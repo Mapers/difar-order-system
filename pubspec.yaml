@@ -1,0 +1,30 @@
+name: sistema_pedidos
+description: Sistema de gestión de pedidos para DIFAR CHIMBOTE.
+
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: '>=2.19.0 <3.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.2
+  google_fonts: ^4.0.3
+  flutter_svg: ^2.0.5
+  intl: ^0.18.0
+  shared_preferences: ^2.2.0
+  smooth_page_indicator: ^1.1.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^2.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/
+
