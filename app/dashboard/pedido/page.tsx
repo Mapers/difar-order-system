@@ -1,8 +1,6 @@
-"use client"
+'use client'
 
-import type React from "react"
-
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -12,28 +10,32 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Trash, ShoppingCart, ArrowRight, ArrowLeft, Check } from "lucide-react"
 import { StepProgress } from "@/components/step-progress"
+import apiClient from "@/app/api/client"
+import { Skeleton } from "@/components/ui/skeleton"
+import * as moment from 'moment'
 
-// Mock data
-const clients = [
-  { Codigo: "C001", Nombre: "Cliente 1" },
-  { Codigo: "C002", Nombre: "Cliente 2" },
-  { Codigo: "C003", Nombre: "Cliente 3" },
-]
+interface IClient {
+  Codigo: string
+  Nombre: string
+}
 
-const conditions = [
-  { CodigoCondicion: "001", Descripcion: "Crédito" },
-  { CodigoCondicion: "002", Descripcion: "Factura" },
-  { CodigoCondicion: "003", Descripcion: "Boleta" },
-]
+interface ICondicion {
+  CodigoCondicion: string
+  Descripcion: string
+  Credito: boolean
+}
 
-const products = [
-  { IdArticulo: 1, NombreItem: "Producto 1", Precio: 100.0 },
-  { IdArticulo: 2, NombreItem: "Producto 2", Precio: 200.0 },
-  { IdArticulo: 3, NombreItem: "Producto 3", Precio: 150.0 },
-]
+interface IProduct {
+  IdArticulo: number
+  Codigo_Art: string
+  NombreItem: string
+  Stock?: number
+  precio1?: string;
+}
 
 interface OrderItem {
   IdArticulo: number
+  Codigo_Art: string
   NombreItem: string
   Cantidad: number
   Precio: number
@@ -47,26 +49,106 @@ export default function OrderPage() {
   const [clientName, setClientName] = useState("")
   const [condition, setCondition] = useState("")
   const [conditionName, setConditionName] = useState("")
-  const [currency, setCurrency] = useState("NSO")
+  const [currency, setCurrency] = useState("PEN")
   const [selectedProduct, setSelectedProduct] = useState("")
   const [quantity, setQuantity] = useState(1)
   const [orderItems, setOrderItems] = useState<OrderItem[]>([])
+  const [clients, setClients] = useState<IClient[]>([])
+  const [conditions, setConditions] = useState<ICondicion[]>([])
+  const [products, setProducts] = useState<IProduct[]>([])
+  const [loading, setLoading] = useState({
+    clients: true,
+    conditions: true,
+    products: true
+  })
+  const [search, setSearch] = useState({
+    client: "",
+    product: "",
+    condition: ""
+  })
 
   const steps = ["Cliente", "Condiciones", "Productos", "Resumen"]
+
+  // Fetch clients
+  useEffect(() => {
+    const fetchClients = async () => {
+      try {
+        const url = search.client
+          ? `/clientes/search?query=${encodeURIComponent(search.client)}`
+          : '/clientes'
+
+        const response = await apiClient.get(url)
+        setClients(response.data?.data?.data || [])
+      } catch (error) {
+        console.error("Error fetching clients:", error)
+      } finally {
+        setLoading(prev => ({ ...prev, clients: false }))
+      }
+    }
+
+    fetchClients()
+  }, [search.client])
+
+  // Fetch conditions
+  useEffect(() => {
+    const fetchConditions = async () => {
+      try {
+        const response = await apiClient.get(`/condiciones?query=${search.condition}`)
+        setConditions(response.data?.data?.data || [])
+      } catch (error) {
+        console.error("Error fetching conditions:", error)
+      } finally {
+        setLoading(prev => ({ ...prev, conditions: false }))
+      }
+    }
+
+    fetchConditions()
+  }, [search.condition])
+
+  // Fetch products
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const url = search.product
+          ? `/articulos/search?query=${encodeURIComponent(search.product)}`
+          : '/articulos'
+
+        const response = await apiClient.get(url)
+        setProducts(response.data?.data?.data || [])
+      } catch (error) {
+        console.error("Error fetching products:", error)
+      } finally {
+        setLoading(prev => ({ ...prev, products: false }))
+      }
+    }
+
+    fetchProducts()
+  }, [search.product])
 
   const handleAddProduct = () => {
     const product = products.find((p) => p.IdArticulo.toString() === selectedProduct)
     if (!product) return
 
-    const newItem: OrderItem = {
-      IdArticulo: product.IdArticulo,
-      NombreItem: product.NombreItem,
-      Cantidad: quantity,
-      Precio: product.Precio,
-      Total: product.Precio * quantity,
+    const existingItemIndex = orderItems.findIndex(item => item.IdArticulo === product.IdArticulo)
+
+    if (existingItemIndex >= 0) {
+      const updatedItems = [...orderItems]
+      updatedItems[existingItemIndex].Cantidad += quantity
+      updatedItems[existingItemIndex].Total = updatedItems[existingItemIndex].Cantidad * updatedItems[existingItemIndex].Precio
+      setOrderItems(updatedItems)
+    } else {
+      const newItem: OrderItem = {
+        IdArticulo: product.IdArticulo,
+        Codigo_Art: product.Codigo_Art,
+        NombreItem: product.NombreItem,
+        Cantidad: quantity,
+        Precio: Number(product.precio1),
+        Total: Number(product.precio1) * quantity,
+      }
+
+      setOrderItems([...orderItems, newItem])
     }
 
-    setOrderItems([...orderItems, newItem])
     setSelectedProduct("")
     setQuantity(1)
   }
@@ -81,25 +163,32 @@ export default function OrderPage() {
     return orderItems.reduce((sum, item) => sum + item.Total, 0)
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    // Create order object
-    const order = {
-      clientePedido: client,
-      clienteNombre: clientName,
-      fechaPedido: new Date().toISOString().split("T")[0],
-      monedaPedido: currency,
-      condicionPedido: condition,
-      condicionNombre: conditionName,
-      items: orderItems,
+    try {
+      const pedidoData = {
+        clientePedido: client,
+        monedaPedido: currency,
+        condicionPedido: condition,
+        fechaPedido: moment(new Date()).format('yyyy-MM-DD'),
+        usuario: 1,
+        detalles: orderItems.map(item => ({
+          iditemPedido: item.IdArticulo,
+          codigoitemPedido: item.Codigo_Art,
+          cantPedido: item.Cantidad,
+          precioPedido: item.Precio
+        }))
+      }
+
+      const response = await apiClient.post('/pedidos', pedidoData)
+
+      if (response.status === 201) {
+        router.push("/dashboard/mis-pedidos")
+      }
+    } catch (error) {
+      console.error("Error creating order:", error)
     }
-
-    // In a real app, you would save this to your database
-    console.log("Order created:", order)
-
-    // Navigate to summary page
-    router.push("/dashboard")
   }
 
   const handleClientSelect = (value: string) => {
@@ -176,11 +265,29 @@ export default function OrderPage() {
                     <SelectValue placeholder="Seleccionar cliente" />
                   </SelectTrigger>
                   <SelectContent>
-                    {clients.map((c) => (
-                      <SelectItem key={c.Codigo} value={c.Codigo}>
-                        {c.Nombre}
-                      </SelectItem>
-                    ))}
+                    <div className="p-2">
+                      <Input
+                        placeholder="Buscar cliente..."
+                        value={search.client}
+                        onChange={(e) => setSearch({...search, client: e.target.value})}
+                        className="mb-2"
+                      />
+                    </div>
+                    {loading.clients ? (
+                      <div className="p-4">
+                        <Skeleton className="h-4 w-full" />
+                      </div>
+                    ) : clients.length > 0 ? (
+                      clients.map((c) => (
+                        <SelectItem key={c.Codigo} value={c.Codigo}>
+                          {c.Nombre} ({c.Codigo})
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <div className="p-4 text-sm text-gray-500">
+                        No se encontraron clientes
+                      </div>
+                    )}
                   </SelectContent>
                 </Select>
               </div>
@@ -214,11 +321,29 @@ export default function OrderPage() {
                     <SelectValue placeholder="Seleccionar condición" />
                   </SelectTrigger>
                   <SelectContent>
-                    {conditions.map((c) => (
-                      <SelectItem key={c.CodigoCondicion} value={c.CodigoCondicion}>
-                        {c.Descripcion}
-                      </SelectItem>
-                    ))}
+                    {/*<div className="p-2">*/}
+                    {/*  <Input*/}
+                    {/*    placeholder="Buscar condición..."*/}
+                    {/*    value={search.condition}*/}
+                    {/*    onChange={(e) => setSearch({...search, condition: e.target.value})}*/}
+                    {/*    className="mb-2"*/}
+                    {/*  />*/}
+                    {/*</div>*/}
+                    {loading.conditions ? (
+                      <div className="p-4">
+                        <Skeleton className="h-4 w-full" />
+                      </div>
+                    ) : conditions.length > 0 ? (
+                      conditions.map((c) => (
+                        <SelectItem key={c.CodigoCondicion} value={c.CodigoCondicion}>
+                          {c.Descripcion}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <div className="p-4 text-sm text-gray-500">
+                        No se encontraron condiciones
+                      </div>
+                    )}
                   </SelectContent>
                 </Select>
               </div>
@@ -231,7 +356,7 @@ export default function OrderPage() {
                     <SelectValue placeholder="Seleccionar moneda" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="NSO">Soles (NSO)</SelectItem>
+                    <SelectItem value="PEN">Soles (PEN)</SelectItem>
                     <SelectItem value="USD">Dólares (USD)</SelectItem>
                   </SelectContent>
                 </Select>
@@ -271,11 +396,29 @@ export default function OrderPage() {
                       <SelectValue placeholder="Seleccionar producto" />
                     </SelectTrigger>
                     <SelectContent>
-                      {products.map((p) => (
-                        <SelectItem key={p.IdArticulo} value={p.IdArticulo.toString()}>
-                          {p.NombreItem}
-                        </SelectItem>
-                      ))}
+                      <div className="p-2">
+                        <Input
+                          placeholder="Buscar producto..."
+                          value={search.product}
+                          onChange={(e) => setSearch({...search, product: e.target.value})}
+                          className="mb-2"
+                        />
+                      </div>
+                      {loading.products ? (
+                        <div className="p-4">
+                          <Skeleton className="h-4 w-full" />
+                        </div>
+                      ) : products.length > 0 ? (
+                        products.map((p) => (
+                          <SelectItem key={p.IdArticulo} value={p.IdArticulo.toString()}>
+                            {p.NombreItem} ({p.Codigo_Art})
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <div className="p-4 text-sm text-gray-500">
+                          No se encontraron productos
+                        </div>
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
@@ -331,13 +474,16 @@ export default function OrderPage() {
                       ) : (
                         orderItems.map((item, index) => (
                           <TableRow key={index} className="hover:bg-gray-50">
-                            <TableCell>{item.NombreItem}</TableCell>
+                            <TableCell>
+                              <div className="font-medium">{item.NombreItem}</div>
+                              <div className="text-sm text-gray-500">{item.Codigo_Art}</div>
+                            </TableCell>
                             <TableCell className="text-right">{item.Cantidad}</TableCell>
                             <TableCell className="text-right">
-                              {item.Precio.toFixed(2)} {currency === "NSO" ? "S/." : "$"}
+                              {Number(item.Precio).toFixed(2)} {currency === "PEN" ? "S/." : "$"}
                             </TableCell>
                             <TableCell className="text-right">
-                              {item.Total.toFixed(2)} {currency === "NSO" ? "S/." : "$"}
+                              {item.Total.toFixed(2)} {currency === "PEN" ? "S/." : "$"}
                             </TableCell>
                             <TableCell>
                               <Button
@@ -408,7 +554,7 @@ export default function OrderPage() {
                       </div>
                       <div>
                         <p className="text-sm font-medium text-gray-500">Moneda:</p>
-                        <p className="text-gray-900">{currency === "NSO" ? "Soles (S/.)" : "Dólares ($)"}</p>
+                        <p className="text-gray-900">{currency === "PEN" ? "Soles (S/.)" : "Dólares ($)"}</p>
                       </div>
                       <div>
                         <p className="text-sm font-medium text-gray-500">Fecha:</p>
@@ -434,13 +580,16 @@ export default function OrderPage() {
                     <TableBody>
                       {orderItems.map((item, index) => (
                         <TableRow key={index} className="hover:bg-gray-50">
-                          <TableCell>{item.NombreItem}</TableCell>
+                          <TableCell>
+                            <div className="font-medium">{item.NombreItem}</div>
+                            <div className="text-sm text-gray-500">{item.Codigo_Art}</div>
+                          </TableCell>
                           <TableCell className="text-right">{item.Cantidad}</TableCell>
                           <TableCell className="text-right">
-                            {item.Precio.toFixed(2)} {currency === "NSO" ? "S/." : "$"}
+                            {Number(item.Precio).toFixed(2)} {currency === "PEN" ? "S/." : "$"}
                           </TableCell>
                           <TableCell className="text-right">
-                            {item.Total.toFixed(2)} {currency === "NSO" ? "S/." : "$"}
+                            {item.Total.toFixed(2)} {currency === "PEN" ? "S/." : "$"}
                           </TableCell>
                         </TableRow>
                       ))}
@@ -452,7 +601,7 @@ export default function OrderPage() {
               <div className="rounded-lg bg-blue-50 p-4 flex justify-between items-center">
                 <div className="text-lg font-medium text-blue-900">Total del Pedido:</div>
                 <div className="text-xl font-bold text-blue-900">
-                  {calculateTotal().toFixed(2)} {currency === "NSO" ? "S/." : "$"}
+                  {calculateTotal().toFixed(2)} {currency === "PEN" ? "S/." : "$"}
                 </div>
               </div>
             </CardContent>
@@ -472,4 +621,3 @@ export default function OrderPage() {
     </div>
   )
 }
-

@@ -7,28 +7,33 @@ import { LoginForm } from "@/components/login-form"
 export default function Home() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
+  const [showSplash, setShowSplash] = useState(false)
 
   useEffect(() => {
-    // Verificar si debemos mostrar el splash screen
+    // This will only run on the client side
     const lastVisit = localStorage.getItem("last_visit")
     const currentTime = new Date().getTime()
 
-    // Si no hay visita previa o han pasado más de 24 horas
-    if (!lastVisit || currentTime - Number.parseInt(lastVisit) > 24 * 60 * 60 * 1000) {
+    if (!lastVisit || currentTime - Number(lastVisit) > 24 * 60 * 60 * 1000) {
       localStorage.setItem("last_visit", currentTime.toString())
+      setShowSplash(true)
       router.push("/splash")
-      return
+    } else {
+      setLoading(false)
     }
-
-    setLoading(false)
   }, [router])
 
-  if (loading) {
+  if (typeof window === 'undefined' || loading) {
+    // Server-side render or initial loading state
     return (
       <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-500 border-t-transparent"></div>
       </div>
     )
+  }
+
+  if (showSplash) {
+    return null // Will be redirected by the router
   }
 
   return (
@@ -43,4 +48,3 @@ export default function Home() {
     </main>
   )
 }
-

@@ -1,8 +1,82 @@
+'use client'
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Package, ShoppingCart, Users, TrendingUp, Calendar, FileText } from "lucide-react"
 import Link from "next/link"
+import {useEffect, useState} from "react";
+import apiClient from "@/app/api/client";
+
+interface DashboardStats {
+  totalClientes: number;
+  nuevosClientesMes: number;
+  totalArticulos: number;
+  articulosActualizados: number;
+  totalPedidos: number;
+  nuevosPedidosHoy: number;
+  ultimaActualizacion: string;
+}
 
 export default function Dashboard() {
+  const [stats, setStats] = useState<DashboardStats | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        const [clientesRes, articulosRes, pedidosRes] = await Promise.all([
+          apiClient.get('/clientes/stats/count'),
+          apiClient.get('/articulos/stats/count'),
+          apiClient.get('/pedidos/stats/count')
+        ])
+
+        if (clientesRes.status !== 200 || articulosRes.status !== 200 || pedidosRes.status !== 200) {
+          throw new Error('Error al obtener datos del dashboard')
+        }
+
+        const [clientesData, articulosData, pedidosData] = [
+          clientesRes.data,
+          articulosRes.data,
+          pedidosRes.data
+        ]
+
+        const nuevosClientesRes = await apiClient.get('/clientes/recent/month')
+        const nuevosClientesData = nuevosClientesRes.data;
+
+        const articulosActualizadosRes = await apiClient.get('/articulos/recent/updated')
+        const articulosActualizadosData = articulosActualizadosRes.data;
+
+        const pedidosHoyRes = await apiClient.get('/pedidos/stats/hoy')
+        const pedidosHoyData = pedidosHoyRes.data;
+
+        setStats({
+          totalClientes: clientesData.data.total,
+          nuevosClientesMes: nuevosClientesData.data.length,
+          totalArticulos: articulosData.data.total,
+          articulosActualizados: articulosActualizadosData.data.length,
+          totalPedidos: pedidosData.data.total,
+          nuevosPedidosHoy: pedidosHoyData.data.totalHoy,
+          ultimaActualizacion: new Date().toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' })
+        })
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Error desconocido')
+        console.error('Error fetching dashboard data:', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchDashboardData()
+  }, [])
+
+  if (loading) {
+    return <div className="flex justify-center items-center h-64">Cargando datos...</div>
+  }
+
+  if (error) {
+    return <div className="text-red-500 p-4">Error: {error}</div>
+  }
+
   return (
     <div className="grid gap-6">
       <div className="flex flex-col gap-2">
@@ -11,45 +85,55 @@ export default function Dashboard() {
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+        {/* Tarjeta de Pedidos */}
         <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-lg hover:shadow-xl transition-all">
           <CardHeader className="pb-2">
             <CardTitle className="text-lg font-medium">Pedidos</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-between">
-              <div className="text-3xl font-bold">24</div>
+              <div className="text-3xl font-bold">{stats?.totalPedidos || '--'}</div>
               <TrendingUp className="h-8 w-8 text-blue-100" />
             </div>
-            <p className="mt-2 text-sm text-blue-100">12 pedidos nuevos hoy</p>
+            <p className="mt-2 text-sm text-blue-100">
+              {stats?.nuevosPedidosHoy || '--'} pedidos nuevos hoy
+            </p>
           </CardContent>
         </Card>
 
+        {/* Tarjeta de Clientes */}
         <Card className="bg-gradient-to-br from-indigo-500 to-indigo-600 text-white shadow-lg hover:shadow-xl transition-all">
           <CardHeader className="pb-2">
             <CardTitle className="text-lg font-medium">Clientes</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-between">
-              <div className="text-3xl font-bold">156</div>
+              <div className="text-3xl font-bold">{stats?.totalClientes || '--'}</div>
               <Users className="h-8 w-8 text-indigo-100" />
             </div>
-            <p className="mt-2 text-sm text-indigo-100">3 clientes nuevos este mes</p>
+            <p className="mt-2 text-sm text-indigo-100">
+              {stats?.nuevosClientesMes || '--'} clientes nuevos este mes
+            </p>
           </CardContent>
         </Card>
 
+        {/* Tarjeta de Productos */}
         <Card className="bg-gradient-to-br from-purple-500 to-purple-600 text-white shadow-lg hover:shadow-xl transition-all">
           <CardHeader className="pb-2">
             <CardTitle className="text-lg font-medium">Productos</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-between">
-              <div className="text-3xl font-bold">89</div>
+              <div className="text-3xl font-bold">{stats?.totalArticulos || '--'}</div>
               <Package className="h-8 w-8 text-purple-100" />
             </div>
-            <p className="mt-2 text-sm text-purple-100">5 productos actualizados</p>
+            <p className="mt-2 text-sm text-purple-100">
+              {stats?.articulosActualizados || '--'} productos actualizados
+            </p>
           </CardContent>
         </Card>
 
+        {/* Tarjeta de Actividad */}
         <Card className="bg-gradient-to-br from-cyan-500 to-cyan-600 text-white shadow-lg hover:shadow-xl transition-all">
           <CardHeader className="pb-2">
             <CardTitle className="text-lg font-medium">Actividad</CardTitle>
@@ -59,7 +143,9 @@ export default function Dashboard() {
               <div className="text-3xl font-bold">Hoy</div>
               <Calendar className="h-8 w-8 text-cyan-100" />
             </div>
-            <p className="mt-2 text-sm text-cyan-100">Última actualización: 10:45 AM</p>
+            <p className="mt-2 text-sm text-cyan-100">
+              Última actualización: {stats?.ultimaActualizacion || '--'}
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -120,4 +206,3 @@ export default function Dashboard() {
     </div>
   )
 }
-
