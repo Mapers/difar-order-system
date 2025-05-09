@@ -4,99 +4,106 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Search, PackagePlus, Eye, Edit, Trash } from "lucide-react"
-import { Badge } from "@/components/ui/badge"
-import { useEffect, useState } from "react"
+import React, { useEffect, useState } from "react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Pagination, PaginationContent, PaginationItem, PaginationNext, PaginationPrevious } from "@/components/ui/pagination"
-import apiClient from "@/app/api/client"
+import { Search, } from "lucide-react"
+import { toast } from "@/hooks/use-toast"
+import { IDate } from "@/interface/product-interface"
+import { dateSchema } from "@/schemas/products/productSchema"
+import { getDateProductsRequest } from "@/app/api/products"
+import { z } from 'zod'
 
-interface IProduct {
-  IdArticulo: number
-  Codigo_Art: string
-  NombreItem: string
-  SubLinea: string
-  Unidad?: number
-  PUInclIGV: number
-  Estado?: string
-  Presentacion: string
-}
 
-export default function ProductsPage() {
-  const [products, setProducts] = useState<IProduct[]>([])
-  const [loading, setLoading] = useState(true)
-  const [searchQuery, setSearchQuery] = useState("")
-  const [currentPage, setCurrentPage] = useState(1)
+export default function CollectSellerPage() {
+
+  const [dataSeller, setDataSeller] = useState<any[]>([])
+  const [loading, setLoading] = useState(false)
+  const [date, setDateCut] = useState<string>("")
   const [totalPages, setTotalPages] = useState(1)
+  const [page, setPage] = useState<number>(1)
+  const [perPage, setPerPage] = useState<number>(10)
 
-  const fetchProducts = async (query = "", page = 1) => {
+  const searchSeller = async () => {
+    setLoading(true)
     try {
-      setLoading(true)
-      const url = query
-        ? `/articulos/search?query=${encodeURIComponent(query)}&page=${page}`
-        : `/articulos?page=${page}`
-
-      const response = await apiClient.get(url)
-      if (response.status !== 200) throw new Error("Error al obtener productos")
-
-      const { data: { data, pagination } } = response.data
-      setProducts(data)
-      setTotalPages(pagination.totalPages)
-    } catch (error) {
-      console.error("Error fetching products:", error)
-    } finally {
+      const sendDate: IDate = {
+        fecha: date
+      }
+      dateSchema.parse(sendDate)
+      const response = await getDateProductsRequest(sendDate, page, perPage)
+      if (response.status !== 200) throw new Error("Error al consultar documento de cliente")
+      const data = response?.data?.data?.data
+      setDataSeller(data)
+      setTotalPages(response?.data?.data?.pagination.totalPages || 1)
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        toast({ title: "Productos", description: error.errors[0]?.message, variant: "error" })
+      } else {
+        console.error("Error collection client")
+      }
+    }
+    finally {
       setLoading(false)
     }
   }
 
+  const handleSearchSeller = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setPage(1)
+    await searchSeller()
+  }
+
   useEffect(() => {
-    fetchProducts(searchQuery, currentPage)
-  }, [searchQuery, currentPage])
+    if (date) {
+      searchSeller()
+    }
+  }, [page])
+
 
   const handlePreviousPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage(currentPage - 1)
+    if (page > 1) {
+      setPage(page - 1)
     }
   }
 
   const handleNextPage = () => {
-    if (currentPage < totalPages) {
-      setCurrentPage(currentPage + 1)
+    if (page < totalPages) {
+      setPage(page + 1)
     }
-  }
-
-  const getProductStatus = (product: IProduct) => {
-    if (product.Unidad === null) return "No existente"
-    return Number(product.Unidad) > 0 ? "Disponible" : "Agotado"
   }
 
   return (
     <div className="grid gap-6">
       <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold tracking-tight text-gray-900">Productos</h1>
-        <p className="text-gray-500">Gestiona tu catálogo de productos.</p>
+        <h1 className="text-3xl font-bold tracking-tight text-gray-900">Consulta Cobrar Vendedor</h1>
+        <p className="text-gray-500">Gestiona la información de tus clientes.</p>
       </div>
 
       <Card className="shadow-md">
-        <CardHeader className="flex flex-col sm:flex-row justify-between gap-4 sm:items-center">
-          <CardTitle className="text-xl font-semibold text-indigo-700">Lista de Productos</CardTitle>
-          <div className="flex flex-col sm:flex-row gap-4 sm:items-center">
+        <CardHeader className="flex flex-col sm:flex-row justify-start gap-4 sm:items-center">
+
+          <CardTitle className="text-xl font-semibold text-indigo-700">Lista de Productos</CardTitle> <div className="flex flex-col sm:flex-row gap-4 sm:items-center">
+
             <div className="relative">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
               <Input
-                type="search"
-                placeholder="Buscar por código o nombre..."
-                className="pl-8 bg-white"
-                value={searchQuery}
+                type="date"
+                placeholder="F000-0000"
+                // className={`pl-8 bg-white ${isEmpty ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
+                className={"pl-8 bg-white"}
+                value={date}
                 onChange={(e) => {
-                  setSearchQuery(e.target.value)
-                  setCurrentPage(1)
+                  setDateCut(e.target.value)
                 }}
+                required
               />
             </div>
-            <Button className="bg-indigo-600 hover:bg-indigo-700" disabled>
-              <PackagePlus className="mr-2 h-4 w-4" />
-              Nuevo Producto
+
+            <Button className="bg-blue-600 hover:bg-blue-700"
+              onClick={handleSearchSeller}
+            >
+              <Search className="mr-2 h-4 w-4" />
+              Buscar
             </Button>
           </div>
         </CardHeader>
@@ -105,98 +112,83 @@ export default function ProductsPage() {
             <Table>
               <TableHeader className="bg-gray-50">
                 <TableRow>
-                  <TableHead>ID</TableHead>
-                  <TableHead>Nombre</TableHead>
-                  <TableHead className="hidden md:table-cell">Stock</TableHead>
-                  <TableHead className="hidden md:table-cell">Presentación</TableHead>
-                  <TableHead className="hidden md:table-cell">Estado</TableHead>
-                  <TableHead className="text-right">Acciones</TableHead>
+                  <TableHead>Código Arctículo</TableHead>
+                  <TableHead>Línea De Descripción</TableHead>
+                  <TableHead className="hidden md:table-cell">Lote De Descripción</TableHead>
+                  <TableHead className="hidden md:table-cell">Nombre</TableHead>
+                  <TableHead className="hidden md:table-cell">Unidad</TableHead>
+                  <TableHead className="hidden md:table-cell">Saldo Cantidad</TableHead>
+                  <TableHead className="hidden md:table-cell">PU_Inc_IGV</TableHead>
+                  <TableHead className="text-right">Tipo PU_No_Afecto_IGV</TableHead>
+                  <TableHead className="text-right">Pago Al Contado</TableHead>
+                  <TableHead className="text-right">Pago Al Crédito</TableHead>
+                  <TableHead className="text-right">Mayor</TableHead>
+                  <TableHead className="text-right">Menor</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {loading ? (
+                  // Skeleton loading
                   Array.from({ length: 5 }).map((_, index) => (
                     <TableRow key={index}>
+                      <TableCell><Skeleton className="h-4 w-[40px]" /></TableCell>
+                      <TableCell><Skeleton className="h-4 w-[50px]" /></TableCell>
+                      <TableCell><Skeleton className="h-4 w-[60px]" /></TableCell>
+                      <TableCell><Skeleton className="h-4 w-[50px]" /></TableCell>
+                      <TableCell><Skeleton className="h-4 w-[50px]" /></TableCell>
+                      <TableCell><Skeleton className="h-4 w-[60px]" /></TableCell>
                       <TableCell><Skeleton className="h-4 w-[80px]" /></TableCell>
-                      <TableCell><Skeleton className="h-4 w-[180px]" /></TableCell>
-                      <TableCell className="hidden md:table-cell">
-                        <Skeleton className="h-4 w-[120px]" />
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell">
-                        <Skeleton className="h-4 w-[100px]" />
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell">
-                        <Skeleton className="h-4 w-[80px]" />
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Skeleton className="h-8 w-8 rounded-md" />
-                          <Skeleton className="h-8 w-8 rounded-md" />
-                          <Skeleton className="h-8 w-8 rounded-md" />
-                        </div>
-                      </TableCell>
+                      <TableCell><Skeleton className="h-4 w-[80px]" /></TableCell>
+                      <TableCell><Skeleton className="h-4 w-[80px]" /></TableCell>
+                      <TableCell><Skeleton className="h-4 w-[70px]" /></TableCell>
+                      <TableCell><Skeleton className="h-4 w-[70px]" /></TableCell>
+                      <TableCell><Skeleton className="h-4 w-[80px]" /></TableCell>
+                      <TableCell><Skeleton className="h-4 w-[80px]" /></TableCell>
+
+
                     </TableRow>
                   ))
-                ) : products.length > 0 ? (
-                  products.map((product) => (
-                    <TableRow key={product.IdArticulo} className="hover:bg-gray-50">
-                      <TableCell className="font-medium">{product.IdArticulo}</TableCell>
-                      <TableCell>{product.NombreItem ?? '-'}</TableCell>
+                ) : dataSeller.length > 0 ? (
+                  dataSeller.map((doc, index) => (
+                    <TableRow key={doc.Codigo_Art + index} className="hover:bg-gray-50">
+                      <TableCell className="font-medium">{doc.Codigo_Art || '-'}</TableCell>
+                      <TableCell className="font-medium">{doc.DescripcionLinea}</TableCell>
                       <TableCell className="hidden md:table-cell">
-                        {product.Unidad || "-"}
+                        {doc.DescripcionLote || "-"}
                       </TableCell>
                       <TableCell className="hidden md:table-cell">
-                        {product.Presentacion || "-"}
+                        {doc.NombreItem || "-"}
                       </TableCell>
                       <TableCell className="hidden md:table-cell">
-                        <Badge
-                          variant={getProductStatus(product) === "Disponible" ? "default" : "secondary"}
-                          className={
-                            getProductStatus(product) === "Disponible"
-                              ? "bg-green-100 text-green-800 hover:bg-green-100"
-                              : "bg-red-100 text-red-800 hover:bg-red-100"
-                          }
-                        >
-                          {getProductStatus(product)}
-                        </Badge>
+                        {doc.Unidad || "-"}
                       </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button
-                            disabled
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
-                          >
-                            <Eye className="h-4 w-4" />
-                            <span className="sr-only">Ver</span>
-                          </Button>
-                          <Button
-                            disabled
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-amber-600 hover:text-amber-700 hover:bg-amber-50"
-                          >
-                            <Edit className="h-4 w-4" />
-                            <span className="sr-only">Editar</span>
-                          </Button>
-                          <Button
-                            disabled
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
-                          >
-                            <Trash className="h-4 w-4" />
-                            <span className="sr-only">Eliminar</span>
-                          </Button>
-                        </div>
+                      <TableCell className="hidden md:table-cell">
+                        {doc.saldoCant || "-"}
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell">
+                        {doc.PU_Inc_IGV || "-"}
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell">
+                        {doc.PU_No_Afecto_IGV || "-"}
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell">
+                        {doc.PUContado || "-"}
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell">
+                        {doc.PUCredito || "-"}
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell">
+                        {doc.PUPorMayor || "-"}
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell">
+                        {doc.PUPorMenor || "-"}
                       </TableCell>
                     </TableRow>
                   ))
                 ) : (
                   <TableRow>
                     <TableCell colSpan={7} className="text-center py-8 text-gray-500">
-                      No se encontraron productos
+                      No se encontraron clientes
                     </TableCell>
                   </TableRow>
                 )}
@@ -204,25 +196,25 @@ export default function ProductsPage() {
             </Table>
 
             {/* Paginación */}
-            {!loading && products.length > 0 && (
+            {!loading && dataSeller.length > 0 && (
               <div className="mt-4 flex justify-center">
                 <Pagination>
                   <PaginationContent>
                     <PaginationItem>
                       <PaginationPrevious
                         onClick={handlePreviousPage}
-                        className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
+                        className={page === 1 ? "pointer-events-none opacity-50" : ""}
                       />
                     </PaginationItem>
                     <PaginationItem>
                       <span className="px-4 py-2 text-sm font-medium">
-                        Página {currentPage} de {totalPages}
+                        Página {page} de {totalPages}
                       </span>
                     </PaginationItem>
                     <PaginationItem>
                       <PaginationNext
                         onClick={handleNextPage}
-                        className={currentPage >= totalPages ? "pointer-events-none opacity-50" : ""}
+                        className={page >= totalPages ? "pointer-events-none opacity-50" : ""}
                       />
                     </PaginationItem>
                   </PaginationContent>
