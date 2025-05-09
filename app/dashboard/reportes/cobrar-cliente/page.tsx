@@ -7,10 +7,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import React, { useEffect, useState } from "react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Pagination, PaginationContent, PaginationItem, PaginationNext, PaginationPrevious } from "@/components/ui/pagination"
-import { balanceDocClientRequest,  } from "@/app/api/reports"
+import { balanceDocClientRequest, } from "@/app/api/reports"
 import { IClient } from "@/interface/report-interface"
-import { Search,  } from "lucide-react"
-
+import { Search, } from "lucide-react"
+import { clientSchema } from "@/schemas/reports/documentoSchema"
+import { z } from 'zod'
+import { toast } from "@/hooks/use-toast"
 
 
 export default function CollectClientPage() {
@@ -25,7 +27,6 @@ export default function CollectClientPage() {
   const [perPage, setPerPage] = useState<number>(10)
 
 
-  // NUEVA FUNCIÓN GENERAL
   const searchClient = async () => {
     setLoading(true)
     try {
@@ -33,32 +34,28 @@ export default function CollectClientPage() {
         nombreApellido: fullName.toLocaleUpperCase(),
         fechaCorte: dateCut
       }
+      clientSchema.parse(client)
       const response = await balanceDocClientRequest(client, page, perPage)
       if (response.status !== 200) throw new Error("Error al consultar documento de cliente")
       const data = response?.data?.data?.data
       setDataClient(data)
       setTotalPages(response?.data?.data?.pagination.totalPages || 1)
-    } catch (error) {
-      console.error("Error search document")
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        toast({ title: "Cobrar Cliente", description: error.errors[0]?.message, variant: "error" })
+      } else {
+        console.error("Error collection client")
+      }
     } finally {
       setLoading(false)
     }
   }
 
-  // MANTIENE EL FORM SUBMIT
   const handleSearchClient = async (e: React.FormEvent) => {
     e.preventDefault()
     setPage(1)
     await searchClient()
   }
-
-  // CUANDO CAMBIA LA PÁGINA
-  useEffect(() => {
-    if (fullName && dateCut) {
-      searchClient()
-    }
-  }, [page])
-
 
   const handlePreviousPage = () => {
     if (page > 1) {
@@ -71,6 +68,12 @@ export default function CollectClientPage() {
       setPage(page + 1)
     }
   }
+
+  useEffect(() => {
+    if (fullName && dateCut) {
+      searchClient()
+    }
+  }, [page])
 
 
   return (

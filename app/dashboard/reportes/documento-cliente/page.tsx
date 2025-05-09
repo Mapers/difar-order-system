@@ -12,6 +12,9 @@ import { Pagination, PaginationContent, PaginationItem, PaginationNext, Paginati
 import { consultDocClientRequest, fetchTypeDocuments } from "@/app/api/reports"
 import { IDocument, IDocClient } from "@/interface/report-interface"
 import { normalizeDocumentCode } from "@/utils/normalizeDocumentCode"
+import { documentoSchema } from '@/schemas/reports/documentoSchema'
+import { z } from 'zod'
+import { toast } from "@/hooks/use-toast"
 
 
 
@@ -19,7 +22,6 @@ export default function DocumentClientPage() {
   const [typesDocuments, setTypesDocuments] = useState<IDocument[]>([])
   const [dataDocClient, setDataDocClient] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
-  const [loadingDocClient, setLoadingDocClient] = useState(false)
   const [isEmpty, setIsEmpty] = useState(false)
   const [selectedDocumentCode, setSelectedDocumentCode] = useState<string>("")
   const [documentCode, setDocumentCode] = useState<string>("")
@@ -34,7 +36,6 @@ export default function DocumentClientPage() {
       setLoading(true)
       const response = await fetchTypeDocuments()
       if (response.status !== 200) throw new Error("Error al obtener tipos de documentos")
-      console.log("response : ", response);
       const data = response?.data?.data
       setTypesDocuments(data)
     } catch (error) {
@@ -43,7 +44,6 @@ export default function DocumentClientPage() {
       setLoading(false)
     }
   }
-
 
   const searchDocument = async () => {
     setLoading(true)
@@ -54,45 +54,35 @@ export default function DocumentClientPage() {
       }
       setIsEmpty(false)
       const normalizedDocumenCode = normalizeDocumentCode(documentCode)
-      const docClient: IDocClient = {
-        documento: `${selectedDocumentCode}-${normalizedDocumenCode}`
-      }
-      const response = await consultDocClientRequest(docClient,page,perPage)
+      const documento = `${selectedDocumentCode}-${normalizedDocumenCode}`
+      documentoSchema.parse({ documento })
+      const docClient: IDocClient = { documento }
+      const response = await consultDocClientRequest(docClient, page, perPage)
       if (response.status !== 200) throw new Error("Error al consultar documento de cliente")
       const data = response?.data?.data?.data
       setDataDocClient(data)
       setTotalPages(response?.data?.data?.pagination.totalPages || 1)
-    } catch (error) {
-      console.error("Error search document")
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        toast({ title: "Consultar Cliente", description: error.errors[0]?.message, variant: "error" })
+      } else {
+        console.error("Error search document")
+      }
     }
     finally {
       setLoading(false)
-
     }
   }
 
-  const handleDocumentSelect = (value: string) => {
-    setSelectedDocumentCode(value)
-    console.log("Documento seleccionado:", value)
-  }
-
-
-
-
-  // MANTIENE EL FORM SUBMIT
   const handleSearchDocument = async (e: React.FormEvent) => {
     e.preventDefault()
     setPage(1)
     await searchDocument()
   }
 
-  // CUANDO CAMBIA LA PÁGINA
-  useEffect(() => {
-    getTypesDocuments()
-    if (selectedDocumentCode && documentCode) {
-      searchDocument()
-    }
-  }, [page])
+  const handleDocumentSelect = (value: string) => {
+    setSelectedDocumentCode(value)
+  }
 
   const handlePreviousPage = () => {
     if (page > 1) {
@@ -106,6 +96,17 @@ export default function DocumentClientPage() {
     }
   }
 
+  useEffect(() => {
+    getTypesDocuments()
+    if (selectedDocumentCode && documentCode) {
+      searchDocument()
+    }
+  }, [page])
+
+  useEffect(() => {
+    getTypesDocuments()
+
+  }, [])
 
 
   return (
@@ -140,7 +141,7 @@ export default function DocumentClientPage() {
                 )}
               </SelectContent>
             </Select>
-            <div className="relative">
+            <div className="relative border-red">
               <Input
                 type="search"
                 placeholder="F000-0000"

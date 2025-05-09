@@ -10,7 +10,9 @@ import { Pagination, PaginationContent, PaginationItem, PaginationNext, Paginati
 import { balanceDocClientSellerRequest } from "@/app/api/reports"
 import { IClient } from "@/interface/report-interface"
 import { Search, } from "lucide-react"
-
+import { toast } from "@/hooks/use-toast"
+import { clientSchema } from "@/schemas/reports/documentoSchema"
+import { z } from 'zod'
 
 
 export default function CollectSellerPage() {
@@ -31,28 +33,30 @@ export default function CollectSellerPage() {
         nombreApellido: fullName.toLocaleUpperCase(),
         fechaCorte: dateCut
       }
-      const response = await balanceDocClientSellerRequest(client,page,perPage)
+      clientSchema.parse(client)
+      const response = await balanceDocClientSellerRequest(client, page, perPage)
       if (response.status !== 200) throw new Error("Error al consultar documento de cliente")
       const data = response?.data?.data?.data
       setDataSeller(data)
       setTotalPages(response?.data?.data?.pagination.totalPages || 1)
-    } catch (error) {
-      console.error("Error search document")
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        toast({ title: "Cobrar Cliente", description: error.errors[0]?.message, variant: "error" })
+      } else {
+        console.error("Error collection client")
+      }
     }
     finally {
       setLoading(false)
     }
   }
 
-
-  // MANTIENE EL FORM SUBMIT
   const handleSearchSeller = async (e: React.FormEvent) => {
     e.preventDefault()
     setPage(1)
     await searchSeller()
   }
 
-  // CUANDO CAMBIA LA PÁGINA
   useEffect(() => {
     if (fullName && dateCut) {
       searchSeller()

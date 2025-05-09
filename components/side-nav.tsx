@@ -10,9 +10,7 @@ import {
   LogOut,
   FileText,
   BarChart2,
-  BarChart,
   LineChart,
-  FileBarChart,
   ChevronDown,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
