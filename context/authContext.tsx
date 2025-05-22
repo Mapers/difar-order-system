@@ -46,15 +46,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         try {
             const res = await loginRequest(user)
             if (res && res.status === 200) {
-                console.log(" > logui request : ", res.data)
-                const { user, token } = res.data
+                console.log(" > loguin request : ", res.data.data)
+                const token = res.data.data
                 localStorage.setItem("token", token)
-                setUser(user)
                 setIsAuthenticated(true);
                 return res
             }
         } catch (error: any) {
-            const message = error.response?.data?.error?.message
+            const message = error.response?.data?.message
             setErrors([message]);
             console.log("> Error sign in :", error);
         }
@@ -80,9 +79,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                     logout();
                 } else {
                     setUser({
-                        _id: decoded._id,
-                        email: decoded.email,
-                        role: decoded.role,
+                        EmpRegistros: decoded.EmpRegistros,
+                        NombreUsuarios: decoded.NombreUsuarios,
+                        id_rol: decoded.id_rol,
+                        descripcion_rol: decoded.descripcion_rol,
                     });
                     setIsAuthenticated(true);
                 }

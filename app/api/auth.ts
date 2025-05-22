@@ -6,7 +6,5 @@ export const registerRequest = async (user: UserRegisterDTO) => {
 };
 
 export const loginRequest = async (user: UserLoginDTO) => {
-  return axios.post(`auth/signin`, user, {
-    withCredentials: true,
-  });
+  return axios.post(`auth/signin`, user);
 };

@@ -7,20 +7,22 @@
  * @param input string - El código ingresado por el usuario (ej. 'F0019061' o 'F001-9061')
  * @returns string - Código normalizado en formato F001-9061
  */
- export function normalizeDocumentCode(input: string): string {
-    let normalized = input.trim().toUpperCase()
+
   
-    // Si ya está en formato correcto (con guion), lo devolvemos tal cual
-    if (normalized.includes("-")) {
-      return normalized
+  export function normalizeDocumentCode(input: string): string | null {
+    const normalized = input.trim().toUpperCase();
+  
+    // No se puede normalizar si tiene menos de 5 caracteres
+    if (normalized.length < 5) {
+      return null;
     }
   
-    // Si no tiene guion y tiene 9 caracteres (ej: F0019061), insertamos guion después del 4to carácter
-    if (normalized.length === 9) {
-      return `${normalized.slice(0, 4)}-${normalized.slice(4)}`
+    // Si el 5to carácter es un guion, asumimos que ya está correctamente formateado
+    if (normalized.charAt(4) === "-") {
+      return normalized;
     }
   
-    // Si no cumple las condiciones, lo devolvemos igual (puedes lanzar un error si prefieres)
-    return normalized
+    // Si no tiene guion y tiene al menos 5 caracteres, insertamos el guion
+    return `${normalized.slice(0, 4)}-${normalized.slice(4)}`;
   }
   

@@ -1,8 +1,9 @@
 
 export interface User {
-    _id: string;
-    email: string;
-    role: string;
+    EmpRegistros: string;
+    NombreUsuarios: string;
+    id_rol: number;
+    descripcion_rol: string;
 }
 
 export interface UserLoginDTO {
@@ -22,6 +23,7 @@ export interface JwtPayload {
     NombreUsuarios: string;
     id_rol: number;
     descripcion_rol: string;
+    exp: number;
 }
 
 

@@ -9,14 +9,16 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { ShoppingCart, Lock, User, ArrowRight } from "lucide-react"
+import { useAuth } from "@/context/authContext"
+import { toast } from "@/hooks/use-toast"
 
 export function LoginForm() {
   const router = useRouter()
+  const { signin, loading, errors, isAuthenticated } = useAuth()
   const [dni, setDni] = useState("")
   const [password, setPassword] = useState("")
-  const [verificationCode, setVerificationCode] = useState(["", "", "", "", ""])
-  const [showVerification, setShowVerification] = useState(false)
-  const [loading, setLoading] = useState(false)
+
+  const [loadingLogin, setLoadingLogin] = useState(false)
 
   useEffect(() => {
     // Si el usuario viene del onboarding, mostrar un mensaje de bienvenida
@@ -27,17 +29,33 @@ export function LoginForm() {
     }
   }, [])
 
-  const handleDniSubmit = (e: React.FormEvent) => {
+  const handleDniSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setLoading(true)
+    try {
+      setLoadingLogin(true)
+      const formData = { dni, password }
+      const response = await signin(formData);
+      if (response?.status === 200) {
+        router.push("/dashboard")
+      }
+    } catch (error: any) {
+      console.log("errror:", error);
+      const message = error.response?.data.error.message
+      console.log("> message error signin:", message);
+    }
+    finally {
+      setLoadingLogin(false)
+    }
 
-    // Simulate API call to send verification code
-    setTimeout(() => {
-      setLoading(false)
-      setShowVerification(true)
-      router.push("/dashboard")
-    }, 1500)
   }
+  useEffect(() => {
+    if (errors.length > 0) {
+      errors.forEach(err => {
+        // toast.info(err);
+        toast({ title: "Iniciar Sesión", description: err, variant: "error" })
+      });
+    }
+  }, [errors]);
 
 
   return (
@@ -84,7 +102,7 @@ export function LoginForm() {
 
                 </div>
                 <div className="relative">
-                <Lock className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+                  <Lock className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
                   <Input
                     id="password"
                     type="password"
@@ -101,7 +119,7 @@ export function LoginForm() {
                 className="w-full h-12 mt-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-medium rounded-lg shadow-md hover:shadow-lg transition-all"
                 disabled={loading}
               >
-                {loading ? (
+                {loadingLogin ? (
                   <div className="flex items-center justify-center">
                     <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
                     Iniciando sesión...

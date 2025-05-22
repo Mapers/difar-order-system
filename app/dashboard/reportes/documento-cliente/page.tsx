@@ -24,7 +24,6 @@ import { z } from 'zod'
 import ZoneReportSkeleton from "@/components/skeleton/ZoneReportSkeleton"
 
 
-
 export default function DocumentClientPage() {
   const [typesDocuments, setTypesDocuments] = useState<IDocument[]>([])
   const [dataZoneClient, setDataZoneClient] = useState<Zone[]>([])

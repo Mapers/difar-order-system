@@ -18,11 +18,16 @@ import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { useState } from "react"
+import { useAuth } from "@/context/authContext"
 
 export function SideNav() {
   const pathname = usePathname()
   const [openItem, setOpenItem] = useState<string | null>(null)
+  const { logout, errors } = useAuth();
 
+  const handleLogout = async () => {
+      await logout()
+  }
   const navItems = [
     {
       title: "Dashboard",
@@ -178,15 +183,14 @@ export function SideNav() {
         </nav>
       </ScrollArea>
       <div className="mt-auto border-t p-4">
-        <Link href="/">
           <Button
             variant="outline"
             className="w-full justify-start gap-2 text-red-600 hover:bg-red-50 hover:text-red-700"
+            onClick={handleLogout}
           >
             <LogOut className="h-4 w-4" />
             Cerrar sesión
           </Button>
-        </Link>
       </div>
     </div>
   )
