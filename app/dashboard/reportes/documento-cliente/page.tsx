@@ -3,33 +3,39 @@
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Search } from "lucide-react"
 import React, { useEffect, useState } from "react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Pagination, PaginationContent, PaginationItem, PaginationNext, PaginationPrevious } from "@/components/ui/pagination"
 import { consultDocClientRequest, fetchTypeDocuments } from "@/app/api/reports"
-import { IDocument, IDocClient } from "@/interface/report-interface"
+import { IDocument, IDocClient, Zone } from "@/interface/report-interface"
 import { normalizeDocumentCode } from "@/utils/normalizeDocumentCode"
 import { documentoSchema } from '@/schemas/reports/documentoSchema'
-import { z } from 'zod'
 import { toast } from "@/hooks/use-toast"
+import ZoneReport from "@/components/zoneReport"
+import { dataZone } from "@/data/data"
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs"
+import { z } from 'zod'
+import ZoneReportSkeleton from "@/components/skeleton/ZoneReportSkeleton"
 
 
 
 export default function DocumentClientPage() {
   const [typesDocuments, setTypesDocuments] = useState<IDocument[]>([])
-  const [dataDocClient, setDataDocClient] = useState<any[]>([])
+  const [dataZoneClient, setDataZoneClient] = useState<Zone[]>([])
+  // const [dataZoneClient, setDataZoneClient] = useState<Zone[]>(dataZone)
   const [loading, setLoading] = useState(false)
+  const [loadingZone, setLoadingZone] = useState(false)
   const [isEmpty, setIsEmpty] = useState(false)
   const [selectedDocumentCode, setSelectedDocumentCode] = useState<string>("")
   const [documentCode, setDocumentCode] = useState<string>("")
 
-
-  const [totalPages, setTotalPages] = useState(1)
-  const [page, setPage] = useState<number>(1)
-  const [perPage, setPerPage] = useState<number>(10)
+  const [activeTab, setActiveTab] = useState<string>("0")
 
   const getTypesDocuments = async () => {
     try {
@@ -46,7 +52,7 @@ export default function DocumentClientPage() {
   }
 
   const searchDocument = async () => {
-    setLoading(true)
+    setLoadingZone(true)
     try {
       if (!documentCode.trim()) {
         setIsEmpty(true)
@@ -57,11 +63,11 @@ export default function DocumentClientPage() {
       const documento = `${selectedDocumentCode}-${normalizedDocumenCode}`
       documentoSchema.parse({ documento })
       const docClient: IDocClient = { documento }
-      const response = await consultDocClientRequest(docClient, page, perPage)
+      const response = await consultDocClientRequest(docClient, 1, 9)
       if (response.status !== 200) throw new Error("Error al consultar documento de cliente")
-      const data = response?.data?.data?.data
-      setDataDocClient(data)
-      setTotalPages(response?.data?.data?.pagination.totalPages || 1)
+      console.log("response data:", response?.data?.data)
+      const data = response?.data?.data
+      setDataZoneClient(data)
     } catch (error: any) {
       if (error instanceof z.ZodError) {
         toast({ title: "Consultar Cliente", description: error.errors[0]?.message, variant: "error" })
@@ -70,13 +76,12 @@ export default function DocumentClientPage() {
       }
     }
     finally {
-      setLoading(false)
+      setLoadingZone(false)
     }
   }
 
   const handleSearchDocument = async (e: React.FormEvent) => {
     e.preventDefault()
-    setPage(1)
     await searchDocument()
   }
 
@@ -84,28 +89,13 @@ export default function DocumentClientPage() {
     setSelectedDocumentCode(value)
   }
 
-  const handlePreviousPage = () => {
-    if (page > 1) {
-      setPage(page - 1)
-    }
-  }
 
-  const handleNextPage = () => {
-    if (page < totalPages) {
-      setPage(page + 1)
-    }
-  }
 
   useEffect(() => {
     getTypesDocuments()
     if (selectedDocumentCode && documentCode) {
       searchDocument()
     }
-  }, [page])
-
-  useEffect(() => {
-    getTypesDocuments()
-
   }, [])
 
 
@@ -124,7 +114,7 @@ export default function DocumentClientPage() {
                 <SelectValue placeholder="Seleccionar Documento" />
               </SelectTrigger>
               <SelectContent>
-                {loading ? (
+                {loadingZone ? (
                   <div className="p-4">
                     <Skeleton className="h-4 w-full" />
                   </div>
@@ -164,127 +154,33 @@ export default function DocumentClientPage() {
         </CardHeader>
         <CardContent>
           <div className="rounded-md border bg-white">
-            <Table>
-              <TableHeader className="bg-gray-50">
-                <TableRow>
-                  <TableHead>Código</TableHead>
-                  <TableHead>Nombre Vendedor</TableHead>
-                  <TableHead className="hidden md:table-cell">Código Cliente</TableHead>
-                  <TableHead className="hidden md:table-cell">Nombre Comercial</TableHead>
-                  <TableHead className="hidden md:table-cell">Fecha Emisión</TableHead>
-                  <TableHead className="hidden md:table-cell">Fecha Vencimiento</TableHead>
-                  <TableHead className="hidden md:table-cell">Fecha Amortización</TableHead>
-                  <TableHead className="text-right">Tipo Documento</TableHead>
-                  <TableHead className="text-right">Serie Documento</TableHead>
-                  <TableHead className="text-right">Número Documento</TableHead>
-                  <TableHead className="text-right">Tipo Moneda</TableHead>
-                  <TableHead className="text-right">Provisión</TableHead>
-                  <TableHead className="text-right">Amortización</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {loading ? (
-                  // Skeleton loading
-                  Array.from({ length: 5 }).map((_, index) => (
-                    <TableRow key={index}>
-                      <TableCell><Skeleton className="h-4 w-[40px]" /></TableCell>
-                      <TableCell><Skeleton className="h-4 w-[50px]" /></TableCell>
-                      <TableCell><Skeleton className="h-4 w-[60px]" /></TableCell>
-                      <TableCell><Skeleton className="h-4 w-[50px]" /></TableCell>
-                      <TableCell><Skeleton className="h-4 w-[50px]" /></TableCell>
-                      <TableCell><Skeleton className="h-4 w-[60px]" /></TableCell>
-                      <TableCell><Skeleton className="h-4 w-[80px]" /></TableCell>
-                      <TableCell><Skeleton className="h-4 w-[80px]" /></TableCell>
-                      <TableCell><Skeleton className="h-4 w-[80px]" /></TableCell>
-                      <TableCell><Skeleton className="h-4 w-[70px]" /></TableCell>
-                      <TableCell><Skeleton className="h-4 w-[70px]" /></TableCell>
-                      <TableCell><Skeleton className="h-4 w-[80px]" /></TableCell>
-                      <TableCell><Skeleton className="h-4 w-[80px]" /></TableCell>
+            {loadingZone ? (
+              < ZoneReportSkeleton />
+            ) : dataZoneClient.length > 0 ? (
+              <Tabs value={activeTab} onValueChange={setActiveTab}>
+                <TabsList className="grid grid-cols-2 sm:grid-cols-4 w-full mb-4">
+                  {dataZoneClient.map((zone, index) => (
+                    <TabsTrigger key={index} value={index.toString()}>
+                      {zone.nomVend}
+                    </TabsTrigger>
+                  ))}
+                </TabsList>
 
-
-                    </TableRow>
-                  ))
-                ) : dataDocClient.length > 0 ? (
-                  dataDocClient.map((doc, index) => (
-                    <TableRow key={doc.CodVend + index} className="hover:bg-gray-50">
-                      <TableCell className="font-medium">{doc.CodVend}</TableCell>
-                      <TableCell className="font-medium">{doc.nomVend}</TableCell>
-                      <TableCell className="hidden md:table-cell">
-                        {doc.Cod_Clie || "-"}
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell">
-                        {doc.NombreComercial || "-"}
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell">
-                        {doc.Fecha_Emision || "-"}
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell">
-                        {doc.Fecha_Vcto || "-"}
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell">
-                        {doc.Date_Amortizacion || "-"}
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell">
-                        {doc.Tipo_Doc || "-"}
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell">
-                        {doc.SerieDoc || "-"}
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell">
-                        {doc.NumeroDoc || "-"}
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell">
-                        {doc.Tipo_Moneda || "-"}
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell">
-                        {doc.Provision || "-"}
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell">
-                        {doc.Amortizacion || "-"}
-                      </TableCell>
-
-
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8 text-gray-500">
-                      No se encontraron clientes
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-
-            {/* Paginación */}
-            {!loading && dataDocClient.length > 0 && (
-              <div className="mt-4 flex justify-center">
-                <Pagination>
-                  <PaginationContent>
-                    <PaginationItem>
-                      <PaginationPrevious
-                        onClick={handlePreviousPage}
-                        className={page === 1 ? "pointer-events-none opacity-50" : ""}
-                      />
-                    </PaginationItem>
-                    <PaginationItem>
-                      <span className="px-4 py-2 text-sm font-medium">
-                        Página {page} de {totalPages}
-                      </span>
-                    </PaginationItem>
-                    <PaginationItem>
-                      <PaginationNext
-                        onClick={handleNextPage}
-                        className={page >= totalPages ? "pointer-events-none opacity-50" : ""}
-                      />
-                    </PaginationItem>
-                  </PaginationContent>
-                </Pagination>
+                {dataZoneClient.map((zone, index) => (
+                  <TabsContent key={index} value={index.toString()}>
+                    <ZoneReport zone={zone} clients={zone.document_dislab} />
+                  </TabsContent>
+                ))}
+              </Tabs>
+            ) : (
+              <div className="text-center text-sm text-gray-500 py-6">
+                No hay datos disponibles.
               </div>
             )}
           </div>
         </CardContent>
-      </Card>
-    </div>
+
+      </Card >
+    </div >
   )
 }

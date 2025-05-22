@@ -7,7 +7,7 @@ export const consultDocClientRequest = async (
     page: number = 1,
     perPage: number = 10
 ): Promise<any> => {
-    return apiClient.post(`/reportes/consultdocumentclient?page=${page}&perPage=${perPage}`, docClient)
+    return apiClient.post(`/reportes/consultdocumentclientV1?page=${page}&perPage=${perPage}`, docClient)
 }
 
 export const balanceDocClientSellerRequest = async (
