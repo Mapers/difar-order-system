@@ -10,14 +10,14 @@ import { clientSchema } from "@/schemas/reports/documentoSchema"
 import { z } from 'zod'
 import { toast } from "@/hooks/use-toast"
 import ZoneReportSkeleton from "@/components/skeleton/ZoneReportSkeleton"
-import { ZoneSeller, IClientSeller } from "@/interface/report/balanceDocClientSeller-interface"
-import ZoneReportSeller from "@/components/reporte/zoneReportSeller"
+import ZoneCollectSellerReport from "@/components/reporte/zoneCollectSellerReport"
 import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs"
+import { Customer, Zone } from "@/interface/report/report-interface"
 
 export default function CollectSellerPage() {
 
@@ -26,7 +26,7 @@ export default function CollectSellerPage() {
   const [dateCut, setDateCut] = useState<string>("")
   const [fullName, setFullName] = useState<string>("")
   const [loadingClient, setLoadingClient] = useState(false)
-  const [dataClientSeller, setDataClientSeller] = useState<ZoneSeller[]>([])
+  const [dataClientSeller, setDataClientSeller] = useState<Zone[]>([])
   const [activeTab, setActiveTab] = useState<string>("0")
 
   const searchSeller = async () => {
@@ -37,12 +37,12 @@ export default function CollectSellerPage() {
         return;
       }
       setIsEmpty(false)
-      const client: IClientSeller = {
+      const customer: Customer = {
         nombreApellido: fullName.toLocaleUpperCase(),
         fechaCorte: dateCut
       }
-      clientSchema.parse(client)
-      const response = await balanceDocClientSellerRequest(client, 1, 9)
+      clientSchema.parse(customer)
+      const response = await balanceDocClientSellerRequest(customer)
       if (response.status !== 200) throw new Error("Error al consultar documento de cliente")
       const data = response?.data?.data
       setDataClientSeller(data)
@@ -130,9 +130,9 @@ export default function CollectSellerPage() {
                   ))}
                 </TabsList>
 
-                {dataClientSeller.map((zoneseller, index) => (
+                {dataClientSeller.map((zone, index) => (
                   <TabsContent key={index} value={index.toString()}>
-                    <ZoneReportSeller zoneseller={zoneseller} clientssellers={zoneseller.document_dislab} />
+                    <ZoneCollectSellerReport zone={zone} clients={zone.document_dislab} />
                   </TabsContent>
                 ))}
               </Tabs>

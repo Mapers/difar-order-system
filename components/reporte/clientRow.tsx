@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import InvoiceRow from './invoiceRow';
-import { Client, Invoice } from '@/interface/report/consultDocClient-interface';
-
+import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Client, Invoice } from '@/interface/report/report-interface';
+import InvoiceClientRow from './invoiceClientRow';
 
 interface ClientRowProps {
     client: Client;
@@ -75,7 +74,7 @@ const ClientRow: React.FC<ClientRowProps> = ({ client,invoices }) => {
                         </TableHeader>
                         <TableBody>
                             {invoices.map((invoice: Invoice) => (
-                                <InvoiceRow key={invoice.Fecha_Emision} invoice={invoice} />
+                                <InvoiceClientRow key={invoice.Fecha_Emision} invoice={invoice} />
                             ))}
                         </TableBody>
                     </Table>

@@ -8,12 +8,11 @@ import React, { useEffect, useState } from "react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { consultDocClientRequest, fetchTypeDocuments } from "@/app/api/reports"
-import { IDocument, IDocClient, Zone } from "@/interface/report/consultDocClient-interface"
+import { TypeDocument, Document, Zone } from "@/interface/report/report-interface"
 import { normalizeDocumentCode } from "@/utils/normalizeDocumentCode"
 import { documentoSchema } from '@/schemas/reports/documentoSchema'
 import { toast } from "@/hooks/use-toast"
-import ZoneReport from "@/components/reporte/zoneReport"
-import { dataZone } from "@/data/data"
+import ZoneClientReport from "@/components/reporte/zoneClientReport"
 import {
   Tabs,
   TabsContent,
@@ -25,9 +24,8 @@ import ZoneReportSkeleton from "@/components/skeleton/ZoneReportSkeleton"
 
 
 export default function DocumentClientPage() {
-  const [typesDocuments, setTypesDocuments] = useState<IDocument[]>([])
+  const [typesDocuments, setTypesDocuments] = useState<TypeDocument[]>([])
   const [dataZoneClient, setDataZoneClient] = useState<Zone[]>([])
-  // const [dataZoneClient, setDataZoneClient] = useState<Zone[]>(dataZone)
   const [loading, setLoading] = useState(false)
   const [loadingZone, setLoadingZone] = useState(false)
   const [isEmpty, setIsEmpty] = useState(false)
@@ -60,10 +58,9 @@ export default function DocumentClientPage() {
       const normalizedDocumenCode = normalizeDocumentCode(documentCode)
       const documento = `${selectedDocumentCode}-${normalizedDocumenCode}`
       documentoSchema.parse({ documento })
-      const docClient: IDocClient = { documento }
-      const response = await consultDocClientRequest(docClient, 1, 9)
+      const docClient: Document = { documento }
+      const response = await consultDocClientRequest(docClient)
       if (response.status !== 200) throw new Error("Error al consultar documento de cliente")
-      console.log("response data:", response?.data?.data)
       const data = response?.data?.data
       setDataZoneClient(data)
     } catch (error: any) {
@@ -164,7 +161,7 @@ export default function DocumentClientPage() {
 
                 {dataZoneClient.map((zone, index) => (
                   <TabsContent key={index} value={index.toString()}>
-                    <ZoneReport zone={zone} clients={zone.document_dislab} />
+                    <ZoneClientReport zone={zone} clients={zone.document_dislab} />
                   </TabsContent>
                 ))}
               </Tabs>

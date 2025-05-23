@@ -1,29 +1,23 @@
 
 import apiClient from "./client";
-import { IClient, IDocClient } from "@/interface/report/consultDocClient-interface";
+import { Customer, Document } from "@/interface/report/report-interface";
 
 export const consultDocClientRequest = async (
-    docClient: IDocClient,
-    page: number = 1,
-    perPage: number = 10
+    documento: Document,
 ): Promise<any> => {
-    return apiClient.post(`/reportes/consultdocumentclientV1?page=${page}&perPage=${perPage}`, docClient)
+    return apiClient.post(`/reportes/consultdocumentclientV1`, documento)
 }
 
 export const balanceDocClientSellerRequest = async (
-    client: IClient,
-    page: number = 1,
-    perPage: number = 10
+    customer: Customer,
 ): Promise<any> => {
-    return apiClient.post(`/reportes/balancedocumentclientsellerV1?page=${page}&perPage=${perPage}`, client)
+    return apiClient.post(`/reportes/balancedocumentclientsellerV1`, customer)
 }
 
 export const balanceDocClientRequest = async (
-    client: IClient,
-    page: number = 1,
-    perPage: number = 10
+    customer: Customer,
 ): Promise<any> => {
-    return apiClient.post(`/reportes/balancedocumentclient?page=${page}&perPage=${perPage}`, client);
+    return apiClient.post(`/reportes/balancedocumentclientV1`, customer);
 };
 
 
