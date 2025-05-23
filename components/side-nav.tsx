@@ -23,7 +23,7 @@ import { useAuth } from "@/context/authContext"
 export function SideNav() {
   const pathname = usePathname()
   const [openItem, setOpenItem] = useState<string | null>(null)
-  const { logout, errors } = useAuth();
+  const { logout } = useAuth();
 
   const handleLogout = async () => {
       await logout()

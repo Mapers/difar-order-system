@@ -1,6 +1,6 @@
 
 import apiClient from "./client";
-import { IClient, IDocClient } from "@/interface/report-interface";
+import { IClient, IDocClient } from "@/interface/report/consultDocClient-interface";
 
 export const consultDocClientRequest = async (
     docClient: IDocClient,
@@ -15,7 +15,7 @@ export const balanceDocClientSellerRequest = async (
     page: number = 1,
     perPage: number = 10
 ): Promise<any> => {
-    return apiClient.post(`/reportes/balancedocumentclientseller?page=${page}&perPage=${perPage}`, client)
+    return apiClient.post(`/reportes/balancedocumentclientsellerV1?page=${page}&perPage=${perPage}`, client)
 }
 
 export const balanceDocClientRequest = async (

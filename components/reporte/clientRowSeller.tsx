@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import InvoiceRow from './invoiceRow';
-import { Client, Invoice } from '@/interface/report-interface';
+import { ClientSeller, InvoiceSeller } from '@/interface/report/balanceDocClientSeller-interface';
+import InvoiceRowSeller from './invoiceRowSeller';
 
 
 interface ClientRowProps {
-    client: Client;
-    invoices: Invoice[];
+    clientseller: ClientSeller;
+    invoicesellers: InvoiceSeller[];
   }
-const ClientRow: React.FC<ClientRowProps> = ({ client,invoices }) => {
+const ClientRowSeller: React.FC<ClientRowProps> = ({ clientseller,invoicesellers }) => {
     const [expanded, setExpanded] = useState(false);
 
 
@@ -25,12 +25,12 @@ const ClientRow: React.FC<ClientRowProps> = ({ client,invoices }) => {
                 <div className="w-full">
                     <div className="flex flex-col md:flex-row md:justify-between md:items-center">
                         <div className="flex-1">
-                            <div className="font-semibold text-lg text-gray-800">{client.head.NombreComercial}</div>
+                            <div className="font-semibold text-lg text-gray-800">{clientseller.head.NombreComercial}</div>
+                            {/* <div className="text-sm text-gray-600">
+                                <span className="font-medium">Cliente:</span> {clientseller.head.Cod_Clie}
+                            </div> */}
                             <div className="text-sm text-gray-600">
-                                <span className="font-medium">Cliente:</span> {client.head.Cod_Clie}
-                            </div>
-                            <div className="text-sm text-gray-600">
-                                <span className="font-medium">Zona:</span> {client.head.Nombre}
+                                <span className="font-medium">Zona:</span> {clientseller.head.Nombre}
                             </div>
                         </div>
                         <div className="mt-2 md:mt-0 text-right">
@@ -41,7 +41,7 @@ const ClientRow: React.FC<ClientRowProps> = ({ client,invoices }) => {
 
                     <div className="mt-2 flex items-center">
                         <div className="text-indigo-600 text-sm">
-                            {expanded ? 'Ocultar facturas' : `Ver facturas (${invoices.length})`}
+                            {expanded ? 'Ocultar facturas' : `Ver facturas (${invoicesellers.length})`}
                         </div>
                         <svg
                             className={`ml-1 w-4 h-4 transition-transform duration-200 ${expanded ? 'transform rotate-180' : ''}`}
@@ -63,19 +63,17 @@ const ClientRow: React.FC<ClientRowProps> = ({ client,invoices }) => {
                             <TableRow>
                                 <TableHead>Fecha EMISIÓN</TableHead>
                                 <TableHead>FECHA VENCIMIENTO</TableHead>
-                                <TableHead className="hidden md:table-cell">FECHA AMORTIZACIÓN</TableHead>
                                 <TableHead className="hidden md:table-cell">TIPO DE DOCUMENTO</TableHead>
                                 <TableHead className="hidden md:table-cell">ABRE DOC</TableHead>
                                 <TableHead className="hidden md:table-cell">SERIE DE DOCUMENTO</TableHead>
                                 <TableHead className="hidden md:table-cell">NÚMERO DE DOCUMENTO</TableHead>
                                 <TableHead className="text-right">TIPO DE MONEDA</TableHead>
-                                <TableHead className="text-right">PROVISIÓN</TableHead>
-                                <TableHead className="text-right">AMORTIZACIÓN</TableHead>
+                                <TableHead className="text-right">SALDO</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {invoices.map((invoice: Invoice) => (
-                                <InvoiceRow key={invoice.Fecha_Emision} invoice={invoice} />
+                            {invoicesellers.map((invoiceseller: InvoiceSeller) => (
+                                <InvoiceRowSeller key={invoiceseller.Fecha_Emision} invoiceseller={invoiceseller} />
                             ))}
                         </TableBody>
                     </Table>
@@ -85,4 +83,4 @@ const ClientRow: React.FC<ClientRowProps> = ({ client,invoices }) => {
     );
 };
 
-export default ClientRow;
+export default ClientRowSeller;

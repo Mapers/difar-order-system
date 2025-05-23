@@ -1,7 +1,7 @@
 import React from 'react';
 
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Invoice } from '@/interface/report-interface';
+import { TableCell, TableRow } from "@/components/ui/table"
+import { Invoice } from '@/interface/report/consultDocClient-interface';
 
 interface InvoiceProps {
     invoice: Invoice

@@ -8,11 +8,11 @@ import React, { useEffect, useState } from "react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { consultDocClientRequest, fetchTypeDocuments } from "@/app/api/reports"
-import { IDocument, IDocClient, Zone } from "@/interface/report-interface"
+import { IDocument, IDocClient, Zone } from "@/interface/report/consultDocClient-interface"
 import { normalizeDocumentCode } from "@/utils/normalizeDocumentCode"
 import { documentoSchema } from '@/schemas/reports/documentoSchema'
 import { toast } from "@/hooks/use-toast"
-import ZoneReport from "@/components/zoneReport"
+import ZoneReport from "@/components/reporte/zoneReport"
 import { dataZone } from "@/data/data"
 import {
   Tabs,
@@ -33,7 +33,6 @@ export default function DocumentClientPage() {
   const [isEmpty, setIsEmpty] = useState(false)
   const [selectedDocumentCode, setSelectedDocumentCode] = useState<string>("")
   const [documentCode, setDocumentCode] = useState<string>("")
-
   const [activeTab, setActiveTab] = useState<string>("0")
 
   const getTypesDocuments = async () => {
@@ -87,8 +86,6 @@ export default function DocumentClientPage() {
   const handleDocumentSelect = (value: string) => {
     setSelectedDocumentCode(value)
   }
-
-
 
   useEffect(() => {
     getTypesDocuments()

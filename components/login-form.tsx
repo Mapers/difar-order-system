@@ -14,7 +14,7 @@ import { toast } from "@/hooks/use-toast"
 
 export function LoginForm() {
   const router = useRouter()
-  const { signin, loading, errors, isAuthenticated } = useAuth()
+  const { signin, loading, errors } = useAuth()
   const [dni, setDni] = useState("")
   const [password, setPassword] = useState("")
 
@@ -51,7 +51,6 @@ export function LoginForm() {
   useEffect(() => {
     if (errors.length > 0) {
       errors.forEach(err => {
-        // toast.info(err);
         toast({ title: "Iniciar Sesión", description: err, variant: "error" })
       });
     }
