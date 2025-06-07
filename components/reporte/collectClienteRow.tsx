@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Client, Invoice } from '@/interface/report/report-interface';
 import InvoiceCollectClientRow from './invoiceCollectClientRow';
+import { calcularTotal } from '@/utils/client';
 
 
 interface ClientRowProps {
@@ -10,7 +11,7 @@ interface ClientRowProps {
 }
 const CollectClienteRow: React.FC<ClientRowProps> = ({ client, invoices }) => {
     const [expanded, setExpanded] = useState(false);
-
+    const total = calcularTotal(invoices);
     const toggleExpand = () => {
         setExpanded(!expanded);
     };
@@ -30,7 +31,7 @@ const CollectClienteRow: React.FC<ClientRowProps> = ({ client, invoices }) => {
                             </div>
                         </div>
                         <div className="mt-2 md:mt-0 text-right">
-                            <div className="font-semibold text-lg text-gray-800"> S/. {3000}</div>
+                            <div className="font-semibold text-lg text-gray-800"> S/. {total.toFixed(2)}</div>
                             <div className="text-sm text-gray-600">Saldo Total</div>
                         </div>
                     </div>

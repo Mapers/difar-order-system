@@ -25,4 +25,7 @@
     // Si no tiene guion y tiene al menos 5 caracteres, insertamos el guion
     return `${normalized.slice(0, 4)}-${normalized.slice(4)}`;
   }
+
+
+  
   
