@@ -20,3 +20,12 @@ export function calcularTotal(invoices: Invoice[]): number {
 }
 
 
+
+export function calcularTotalWithAmortizacion(invoices: Invoice[]): number {
+  return invoices.reduce((total, invoice) => {
+    const provision = parseFloat(invoice?.Provision ?? "0");
+    const amortizacion = parseFloat(invoice?.Amortizacion ?? "0");
+    const value = provision - amortizacion;
+    return total + (isNaN(value) ? 0 : value);
+  }, 0);
+}

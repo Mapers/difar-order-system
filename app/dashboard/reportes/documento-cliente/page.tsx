@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Search } from "lucide-react"
+import { Search, Printer} from "lucide-react"
 import React, { useEffect, useState } from "react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -142,6 +142,12 @@ export default function DocumentClientPage() {
             >
               <Search className="mr-2 h-4 w-4" />
               Buscar
+            </Button>
+            <Button className="bg-blue-600 hover:bg-blue-700"
+              onClick={handleSearchDocument}
+            >
+              <Printer className="mr-2 h-4 w-4" />
+              Generar Reporte
             </Button>
           </div>
         </CardHeader>

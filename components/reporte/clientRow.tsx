@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Client, Invoice } from '@/interface/report/report-interface';
 import InvoiceClientRow from './invoiceClientRow';
+import { calcularTotalWithAmortizacion } from '@/utils/client';
 
 interface ClientRowProps {
     client: Client;
@@ -9,6 +10,7 @@ interface ClientRowProps {
   }
 const ClientRow: React.FC<ClientRowProps> = ({ client,invoices }) => {
     const [expanded, setExpanded] = useState(false);
+    const total = calcularTotalWithAmortizacion(invoices);
 
 
     const toggleExpand = () => {
@@ -33,7 +35,7 @@ const ClientRow: React.FC<ClientRowProps> = ({ client,invoices }) => {
                             </div>
                         </div>
                         <div className="mt-2 md:mt-0 text-right">
-                            <div className="font-semibold text-lg text-gray-800"> S/. {3000}</div>
+                            <div className="font-semibold text-lg text-gray-800"> S/. {total.toFixed(2)}</div>
                             <div className="text-sm text-gray-600">Saldo Total</div>
                         </div>
                     </div>
@@ -63,13 +65,12 @@ const ClientRow: React.FC<ClientRowProps> = ({ client,invoices }) => {
                                 <TableHead>Fecha EMISIÓN</TableHead>
                                 <TableHead>FECHA VENCIMIENTO</TableHead>
                                 <TableHead className="hidden md:table-cell">FECHA AMORTIZACIÓN</TableHead>
-                                <TableHead className="hidden md:table-cell">TIPO DE DOCUMENTO</TableHead>
                                 <TableHead className="hidden md:table-cell">ABRE DOC</TableHead>
                                 <TableHead className="hidden md:table-cell">SERIE DE DOCUMENTO</TableHead>
                                 <TableHead className="hidden md:table-cell">NÚMERO DE DOCUMENTO</TableHead>
-                                <TableHead className="text-right">TIPO DE MONEDA</TableHead>
-                                <TableHead className="text-right">PROVISIÓN</TableHead>
-                                <TableHead className="text-right">AMORTIZACIÓN</TableHead>
+                                <TableHead className="hidden md:table-cell">TIPO DE MONEDA</TableHead>
+                                <TableHead className="hidden md:table-cell">PROVISIÓN</TableHead>
+                                <TableHead className="hidden md:table-cell">AMORTIZACIÓN</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>

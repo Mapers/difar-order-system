@@ -12,10 +12,6 @@ const InvoiceCollectSellerRow: React.FC<InvoiceProps> = ({ invoice }) => {
         <TableRow className="hover:bg-gray-50">
             <TableCell className="font-medium">{invoice.Fecha_Emision}</TableCell>
             <TableCell className="font-medium">{invoice.Fecha_Vcto}</TableCell>
-            
-            <TableCell className="hidden md:table-cell">
-                {invoice.Tipo_Doc || "-"}
-            </TableCell>
             <TableCell className="hidden md:table-cell">
                 {invoice.Abre_Doc || "-"}
             </TableCell>
@@ -25,10 +21,10 @@ const InvoiceCollectSellerRow: React.FC<InvoiceProps> = ({ invoice }) => {
             <TableCell className="hidden md:table-cell">
                 {invoice.NumeroDoc || "-"}
             </TableCell>
-            <TableCell className="hidden md:table-cell">
+            <TableCell className="hidden md:table-cell text-right">
                 {invoice.Tipo_Moneda || "-"}
             </TableCell>
-            <TableCell className="hidden md:table-cell">
+            <TableCell className="hidden md:table-cell text-right">
                 {invoice.saldoDoc || "-"}
             </TableCell>
           

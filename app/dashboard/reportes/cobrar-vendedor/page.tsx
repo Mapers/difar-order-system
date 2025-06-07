@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import React, { useEffect, useState } from "react"
 import { balanceDocClientSellerRequest } from "@/app/api/reports"
-import { Search, } from "lucide-react"
+import { Search, Printer, } from "lucide-react"
 import { clientSchema } from "@/schemas/reports/documentoSchema"
 import { z } from 'zod'
 import { toast } from "@/hooks/use-toast"
@@ -111,6 +111,12 @@ export default function CollectSellerPage() {
             >
               <Search className="mr-2 h-4 w-4" />
               Buscar
+            </Button>
+            <Button className="bg-blue-600 hover:bg-blue-700"
+              onClick={handleSearchSeller}
+            >
+              <Printer className="mr-2 h-4 w-4" />
+              Generar Reporte
             </Button>
           </div>
         </CardHeader>

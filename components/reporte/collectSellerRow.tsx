@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import InvoiceCollectSellerRow from './invoiceCollectSellerRow';
 import { Client, Invoice } from '@/interface/report/report-interface';
+import { calcularTotal } from '@/utils/client';
 
 
 interface ClientRowProps {
@@ -10,6 +11,7 @@ interface ClientRowProps {
 }
 const CollectSellerRow: React.FC<ClientRowProps> = ({ client, invoices }) => {
     const [expanded, setExpanded] = useState(false);
+    const total = calcularTotal(invoices);
 
     const toggleExpand = () => {
         setExpanded(!expanded);
@@ -30,7 +32,7 @@ const CollectSellerRow: React.FC<ClientRowProps> = ({ client, invoices }) => {
                             </div>
                         </div>
                         <div className="mt-2 md:mt-0 text-right">
-                            <div className="font-semibold text-lg text-gray-800"> S/. {3000}</div>
+                            <div className="font-semibold text-lg text-gray-800"> S/. {total.toFixed(2)}</div>
                             <div className="text-sm text-gray-600">Saldo Total</div>
                         </div>
                     </div>
@@ -59,7 +61,6 @@ const CollectSellerRow: React.FC<ClientRowProps> = ({ client, invoices }) => {
                             <TableRow>
                                 <TableHead>Fecha EMISIÓN</TableHead>
                                 <TableHead>FECHA VENCIMIENTO</TableHead>
-                                <TableHead className="hidden md:table-cell">TIPO DE DOCUMENTO</TableHead>
                                 <TableHead className="hidden md:table-cell">ABRE DOC</TableHead>
                                 <TableHead className="hidden md:table-cell">SERIE DE DOCUMENTO</TableHead>
                                 <TableHead className="hidden md:table-cell">NÚMERO DE DOCUMENTO</TableHead>

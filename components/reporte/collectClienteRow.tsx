@@ -60,7 +60,6 @@ const CollectClienteRow: React.FC<ClientRowProps> = ({ client, invoices }) => {
                             <TableRow>
                                 <TableHead>Fecha EMISIÓN</TableHead>
                                 <TableHead>FECHA VENCIMIENTO</TableHead>
-                                <TableHead className="hidden md:table-cell">TIPO DE DOCUMENTO</TableHead>
                                 <TableHead className="hidden md:table-cell">ABRE DOC</TableHead>
                                 <TableHead className="hidden md:table-cell">SERIE DE DOCUMENTO</TableHead>
                                 <TableHead className="hidden md:table-cell">NÚMERO DE DOCUMENTO</TableHead>

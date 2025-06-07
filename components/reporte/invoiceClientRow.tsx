@@ -17,9 +17,6 @@ const InvoiceClientRow: React.FC<InvoiceProps> = ({ invoice }) => {
                 {invoice.Date_Amortizacion || "-"}
             </TableCell>
             <TableCell className="hidden md:table-cell">
-                {invoice.Tipo_Doc || "-"}
-            </TableCell>
-            <TableCell className="hidden md:table-cell">
                 {invoice.Abre_Doc || "-"}
             </TableCell>
             <TableCell className="hidden md:table-cell">
@@ -28,13 +25,13 @@ const InvoiceClientRow: React.FC<InvoiceProps> = ({ invoice }) => {
             <TableCell className="hidden md:table-cell">
                 {invoice.NumeroDoc || "-"}
             </TableCell>
-            <TableCell className="hidden md:table-cell">
+            <TableCell className="hidden md:table-cell text-center">
                 {invoice.Tipo_Moneda || "-"}
             </TableCell>
-            <TableCell className="hidden md:table-cell">
+            <TableCell className="hidden md:table-cell text-right">
                 {invoice.Provision || "-"}
             </TableCell>
-            <TableCell className="hidden md:table-cell">
+            <TableCell className="hidden md:table-cell text-right">
                 {invoice.Amortizacion || "-"}
             </TableCell>
         </TableRow>
