@@ -13,9 +13,10 @@ import { StepProgress } from "@/components/step-progress"
 import apiClient from "@/app/api/client"
 import { Skeleton } from "@/components/ui/skeleton"
 import * as moment from 'moment'
+import { fetchGetClients } from "@/app/api/clients"
 
 interface IClient {
-  Codigo: string
+  codigo: string
   Nombre: string
 }
 
@@ -67,27 +68,45 @@ export default function OrderPage() {
     condition: ""
   })
 
-  const steps = ["Cliente", "Condiciones", "Productos", "Resumen"]
+  const steps = ["Cliente", "Productos", "Resumen"]
 
   // Fetch clients
+  // useEffect(() => {
+  //   const fetchClients = async () => {
+  //     try {
+  //       const url = search.client
+  //         ? `/clientes/search?query=${encodeURIComponent(search.client)}`
+  //         : '/clientes'
+  //       const response = await apiClient.get(url)
+  //       setClients(response.data?.data?.data || [])
+  //     } catch (error) {
+  //       console.error("Error fetching clients:", error)
+  //     } finally {
+  //       setLoading(prev => ({ ...prev, clients: false }))
+  //     }
+  //   }
+
+  //   fetchClients()
+  // }, [search.client])
+
+
   useEffect(() => {
     const fetchClients = async () => {
+      if (!search.client) return; 
+  
       try {
-        const url = search.client
-          ? `/clientes/search?query=${encodeURIComponent(search.client)}`
-          : '/clientes'
-
-        const response = await apiClient.get(url)
-        setClients(response.data?.data?.data || [])
+        const response = await fetchGetClients(search.client);
+        setClients(response.data?.data?.data || []);
       } catch (error) {
-        console.error("Error fetching clients:", error)
+        console.error("Error fetching clients:", error);
       } finally {
-        setLoading(prev => ({ ...prev, clients: false }))
+        setLoading(prev => ({ ...prev, clients: false }));
       }
-    }
-
-    fetchClients()
-  }, [search.client])
+    };
+  
+    fetchClients();
+  }, [search.client]);
+  
 
   // Fetch conditions
   useEffect(() => {
@@ -279,8 +298,8 @@ export default function OrderPage() {
                       </div>
                     ) : clients.length > 0 ? (
                       clients.map((c) => (
-                        <SelectItem key={c.Codigo} value={c.Codigo}>
-                          {c.Nombre} ({c.Codigo})
+                        <SelectItem key={c.codigo} value={c.codigo}>
+                          {c.Nombre} ({c.codigo})
                         </SelectItem>
                       ))
                     ) : (
@@ -306,81 +325,9 @@ export default function OrderPage() {
           </Card>
         )}
 
-        {currentStep === 1 && (
-          <Card className="shadow-md bg-white">
-            <CardHeader className="border-b bg-gray-50">
-              <CardTitle className="text-xl font-semibold text-blue-700">Condiciones del Pedido</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6 pt-6">
-              <div className="space-y-2">
-                <Label htmlFor="condition" className="text-gray-700">
-                  Condición
-                </Label>
-                <Select value={condition} onValueChange={handleConditionSelect} required>
-                  <SelectTrigger className="bg-white">
-                    <SelectValue placeholder="Seleccionar condición" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {/*<div className="p-2">*/}
-                    {/*  <Input*/}
-                    {/*    placeholder="Buscar condición..."*/}
-                    {/*    value={search.condition}*/}
-                    {/*    onChange={(e) => setSearch({...search, condition: e.target.value})}*/}
-                    {/*    className="mb-2"*/}
-                    {/*  />*/}
-                    {/*</div>*/}
-                    {loading.conditions ? (
-                      <div className="p-4">
-                        <Skeleton className="h-4 w-full" />
-                      </div>
-                    ) : conditions.length > 0 ? (
-                      conditions.map((c) => (
-                        <SelectItem key={c.CodigoCondicion} value={c.CodigoCondicion}>
-                          {c.Descripcion}
-                        </SelectItem>
-                      ))
-                    ) : (
-                      <div className="p-4 text-sm text-gray-500">
-                        No se encontraron condiciones
-                      </div>
-                    )}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="currency" className="text-gray-700">
-                  Moneda
-                </Label>
-                <Select value={currency} onValueChange={setCurrency} required>
-                  <SelectTrigger className="bg-white">
-                    <SelectValue placeholder="Seleccionar moneda" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="PEN">Soles (PEN)</SelectItem>
-                    <SelectItem value="USD">Dólares (USD)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </CardContent>
-            <CardFooter className="flex justify-between border-t bg-gray-50 py-4">
-              <Button type="button" variant="outline" onClick={prevStep}>
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Anterior
-              </Button>
-              <Button
-                type="button"
-                onClick={nextStep}
-                disabled={!isStepValid()}
-                className="bg-blue-600 hover:bg-blue-700"
-              >
-                Siguiente
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            </CardFooter>
-          </Card>
-        )}
 
-        {currentStep === 2 && (
+
+        {currentStep === 1 && (
           <div className="grid gap-6">
             <Card className="shadow-md bg-white">
               <CardHeader className="border-b bg-gray-50">
@@ -521,7 +468,7 @@ export default function OrderPage() {
           </div>
         )}
 
-        {currentStep === 3 && (
+        {currentStep === 2 && (
           <Card className="shadow-md bg-white">
             <CardHeader className="border-b bg-gray-50">
               <CardTitle className="text-xl font-semibold text-blue-700">Resumen del Pedido</CardTitle>
