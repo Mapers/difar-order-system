@@ -14,11 +14,10 @@ import apiClient from "@/app/api/client"
 import { Skeleton } from "@/components/ui/skeleton"
 import * as moment from 'moment'
 import { fetchGetClients } from "@/app/api/clients"
+import { IClient } from "@/interface/client/client-interface"
+import ContactInfo from "@/components/cliente/contactInfo"
+import { X } from "lucide-react"
 
-interface IClient {
-  codigo: string
-  Nombre: string
-}
 
 interface ICondicion {
   CodigoCondicion: string
@@ -51,14 +50,16 @@ export default function OrderPage() {
   const [condition, setCondition] = useState("")
   const [conditionName, setConditionName] = useState("")
   const [currency, setCurrency] = useState("PEN")
+
   const [selectedProduct, setSelectedProduct] = useState("")
   const [quantity, setQuantity] = useState(1)
+  const [selectedClient, setSelectedClient] = useState<IClient | null>(null)
   const [orderItems, setOrderItems] = useState<OrderItem[]>([])
   const [clients, setClients] = useState<IClient[]>([])
   const [conditions, setConditions] = useState<ICondicion[]>([])
   const [products, setProducts] = useState<IProduct[]>([])
   const [loading, setLoading] = useState({
-    clients: true,
+    clients: false,
     conditions: true,
     products: true
   })
@@ -68,34 +69,18 @@ export default function OrderPage() {
     condition: ""
   })
 
+
   const steps = ["Cliente", "Productos", "Resumen"]
-
-  // Fetch clients
-  // useEffect(() => {
-  //   const fetchClients = async () => {
-  //     try {
-  //       const url = search.client
-  //         ? `/clientes/search?query=${encodeURIComponent(search.client)}`
-  //         : '/clientes'
-  //       const response = await apiClient.get(url)
-  //       setClients(response.data?.data?.data || [])
-  //     } catch (error) {
-  //       console.error("Error fetching clients:", error)
-  //     } finally {
-  //       setLoading(prev => ({ ...prev, clients: false }))
-  //     }
-  //   }
-
-  //   fetchClients()
-  // }, [search.client])
 
 
   useEffect(() => {
     const fetchClients = async () => {
-      if (!search.client) return; 
-  
+      setLoading(prev => ({ ...prev, clients: true }));
       try {
         const response = await fetchGetClients(search.client);
+        if (response.data?.data?.data.length == 0) {
+          setClients([])
+        }
         setClients(response.data?.data?.data || []);
       } catch (error) {
         console.error("Error fetching clients:", error);
@@ -103,10 +88,10 @@ export default function OrderPage() {
         setLoading(prev => ({ ...prev, clients: false }));
       }
     };
-  
+
     fetchClients();
   }, [search.client]);
-  
+
 
   // Fetch conditions
   useEffect(() => {
@@ -210,13 +195,18 @@ export default function OrderPage() {
     }
   }
 
+  // const handleClientSelect = (value: string) => {
+  //   setClient(value)
+  //   const selectedClient = clients.find((c) => c.codigo === value)
+  //   if (selectedClient) {
+  //     setClientName(selectedClient.Nombre)
+  //   }
+  // }
   const handleClientSelect = (value: string) => {
-    setClient(value)
-    const selectedClient = clients.find((c) => c.Codigo === value)
-    if (selectedClient) {
-      setClientName(selectedClient.Nombre)
-    }
+    const parsedClient = JSON.parse(value) as IClient
+    setSelectedClient(parsedClient)
   }
+
 
   const handleConditionSelect = (value: string) => {
     setCondition(value)
@@ -279,37 +269,54 @@ export default function OrderPage() {
                 <Label htmlFor="client" className="text-gray-700">
                   Cliente
                 </Label>
-                <Select value={client} onValueChange={handleClientSelect} required>
-                  <SelectTrigger className="bg-white">
-                    <SelectValue placeholder="Seleccionar cliente" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <div className="p-2">
-                      <Input
-                        placeholder="Buscar cliente..."
-                        value={search.client}
-                        onChange={(e) => setSearch({...search, client: e.target.value})}
-                        className="mb-2"
-                      />
-                    </div>
-                    {loading.clients ? (
-                      <div className="p-4">
-                        <Skeleton className="h-4 w-full" />
+                <div className="relative p-2">
+                  <Input
+                    placeholder="Buscar cliente..."
+                    value={search.client}
+                    onChange={(e) => setSearch({ ...search, client: e.target.value })}
+                    className="mb-2 pr-8"
+                  />
+                  {search.client && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSearch({ ...search, client: "" })
+                        setSelectedClient(null)
+                        setClients([])
+                      }}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+
+                {loading.clients ? (
+                  <div className="p-4">
+                    <Skeleton className="h-4 w-full" />
+                  </div>
+                ) : clients.length > 0 ? (
+                  <div className="space-y-1">
+                    {clients.map((c) => (
+                      <div
+                        key={c.codigo}
+                        className="relative flex w-full cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground"
+                        onClick={() => {
+                          setSelectedClient(c)
+                          setSearch({ ...search, client: `${c.Nombre} (${c.codigo})` })
+                        }}
+                      >
+                        {c.Nombre} ({c.codigo})
                       </div>
-                    ) : clients.length > 0 ? (
-                      clients.map((c) => (
-                        <SelectItem key={c.codigo} value={c.codigo}>
-                          {c.Nombre} ({c.codigo})
-                        </SelectItem>
-                      ))
-                    ) : (
-                      <div className="p-4 text-sm text-gray-500">
-                        No se encontraron clientes
-                      </div>
-                    )}
-                  </SelectContent>
-                </Select>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="p-4 text-sm text-gray-500">
+                    No se encontraron clientes
+                  </div>
+                )}
               </div>
+              {selectedClient && <ContactInfo client={selectedClient} />}
             </CardContent>
             <CardFooter className="flex justify-end border-t bg-gray-50 py-4">
               <Button
@@ -324,9 +331,6 @@ export default function OrderPage() {
             </CardFooter>
           </Card>
         )}
-
-
-
         {currentStep === 1 && (
           <div className="grid gap-6">
             <Card className="shadow-md bg-white">
@@ -347,7 +351,7 @@ export default function OrderPage() {
                         <Input
                           placeholder="Buscar producto..."
                           value={search.product}
-                          onChange={(e) => setSearch({...search, product: e.target.value})}
+                          onChange={(e) => setSearch({ ...search, product: e.target.value })}
                           className="mb-2"
                         />
                       </div>
