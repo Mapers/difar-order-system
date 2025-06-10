@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Phone, User, MapPin, Navigation } from 'lucide-react';
+import { Phone, User, MapPin, Navigation, ChevronDown } from 'lucide-react';
 import { Label } from '@radix-ui/react-label';
 import { Input } from '../ui/input';
 import { IClient } from '@/interface/client/client-interface';
@@ -11,6 +11,31 @@ interface ClientRowProps {
 const ContactInfo: React.FC<ClientRowProps> = ({ client }) => {
   const [contactoPedido, setContactoPedido] = useState('');
   const [referenciaDireccion, setReferenciaDireccion] = useState('');
+  const [showFullDireccion, setShowFullDireccion] = useState(false);
+
+  const renderDireccion = () => {
+    const isLong = client.Dirección.length > 20;
+    const text = showFullDireccion || !isLong
+      ? client.Dirección
+      : client.Dirección.slice(0, 20) + '...';
+
+    return (
+      <p className="text-sm text-gray-900 flex items-center gap-1">
+        {text}
+        {isLong && (
+          <button
+            onClick={() => setShowFullDireccion(!showFullDireccion)}
+            className="ml-1 text-gray-600 hover:text-black"
+            type="button"
+          >
+            <ChevronDown
+              className={`w-4 h-4 transition-transform ${showFullDireccion ? 'rotate-180' : ''}`}
+            />
+          </button>
+        )}
+      </p>
+    );
+  };
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -26,7 +51,7 @@ const ContactInfo: React.FC<ClientRowProps> = ({ client }) => {
             <Phone className="w-5 h-5 text-blue-600" />
             <div>
               <Label className="text-sm font-medium text-gray-700">Teléfono</Label>
-              <p className="text-sm text-gray-900">{client.telefono}</p>
+              <p className="text-sm text-gray-900">{client.telefono ?? '+51 ---------'}</p>
             </div>
           </div>
 
@@ -57,7 +82,7 @@ const ContactInfo: React.FC<ClientRowProps> = ({ client }) => {
             <MapPin className="w-5 h-5 text-green-600 mt-0.5" />
             <div>
               <Label className="text-sm font-medium text-gray-700">Dirección</Label>
-              <p className="text-sm text-gray-900">{client.Dirección}</p>
+              {renderDireccion()}
             </div>
           </div>
 

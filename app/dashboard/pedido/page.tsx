@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Trash, ShoppingCart, ArrowRight, ArrowLeft, Check } from "lucide-react"
+import { Trash, ShoppingCart, ArrowRight, ArrowLeft, Check, Search } from "lucide-react"
 import { StepProgress } from "@/components/step-progress"
 import apiClient from "@/app/api/client"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -17,6 +17,8 @@ import { fetchGetClients } from "@/app/api/clients"
 import { IClient } from "@/interface/client/client-interface"
 import ContactInfo from "@/components/cliente/contactInfo"
 import { X } from "lucide-react"
+import FinancialZone from "@/components/cliente/financialZone"
+import PaymentCondition from "@/components/cliente/paymentCondition"
 
 
 interface ICondicion {
@@ -156,7 +158,13 @@ export default function OrderPage() {
     setSelectedProduct("")
     setQuantity(1)
   }
-
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSearch((prev) => ({ ...prev, client: value }));
+    if (value === '') {
+      setSelectedClient(null);
+    }
+  }
   const handleRemoveItem = (index: number) => {
     const newItems = [...orderItems]
     newItems.splice(index, 1)
@@ -195,18 +203,11 @@ export default function OrderPage() {
     }
   }
 
-  // const handleClientSelect = (value: string) => {
-  //   setClient(value)
-  //   const selectedClient = clients.find((c) => c.codigo === value)
-  //   if (selectedClient) {
-  //     setClientName(selectedClient.Nombre)
-  //   }
-  // }
-  const handleClientSelect = (value: string) => {
-    const parsedClient = JSON.parse(value) as IClient
-    setSelectedClient(parsedClient)
+  const handleClientSelect = (c: IClient) => {
+    setSelectedClient(c)
+    setClient(c.codigo)
+    setSearch({ ...search, client: `${c.Nombre} (${c.codigo})` })
   }
-
 
   const handleConditionSelect = (value: string) => {
     setCondition(value)
@@ -269,54 +270,41 @@ export default function OrderPage() {
                 <Label htmlFor="client" className="text-gray-700">
                   Cliente
                 </Label>
-                <div className="relative p-2">
+                <div className="relative">
+                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
                   <Input
+                    type="search"
                     placeholder="Buscar cliente..."
                     value={search.client}
-                    onChange={(e) => setSearch({ ...search, client: e.target.value })}
-                    className="mb-2 pr-8"
+                    onChange={handleSearchChange}
+                    className="pl-8 bg-white"
                   />
-                  {search.client && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSearch({ ...search, client: "" })
-                        setSelectedClient(null)
-                        setClients([])
-                      }}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  )}
                 </div>
-
                 {loading.clients ? (
                   <div className="p-4">
                     <Skeleton className="h-4 w-full" />
                   </div>
                 ) : clients.length > 0 ? (
-                  <div className="space-y-1">
+                  <div className="max-h-60 overflow-y-auto border space-y-1">
                     {clients.map((c) => (
                       <div
                         key={c.codigo}
-                        className="relative flex w-full cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground"
-                        onClick={() => {
-                          setSelectedClient(c)
-                          setSearch({ ...search, client: `${c.Nombre} (${c.codigo})` })
-                        }}
+                        className="relative flex  w-full cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground"
+                        onClick={() => handleClientSelect(c)}
                       >
                         {c.Nombre} ({c.codigo})
                       </div>
                     ))}
                   </div>
-                ) : (
+                ) : !selectedClient ? (
                   <div className="p-4 text-sm text-gray-500">
                     No se encontraron clientes
                   </div>
-                )}
+                ) : null}
               </div>
               {selectedClient && <ContactInfo client={selectedClient} />}
+              {selectedClient && <FinancialZone client={selectedClient} />}
+              {selectedClient && <PaymentCondition client={selectedClient} />}
             </CardContent>
             <CardFooter className="flex justify-end border-t bg-gray-50 py-4">
               <Button
