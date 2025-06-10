@@ -13,19 +13,18 @@ import { StepProgress } from "@/components/step-progress"
 import apiClient from "@/app/api/client"
 import { Skeleton } from "@/components/ui/skeleton"
 import * as moment from 'moment'
-import { fetchGetClients } from "@/app/api/clients"
-import { IClient } from "@/interface/client/client-interface"
+import { fetchGetClients, fetchGetConditions, fetchGetZona, fetchUnidaTerritorial } from "@/app/api/orders"
+import { IClient, ICondicion, IDistrito, ITerritorio } from "@/interface/order/client-interface"
 import ContactInfo from "@/components/cliente/contactInfo"
-import { X } from "lucide-react"
 import FinancialZone from "@/components/cliente/financialZone"
 import PaymentCondition from "@/components/cliente/paymentCondition"
 
 
-interface ICondicion {
-  CodigoCondicion: string
-  Descripcion: string
-  Credito: boolean
-}
+// interface ICondicion {
+//   CodigoCondicion: string
+//   Descripcion: string
+//   Credito: boolean
+// }
 
 interface IProduct {
   IdArticulo: number
@@ -51,6 +50,7 @@ export default function OrderPage() {
   const [clientName, setClientName] = useState("")
   const [condition, setCondition] = useState("")
   const [conditionName, setConditionName] = useState("")
+  const [nameZone, setNameZone] = useState("")
   const [currency, setCurrency] = useState("PEN")
 
   const [selectedProduct, setSelectedProduct] = useState("")
@@ -58,6 +58,7 @@ export default function OrderPage() {
   const [selectedClient, setSelectedClient] = useState<IClient | null>(null)
   const [orderItems, setOrderItems] = useState<OrderItem[]>([])
   const [clients, setClients] = useState<IClient[]>([])
+  const [unidadTerritorio, setUnidadTerritorio] = useState<ITerritorio | null>(null)
   const [conditions, setConditions] = useState<ICondicion[]>([])
   const [products, setProducts] = useState<IProduct[]>([])
   const [loading, setLoading] = useState({
@@ -75,41 +76,65 @@ export default function OrderPage() {
   const steps = ["Cliente", "Productos", "Resumen"]
 
 
-  useEffect(() => {
-    const fetchClients = async () => {
-      setLoading(prev => ({ ...prev, clients: true }));
-      try {
-        const response = await fetchGetClients(search.client);
-        if (response.data?.data?.data.length == 0) {
-          setClients([])
-        }
-        setClients(response.data?.data?.data || []);
-      } catch (error) {
-        console.error("Error fetching clients:", error);
-      } finally {
-        setLoading(prev => ({ ...prev, clients: false }));
+  const getZona = async (idZona: string) => {
+    try {
+      const response = await fetchGetZona(idZona);
+      setNameZone(response?.data?.data?.data?.NombreZona || "No definido")
+    }
+    catch (error) {
+      console.error("Error fetching zona:", error);
+    }
+  }
+  const getUnidadTerritorial = async (idDistrito: number) => {
+    try {
+      const request: IDistrito = {
+        idDistrito: idDistrito.toString(),
       }
-    };
+      const response = await fetchUnidaTerritorial(request);
+      console.log(">>>Dta 0:", response?.data?.data?.data[0]);
+      console.log(">>>Dta:", response?.data?.data?.data);
+      setUnidadTerritorio(response?.data?.data?.data[0] || "No definido");
+    }
+    catch (error) {
+      console.error("Error fetching zona:", error);
+    }
+  }
 
+  const fetchClients = async () => {
+    setLoading(prev => ({ ...prev, clients: true }));
+    try {
+      const response = await fetchGetClients(search.client);
+      if (response.data?.data?.data.length == 0) {
+        setClients([])
+      }
+      setClients(response.data?.data?.data || []);
+    } catch (error) {
+      console.error("Error fetching clients:", error);
+    } finally {
+      setLoading(prev => ({ ...prev, clients: false }));
+    }
+  };
+
+  const fetchConditions = async () => {
+    try {
+      const response = await fetchGetConditions(search.client);
+      setConditions(response.data?.data?.data || [])
+    } catch (error) {
+      console.error("Error fetching conditions:", error)
+    } finally {
+      setLoading(prev => ({ ...prev, conditions: false }))
+    }
+  }
+  useEffect(() => {
     fetchClients();
-  }, [search.client]);
+    fetchConditions()
+  }, [search.client, search.condition]);
 
 
   // Fetch conditions
-  useEffect(() => {
-    const fetchConditions = async () => {
-      try {
-        const response = await apiClient.get(`/condiciones?query=${search.condition}`)
-        setConditions(response.data?.data?.data || [])
-      } catch (error) {
-        console.error("Error fetching conditions:", error)
-      } finally {
-        setLoading(prev => ({ ...prev, conditions: false }))
-      }
-    }
-
-    fetchConditions()
-  }, [search.condition])
+  // useEffect(() => {
+  //   fetchConditions()
+  // }, [search.condition])
 
   // Fetch products
   useEffect(() => {
@@ -207,6 +232,13 @@ export default function OrderPage() {
     setSelectedClient(c)
     setClient(c.codigo)
     setSearch({ ...search, client: `${c.Nombre} (${c.codigo})` })
+    if (c.IdZona) {
+      getZona(c.IdZona)
+    }
+    if (c.idDistrito) {
+      getUnidadTerritorial(c.idDistrito)
+    }
+
   }
 
   const handleConditionSelect = (value: string) => {
@@ -303,8 +335,8 @@ export default function OrderPage() {
                 ) : null}
               </div>
               {selectedClient && <ContactInfo client={selectedClient} />}
-              {selectedClient && <FinancialZone client={selectedClient} />}
-              {selectedClient && <PaymentCondition client={selectedClient} />}
+              {selectedClient && <FinancialZone client={selectedClient} nameZone={nameZone} unidadTerritorio={unidadTerritorio} />}
+              {selectedClient && <PaymentCondition conditions={conditions} />}
             </CardContent>
             <CardFooter className="flex justify-end border-t bg-gray-50 py-4">
               <Button

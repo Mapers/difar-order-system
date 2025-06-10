@@ -7,7 +7,7 @@ import {
   Check,
 } from 'lucide-react';
 import { Label } from '@radix-ui/react-label';
-import { IClient } from '@/interface/client/client-interface';
+import { IClient, ICondicion } from '@/interface/order/client-interface';
 import {
   Card,
   CardContent,
@@ -36,7 +36,7 @@ function cn(...classes: (string | boolean | undefined)[]) {
 }
 
 // Mock de condiciones y monedas (reemplázalos con los reales)
-const condicionesPago = [
+const conditions = [
   { value: 'contado', label: 'Contado' },
   { value: 'credito', label: 'Crédito' },
 ];
@@ -47,10 +47,10 @@ const monedas = [
 ];
 
 interface ClientRowProps {
-  client: IClient;
+  conditions: ICondicion[];
 }
 
-const PaymentCondition: React.FC<ClientRowProps> = ({ client }) => {
+const PaymentCondition: React.FC<ClientRowProps> = ({ conditions }) => {
   const [selectedCondition, setSelectedCondition] = useState('');
   const [selectedCurrency, setSelectedCurrency] = useState('');
 
@@ -72,7 +72,7 @@ const PaymentCondition: React.FC<ClientRowProps> = ({ client }) => {
               <PopoverTrigger asChild>
                 <Button variant="outline" role="combobox" className="w-full justify-between h-12">
                   {selectedCondition
-                    ? condicionesPago.find((c) => c.value === selectedCondition)?.label
+                    ? conditions.find((c) => c.CodigoCondicion === selectedCondition)?.Descripcion
                     : 'Seleccionar condición...'}
                   <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
@@ -83,10 +83,10 @@ const PaymentCondition: React.FC<ClientRowProps> = ({ client }) => {
                   <CommandList>
                     <CommandEmpty>No se encontraron condiciones.</CommandEmpty>
                     <CommandGroup>
-                      {condicionesPago.map((condition) => (
+                      {conditions.map((condition) => (
                         <CommandItem
-                          key={condition.value}
-                          value={condition.value}
+                          key={condition.CodigoCondicion}
+                          value={condition.CodigoCondicion}
                           onSelect={(currentValue) => {
                             setSelectedCondition(
                               currentValue === selectedCondition ? '' : currentValue,
@@ -96,12 +96,12 @@ const PaymentCondition: React.FC<ClientRowProps> = ({ client }) => {
                           <Check
                             className={cn(
                               'mr-2 h-4 w-4',
-                              selectedCondition === condition.value
+                              selectedCondition === condition.CodigoCondicion
                                 ? 'opacity-100'
                                 : 'opacity-0',
                             )}
                           />
-                          {condition.label}
+                          {condition.Descripcion}
                         </CommandItem>
                       ))}
                     </CommandGroup>
@@ -165,7 +165,7 @@ const PaymentCondition: React.FC<ClientRowProps> = ({ client }) => {
             <div className="flex flex-wrap gap-2">
               {selectedCondition && (
                 <Badge variant="secondary" className="bg-green-100 text-green-800">
-                  {condicionesPago.find((c) => c.value === selectedCondition)?.label}
+                  {conditions.find((c) => c.CodigoCondicion === selectedCondition)?.Descripcion}
                 </Badge>
               )}
               {selectedCurrency && (

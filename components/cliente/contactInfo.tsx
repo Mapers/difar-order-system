@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Phone, User, MapPin, Navigation, ChevronDown } from 'lucide-react';
 import { Label } from '@radix-ui/react-label';
 import { Input } from '../ui/input';
-import { IClient } from '@/interface/client/client-interface';
+import { IClient } from '@/interface/order/client-interface';
 
 interface ClientRowProps {
   client: IClient;
