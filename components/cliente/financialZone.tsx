@@ -1,7 +1,6 @@
 import React from 'react';
-import { Phone, User, MapPin, Navigation, CreditCard, Map, ChevronDown } from 'lucide-react';
+import { MapPin, Navigation, CreditCard, Map, ChevronDown } from 'lucide-react';
 import { Label } from '@radix-ui/react-label';
-import { Input } from '../ui/input';
 import { IClient, ITerritorio } from '@/interface/order/client-interface';
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Badge } from '../ui/badge';
@@ -9,18 +8,18 @@ import { Badge } from '../ui/badge';
 interface ClientRowProps {
   client: IClient;
   nameZone: string;
-  unidadTerritorio :ITerritorio | null
+  unidadTerritorio: ITerritorio 
 }
 
-const FinancialZone: React.FC<ClientRowProps> = ({ client, nameZone, unidadTerritorio  }) => {
+const FinancialZone: React.FC<ClientRowProps> = ({ client, nameZone, unidadTerritorio }) => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       <div className="flex items-center gap-3 p-4 bg-yellow-50 rounded-lg border border-yellow-200">
         <CreditCard className="w-6 h-6 text-yellow-600" />
         <div>
           <Label className="text-sm font-medium text-gray-700">Línea de Crédito</Label>
-          <p className="text-lg font-semibold text-gray-900">{client.LineaCredito|| "0.00"}</p>
-        </div>  
+          <p className="text-lg font-semibold text-gray-900">{client.LineaCredito || "0.00"}</p>
+        </div>
       </div>
 
       <Dialog>
@@ -29,7 +28,7 @@ const FinancialZone: React.FC<ClientRowProps> = ({ client, nameZone, unidadTerri
             <Map className="w-6 h-6 text-purple-600" />
             <div className="flex-1">
               <Label className="text-sm font-medium text-gray-700">Zona</Label>
-              <p className="text-lg font-semibold text-gray-900">Zona {nameZone || "------"} </p>
+              <p className="text-lg font-semibold text-gray-900">Zona: {nameZone || "No Definido"} </p>
               <p className="text-xs text-purple-600 mt-1">Click para ver detalles</p>
             </div>
             <ChevronDown className="w-4 h-4 text-purple-600 rotate-[-90deg]" />
@@ -49,7 +48,7 @@ const FinancialZone: React.FC<ClientRowProps> = ({ client, nameZone, unidadTerri
                   <Map className="w-4 h-4 text-purple-600" />
                   <div>
                     <Label className="text-xs font-medium text-gray-600">ZONA</Label>
-                    <p className="text-sm font-semibold text-gray-900">{nameZone}</p>
+                    <p className="text-sm font-semibold text-gray-900">{nameZone || 'No Definido'}</p>
                   </div>
                 </div>
 

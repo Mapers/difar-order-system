@@ -14,34 +14,11 @@ import apiClient from "@/app/api/client"
 import { Skeleton } from "@/components/ui/skeleton"
 import * as moment from 'moment'
 import { fetchGetClients, fetchGetConditions, fetchGetZona, fetchUnidaTerritorial } from "@/app/api/orders"
-import { IClient, ICondicion, IDistrito, ITerritorio } from "@/interface/order/client-interface"
+import { IClient, ICondicion, IDistrito, IProduct, ITerritorio, OrderItem } from "@/interface/order/client-interface"
 import ContactInfo from "@/components/cliente/contactInfo"
 import FinancialZone from "@/components/cliente/financialZone"
 import PaymentCondition from "@/components/cliente/paymentCondition"
-
-
-// interface ICondicion {
-//   CodigoCondicion: string
-//   Descripcion: string
-//   Credito: boolean
-// }
-
-interface IProduct {
-  IdArticulo: number
-  Codigo_Art: string
-  NombreItem: string
-  Stock?: number
-  precio1?: string;
-}
-
-interface OrderItem {
-  IdArticulo: number
-  Codigo_Art: string
-  NombreItem: string
-  Cantidad: number
-  Precio: number
-  Total: number
-}
+import debounce from 'lodash.debounce';
 
 export default function OrderPage() {
   const router = useRouter()
@@ -52,15 +29,19 @@ export default function OrderPage() {
   const [conditionName, setConditionName] = useState("")
   const [nameZone, setNameZone] = useState("")
   const [currency, setCurrency] = useState("PEN")
-
   const [selectedProduct, setSelectedProduct] = useState("")
   const [quantity, setQuantity] = useState(1)
   const [selectedClient, setSelectedClient] = useState<IClient | null>(null)
   const [orderItems, setOrderItems] = useState<OrderItem[]>([])
   const [clients, setClients] = useState<IClient[]>([])
-  const [unidadTerritorio, setUnidadTerritorio] = useState<ITerritorio | null>(null)
   const [conditions, setConditions] = useState<ICondicion[]>([])
   const [products, setProducts] = useState<IProduct[]>([])
+  const [unidadTerritorio, setUnidadTerritorio] = useState<ITerritorio>({
+    NombreDistrito: "",
+    nombreProvincia: '',
+    nombreDepartamento: '',
+    ubigeo: ''
+  })
   const [loading, setLoading] = useState({
     clients: false,
     conditions: true,
@@ -71,10 +52,12 @@ export default function OrderPage() {
     product: "",
     condition: ""
   })
-
+  const monedas = [
+    { value: 'PEN', label: 'Soles (PEN)' },
+    { value: 'USD', label: 'Dólares (USD)' },
+  ];
 
   const steps = ["Cliente", "Productos", "Resumen"]
-
 
   const getZona = async (idZona: string) => {
     try {
@@ -100,20 +83,25 @@ export default function OrderPage() {
     }
   }
 
-  const fetchClients = async () => {
-    setLoading(prev => ({ ...prev, clients: true }));
-    try {
-      const response = await fetchGetClients(search.client);
-      if (response.data?.data?.data.length == 0) {
-        setClients([])
+  const debouncedFetchClients = debounce(async () => {
+    if (search.client.length >= 4) {
+      setLoading(prev => ({ ...prev, clients: true }));
+      try {
+        const response = await fetchGetClients(search.client);
+        if (response.data?.data?.data.length === 0) {
+          setClients([]);
+        } else {
+          setClients(response.data?.data?.data || []);
+        }
+      } catch (error) {
+        console.error("Error fetching clients:", error);
+      } finally {
+        setLoading(prev => ({ ...prev, clients: false }));
       }
-      setClients(response.data?.data?.data || []);
-    } catch (error) {
-      console.error("Error fetching clients:", error);
-    } finally {
-      setLoading(prev => ({ ...prev, clients: false }));
+    } else {
+      setClients([]);
     }
-  };
+  }, 500);
 
   const fetchConditions = async () => {
     try {
@@ -126,15 +114,14 @@ export default function OrderPage() {
     }
   }
   useEffect(() => {
-    fetchClients();
+    debouncedFetchClients();
+    return () => debouncedFetchClients.cancel();
+  }, [search.client]);
+
+
+  useEffect(() => {
     fetchConditions()
-  }, [search.client, search.condition]);
-
-
-  // Fetch conditions
-  // useEffect(() => {
-  //   fetchConditions()
-  // }, [search.condition])
+  }, [search.condition]);
 
   // Fetch products
   useEffect(() => {
@@ -231,6 +218,7 @@ export default function OrderPage() {
   const handleClientSelect = (c: IClient) => {
     setSelectedClient(c)
     setClient(c.codigo)
+    setClientName(c.Nombre)
     setSearch({ ...search, client: `${c.Nombre} (${c.codigo})` })
     if (c.IdZona) {
       getZona(c.IdZona)
@@ -249,6 +237,13 @@ export default function OrderPage() {
     }
   }
 
+  const handleCurrencySelect = (value: string) => {
+    setCurrency(value)
+    const selectedTypeMoneda = monedas.find((m) => m.value === value)
+    if (selectedTypeMoneda) {
+      setConditionName(selectedTypeMoneda.label)
+    }
+  }
   const nextStep = () => {
     if (currentStep < steps.length - 1) {
       setCurrentStep(currentStep + 1)
@@ -269,9 +264,7 @@ export default function OrderPage() {
     switch (currentStep) {
       case 0: // Client step
         return !!client
-      case 1: // Conditions step
-        return !!condition
-      case 2: // Products step
+      case 1: // Products step
         return orderItems.length > 0
       default:
         return true
@@ -336,7 +329,7 @@ export default function OrderPage() {
               </div>
               {selectedClient && <ContactInfo client={selectedClient} />}
               {selectedClient && <FinancialZone client={selectedClient} nameZone={nameZone} unidadTerritorio={unidadTerritorio} />}
-              {selectedClient && <PaymentCondition conditions={conditions} />}
+              {selectedClient && <PaymentCondition conditions={conditions} monedas={monedas} onConditionChange={handleConditionSelect} onCurrencyChange={handleCurrencySelect} />}
             </CardContent>
             <CardFooter className="flex justify-end border-t bg-gray-50 py-4">
               <Button

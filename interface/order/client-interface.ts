@@ -1,5 +1,4 @@
 
-
 // Interfaz cliente
 export interface IClient {
   codigo: string;
@@ -22,6 +21,12 @@ export interface ICondicion {
   Credito: string;
 }
 
+// Interfaz de moneda 
+export interface IMoneda {
+  value: string;
+  label: string;
+}
+
 // Id distrito
 export interface IDistrito {
   idDistrito: string
@@ -36,10 +41,30 @@ export interface IDzona {
   idzona: number
 }
 
+// Interfaz territorio
 export interface ITerritorio {
   NombreDistrito: string;
   nombreProvincia: string;
   nombreDepartamento: string;
   ubigeo: string;
 }
+// Interfaz producto
+export interface IProduct {
+  IdArticulo: number
+  Codigo_Art: string
+  NombreItem: string
+  Stock?: number
+  precio1?: string;
+}
+
+// Interfaz order item
+export interface OrderItem {
+  IdArticulo: number
+  Codigo_Art: string
+  NombreItem: string
+  Cantidad: number
+  Precio: number
+  Total: number
+}
+
 

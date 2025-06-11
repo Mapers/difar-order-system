@@ -1,58 +1,43 @@
 'use client';
 
 import React, { useState } from 'react';
-import {
-  CreditCard,
-  ChevronDown,
-  Check,
-} from 'lucide-react';
+import { CreditCard, ChevronDown, Check } from 'lucide-react';
 import { Label } from '@radix-ui/react-label';
-import { IClient, ICondicion } from '@/interface/order/client-interface';
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from '../ui/card';
+import { ICondicion, IMoneda } from '@/interface/order/client-interface';
+import { Card, CardContent, CardHeader, CardTitle, } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
-import {
-  Popover,
-  PopoverTrigger,
-  PopoverContent,
-} from '../ui/popover';
-import {
-  Command,
-  CommandInput,
-  CommandList,
-  CommandGroup,
-  CommandItem,
-  CommandEmpty,
-} from '../ui/command';
+import { Popover, PopoverTrigger, PopoverContent } from '../ui/popover';
+import { Command, CommandInput, CommandList, CommandGroup, CommandItem, CommandEmpty } from '../ui/command';
 
 // Función utilitaria para clases condicionales
 function cn(...classes: (string | boolean | undefined)[]) {
   return classes.filter(Boolean).join(' ');
 }
 
-// Mock de condiciones y monedas (reemplázalos con los reales)
-const conditions = [
-  { value: 'contado', label: 'Contado' },
-  { value: 'credito', label: 'Crédito' },
-];
-
-const monedas = [
-  { value: 'pen', label: 'Soles (PEN)' },
-  { value: 'usd', label: 'Dólares (USD)' },
-];
 
 interface ClientRowProps {
   conditions: ICondicion[];
+  monedas: IMoneda[];
+  onConditionChange: (value: string) => void
+  onCurrencyChange: (value: string) => void
 }
 
-const PaymentCondition: React.FC<ClientRowProps> = ({ conditions }) => {
+const PaymentCondition: React.FC<ClientRowProps> = ({ conditions, monedas, onConditionChange, onCurrencyChange }) => {
   const [selectedCondition, setSelectedCondition] = useState('');
   const [selectedCurrency, setSelectedCurrency] = useState('');
+
+  const handleConditionSelect = (currenteValue: string) => {
+    const newValue = currenteValue === selectedCondition ? "" : currenteValue
+    setSelectedCondition(newValue)
+    onConditionChange(newValue)
+  }
+  const handleCurrencySelect = (currenteValue: string) => {
+    const newValue = currenteValue === selectedCurrency ? '' : currenteValue;
+    setSelectedCurrency(newValue);
+    onCurrencyChange(newValue);
+  };
+
 
   return (
     <Card className="bg-white shadow-sm">
@@ -87,11 +72,7 @@ const PaymentCondition: React.FC<ClientRowProps> = ({ conditions }) => {
                         <CommandItem
                           key={condition.CodigoCondicion}
                           value={condition.CodigoCondicion}
-                          onSelect={(currentValue) => {
-                            setSelectedCondition(
-                              currentValue === selectedCondition ? '' : currentValue,
-                            );
-                          }}
+                          onSelect={handleConditionSelect}
                         >
                           <Check
                             className={cn(
@@ -133,11 +114,7 @@ const PaymentCondition: React.FC<ClientRowProps> = ({ conditions }) => {
                         <CommandItem
                           key={currency.value}
                           value={currency.value}
-                          onSelect={(currentValue) => {
-                            setSelectedCurrency(
-                              currentValue === selectedCurrency ? '' : currentValue,
-                            );
-                          }}
+                          onSelect={handleCurrencySelect}
                         >
                           <Check
                             className={cn(
