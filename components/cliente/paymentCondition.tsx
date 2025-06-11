@@ -10,11 +10,9 @@ import { Button } from '../ui/button';
 import { Popover, PopoverTrigger, PopoverContent } from '../ui/popover';
 import { Command, CommandInput, CommandList, CommandGroup, CommandItem, CommandEmpty } from '../ui/command';
 
-// Función utilitaria para clases condicionales
 function cn(...classes: (string | boolean | undefined)[]) {
   return classes.filter(Boolean).join(' ');
 }
-
 
 interface ClientRowProps {
   conditions: ICondicion[];
@@ -37,7 +35,6 @@ const PaymentCondition: React.FC<ClientRowProps> = ({ conditions, monedas, onCon
     setSelectedCurrency(newValue);
     onCurrencyChange(newValue);
   };
-
 
   return (
     <Card className="bg-white shadow-sm">

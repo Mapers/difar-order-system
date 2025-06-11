@@ -74,8 +74,6 @@ export default function OrderPage() {
         idDistrito: idDistrito.toString(),
       }
       const response = await fetchUnidaTerritorial(request);
-      console.log(">>>Dta 0:", response?.data?.data?.data[0]);
-      console.log(">>>Dta:", response?.data?.data?.data);
       setUnidadTerritorio(response?.data?.data?.data[0] || "No definido");
     }
     catch (error) {
