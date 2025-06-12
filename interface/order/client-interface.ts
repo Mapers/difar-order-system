@@ -48,14 +48,20 @@ export interface ITerritorio {
   nombreDepartamento: string;
   ubigeo: string;
 }
+
 // Interfaz producto
 export interface IProduct {
-  IdArticulo: number
-  Codigo_Art: string
-  NombreItem: string
-  Stock?: number
-  precio1?: string;
+  IdArticulo: number;
+  Codigo_Art: string;
+  NombreItem: string;
+  Stock: string;
+  Descripcion: string;
+  presentacion: string | null;
+  tieneEscala: number;
+  tieneBonificado: number;
+  precio1: string;
 }
+
 
 // Interfaz order item
 export interface OrderItem {

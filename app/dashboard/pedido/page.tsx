@@ -19,6 +19,7 @@ import ContactInfo from "@/components/cliente/contactInfo"
 import FinancialZone from "@/components/cliente/financialZone"
 import PaymentCondition from "@/components/cliente/paymentCondition"
 import debounce from 'lodash.debounce';
+import { getProductsRequest } from "@/app/api/products"
 
 export default function OrderPage() {
   const router = useRouter()
@@ -125,11 +126,7 @@ export default function OrderPage() {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const url = search.product
-          ? `/articulos/search?query=${encodeURIComponent(search.product)}`
-          : '/articulos'
-
-        const response = await apiClient.get(url)
+        const response = await getProductsRequest()
         setProducts(response.data?.data?.data || [])
       } catch (error) {
         console.error("Error fetching products:", error)
