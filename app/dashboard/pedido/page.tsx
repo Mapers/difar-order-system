@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Trash, ShoppingCart, ArrowRight, ArrowLeft, Check, Search, Package, Command } from "lucide-react"
+import { Trash, ShoppingCart, ArrowRight, ArrowLeft, Check, Search, Package } from "lucide-react"
 import { StepProgress } from "@/components/step-progress"
 import apiClient from "@/app/api/client"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -23,31 +23,22 @@ import { getEscalasRequest, getProductsRequest } from "@/app/api/products"
 import { Badge } from "@/components/ui/badge"
 import { IEscala, IBonificado, IBonificadoRequest, IEscalaRequest } from "@/interface/product/client-interface"
 import { Popover, PopoverContent, PopoverTrigger } from "@radix-ui/react-popover"
-import { CommandEmpty, CommandGroup, CommandInput, CommandList } from "@/components/ui/command"
-import { CommandItem } from "cmdk"
+import { CommandEmpty, CommandGroup, CommandInput, CommandList, Command, CommandItem } from "@/components/ui/command"
 
 export default function OrderPage() {
   const router = useRouter()
-  const [open, setOpen] = useState(false)
   const [currentStep, setCurrentStep] = useState(0)
+  // Estados para cliente
   const [client, setClient] = useState("")
-  const [product, setProdut] = useState("")
   const [clientName, setClientName] = useState("")
-  const [searchQuery, setSearchQuery] = useState("")
   const [condition, setCondition] = useState("")
   const [conditionName, setConditionName] = useState("")
   const [nameZone, setNameZone] = useState("")
   const [currency, setCurrency] = useState("PEN")
-  const [quantity, setQuantity] = useState(1)
   const [selectedClient, setSelectedClient] = useState<IClient | null>(null)
-  // const [selectedProduct, setSelectedProduct] = useState<IProduct | null>(null)
-  const [selectedProduct, setSelectedProduct] = useState("")
-  const [orderItems, setOrderItems] = useState<OrderItem[]>([])
   const [clients, setClients] = useState<IClient[]>([])
   const [conditions, setConditions] = useState<ICondicion[]>([])
-  const [products, setProducts] = useState<IProduct[]>([])
-  const [escalas, setEscalas] = useState<IEscala[]>([])
-  const [bonificados, setBonificados] = useState<IBonificado[]>([])
+
   const [unidadTerritorio, setUnidadTerritorio] = useState<ITerritorio>({
     NombreDistrito: "",
     nombreProvincia: '',
@@ -64,6 +55,28 @@ export default function OrderPage() {
     product: "",
     condition: ""
   })
+
+  // Estado para productos
+  const [open, setOpen] = useState(false)
+  const [searchQuery, setSearchQuery] = useState("")
+  const [quantity, setQuantity] = useState(1)
+  const [selectedProduct, setSelectedProduct] = useState<IProduct | null>(null)
+  // Estados para modales
+  const [isCheckingBonification, setIsCheckingBonification] = useState(false)
+  const [showBonificationModal, setShowBonificationModal] = useState(false)
+  const [currentBonification, setCurrentBonification] = useState<any>(null)
+
+  // Estados para escalas
+  const [showScalesModal, setShowScalesModal] = useState(false)
+  const [currentScales, setCurrentScales] = useState<any>(null)
+  const [selectedScale, setSelectedScale] = useState<string | null>(null)
+  // order
+  const [orderItems, setOrderItems] = useState<OrderItem[]>([])
+  const [products, setProducts] = useState<IProduct[]>([])
+  const [escalasProducto, setEscalasProducto] = useState<IEscala[]>([])
+  const [bonificacionesProducto, setBonificacionesProducto] = useState<IBonificado[]>([])
+
+
   const monedas = [
     { value: 'PEN', label: 'Soles (PEN)' },
     { value: 'USD', label: 'Dólares (USD)' },
@@ -101,13 +114,13 @@ export default function OrderPage() {
         cantidad: cantidad
       }
       const response = await getEscalasRequest(requestEscala);
-      setEscalas(response?.data?.data?.data || [])
+      setEscalasProducto(response?.data?.data?.data || [])
     }
     catch (error) {
       console.error("Error fetching escalas:", error);
     }
   }
-  // lisata bonificados
+  // lista bonificados
   const getBonificados = async (idArticulo: string, cantidad: number) => {
     try {
       const requestBonificado: IBonificadoRequest = {
@@ -115,7 +128,7 @@ export default function OrderPage() {
         cantidad: cantidad
       }
       const response = await getEscalasRequest(requestBonificado);
-      setBonificados(response?.data?.data?.data || [])
+      setBonificacionesProducto(response?.data?.data?.data || [])
     }
     catch (error) {
       console.error("Error fetching bonificado:", error);
@@ -178,33 +191,93 @@ export default function OrderPage() {
     fetchProducts()
   }, [search.product])
 
-  const handleAddProduct = () => {
-    const product = products.find((p) => p.IdArticulo.toString() === selectedProduct)
-    if (!product) return
 
-    const existingItemIndex = orderItems.findIndex(item => item.IdArticulo === product.IdArticulo)
+  // const getApplicableScale = (productCode: string, quantity: number) => {
+  //   const productScales = escalas[productCode as keyof typeof escalas]
+  //   if (!productScales) return null
 
-    if (existingItemIndex >= 0) {
-      const updatedItems = [...orderItems]
-      updatedItems[existingItemIndex].Cantidad += quantity
-      updatedItems[existingItemIndex].Total = updatedItems[existingItemIndex].Cantidad * updatedItems[existingItemIndex].Precio
-      setOrderItems(updatedItems)
-    } else {
-      const newItem: OrderItem = {
-        IdArticulo: product.IdArticulo,
-        Codigo_Art: product.Codigo_Art,
-        NombreItem: product.NombreItem,
-        Cantidad: quantity,
-        Precio: Number(product.precio1),
-        Total: Number(product.precio1) * quantity,
-      }
-
-      setOrderItems([...orderItems, newItem])
-    }
-
-    setSelectedProduct("")
-    setQuantity(1)
+  //   return productScales.find((scale) => quantity >= scale.minimo && quantity <= scale.maximo) || null
+  // }
+  const getApplicableScale = (productCode: string, quantity: number) => {
+    return escalasProducto.find(scale =>
+      scale.IdArticulo === productCode &&
+      quantity >= scale.minimo &&
+      (scale.maximo === null || quantity <= scale.maximo)
+    ) || null
   }
+
+
+  // const handleAddProduct = () => {
+  //   const product = products.find((p) => p.IdArticulo.toString() === selectedProduct)
+  //   if (!selectedProduct) return
+
+  //   const existingItemIndex = orderItems.findIndex(item => item.IdArticulo === product.IdArticulo)
+
+  //   if (existingItemIndex >= 0) {
+  //     const updatedItems = [...orderItems]
+  //     updatedItems[existingItemIndex].Cantidad += quantity
+  //     updatedItems[existingItemIndex].Total = updatedItems[existingItemIndex].Cantidad * updatedItems[existingItemIndex].Precio
+  //     setOrderItems(updatedItems)
+  //   } else {
+  //     const newItem: OrderItem = {
+  //       IdArticulo: product.IdArticulo,
+  //       Codigo_Art: product.Codigo_Art,
+  //       NombreItem: product.NombreItem,
+  //       Cantidad: quantity,
+  //       Precio: Number(product.precio1),
+  //       Total: Number(product.precio1) * quantity,
+  //     }
+
+  //     setOrderItems([...orderItems, newItem])
+  //   }
+
+  //   setSelectedProduct("")
+  //   setQuantity(1)
+  // }
+
+  const handleAddProduct = () => {
+    if (!selectedProduct) return
+    setIsCheckingBonification(true)
+
+    setTimeout(() => {
+      setIsCheckingBonification(false)
+
+      // const bonificacionesProducto = bonificaciones[selectedProduct.codigo as keyof typeof bonificaciones]
+      // const bonificacionesProducto = bonificaciones.find(
+      //   (b) => b.ProductoSolicitado === selectedProduct.codigo
+      // )
+      getBonificados(selectedProduct.Codigo_Art, quantity)
+
+      if (bonificacionesProducto && bonificacionesProducto.length > 0) {
+        setCurrentBonification({
+          bonificaciones: bonificacionesProducto,
+          productoSolicitado: selectedProduct.Codigo_Art,
+          nombreProductoSolicitado: selectedProduct.NombreItem,
+          cantidadSolicitada: quantity,
+        })
+        // setSelectedBonifications([])
+        setShowBonificationModal(true)
+      } else {
+
+        getEscalas(selectedProduct.Codigo_Art, quantity)
+        if (escalasProducto && escalasProducto.length > 0) {
+          const applicableScale = getApplicableScale(selectedProduct.Codigo_Art, quantity)
+          setCurrentScales({
+            escalas: escalasProducto,
+            productoSolicitado: selectedProduct.Codigo_Art,
+            nombreProductoSolicitado: selectedProduct.NombreItem,
+            cantidadSolicitada: quantity,
+            escalaAplicable: applicableScale,
+          })
+          setSelectedScale(applicableScale?.IdArticulo || null)
+          setShowScalesModal(true)
+        } else {
+          // addProductToList()
+        }
+      }
+    }, 1500)
+  }
+
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -279,7 +352,7 @@ export default function OrderPage() {
   )
 
   const handleProductSelect = (product: IProduct) => {
-    // setSelectedProduct(product)
+    setSelectedProduct(product)
     setOpen(false)
   }
 
@@ -405,83 +478,112 @@ export default function OrderPage() {
                 <CardTitle className="text-xl font-semibold text-blue-700">Agregar Productos</CardTitle>
               </CardHeader>
               <CardContent className="space-y-6 pt-6">
-                <div className="space-y-2">
-                  <Label htmlFor="product" className="text-gray-700">
+
+                <div className="lg:col-span-2 space-y-2">
+                  <Label htmlFor="producto" className="text-sm font-medium">
                     Producto
                   </Label>
-                  <Select value={selectedProduct} onValueChange={setSelectedProduct}>
-                    <SelectTrigger className="bg-white">
-                      <SelectValue placeholder="Seleccionar producto" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <div className="p-2">
-                        <Input
-                          placeholder="Buscar producto..."
-                          value={search.product}
-                          onChange={(e) => setSearch({ ...search, product: e.target.value })}
-                          className="mb-2"
-                        />
-                      </div>
-                      {loading.products ? (
-                        <div className="p-4">
-                          <Skeleton className="h-4 w-full" />
-                        </div>
-                      ) :
-                        products.length > 0 ? (
-                          products.map((product) => (
-                            <SelectItem key={product.IdArticulo} value={product.IdArticulo.toString()} className="py-3">
-                              <div className="flex items-start gap-2 w-full">
-                                <div className="bg-blue-100 p-2 rounded-md shrink-0">
-                                  <Package className="h-3 w-3 sm:h-4 sm:w-4 text-blue-600" />
-                                </div>
-                                <div className="flex flex-col flex-1 min-w-0">
-                                  <div className="flex justify-between items-start w-full gap-2">
-                                    <span className="font-medium text-sm truncate flex-1">
-                                      {product.NombreItem}
-                                    </span>
-                                    <div className="flex flex-wrap gap-1 shrink-0">
-                                      <Badge
-                                        variant="outline"
-                                        className="bg-green-50 text-green-700 text-xs whitespace-nowrap"
-                                      >
-                                        Stock: {product.Stock}
-                                      </Badge>
-                                      {product.tieneBonificado === 1 && (
-                                        <Badge variant="outline" className="bg-yellow-50 text-yellow-700 text-xs">
-                                          Bonif.
-                                        </Badge>
-                                      )}
-                                      {product.tieneEscala === 1 && (
-                                        <Badge variant="outline" className="bg-purple-50 text-purple-700 text-xs">
-                                          Escalas
-                                        </Badge>
-                                      )}
+                  <div className="relative">
+                    <Popover open={open} onOpenChange={setOpen}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          role="combobox"
+                          aria-expanded={open}
+                          className="w-full justify-between h-10 sm:h-12 px-3 text-left font-normal text-sm"
+                        >
+                          {selectedProduct ? (
+                            <div className="flex flex-col items-start min-w-0 flex-1">
+                              <span className="font-medium truncate w-full">
+                                {selectedProduct.NombreItem}
+                              </span>
+                              <span className="text-xs text-gray-500 truncate w-full">
+                                {selectedProduct.Codigo_Art} | {selectedProduct.Descripcion}
+                              </span>
+                            </div>
+                          ) : (
+                            <span className="text-gray-500">Buscar producto...</span>
+                          )}
+                          <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent
+                        className="w-[calc(100vw-2rem)] sm:w-full p-0"
+                        align="start"
+                        side="bottom"
+                      >
+                        <Command shouldFilter={false}>
+                          <CommandInput
+                            placeholder="Buscar por código, nombre o laboratorio..."
+                            value={searchQuery}
+                            onValueChange={setSearchQuery}
+                            className="text-sm"
+                          />
+                          <CommandList>
+                            <CommandEmpty>No se encontraron productos.</CommandEmpty>
+                            <CommandGroup heading="Resultados">
+                              {filteredProducts.map((product) => (
+                                <CommandItem
+                                  key={product.Codigo_Art}
+                                  value={product.Codigo_Art}
+                                  onSelect={() => handleProductSelect(product)}
+                                  className="py-3"
+                                >
+                                  <div className="flex items-start gap-2 w-full">
+                                    <div className="bg-blue-100 p-2 rounded-md shrink-0">
+                                      <Package className="h-3 w-3 sm:h-4 sm:w-4 text-blue-600" />
+                                    </div>
+                                    <div className="flex flex-col flex-1 min-w-0">
+                                      <div className="flex justify-between items-start w-full gap-2">
+                                        <span className="font-medium text-sm truncate flex-1">
+                                          {product.NombreItem}
+                                        </span>
+                                        <div className="flex flex-wrap gap-1 shrink-0">
+                                          <Badge
+                                            variant="outline"
+                                            className="bg-green-50 text-green-700 text-xs"
+                                          >
+                                            Stock: {product.Stock}
+                                          </Badge>
+                                          {product.tieneBonificado === 1 && (
+                                            <Badge
+                                              variant="outline"
+                                              className="bg-yellow-50 text-yellow-700 text-xs"
+                                            >
+                                              Bonif.
+                                            </Badge>
+                                          )}
+                                          {product.tieneEscala === 1 && (
+                                            <Badge
+                                              variant="outline"
+                                              className="bg-purple-50 text-purple-700 text-xs"
+                                            >
+                                              Escalas
+                                            </Badge>
+                                          )}
+                                        </div>
+                                      </div>
+                                      <div className="flex justify-between items-center w-full mt-1">
+                                        <span className="text-xs text-gray-500 truncate">
+                                          <span className="font-medium">Código:</span>{" "}
+                                          {product.Codigo_Art}
+                                        </span>
+                                        <span className="text-xs text-gray-500 truncate">
+                                          <span className="font-medium">Lab:</span>{" "}
+                                          {product.Descripcion}
+                                        </span>
+                                      </div>
                                     </div>
                                   </div>
-                                  <div className="flex justify-between items-center w-full mt-1">
-                                    <span className="text-xs text-gray-500 truncate">
-                                    </span>
-                                    <span className="font-medium">Código:</span> {product.Codigo_Art + ' '}
-                                    <span className="text-xs text-gray-500 truncate">
-                                      <span className="font-medium">Lab:</span> {product.Descripcion}
-                                    </span>
-                                  </div>
-                                </div>
-                              </div>
-                            </SelectItem>
-                          ))
-                        )
-                          : (
-                            <div className="p-4 text-sm text-gray-500">
-                              No se encontraron productos
-                            </div>
-                          )
-                      }
-                    </SelectContent>
-                  </Select>
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
+                  </div>
                 </div>
-
-
 
                 <div className="space-y-2">
                   <Label htmlFor="quantity" className="text-gray-700">
@@ -500,7 +602,7 @@ export default function OrderPage() {
                 <Button
                   type="button"
                   onClick={handleAddProduct}
-                  disabled={!selectedProduct}
+                  // disabled={!selectedProduct}
                   className="w-full bg-indigo-600 hover:bg-indigo-700"
                 >
                   <ShoppingCart className="mr-2 h-4 w-4" />
