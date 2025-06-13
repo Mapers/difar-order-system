@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Trash, ShoppingCart, ArrowRight, ArrowLeft, Check, Search } from "lucide-react"
+import { Trash, ShoppingCart, ArrowRight, ArrowLeft, Check, Search, Package, Command } from "lucide-react"
 import { StepProgress } from "@/components/step-progress"
 import apiClient from "@/app/api/client"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -19,24 +19,35 @@ import ContactInfo from "@/components/cliente/contactInfo"
 import FinancialZone from "@/components/cliente/financialZone"
 import PaymentCondition from "@/components/cliente/paymentCondition"
 import debounce from 'lodash.debounce';
-import { getProductsRequest } from "@/app/api/products"
+import { getEscalasRequest, getProductsRequest } from "@/app/api/products"
+import { Badge } from "@/components/ui/badge"
+import { IEscala, IBonificado, IBonificadoRequest, IEscalaRequest } from "@/interface/product/client-interface"
+import { Popover, PopoverContent, PopoverTrigger } from "@radix-ui/react-popover"
+import { CommandEmpty, CommandGroup, CommandInput, CommandList } from "@/components/ui/command"
+import { CommandItem } from "cmdk"
 
 export default function OrderPage() {
   const router = useRouter()
+  const [open, setOpen] = useState(false)
   const [currentStep, setCurrentStep] = useState(0)
   const [client, setClient] = useState("")
+  const [product, setProdut] = useState("")
   const [clientName, setClientName] = useState("")
+  const [searchQuery, setSearchQuery] = useState("")
   const [condition, setCondition] = useState("")
   const [conditionName, setConditionName] = useState("")
   const [nameZone, setNameZone] = useState("")
   const [currency, setCurrency] = useState("PEN")
-  const [selectedProduct, setSelectedProduct] = useState("")
   const [quantity, setQuantity] = useState(1)
   const [selectedClient, setSelectedClient] = useState<IClient | null>(null)
+  // const [selectedProduct, setSelectedProduct] = useState<IProduct | null>(null)
+  const [selectedProduct, setSelectedProduct] = useState("")
   const [orderItems, setOrderItems] = useState<OrderItem[]>([])
   const [clients, setClients] = useState<IClient[]>([])
   const [conditions, setConditions] = useState<ICondicion[]>([])
   const [products, setProducts] = useState<IProduct[]>([])
+  const [escalas, setEscalas] = useState<IEscala[]>([])
+  const [bonificados, setBonificados] = useState<IBonificado[]>([])
   const [unidadTerritorio, setUnidadTerritorio] = useState<ITerritorio>({
     NombreDistrito: "",
     nombreProvincia: '',
@@ -69,6 +80,7 @@ export default function OrderPage() {
       console.error("Error fetching zona:", error);
     }
   }
+  // lista territorio
   const getUnidadTerritorial = async (idDistrito: number) => {
     try {
       const request: IDistrito = {
@@ -78,10 +90,38 @@ export default function OrderPage() {
       setUnidadTerritorio(response?.data?.data?.data[0] || "No definido");
     }
     catch (error) {
-      console.error("Error fetching zona:", error);
+      console.error("Error fetching unidad territorial:", error);
     }
   }
-
+  // Lista escalas
+  const getEscalas = async (idArticulo: string, cantidad: number) => {
+    try {
+      const requestEscala: IEscalaRequest = {
+        idArticulo: idArticulo,
+        cantidad: cantidad
+      }
+      const response = await getEscalasRequest(requestEscala);
+      setEscalas(response?.data?.data?.data || [])
+    }
+    catch (error) {
+      console.error("Error fetching escalas:", error);
+    }
+  }
+  // lisata bonificados
+  const getBonificados = async (idArticulo: string, cantidad: number) => {
+    try {
+      const requestBonificado: IBonificadoRequest = {
+        idArticulo: idArticulo,
+        cantidad: cantidad
+      }
+      const response = await getEscalasRequest(requestBonificado);
+      setBonificados(response?.data?.data?.data || [])
+    }
+    catch (error) {
+      console.error("Error fetching bonificado:", error);
+    }
+  }
+  // lista clientes  con funcion debouse 
   const debouncedFetchClients = debounce(async () => {
     if (search.client.length >= 4) {
       setLoading(prev => ({ ...prev, clients: true }));
@@ -165,11 +205,19 @@ export default function OrderPage() {
     setSelectedProduct("")
     setQuantity(1)
   }
+
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setSearch((prev) => ({ ...prev, client: value }));
     if (value === '') {
       setSelectedClient(null);
+    }
+  }
+  const handleSearchChangeProduct = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSearch((prev) => ({ ...prev, product: value }));
+    if (value === '') {
+      // setSelectedProduct(null);
     }
   }
   const handleRemoveItem = (index: number) => {
@@ -222,6 +270,17 @@ export default function OrderPage() {
       getUnidadTerritorial(c.idDistrito)
     }
 
+  }
+  const filteredProducts = products.filter(
+    (product) =>
+      product.Codigo_Art.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      product.NombreItem.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      product.Descripcion.toLowerCase().includes(searchQuery.toLowerCase()),
+  )
+
+  const handleProductSelect = (product: IProduct) => {
+    // setSelectedProduct(product)
+    setOpen(false)
   }
 
   const handleConditionSelect = (value: string) => {
@@ -367,20 +426,63 @@ export default function OrderPage() {
                         <div className="p-4">
                           <Skeleton className="h-4 w-full" />
                         </div>
-                      ) : products.length > 0 ? (
-                        products.map((p) => (
-                          <SelectItem key={p.IdArticulo} value={p.IdArticulo.toString()}>
-                            {p.NombreItem} ({p.Codigo_Art})
-                          </SelectItem>
-                        ))
-                      ) : (
-                        <div className="p-4 text-sm text-gray-500">
-                          No se encontraron productos
-                        </div>
-                      )}
+                      ) :
+                        products.length > 0 ? (
+                          products.map((product) => (
+                            <SelectItem key={product.IdArticulo} value={product.IdArticulo.toString()} className="py-3">
+                              <div className="flex items-start gap-2 w-full">
+                                <div className="bg-blue-100 p-2 rounded-md shrink-0">
+                                  <Package className="h-3 w-3 sm:h-4 sm:w-4 text-blue-600" />
+                                </div>
+                                <div className="flex flex-col flex-1 min-w-0">
+                                  <div className="flex justify-between items-start w-full gap-2">
+                                    <span className="font-medium text-sm truncate flex-1">
+                                      {product.NombreItem}
+                                    </span>
+                                    <div className="flex flex-wrap gap-1 shrink-0">
+                                      <Badge
+                                        variant="outline"
+                                        className="bg-green-50 text-green-700 text-xs whitespace-nowrap"
+                                      >
+                                        Stock: {product.Stock}
+                                      </Badge>
+                                      {product.tieneBonificado === 1 && (
+                                        <Badge variant="outline" className="bg-yellow-50 text-yellow-700 text-xs">
+                                          Bonif.
+                                        </Badge>
+                                      )}
+                                      {product.tieneEscala === 1 && (
+                                        <Badge variant="outline" className="bg-purple-50 text-purple-700 text-xs">
+                                          Escalas
+                                        </Badge>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <div className="flex justify-between items-center w-full mt-1">
+                                    <span className="text-xs text-gray-500 truncate">
+                                    </span>
+                                    <span className="font-medium">Código:</span> {product.Codigo_Art + ' '}
+                                    <span className="text-xs text-gray-500 truncate">
+                                      <span className="font-medium">Lab:</span> {product.Descripcion}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                            </SelectItem>
+                          ))
+                        )
+                          : (
+                            <div className="p-4 text-sm text-gray-500">
+                              No se encontraron productos
+                            </div>
+                          )
+                      }
                     </SelectContent>
                   </Select>
                 </div>
+
+
+
                 <div className="space-y-2">
                   <Label htmlFor="quantity" className="text-gray-700">
                     Cantidad
