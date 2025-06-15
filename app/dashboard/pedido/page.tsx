@@ -14,20 +14,26 @@ import apiClient from "@/app/api/client"
 import { Skeleton } from "@/components/ui/skeleton"
 import * as moment from 'moment'
 import { fetchGetClients, fetchGetConditions, fetchGetZona, fetchUnidaTerritorial } from "@/app/api/orders"
-import { IClient, ICondicion, IDistrito, IProduct, ITerritorio, OrderItem } from "@/interface/order/client-interface"
 import ContactInfo from "@/components/cliente/contactInfo"
 import FinancialZone from "@/components/cliente/financialZone"
 import PaymentCondition from "@/components/cliente/paymentCondition"
 import debounce from 'lodash.debounce';
-import { getEscalasRequest, getProductsRequest } from "@/app/api/products"
+import { getBonificadosRequest, getEscalasRequest, getProductsRequest } from "@/app/api/products"
 import { Badge } from "@/components/ui/badge"
-import { IEscala, IBonificado, IBonificadoRequest, IEscalaRequest } from "@/interface/product/client-interface"
 import { Popover, PopoverContent, PopoverTrigger } from "@radix-ui/react-popover"
 import { CommandEmpty, CommandGroup, CommandInput, CommandList, Command, CommandItem } from "@/components/ui/command"
+import ModalVerification from "@/components/modal/modalVerification"
+import ModalBonification from "@/components/modal/modalBonification"
+import ModalEscale from "@/components/modal/modalEscale"
+import { evaluarPromociones } from "@/utils/order"
+import { PROMOCIONES } from "@/constants"
+import { IBonificado, IEscala, IProduct, IPromocionRequest, OrderItem } from "@/interface/order/client-interface"
+import { IClient, ICondicion, IDistrito, ITerritorio } from "@/interface/order/product-interface"
 
 export default function OrderPage() {
   const router = useRouter()
   const [currentStep, setCurrentStep] = useState(0)
+  // const [isLoading, setIsLoading] = useState(false)
   // Estados para cliente
   const [client, setClient] = useState("")
   const [clientName, setClientName] = useState("")
@@ -48,7 +54,7 @@ export default function OrderPage() {
   const [loading, setLoading] = useState({
     clients: false,
     conditions: true,
-    products: true
+    products: false
   })
   const [search, setSearch] = useState({
     client: "",
@@ -70,6 +76,7 @@ export default function OrderPage() {
   const [showScalesModal, setShowScalesModal] = useState(false)
   const [currentScales, setCurrentScales] = useState<any>(null)
   const [selectedScale, setSelectedScale] = useState<string | null>(null)
+
   // order
   const [orderItems, setOrderItems] = useState<OrderItem[]>([])
   const [products, setProducts] = useState<IProduct[]>([])
@@ -109,7 +116,7 @@ export default function OrderPage() {
   // Lista escalas
   const getEscalas = async (idArticulo: string, cantidad: number) => {
     try {
-      const requestEscala: IEscalaRequest = {
+      const requestEscala: IPromocionRequest = {
         idArticulo: idArticulo,
         cantidad: cantidad
       }
@@ -123,12 +130,15 @@ export default function OrderPage() {
   // lista bonificados
   const getBonificados = async (idArticulo: string, cantidad: number) => {
     try {
-      const requestBonificado: IBonificadoRequest = {
+      const requestBonificado: IPromocionRequest = {
         idArticulo: idArticulo,
         cantidad: cantidad
       }
-      const response = await getEscalasRequest(requestBonificado);
-      setBonificacionesProducto(response?.data?.data?.data || [])
+      const response = await getBonificadosRequest(requestBonificado);
+      if (response?.data?.data?.data[0].Mensaje) return []
+      console.log("> data bonificado:", response?.data.data.data)
+      return response?.data?.data?.data
+      // setBonificacionesProducto(response?.data?.data?.data || [])
     }
     catch (error) {
       console.error("Error fetching bonificado:", error);
@@ -179,6 +189,7 @@ export default function OrderPage() {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
+        setLoading(prev => ({ ...prev, products: true }))
         const response = await getProductsRequest()
         setProducts(response.data?.data?.data || [])
       } catch (error) {
@@ -207,76 +218,40 @@ export default function OrderPage() {
   }
 
 
-  // const handleAddProduct = () => {
-  //   const product = products.find((p) => p.IdArticulo.toString() === selectedProduct)
-  //   if (!selectedProduct) return
 
-  //   const existingItemIndex = orderItems.findIndex(item => item.IdArticulo === product.IdArticulo)
+  const handleAddProduct = async () => {
+    if (!selectedProduct) return;
 
-  //   if (existingItemIndex >= 0) {
-  //     const updatedItems = [...orderItems]
-  //     updatedItems[existingItemIndex].Cantidad += quantity
-  //     updatedItems[existingItemIndex].Total = updatedItems[existingItemIndex].Cantidad * updatedItems[existingItemIndex].Precio
-  //     setOrderItems(updatedItems)
-  //   } else {
-  //     const newItem: OrderItem = {
-  //       IdArticulo: product.IdArticulo,
-  //       Codigo_Art: product.Codigo_Art,
-  //       NombreItem: product.NombreItem,
-  //       Cantidad: quantity,
-  //       Precio: Number(product.precio1),
-  //       Total: Number(product.precio1) * quantity,
-  //     }
+    setIsCheckingBonification(true);
 
-  //     setOrderItems([...orderItems, newItem])
-  //   }
+    try {
+      const idArticulo = selectedProduct.Codigo_Art;
+      const cantidad = quantity;
+      const result = evaluarPromociones(selectedProduct);
+      switch (result) {
+        case PROMOCIONES.BONIFICADO:
+          const bonificaciones = await getBonificados(idArticulo, cantidad);
+          if (bonificaciones.length > 0) {
+            setCurrentBonification({
+              bonificaciones,
+              productoSolicitado: idArticulo,
+              nombreProductoSolicitado: selectedProduct.NombreItem,
+              cantidadSolicitada: cantidad,
+            });
+            setShowBonificationModal(true);
+          }
+          break
+        case PROMOCIONES.ESCALA:
+          break
 
-  //   setSelectedProduct("")
-  //   setQuantity(1)
-  // }
-
-  const handleAddProduct = () => {
-    if (!selectedProduct) return
-    setIsCheckingBonification(true)
-
-    setTimeout(() => {
-      setIsCheckingBonification(false)
-
-      // const bonificacionesProducto = bonificaciones[selectedProduct.codigo as keyof typeof bonificaciones]
-      // const bonificacionesProducto = bonificaciones.find(
-      //   (b) => b.ProductoSolicitado === selectedProduct.codigo
-      // )
-      getBonificados(selectedProduct.Codigo_Art, quantity)
-
-      if (bonificacionesProducto && bonificacionesProducto.length > 0) {
-        setCurrentBonification({
-          bonificaciones: bonificacionesProducto,
-          productoSolicitado: selectedProduct.Codigo_Art,
-          nombreProductoSolicitado: selectedProduct.NombreItem,
-          cantidadSolicitada: quantity,
-        })
-        // setSelectedBonifications([])
-        setShowBonificationModal(true)
-      } else {
-
-        getEscalas(selectedProduct.Codigo_Art, quantity)
-        if (escalasProducto && escalasProducto.length > 0) {
-          const applicableScale = getApplicableScale(selectedProduct.Codigo_Art, quantity)
-          setCurrentScales({
-            escalas: escalasProducto,
-            productoSolicitado: selectedProduct.Codigo_Art,
-            nombreProductoSolicitado: selectedProduct.NombreItem,
-            cantidadSolicitada: quantity,
-            escalaAplicable: applicableScale,
-          })
-          setSelectedScale(applicableScale?.IdArticulo || null)
-          setShowScalesModal(true)
-        } else {
-          // addProductToList()
-        }
       }
-    }, 1500)
-  }
+    } catch (error) {
+      console.error("Error al agregar producto:", error);
+    } finally {
+      setIsCheckingBonification(false);
+    }
+  };
+
 
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -508,7 +483,7 @@ export default function OrderPage() {
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent
-                        className="w-[calc(100vw-2rem)] sm:w-full p-0"
+                        className="z-[999] w-[calc(100vw-2rem)] sm:w-full p-0"
                         align="start"
                         side="bottom"
                       >
@@ -601,8 +576,8 @@ export default function OrderPage() {
                 </div>
                 <Button
                   type="button"
+                  disabled={!selectedProduct || loading.products || isCheckingBonification}
                   onClick={handleAddProduct}
-                  // disabled={!selectedProduct}
                   className="w-full bg-indigo-600 hover:bg-indigo-700"
                 >
                   <ShoppingCart className="mr-2 h-4 w-4" />
@@ -610,6 +585,25 @@ export default function OrderPage() {
                 </Button>
               </CardContent>
             </Card>
+            {/* Componente de verificación */}
+            <ModalVerification
+              open={isCheckingBonification}
+              onOpenChange={setIsCheckingBonification}
+            />
+
+            {/* Modal de bonificaciones */}
+            <ModalBonification
+              open={showBonificationModal}
+              onOpenChange={setShowBonificationModal}
+              currentBonification={currentBonification}
+            />
+
+            {/* Modald de escalas  */}
+            {/* <ModalEscale
+              open={showScalesModal}
+              onOpenChange={setShowScalesModal}
+              currentScales={currentScales}
+            /> */}
 
             <Card className="shadow-md bg-white">
               <CardHeader className="border-b bg-gray-50">

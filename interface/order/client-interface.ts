@@ -1,52 +1,34 @@
 
-// Interfaz cliente
-export interface IClient {
-  codigo: string;
-  Nombre: string;
-  NombreComercial: string;
-  RUC: string;
-  Dirección: string;
-  Provincia: number;
-  idDistrito: number;
-  IdZona: string;
-  LineaCredito: string;
-  telefono: string | null;
+// Interfaz request para escala y bonificado
+export interface IPromocionRequest {
+  idArticulo: string,
+  cantidad: number
 }
 
-// Interfaz condición
-export interface ICondicion {
-  CodigoCondicion: string;
+// Interfaz escala
+export interface IEscala {
+  IdArticulo: string;
   Descripcion: string;
-  DiasCdto: number;
-  Credito: string;
+  minimo: number;
+  maximo: number | null;
+  Precio: string;
+  estado: string;
+  Presentacion: string;
+  PrincipioAdictivo: string;
 }
 
-// Interfaz de moneda 
-export interface IMoneda {
-  value: string;
-  label: string;
-}
-
-// Id distrito
-export interface IDistrito {
-  idDistrito: string
-}
-
-// Id distrito
-export interface IZona {
-  NombreZona: string
-}
-// Id zona
-export interface IDzona {
-  idzona: number
-}
-
-// Interfaz territorio
-export interface ITerritorio {
-  NombreDistrito: string;
-  nombreProvincia: string;
-  nombreDepartamento: string;
-  ubigeo: string;
+// Interfaz bonificado
+export interface IBonificado {
+  ProductoSolicitado: string;
+  CantidadSolicitada: string;
+  ProductoBonificado: string;
+  CantidadBonificadaPorUnidad: string;
+  VecesBonifica: number;
+  TotalBonificados: string;
+  NombreItem: string;
+  Presentacion: string;
+  PrecioBonificado: string;
+  PrincipioActivo: string;
 }
 
 // Interfaz producto
@@ -61,7 +43,6 @@ export interface IProduct {
   tieneBonificado: number;
   precio1: string;
 }
-
 
 // Interfaz order item
 export interface OrderItem {
