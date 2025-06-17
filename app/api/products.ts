@@ -1,7 +1,7 @@
 
 import apiClient from "./client";
 import { IDate } from "@/interface/product-interface";
-import { IPromocionRequest } from "@/interface/order/client-interface";
+import { IPromocionRequest } from "@/interface/order/product-interface";
 
 export const getDateProductsRequest = async (date: IDate, page: number = 1, perPage: number = 10): Promise<any> => {
     return apiClient.post(`/articulos/dateproducts?page=${page}&perPage=${perPage}`, date)

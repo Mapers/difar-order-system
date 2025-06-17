@@ -7,7 +7,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table"
 import { Trash, ShoppingCart, ArrowRight, ArrowLeft, Check, Search, Package } from "lucide-react"
 import { StepProgress } from "@/components/step-progress"
 import apiClient from "@/app/api/client"
@@ -27,13 +27,13 @@ import ModalBonification from "@/components/modal/modalBonification"
 import ModalEscale from "@/components/modal/modalEscale"
 import { evaluarPromociones } from "@/utils/order"
 import { PROMOCIONES } from "@/constants"
-import { IBonificado, IEscala, IProduct, IPromocionRequest, OrderItem } from "@/interface/order/client-interface"
-import { IClient, ICondicion, IDistrito, ITerritorio } from "@/interface/order/product-interface"
+import { IBonificado, ICurrentBonification, IEscala, IProduct, IPromocionRequest, ISelectedProduct, OrderItem } from "@/interface/order/product-interface"
+import { IClient, ICondicion, IDistrito, ITerritorio } from "@/interface/order/client-interface"
 
 export default function OrderPage() {
   const router = useRouter()
   const [currentStep, setCurrentStep] = useState(0)
-  // const [isLoading, setIsLoading] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
   // Estados para cliente
   const [client, setClient] = useState("")
   const [clientName, setClientName] = useState("")
@@ -67,10 +67,13 @@ export default function OrderPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [quantity, setQuantity] = useState(1)
   const [selectedProduct, setSelectedProduct] = useState<IProduct | null>(null)
+
+  // Funciona como orderItems
+  const [selectedProducts, setSelectedProducts] = useState<ISelectedProduct[]>([])
   // Estados para modales
   const [isCheckingBonification, setIsCheckingBonification] = useState(false)
   const [showBonificationModal, setShowBonificationModal] = useState(false)
-  const [currentBonification, setCurrentBonification] = useState<any>(null)
+  const [currentBonification, setCurrentBonification] = useState<ICurrentBonification | null>(null)
 
   // Estados para escalas
   const [showScalesModal, setShowScalesModal] = useState(false)
@@ -82,6 +85,7 @@ export default function OrderPage() {
   const [products, setProducts] = useState<IProduct[]>([])
   const [escalasProducto, setEscalasProducto] = useState<IEscala[]>([])
   const [bonificacionesProducto, setBonificacionesProducto] = useState<IBonificado[]>([])
+
 
 
   const monedas = [
@@ -138,7 +142,6 @@ export default function OrderPage() {
       if (response?.data?.data?.data[0].Mensaje) return []
       console.log("> data bonificado:", response?.data.data.data)
       return response?.data?.data?.data
-      // setBonificacionesProducto(response?.data?.data?.data || [])
     }
     catch (error) {
       console.error("Error fetching bonificado:", error);
@@ -165,6 +168,7 @@ export default function OrderPage() {
     }
   }, 500);
 
+  // lista las condiciones
   const fetchConditions = async () => {
     try {
       const response = await fetchGetConditions(search.client);
@@ -175,11 +179,32 @@ export default function OrderPage() {
       setLoading(prev => ({ ...prev, conditions: false }))
     }
   }
+
+  const addProductToList = (appliedScale?: any) => {
+    setIsLoading(true)
+    setTimeout(() => {
+      const finalPrice = appliedScale ? appliedScale.precio : selectedProduct!.precio1
+      setSelectedProducts([
+        ...selectedProducts,
+        {
+          product: selectedProduct!,
+          quantity,
+          appliedScale,
+          finalPrice,
+        },
+      ])
+      console.log(" selected  products : ", selectedProducts)
+      setSelectedProduct(null)
+      setQuantity(1)
+      setIsLoading(false)
+    }, 600)
+  }
+
+
   useEffect(() => {
     debouncedFetchClients();
     return () => debouncedFetchClients.cancel();
   }, [search.client]);
-
 
   useEffect(() => {
     fetchConditions()
@@ -221,9 +246,7 @@ export default function OrderPage() {
 
   const handleAddProduct = async () => {
     if (!selectedProduct) return;
-
     setIsCheckingBonification(true);
-
     try {
       const idArticulo = selectedProduct.Codigo_Art;
       const cantidad = quantity;
@@ -243,7 +266,9 @@ export default function OrderPage() {
           break
         case PROMOCIONES.ESCALA:
           break
-
+        case PROMOCIONES.NO_ESCALA_BONIFICADO:
+          addProductToList()
+          break
       }
     } catch (error) {
       console.error("Error al agregar producto:", error);
@@ -251,9 +276,6 @@ export default function OrderPage() {
       setIsCheckingBonification(false);
     }
   };
-
-
-
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setSearch((prev) => ({ ...prev, client: value }));
@@ -269,9 +291,9 @@ export default function OrderPage() {
     }
   }
   const handleRemoveItem = (index: number) => {
-    const newItems = [...orderItems]
+    const newItems = [...selectedProducts]
     newItems.splice(index, 1)
-    setOrderItems(newItems)
+    setSelectedProducts(newItems)
   }
 
   const calculateTotal = () => {
@@ -367,7 +389,7 @@ export default function OrderPage() {
       case 0: // Client step
         return !!client
       case 1: // Products step
-        return orderItems.length > 0
+        return selectedProducts.length > 0
       default:
         return true
     }
@@ -585,6 +607,7 @@ export default function OrderPage() {
                 </Button>
               </CardContent>
             </Card>
+
             {/* Componente de verificación */}
             <ModalVerification
               open={isCheckingBonification}
@@ -596,6 +619,9 @@ export default function OrderPage() {
               open={showBonificationModal}
               onOpenChange={setShowBonificationModal}
               currentBonification={currentBonification}
+              products={products}
+              setSelectedProducts={setSelectedProducts}
+              addProductToList={addProductToList}
             />
 
             {/* Modald de escalas  */}
@@ -604,77 +630,126 @@ export default function OrderPage() {
               onOpenChange={setShowScalesModal}
               currentScales={currentScales}
             /> */}
-
-            <Card className="shadow-md bg-white">
-              <CardHeader className="border-b bg-gray-50">
-                <CardTitle className="text-xl font-semibold text-blue-700">Productos Seleccionados</CardTitle>
-              </CardHeader>
-              <CardContent className="pt-6">
-                <div className="rounded-md border">
-                  <Table>
-                    <TableHeader className="bg-gray-50">
-                      <TableRow>
-                        <TableHead>Producto</TableHead>
-                        <TableHead className="text-right">Cantidad</TableHead>
-                        <TableHead className="text-right">Precio</TableHead>
-                        <TableHead className="text-right">Total</TableHead>
-                        <TableHead></TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {orderItems.length === 0 ? (
+            {selectedProducts.length > 0 && (
+              <Card className="shadow-md bg-white">
+                <CardHeader className="border-b bg-gray-50">
+                  <CardTitle className="text-xl font-semibold text-blue-700">Productos Seleccionados</CardTitle>
+                </CardHeader>
+                <CardContent className="pt-6">
+                  <div className="rounded-md border">
+                    <Table>
+                      <TableHeader className="bg-gray-50">
                         <TableRow>
-                          <TableCell colSpan={5} className="text-center">
-                            No hay productos agregados
+                          <TableHead>Producto</TableHead>
+                          <TableHead className="text-right">Cantidad</TableHead>
+                          <TableHead className="text-right">Precio</TableHead>
+                          <TableHead className="text-right">Total</TableHead>
+                          <TableHead></TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {selectedProducts.map((item, index) => {
+                          const precioOriginal = item.product.precio1;
+                          const precioEscala = item.appliedScale?.precio1;
+                          const precioUnitario = item.isBonification ? 0 : precioEscala ?? precioOriginal;
+                          const subtotal = precioUnitario * item.quantity;
+                          return (
+                            <TableRow key={index} className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}>
+                              <TableCell className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
+                                <div className="flex items-center flex-wrap gap-1">
+                                  {item.isBonification && (
+                                    <Badge variant="outline" className="bg-yellow-50 text-yellow-700">
+                                      Bonificado
+                                    </Badge>
+                                  )}
+                                  {item.appliedScale && (
+                                    <Badge variant="outline" className="bg-purple-50 text-purple-700">
+                                      Escala {item.appliedScale.descuento}% desc.
+                                    </Badge>
+                                  )}
+                                  <span>{item.product.NombreItem}</span>
+                                </div>
+                              </TableCell>
+                              <TableCell className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-right">
+                                {item.quantity}
+                              </TableCell>
+
+                              <TableCell className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-right">
+                                <div className="flex flex-col items-end">
+                                  <span className={item.appliedScale ? "line-through text-gray-400 text-xs" : ""}>
+                                    {currency === "PEN" ? "S/." : "$"}
+                                    {Number(precioOriginal).toFixed(2)}
+                                  </span>
+                                  {item.appliedScale && (
+                                    <span className="text-purple-600 font-medium text-sm">
+                                      {currency === "PEN" ? "S/." : "$"}
+                                      {Number(precioEscala).toFixed(2)}
+                                    </span>
+                                  )}
+                                  {item.isBonification && (
+                                    <span className="text-green-600 text-sm">{currency === "PEN" ? "S/." : "$"}0.00</span>
+                                  )}
+                                </div>
+                              </TableCell>
+
+                              <TableCell className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900 text-right">
+                                {currency === "PEN" ? "S/." : "$"}
+                                {subtotal.toFixed(2)}
+                              </TableCell>
+
+                              <TableCell className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleRemoveItem(index)}
+                                  className="text-red-600 hover:text-red-800 hover:bg-red-50"
+                                >
+                                  Eliminar
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                      <TableFooter>
+                        <TableRow>
+                          <TableCell colSpan={3}></TableCell>
+                          <TableCell className="px-4 py-3 text-right text-sm font-medium text-gray-900">
+                            Total:
+                          </TableCell>
+                          <TableCell className="px-4 py-3 whitespace-nowrap text-sm font-bold text-gray-900 text-right">
+                            {currency === "PEN" ? "S/." : "$"}
+                            {selectedProducts
+                              .reduce((sum, item) => {
+                                const precioUnitario = item.isBonification
+                                  ? 0
+                                  : item.appliedScale?.precio1 ?? item.product.precio1
+                                return sum + precioUnitario * item.quantity
+                              }, 0)
+                              .toFixed(2)}
                           </TableCell>
                         </TableRow>
-                      ) : (
-                        orderItems.map((item, index) => (
-                          <TableRow key={index} className="hover:bg-gray-50">
-                            <TableCell>
-                              <div className="font-medium">{item.NombreItem}</div>
-                              <div className="text-sm text-gray-500">{item.Codigo_Art}</div>
-                            </TableCell>
-                            <TableCell className="text-right">{item.Cantidad}</TableCell>
-                            <TableCell className="text-right">
-                              {Number(item.Precio).toFixed(2)} {currency === "PEN" ? "S/." : "$"}
-                            </TableCell>
-                            <TableCell className="text-right">
-                              {item.Total.toFixed(2)} {currency === "PEN" ? "S/." : "$"}
-                            </TableCell>
-                            <TableCell>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => handleRemoveItem(index)}
-                                className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
-                              >
-                                <Trash className="h-4 w-4" />
-                              </Button>
-                            </TableCell>
-                          </TableRow>
-                        ))
-                      )}
-                    </TableBody>
-                  </Table>
-                </div>
-              </CardContent>
-              <CardFooter className="flex justify-between border-t bg-gray-50 py-4">
-                <Button type="button" variant="outline" onClick={prevStep}>
-                  <ArrowLeft className="mr-2 h-4 w-4" />
-                  Anterior
-                </Button>
-                <Button
-                  type="button"
-                  onClick={nextStep}
-                  disabled={!isStepValid()}
-                  className="bg-blue-600 hover:bg-blue-700"
-                >
-                  Siguiente
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </CardFooter>
-            </Card>
+                      </TableFooter>
+                    </Table>
+                  </div>
+                </CardContent>
+                <CardFooter className="flex justify-between border-t bg-gray-50 py-4">
+                  <Button type="button" variant="outline" onClick={prevStep}>
+                    <ArrowLeft className="mr-2 h-4 w-4" />
+                    Anterior
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={nextStep}
+                    disabled={!isStepValid()}
+                    className="bg-blue-600 hover:bg-blue-700"
+                  >
+                    Siguiente
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </CardFooter>
+              </Card>
+            )}
           </div>
         )}
 
