@@ -5,6 +5,33 @@ export interface IPromocionRequest {
   cantidad: number
 }
 
+
+
+// Interfaz Bonificacion actual
+export interface ICurrentBonification {
+  bonificaciones: IBonificado[],
+  productoSolicitado: string,
+  nombreProductoSolicitado: string,
+  cantidadSolicitada: number
+}
+// Interfaz Escala actual
+export interface ICurrentScales {
+  escalas: IEscala[],
+  productoSolicitado: string,
+  nombreProductoSolicitado: string,
+  cantidadSolicitada: number,
+  escalaAplicable: IAplicableEscale
+}
+
+// Interfaz Bonificacion actual
+export interface ICurrent {
+  bonificaciones: IBonificado[],
+  productoSolicitado: string,
+  nombreProductoSolicitado: string,
+  cantidadSolicitada: number
+}
+
+
 // Interfaz escala
 export interface IEscala {
   IdArticulo: string;
@@ -17,13 +44,15 @@ export interface IEscala {
   PrincipioAdictivo: string;
 }
 
-// Interfaz Bonificacion actual
-
-export interface ICurrentBonification {
-  bonificaciones: IBonificado[],
-  productoSolicitado: string,
-  nombreProductoSolicitado: string,
-  cantidadSolicitada: number
+// Interface de producto con escala aplicable
+export interface IAplicableEscale {
+  id: number
+  descripcion: string
+  minimo: number
+  maximo: number
+  precio: number
+  descuento: number
+  ahorro: number
 }
 
 // Interfaz producto bonificado
@@ -50,7 +79,8 @@ export interface IProduct {
   presentacion: string | null;
   tieneEscala: number;
   tieneBonificado: number;
-  precio1: string;
+  PUContado: string;
+  PUCredito: string;
 }
 
 // Interfaz order item

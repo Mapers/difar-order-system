@@ -26,8 +26,8 @@ import ModalVerification from "@/components/modal/modalVerification"
 import ModalBonification from "@/components/modal/modalBonification"
 import ModalEscale from "@/components/modal/modalEscale"
 import { evaluarPromociones } from "@/utils/order"
-import { PROMOCIONES } from "@/constants"
-import { IBonificado, ICurrentBonification, IEscala, IProduct, IPromocionRequest, ISelectedProduct, OrderItem } from "@/interface/order/product-interface"
+import { monedas, PROMOCIONES } from "@/constants"
+import { IBonificado, ICurrentBonification, ICurrentScales, IEscala, IProduct, IPromocionRequest, ISelectedProduct, OrderItem } from "@/interface/order/product-interface"
 import { IClient, ICondicion, IDistrito, ITerritorio } from "@/interface/order/client-interface"
 
 export default function OrderPage() {
@@ -40,7 +40,7 @@ export default function OrderPage() {
   const [condition, setCondition] = useState("")
   const [conditionName, setConditionName] = useState("")
   const [nameZone, setNameZone] = useState("")
-  const [currency, setCurrency] = useState("PEN")
+  const [currency, setCurrency] = useState("")
   const [selectedClient, setSelectedClient] = useState<IClient | null>(null)
   const [clients, setClients] = useState<IClient[]>([])
   const [conditions, setConditions] = useState<ICondicion[]>([])
@@ -70,6 +70,7 @@ export default function OrderPage() {
 
   // Funciona como orderItems
   const [selectedProducts, setSelectedProducts] = useState<ISelectedProduct[]>([])
+
   // Estados para modales
   const [isCheckingBonification, setIsCheckingBonification] = useState(false)
   const [showBonificationModal, setShowBonificationModal] = useState(false)
@@ -77,8 +78,7 @@ export default function OrderPage() {
 
   // Estados para escalas
   const [showScalesModal, setShowScalesModal] = useState(false)
-  const [currentScales, setCurrentScales] = useState<any>(null)
-  const [selectedScale, setSelectedScale] = useState<string | null>(null)
+  const [currentScales, setCurrentScales] = useState<ICurrentScales | null>(null)
 
   // order
   const [orderItems, setOrderItems] = useState<OrderItem[]>([])
@@ -88,10 +88,6 @@ export default function OrderPage() {
 
 
 
-  const monedas = [
-    { value: 'PEN', label: 'Soles (PEN)' },
-    { value: 'USD', label: 'Dólares (USD)' },
-  ];
 
   const steps = ["Cliente", "Productos", "Resumen"]
 
@@ -125,7 +121,8 @@ export default function OrderPage() {
         cantidad: cantidad
       }
       const response = await getEscalasRequest(requestEscala);
-      setEscalasProducto(response?.data?.data?.data || [])
+      if (response?.data?.data?.data[0].Mensaje) return []
+      return response?.data?.data?.data
     }
     catch (error) {
       console.error("Error fetching escalas:", error);
@@ -140,7 +137,6 @@ export default function OrderPage() {
       }
       const response = await getBonificadosRequest(requestBonificado);
       if (response?.data?.data?.data[0].Mensaje) return []
-      console.log("> data bonificado:", response?.data.data.data)
       return response?.data?.data?.data
     }
     catch (error) {
@@ -183,7 +179,7 @@ export default function OrderPage() {
   const addProductToList = (appliedScale?: any) => {
     setIsLoading(true)
     setTimeout(() => {
-      const finalPrice = appliedScale ? appliedScale.precio : selectedProduct!.precio1
+      const finalPrice = appliedScale ? appliedScale.precio : selectedProduct!.PUContado
       setSelectedProducts([
         ...selectedProducts,
         {
@@ -234,8 +230,9 @@ export default function OrderPage() {
 
   //   return productScales.find((scale) => quantity >= scale.minimo && quantity <= scale.maximo) || null
   // }
-  const getApplicableScale = (productCode: string, quantity: number) => {
-    return escalasProducto.find(scale =>
+  const getApplicableScale = (productCode: string, quantity: number, productosEscala: any) => {
+    if (!productosEscala) return null
+    return productosEscala.find((scale: any) =>
       scale.IdArticulo === productCode &&
       quantity >= scale.minimo &&
       (scale.maximo === null || quantity <= scale.maximo)
@@ -263,8 +260,26 @@ export default function OrderPage() {
             });
             setShowBonificationModal(true);
           }
+          else {
+            addProductToList()
+          }
           break
         case PROMOCIONES.ESCALA:
+          const escalasProductos = await getEscalas(idArticulo, cantidad);
+          if (escalasProductos.length > 0) {
+            const aplicableScale = getApplicableScale(selectedProduct.Codigo_Art, cantidad, escalasProductos)
+            setCurrentScales({
+              escalas: escalasProductos,
+              productoSolicitado: idArticulo,
+              nombreProductoSolicitado: selectedProduct.NombreItem,
+              cantidadSolicitada: cantidad,
+              escalaAplicable: aplicableScale,
+            })
+            setShowScalesModal(true)
+          }
+          else {
+            addProductToList()
+          }
           break
         case PROMOCIONES.NO_ESCALA_BONIFICADO:
           addProductToList()
@@ -276,6 +291,8 @@ export default function OrderPage() {
       setIsCheckingBonification(false);
     }
   };
+
+
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setSearch((prev) => ({ ...prev, client: value }));
@@ -387,7 +404,7 @@ export default function OrderPage() {
   const isStepValid = () => {
     switch (currentStep) {
       case 0: // Client step
-        return !!client
+        return !!client && currency && condition
       case 1: // Products step
         return selectedProducts.length > 0
       default:
@@ -622,14 +639,19 @@ export default function OrderPage() {
               products={products}
               setSelectedProducts={setSelectedProducts}
               addProductToList={addProductToList}
+              currency={currency}
             />
 
             {/* Modald de escalas  */}
-            {/* <ModalEscale
+            <ModalEscale
               open={showScalesModal}
               onOpenChange={setShowScalesModal}
               currentScales={currentScales}
-            /> */}
+              products={products}
+              setSelectedProducts={setSelectedProducts}
+              addProductToList={addProductToList}
+              currency={currency}
+            />
             {selectedProducts.length > 0 && (
               <Card className="shadow-md bg-white">
                 <CardHeader className="border-b bg-gray-50">
@@ -649,8 +671,8 @@ export default function OrderPage() {
                       </TableHeader>
                       <TableBody>
                         {selectedProducts.map((item, index) => {
-                          const precioOriginal = item.product.precio1;
-                          const precioEscala = item.appliedScale?.precio1;
+                          const precioOriginal = item.product.PUContado;
+                          const precioEscala = item.appliedScale?.PUContado;
                           const precioUnitario = item.isBonification ? 0 : precioEscala ?? precioOriginal;
                           const subtotal = precioUnitario * item.quantity;
                           return (
@@ -723,7 +745,7 @@ export default function OrderPage() {
                               .reduce((sum, item) => {
                                 const precioUnitario = item.isBonification
                                   ? 0
-                                  : item.appliedScale?.precio1 ?? item.product.precio1
+                                  : item.appliedScale?.PUContado ?? item.product.PUContado
                                 return sum + precioUnitario * item.quantity
                               }, 0)
                               .toFixed(2)}

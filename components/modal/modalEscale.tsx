@@ -1,50 +1,63 @@
 import React, { useState } from 'react'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, } from "@/components/ui/dialog"
-import { Badge, Loader2, TrendingUp } from 'lucide-react'
-import { Button } from '@/components/ui/button' // Corrige aquí la importación del botón
+import { TrendingUp } from 'lucide-react'
+import { Badge } from "@/components/ui/badge"
+import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
+import { ICurrentScales, IProduct, ISelectedProduct } from '@/interface/order/product-interface'
 
-interface Escala {
-  id: number
-  descripcion: string
-  minimo: number
-  maximo: number
-  precio: number
-  descuento: number
-  ahorro: number
-}
-
-interface Producto {
-  codigo: string
-  precio: number
-}
-
-interface CurrentScales {
-  cantidadSolicitada: number
-  nombreProductoSolicitado: string
-  productoSolicitado: string
-  escalaAplicable?: Escala
-  escalas: Escala[]
-}
 
 interface ModalVerificationProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  currentScales?: CurrentScales
-  productos: Producto[]
-  handleConfirmScale: () => void
+  currentScales: ICurrentScales | null,
+  products: IProduct[],
+  setSelectedProducts: React.Dispatch<React.SetStateAction<ISelectedProduct[]>>
+  addProductToList: (appliedScale?: any) => void;
+  currency: string
 }
 
 const ModalEscale: React.FC<ModalVerificationProps> = ({
   open,
   onOpenChange,
   currentScales,
-  productos,
-  handleConfirmScale,
+  products,
+  setSelectedProducts,
+  addProductToList,
+  currency
 }) => {
-  const [selectedScale, setSelectedScale] = useState<number | null>(null)
+  const [selectedScales, setSelectedScales] = useState<string[]>([])
 
+  const handleConfirmScale = () => {
+    onOpenChange(false)
+    addProductToList()
+    // const selectedScaleData = currentScales.escalas.find((s: any) => s.IdArticulo === selectedScales)
+    // addProductToList(selectedScaleData)
+    if (currentScales && selectedScales.length > 0) {
+      selectedScales.forEach((bonificationId) => {
+        const escale = currentScales.escalas.find((b: any) => b.IdArticulo === bonificationId)
+        if (escale) {
+          const escaleProducto = products.find((p: any) => p.Codigo_Art === escale.IdArticulo)
+          if (escaleProducto) {
+            setTimeout(() => {
+              setSelectedProducts((prev: any) => [
+                ...prev,
+                {
+                  product: escaleProducto,
+                  quantity: escale.minimo,
+                  isBonification: true,
+                  bonificationId: escale.IdArticulo,
+                  finalPrice: escale.maximo,
+                },
+              ])
+            }, 800)
+          }
+
+        }
+      })
+    }
+  }
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="w-[calc(100vw-2rem)] max-w-4xl max-h-[90vh] overflow-y-auto mx-4">
@@ -106,27 +119,27 @@ const ModalEscale: React.FC<ModalVerificationProps> = ({
                   const isApplicable =
                     currentScales.cantidadSolicitada >= escala.minimo &&
                     currentScales.cantidadSolicitada <= escala.maximo
-                  const isRecommended = escala.id === currentScales.escalaAplicable?.id
+                  const isRecommended = escala.IdArticulo === currentScales.escalaAplicable?.id
                   const totalSavings = escala.ahorro * currentScales.cantidadSolicitada
 
                   return (
                     <div
-                      key={escala.id}
-                      className={`border rounded-lg p-3 cursor-pointer transition-all ${selectedScale === escala.id
+                      key={escala.IdArticulo}
+                      className={`border rounded-lg p-3 cursor-pointer transition-all ${selectedScales === escala.IdArticulo
                         ? "border-purple-500 bg-purple-50"
                         : isApplicable
                           ? "border-green-300 bg-green-50"
                           : "border-gray-200 bg-gray-50"
                         } ${!isApplicable ? "opacity-60" : ""}`}
-                      onClick={() => isApplicable && setSelectedScale(escala.id)}
+                      onClick={() => isApplicable && setSelectedScales(escala.IdArticulo)}
                     >
                       <div className="flex items-start gap-3">
                         <div className="flex items-center h-5 shrink-0">
                           <input
                             type="radio"
                             name="escala"
-                            checked={selectedScale === escala.id}
-                            onChange={() => setSelectedScale(escala.id)}
+                            checked={selectedScales === escala.IdArticulo}
+                            onChange={() => setSelectedScales(escala.IdArticulo)}
                             className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300"
                             disabled={!isApplicable}
                           />
@@ -135,7 +148,7 @@ const ModalEscale: React.FC<ModalVerificationProps> = ({
                         <div className="flex-1 min-w-0">
                           <div className="flex flex-col gap-2 mb-3">
                             <div className="flex items-center justify-between">
-                              <h5 className="font-medium text-gray-900 text-sm">{escala.descripcion}</h5>
+                              <h5 className="font-medium text-gray-900 text-sm">{escala.Descripcion}</h5>
                               {isRecommended && (
                                 <Badge variant="outline" className="bg-green-50 text-green-700 text-xs">
                                   Recomendado
@@ -149,15 +162,15 @@ const ModalEscale: React.FC<ModalVerificationProps> = ({
                                 {escala.descuento > 0 && (
                                   <span className="line-through text-gray-400 text-xs block">
                                     $
-                                    {productos
-                                      .find((p) => p.codigo === currentScales.productoSolicitado)
-                                      ?.precio.toFixed(2)}
+                                    {products
+                                      .find((p) => p.Codigo_Art === currentScales.productoSolicitado)
+                                      ?.PUContado}
                                   </span>
                                 )}
                                 <span
                                   className={`font-medium text-sm ${escala.descuento > 0 ? "text-purple-600" : ""}`}
                                 >
-                                  ${escala.precio.toFixed(2)}
+                                  ${Number(escala.Precio).toFixed(2)}
                                 </span>
                               </div>
                             </div>
@@ -166,17 +179,17 @@ const ModalEscale: React.FC<ModalVerificationProps> = ({
                               <div className="flex items-center justify-between">
                                 <span className="text-xs text-gray-500">Descuento:</span>
                                 <Badge variant="outline" className="bg-purple-50 text-purple-700 text-xs">
-                                  {escala.descuento.toFixed(1)}%
+                                  {escala.descuento}%
                                 </Badge>
                               </div>
                             )}
 
-                            {totalSavings > 0 && (
+                            {/* {totalSavings > 0 && (
                               <div className="flex items-center justify-between">
                                 <span className="text-xs text-gray-500">Ahorro Total:</span>
                                 <span className="text-green-600 font-bold text-sm">${totalSavings.toFixed(2)}</span>
                               </div>
-                            )}
+                            )} */}
                           </div>
                         </div>
                       </div>
@@ -216,27 +229,27 @@ const ModalEscale: React.FC<ModalVerificationProps> = ({
                         const isApplicable =
                           currentScales.cantidadSolicitada >= escala.minimo &&
                           currentScales.cantidadSolicitada <= escala.maximo
-                        const isRecommended = escala.id === currentScales.escalaAplicable?.id
+                        const isRecommended = escala.IdArticulo === currentScales.escalaAplicable?.id
                         const totalSavings = escala.ahorro * currentScales.cantidadSolicitada
 
                         return (
                           <tr
-                            key={escala.id}
-                            className={`cursor-pointer transition-colors ${selectedScale === escala.id
+                            key={escala.IdArticulo}
+                            className={`cursor-pointer transition-colors ${selectedScales === escala.IdArticulo
                               ? "bg-purple-50 border-purple-200"
                               : isApplicable
                                 ? "bg-green-50 hover:bg-green-100"
                                 : "hover:bg-gray-50"
                               } ${!isApplicable ? "opacity-60" : ""}`}
-                            onClick={() => isApplicable && setSelectedScale(escala.id)}
+                            onClick={() => isApplicable && setSelectedScales(escala.IdArticulo)}
                           >
                             <td className="px-4 py-3 whitespace-nowrap">
                               <div className="flex items-center">
                                 <input
                                   type="radio"
                                   name="escala"
-                                  checked={selectedScale === escala.id}
-                                  onChange={() => setSelectedScale(escala.id)}
+                                  checked={selectedScales === escala.IdArticulo}
+                                  onChange={() => setSelectedScales(escala.IdArticulo)}
                                   className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300"
                                   disabled={!isApplicable}
                                 />
@@ -254,21 +267,21 @@ const ModalEscale: React.FC<ModalVerificationProps> = ({
                               <div className="flex flex-col">
                                 {escala.descuento > 0 && (
                                   <span className="line-through text-gray-400 text-xs">
-                                    $
-                                    {productos
-                                      .find((p) => p.codigo === currentScales.productoSolicitado)
-                                      ?.precio.toFixed(2)}
+                                    $---
+                                    {/* {products
+                                      .find((p) => p.Codigo_Art === currentScales.IdArticulo)
+                                      ?.PUContado} */}
                                   </span>
                                 )}
                                 <span className={`font-medium ${escala.descuento > 0 ? "text-purple-600" : ""}`}>
-                                  ${escala.precio.toFixed(2)}
+                                  ${Number(escala.Precio).toFixed(2)}
                                 </span>
                               </div>
                             </td>
                             <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
                               {escala.descuento > 0 ? (
                                 <Badge variant="outline" className="bg-purple-50 text-purple-700">
-                                  {escala.descuento.toFixed(1)}%
+                                  {escala?.descuento}%
                                 </Badge>
                               ) : (
                                 <span className="text-gray-400">-</span>
@@ -276,14 +289,14 @@ const ModalEscale: React.FC<ModalVerificationProps> = ({
                             </td>
                             <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
                               {escala.ahorro > 0 ? (
-                                <span className="text-green-600 font-medium">${escala.ahorro.toFixed(2)}</span>
+                                <span className="text-green-600 font-medium">${escala.ahorro}</span>
                               ) : (
                                 <span className="text-gray-400">-</span>
                               )}
                             </td>
                             <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
                               {totalSavings > 0 ? (
-                                <span className="text-green-600 font-bold">${totalSavings.toFixed(2)}</span>
+                                <span className="text-green-600 font-bold">${totalSavings}</span>
                               ) : (
                                 <span className="text-gray-400">-</span>
                               )}
@@ -296,11 +309,11 @@ const ModalEscale: React.FC<ModalVerificationProps> = ({
                 </div>
               </div>
 
-              {selectedScale && (
+              {/* {selectedScales && (
                 <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 sm:p-4">
                   <h5 className="font-medium text-purple-800 mb-2 text-sm">Escala seleccionada:</h5>
                   {(() => {
-                    const selectedScaleData = currentScales.escalas.find((s: any) => s.id === selectedScale)
+                    const selectedScaleData = currentScales.escalas.find((s: any) => s.IdArticulo === selectedScales)
                     const totalPrice = selectedScaleData.precio * currentScales.cantidadSolicitada
                     const originalPrice =
                       productos.find((p) => p.codigo === currentScales.productoSolicitado)?.precio || 0
@@ -329,7 +342,7 @@ const ModalEscale: React.FC<ModalVerificationProps> = ({
                     )
                   })()}
                 </div>
-              )}
+              )} */}
             </div>
           </div>
         )}
@@ -341,7 +354,7 @@ const ModalEscale: React.FC<ModalVerificationProps> = ({
           <Button
             onClick={handleConfirmScale}
             className="bg-purple-600 hover:bg-purple-700 w-full sm:w-auto"
-            disabled={!selectedScale}
+            disabled={!selectedScales}
           >
             <TrendingUp className="mr-2 h-4 w-4" />
             Aplicar Escala

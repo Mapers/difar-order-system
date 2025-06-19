@@ -15,10 +15,11 @@ interface ModalBonificationProps {
   products: IProduct[],
   setSelectedProducts: React.Dispatch<React.SetStateAction<ISelectedProduct[]>>
   addProductToList: (appliedScale?: any) => void;
+  currency: string
 }
 
 const ModalBonification: React.FC<ModalBonificationProps> = ({
-  open, onOpenChange, currentBonification, products, setSelectedProducts, addProductToList }) => {
+  open, onOpenChange, currentBonification, products, setSelectedProducts, addProductToList, currency }) => {
   const [selectedBonifications, setSelectedBonifications] = useState<string[]>([])
 
   const toggleBonificationSelection = (id: string) => {
@@ -148,7 +149,7 @@ const ModalBonification: React.FC<ModalBonificationProps> = ({
                           <div>
                             <Label className="text-xs text-gray-500">Precio</Label>
                             <p className="font-medium text-xs sm:text-sm text-green-600">
-                              ${bonificacion.PrecioBonificado}
+                              {`${currency} ${bonificacion.PrecioBonificado}`}
                             </p>
                           </div>
                         </div>
@@ -221,7 +222,7 @@ const ModalBonification: React.FC<ModalBonificationProps> = ({
           </Button>
         </DialogFooter>
       </DialogContent>
-    </Dialog>
+    </Dialog >
   )
 }
 
