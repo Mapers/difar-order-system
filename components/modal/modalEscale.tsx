@@ -29,14 +29,22 @@ const ModalEscale: React.FC<ModalVerificationProps> = ({
 }) => {
   const [selectedScales, setSelectedScales] = useState<string[]>([])
 
+
+  const toggleEscalaSelection = (id: string) => {
+    console.log(">>id: ", id);
+    setSelectedScales((prev) =>
+      prev.includes(id) ? prev.filter((bId) => bId !== id) : [...prev, id]
+    )
+  }
+
   const handleConfirmScale = () => {
     onOpenChange(false)
     addProductToList()
     // const selectedScaleData = currentScales.escalas.find((s: any) => s.IdArticulo === selectedScales)
     // addProductToList(selectedScaleData)
     if (currentScales && selectedScales.length > 0) {
-      selectedScales.forEach((bonificationId) => {
-        const escale = currentScales.escalas.find((b: any) => b.IdArticulo === bonificationId)
+      selectedScales.forEach((scaleId) => {
+        const escale = currentScales.escalas.find((b: any) => b.IdArticulo === scaleId)
         if (escale) {
           const escaleProducto = products.find((p: any) => p.Codigo_Art === escale.IdArticulo)
           if (escaleProducto) {
@@ -46,14 +54,13 @@ const ModalEscale: React.FC<ModalVerificationProps> = ({
                 {
                   product: escaleProducto,
                   quantity: escale.minimo,
-                  isBonification: true,
                   bonificationId: escale.IdArticulo,
+                  appliedScale: currentScales.escalaAplicable,
                   finalPrice: escale.maximo,
                 },
               ])
             }, 800)
           }
-
         }
       })
     }
@@ -113,91 +120,6 @@ const ModalEscale: React.FC<ModalVerificationProps> = ({
                 Selecciona las escalas que deseas aplicar:
               </h4>
 
-              {/* Mobile View - Cards */}
-              <div className="block sm:hidden space-y-3">
-                {currentScales.escalas.map((escala: any, index: number) => {
-                  const isApplicable =
-                    currentScales.cantidadSolicitada >= escala.minimo &&
-                    currentScales.cantidadSolicitada <= escala.maximo
-                  const isRecommended = escala.IdArticulo === currentScales.escalaAplicable?.id
-                  const totalSavings = escala.ahorro * currentScales.cantidadSolicitada
-
-                  return (
-                    <div
-                      key={escala.IdArticulo}
-                      className={`border rounded-lg p-3 cursor-pointer transition-all ${selectedScales === escala.IdArticulo
-                        ? "border-purple-500 bg-purple-50"
-                        : isApplicable
-                          ? "border-green-300 bg-green-50"
-                          : "border-gray-200 bg-gray-50"
-                        } ${!isApplicable ? "opacity-60" : ""}`}
-                      onClick={() => isApplicable && setSelectedScales(escala.IdArticulo)}
-                    >
-                      <div className="flex items-start gap-3">
-                        <div className="flex items-center h-5 shrink-0">
-                          <input
-                            type="radio"
-                            name="escala"
-                            checked={selectedScales === escala.IdArticulo}
-                            onChange={() => setSelectedScales(escala.IdArticulo)}
-                            className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300"
-                            disabled={!isApplicable}
-                          />
-                        </div>
-
-                        <div className="flex-1 min-w-0">
-                          <div className="flex flex-col gap-2 mb-3">
-                            <div className="flex items-center justify-between">
-                              <h5 className="font-medium text-gray-900 text-sm">{escala.Descripcion}</h5>
-                              {isRecommended && (
-                                <Badge variant="outline" className="bg-green-50 text-green-700 text-xs">
-                                  Recomendado
-                                </Badge>
-                              )}
-                            </div>
-
-                            <div className="flex items-center justify-between">
-                              <span className="text-xs text-gray-500">Precio Unitario:</span>
-                              <div className="text-right">
-                                {escala.descuento > 0 && (
-                                  <span className="line-through text-gray-400 text-xs block">
-                                    $
-                                    {products
-                                      .find((p) => p.Codigo_Art === currentScales.productoSolicitado)
-                                      ?.PUContado}
-                                  </span>
-                                )}
-                                <span
-                                  className={`font-medium text-sm ${escala.descuento > 0 ? "text-purple-600" : ""}`}
-                                >
-                                  ${Number(escala.Precio).toFixed(2)}
-                                </span>
-                              </div>
-                            </div>
-
-                            {escala.descuento > 0 && (
-                              <div className="flex items-center justify-between">
-                                <span className="text-xs text-gray-500">Descuento:</span>
-                                <Badge variant="outline" className="bg-purple-50 text-purple-700 text-xs">
-                                  {escala.descuento}%
-                                </Badge>
-                              </div>
-                            )}
-
-                            {/* {totalSavings > 0 && (
-                              <div className="flex items-center justify-between">
-                                <span className="text-xs text-gray-500">Ahorro Total:</span>
-                                <span className="text-green-600 font-bold text-sm">${totalSavings.toFixed(2)}</span>
-                              </div>
-                            )} */}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-
               {/* Desktop View - Table */}
               <div className="hidden sm:block overflow-hidden border border-gray-200 rounded-lg">
                 <div className="overflow-x-auto">
@@ -216,12 +138,6 @@ const ModalEscale: React.FC<ModalVerificationProps> = ({
                         <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                           Descuento
                         </th>
-                        <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                          Ahorro por Unidad
-                        </th>
-                        <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                          Ahorro Total
-                        </th>
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
@@ -229,8 +145,7 @@ const ModalEscale: React.FC<ModalVerificationProps> = ({
                         const isApplicable =
                           currentScales.cantidadSolicitada >= escala.minimo &&
                           currentScales.cantidadSolicitada <= escala.maximo
-                        const isRecommended = escala.IdArticulo === currentScales.escalaAplicable?.id
-                        const totalSavings = escala.ahorro * currentScales.cantidadSolicitada
+                        const isRecommended = escala.IdArticulo === currentScales.escalaAplicable?.IdArticulo
 
                         return (
                           <tr
@@ -241,7 +156,7 @@ const ModalEscale: React.FC<ModalVerificationProps> = ({
                                 ? "bg-green-50 hover:bg-green-100"
                                 : "hover:bg-gray-50"
                               } ${!isApplicable ? "opacity-60" : ""}`}
-                            onClick={() => isApplicable && setSelectedScales(escala.IdArticulo)}
+                            onClick={() => toggleEscalaSelection(escala.IdArticulo)}
                           >
                             <td className="px-4 py-3 whitespace-nowrap">
                               <div className="flex items-center">
@@ -249,7 +164,7 @@ const ModalEscale: React.FC<ModalVerificationProps> = ({
                                   type="radio"
                                   name="escala"
                                   checked={selectedScales === escala.IdArticulo}
-                                  onChange={() => setSelectedScales(escala.IdArticulo)}
+                                  onChange={() => toggleEscalaSelection(escala.IdArticulo)}
                                   className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300"
                                   disabled={!isApplicable}
                                 />
@@ -261,42 +176,23 @@ const ModalEscale: React.FC<ModalVerificationProps> = ({
                               </div>
                             </td>
                             <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
-                              {escala.descripcion}
+                              {escala.Descripcion}
                             </td>
                             <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
                               <div className="flex flex-col">
-                                {escala.descuento > 0 && (
-                                  <span className="line-through text-gray-400 text-xs">
-                                    $---
-                                    {/* {products
-                                      .find((p) => p.Codigo_Art === currentScales.IdArticulo)
-                                      ?.PUContado} */}
-                                  </span>
-                                )}
+                                <span className="line-through text-gray-400 text-xs">
+                                  {`${currency} ${escala.precio_contado_actual}`}
+                                </span>
                                 <span className={`font-medium ${escala.descuento > 0 ? "text-purple-600" : ""}`}>
-                                  ${Number(escala.Precio).toFixed(2)}
+                                  {`${currency} ${Number(escala.precio_escala).toFixed(2)}`}
                                 </span>
                               </div>
                             </td>
                             <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                              {escala.descuento > 0 ? (
+                              {Number(escala.porcentaje_descuento) > 0 ? (
                                 <Badge variant="outline" className="bg-purple-50 text-purple-700">
-                                  {escala?.descuento}%
+                                  {Number(escala?.porcentaje_descuento).toFixed(2)}%
                                 </Badge>
-                              ) : (
-                                <span className="text-gray-400">-</span>
-                              )}
-                            </td>
-                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                              {escala.ahorro > 0 ? (
-                                <span className="text-green-600 font-medium">${escala.ahorro}</span>
-                              ) : (
-                                <span className="text-gray-400">-</span>
-                              )}
-                            </td>
-                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                              {totalSavings > 0 ? (
-                                <span className="text-green-600 font-bold">${totalSavings}</span>
                               ) : (
                                 <span className="text-gray-400">-</span>
                               )}
@@ -309,40 +205,40 @@ const ModalEscale: React.FC<ModalVerificationProps> = ({
                 </div>
               </div>
 
-              {/* {selectedScales && (
+              {selectedScales.length > 0 && (
                 <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 sm:p-4">
                   <h5 className="font-medium text-purple-800 mb-2 text-sm">Escala seleccionada:</h5>
-                  {(() => {
-                    const selectedScaleData = currentScales.escalas.find((s: any) => s.IdArticulo === selectedScales)
-                    const totalPrice = selectedScaleData.precio * currentScales.cantidadSolicitada
-                    const originalPrice =
-                      productos.find((p) => p.codigo === currentScales.productoSolicitado)?.precio || 0
-                    const originalTotal = originalPrice * currentScales.cantidadSolicitada
-                    const totalSavings = originalTotal - totalPrice
 
+                  {selectedScales.map((escaleId) => {
+                    const escala = currentScales.escalas.find(
+                      (e: any) => e.IdArticulo === escaleId
+                    );
+
+                    if (!escala) return null;
                     return (
-                      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 text-xs sm:text-sm">
+                      <div
+                        key={escala.IdArticulo}
+                        className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 text-xs sm:text-sm">
                         <div>
                           <Label className="text-xs text-purple-600">Rango</Label>
-                          <p className="font-medium">{selectedScaleData.descripcion}</p>
+                          <p className="font-medium">{escala?.Descripcion}</p>
                         </div>
                         <div>
                           <Label className="text-xs text-purple-600">Precio Unitario</Label>
-                          <p className="font-medium">${selectedScaleData.precio.toFixed(2)}</p>
+                          <p className="font-medium">{`${currency} ${escala?.precio_escala}`}</p>
                         </div>
                         <div>
                           <Label className="text-xs text-purple-600">Total a Pagar</Label>
-                          <p className="font-bold text-purple-700">${totalPrice.toFixed(2)}</p>
-                        </div>
-                        <div>
-                          <Label className="text-xs text-purple-600">Ahorro Total</Label>
-                          <p className="font-bold text-green-600">${totalSavings.toFixed(2)}</p>
+                          <p className="font-bold text-purple-700">
+                            {`${currency} ${currentScales.cantidadSolicitada * Number(escala?.precio_escala)}`}
+                          </p>
                         </div>
                       </div>
                     )
-                  })()}
+                  })}
+
                 </div>
-              )} */}
+              )}
             </div>
           </div>
         )}

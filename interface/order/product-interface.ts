@@ -5,8 +5,6 @@ export interface IPromocionRequest {
   cantidad: number
 }
 
-
-
 // Interfaz Bonificacion actual
 export interface ICurrentBonification {
   bonificaciones: IBonificado[],
@@ -20,7 +18,7 @@ export interface ICurrentScales {
   productoSolicitado: string,
   nombreProductoSolicitado: string,
   cantidadSolicitada: number,
-  escalaAplicable: IAplicableEscale
+  escalaAplicable: IEscala | null
 }
 
 // Interfaz Bonificacion actual
@@ -31,29 +29,30 @@ export interface ICurrent {
   cantidadSolicitada: number
 }
 
-
 // Interfaz escala
 export interface IEscala {
   IdArticulo: string;
   Descripcion: string;
   minimo: number;
-  maximo: number | null;
-  Precio: string;
+  maximo: number;
+  precio_escala: string; 
   estado: string;
   Presentacion: string;
   PrincipioAdictivo: string;
+  precio_contado_actual: string; 
+  porcentaje_descuento: string; 
 }
 
 // Interface de producto con escala aplicable
-export interface IAplicableEscale {
-  id: number
-  descripcion: string
-  minimo: number
-  maximo: number
-  precio: number
-  descuento: number
-  ahorro: number
-}
+// export interface IAplicableEscale {
+//   id: number
+//   descripcion: string
+//   minimo: number
+//   maximo: number
+//   precio: number
+//   descuento: number
+//   ahorro: number
+// }
 
 // Interfaz producto bonificado
 export interface IBonificado {

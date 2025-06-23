@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table"
-import { Trash, ShoppingCart, ArrowRight, ArrowLeft, Check, Search, Package } from "lucide-react"
+import { Trash, ShoppingCart, ArrowRight, ArrowLeft, Check, Search, Package, User, Phone, MapPin, Calendar, CreditCard, DollarSign } from "lucide-react"
 import { StepProgress } from "@/components/step-progress"
 import apiClient from "@/app/api/client"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -39,6 +39,7 @@ export default function OrderPage() {
   const [clientName, setClientName] = useState("")
   const [condition, setCondition] = useState("")
   const [conditionName, setConditionName] = useState("")
+  const [currencyName, setCurrencyName] = useState("")
   const [nameZone, setNameZone] = useState("")
   const [currency, setCurrency] = useState("")
   const [selectedClient, setSelectedClient] = useState<IClient | null>(null)
@@ -230,11 +231,10 @@ export default function OrderPage() {
 
   //   return productScales.find((scale) => quantity >= scale.minimo && quantity <= scale.maximo) || null
   // }
-  const getApplicableScale = (productCode: string, quantity: number, productosEscala: any) => {
+  const getApplicableScale = (productCode: string, quantity: number, productosEscala: IEscala[]) => {
     if (!productosEscala) return null
-    return productosEscala.find((scale: any) =>
-      scale.IdArticulo === productCode &&
-      quantity >= scale.minimo &&
+    return productosEscala.find((scale: IEscala) =>
+      scale.IdArticulo === productCode && quantity >= scale.minimo &&
       (scale.maximo === null || quantity <= scale.maximo)
     ) || null
   }
@@ -313,9 +313,25 @@ export default function OrderPage() {
     setSelectedProducts(newItems)
   }
 
-  const calculateTotal = () => {
-    return orderItems.reduce((sum, item) => sum + item.Total, 0)
+  const calcularSubtotal = (productos: ISelectedProduct[]): number => {
+    return productos.reduce((sum, item) => {
+      const precioUnitario = item.isBonification
+        ? 0
+        : item.appliedScale?.precio_escala ?? item.product.PUContado
+      return sum + precioUnitario * item.quantity
+    }, 0)
   }
+
+  const calcularIGV = (productos: ISelectedProduct[]): number => {
+    return calcularSubtotal(productos) * 0.18
+  }
+
+  const calcularTotal = (productos: ISelectedProduct[]): number => {
+    const subtotal = calcularSubtotal(productos)
+    const igv = calcularIGV(productos)
+    return subtotal + igv
+  }
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -382,7 +398,7 @@ export default function OrderPage() {
     setCurrency(value)
     const selectedTypeMoneda = monedas.find((m) => m.value === value)
     if (selectedTypeMoneda) {
-      setConditionName(selectedTypeMoneda.label)
+      setCurrencyName(selectedTypeMoneda.label)
     }
   }
   const nextStep = () => {
@@ -672,7 +688,7 @@ export default function OrderPage() {
                       <TableBody>
                         {selectedProducts.map((item, index) => {
                           const precioOriginal = item.product.PUContado;
-                          const precioEscala = item.appliedScale?.PUContado;
+                          const precioEscala = item.appliedScale?.precio_escala;
                           const precioUnitario = item.isBonification ? 0 : precioEscala ?? precioOriginal;
                           const subtotal = precioUnitario * item.quantity;
                           return (
@@ -686,7 +702,7 @@ export default function OrderPage() {
                                   )}
                                   {item.appliedScale && (
                                     <Badge variant="outline" className="bg-purple-50 text-purple-700">
-                                      Escala {item.appliedScale.descuento}% desc.
+                                      Escala {item.appliedScale.porcentaje_descuento}% desc.
                                     </Badge>
                                   )}
                                   <span>{item.product.NombreItem}</span>
@@ -745,7 +761,7 @@ export default function OrderPage() {
                               .reduce((sum, item) => {
                                 const precioUnitario = item.isBonification
                                   ? 0
-                                  : item.appliedScale?.PUContado ?? item.product.PUContado
+                                  : item.appliedScale?.precio_escala ?? item.product.PUContado
                                 return sum + precioUnitario * item.quantity
                               }, 0)
                               .toFixed(2)}
@@ -781,46 +797,100 @@ export default function OrderPage() {
               <CardTitle className="text-xl font-semibold text-blue-700">Resumen del Pedido</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6 pt-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <h3 className="text-lg font-medium text-gray-900">Información del Cliente</h3>
-                  <div className="rounded-lg bg-gray-50 p-4">
-                    <div className="grid grid-cols-2 gap-4">
+              {/* <div className="grid grid-cols-1 md:grid-cols-2 gap-6"> */}
+              {/* informacion del ciente  */}
+
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <User className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
+                  <h3 className="font-semibold text-gray-900 text-sm sm:text-base">Información del Cliente</h3>
+                </div>
+
+                <div className="bg-blue-50 rounded-lg p-4 border border-blue-100">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-3">
                       <div>
-                        <p className="text-sm font-medium text-gray-500">Cliente:</p>
-                        <p className="text-gray-900">{clientName}</p>
+                        <Label className="text-xs text-gray-500">Cliente</Label>
+                        <p className="font-medium text-sm sm:text-base">{selectedClient?.Nombre}</p>
+                        <p className="text-xs text-gray-500">Documento: doc nro</p>
                       </div>
-                      <div>
-                        <p className="text-sm font-medium text-gray-500">Código:</p>
-                        <p className="text-gray-900">{client}</p>
+
+                      <div className="flex items-start gap-2">
+                        <Phone className="w-4 h-4 text-blue-600 mt-0.5" />
+                        <div>
+                          <Label className="text-xs text-gray-500">Teléfono</Label>
+                          <p className="text-sm">{selectedClient?.telefono ?? '+52 ---------'}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <User className="w-4 h-4 text-blue-600 mt-0.5" />
+                        <div>
+                          <Label className="text-xs text-gray-500">Contacto para el Pedido</Label>
+                          <p className="text-sm">{selectedClient?.contactoPedido ?? 'test contact -----'}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      <div className="flex items-start gap-2">
+                        <MapPin className="w-4 h-4 text-green-600 mt-0.5" />
+                        <div>
+                          <Label className="text-xs text-gray-500">Dirección de Entrega</Label>
+                          <p className="text-sm">{selectedClient?.Dirección ?? 'test direccion entrega ----'}</p>
+                          {selectedClient?.referenciaDireccion && (
+                            <p className="text-xs text-gray-600 mt-1">Ref: {selectedClient.referenciaDireccion}</p>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex items-start gap-2">
+                        <MapPin className="w-4 h-4 text-purple-600 mt-0.5" />
+                        <div>
+                          <Label className="text-xs text-gray-500">Zona</Label>
+                          <p className="text-sm">
+                            {nameZone}
+                          </p>
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
+              </div>
+              {/* condiciones de pago */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <CreditCard className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
+                  <h3 className="font-semibold text-gray-900 text-sm sm:text-base">Condiciones de Pago</h3>
+                </div>
 
-                <div className="space-y-4">
-                  <h3 className="text-lg font-medium text-gray-900">Información del Pedido</h3>
-                  <div className="rounded-lg bg-gray-50 p-4">
-                    <div className="grid grid-cols-2 gap-4">
+                <div className="bg-green-50 rounded-lg p-4 border border-green-100">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="flex items-start gap-2">
+                      <Calendar className="w-4 h-4 text-green-600 mt-0.5" />
                       <div>
-                        <p className="text-sm font-medium text-gray-500">Condición:</p>
-                        <p className="text-gray-900">{conditionName}</p>
+                        <Label className="text-xs text-gray-500">Condición</Label>
+                        <p className="font-medium text-sm"> {conditionName}</p>
                       </div>
+                    </div>
+
+                    <div className="flex items-start gap-2">
+                      <DollarSign className="w-4 h-4 text-green-600 mt-0.5" />
                       <div>
-                        <p className="text-sm font-medium text-gray-500">Moneda:</p>
-                        <p className="text-gray-900">{currency === "PEN" ? "Soles (S/.)" : "Dólares ($)"}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-gray-500">Fecha:</p>
-                        <p className="text-gray-900">{new Date().toLocaleDateString()}</p>
+                        <Label className="text-xs text-gray-500">Moneda</Label>
+                        <p className="font-medium text-sm">{currencyName}</p>
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
 
+              {/* Lista de productos */}
               <div className="space-y-4">
-                <h3 className="text-lg font-medium text-gray-900">Productos</h3>
+                <div className="flex items-center gap-2">
+                  <Package className="w-4 h-4 sm:w-5 sm:h-5 text-orange-600" />
+                  <h3 className="font-semibold text-gray-900 text-sm sm:text-base">Productos Seleccionados</h3>
+                </div>
+                {/* <h3 className="text-lg font-medium text-gray-900">Productos</h3> */}
                 <div className="rounded-md border">
                   <Table>
                     <TableHeader className="bg-gray-50">
@@ -828,34 +898,102 @@ export default function OrderPage() {
                         <TableHead>Producto</TableHead>
                         <TableHead className="text-right">Cantidad</TableHead>
                         <TableHead className="text-right">Precio</TableHead>
-                        <TableHead className="text-right">Total</TableHead>
+                        <TableHead className="text-right">Subtotal</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {orderItems.map((item, index) => (
-                        <TableRow key={index} className="hover:bg-gray-50">
-                          <TableCell>
-                            <div className="font-medium">{item.NombreItem}</div>
-                            <div className="text-sm text-gray-500">{item.Codigo_Art}</div>
-                          </TableCell>
-                          <TableCell className="text-right">{item.Cantidad}</TableCell>
-                          <TableCell className="text-right">
-                            {Number(item.Precio).toFixed(2)} {currency === "PEN" ? "S/." : "$"}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            {item.Total.toFixed(2)} {currency === "PEN" ? "S/." : "$"}
-                          </TableCell>
-                        </TableRow>
-                      ))}
+                      {selectedProducts.map((item, index) => {
+                        const precioOriginal = item.product.PUContado;
+                        const precioEscala = item.appliedScale?.precio_escala;
+                        const precioUnitario = item.isBonification ? 0 : precioEscala ?? precioOriginal;
+                        const subtotal = precioUnitario * item.quantity;
+                        return (
+                          <TableRow key={index} className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}>
+                            <TableCell className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
+                              <div className="flex items-center flex-wrap gap-1">
+                                {item.isBonification && (
+                                  <Badge variant="outline" className="bg-yellow-50 text-yellow-700">
+                                    Bonificado
+                                  </Badge>
+                                )}
+                                {item.appliedScale && (
+                                  <Badge variant="outline" className="bg-purple-50 text-purple-700">
+                                    Escala {item.appliedScale.porcentaje_descuento}% desc.
+                                  </Badge>
+                                )}
+                                <span>{item.product.NombreItem}</span>
+                              </div>
+                            </TableCell>
+                            <TableCell className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-right">
+                              {item.quantity}
+                            </TableCell>
+
+                            <TableCell className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-right">
+                              <div className="flex flex-col items-end">
+                                <span className={item.appliedScale ? "line-through text-gray-400 text-xs" : ""}>
+                                  {currency === "PEN" ? "S/." : "$"}
+                                  {Number(precioOriginal).toFixed(2)}
+                                </span>
+                                {item.appliedScale && (
+                                  <span className="text-purple-600 font-medium text-sm">
+                                    {currency === "PEN" ? "S/." : "$"}
+                                    {Number(precioEscala).toFixed(2)}
+                                  </span>
+                                )}
+                                {item.isBonification && (
+                                  <span className="text-green-600 text-sm">{currency === "PEN" ? "S/." : "$"}0.00</span>
+                                )}
+                              </div>
+                            </TableCell>
+
+                            <TableCell className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900 text-right">
+                              {currency === "PEN" ? "S/." : "$"}
+                              {subtotal.toFixed(2)}
+                            </TableCell>
+
+                            <TableCell className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleRemoveItem(index)}
+                                className="text-red-600 hover:text-red-800 hover:bg-red-50"
+                              >
+                                Eliminar
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
                     </TableBody>
+                    <TableFooter>
+                      <TableRow>
+                        <TableCell colSpan={3}></TableCell>
+                        <TableCell className="px-4 py-3 text-right text-sm font-medium text-gray-900">
+                          SubTotal:
+                        </TableCell>
+                        <TableCell className="px-4 py-3 whitespace-nowrap text-sm font-bold text-gray-900 text-right">
+                          {currency === "PEN" ? "S/." : "$"}
+                          {calcularSubtotal(selectedProducts).toFixed(2)}
+                        </TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell colSpan={3}></TableCell>
+                        <TableCell className="px-4 py-3 text-right text-sm font-medium text-gray-900">
+                          IGV (18%):
+                        </TableCell>
+                        <TableCell className="px-4 py-3 whitespace-nowrap text-sm font-bold text-gray-900 text-right">
+                          {currency === "PEN" ? "S/." : "$"}
+                          {calcularIGV(selectedProducts).toFixed(2)}
+                        </TableCell>
+                      </TableRow>
+                    </TableFooter>
                   </Table>
                 </div>
               </div>
-
               <div className="rounded-lg bg-blue-50 p-4 flex justify-between items-center">
                 <div className="text-lg font-medium text-blue-900">Total del Pedido:</div>
                 <div className="text-xl font-bold text-blue-900">
-                  {calculateTotal().toFixed(2)} {currency === "PEN" ? "S/." : "$"}
+                  {currency === "PEN" ? "S/." : "$"} {calcularTotal(selectedProducts).toFixed(2)}
                 </div>
               </div>
             </CardContent>

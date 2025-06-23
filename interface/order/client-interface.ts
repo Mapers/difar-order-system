@@ -11,6 +11,9 @@ export interface IClient {
   IdZona: string;
   LineaCredito: string;
   telefono: string | null;
+  contactoPedido?:string;
+  referenciaDireccion?:string;
+  zona?:IZona;
 }
 
 // Interfaz condición
