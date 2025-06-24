@@ -36,13 +36,14 @@ export default function OrderPage() {
   // Estados para cliente
   const [client, setClient] = useState("")
   const [clientName, setClientName] = useState("")
-  const [condition, setCondition] = useState<ICondicion | null>(null)
   const [nameZone, setNameZone] = useState("")
-  const [currency, setCurrency] = useState<IMoneda | null>(null)
   const [selectedClient, setSelectedClient] = useState<IClient | null>(null)
+  const [condition, setCondition] = useState<ICondicion | null>(null)
+  const [currency, setCurrency] = useState<IMoneda | null>(null)
   const [clients, setClients] = useState<IClient[]>([])
   const [conditions, setConditions] = useState<ICondicion[]>([])
-
+  const [contactoPedido, setContactoPedido] = useState('');
+  const [referenciaDireccion, setReferenciaDireccion] = useState('');
   const [unidadTerritorio, setUnidadTerritorio] = useState<ITerritorio>({
     NombreDistrito: "",
     nombreProvincia: '',
@@ -324,8 +325,11 @@ export default function OrderPage() {
     try {
       const pedidoData = {
         clientePedido: client,
-        monedaPedido: currency?.label,
+        monedaPedido: currency?.value,
         condicionPedido: condition?.Descripcion,
+        contactoPedido: contactoPedido,
+        direccionEntrega: selectedClient?.Dirección,
+        referenciaDireccion: referenciaDireccion,
         fechaPedido: moment(new Date()).format('yyyy-MM-DD'),
         usuario: 1,
         detalles: selectedProducts.map(item => ({
@@ -357,8 +361,18 @@ export default function OrderPage() {
     if (c.idDistrito) {
       getUnidadTerritorial(c.idDistrito)
     }
-
   }
+
+
+  const handleChangeContactoPedido = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setContactoPedido(e.target.value);
+  };
+  const handleChangeReferenciaDireccion = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setReferenciaDireccion(e.target.value);
+  };
+
+
+
   const filteredProducts = products.filter(
     (product) =>
       product.Codigo_Art.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -468,7 +482,14 @@ export default function OrderPage() {
                   </div>
                 ) : null}
               </div>
-              {selectedClient && <ContactInfo client={selectedClient} />}
+              {selectedClient && <ContactInfo
+                client={selectedClient}
+                referenciaDireccion={referenciaDireccion}
+                contactoPedido={contactoPedido}
+                onChangeReferenciaDireccion={handleChangeReferenciaDireccion}
+                onChangeContactoPedido={handleChangeContactoPedido}
+
+              />}
               {selectedClient && <FinancialZone client={selectedClient} nameZone={nameZone} unidadTerritorio={unidadTerritorio} />}
               {selectedClient &&
                 <PaymentCondition
@@ -818,7 +839,7 @@ export default function OrderPage() {
                         <User className="w-4 h-4 text-blue-600 mt-0.5" />
                         <div>
                           <Label className="text-xs text-gray-500">Contacto para el Pedido</Label>
-                          <p className="text-sm">{selectedClient?.contactoPedido ?? 'test contact -----'}</p>
+                          <p className="text-sm">{contactoPedido ?? '-----'}</p>
                         </div>
                       </div>
                     </div>

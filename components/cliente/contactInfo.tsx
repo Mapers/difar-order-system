@@ -6,11 +6,16 @@ import { IClient } from '@/interface/order/client-interface';
 
 interface ClientRowProps {
   client: IClient;
+  referenciaDireccion: string;
+  contactoPedido: string;
+  onChangeReferenciaDireccion: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onChangeContactoPedido: (e: React.ChangeEvent<HTMLInputElement>) => void;
+
 }
 
-const ContactInfo: React.FC<ClientRowProps> = ({ client }) => {
-  const [contactoPedido, setContactoPedido] = useState('');
-  const [referenciaDireccion, setReferenciaDireccion] = useState('');
+const ContactInfo: React.FC<ClientRowProps> = ({ client, referenciaDireccion, contactoPedido, onChangeContactoPedido, onChangeReferenciaDireccion }) => {
+  // const [contactoPedido, setContactoPedido] = useState('');
+  // const [referenciaDireccion, setReferenciaDireccion] = useState('');
   const [showFullDireccion, setShowFullDireccion] = useState(false);
 
   const renderDireccion = () => {
@@ -63,7 +68,7 @@ const ContactInfo: React.FC<ClientRowProps> = ({ client }) => {
             <Input
               id="contactoPedido"
               value={contactoPedido}
-              onChange={(e) => setContactoPedido(e.target.value)}
+              onChange={onChangeContactoPedido}
               placeholder="Nombre de la persona de contacto (opcional)"
             />
           </div>
@@ -94,7 +99,7 @@ const ContactInfo: React.FC<ClientRowProps> = ({ client }) => {
             <Input
               id="referenciaDireccion"
               value={referenciaDireccion}
-              onChange={(e) => setReferenciaDireccion(e.target.value)}
+              onChange={onChangeReferenciaDireccion}
               placeholder="Ej: Frente al parque, casa azul..."
             />
           </div>
