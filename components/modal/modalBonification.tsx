@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Button } from "@/components/ui/button"
 import { ICurrentBonification, IProduct, ISelectedProduct } from '@/interface/order/product-interface'
+import { IMoneda } from '@/interface/order/client-interface'
 
 
 interface ModalBonificationProps {
@@ -15,7 +16,7 @@ interface ModalBonificationProps {
   products: IProduct[],
   setSelectedProducts: React.Dispatch<React.SetStateAction<ISelectedProduct[]>>
   addProductToList: (appliedScale?: any) => void;
-  currency: string
+  currency: IMoneda | null;
 }
 
 const ModalBonification: React.FC<ModalBonificationProps> = ({
@@ -149,7 +150,7 @@ const ModalBonification: React.FC<ModalBonificationProps> = ({
                           <div>
                             <Label className="text-xs text-gray-500">Precio</Label>
                             <p className="font-medium text-xs sm:text-sm text-green-600">
-                              {`${currency} ${bonificacion.PrecioBonificado}`}
+                              {`${currency?.value === "PEN" ? "S/." : "$"} ${bonificacion.PrecioBonificado}`}
                             </p>
                           </div>
                         </div>

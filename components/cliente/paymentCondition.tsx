@@ -17,24 +17,13 @@ function cn(...classes: (string | boolean | undefined)[]) {
 interface ClientRowProps {
   conditions: ICondicion[];
   monedas: IMoneda[];
-  onConditionChange: (value: string) => void
-  onCurrencyChange: (value: string) => void
+  onConditionChange: (condition: ICondicion) => void;
+  onCurrencyChange: (currency: IMoneda) => void;
+  selectedCondition: ICondicion | null;
+  selectedCurrency: IMoneda | null;
 }
 
-const PaymentCondition: React.FC<ClientRowProps> = ({ conditions, monedas, onConditionChange, onCurrencyChange }) => {
-  const [selectedCondition, setSelectedCondition] = useState('');
-  const [selectedCurrency, setSelectedCurrency] = useState('');
-
-  const handleConditionSelect = (currenteValue: string) => {
-    const newValue = currenteValue === selectedCondition ? "" : currenteValue
-    setSelectedCondition(newValue)
-    onConditionChange(newValue)
-  }
-  const handleCurrencySelect = (currenteValue: string) => {
-    const newValue = currenteValue === selectedCurrency ? '' : currenteValue;
-    setSelectedCurrency(newValue);
-    onCurrencyChange(newValue);
-  };
+const PaymentCondition: React.FC<ClientRowProps> = ({ conditions, monedas, onConditionChange, onCurrencyChange, selectedCondition, selectedCurrency }) => {
 
   return (
     <Card className="bg-white shadow-sm">
@@ -47,14 +36,14 @@ const PaymentCondition: React.FC<ClientRowProps> = ({ conditions, monedas, onCon
 
       <CardContent className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Condición */}
+          {/* condicion */}
           <div className="space-y-2">
             <Label htmlFor="condicion">Condición</Label>
             <Popover>
               <PopoverTrigger asChild>
                 <Button variant="outline" role="combobox" className="w-full justify-between h-12">
                   {selectedCondition
-                    ? conditions.find((c) => c.CodigoCondicion === selectedCondition)?.Descripcion
+                    ? conditions.find((c) => c.CodigoCondicion === selectedCondition.CodigoCondicion)?.Descripcion
                     : 'Seleccionar condición...'}
                   <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
@@ -65,16 +54,16 @@ const PaymentCondition: React.FC<ClientRowProps> = ({ conditions, monedas, onCon
                   <CommandList>
                     <CommandEmpty>No se encontraron condiciones.</CommandEmpty>
                     <CommandGroup>
-                      {conditions.map((condition) => (
+                      {conditions.map((condition: ICondicion) => (
                         <CommandItem
                           key={condition.CodigoCondicion}
                           value={condition.CodigoCondicion}
-                          onSelect={handleConditionSelect}
+                          onSelect={() => onConditionChange(condition)}
                         >
                           <Check
                             className={cn(
                               'mr-2 h-4 w-4',
-                              selectedCondition === condition.CodigoCondicion
+                              selectedCondition?.CodigoCondicion === condition.CodigoCondicion
                                 ? 'opacity-100'
                                 : 'opacity-0',
                             )}
@@ -96,7 +85,7 @@ const PaymentCondition: React.FC<ClientRowProps> = ({ conditions, monedas, onCon
               <PopoverTrigger asChild>
                 <Button variant="outline" role="combobox" className="w-full justify-between h-12">
                   {selectedCurrency
-                    ? monedas.find((m) => m.value === selectedCurrency)?.label
+                    ? monedas.find((m) => m.value === selectedCurrency.value)?.label
                     : 'Seleccionar moneda...'}
                   <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
@@ -111,12 +100,12 @@ const PaymentCondition: React.FC<ClientRowProps> = ({ conditions, monedas, onCon
                         <CommandItem
                           key={currency.value}
                           value={currency.value}
-                          onSelect={handleCurrencySelect}
+                          onSelect={() => onCurrencyChange(currency)}
                         >
                           <Check
                             className={cn(
                               'mr-2 h-4 w-4',
-                              selectedCurrency === currency.value
+                              selectedCurrency?.value === currency.value
                                 ? 'opacity-100'
                                 : 'opacity-0',
                             )}
@@ -139,12 +128,12 @@ const PaymentCondition: React.FC<ClientRowProps> = ({ conditions, monedas, onCon
             <div className="flex flex-wrap gap-2">
               {selectedCondition && (
                 <Badge variant="secondary" className="bg-green-100 text-green-800">
-                  {conditions.find((c) => c.CodigoCondicion === selectedCondition)?.Descripcion}
+                  {conditions.find((c) => c.CodigoCondicion === selectedCondition.CodigoCondicion)?.Descripcion}
                 </Badge>
               )}
               {selectedCurrency && (
                 <Badge variant="secondary" className="bg-blue-100 text-blue-800">
-                  {monedas.find((m) => m.value === selectedCurrency)?.label}
+                  {monedas.find((m) => m.value === selectedCurrency.value)?.label}
                 </Badge>
               )}
             </div>

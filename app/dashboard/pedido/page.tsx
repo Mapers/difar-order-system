@@ -6,9 +6,8 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table"
-import { Trash, ShoppingCart, ArrowRight, ArrowLeft, Check, Search, Package, User, Phone, MapPin, Calendar, CreditCard, DollarSign } from "lucide-react"
+import { ShoppingCart, ArrowRight, ArrowLeft, Check, Search, Package, User, Phone, MapPin, Calendar, CreditCard, DollarSign, Coins } from "lucide-react"
 import { StepProgress } from "@/components/step-progress"
 import apiClient from "@/app/api/client"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -28,7 +27,7 @@ import ModalEscale from "@/components/modal/modalEscale"
 import { evaluarPromociones } from "@/utils/order"
 import { monedas, PROMOCIONES } from "@/constants"
 import { IBonificado, ICurrentBonification, ICurrentScales, IEscala, IProduct, IPromocionRequest, ISelectedProduct, OrderItem } from "@/interface/order/product-interface"
-import { IClient, ICondicion, IDistrito, ITerritorio } from "@/interface/order/client-interface"
+import { IClient, ICondicion, IDistrito, IMoneda, ITerritorio } from "@/interface/order/client-interface"
 
 export default function OrderPage() {
   const router = useRouter()
@@ -37,11 +36,9 @@ export default function OrderPage() {
   // Estados para cliente
   const [client, setClient] = useState("")
   const [clientName, setClientName] = useState("")
-  const [condition, setCondition] = useState("")
-  const [conditionName, setConditionName] = useState("")
-  const [currencyName, setCurrencyName] = useState("")
+  const [condition, setCondition] = useState<ICondicion | null>(null)
   const [nameZone, setNameZone] = useState("")
-  const [currency, setCurrency] = useState("")
+  const [currency, setCurrency] = useState<IMoneda | null>(null)
   const [selectedClient, setSelectedClient] = useState<IClient | null>(null)
   const [clients, setClients] = useState<IClient[]>([])
   const [conditions, setConditions] = useState<ICondicion[]>([])
@@ -84,14 +81,11 @@ export default function OrderPage() {
   // order
   const [orderItems, setOrderItems] = useState<OrderItem[]>([])
   const [products, setProducts] = useState<IProduct[]>([])
-  const [escalasProducto, setEscalasProducto] = useState<IEscala[]>([])
-  const [bonificacionesProducto, setBonificacionesProducto] = useState<IBonificado[]>([])
-
 
 
 
   const steps = ["Cliente", "Productos", "Resumen"]
-
+  // obtiene una zona por id
   const getZona = async (idZona: string) => {
     try {
       const response = await fetchGetZona(idZona);
@@ -101,6 +95,7 @@ export default function OrderPage() {
       console.error("Error fetching zona:", error);
     }
   }
+
   // lista territorio
   const getUnidadTerritorial = async (idDistrito: number) => {
     try {
@@ -114,6 +109,7 @@ export default function OrderPage() {
       console.error("Error fetching unidad territorial:", error);
     }
   }
+
   // Lista escalas
   const getEscalas = async (idArticulo: string, cantidad: number) => {
     try {
@@ -129,6 +125,7 @@ export default function OrderPage() {
       console.error("Error fetching escalas:", error);
     }
   }
+
   // lista bonificados
   const getBonificados = async (idArticulo: string, cantidad: number) => {
     try {
@@ -144,6 +141,7 @@ export default function OrderPage() {
       console.error("Error fetching bonificado:", error);
     }
   }
+
   // lista clientes  con funcion debouse 
   const debouncedFetchClients = debounce(async () => {
     if (search.client.length >= 4) {
@@ -190,7 +188,6 @@ export default function OrderPage() {
           finalPrice,
         },
       ])
-      console.log(" selected  products : ", selectedProducts)
       setSelectedProduct(null)
       setQuantity(1)
       setIsLoading(false)
@@ -220,17 +217,11 @@ export default function OrderPage() {
         setLoading(prev => ({ ...prev, products: false }))
       }
     }
-
     fetchProducts()
   }, [search.product])
 
 
-  // const getApplicableScale = (productCode: string, quantity: number) => {
-  //   const productScales = escalas[productCode as keyof typeof escalas]
-  //   if (!productScales) return null
 
-  //   return productScales.find((scale) => quantity >= scale.minimo && quantity <= scale.maximo) || null
-  // }
   const getApplicableScale = (productCode: string, quantity: number, productosEscala: IEscala[]) => {
     if (!productosEscala) return null
     return productosEscala.find((scale: IEscala) =>
@@ -300,13 +291,7 @@ export default function OrderPage() {
       setSelectedClient(null);
     }
   }
-  const handleSearchChangeProduct = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setSearch((prev) => ({ ...prev, product: value }));
-    if (value === '') {
-      // setSelectedProduct(null);
-    }
-  }
+
   const handleRemoveItem = (index: number) => {
     const newItems = [...selectedProducts]
     newItems.splice(index, 1)
@@ -339,15 +324,15 @@ export default function OrderPage() {
     try {
       const pedidoData = {
         clientePedido: client,
-        monedaPedido: currency,
-        condicionPedido: condition,
+        monedaPedido: currency?.label,
+        condicionPedido: condition?.Descripcion,
         fechaPedido: moment(new Date()).format('yyyy-MM-DD'),
         usuario: 1,
-        detalles: orderItems.map(item => ({
-          iditemPedido: item.IdArticulo,
-          codigoitemPedido: item.Codigo_Art,
-          cantPedido: item.Cantidad,
-          precioPedido: item.Precio
+        detalles: selectedProducts.map(item => ({
+          iditemPedido: item.product.IdArticulo,
+          codigoitemPedido: item.product.Codigo_Art,
+          cantPedido: item.quantity,
+          precioPedido: item?.finalPrice
         }))
       }
 
@@ -386,19 +371,18 @@ export default function OrderPage() {
     setOpen(false)
   }
 
-  const handleConditionSelect = (value: string) => {
-    setCondition(value)
-    const selectedCondition = conditions.find((c) => c.CodigoCondicion === value)
+  const handleConditionSelect = (condition: ICondicion) => {
+    const selectedCondition = conditions.find((c) => c.CodigoCondicion === condition.CodigoCondicion)
     if (selectedCondition) {
-      setConditionName(selectedCondition.Descripcion)
+      setCondition(selectedCondition);
+      console.log("condicion:", selectedCondition)
     }
   }
 
-  const handleCurrencySelect = (value: string) => {
-    setCurrency(value)
-    const selectedTypeMoneda = monedas.find((m) => m.value === value)
+  const handleCurrencySelect = (currency: IMoneda) => {
+    const selectedTypeMoneda = monedas.find((m) => m.value === currency.value)
     if (selectedTypeMoneda) {
-      setCurrencyName(selectedTypeMoneda.label)
+      setCurrency(selectedTypeMoneda)
     }
   }
   const nextStep = () => {
@@ -486,7 +470,15 @@ export default function OrderPage() {
               </div>
               {selectedClient && <ContactInfo client={selectedClient} />}
               {selectedClient && <FinancialZone client={selectedClient} nameZone={nameZone} unidadTerritorio={unidadTerritorio} />}
-              {selectedClient && <PaymentCondition conditions={conditions} monedas={monedas} onConditionChange={handleConditionSelect} onCurrencyChange={handleCurrencySelect} />}
+              {selectedClient &&
+                <PaymentCondition
+                  conditions={conditions}
+                  monedas={monedas}
+                  onConditionChange={handleConditionSelect}
+                  onCurrencyChange={handleCurrencySelect}
+                  selectedCondition={condition}
+                  selectedCurrency={currency}
+                />}
             </CardContent>
             <CardFooter className="flex justify-end border-t bg-gray-50 py-4">
               <Button
@@ -715,23 +707,23 @@ export default function OrderPage() {
                               <TableCell className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-right">
                                 <div className="flex flex-col items-end">
                                   <span className={item.appliedScale ? "line-through text-gray-400 text-xs" : ""}>
-                                    {currency === "PEN" ? "S/." : "$"}
+                                    {currency?.value === "PEN" ? "S/." : "$"}
                                     {Number(precioOriginal).toFixed(2)}
                                   </span>
                                   {item.appliedScale && (
                                     <span className="text-purple-600 font-medium text-sm">
-                                      {currency === "PEN" ? "S/." : "$"}
+                                      {currency?.value === "PEN" ? "S/." : "$"}
                                       {Number(precioEscala).toFixed(2)}
                                     </span>
                                   )}
                                   {item.isBonification && (
-                                    <span className="text-green-600 text-sm">{currency === "PEN" ? "S/." : "$"}0.00</span>
+                                    <span className="text-green-600 text-sm">{currency?.value === "PEN" ? "S/." : "$"}0.00</span>
                                   )}
                                 </div>
                               </TableCell>
 
                               <TableCell className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900 text-right">
-                                {currency === "PEN" ? "S/." : "$"}
+                                {currency?.value === "PEN" ? "S/." : "$"}
                                 {subtotal.toFixed(2)}
                               </TableCell>
 
@@ -756,7 +748,7 @@ export default function OrderPage() {
                             Total:
                           </TableCell>
                           <TableCell className="px-4 py-3 whitespace-nowrap text-sm font-bold text-gray-900 text-right">
-                            {currency === "PEN" ? "S/." : "$"}
+                            {currency?.value === "PEN" ? "S/." : "$"}
                             {selectedProducts
                               .reduce((sum, item) => {
                                 const precioUnitario = item.isBonification
@@ -869,17 +861,21 @@ export default function OrderPage() {
                       <Calendar className="w-4 h-4 text-green-600 mt-0.5" />
                       <div>
                         <Label className="text-xs text-gray-500">Condición</Label>
-                        <p className="font-medium text-sm"> {conditionName}</p>
+                        <p className="font-medium text-sm"> {condition?.Descripcion}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      {currency?.value === "PEN" ? (
+                        <Coins className="w-4 h-4 text-green-600 mt-0.5" />
+                      ) : (
+                        <DollarSign className="w-4 h-4 text-green-600 mt-0.5" />
+                      )}
+                      <div>
+                        <Label className="text-xs text-gray-500">Moneda</Label>
+                        <p className="font-medium text-sm">{currency?.label}</p>
                       </div>
                     </div>
 
-                    <div className="flex items-start gap-2">
-                      <DollarSign className="w-4 h-4 text-green-600 mt-0.5" />
-                      <div>
-                        <Label className="text-xs text-gray-500">Moneda</Label>
-                        <p className="font-medium text-sm">{currencyName}</p>
-                      </div>
-                    </div>
                   </div>
                 </div>
               </div>
@@ -931,23 +927,23 @@ export default function OrderPage() {
                             <TableCell className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-right">
                               <div className="flex flex-col items-end">
                                 <span className={item.appliedScale ? "line-through text-gray-400 text-xs" : ""}>
-                                  {currency === "PEN" ? "S/." : "$"}
+                                  {currency?.value === "PEN" ? "S/." : "$"}
                                   {Number(precioOriginal).toFixed(2)}
                                 </span>
                                 {item.appliedScale && (
                                   <span className="text-purple-600 font-medium text-sm">
-                                    {currency === "PEN" ? "S/." : "$"}
+                                    {currency?.value === "PEN" ? "S/." : "$"}
                                     {Number(precioEscala).toFixed(2)}
                                   </span>
                                 )}
                                 {item.isBonification && (
-                                  <span className="text-green-600 text-sm">{currency === "PEN" ? "S/." : "$"}0.00</span>
+                                  <span className="text-green-600 text-sm">{currency?.value === "PEN" ? "S/." : "$"}0.00</span>
                                 )}
                               </div>
                             </TableCell>
 
                             <TableCell className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900 text-right">
-                              {currency === "PEN" ? "S/." : "$"}
+                              {currency?.value === "PEN" ? "S/." : "$"}
                               {subtotal.toFixed(2)}
                             </TableCell>
 
@@ -972,17 +968,17 @@ export default function OrderPage() {
                           SubTotal:
                         </TableCell>
                         <TableCell className="px-4 py-3 whitespace-nowrap text-sm font-bold text-gray-900 text-right">
-                          {currency === "PEN" ? "S/." : "$"}
+                          {currency?.value === "PEN" ? "S/." : "$"}
                           {calcularSubtotal(selectedProducts).toFixed(2)}
                         </TableCell>
                       </TableRow>
                       <TableRow>
                         <TableCell colSpan={3}></TableCell>
-                        <TableCell className="px-4 py-3 text-right text-sm font-medium text-gray-900">
+                        <TableCell className="px-4 py-3 text-right text-sm font-medium text-gray-500">
                           IGV (18%):
                         </TableCell>
                         <TableCell className="px-4 py-3 whitespace-nowrap text-sm font-bold text-gray-900 text-right">
-                          {currency === "PEN" ? "S/." : "$"}
+                          {currency?.value === "PEN" ? "S/." : "$"}
                           {calcularIGV(selectedProducts).toFixed(2)}
                         </TableCell>
                       </TableRow>
@@ -993,7 +989,7 @@ export default function OrderPage() {
               <div className="rounded-lg bg-blue-50 p-4 flex justify-between items-center">
                 <div className="text-lg font-medium text-blue-900">Total del Pedido:</div>
                 <div className="text-xl font-bold text-blue-900">
-                  {currency === "PEN" ? "S/." : "$"} {calcularTotal(selectedProducts).toFixed(2)}
+                  {currency?.value === "PEN" ? "S/." : "$"} {calcularTotal(selectedProducts).toFixed(2)}
                 </div>
               </div>
             </CardContent>

@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
 import { ICurrentScales, IProduct, ISelectedProduct } from '@/interface/order/product-interface'
+import { IMoneda } from '@/interface/order/client-interface'
 
 
 interface ModalVerificationProps {
@@ -15,7 +16,7 @@ interface ModalVerificationProps {
   products: IProduct[],
   setSelectedProducts: React.Dispatch<React.SetStateAction<ISelectedProduct[]>>
   addProductToList: (appliedScale?: any) => void;
-  currency: string
+  currency: IMoneda | null;
 }
 
 const ModalEscale: React.FC<ModalVerificationProps> = ({
@@ -29,9 +30,7 @@ const ModalEscale: React.FC<ModalVerificationProps> = ({
 }) => {
   const [selectedScales, setSelectedScales] = useState<string[]>([])
 
-
   const toggleEscalaSelection = (id: string) => {
-    console.log(">>id: ", id);
     setSelectedScales((prev) =>
       prev.includes(id) ? prev.filter((bId) => bId !== id) : [...prev, id]
     )
@@ -40,8 +39,6 @@ const ModalEscale: React.FC<ModalVerificationProps> = ({
   const handleConfirmScale = () => {
     onOpenChange(false)
     addProductToList()
-    // const selectedScaleData = currentScales.escalas.find((s: any) => s.IdArticulo === selectedScales)
-    // addProductToList(selectedScaleData)
     if (currentScales && selectedScales.length > 0) {
       selectedScales.forEach((scaleId) => {
         const escale = currentScales.escalas.find((b: any) => b.IdArticulo === scaleId)
@@ -181,10 +178,10 @@ const ModalEscale: React.FC<ModalVerificationProps> = ({
                             <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
                               <div className="flex flex-col">
                                 <span className="line-through text-gray-400 text-xs">
-                                  {`${currency} ${escala.precio_contado_actual}`}
+                                  {`${currency?.value === "PEN" ? "S/." : "$"} ${escala.precio_contado_actual}`}
                                 </span>
                                 <span className={`font-medium ${escala.descuento > 0 ? "text-purple-600" : ""}`}>
-                                  {`${currency} ${Number(escala.precio_escala).toFixed(2)}`}
+                                  {`${currency?.value === "PEN" ? "S/." : "$"} ${Number(escala.precio_escala).toFixed(2)}`}
                                 </span>
                               </div>
                             </td>
@@ -230,7 +227,7 @@ const ModalEscale: React.FC<ModalVerificationProps> = ({
                         <div>
                           <Label className="text-xs text-purple-600">Total a Pagar</Label>
                           <p className="font-bold text-purple-700">
-                            {`${currency} ${currentScales.cantidadSolicitada * Number(escala?.precio_escala)}`}
+                            {`${currency?.value === "PEN" ? "S/." : "$"} ${currentScales.cantidadSolicitada * Number(escala?.precio_escala)}`}
                           </p>
                         </div>
                       </div>
