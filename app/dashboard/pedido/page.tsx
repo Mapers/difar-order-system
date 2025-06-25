@@ -26,7 +26,7 @@ import ModalBonification from "@/components/modal/modalBonification"
 import ModalEscale from "@/components/modal/modalEscale"
 import { evaluarPromociones } from "@/utils/order"
 import { monedas, PROMOCIONES } from "@/constants"
-import { IBonificado, ICurrentBonification, ICurrentScales, IEscala, IProduct, IPromocionRequest, ISelectedProduct, OrderItem } from "@/interface/order/product-interface"
+import { ICurrentBonification, ICurrentScales, IEscala, IProduct, IPromocionRequest, ISelectedProduct, OrderItem } from "@/interface/order/product-interface"
 import { IClient, ICondicion, IDistrito, IMoneda, ITerritorio } from "@/interface/order/client-interface"
 
 export default function OrderPage() {
@@ -810,9 +810,6 @@ export default function OrderPage() {
               <CardTitle className="text-xl font-semibold text-blue-700">Resumen del Pedido</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6 pt-6">
-              {/* <div className="grid grid-cols-1 md:grid-cols-2 gap-6"> */}
-              {/* informacion del ciente  */}
-
               <div className="space-y-4">
                 <div className="flex items-center gap-2">
                   <User className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />

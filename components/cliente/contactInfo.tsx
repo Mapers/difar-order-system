@@ -10,12 +10,10 @@ interface ClientRowProps {
   contactoPedido: string;
   onChangeReferenciaDireccion: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onChangeContactoPedido: (e: React.ChangeEvent<HTMLInputElement>) => void;
-
 }
 
 const ContactInfo: React.FC<ClientRowProps> = ({ client, referenciaDireccion, contactoPedido, onChangeContactoPedido, onChangeReferenciaDireccion }) => {
-  // const [contactoPedido, setContactoPedido] = useState('');
-  // const [referenciaDireccion, setReferenciaDireccion] = useState('');
+
   const [showFullDireccion, setShowFullDireccion] = useState(false);
 
   const renderDireccion = () => {

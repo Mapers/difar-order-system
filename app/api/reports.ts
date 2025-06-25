@@ -17,3 +17,7 @@ export const balanceDocClientRequest = async (customer: Customer): Promise<any> 
 export const fetchTypeDocuments = async (): Promise<any> => {
     return apiClient.get('/reportes/typedocuments')
 }
+
+export const fetchAvailableZones = async (): Promise<any> => {
+    return apiClient.get('/reportes/zones')
+}

@@ -1,31 +1,29 @@
 
 // interfaz documento
 export interface Document {
-    documento: string
+  documento: string
 }
 
 // interfaz código de tipos de documento (F001-9061)
 export interface TypeDocument {
-    Cod_Tipo: string;
-    Descripcion: string;
+  Cod_Tipo: string;
+  Descripcion: string;
 }
 
 // interfaz de cliente (customer)
 export interface Customer {
-    nombreApellido: string
-    fechaCorte: string
+  nombreApellido: string
+  fechaCorte: string
+  idZona: string | null
+
 }
 
 // interfaz factura individual (invoice)
 export interface Invoice {
-  // para consulta documento cliente
   Date_Amortizacion?: string;
   Provision: string;
   Amortizacion: string;
-  // para cobrar cliente
-  // para cobrar vendedor
   saldoDoc?: string;
-  //
   Fecha_Emision: string;
   Fecha_Vcto: string;
   Tipo_Doc: string;
@@ -49,12 +47,14 @@ export interface Client {
   boddy: Invoice[];
 }
 
-// Vendedor con su lista de clientes
+// Interfaz de vendedor con su lista de clientes
 export interface Zone {
   CodVend: string;
   nomVend: string;
   document_dislab: Client[];
 }
-
-// Lista de zonas (todos los vendedores)
-export type DataZoneClient = Zone[];
+// Interfaz de zona 
+export interface IArea {
+  IdZona: string,
+  NombreZona: string
+}

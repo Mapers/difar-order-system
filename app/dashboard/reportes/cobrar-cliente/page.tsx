@@ -4,20 +4,19 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import React, { useEffect, useState } from "react"
-import { balanceDocClientRequest } from "@/app/api/reports"
-import { Search } from "lucide-react"
+import { balanceDocClientRequest, fetchAvailableZones } from "@/app/api/reports"
+import { Check, ChevronDown, MapPin, Search, User, X } from "lucide-react"
 import { clientSchema } from "@/schemas/reports/documentoSchema"
 import { z } from 'zod'
 import { toast } from "@/hooks/use-toast"
 import ZoneReportSkeleton from "@/components/skeleton/ZoneReportSkeleton"
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs"
-import { Customer, Zone } from "@/interface/report/report-interface"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Customer, IArea, Zone } from "@/interface/report/report-interface"
 import ZoneCollectClientReport from "@/components/reporte/zoneCollectClientReport"
+import { Label } from "@radix-ui/react-label"
+import { Popover, PopoverContent, PopoverTrigger } from "@radix-ui/react-popover"
+import { Command, CommandInput, CommandList, CommandGroup, CommandItem, CommandEmpty } from "@/components/ui/command"
+import { cn } from "@/lib/utils"
 
 export default function CollectClientPage() {
 
@@ -27,7 +26,19 @@ export default function CollectClientPage() {
   const [fullName, setFullName] = useState<string>("")
   const [loadingClient, setLoadingClient] = useState(false)
   const [dataClient, setDataClient] = useState<Zone[]>([])
+  const [zonas, setZonas] = useState<IArea[]>([])
   const [activeTab, setActiveTab] = useState<string>("0")
+  const [selectedZona, setSelectedZona] = useState<IArea | null>(null)
+  const [open, setOpen] = useState(false)
+
+  const handleZonaSelected = (zona: IArea) => {
+    const selectedZona = zonas.find((z) => z.IdZona === zona.IdZona)
+    if (selectedZona) {
+      console.log("zona: ", selectedZona);
+      setSelectedZona(selectedZona)
+      setOpen(false)
+    }
+  }
 
   const searchSeller = async () => {
     setLoadingClient(true)
@@ -39,7 +50,8 @@ export default function CollectClientPage() {
       setIsEmpty(false)
       const customer: Customer = {
         nombreApellido: fullName.toLocaleUpperCase(),
-        fechaCorte: dateCut
+        fechaCorte: dateCut,
+        idZona: selectedZona?.IdZona ?? null
       }
       clientSchema.parse(customer)
       const response = await balanceDocClientRequest(customer)
@@ -58,12 +70,27 @@ export default function CollectClientPage() {
     }
   }
 
+  const getAvailableZones = async () => {
+    try {
+      setLoading(true)
+      const response = await fetchAvailableZones();
+      if (response.status !== 200) throw new Error("Error al obtener zonas disponibles")
+      const data = response?.data?.data
+      setZonas(data || [])
+    } catch (error) {
+      console.error("Error fetching clients:", error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const handleSearchSeller = async (e: React.FormEvent) => {
     e.preventDefault()
     await searchSeller()
   }
 
   useEffect(() => {
+    getAvailableZones()
     if (fullName && dateCut) {
       searchSeller()
     }
@@ -78,40 +105,101 @@ export default function CollectClientPage() {
       </div>
 
       <Card className="shadow-md">
-        <CardHeader className="flex flex-col sm:flex-row justify-between gap-4 sm:items-center">
-          <div className="flex flex-col sm:flex-row gap-4 sm:items-center">
+        <CardHeader className="flex flex-col gap-4">
+          <div>
+            <h2 className="text-xl font-semibold tracking-tight">Filtros de búsqueda </h2>
+            <p className="text-sm text-muted-foreground">
+              Utiliza los filtros para encontrar clientes específicos
+            </p>
+          </div>
 
-            <div className="relative">
+          {/* Fila: Nombre y Fecha */}
+          <div className="grid sm:grid-cols-2 gap-4">
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center gap-1.5">
+                <User className="w-4 h-4 text-muted-foreground" />
+                <Label htmlFor="search">Nombre/Apellido o RUC</Label>
+              </div>
               <Input
-                type="search"
-                placeholder="Nombre y Apellido"
-                className={`pl-8 bg-white ${isEmpty ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
+                id="search"
+                type="text"
+                placeholder="Buscar por nombre, apellido o RUC"
                 value={fullName}
-                onChange={(e) => {
-                  setFullName(e.target.value)
-                }}
-                required
-              />
-            </div>
-            <div className="relative">
-              <Input
-                type="date"
-                placeholder="F000-0000"
-                className={`pl-8 bg-white ${isEmpty ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
-                value={dateCut}
-                onChange={(e) => {
-                  setDateCut(e.target.value)
-                }}
-                required
+                onChange={(e) => setFullName(e.target.value)}
               />
             </div>
 
-            <Button className="bg-blue-600 hover:bg-blue-700"
-              onClick={handleSearchSeller}
-            >
-              <Search className="mr-2 h-4 w-4" />
-              Buscar
-            </Button>
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center gap-1.5">
+                <Label htmlFor="date">Fecha</Label>
+              </div>
+              <Input
+                id="date"
+                type="date"
+                value={dateCut}
+                onChange={(e) => setDateCut(e.target.value)}
+              />
+            </div>
+          </div>
+
+          {/* Fila: Zona y Botón buscar */}
+          <div className="grid sm:grid-cols-2 gap-4">
+            <div className="relative space-y-2">
+              <div className="flex items-center gap-1.5">
+                <MapPin className="w-4 h-4 text-muted-foreground" />
+                <Label htmlFor="search">Zona</Label>
+              </div>
+              <Popover open={open} onOpenChange={setOpen}>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" role="combobox" className="w-full justify-between h-12">
+                    {selectedZona
+                      ? zonas.find((c) => c.IdZona === selectedZona.IdZona)?.NombreZona
+                      : 'Seleccionar zona...'}
+                    <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-full max-w-[450px] sm:max-w-[300px] max-h-[300px] p-0 z-50">
+                  <Command>
+                    <CommandInput placeholder="Buscar zona..." />
+                    <CommandList>
+                      <CommandEmpty>No se encontraron condiciones.</CommandEmpty>
+                      <CommandGroup>
+                        {zonas.map((zona: IArea) => (
+                          <CommandItem
+                            key={zona.IdZona}
+                            // value={zona.IdZona}
+                            value={`${zona.IdZona} ${zona.NombreZona}`}
+                            onSelect={() => handleZonaSelected(zona)}
+                          >
+                            <Check
+                              className={cn(
+                                'mr-2 h-4 w-4',
+                                selectedZona?.IdZona === zona.IdZona
+                                  ? 'opacity-100'
+                                  : 'opacity-0',
+                              )}
+                            />
+                            {zona.NombreZona}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            {/* Botón Buscar */}
+            <div className="flex flex-col justify-end gap-1">
+              <Label className="invisible">.</Label>
+              <Button
+                className="bg-blue-600 hover:bg-blue-700 w-full h-10"
+                onClick={handleSearchSeller}
+              >
+                <Search className="mr-2 h-4 w-4" />
+                Buscar
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
