@@ -46,7 +46,7 @@ export function SideNav() {
     },
     {
       title: "Tomar Pedido",
-      href: "/dashboard/pedido",
+      href: "/dashboard/tomar-pedido",
       icon: ShoppingCart,
     },
     {

@@ -12,6 +12,7 @@ export interface ICurrentBonification {
   nombreProductoSolicitado: string,
   cantidadSolicitada: number
 }
+
 // Interfaz Escala actual
 export interface ICurrentScales {
   escalas: IEscala[],
@@ -42,17 +43,6 @@ export interface IEscala {
   precio_contado_actual: string; 
   porcentaje_descuento: string; 
 }
-
-// Interface de producto con escala aplicable
-// export interface IAplicableEscale {
-//   id: number
-//   descripcion: string
-//   minimo: number
-//   maximo: number
-//   precio: number
-//   descuento: number
-//   ahorro: number
-// }
 
 // Interfaz producto bonificado
 export interface IBonificado {
@@ -101,6 +91,3 @@ export interface ISelectedProduct {
   appliedScale?: any
   finalPrice?: number
 }
-
-
-

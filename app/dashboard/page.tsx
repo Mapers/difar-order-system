@@ -179,7 +179,7 @@ export default function Dashboard() {
           </Card>
         </Link>
 
-        <Link href="/dashboard/pedido">
+        <Link href="/dashboard/tomar-pedido">
           <Card className="hover:bg-purple-50 transition-colors h-full">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-xl font-medium text-purple-700">Tomar Pedido</CardTitle>
