@@ -14,7 +14,11 @@ import { Label } from "@radix-ui/react-label"
 import { fetchGetClients } from "@/app/api/clients"
 import { format, parseISO } from "date-fns"
 import { useAuth } from '@/context/authContext';
+import ModalClientEvaluation from "@/components/modal/modalClientEvaluation"
 import { IClient } from "@/interface/clients/client-interface"
+import { mapClientFromApi } from "@/mappers/clients"
+import { formatSafeDate } from "@/utils/date"
+import ModalClientEdit from "@/components/modal/modalClientEdit"
 
 export default function ClientsPage() {
   const { user, isAuthenticated } = useAuth();
@@ -24,6 +28,8 @@ export default function ClientsPage() {
 
   // Estados para modales
   const [showCreateModal, setShowCreateModal] = useState(false)
+  const [showEditModal, setShowEditModal] = useState(false)
+  const [showViewModal, setShowViewModal] = useState(false)
   const [showFilters, setShowFilters] = useState(false)
 
   // Estado base de formData
@@ -58,6 +64,26 @@ export default function ClientsPage() {
     aprobadoGerente: null,
     observacionesGlobal: "",
   });
+
+  const [selectedClient, setSelectedClient] = useState<IClient | null>(null)
+  const [codClient, setCodClient] = useState<any>("")
+
+
+  // Abrir modal de edición
+  const handleEdit = (client: IClient) => {
+    setSelectedClient(client)
+    setFormData({ ...client })
+    setShowEditModal(true)
+  }
+
+  // Abrir modal de visualización
+  const handleView = (codClient:string) => {
+    console.log(">>>cod cliente : ", codClient)
+    setCodClient(codClient)
+    // setSelectedClient(client)
+    setShowViewModal(true)
+  }
+
 
   // 🔵 Catálogos simulados
   const categorias = [
@@ -95,7 +121,7 @@ export default function ClientsPage() {
     }
   };
 
-  // ✅ Lista las condiciones con mejor manejo de errores
+  // lista clinetes  con codigo de vendedor
   const getClients = async () => {
     try {
       setLoading(true);
@@ -107,7 +133,9 @@ export default function ClientsPage() {
         return;
       }
       const response = await fetchGetClients(codVendedor);
-      setClients(response.data?.data?.data || response.data?.data || []);
+      const rawClients = response.data?.data?.data || response.data?.data || [];
+      const mappedClients: IClient[] = rawClients.map(mapClientFromApi)
+      setClients(mappedClients);
     } catch (error) {
       console.error("Error fetching clients:", error);
       setError("Error al cargar los clientes");
@@ -241,20 +269,20 @@ export default function ClientsPage() {
                         ))
                       ) : clients.length > 0 ? (
                         clients.map((client: IClient, index: number) => (
-                          <TableRow key={client.codigo + index} className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}>
-                            <TableCell className="font-bold text-blue-600">{client.codigo}</TableCell>
+                          <TableRow key={client.codigoInterno + index} className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}>
+                            <TableCell className="font-bold text-blue-600">{client.codigoInterno}</TableCell>
                             <TableCell>
-                              <div className="text-sm text-gray-900">{client.cliente_nombre}</div>
-                              <div className="text-xs text-gray-500">{client.cliente_comercial}</div>
+                              <div className="text-sm text-gray-900">{client.razonSocial}</div>
+                              <div className="text-xs text-gray-500">{client.nombreComercial}</div>
                             </TableCell>
                             <TableCell className="hidden md:table-cell">
-                              <div className="text-sm text-gray-900">{client.documento_numero}</div>
-                              <div className="text-xs text-gray-500">{client.documento_abrev}</div>
+                              <div className="text-sm text-gray-900">{client.numeroDocumento}</div>
+                              <div className="text-xs text-gray-500">{client.tipoDocumento}</div>
                             </TableCell>
                             <TableCell className="hidden md:table-cell">
                               <div className="text-sm text-gray-900">{client.categoria}</div>
                               <div className="text-xs text-gray-500">
-                                {client.fecha_evaluacion ? format(parseISO(client.fecha_evaluacion), "dd/MM/yyyy") : "Sin evaluar"}
+                              {formatSafeDate(client.fechaEvaluacion)}
                               </div>
                             </TableCell>
                             <TableCell className="hidden md:table-cell">
@@ -271,13 +299,22 @@ export default function ClientsPage() {
                             </TableCell>
                             <TableCell className="text-right">
                               <div className="flex justify-end gap-2">
-                                <Button variant="outline" size="sm">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleView(client.codigoInterno)}
+                                >
                                   <Eye className="mr-1 h-4 w-4" />
                                   Ver
                                 </Button>
-                                <Button variant="outline" size="sm">
+
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleEdit(client)}
+                                >
                                   <Edit className="mr-1 h-4 w-4" />
-                                  Evaluar
+                                  Editar
                                 </Button>
                               </div>
                             </TableCell>
@@ -313,7 +350,24 @@ export default function ClientsPage() {
           zonas={zonas}
           tiposCliente={tiposCliente}
         />
+
+        <ModalClientEvaluation
+          open={showViewModal}
+          onOpenChange={setShowViewModal}
+          codClient={codClient}
+        />
+        {/* <ModalClientEdit
+          open={showViewModal}
+          onOpenChange={setShowViewModal}
+          codClient={codClient}
+        /> */}
+
       </Card>
+
+
+
+
+
     </div>
   )
 }

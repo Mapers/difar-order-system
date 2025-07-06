@@ -5,3 +5,18 @@ export const fetchGetClients = async (codVendedor: string): Promise<any> => {
     return apiClient.get(`/clientes/listar/${encodeURIComponent(codVendedor)}`);
 };
 
+export const fetchGetClientBycod = async (codClient: string): Promise<any> => {
+    return apiClient.get(`/clientes/${encodeURIComponent(codClient)}`);
+};
+
+export const fetchEvaluationByCodClient = async (codClient: string): Promise<any> => {
+    return apiClient.get(`/clientes/evaluacion/${encodeURIComponent(codClient)}`);
+};
+
+export const fetchGetDocObligatorios = async (): Promise<any> => {
+    return apiClient.get(`/clientes/docs/obligatorios`);
+};
+
+export const fetchEvaluationCalifByCodClient = async (codClient: string): Promise<any> => {
+    return apiClient.get(`/clientes/evaluacion-calif/${encodeURIComponent(codClient)}`);
+};

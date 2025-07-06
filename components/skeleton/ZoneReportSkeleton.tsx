@@ -1,4 +1,6 @@
 import React from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
+import { Skeleton } from "../ui/skeleton";
 
 export default function ZoneReportSkeleton() {
     return (
@@ -48,3 +50,41 @@ export default function ZoneReportSkeleton() {
     );
 }
 
+
+
+
+export const ClientCardSkeleton = () => (
+    <>
+      <Card className="bg-blue-100 border-blue-300">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm font-medium text-blue-900">
+            Información del Cliente
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3 text-sm">
+          {Array.from({ length: 5 }).map((_, idx) => (
+            <div key={idx}>
+              <div className="h-3 w-24 mb-1 bg-gray-400 rounded animate-pulse" />
+              <div className="h-4 w-full bg-gray-500 rounded animate-pulse" />
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+  
+      <Card className="bg-green-100 border-green-300">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm font-medium text-green-900">
+            Estado y Contacto
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3 text-sm">
+          {Array.from({ length: 4 }).map((_, idx) => (
+            <div key={idx}>
+              <div className="h-3 w-28 mb-1 bg-gray-400 rounded animate-pulse" />
+              <div className="h-4 w-full bg-gray-500 rounded animate-pulse" />
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+    </>
+  )
