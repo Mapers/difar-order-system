@@ -8,8 +8,6 @@ import { Card, CardContent, CardHeader, CardTitle, } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { parseISO, format } from 'date-fns'
-import { es } from 'date-fns/locale'
 import { IClient, IClientEvaluation, IEvaluacionCalif, IEvaluation } from '@/interface/clients/client-interface'
 import { DOCUMENTO, ESTADO_APROBACION } from '@/constants/clients'
 import { useEffect, useState } from "react"
@@ -21,15 +19,13 @@ import { getEstadoVisual } from '@/utils/client'
 interface ModalVerificationProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  codClient: any
-  // client: any
+  codClient: string
 }
 
 const ModalClientEvaluation: React.FC<ModalVerificationProps> = ({
   open,
   onOpenChange,
   codClient
-  // client,
 }) => {
 
   const [loading, setLoading] = useState(false)
@@ -75,8 +71,6 @@ const ModalClientEvaluation: React.FC<ModalVerificationProps> = ({
     return categorias[categoria] ?? "Categoría Desconocida"
   }
 
-
-
   const getEstadoContribuyenteLabel = (estado: string) => {
     const estados: Record<string, string> = {
       Activo: "Activo",
@@ -85,27 +79,9 @@ const ModalClientEvaluation: React.FC<ModalVerificationProps> = ({
     return estados[estado] ?? "Desconocido"
   }
 
-  const getProvinciaNombre = (provincia: string) => {
-    const provincias: Record<string, string> = {
-      Lima: "Lima",
-      Cusco: "Cusco",
-    }
-    return provincias[provincia] ?? "Provincia Desconocida"
-  }
-
-  const getZonaNombre = (idZona: number) => {
-    const zonas: Record<number, string> = {
-      1: "Norte",
-      2: "Sur",
-    }
-    return zonas[idZona] ?? "Zona Desconocida"
-  }
-
   const handleEdit = (client: any) => {
     console.log(`Editando evaluación para cliente: ${client.codigoInterno}`)
   }
-
-
 
 
   // lista documentos obligatorios
@@ -117,7 +93,6 @@ const ModalClientEvaluation: React.FC<ModalVerificationProps> = ({
         setDocObligatorios(response.data?.data || [])
       }
       else if (!response.success) {
-        // mostrar toas de  no hay doc obligatorios
         setDocObligatorios([])
       }
     } catch (error) {
@@ -126,6 +101,7 @@ const ModalClientEvaluation: React.FC<ModalVerificationProps> = ({
       setLoading(false);
     }
   };
+
   // lista clientescon codigo de vendedor
   const getClientByCod = async (codClient: string) => {
     try {
@@ -140,13 +116,12 @@ const ModalClientEvaluation: React.FC<ModalVerificationProps> = ({
       setLoading(false);
     }
   };
+
   // lista clientescon codigo de vendedor
   const getEvaluationCalifByCodClient = async (codClient: string) => {
     try {
       setLoading(true);
       const response = await fetchEvaluationCalifByCodClient(codClient);
-
-
       if (response && response.data.success && response.status === 200) {
         const rawClient = response.data?.data || []
         const mappedEvalCalif: IEvaluacionCalif = mapEvaluacionCalificacionFromApi(rawClient);
@@ -193,11 +168,6 @@ const ModalClientEvaluation: React.FC<ModalVerificationProps> = ({
   if (loading) {
     return <div className="flex justify-center items-center h-64">Cargando datos...</div>
   }
-
-  // if (error) {
-  //   return <div className="text-red-500 p-4">Error: {error}</div>
-  // }
-
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

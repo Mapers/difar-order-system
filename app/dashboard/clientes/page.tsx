@@ -70,14 +70,13 @@ export default function ClientsPage() {
 
 
   // Abrir modal de edición
-  const handleEdit = (client: IClient) => {
-    setSelectedClient(client)
-    setFormData({ ...client })
+  const handleEdit = (codClient: string) => {
+    setCodClient(codClient)
     setShowEditModal(true)
   }
 
   // Abrir modal de visualización
-  const handleView = (codClient:string) => {
+  const handleView = (codClient: string) => {
     console.log(">>>cod cliente : ", codClient)
     setCodClient(codClient)
     // setSelectedClient(client)
@@ -282,7 +281,7 @@ export default function ClientsPage() {
                             <TableCell className="hidden md:table-cell">
                               <div className="text-sm text-gray-900">{client.categoria}</div>
                               <div className="text-xs text-gray-500">
-                              {formatSafeDate(client.fechaEvaluacion)}
+                                {formatSafeDate(client.fechaEvaluacion)}
                               </div>
                             </TableCell>
                             <TableCell className="hidden md:table-cell">
@@ -311,7 +310,7 @@ export default function ClientsPage() {
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  onClick={() => handleEdit(client)}
+                                  onClick={() => handleEdit(client.codigoInterno)}
                                 >
                                   <Edit className="mr-1 h-4 w-4" />
                                   Editar
@@ -356,11 +355,11 @@ export default function ClientsPage() {
           onOpenChange={setShowViewModal}
           codClient={codClient}
         />
-        {/* <ModalClientEdit
-          open={showViewModal}
-          onOpenChange={setShowViewModal}
+        <ModalClientEdit
+          open={showEditModal}
+          onOpenChange={setShowEditModal}
           codClient={codClient}
-        /> */}
+        />
 
       </Card>
 
