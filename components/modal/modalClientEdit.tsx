@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { Dialog, DialogContent, DialogTitle, DialogHeader, DialogFooter } from "@/components/ui/dialog"
-import { Eye, User, FileText, CheckCircle, XCircle, Edit, AlertCircle, Plus, Save, X, MapPin, Calendar } from 'lucide-react'
+import { Eye, User, FileText, CheckCircle, XCircle, Edit, AlertCircle, Plus, Save, X, MapPin, Calendar, ChevronDown, Check } from 'lucide-react'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
@@ -10,7 +10,14 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Separator } from "@/components/ui/separator"
-import { fetchCreateUpdateClienteEvaluacion } from '@/app/api/clients'
+import { fetchCreateUpdateClienteEvaluacion, fetchGetDistricts, fetchGetDocumentsTypes, fetchGetProvincesCities, fetchGetSunatStatus } from '@/app/api/clients'
+import { useAuth } from '@/context/authContext';
+import { Popover, PopoverTrigger, PopoverContent } from '../ui/popover';
+import { Command, CommandInput, CommandList, CommandGroup, CommandItem, CommandEmpty } from '../ui/command';
+
+function cn(...classes: (string | boolean | undefined)[]) {
+  return classes.filter(Boolean).join(' ');
+}
 
 interface ModalVerificationProps {
   open: boolean
@@ -23,11 +30,18 @@ const ModalClientEdit: React.FC<ModalVerificationProps> = ({
   onOpenChange,
   codClient
 }) => {
+
+  const { user, isAuthenticated } = useAuth();
+  const [loading, setLoading] = useState(false)
+
   // Estados para controlar modales y formulario
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
-
+  const [typeDocuments, setTypeDocuments] = useState<any>([])
+  const [provincesCities, setProvincesCities] = useState<any>([])
+  const [sunatStatus, setSunatStatus] = useState<any>([])
+  const [isPopoverOpen, setIsPopoverOpen] = useState(false);
   // Estado del formulario con estructura inicial
   const [formData, setFormData] = useState({
     // campos cliente
@@ -82,15 +96,77 @@ const ModalClientEdit: React.FC<ModalVerificationProps> = ({
     }
   }
 
+
+
+
+  // lista tipos de documento
+  const getDocumentsType = async () => {
+    try {
+      setLoading(true);
+      const response = await fetchGetDocumentsTypes();
+      console.log(" > Response:", response.data)
+      if (response && response.data.success && response.status === 200) {
+        setTypeDocuments(response.data?.data || [])
+      }
+    } catch (error) {
+      console.error("Error fetching types documents:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // lista provincias ciudades
+  const getListProvincesCities = async () => {
+    try {
+      setLoading(true);
+      const response = await fetchGetProvincesCities();
+      if (response && response.data.success && response.status === 200) {
+        setProvincesCities(response.data?.data || [])
+      }
+    } catch (error) {
+      console.error("Error fetching provinces cities:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // lista provincias ciudades
+  const getListDistricts = async () => {
+    try {
+      setLoading(true);
+      const response = await fetchGetDistricts();
+      if (response && response.data.success && response.status === 200) {
+        setProvincesCities(response.data?.data || [])
+      }
+    } catch (error) {
+      console.error("Error fetching districts:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+    // lista estados de sunat
+    const getLisSunatStatus = async () => {
+      try {
+        setLoading(true);
+        const response = await fetchGetSunatStatus();
+        if (response && response.data.success && response.status === 200) {
+          setSunatStatus(response.data?.data || [])
+        }
+      } catch (error) {
+        console.error("Error fetching districts:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
   // Simulación de guardar datos
-
-
   const handleSave = async () => {
     setIsSubmitting(true);
     try {
       const dataPayload = {
         codigo: codClient,
-        codigoVed: '',
+        codigoVed: user?.codigo,
         nombre: ' ',
         nombreComercial: formData.nombreComercial,
         ruc: formData.ruc ?? '',
@@ -128,24 +204,20 @@ const ModalClientEdit: React.FC<ModalVerificationProps> = ({
   };
 
 
-  // Controla apertura del modal según prop open
   useEffect(() => {
-    if (open) {
-      setShowEditModal(true)
-    } else {
-      setShowEditModal(false)
-      setShowCreateModal(false)
+    if (open && codClient) {
+      getDocumentsType()
+      getListProvincesCities()
+      getLisSunatStatus()
     }
-  }, [open])
+
+  }, [open, codClient])
+
 
   return (
     <Dialog
-      open={showCreateModal || showEditModal}
-      onOpenChange={(open) => {
-        setShowCreateModal(false)
-        setShowEditModal(false)
-        onOpenChange(open)
-      }}
+      open={open}
+      onOpenChange={onOpenChange}
     >
       <DialogContent className="w-[95vw] max-w-6xl max-h-[90vh] overflow-y-auto mx-2">
         <DialogHeader>
@@ -266,9 +338,9 @@ const ModalClientEdit: React.FC<ModalVerificationProps> = ({
                       required
                     >
                       <option value="">Seleccionar tipo</option>
-                      {tiposDocumento.map((tipo) => (
-                        <option key={tipo.value} value={tipo.value}>
-                          {tipo.label}
+                      {typeDocuments.map((tipo: any) => (
+                        <option key={tipo.codigo} value={tipo.codigo}>
+                          {tipo.abreviatura}
                         </option>
                       ))}
                     </select>
@@ -306,9 +378,9 @@ const ModalClientEdit: React.FC<ModalVerificationProps> = ({
                       required
                     >
                       <option value="">Seleccionar estado</option>
-                      {estadosContribuyente.map((estado) => (
-                        <option key={estado.value} value={estado.value}>
-                          {estado.label}
+                      {sunatStatus.map((estado:any) => (
+                        <option key={estado.id} value={estado.id}>
+                          {estado.nombre}
                         </option>
                       ))}
                     </select>
@@ -368,7 +440,7 @@ const ModalClientEdit: React.FC<ModalVerificationProps> = ({
                 </h4>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <div className="space-y-2">
+                  {/* <div className="space-y-2">
                     <Label htmlFor="provincia">Provincia *</Label>
                     <select
                       id="provincia"
@@ -378,12 +450,62 @@ const ModalClientEdit: React.FC<ModalVerificationProps> = ({
                       required
                     >
                       <option value={0}>Seleccionar provincia</option>
-                      {provincias.map((provincia) => (
+                      {provincesCities.map((provincia:any) => (
                         <option key={provincia.id} value={provincia.id}>
                           {provincia.nombre}
                         </option>
                       ))}
                     </select>
+                  </div> */}
+                  <div className="space-y-2">
+                    <Label htmlFor="provincia">Provincia *</Label>
+                    <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          role="combobox"
+                          className="w-full justify-between h-12"
+                          aria-expanded={Boolean(formData.provincia)}
+                          aria-controls="provincia-listbox"
+                          aria-haspopup="listbox"
+                        >
+                          {formData.provincia
+                            ? provincesCities.find((p: any) => p.codigo === formData.provincia)?.nombre
+                            : 'Seleccionar provincia...'}
+                          <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-full p-0">
+                        <Command>
+                          <CommandInput placeholder="Buscar provincia..." />
+                          <CommandList id="provincia-listbox" role="listbox" aria-label="Provincias">
+                            <CommandEmpty>No se encontraron provincias.</CommandEmpty>
+                            <CommandGroup>
+                              {provincesCities.map((provincia: any) => (
+                                <CommandItem
+                                  key={provincia.id}
+                                  value={provincia.nombre}
+                                  onSelect={() => {
+                                    handleInputChange('provincia', provincia.codigo);
+                                    setIsPopoverOpen(false)
+                                  }}
+                                  aria-selected={formData.provincia === provincia.codigo}
+                                  role="option"
+                                >
+                                  <Check
+                                    className={cn(
+                                      'mr-2 h-4 w-4',
+                                      formData.provincia === provincia.codigo ? 'opacity-100' : 'opacity-0'
+                                    )}
+                                  />
+                                  {provincia.nombre}
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
                   </div>
 
                   <div className="space-y-2">
@@ -414,7 +536,7 @@ const ModalClientEdit: React.FC<ModalVerificationProps> = ({
                       placeholder="11001"
                     />
                   </div>
-
+                  {/* 
                   <div className="space-y-2">
                     <Label htmlFor="tipoCliente">Tipo Cliente *</Label>
                     <select
@@ -431,7 +553,7 @@ const ModalClientEdit: React.FC<ModalVerificationProps> = ({
                         </option>
                       ))}
                     </select>
-                  </div>
+                  </div> */}
                 </div>
               </div>
 
@@ -468,9 +590,9 @@ const ModalClientEdit: React.FC<ModalVerificationProps> = ({
 
                   <div className="space-y-2">
                     <Label htmlFor="codigoVendedor">Código Vendedor</Label>
-                    <Input id="codigoVendedor" 
-                    // value={formData.codigoVendedor} 
-                    disabled />
+                    <Input id="codigoVendedor"
+                      value={user?.codigo}
+                      disabled />
                   </div>
                 </div>
               </div>
@@ -690,7 +812,7 @@ const ModalClientEdit: React.FC<ModalVerificationProps> = ({
                     <div className="text-center">
                       <p className="text-sm text-gray-600 mb-4">Estado de aprobación:</p>
                       <Button
-                        onClick={() => handleInputChange("aprobadoGerente", !formData.aprobadoGerente)}
+                        // onClick={() => handleInputChange("aprobadoGerente", !formData.aprobadoGerente)}
                         className={`w-full h-12 text-sm sm:text-base font-bold transition-all duration-200 ${formData.aprobadoGerente
                           ? "bg-green-600 hover:bg-green-700 text-white"
                           : "bg-red-600 hover:bg-red-700 text-white"
@@ -730,7 +852,7 @@ const ModalClientEdit: React.FC<ModalVerificationProps> = ({
                 <Label htmlFor="observacionesGlobal">Observaciones Globales</Label>
                 <Textarea
                   id="observacionesGlobal"
-                  value={formData.observacionesGlobal}
+                  // value={formData.observacionesGlobal}
                   onChange={(e) => handleInputChange("observacionesGlobal", e.target.value)}
                   placeholder="Observaciones generales sobre la evaluación del cliente..."
                   rows={4}

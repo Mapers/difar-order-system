@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { CreditCard, ChevronDown, Check } from 'lucide-react';
 import { Label } from '@radix-ui/react-label';
 import { ICondicion, IMoneda } from '@/interface/order/client-interface';
-import { Card, CardContent, CardHeader, CardTitle, } from '../ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import { Popover, PopoverTrigger, PopoverContent } from '../ui/popover';
@@ -23,7 +23,16 @@ interface ClientRowProps {
   selectedCurrency: IMoneda | null;
 }
 
-const PaymentCondition: React.FC<ClientRowProps> = ({ conditions, monedas, onConditionChange, onCurrencyChange, selectedCondition, selectedCurrency }) => {
+const PaymentCondition: React.FC<ClientRowProps> = ({
+  conditions,
+  monedas,
+  onConditionChange,
+  onCurrencyChange,
+  selectedCondition,
+  selectedCurrency,
+}) => {
+  const [isConditionOpen, setIsConditionOpen] = useState(false);
+  const [isCurrencyOpen, setIsCurrencyOpen] = useState(false);
 
   return (
     <Card className="bg-white shadow-sm">
@@ -36,10 +45,16 @@ const PaymentCondition: React.FC<ClientRowProps> = ({ conditions, monedas, onCon
 
       <CardContent className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* condicion */}
+          {/* Condición */}
           <div className="space-y-2">
             <Label htmlFor="condicion">Condición</Label>
-            <Popover>
+            <Popover
+              open={isConditionOpen}
+              onOpenChange={(open) => {
+                setIsConditionOpen(open);
+                if (open) setIsCurrencyOpen(false);
+              }}
+            >
               <PopoverTrigger asChild>
                 <Button variant="outline" role="combobox" className="w-full justify-between h-12">
                   {selectedCondition
@@ -58,7 +73,10 @@ const PaymentCondition: React.FC<ClientRowProps> = ({ conditions, monedas, onCon
                         <CommandItem
                           key={condition.CodigoCondicion}
                           value={condition.CodigoCondicion}
-                          onSelect={() => onConditionChange(condition)}
+                          onSelect={() => {
+                            onConditionChange(condition);
+                            setIsConditionOpen(false);
+                          }}
                         >
                           <Check
                             className={cn(
@@ -81,7 +99,13 @@ const PaymentCondition: React.FC<ClientRowProps> = ({ conditions, monedas, onCon
           {/* Moneda */}
           <div className="space-y-2">
             <Label htmlFor="moneda">Moneda</Label>
-            <Popover>
+            <Popover
+              open={isCurrencyOpen}
+              onOpenChange={(open) => {
+                setIsCurrencyOpen(open);
+                if (open) setIsConditionOpen(false);
+              }}
+            >
               <PopoverTrigger asChild>
                 <Button variant="outline" role="combobox" className="w-full justify-between h-12">
                   {selectedCurrency
@@ -100,14 +124,15 @@ const PaymentCondition: React.FC<ClientRowProps> = ({ conditions, monedas, onCon
                         <CommandItem
                           key={currency.value}
                           value={currency.value}
-                          onSelect={() => onCurrencyChange(currency)}
+                          onSelect={() => {
+                            onCurrencyChange(currency);
+                            setIsCurrencyOpen(false);
+                          }}
                         >
                           <Check
                             className={cn(
                               'mr-2 h-4 w-4',
-                              selectedCurrency?.value === currency.value
-                                ? 'opacity-100'
-                                : 'opacity-0',
+                              selectedCurrency?.value === currency.value ? 'opacity-100' : 'opacity-0',
                             )}
                           />
                           {currency.label}

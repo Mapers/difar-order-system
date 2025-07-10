@@ -24,3 +24,19 @@ export const fetchEvaluationCalifByCodClient = async (codClient: string): Promis
 export const fetchCreateUpdateClienteEvaluacion = async (dataPayload:any): Promise<any> => {
     return apiClient.post(`/clientes/create-update-cliente-evaluacion`,dataPayload);
 };
+
+export const fetchGetDocumentsTypes = async (): Promise<any> => {
+    return apiClient.get(`/clientes/documento/tipo`);
+};
+
+export const fetchGetProvincesCities = async (): Promise<any> => {
+    return apiClient.get(`/clientes/ciudad/provincias-ciudades`);
+};
+
+export const fetchGetDistricts = async (): Promise<any> => {
+    return apiClient.get(`/clientes/ciudad/provincias-ciudades`);
+};
+
+export const fetchGetSunatStatus= async (): Promise<any> => {
+    return apiClient.get(`/clientes/sunat/estado-sunat`);
+};
