@@ -352,6 +352,7 @@ export default function ClientsPage() {
 
         <ModalClientEvaluation
           open={showViewModal}
+          openModalEdit={setShowEditModal}
           onOpenChange={setShowViewModal}
           codClient={codClient}
         />

@@ -18,22 +18,22 @@ import debounce from 'lodash.debounce';
 import { Badge } from "@/components/ui/badge"
 import { Popover, PopoverContent, PopoverTrigger } from "@radix-ui/react-popover"
 import { CommandEmpty, CommandGroup, CommandInput, CommandList, Command, CommandItem } from "@/components/ui/command"
-import ModalVerification from "@/components/modal/modalVerification"
 import ModalBonification from "@/components/modal/modalBonification"
 import ModalEscale from "@/components/modal/modalEscale"
 import { evaluarPromociones } from "@/utils/order"
 import { monedas, PROMOCIONES } from "@/constants"
-// import { fetchGetClients, fetchGetConditions, fetchGetZona, fetchUnidaTerritorial } from "@/app/api/orders"
-// import { getBonificadosRequest, getEscalasRequest, getProductsRequest } from "@/app/api/products"
 import { fetchGetClients, fetchGetConditions, fetchGetZona, fetchUnidaTerritorial } from "@/app/api/takeOrders"
 import { getBonificadosRequest, getEscalasRequest, getProductsRequest } from "@/app/api/products"
 import { ICurrentBonification, ICurrentScales, IEscala, IProduct, IPromocionRequest, ISelectedProduct, OrderItem } from "@/interface/order/product-interface"
 import { IClient, ICondicion, IDistrito, IMoneda, ITerritorio } from "@/interface/order/client-interface"
+import ModalLoader from "@/components/modal/modalLoader"
 
 export default function OrderPage() {
   const router = useRouter()
   const [currentStep, setCurrentStep] = useState(0)
-  const [isLoading, setIsLoading] = useState(false)
+  const [isLoading, setIsLoading] = useState(false);
+  const [modalLoader, setModalLoader] = useState<'BONIFICADO' | 'ESCALA' | 'EVALUACION' | null>(null);
+
   // Estados para cliente
   const [client, setClient] = useState("")
   const [clientName, setClientName] = useState("")
@@ -222,8 +222,6 @@ export default function OrderPage() {
     fetchProducts()
   }, [search.product])
 
-
-
   const getApplicableScale = (productCode: string, quantity: number, productosEscala: IEscala[]) => {
     if (!productosEscala) return null
     return productosEscala.find((scale: IEscala) =>
@@ -232,18 +230,20 @@ export default function OrderPage() {
     ) || null
   }
 
-
-
   const handleAddProduct = async () => {
     if (!selectedProduct) return;
-    setIsCheckingBonification(true);
     try {
       const idArticulo = selectedProduct.Codigo_Art;
       const cantidad = quantity;
       const result = evaluarPromociones(selectedProduct);
+
       switch (result) {
         case PROMOCIONES.BONIFICADO:
+          setModalLoader('BONIFICADO');
+          setIsLoading(true);
           const bonificaciones = await getBonificados(idArticulo, cantidad);
+          setIsLoading(false);
+
           if (bonificaciones.length > 0) {
             setCurrentBonification({
               bonificaciones,
@@ -252,40 +252,43 @@ export default function OrderPage() {
               cantidadSolicitada: cantidad,
             });
             setShowBonificationModal(true);
+          } else {
+            addProductToList();
           }
-          else {
-            addProductToList()
-          }
-          break
+          break;
+
         case PROMOCIONES.ESCALA:
+          setModalLoader('ESCALA');
+          setIsLoading(true);
           const escalasProductos = await getEscalas(idArticulo, cantidad);
+          setIsLoading(false);
+
           if (escalasProductos.length > 0) {
-            const aplicableScale = getApplicableScale(selectedProduct.Codigo_Art, cantidad, escalasProductos)
+            const aplicableScale = getApplicableScale(selectedProduct.Codigo_Art, cantidad, escalasProductos);
             setCurrentScales({
               escalas: escalasProductos,
               productoSolicitado: idArticulo,
               nombreProductoSolicitado: selectedProduct.NombreItem,
               cantidadSolicitada: cantidad,
               escalaAplicable: aplicableScale,
-            })
-            setShowScalesModal(true)
+            });
+            setShowScalesModal(true);
+          } else {
+            addProductToList();
           }
-          else {
-            addProductToList()
-          }
-          break
+          break;
+
         case PROMOCIONES.NO_ESCALA_BONIFICADO:
-          addProductToList()
-          break
+          addProductToList();
+          break;
       }
     } catch (error) {
       console.error("Error al agregar producto:", error);
     } finally {
-      setIsCheckingBonification(false);
+      setIsLoading(false);
+      setModalLoader(null);
     }
   };
-
-
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setSearch((prev) => ({ ...prev, client: value }));
@@ -656,9 +659,15 @@ export default function OrderPage() {
             </Card>
 
             {/* Componente de verificación */}
-            <ModalVerification
+            {/* <ModalLoader
               open={isCheckingBonification}
               onOpenChange={setIsCheckingBonification}
+              caseKey="bonificaciones"
+            /> */}
+            <ModalLoader
+              open={isLoading}
+              onOpenChange={setIsLoading}
+              caseKey={modalLoader ?? undefined}
             />
 
             {/* Modal de bonificaciones */}

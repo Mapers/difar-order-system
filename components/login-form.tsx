@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label"
 import { ShoppingCart, Lock, User, ArrowRight } from "lucide-react"
 import { useAuth } from "@/context/authContext"
 import { toast } from "@/hooks/use-toast"
+import { UserLoginDTO } from "@/interface/auth-interface"
 
 export function LoginForm() {
   const router = useRouter()
@@ -33,10 +34,15 @@ export function LoginForm() {
     e.preventDefault()
     try {
       setLoadingLogin(true)
-      const formData = { dni, password }
+      const formData: UserLoginDTO = { dni, password }
       const response = await signin(formData);
-      if (response?.status === 200) {
+      if (response?.status === 200 && response.data.success) {
         router.push("/dashboard")
+      }
+      else {
+        const message = response?.data.message || "Error al iniciar sesión"
+        toast({ title: "login", description: message, variant: "success" })
+
       }
     } catch (error: any) {
       console.log("errror:", error);

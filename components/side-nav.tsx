@@ -2,23 +2,14 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import {
-  Package,
-  ShoppingCart,
-  Users,
-  Home,
-  LogOut,
-  FileText,
-  BarChart2,
-  LineChart,
-  ChevronDown,
-} from "lucide-react"
+import { Package, ShoppingCart, Users, Home, LogOut, FileText, BarChart2, LineChart, ChevronDown } from "lucide-react"
 import { cn } from "@/lib/utils"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { useState } from "react"
 import { useAuth } from "@/context/authContext"
+import { NAME_ROLES } from "@/constants"
 
 export function SideNav() {
   const pathname = usePathname()
@@ -26,13 +17,14 @@ export function SideNav() {
   const { logout } = useAuth();
 
   const handleLogout = async () => {
-      await logout()
+    await logout()
   }
   const navItems = [
     {
       title: "Dashboard",
       href: "/dashboard",
       icon: Home,
+      roles: [NAME_ROLES.ADMIN]
     },
     {
       title: "Clientes",
@@ -183,14 +175,14 @@ export function SideNav() {
         </nav>
       </ScrollArea>
       <div className="mt-auto border-t p-4">
-          <Button
-            variant="outline"
-            className="w-full justify-start gap-2 text-red-600 hover:bg-red-50 hover:text-red-700"
-            onClick={handleLogout}
-          >
-            <LogOut className="h-4 w-4" />
-            Cerrar sesión
-          </Button>
+        <Button
+          variant="outline"
+          className="w-full justify-start gap-2 text-red-600 hover:bg-red-50 hover:text-red-700"
+          onClick={handleLogout}
+        >
+          <LogOut className="h-4 w-4" />
+          Cerrar sesión
+        </Button>
       </div>
     </div>
   )

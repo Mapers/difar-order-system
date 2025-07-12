@@ -18,12 +18,14 @@ import { getEstadoVisual } from '@/utils/client'
 
 interface ModalVerificationProps {
   open: boolean
+  openModalEdit: (open: boolean) => void
   onOpenChange: (open: boolean) => void
   codClient: string
 }
 
 const ModalClientEvaluation: React.FC<ModalVerificationProps> = ({
   open,
+  openModalEdit,
   onOpenChange,
   codClient
 }) => {
@@ -81,7 +83,9 @@ const ModalClientEvaluation: React.FC<ModalVerificationProps> = ({
 
   const handleEdit = (client: any) => {
     console.log(`Editando evaluación para cliente: ${client.codigoInterno}`)
-  }
+    onOpenChange(false)
+    openModalEdit(true)
+  } 
 
 
   // lista documentos obligatorios

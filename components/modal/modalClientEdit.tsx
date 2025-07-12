@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { Dialog, DialogContent, DialogTitle, DialogHeader, DialogFooter } from "@/components/ui/dialog"
-import { Eye, User, FileText, CheckCircle, XCircle, Edit, AlertCircle, Plus, Save, X, MapPin, Calendar, ChevronDown, Check } from 'lucide-react'
+import { User, FileText, CheckCircle, XCircle, Edit, AlertCircle, Plus, Save, X, MapPin, Calendar, ChevronDown, Check } from 'lucide-react'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
@@ -10,10 +10,16 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Separator } from "@/components/ui/separator"
-import { fetchCreateUpdateClienteEvaluacion, fetchGetDistricts, fetchGetDocumentsTypes, fetchGetProvincesCities, fetchGetSunatStatus } from '@/app/api/clients'
+import { fetchCreateUpdateClienteEvaluacion, fetchGetDistricts, fetchGetDocumentsTypes, fetchGetProvincesCities, fetchGetSunatStatus, fetchGetZones } from '@/app/api/clients'
 import { useAuth } from '@/context/authContext';
 import { Popover, PopoverTrigger, PopoverContent } from '../ui/popover';
 import { Command, CommandInput, CommandList, CommandGroup, CommandItem, CommandEmpty } from '../ui/command';
+import ModalLoader from './modalLoader'
+import { toast } from '@/hooks/use-toast'
+import DireccionTecnica from '../cliente/tabDireccionTecnica'
+import Calificacion from '../cliente/tabCalificacion'
+import TabDireccionTecnica from '../cliente/tabDireccionTecnica'
+import TabCalificacion from '../cliente/tabCalificacion'
 
 function cn(...classes: (string | boolean | undefined)[]) {
   return classes.filter(Boolean).join(' ');
@@ -33,6 +39,8 @@ const ModalClientEdit: React.FC<ModalVerificationProps> = ({
 
   const { user, isAuthenticated } = useAuth();
   const [loading, setLoading] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const [modalLoader, setModalLoader] = useState<'BONIFICADO' | 'ESCALA' | 'EVALUACION' | null>(null);
 
   // Estados para controlar modales y formulario
   const [showCreateModal, setShowCreateModal] = useState(false)
@@ -40,9 +48,16 @@ const ModalClientEdit: React.FC<ModalVerificationProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [typeDocuments, setTypeDocuments] = useState<any>([])
   const [provincesCities, setProvincesCities] = useState<any>([])
+  const [districts, setDistricts] = useState<any>([])
+  const [zones, setZones] = useState<any>([])
   const [sunatStatus, setSunatStatus] = useState<any>([])
-  const [isPopoverOpen, setIsPopoverOpen] = useState(false);
+  const [isPopoverProvinceOpen, setIsPopoverProvinceOpen] = useState(false);
+  const [isPopoverZoneOpen, setIsPopoverZoneOpen] = useState(false);
+  const [isPopoverSunatOpen, setIsPopoverSunatOpen] = useState(false);
+  const [isPopoverDistrictOpen, setIsPopoverDistrictOpen] = useState(false);
   // Estado del formulario con estructura inicial
+
+
   const [formData, setFormData] = useState({
     // campos cliente
     codigo: '',
@@ -70,13 +85,34 @@ const ModalClientEdit: React.FC<ModalVerificationProps> = ({
     observaciones: '',
   });
 
-  // Listas simuladas para selects
-  const categorias = [{ value: 'cat1', label: 'Categoría 1' }, { value: 'cat2', label: 'Categoría 2' }]
-  const tiposDocumento = [{ value: 'dni', label: 'DNI' }, { value: 'ruc', label: 'RUC' }]
-  const estadosContribuyente = [{ value: 'activo', label: 'Activo' }, { value: 'inactivo', label: 'Inactivo' }]
-  const provincias = [{ id: 1, nombre: 'Provincia 1' }, { id: 2, nombre: 'Provincia 2' }]
-  const zonas = [{ id: 'zona1', nombre: 'Zona 1' }, { id: 'zona2', nombre: 'Zona 2' }]
-  const tiposCliente = [{ value: 'tipo1', label: 'Tipo 1' }, { value: 'tipo2', label: 'Tipo 2' }]
+
+  const [formDataDireccionTecnica, setFormDataDireccionTecnica] = useState({
+    autorizacion: {
+      codigo: codClient,
+      tipoId: 1,
+      detalle: '',
+      observaciones: '',
+    },
+    situacion: {
+      codigo: codClient,
+      tipoId: 2,
+      detalle: '',
+      observaciones: '',
+    },
+    registro: {
+      codigo: codClient,
+      tipoId: 3,
+      detalle: '',
+      observaciones: '',
+    },
+    certificaciones: {
+      codigo: codClient,
+      tipoId: 4,
+      detalle: '',
+      observaciones: '',
+    },
+  });
+
 
   // Manejo de cambios en inputs, soporta campos anidados con punto
   const handleInputChange = (field: string, value: any) => {
@@ -95,8 +131,6 @@ const ModalClientEdit: React.FC<ModalVerificationProps> = ({
       setFormData(prev => ({ ...prev, [field]: value }))
     }
   }
-
-
 
 
   // lista tipos de documento
@@ -130,13 +164,14 @@ const ModalClientEdit: React.FC<ModalVerificationProps> = ({
     }
   };
 
+
   // lista provincias ciudades
   const getListDistricts = async () => {
     try {
       setLoading(true);
       const response = await fetchGetDistricts();
       if (response && response.data.success && response.status === 200) {
-        setProvincesCities(response.data?.data || [])
+        setDistricts(response.data?.data || [])
       }
     } catch (error) {
       console.error("Error fetching districts:", error);
@@ -145,31 +180,50 @@ const ModalClientEdit: React.FC<ModalVerificationProps> = ({
     }
   };
 
-    // lista estados de sunat
-    const getLisSunatStatus = async () => {
-      try {
-        setLoading(true);
-        const response = await fetchGetSunatStatus();
-        if (response && response.data.success && response.status === 200) {
-          setSunatStatus(response.data?.data || [])
-        }
-      } catch (error) {
-        console.error("Error fetching districts:", error);
-      } finally {
-        setLoading(false);
+
+  // lista provincias ciudades
+  const getListZones = async () => {
+    try {
+      setLoading(true);
+      const response = await fetchGetZones();
+      if (response && response.data.success && response.status === 200) {
+        const filterZones = (response.data?.data || []).filter((zone: any) => zone.NombreZona !== null)
+        setZones(filterZones)
       }
-    };
+    } catch (error) {
+      console.error("Error fetching districts:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // lista estados de sunat
+  const getListSunatStatus = async () => {
+    try {
+      setLoading(true);
+      const response = await fetchGetSunatStatus();
+      if (response && response.data.success && response.status === 200) {
+        setSunatStatus(response.data?.data || [])
+      }
+    } catch (error) {
+      console.error("Error fetching districts:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Simulación de guardar datos
   const handleSave = async () => {
-    setIsSubmitting(true);
+    // setIsSubmitting(true);
+    setModalLoader('EVALUACION')
+    setIsLoading(true)
     try {
       const dataPayload = {
         codigo: codClient,
         codigoVed: user?.codigo,
-        nombre: ' ',
+        nombre: formData.nombre,
         nombreComercial: formData.nombreComercial,
-        ruc: formData.ruc ?? '',
+        ruc: formData.ruc,
         tipoDocIdent: formData.tipoDocIdent,
         tipoCliente: formData.tipoCliente,
         direccion: formData.direccion,
@@ -181,17 +235,27 @@ const ModalClientEdit: React.FC<ModalVerificationProps> = ({
         fechaInicio: formData.fechaInicio,
         fechaEvaluacion: formData.fechaEvaluacion,
         categoria: formData.categoria,
-        estadoSUNAT: '',
+        estadoSUNAT: formData.estadoSUNAT,
         representanteLegal: formData.representanteLegal,
         itemLista: formData.itemLista,
         aprobDirTecnica: ' ',
         aprobGerente: '',
         observaciones: '',
       };
+      console.log(">>>>data enviado :", dataPayload);
 
       const response = await fetchCreateUpdateClienteEvaluacion(dataPayload);
+      if (response.status === 201 && response?.data?.success) {
+        toast({ title: "Evaluación", description: response.data.message, variant: "success" })
+      }
+      else {
+        toast({ title: "Evaluación", description: response.data.message || "Evaluación no actualizada.", variant: "error" })
+
+      }
       console.log('Guardado exitoso:', response);
       // Aquí puedes mostrar mensaje, cerrar modal, etc.
+      setIsLoading(false)
+
       setShowCreateModal(false);
       setShowEditModal(false);
       onOpenChange(false);
@@ -199,7 +263,9 @@ const ModalClientEdit: React.FC<ModalVerificationProps> = ({
       console.error('Error al guardar:', error);
       // Manejo de error, mostrar alerta, etc.
     } finally {
-      setIsSubmitting(false);
+      // setIsSubmitting(false);
+      setIsLoading(false)
+      setModalLoader(null)
     }
   };
 
@@ -208,7 +274,9 @@ const ModalClientEdit: React.FC<ModalVerificationProps> = ({
     if (open && codClient) {
       getDocumentsType()
       getListProvincesCities()
-      getLisSunatStatus()
+      getListSunatStatus()
+      getListDistricts()
+      getListZones()
     }
 
   }, [open, codClient])
@@ -273,7 +341,7 @@ const ModalClientEdit: React.FC<ModalVerificationProps> = ({
                       value={codClient}
                       onChange={(e) => handleInputChange("codigoInterno", e.target.value)}
                       placeholder="CLI001"
-                      disabled={showEditModal}
+                      disabled
                     />
                   </div>
 
@@ -290,28 +358,21 @@ const ModalClientEdit: React.FC<ModalVerificationProps> = ({
 
                   <div className="space-y-2">
                     <Label htmlFor="categoria">Categoría *</Label>
-                    <select
+                    <Input
                       id="categoria"
                       value={formData.categoria}
                       onChange={(e) => handleInputChange("categoria", e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                      placeholder="Ejm: A"
                       required
-                    >
-                      <option value="">Seleccionar categoría</option>
-                      {categorias.map((categoria) => (
-                        <option key={categoria.value} value={categoria.value}>
-                          {categoria.label}
-                        </option>
-                      ))}
-                    </select>
+                    />
                   </div>
 
                   <div className="space-y-2 lg:col-span-3">
-                    <Label htmlFor="razonSocial">Razón Social *</Label>
+                    <Label htmlFor="nombre">Razón Social *</Label>
                     <Input
-                      id="razonSocial"
-                      // value={formData.razonSocial}
-                      onChange={(e) => handleInputChange("razonSocial", e.target.value)}
+                      id="nombre"
+                      value={formData.nombre}
+                      onChange={(e) => handleInputChange("nombre", e.target.value)}
                       placeholder="ALVAREZ MANTILLA BALDOMERO"
                       required
                     />
@@ -370,20 +431,53 @@ const ModalClientEdit: React.FC<ModalVerificationProps> = ({
 
                   <div className="space-y-2">
                     <Label htmlFor="estadoContribuyenteSunat">Estado Contribuyente SUNAT *</Label>
-                    <select
-                      id="estadoContribuyenteSunat"
-                      value={formData.estadoSUNAT}
-                      onChange={(e) => handleInputChange("estadoContribuyenteSunat", e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
-                      required
-                    >
-                      <option value="">Seleccionar estado</option>
-                      {sunatStatus.map((estado:any) => (
-                        <option key={estado.id} value={estado.id}>
-                          {estado.nombre}
-                        </option>
-                      ))}
-                    </select>
+                    <Popover open={isPopoverSunatOpen} onOpenChange={setIsPopoverSunatOpen}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          role="combobox"
+                          className="w-full justify-between h-12"
+                          aria-expanded={Boolean(formData.estadoSUNAT)}
+                          aria-controls="sunat-listbox"
+                          aria-haspopup="listbox"
+                        >
+                          {formData.estadoSUNAT
+                            ? sunatStatus.find((estado: any) => estado.nombre === formData.estadoSUNAT)?.nombre
+                            : 'Seleccionar estado...'}
+                          <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-full p-0">
+                        <Command>
+                          <CommandInput placeholder="Buscar estado..." />
+                          <CommandList id="sunat-listbox" role="listbox" aria-label="Estados SUNAT">
+                            <CommandEmpty>No se encontraron estados.</CommandEmpty>
+                            <CommandGroup>
+                              {sunatStatus.map((estado: any) => (
+                                <CommandItem
+                                  key={estado.id}
+                                  value={estado.nombre}
+                                  onSelect={() => {
+                                    handleInputChange('estadoSUNAT', estado.nombre);
+                                    setIsPopoverSunatOpen(false);
+                                  }}
+                                  aria-selected={formData.estadoSUNAT === estado.nombre}
+                                  role="option"
+                                >
+                                  <Check
+                                    className={cn(
+                                      'mr-2 h-4 w-4',
+                                      formData.estadoSUNAT === estado.nombre ? 'opacity-100' : 'opacity-0'
+                                    )}
+                                  />
+                                  {estado.nombre}
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
                   </div>
 
                   <div className="space-y-2">
@@ -440,26 +534,9 @@ const ModalClientEdit: React.FC<ModalVerificationProps> = ({
                 </h4>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                  {/* <div className="space-y-2">
-                    <Label htmlFor="provincia">Provincia *</Label>
-                    <select
-                      id="provincia"
-                      value={formData.provincia}
-                      onChange={(e) => handleInputChange("provincia", Number.parseInt(e.target.value))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
-                      required
-                    >
-                      <option value={0}>Seleccionar provincia</option>
-                      {provincesCities.map((provincia:any) => (
-                        <option key={provincia.id} value={provincia.id}>
-                          {provincia.nombre}
-                        </option>
-                      ))}
-                    </select>
-                  </div> */}
                   <div className="space-y-2">
                     <Label htmlFor="provincia">Provincia *</Label>
-                    <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
+                    <Popover open={isPopoverProvinceOpen} onOpenChange={setIsPopoverProvinceOpen}>
                       <PopoverTrigger asChild>
                         <Button
                           variant="outline"
@@ -470,7 +547,7 @@ const ModalClientEdit: React.FC<ModalVerificationProps> = ({
                           aria-haspopup="listbox"
                         >
                           {formData.provincia
-                            ? provincesCities.find((p: any) => p.codigo === formData.provincia)?.nombre
+                            ? provincesCities.find((p: any) => p.id === formData.provincia)?.nombre
                             : 'Seleccionar provincia...'}
                           <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                         </Button>
@@ -486,16 +563,16 @@ const ModalClientEdit: React.FC<ModalVerificationProps> = ({
                                   key={provincia.id}
                                   value={provincia.nombre}
                                   onSelect={() => {
-                                    handleInputChange('provincia', provincia.codigo);
-                                    setIsPopoverOpen(false)
+                                    handleInputChange('provincia', provincia.id);
+                                    setIsPopoverProvinceOpen(false)
                                   }}
-                                  aria-selected={formData.provincia === provincia.codigo}
+                                  aria-selected={formData.provincia === provincia.id}
                                   role="option"
                                 >
                                   <Check
                                     className={cn(
                                       'mr-2 h-4 w-4',
-                                      formData.provincia === provincia.codigo ? 'opacity-100' : 'opacity-0'
+                                      formData.provincia === provincia.id ? 'opacity-100' : 'opacity-0'
                                     )}
                                   />
                                   {provincia.nombre}
@@ -507,53 +584,106 @@ const ModalClientEdit: React.FC<ModalVerificationProps> = ({
                       </PopoverContent>
                     </Popover>
                   </div>
-
                   <div className="space-y-2">
-                    <Label htmlFor="idZona">Zona *</Label>
-                    <select
-                      id="idZona"
-                      value={formData.idZona}
-                      onChange={(e) => handleInputChange("idZona", e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
-                      required
-                    >
-                      <option value="">Seleccionar zona</option>
-                      {zonas.map((zona) => (
-                        <option key={zona.id} value={zona.id}>
-                          {zona.nombre}
-                        </option>
-                      ))}
-                    </select>
+                    <Label htmlFor="zona">Zona *</Label>
+                    <Popover open={isPopoverZoneOpen} onOpenChange={setIsPopoverZoneOpen}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          role="combobox"
+                          className="w-full justify-between h-12"
+                          aria-expanded={Boolean(formData.idZona)}
+                          aria-controls="zona-listbox"
+                          aria-haspopup="listbox"
+                        >
+                          {formData.idZona
+                            ? zones.find((z: any) => z.IdZona === formData.idZona)?.NombreZona
+                            : 'Seleccionar zona...'}
+                          <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-full p-0">
+                        <Command>
+                          <CommandInput placeholder="Buscar zona..." />
+                          <CommandList id="zona-listbox" role="listbox" aria-label="Zonas">
+                            <CommandEmpty>No se encontraron zonas.</CommandEmpty>
+                            <CommandGroup>
+                              {zones.map((zone: any) => (
+                                <CommandItem
+                                  key={zone.IdZona}
+                                  value={zone.NombreZona}
+                                  onSelect={() => {
+                                    handleInputChange('idZona', zone.IdZona);
+                                    setIsPopoverZoneOpen(false);
+                                  }}
+                                  aria-selected={formData.idZona === zone.IdZona}
+                                  role="option"
+                                >
+                                  <Check
+                                    className={cn(
+                                      'mr-2 h-4 w-4',
+                                      formData.idZona === zone.IdZona ? 'opacity-100' : 'opacity-0'
+                                    )}
+                                  />
+                                  {zone.NombreZona}
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
                   </div>
-
                   <div className="space-y-2">
-                    <Label htmlFor="idDistrito">ID Distrito</Label>
-                    <Input
-                      id="idDistrito"
-                      type="number"
-                      value={formData.idDistrito}
-                      onChange={(e) => handleInputChange("idDistrito", Number.parseInt(e.target.value) || 0)}
-                      placeholder="11001"
-                    />
+                    <Label htmlFor="distrito">Distrito *</Label>
+                    <Popover open={isPopoverDistrictOpen} onOpenChange={setIsPopoverDistrictOpen}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          role="combobox"
+                          className="w-full justify-between h-12"
+                          aria-expanded={Boolean(formData.idDistrito)}
+                          aria-controls="distrito-listbox"
+                          aria-haspopup="listbox"
+                        >
+                          {formData.idDistrito
+                            ? districts.find((d: any) => d.id === formData.idDistrito)?.nombre
+                            : 'Seleccionar distrito...'}
+                          <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-full p-0">
+                        <Command>
+                          <CommandInput placeholder="Buscar distrito..." />
+                          <CommandList id="distrito-listbox" role="listbox" aria-label="Distritos">
+                            <CommandEmpty>No se encontraron distritos.</CommandEmpty>
+                            <CommandGroup>
+                              {districts.map((district: any) => (
+                                <CommandItem
+                                  key={district.id}
+                                  value={district.nombre}
+                                  onSelect={() => {
+                                    handleInputChange('idDistrito', district.id);
+                                    setIsPopoverDistrictOpen(false);
+                                  }}
+                                  aria-selected={formData.idDistrito === district.id}
+                                  role="option"
+                                >
+                                  <Check
+                                    className={cn(
+                                      'mr-2 h-4 w-4',
+                                      formData.idDistrito === district.id ? 'opacity-100' : 'opacity-0'
+                                    )}
+                                  />
+                                  {district.nombre}
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
                   </div>
-                  {/* 
-                  <div className="space-y-2">
-                    <Label htmlFor="tipoCliente">Tipo Cliente *</Label>
-                    <select
-                      id="tipoCliente"
-                      value={formData.tipoCliente}
-                      onChange={(e) => handleInputChange("tipoCliente", e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
-                      required
-                    >
-                      <option value="">Seleccionar tipo</option>
-                      {tiposCliente.map((tipo) => (
-                        <option key={tipo.value} value={tipo.value}>
-                          {tipo.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div> */}
                 </div>
               </div>
 
@@ -597,331 +727,58 @@ const ModalClientEdit: React.FC<ModalVerificationProps> = ({
                 </div>
               </div>
             </div>
+            <DialogFooter className="flex flex-col-reverse sm:flex-row gap-3 sm:gap-2 mt-6">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowCreateModal(false)
+                  setShowEditModal(false)
+                  onOpenChange(false)
+                }}
+                className="w-full sm:w-auto"
+              >
+                <X className="mr-2 h-4 w-4" />
+                Cancelar
+              </Button>
+              <Button
+                onClick={handleSave}
+                disabled={isSubmitting}
+                className={`w-full sm:w-auto ${showCreateModal ? "bg-blue-600 hover:bg-blue-700" : "bg-orange-600 hover:bg-orange-700"}`}
+              >
+                {isSubmitting ? (
+                  <>
+                    <div className="animate-spin mr-2 h-4 w-4 border-2 border-white border-t-transparent rounded-full" />
+                    {showCreateModal ? "Creando..." : "Actualizando..."}
+                  </>
+                ) : (
+                  <>
+                    <Save className="mr-2 h-4 w-4" />
+                    {showCreateModal ? "Crear Evaluación" : "Actualizar Evaluación"}
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
           </TabsContent>
 
           {/* Tab 2: Dirección Técnica */}
-          <TabsContent value="direccion-tecnica" className="space-y-6 mt-6">
-            <div className="space-y-6">
-              <h4 className="font-medium text-gray-900 flex items-center gap-2">
-                <FileText className="h-4 w-4 text-green-600" />
-                Documentación Obligatoria
-              </h4>
+          <TabDireccionTecnica
+            onClose={() => onOpenChange(false)}
+            initialData={formDataDireccionTecnica}
+          />
 
-              {/* Documentos obligatorios */}
-              <div className="space-y-6">
-                {/* Autorización Sanitaria */}
-                <Card className="bg-blue-50 border-blue-200">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-sm font-medium text-blue-900">
-                      N° Resolución Directoral de Autorización Sanitaria
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="autorizacionSanitaria-detalle">Detalle</Label>
-                        <Input
-                          id="autorizacionSanitaria-detalle"
-                          // value={formData.documentos.autorizacionSanitaria.detalle}
-                          onChange={(e) =>
-                            handleInputChange("documentos.autorizacionSanitaria.detalle", e.target.value)
-                          }
-                          placeholder="Número de autorización"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="autorizacionSanitaria-observaciones">Observaciones</Label>
-                        <Textarea
-                          id="autorizacionSanitaria-observaciones"
-                          // value={formData.documentos.autorizacionSanitaria.observaciones}
-                          onChange={(e) =>
-                            handleInputChange("documentos.autorizacionSanitaria.observaciones", e.target.value)
-                          }
-                          placeholder="Observaciones sobre la autorización"
-                          rows={2}
-                        />
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Situación de Funcionamiento */}
-                <Card className="bg-green-50 border-green-200">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-sm font-medium text-green-900">Situación de Funcionamiento</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="situacionFuncionamiento-detalle">Detalle</Label>
-                        <Input
-                          id="situacionFuncionamiento-detalle"
-                          // value={formData.documentos.situacionFuncionamiento.detalle}
-                          onChange={(e) =>
-                            handleInputChange("documentos.situacionFuncionamiento.detalle", e.target.value)
-                          }
-                          placeholder="Estado de funcionamiento"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="situacionFuncionamiento-observaciones">Observaciones</Label>
-                        <Textarea
-                          id="situacionFuncionamiento-observaciones"
-                          value={formData.observaciones}
-                          onChange={(e) =>
-                            handleInputChange("documentos.situacionFuncionamiento.observaciones", e.target.value)
-                          }
-                          placeholder="Observaciones sobre el funcionamiento"
-                          rows={2}
-                        />
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Número de Registro */}
-                <Card className="bg-yellow-50 border-yellow-200">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-sm font-medium text-yellow-900">Número de Registro</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="numeroRegistro-detalle">Detalle</Label>
-                        <Input
-                          id="numeroRegistro-detalle"
-                          // value={formData.documentos.numeroRegistro.detalle}
-                          onChange={(e) => handleInputChange("documentos.numeroRegistro.detalle", e.target.value)}
-                          placeholder="Número de registro"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="numeroRegistro-observaciones">Observaciones</Label>
-                        <Textarea
-                          id="numeroRegistro-observaciones"
-                          // value={formData.documentos.numeroRegistro.observaciones}
-                          onChange={(e) =>
-                            handleInputChange("documentos.numeroRegistro.observaciones", e.target.value)
-                          }
-                          placeholder="Observaciones sobre el registro"
-                          rows={2}
-                        />
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Certificaciones */}
-                <Card className="bg-purple-50 border-purple-200">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-sm font-medium text-purple-900">Certificaciones</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="certificaciones-detalle">Detalle</Label>
-                        <Input
-                          id="certificaciones-detalle"
-                          // value={formData.documentos.certificaciones.detalle}
-                          onChange={(e) => handleInputChange("documentos.certificaciones.detalle", e.target.value)}
-                          placeholder="Certificaciones obtenidas"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="certificaciones-observaciones">Observaciones</Label>
-                        <Textarea
-                          id="certificaciones-observaciones"
-                          // value={formData.documentos.certificaciones.observaciones}
-                          onChange={(e) =>
-                            handleInputChange("documentos.certificaciones.observaciones", e.target.value)
-                          }
-                          placeholder="Observaciones sobre las certificaciones"
-                          rows={2}
-                        />
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
-          </TabsContent>
-
-          {/* Tab 3: Calificación */}
-          <TabsContent value="calificacion" className="space-y-6 mt-6">
-            <div className="space-y-6">
-              <h4 className="font-medium text-gray-900 flex items-center gap-2">
-                <CheckCircle className="h-4 w-4 text-green-600" />
-                Calificación Final
-              </h4>
-
-              {/* Aprobaciones con botones toggle */}
-              <div className="grid grid-cols-1 gap-6">
-                <Card className="bg-blue-50 border-blue-200">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-sm font-medium text-blue-900 flex items-center gap-2">
-                      <FileText className="h-4 w-4" />
-                      Firma Dirección Técnica
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="text-center">
-                      <p className="text-sm text-gray-600 mb-4">Estado de aprobación:</p>
-                      <Button
-                        onClick={() => handleInputChange("aprobadoDirTecnica", !formData.aprobadoDirTecnica)}
-                        className={`w-full h-12 text-sm sm:text-base font-bold transition-all duration-200 ${formData.aprobadoDirTecnica
-                          ? "bg-green-600 hover:bg-green-700 text-white"
-                          : "bg-red-600 hover:bg-red-700 text-white"
-                          }`}
-                      >
-                        {formData.aprobadoDirTecnica ? (
-                          <div className="flex items-center gap-2">
-                            <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5" />
-                            <span className="hidden sm:inline">APROBADO</span>
-                            <span className="sm:hidden">✓ APROBADO</span>
-                          </div>
-                        ) : (
-                          <div className="flex items-center gap-2">
-                            <XCircle className="h-4 w-4 sm:h-5 sm:w-5" />
-                            <span className="hidden sm:inline">NO APROBADO</span>
-                            <span className="sm:hidden">✗ NO APROBADO</span>
-                          </div>
-                        )}
-                      </Button>
-                      <p className="text-xs text-gray-500 mt-2">Haz clic para cambiar el estado</p>
-                    </div>
-
-                    {/* Línea de firma */}
-                    <div className="border-t border-gray-300 pt-4 mt-6">
-                      <div className="text-center">
-                        <div className="h-8 sm:h-12 border-b border-gray-400 mb-2"></div>
-                        <p className="text-xs font-medium text-gray-700">DIRECCIÓN TÉCNICA</p>
-                        <p className="text-xs text-gray-500">Firma y sello</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card className="bg-green-50 border-green-200">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-sm font-medium text-green-900 flex items-center gap-2">
-                      <User className="h-4 w-4" />
-                      Firma Gerente
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="text-center">
-                      <p className="text-sm text-gray-600 mb-4">Estado de aprobación:</p>
-                      <Button
-                        // onClick={() => handleInputChange("aprobadoGerente", !formData.aprobadoGerente)}
-                        className={`w-full h-12 text-sm sm:text-base font-bold transition-all duration-200 ${formData.aprobadoGerente
-                          ? "bg-green-600 hover:bg-green-700 text-white"
-                          : "bg-red-600 hover:bg-red-700 text-white"
-                          }`}
-                      >
-                        {formData.aprobadoGerente ? (
-                          <div className="flex items-center gap-2">
-                            <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5" />
-                            <span className="hidden sm:inline">APROBADO</span>
-                            <span className="sm:hidden">✓ APROBADO</span>
-                          </div>
-                        ) : (
-                          <div className="flex items-center gap-2">
-                            <XCircle className="h-4 w-4 sm:h-5 sm:w-5" />
-                            <span className="hidden sm:inline">NO APROBADO</span>
-                            <span className="sm:hidden">✗ NO APROBADO</span>
-                          </div>
-                        )}
-                      </Button>
-                      <p className="text-xs text-gray-500 mt-2">Haz clic para cambiar el estado</p>
-                    </div>
-
-                    {/* Línea de firma */}
-                    <div className="border-t border-gray-300 pt-4 mt-6">
-                      <div className="text-center">
-                        <div className="h-8 sm:h-12 border-b border-gray-400 mb-2"></div>
-                        <p className="text-xs font-medium text-gray-700">GERENTE</p>
-                        <p className="text-xs text-gray-500">Firma y sello</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Observaciones globales */}
-              <div className="space-y-4">
-                <Label htmlFor="observacionesGlobal">Observaciones Globales</Label>
-                <Textarea
-                  id="observacionesGlobal"
-                  // value={formData.observacionesGlobal}
-                  onChange={(e) => handleInputChange("observacionesGlobal", e.target.value)}
-                  placeholder="Observaciones generales sobre la evaluación del cliente..."
-                  rows={4}
-                  className="w-full"
-                />
-              </div>
-
-              {/* Resultado final */}
-              <Card className="bg-gray-50 border-gray-200">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-medium text-gray-900">Resultado de la Evaluación</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center justify-center p-6">
-                    {formData.aprobadoDirTecnica && formData.aprobadoGerente ? (
-                      <div className="flex items-center gap-3 text-green-700">
-                        <CheckCircle className="h-8 w-8" />
-                        <span className="text-xl font-bold">CLIENTE APROBADO</span>
-                      </div>
-                    ) : formData.aprobadoDirTecnica === false || formData.aprobadoGerente === false ? (
-                      <div className="flex items-center gap-3 text-red-700">
-                        <XCircle className="h-8 w-8" />
-                        <span className="text-xl font-bold">CLIENTE NO APROBADO</span>
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-3 text-yellow-700">
-                        <AlertCircle className="h-8 w-8" />
-                        <span className="text-xl font-bold">EVALUACIÓN PENDIENTE</span>
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
+          <TabCalificacion
+            onClose={() => onOpenChange(false)}
+            formData={formData}
+            setFormData={setFormData}
+            // onSave={handleSave(formData)}
+          />
         </Tabs>
-
-        <DialogFooter className="flex flex-col-reverse sm:flex-row gap-3 sm:gap-2 mt-6">
-          <Button
-            variant="outline"
-            onClick={() => {
-              setShowCreateModal(false)
-              setShowEditModal(false)
-              onOpenChange(false)
-            }}
-            className="w-full sm:w-auto"
-          >
-            <X className="mr-2 h-4 w-4" />
-            Cancelar
-          </Button>
-          <Button
-            onClick={handleSave}
-            disabled={isSubmitting}
-            className={`w-full sm:w-auto ${showCreateModal ? "bg-blue-600 hover:bg-blue-700" : "bg-orange-600 hover:bg-orange-700"}`}
-          >
-            {isSubmitting ? (
-              <>
-                <div className="animate-spin mr-2 h-4 w-4 border-2 border-white border-t-transparent rounded-full" />
-                {showCreateModal ? "Creando..." : "Actualizando..."}
-              </>
-            ) : (
-              <>
-                <Save className="mr-2 h-4 w-4" />
-                {showCreateModal ? "Crear Evaluación" : "Actualizar Evaluación"}
-              </>
-            )}
-          </Button>
-        </DialogFooter>
       </DialogContent>
+      <ModalLoader
+        open={isLoading}
+        onOpenChange={setIsLoading}
+        caseKey={modalLoader ?? undefined}
+      />
     </Dialog>
   )
 }

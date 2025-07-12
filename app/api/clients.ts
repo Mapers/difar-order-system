@@ -21,6 +21,10 @@ export const fetchEvaluationCalifByCodClient = async (codClient: string): Promis
     return apiClient.get(`/clientes/evaluacion-calif/${encodeURIComponent(codClient)}`);
 };
 
+export const fetchCreateEvaluationDocument = async (dataPayload: any): Promise<any> => {
+    return apiClient.post(`/clientes/create-update-evaluacion-doc`,dataPayload);
+};
+
 export const fetchCreateUpdateClienteEvaluacion = async (dataPayload:any): Promise<any> => {
     return apiClient.post(`/clientes/create-update-cliente-evaluacion`,dataPayload);
 };
@@ -40,3 +44,8 @@ export const fetchGetDistricts = async (): Promise<any> => {
 export const fetchGetSunatStatus= async (): Promise<any> => {
     return apiClient.get(`/clientes/sunat/estado-sunat`);
 };
+
+export const fetchGetZones= async (): Promise<any> => {
+    return apiClient.get(`/clientes/zone/list-zone`);
+};
+

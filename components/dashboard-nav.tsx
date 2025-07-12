@@ -13,16 +13,20 @@ export function DashboardNav() {
       title: "Clientes",
       href: "/dashboard/clientes",
       icon: Users,
+      roles:["VENDEDOR"]
     },
     {
       title: "Productos",
       href: "/dashboard/productos",
       icon: Package,
+      roles:["USUARIO","VENDEDOR"]
+
     },
     {
       title: "Tomar Pedido",
       href: "/dashboard/tomar-pedido",
       icon: ShoppingCart,
+      roles:["USUARIO","VENDEDOR"]
     },
   ]
 

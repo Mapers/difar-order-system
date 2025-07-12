@@ -35,13 +35,13 @@ export interface User {
 // Resto de interfaces...
 export interface UserLoginDTO {
     dni: string;        // Basado en el SP que usa DNI
-    contrasena: string; // Basado en el SP que usa contrasena
+    password: string; // Basado en el SP que usa password
 }
 
 export interface UserRegisterDTO {
     dni: string;
     nombre: string;
-    contrasena: string;
+    password: string;
     id_rol?: number;
 }
 
