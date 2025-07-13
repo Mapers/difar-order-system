@@ -10,7 +10,7 @@ export interface BaseJwtPayload {
 
 // Interface para vendedores (cuando idvendedor IS NOT NULL)
 export interface VendedorJwtPayload extends BaseJwtPayload {
-    Codigo_vend: string;
+    Codigo_Vend: string;
     Nombre_Completo: string;
 }
 

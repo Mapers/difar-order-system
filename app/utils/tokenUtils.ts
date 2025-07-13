@@ -38,7 +38,7 @@ const normalizeUserData = (decoded: any, userType: string): User | null => {
         case 'vendedor':
             return {
                 ...baseUser,
-                codigo: decoded.Codigo_vend,
+                codigo: decoded.Codigo_Vend,
                 nombre: decoded.Nombre_Completo,
             };
         

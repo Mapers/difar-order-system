@@ -80,7 +80,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 console.log("> Token", token);
                 localStorage.setItem("token", token);
                 const tokenResult = decodeToken(token);
-
+                console.log("> Token result", tokenResult);
                 if (tokenResult.isValid && tokenResult.user) {
                     console.log("> Token result valid :", tokenResult.user);
                     setUser(tokenResult.user);
