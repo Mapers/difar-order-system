@@ -687,10 +687,10 @@ const ModalClientEdit: React.FC<ModalVerificationProps> = ({
           </Button>
           <Button
             onClick={handleSave}
-            disabled={isSubmitting}
-            className={`w-full sm:w-auto ${showCreateModal ? "bg-blue-600 hover:bg-blue-700" : "bg-orange-600 hover:bg-orange-700"}`}
+            disabled={isLoading}
+            className={`w-full sm:w-auto bg-blue-600 hover:bg-blue-700`}
           >
-            {isSubmitting ? (
+            {/* {true ? (
               <>
                 <div className="animate-spin mr-2 h-4 w-4 border-2 border-white border-t-transparent rounded-full" />
                 {showCreateModal ? "Creando..." : "Actualizando..."}
@@ -700,7 +700,10 @@ const ModalClientEdit: React.FC<ModalVerificationProps> = ({
                 <Save className="mr-2 h-4 w-4" />
                 {showCreateModal ? "Crear Evaluación" : "Actualizar Evaluación"}
               </>
-            )}
+            )} */}
+            <Save className="mr-2 h-4 w-4" />
+            Crear Evaluación
+            {/* {showCreateModal ? "Crear Evaluación" : "Actualizar Evaluación"} */}
           </Button>
         </DialogFooter>
       </DialogContent>

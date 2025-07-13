@@ -73,6 +73,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         try {
             setLoading(true);
             const res = await loginRequest(userData);
+            console.log("signin  res:", res)
+            console.log("signin :", res.data)
             if (res && res.status === 200) {
                 const token = res.data.data;
                 console.log("> Token", token);

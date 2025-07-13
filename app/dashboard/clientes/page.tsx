@@ -82,31 +82,7 @@ export default function ClientsPage() {
   }
 
 
-  // 🔵 Catálogos simulados
-  const categorias = [
-    { value: "cat1", label: "Categoría 1" },
-    { value: "cat2", label: "Categoría 2" },
-  ];
-  const tiposDocumento = [
-    { value: "dni", label: "DNI" },
-    { value: "ruc", label: "RUC" },
-  ];
-  const estadosContribuyente = [
-    { value: "activo", label: "Activo" },
-    { value: "suspendido", label: "Suspendido" },
-  ];
-  const provincias = [
-    { id: 1, nombre: "Lima" },
-    { id: 2, nombre: "Ayacucho" },
-  ];
-  const zonas = [
-    { id: "Z1", nombre: "Zona 1" },
-    { id: "Z2", nombre: "Zona 2" },
-  ];
-  const tiposCliente = [
-    { value: "mayorista", label: "Mayorista" },
-    { value: "minorista", label: "Minorista" },
-  ];
+
 
   // 🧠 Función de guardado
   const handleSave = async () => {
@@ -148,6 +124,7 @@ export default function ClientsPage() {
   };
 
   useEffect(() => {
+    console.log(" user:", user)
     if (isAuthenticated && user?.codigo) {
       getClients();
     }

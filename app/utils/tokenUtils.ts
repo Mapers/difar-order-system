@@ -14,7 +14,7 @@ export interface TokenDecodeResult {
  */
 const determineUserType = (decoded: any): 'vendedor' | 'usuario' | 'unknown' => {
     // Si tiene Codigo_vend y Nombre_Completo, es un vendedor
-    if (decoded.Codigo_vend && decoded.Nombre_Completo) {
+    if (decoded.Codigo_Vend && decoded.Nombre_Completo) {
         return 'vendedor';
     }
     // Si tiene EmpRegistros y NombreUsuarios, es un usuario/administrador
@@ -86,6 +86,7 @@ export const decodeToken = (token: string | null | undefined): TokenDecodeResult
         }
 
         // Determinar el tipo de usuario basado en la lógica del SP
+        console.log("decoded:", decoded)
         const userType = determineUserType(decoded);
         
         if (userType === 'unknown') {
