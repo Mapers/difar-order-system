@@ -221,23 +221,7 @@ const TabCalificacion: React.FC<DireccionTecnicaProps> = ({ onClose, formData, s
                     <X className="mr-2 h-4 w-4" />
                     Cancelar
                 </Button>
-                <Button
-                    onClick={handleSave}
-                    disabled={isSubmitting}
-                    className={`w-full sm:w-auto ${true ? "bg-blue-600 hover:bg-blue-700" : "bg-orange-600 hover:bg-orange-700"}`}
-                >
-                    {isSubmitting ? (
-                        <>
-                            <div className="animate-spin mr-2 h-4 w-4 border-2 border-white border-t-transparent rounded-full" />
-                            {true ? "Creando..." : "Actualizando..."}
-                        </>
-                    ) : (
-                        <>
-                            <Save className="mr-2 h-4 w-4" />
-                            {true ? "Dirección Calificación" : "Actualizar Calificación"}
-                        </>
-                    )}
-                </Button>
+
             </DialogFooter>
         </TabsContent>
     )

@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Separator } from "@/components/ui/separator"
-import { fetchCreateUpdateClienteEvaluacion, fetchGetDistricts, fetchGetDocumentsTypes, fetchGetProvincesCities, fetchGetSunatStatus, fetchGetZones } from '@/app/api/clients'
+import { fetchCreateUpdateClienteEvaluacion, fetchEvaluationDocsClient, fetchGetDistricts, fetchGetDocumentsTypes, fetchGetProvincesCities, fetchGetSunatStatus, fetchGetZones } from '@/app/api/clients'
 import { useAuth } from '@/context/authContext';
 import { Popover, PopoverTrigger, PopoverContent } from '../ui/popover';
 import { Command, CommandInput, CommandList, CommandGroup, CommandItem, CommandEmpty } from '../ui/command';
@@ -34,7 +34,7 @@ interface ModalVerificationProps {
 const ModalClientEdit: React.FC<ModalVerificationProps> = ({
   open,
   onOpenChange,
-  codClient
+  codClient,
 }) => {
 
   const { user, isAuthenticated } = useAuth();
@@ -51,6 +51,7 @@ const ModalClientEdit: React.FC<ModalVerificationProps> = ({
   const [districts, setDistricts] = useState<any>([])
   const [zones, setZones] = useState<any>([])
   const [sunatStatus, setSunatStatus] = useState<any>([])
+  const [evaluation, setEvaluation] = useState<any>([])
   const [isPopoverProvinceOpen, setIsPopoverProvinceOpen] = useState(false);
   const [isPopoverZoneOpen, setIsPopoverZoneOpen] = useState(false);
   const [isPopoverSunatOpen, setIsPopoverSunatOpen] = useState(false);
@@ -212,6 +213,21 @@ const ModalClientEdit: React.FC<ModalVerificationProps> = ({
     }
   };
 
+  // lista estados de sunat
+  const getEvaluationClient = async () => {
+    try {
+      setLoading(true);
+      const response = await fetchEvaluationDocsClient(codClient);
+      if (response && response.data.success && response.status === 200) {
+        setEvaluation(response.data?.data || [])
+      }
+    } catch (error) {
+      console.error("Error fetching evaluations:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Simulación de guardar datos
   const handleSave = async () => {
     // setIsSubmitting(true);
@@ -277,6 +293,7 @@ const ModalClientEdit: React.FC<ModalVerificationProps> = ({
       getListSunatStatus()
       getListDistricts()
       getListZones()
+      getEvaluationClient()
     }
 
   }, [open, codClient])

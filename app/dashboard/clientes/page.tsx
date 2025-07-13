@@ -77,9 +77,7 @@ export default function ClientsPage() {
 
   // Abrir modal de visualización
   const handleView = (codClient: string) => {
-    console.log(">>>cod cliente : ", codClient)
     setCodClient(codClient)
-    // setSelectedClient(client)
     setShowViewModal(true)
   }
 
@@ -144,8 +142,9 @@ export default function ClientsPage() {
   };
 
   // Abrir modal de creación
-  const handleCreate = () => {
+  const handleCreateNewEvaluation = () => {
     setShowCreateModal(true);
+    // setShowEditModal(true);
   };
 
   useEffect(() => {
@@ -160,7 +159,6 @@ export default function ClientsPage() {
         <h1 className="text-3xl font-bold tracking-tight text-gray-900">Clientes</h1>
         <p className="text-gray-500">Sistema de evaluación y gestión de clientes DIFAR</p>
       </div>
-
       <Card className="shadow-md">
         <CardHeader className="flex flex-col space-y-4 sm:space-y-0 sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="space-y-1.5">
@@ -171,13 +169,12 @@ export default function ClientsPage() {
               Sistema de evaluación y gestión de clientes DIFAR
             </p>
           </div>
-
           <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
             <Button variant="outline" className="w-full sm:w-auto bg-transparent">
               <Download className="mr-2 h-4 w-4" />
               Exportar
             </Button>
-            <Button onClick={handleCreate} className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto">
+            <Button onClick={handleCreateNewEvaluation} className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto">
               <Plus className="mr-2 h-4 w-4" />
               Nueva Evaluación
             </Button>
@@ -185,7 +182,6 @@ export default function ClientsPage() {
         </CardHeader>
 
         <CardContent>
-          {/* ✅ Mostrar errores */}
           {error && (
             <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-md">
               <p className="text-red-800 text-sm">{error}</p>
@@ -337,17 +333,7 @@ export default function ClientsPage() {
         <ModalCreateEditions
           open={showCreateModal}
           onOpenChange={setShowCreateModal}
-          isCreate={true}
-          formData={formData}
-          setFormData={setFormData}
-          handleSave={handleSave}
-          isSubmitting={false}
-          categorias={categorias}
-          tiposDocumento={tiposDocumento}
-          estadosContribuyente={estadosContribuyente}
-          provincias={provincias}
-          zonas={zonas}
-          tiposCliente={tiposCliente}
+          codClient={codClient}
         />
 
         <ModalClientEvaluation

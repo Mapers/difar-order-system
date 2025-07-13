@@ -525,16 +525,6 @@ const ModalClientEvaluation: React.FC<ModalVerificationProps> = ({
           <Button variant="outline" onClick={() => onOpenChange(false)} className="w-full sm:w-auto">
             Cerrar
           </Button>
-          <Button
-            onClick={() => {
-              onOpenChange(false)
-              handleEdit(client)
-            }}
-            className="bg-orange-600 hover:bg-orange-700 w-full sm:w-auto"
-          >
-            <Edit className="mr-2 h-4 w-4" />
-            Editar Evaluación
-          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

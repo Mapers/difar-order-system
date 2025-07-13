@@ -20,6 +20,9 @@ export const fetchGetDocObligatorios = async (): Promise<any> => {
 export const fetchEvaluationCalifByCodClient = async (codClient: string): Promise<any> => {
     return apiClient.get(`/clientes/evaluacion-calif/${encodeURIComponent(codClient)}`);
 };
+export const fetchEvaluationDocsClient = async (codClient: string): Promise<any> => {
+    return apiClient.get(`/clientes/evaluacion-doc/${encodeURIComponent(codClient)}`);
+};
 
 export const fetchCreateEvaluationDocument = async (dataPayload: any): Promise<any> => {
     return apiClient.post(`/clientes/create-update-evaluacion-doc`,dataPayload);
