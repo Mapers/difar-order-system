@@ -1,73 +1,38 @@
 'use client'
 
+import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Search, UserPlus, Eye, Edit, Trash, Download, Plus, Filter, ChevronDown } from "lucide-react"
+import { Search, Eye, Edit, Download, Plus, Filter, ChevronDown } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
-import { useEffect, useState } from "react"
-import { Skeleton } from "@/components/ui/skeleton"
-import debounce from 'lodash.debounce';
-import ModalCreateEditions from "@/components/modal/modalCreateEditions"
 import { Label } from "@radix-ui/react-label"
-import { format, parseISO } from "date-fns"
 import { useAuth } from '@/context/authContext';
+import ModalCreateEditions from "@/components/modal/modalCreateEditions"
 import ModalClientEvaluation from "@/components/modal/modalClientView"
+import ModalClientEdit from "@/components/modal/modalClientEdit"
+import SkeletonClientRow from "@/components/skeleton/ClientListSkeleton"
 import { IClient } from "@/interface/clients/client-interface"
 import { mapClientFromApi } from "@/mappers/clients"
 import { formatSafeDate } from "@/utils/date"
-import ModalClientEdit from "@/components/modal/modalClientEdit"
 import { ClientService } from "@/app/services/client/ClientService"
+import { ClientMethodsService } from "./services/clientMethodsService"
 
 export default function ClientsPage() {
   const { user, isAuthenticated } = useAuth();
   const [clients, setClients] = useState<IClient[]>([])
+  const [filteredClients, setFilteredClients] = useState<IClient[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [searchTerm, setSearchTerm] = useState("")
 
   // Estados para modales
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [showViewModal, setShowViewModal] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
   const [showFilters, setShowFilters] = useState(false)
-
-  // Estado base de formData
-  const [formData, setFormData] = useState<any>({
-    codigoInterno: "",
-    nombreComercial: "",
-    categoria: "",
-    razonSocial: "",
-    ruc: "",
-    tipoDocIdent: "",
-    telefono: "",
-    direccion: "",
-    estadoContribuyenteSunat: "",
-    fechaEvaluacion: "",
-    itemLista: "",
-    representanteLegal: "",
-    correoElectronico: "",
-    provincia: 0,
-    idZona: "",
-    idDistrito: 0,
-    tipoCliente: "",
-    fechaInicio: "",
-    numRegistro: "",
-    codigoVendedor: "",
-    documentos: {
-      autorizacionSanitaria: { detalle: "", observaciones: "" },
-      situacionFuncionamiento: { detalle: "", observaciones: "" },
-      numeroRegistro: { detalle: "", observaciones: "" },
-      certificaciones: { detalle: "", observaciones: "" },
-    },
-    aprobadoDirTecnica: null,
-    aprobadoGerente: null,
-    observacionesGlobal: "",
-  });
-
-  const [selectedClient, setSelectedClient] = useState<IClient | null>(null)
   const [codClient, setCodClient] = useState<any>("")
-
 
   // Abrir modal de edición
   const handleEdit = (codClient: string) => {
@@ -80,8 +45,6 @@ export default function ClientsPage() {
     setCodClient(codClient)
     setShowViewModal(true)
   }
-
-
 
   // lista clientes con codigo de vendedor
   const getAllClients = async () => {
@@ -97,6 +60,7 @@ export default function ClientsPage() {
       const rawClients = response?.data || [];
       const mappedClients: IClient[] = rawClients.map(mapClientFromApi)
       setClients(mappedClients);
+      setFilteredClients(mappedClients); // Inicialmente sin filtro
     } catch (error) {
       console.error("Error fetching clients:", error);
       setError("Error al cargar los clientes");
@@ -108,8 +72,22 @@ export default function ClientsPage() {
   // Abrir modal de creación
   const handleCreateNewEvaluation = () => {
     setShowCreateModal(true);
-    // setShowEditModal(true);
   };
+
+  // Filtrar clientes cuando cambia searchTerm o clients
+  useEffect(() => {
+    if (!searchTerm) {
+      setFilteredClients(clients);
+      return;
+    }
+    const lowerSearch = searchTerm.toLowerCase();
+    const filtered = clients.filter(client =>
+      client.codigoInterno?.toLowerCase().includes(lowerSearch) ||
+      client.razonSocial?.toLowerCase().includes(lowerSearch) ||
+      client.provincia?.toLowerCase().includes(lowerSearch)
+    );
+    setFilteredClients(filtered);
+  }, [searchTerm, clients]);
 
   useEffect(() => {
     if (isAuthenticated && user?.codigo) {
@@ -177,9 +155,12 @@ export default function ClientsPage() {
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                   <Input
+                    id="search"
                     type="search"
                     placeholder="Ej: 10067929611, AMADO LOARTE BENITA, Condorcanqui..."
                     className="pl-10"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
                   />
                 </div>
               </div>
@@ -188,7 +169,7 @@ export default function ClientsPage() {
           <div className="space-y-4">
             <div className="flex items-center justify-between mt-3">
               <p className="text-sm text-gray-600">
-                {clients.length} cliente{clients.length !== 1 ? "s" : ""} encontrado{clients.length !== 1 ? "s" : ""}
+                {filteredClients.length} cliente{filteredClients.length !== 1 ? "s" : ""} encontrado{filteredClients.length !== 1 ? "s" : ""}
               </p>
             </div>
             <div className="hidden lg:block">
@@ -209,74 +190,67 @@ export default function ClientsPage() {
                     <TableBody>
                       {loading || !isAuthenticated ? (
                         Array.from({ length: 5 }).map((_, index) => (
-                          <TableRow key={index}>
-                            <TableCell><Skeleton className="h-4 w-[80px]" /></TableCell>
-                            <TableCell><Skeleton className="h-4 w-[180px]" /></TableCell>
-                            <TableCell className="hidden md:table-cell"><Skeleton className="h-4 w-[150px]" /></TableCell>
-                            <TableCell className="hidden md:table-cell"><Skeleton className="h-4 w-[120px]" /></TableCell>
-                            <TableCell className="hidden md:table-cell"><Skeleton className="h-4 w-[100px]" /></TableCell>
-                            <TableCell className="hidden md:table-cell"><Skeleton className="h-4 w-[80px]" /></TableCell>
-                            <TableCell className="text-right">
-                              <div className="flex justify-end gap-2">
-                                <Skeleton className="h-8 w-8 rounded-md" />
-                                <Skeleton className="h-8 w-8 rounded-md" />
-                              </div>
-                            </TableCell>
-                          </TableRow>
+                          <SkeletonClientRow key={index} />
                         ))
-                      ) : clients.length > 0 ? (
-                        clients.map((client: IClient, index: number) => (
-                          <TableRow key={client.codigoInterno + index} className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}>
-                            <TableCell className="font-bold text-blue-600">{client.codigoInterno}</TableCell>
-                            <TableCell>
-                              <div className="text-sm text-gray-900">{client.razonSocial}</div>
-                              <div className="text-xs text-gray-500">{client.nombreComercial}</div>
-                            </TableCell>
-                            <TableCell className="hidden md:table-cell">
-                              <div className="text-sm text-gray-900">{client.numeroDocumento}</div>
-                              <div className="text-xs text-gray-500">{client.tipoDocumento}</div>
-                            </TableCell>
-                            <TableCell className="hidden md:table-cell">
-                              <div className="text-sm text-gray-900">{client.categoria}</div>
-                              <div className="text-xs text-gray-500">
-                                {formatSafeDate(client.fechaEvaluacion)}
-                              </div>
-                            </TableCell>
-                            <TableCell className="hidden md:table-cell">
-                              <div className="text-sm text-gray-900">{client.provincia || "Sin provincia"}</div>
-                              <div className="text-xs text-gray-500">Zona: {client.zona}</div>
-                            </TableCell>
-                            <TableCell className="hidden md:table-cell">
-                              <Badge
-                                variant={client.estado === "PENDIENTE" ? "secondary" : "default"}
-                                className={client.estado === "PENDIENTE" ? "bg-yellow-100 text-yellow-800" : "bg-green-100 text-green-800"}
-                              >
-                                {client.estado}
-                              </Badge>
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <div className="flex justify-end gap-2">
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => handleView(client.codigoInterno)}
-                                >
-                                  <Eye className="mr-1 h-4 w-4" />
-                                  Ver
-                                </Button>
+                      ) : filteredClients.length > 0 ? (
+                        filteredClients.map((client: IClient, index: number) => {
+                          const estadoAprobacion = ClientMethodsService.getEstadoAprobacion(client);
+                          const IconoEstado = estadoAprobacion.icon;
 
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => handleEdit(client.codigoInterno)}
-                                >
-                                  <Edit className="mr-1 h-4 w-4" />
-                                  Editar
-                                </Button>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))
+                          return (
+                            <TableRow
+                              key={client.codigoInterno + index}
+                              className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}
+                            >
+                              <TableCell className="font-bold text-blue-600">{client.codigoInterno}</TableCell>
+                              <TableCell>
+                                <div className="text-sm text-gray-900">{client.razonSocial}</div>
+                                <div className="text-xs text-gray-500">{client.nombreComercial}</div>
+                              </TableCell>
+                              <TableCell className="hidden md:table-cell">
+                                <div className="text-sm text-gray-900">{client.numeroDocumento}</div>
+                                <div className="text-xs text-gray-500">{client.tipoDocumento}</div>
+                              </TableCell>
+                              <TableCell className="hidden md:table-cell">
+                                <div className="text-sm text-gray-900">{ClientMethodsService.getCategoriaLabel(client.categoria)}</div>
+                                <div className="text-xs text-gray-500">
+                                  {formatSafeDate(client.fechaEvaluacion)}
+                                </div>
+                              </TableCell>
+                              <TableCell className="hidden md:table-cell">
+                                <div className="text-sm text-gray-900">{client.provincia || "Sin provincia"}</div>
+                                <div className="text-xs text-gray-500">Zona: {client.zona}</div>
+                              </TableCell>
+                              <TableCell className="hidden md:table-cell">
+                                <Badge className={estadoAprobacion.color}>
+                                  <IconoEstado className="w-3 h-3 mr-1" />
+                                  {estadoAprobacion.estado}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <div className="flex justify-end gap-2">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleView(client.codigoInterno)}
+                                  >
+                                    <Eye className="mr-1 h-4 w-4" />
+                                    Ver
+                                  </Button>
+
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleEdit(client.codigoInterno)}
+                                  >
+                                    <Edit className="mr-1 h-4 w-4" />
+                                    Editar
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })
                       ) : (
                         <TableRow>
                           <TableCell colSpan={7} className="text-center py-8 text-gray-500">
@@ -310,11 +284,6 @@ export default function ClientsPage() {
         />
 
       </Card>
-
-
-
-
-
     </div>
   )
 }
