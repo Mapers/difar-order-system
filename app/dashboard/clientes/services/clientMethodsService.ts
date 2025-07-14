@@ -1,6 +1,6 @@
 import { DOCUMENTO, ESTADO_APROBACION } from "@/constants/clients";
 import { CheckCircle, XCircle, AlertCircle } from "lucide-react"
-import { Evaluation } from "../types/client-interface";
+import { Evaluation } from "../types";
 
 export class ClientMethodsService {
 

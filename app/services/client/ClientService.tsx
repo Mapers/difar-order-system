@@ -1,6 +1,7 @@
 // import { IClient } from "@/app/models/Client";
 
 import apiClient from "@/app/api/client";
+import { responseCookiesToRequestCookies } from "next/dist/server/web/spec-extension/adapters/request-cookies";
 
 export class ClientService {
 
@@ -43,6 +44,41 @@ export class ClientService {
     const response = await apiClient.post(`/clientes/create-update-evaluacion-doc`, dataPayload);
     return response.data
   };
+
+  /**
+   * 
+   * @param codClient 
+   * @returns 
+   */
+  static async getClientBycod(codClient: string): Promise<any> {
+    const response = await apiClient.get(`/clientes/${encodeURIComponent(codClient)}`);
+    return response.data
+  };
+
+  /**
+   * 
+   * @param codClient 
+   * @returns 
+   */
+  static async getEvaluationByCodClient(codClient: string): Promise<any> {
+    const response = await apiClient.get(`/clientes/evaluacion/${encodeURIComponent(codClient)}`);
+    return response.data
+  };
+
+
+  /**
+   * 
+   * @returns 
+   */
+  static async getDocObligatorios(): Promise<any> {
+    const response = await apiClient.get(`/clientes/docs/obligatorios`);
+    return response.data
+  };
+
+
+
+
+
 
   // async getClientByCode(code: string): Promise<IClient | null> {
   //   await new Promise(resolve => setTimeout(resolve, 300));

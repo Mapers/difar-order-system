@@ -42,14 +42,12 @@ export default function ClientsPage() {
 
   // Abrir modal de visualización
   const handleView = (codClient: string) => {
-    console.log(">>>>>>habre modal")
     setCodClient(codClient)
     setShowViewModal(true)
   }
 
   // cierra modal de visualización
   const closeViewModal = () => {
-    console.log(">>>>>>cierra modal")
     setCodClient('')
     setShowViewModal(false)
   }
@@ -68,7 +66,7 @@ export default function ClientsPage() {
       const rawClients = response?.data || [];
       const mappedClients: IClient[] = rawClients.map(mapClientFromApi)
       setClients(mappedClients);
-      setFilteredClients(mappedClients); // Inicialmente sin filtro
+      setFilteredClients(mappedClients); 
     } catch (error) {
       console.error("Error fetching clients:", error);
       setError("Error al cargar los clientes");
