@@ -2,19 +2,19 @@
 
 import React from 'react'
 import { Dialog, DialogContent, DialogTitle, DialogHeader, DialogFooter } from "@/components/ui/dialog"
-import { Eye, User, FileText, CheckCircle, XCircle, AlertCircle } from 'lucide-react'
+import { Eye, User, FileText, CheckCircle } from 'lucide-react'
 import { Tabs, TabsList, TabsTrigger, TabsContent, } from "@/components/ui/tabs"
 import { Card, CardContent, CardHeader, CardTitle, } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { IClientEvaluation, IEvaluacionCalif, IEvaluation } from '@/interface/clients/client-interface'
-import { DOCUMENTO, ESTADO_APROBACION } from '@/constants/clients'
 import { useEffect, useState } from "react"
 import { fetchEvaluationByCodClient, fetchEvaluationCalifByCodClient, fetchEvaluationDocsClient, fetchGetClientBycod, fetchGetDocObligatorios } from '@/app/api/clients'
 import { mapClientEvaluationFromApi, mapEvaluacionCalificacionFromApi, mapEvaluationFromApi } from '@/mappers/clients'
 import { ClientCardSkeleton } from '../skeleton/ZoneReportSkeleton'
 import { getEstadoVisual } from '@/utils/client'
+import { ClientMethodsService } from '@/app/dashboard/clientes/services/clientMethodsService'
 
 interface ModalVerificationProps {
   open: boolean
@@ -35,33 +35,6 @@ const ModalClientView: React.FC<ModalVerificationProps> = ({
   const [docObligatorios, setDocObligatorios] = useState<any>({})
   const [evaluacionCalificacion, setEvaluacionCalificacion] = useState<any>({})
 
-  const getEstadoAprobacion = (estado: string) => {
-    switch (estado) {
-      case ESTADO_APROBACION.APROBADO:
-        return { icon: CheckCircle, color: "bg-green-100 text-green-800", estado: "APROBADO" }
-      case ESTADO_APROBACION.RECHAZADO:
-        return { icon: XCircle, color: "bg-red-100 text-red-800", estado: "RECHAZADO" }
-      case ESTADO_APROBACION.PENDIENTE:
-        return { icon: AlertCircle, color: "bg-yellow-100 text-yellow-800", estado: "PENDIENTE" }
-      default:
-        return { icon: AlertCircle, color: "bg-gray-100 text-gray-800", estado: "DESCONOCIDO" }
-    }
-  }
-
-  const getColorDocument = (doc: any): string => {
-    switch (doc.nombre) {
-      case DOCUMENTO.AUTORIZACION_SANITARIA:
-        return "bg-blue-50 border-blue-200"
-      case DOCUMENTO.SITUACION_FUNCIONAMIENTO:
-        return "bg-green-50 border-green-200"
-      case DOCUMENTO.NUMERO_REGISTRO:
-        return "bg-yellow-50 border-yellow-200"
-      case DOCUMENTO.CERTIFICACIONES:
-        return "bg-purple-50 border-purple-200"
-      default:
-        return "bg-gray-50 border-gray-200"
-    }
-  }
 
   // lista documentos obligatorios
   const getDocObligatorios = async () => {
@@ -205,7 +178,7 @@ const ModalClientView: React.FC<ModalVerificationProps> = ({
                   <CardContent className="p-6">
                     <div className="flex items-center justify-center">
                       {(() => {
-                        const estadoAprobacion = getEstadoAprobacion(client.estado)
+                        const estadoAprobacion = ClientMethodsService.getEstadoAprobacion(client.estado)
                         const IconoEstado = estadoAprobacion.icon
                         return (
                           <div className="flex items-center gap-3">
@@ -250,7 +223,7 @@ const ModalClientView: React.FC<ModalVerificationProps> = ({
                           </div>
                           <div>
                             <Label className="text-xs text-blue-600">Categoría</Label>
-                            <p className="font-medium">client.categoria</p>
+                            <p className="font-medium">{ClientMethodsService.getCategoriaLabel(client.categoria)}</p>
                           </div>
                         </CardContent>
                       </Card>
@@ -311,7 +284,7 @@ const ModalClientView: React.FC<ModalVerificationProps> = ({
                   </div>
                   <div>
                     <Label className="text-xs text-gray-500">Categoría</Label>
-                    <p className="font-medium">{evaluation.categoria}</p>
+                    <p className="font-medium">{ClientMethodsService.getCategoriaLabel(evaluation.categoria)}</p>
                   </div>
                   <div className="">
                     <Label className="text-xs text-gray-500">Dirección según ficha RUC</Label>
@@ -348,53 +321,6 @@ const ModalClientView: React.FC<ModalVerificationProps> = ({
             </TabsContent>
 
             {/* Tab Dirección Técnica */}
-            {/* <TabsContent value="direccion-tecnica" className="space-y-6 mt-6">
-              <div className="space-y-6">
-                <p className="text-sm font-medium text-gray-700">
-                  Documentos obligatorios
-                </p>
-
-                <div className="space-y-4">
-                  {docObligatorios?.length ? (
-                    docObligatorios.map((doc: any) => {
-                      const colors = getColorDocument(doc)
-                      return (
-                        <Card key={doc.id} className={colors}>
-                          <CardHeader className="pb-3">
-                            <CardTitle className="text-sm font-medium">
-                              {doc.descripcion}
-                            </CardTitle>
-                          </CardHeader>
-
-                          <CardContent className="space-y-3">
-                            <div>
-                              <Label className="text-xs text-gray-500">Detalle</Label>
-                              <p className="font-medium text-sm">
-                                {evaluationClient.detalle ? evaluationClient.detalle : "No especificado"}
-                              </p>
-                            </div>
-
-                            <div>
-                              <Label className="text-xs text-gray-500">
-                                Observaciones
-                              </Label>
-                              <p className="font-medium text-sm">
-                                {evaluationClient.observaciones ? evaluationClient.observaciones : "Sin observaciones"}
-                              </p>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      );
-                    })
-                  ) : (
-                    <p className="text-sm text-gray-500">
-                      No se han registrado documentos para este cliente.
-                    </p>
-                  )}
-                </div>
-              </div>
-            </TabsContent> */}
-
             <TabsContent value="direccion-tecnica" className="space-y-6 mt-6">
               <div className="space-y-6">
                 <p className="text-sm font-medium text-gray-700">
@@ -404,9 +330,7 @@ const ModalClientView: React.FC<ModalVerificationProps> = ({
                 <div className="space-y-4">
                   {docObligatorios?.length ? (
                     docObligatorios.map((doc: any) => {
-                      const colors = getColorDocument(doc)
-
-                      // Buscar documento en evaluationClient que coincida con doc.id o doc.nombre
+                      const colors = ClientMethodsService.getColorDocument(doc)
                       const docEval = evaluationClient.find(
                         (evalDoc: any) =>
                           evalDoc.identificador === doc.id
@@ -516,7 +440,7 @@ const ModalClientView: React.FC<ModalVerificationProps> = ({
                   <CardContent>
                     <div className="flex items-center justify-center p-6">
                       {(() => {
-                        const estadoAprobacion = getEstadoAprobacion(evaluacionCalificacion.estado)
+                        const estadoAprobacion = ClientMethodsService.getEstadoAprobacion(evaluacionCalificacion.estado)
                         const IconoEstado = estadoAprobacion.icon
                         return (
                           <div className="flex items-center gap-3">

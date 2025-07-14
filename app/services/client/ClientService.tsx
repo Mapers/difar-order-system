@@ -3,6 +3,7 @@
 import apiClient from "@/app/api/client";
 
 export class ClientService {
+  
   static async getAllClientsByCodVendedor(codVendedor: string): Promise<any> {
     const response = await apiClient.get(`/clientes/listar/${codVendedor}`);
     return response.data;

@@ -9,15 +9,15 @@ import { Search, Eye, Edit, Download, Plus, Filter, ChevronDown } from "lucide-r
 import { Badge } from "@/components/ui/badge"
 import { Label } from "@radix-ui/react-label"
 import { useAuth } from '@/context/authContext';
-import ModalCreateEditions from "@/components/modal/modalCreateEditions"
-import ModalClientEvaluation from "@/components/modal/modalClientView"
-import ModalClientEdit from "@/components/modal/modalClientEdit"
 import SkeletonClientRow from "@/components/skeleton/ClientListSkeleton"
 import { IClient } from "@/interface/clients/client-interface"
 import { mapClientFromApi } from "@/mappers/clients"
 import { formatSafeDate } from "@/utils/date"
 import { ClientService } from "@/app/services/client/ClientService"
 import { ClientMethodsService } from "./services/clientMethodsService"
+import ModalCreateEditions from "@/components/modal/modalCreateEditions"
+import ModalClientEdit from "@/components/modal/modalClientEdit"
+import ModalClientView from "@/components/modal/modalClientView"
 
 export default function ClientsPage() {
   const { user, isAuthenticated } = useAuth();
@@ -194,7 +194,7 @@ export default function ClientsPage() {
                         ))
                       ) : filteredClients.length > 0 ? (
                         filteredClients.map((client: IClient, index: number) => {
-                          const estadoAprobacion = ClientMethodsService.getEstadoAprobacion(client);
+                          const estadoAprobacion = ClientMethodsService.getEstadoAprobacion(client.estado);
                           const IconoEstado = estadoAprobacion.icon;
 
                           return (
@@ -271,7 +271,7 @@ export default function ClientsPage() {
           onOpenChange={setShowCreateModal}
         />
 
-        <ModalClientEvaluation
+        <ModalClientView
           open={showViewModal}
           onOpenChange={setShowViewModal}
           codClient={codClient}
