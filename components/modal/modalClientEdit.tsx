@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
-import { fetchCreateUpdateClienteEvaluacion, fetchEvaluationDocsClient, fetchGetDistricts, fetchGetDocumentsTypes, fetchGetProvincesCities, fetchGetSunatStatus, fetchGetZones } from '@/app/api/clients'
+import { fetchCreateUpdateClienteEvaluacion, fetchGetDistricts, fetchGetDocumentsTypes, fetchGetProvincesCities, fetchGetSunatStatus, fetchGetZones } from '@/app/api/clients'
 import { useAuth } from '@/context/authContext';
 import { Popover, PopoverTrigger, PopoverContent } from '../ui/popover';
 import { Command, CommandInput, CommandList, CommandGroup, CommandItem, CommandEmpty } from '../ui/command';
@@ -16,6 +16,7 @@ import ModalLoader from './modalLoader'
 import { toast } from '@/hooks/use-toast'
 import TabDireccionTecnica from '../cliente/tabDireccionTecnica'
 import TabCalificacion from '../cliente/tabCalificacion'
+import { ClientService } from '@/app/services/client/ClientService'
 
 function cn(...classes: (string | boolean | undefined)[]) {
   return classes.filter(Boolean).join(' ');
@@ -47,7 +48,7 @@ const ModalClientEdit: React.FC<ModalVerificationProps> = ({
   const [districts, setDistricts] = useState<any>([])
   const [zones, setZones] = useState<any>([])
   const [sunatStatus, setSunatStatus] = useState<any>([])
-  const [evaluation, setEvaluation] = useState<any>([])
+  const [evaluationClient, setEvaluationClient] = useState<any>([])
   const [isPopoverProvinceOpen, setIsPopoverProvinceOpen] = useState(false);
   const [isPopoverZoneOpen, setIsPopoverZoneOpen] = useState(false);
   const [isPopoverSunatOpen, setIsPopoverSunatOpen] = useState(false);
@@ -80,34 +81,6 @@ const ModalClientEdit: React.FC<ModalVerificationProps> = ({
     aprobDirTecnica: false,
     aprobGerente: false,
     observaciones: '',
-  });
-
-
-  const [formDataDireccionTecnica, setFormDataDireccionTecnica] = useState({
-    autorizacion: {
-      codCliente: codClient,
-      tipoId: 1,
-      detalle: '',
-      observaciones: '',
-    },
-    situacion: {
-      codCliente: codClient,
-      tipoId: 2,
-      detalle: '',
-      observaciones: '',
-    },
-    registro: {
-      codCliente: codClient,
-      tipoId: 3,
-      detalle: '',
-      observaciones: '',
-    },
-    certificaciones: {
-      codCliente: codClient,
-      tipoId: 4,
-      detalle: '',
-      observaciones: '',
-    },
   });
 
 
@@ -210,12 +183,15 @@ const ModalClientEdit: React.FC<ModalVerificationProps> = ({
   };
 
   // lista evaluación de un cliente
-  const getEvaluationClient = async () => {
+  const getEvaluationClient = async (codClient: string) => {
     try {
       setLoading(true);
-      const response = await fetchEvaluationDocsClient(codClient);
-      if (response && response.data.success && response.status === 200) {
-        setEvaluation(response.data?.data || [])
+      const response = await ClientService.getEvaluationDocsClient(codClient);
+      if (response.success) {
+        setEvaluationClient(response.data || [])
+      }
+      else {
+        setEvaluationClient([])
       }
     } catch (error) {
       console.error("Error fetching evaluations:", error);
@@ -289,7 +265,7 @@ const ModalClientEdit: React.FC<ModalVerificationProps> = ({
       getListSunatStatus()
       getListDistricts()
       getListZones()
-      getEvaluationClient()
+      getEvaluationClient(codClient)
     }
 
   }, [open, codClient])
@@ -777,7 +753,7 @@ const ModalClientEdit: React.FC<ModalVerificationProps> = ({
           <TabDireccionTecnica
             codClient={codClient}
             onClose={() => onOpenChange(false)}
-            initialData={formDataDireccionTecnica}
+            evaluationClient={evaluationClient}
           />
 
           <TabCalificacion

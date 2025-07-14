@@ -8,13 +8,10 @@ import { Card, CardContent, CardHeader, CardTitle, } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { IClientEvaluation, IEvaluacionCalif, IEvaluation } from '@/interface/clients/client-interface'
-import { useEffect, useState } from "react"
-import { fetchEvaluationByCodClient, fetchEvaluationCalifByCodClient, fetchEvaluationDocsClient, fetchGetClientBycod, fetchGetDocObligatorios } from '@/app/api/clients'
-import { mapClientEvaluationFromApi, mapEvaluacionCalificacionFromApi, mapEvaluationFromApi } from '@/mappers/clients'
 import { ClientCardSkeleton } from '../skeleton/ZoneReportSkeleton'
 import { getEstadoVisual } from '@/utils/client'
 import { ClientMethodsService } from '@/app/dashboard/clientes/services/clientMethodsService'
+import { useClientData } from '@/app/dashboard/clientes/hooks/useClientData'
 
 interface ModalVerificationProps {
   open: boolean
@@ -22,129 +19,35 @@ interface ModalVerificationProps {
   codClient: string
 }
 
-const ModalClientView: React.FC<ModalVerificationProps> = ({
-  open,
-  onOpenChange,
-  codClient
-}) => {
-
-  const [loading, setLoading] = useState(false)
-  const [client, setClient] = useState<IClientEvaluation | null>(null)
-  const [evaluation, setEvaluation] = useState<any>({})
-  const [evaluationClient, setEvaluationClient] = useState<any>([])
-  const [docObligatorios, setDocObligatorios] = useState<any>({})
-  const [evaluacionCalificacion, setEvaluacionCalificacion] = useState<any>({})
+const ModalClientView: React.FC<ModalVerificationProps> = ({ open, onOpenChange, codClient }) => {
 
 
-  // lista documentos obligatorios
-  const getDocObligatorios = async () => {
-    try {
-      setLoading(true);
-      const response = await fetchGetDocObligatorios();
-      if (response && response.data.success && response.status === 200) {
-        setDocObligatorios(response.data?.data || [])
-      }
-      else if (!response.success) {
-        setDocObligatorios([])
-      }
-    } catch (error) {
-      console.error("Error fetching client:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { client, evaluation, evaluationClient, docObligatorios, evaluacionCalificacion, loading, error } = useClientData(codClient);
 
-  // lista clientescon codigo de vendedor
-  const getClientByCod = async (codClient: string) => {
-    try {
-      setLoading(true);
-      const response = await fetchGetClientBycod(codClient);
-      const rawClient = response.data?.data || {}
-      const mappedClient: IClientEvaluation = mapClientEvaluationFromApi(rawClient);
-      setClient(mappedClient);
-    } catch (error) {
-      console.error("Error fetching client:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // lista clientes con codigo de vendedor
-  const getEvaluationCalifByCodClient = async (codClient: string) => {
-    try {
-      setLoading(true);
-      const response = await fetchEvaluationCalifByCodClient(codClient);
-      if (response && response.data.success && response.status === 200) {
-        const rawClient = response.data?.data || []
-        const mappedEvalCalif: IEvaluacionCalif = mapEvaluacionCalificacionFromApi(rawClient);
-        setEvaluacionCalificacion(mappedEvalCalif);
-      }
-      else if (!response.success) {
-        // mostrar toas de  no hay doc obligatorios
-        setDocObligatorios([])
-      }
-
-    } catch (error) {
-      console.error("Error fetching client:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // obtiene evaluación de un cliente
-  const getEvaluationnBycodCliente = async (codClient: string) => {
-    try {
-      setLoading(true);
-      const response = await fetchEvaluationByCodClient(codClient);
-      const rawEvaluation = response.data?.data || {}
-      const mappedEvaluation: IEvaluation = mapEvaluationFromApi(rawEvaluation);
-      setEvaluation(mappedEvaluation);
-    } catch (error) {
-      console.error("Error fetching client:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // lista evaluación de un cliente
-  const getEvaluationClient = async (codClient: string) => {
-    try {
-      setLoading(true);
-      const response = await fetchEvaluationDocsClient(codClient);
-      if (response && response.data.success && response.status === 200) {
-        setEvaluationClient(response.data?.data || [])
-      }
-    } catch (error) {
-      console.error("Error fetching evaluations:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (open && codClient) {
-      getDocObligatorios()
-      getClientByCod(codClient)
-      getEvaluationnBycodCliente(codClient)
-      getEvaluationCalifByCodClient(codClient)
-      getEvaluationClient(codClient)
-    }
-  }, [open, codClient])
-
-
+  if (!open) return null;
   if (loading) {
     return <div className="flex justify-center items-center h-64">Cargando datos...</div>
   }
+  // if (error) return <p className="text-red-600 font-bold">Error: {error}</p>;
 
+  // if (!client) return <p>No se encontró el cliente.</p>;
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="w-[95vw] max-w-4xl max-h-[90vh] overflow-y-auto mx-2">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Eye className="h-5 w-5 text-green-600" />
-            Evaluación de Cliente - {client?.codigoInterno}
+            Evaluación de Cliente - {client?.codigoInterno ?? '.......'}
           </DialogTitle>
         </DialogHeader>
+        {/* 
+        {loading && (
+          <div className="flex justify-center items-center h-64">Cargando datos...</div>
+        )} */}
+
+        {/* {error && (
+          <p className="text-red-600 font-bold p-4">Error: {error}</p>
+        )} */}
         {client && (
           <Tabs defaultValue="resumen" className="w-full">
             <TabsList className="grid w-full grid-cols-4">
@@ -328,13 +231,25 @@ const ModalClientView: React.FC<ModalVerificationProps> = ({
                 </p>
 
                 <div className="space-y-4">
-                  {docObligatorios?.length ? (
+                  {evaluationClient.length === 0 ? (
+                    <Card className="bg-yellow-50 border-yellow-200">
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-sm font-medium text-yellow-900">
+                          Información
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-sm text-gray-700 text-center">
+                          Cliente no tiene evaluación.
+                        </p>
+                      </CardContent>
+                    </Card>
+                  ) : docObligatorios?.length ? (
                     docObligatorios.map((doc: any) => {
-                      const colors = ClientMethodsService.getColorDocument(doc)
+                      const colors = ClientMethodsService.getColorDocument(doc);
                       const docEval = evaluationClient.find(
-                        (evalDoc: any) =>
-                          evalDoc.identificador === doc.id
-                      )
+                        (evalDoc: any) => evalDoc.identificador === doc.id
+                      );
 
                       return (
                         <Card key={doc.id} className={colors}>
@@ -353,16 +268,14 @@ const ModalClientView: React.FC<ModalVerificationProps> = ({
                             </div>
 
                             <div>
-                              <Label className="text-xs text-gray-500">
-                                Observaciones
-                              </Label>
+                              <Label className="text-xs text-gray-500">Observaciones</Label>
                               <p className="font-medium text-sm">
                                 {docEval?.observaciones ?? "Sin observaciones"}
                               </p>
                             </div>
                           </CardContent>
                         </Card>
-                      )
+                      );
                     })
                   ) : (
                     <p className="text-sm text-gray-500">

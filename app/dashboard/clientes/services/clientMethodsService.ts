@@ -1,5 +1,6 @@
 import { DOCUMENTO, ESTADO_APROBACION } from "@/constants/clients";
 import { CheckCircle, XCircle, AlertCircle } from "lucide-react"
+import { Evaluation } from "../types/client-interface";
 
 export class ClientMethodsService {
 
@@ -35,7 +36,11 @@ export class ClientMethodsService {
         return categorias[categoria] ?? categoria
     }
 
-
+    /**
+     * 
+     * @param doc 
+     * @returns 
+     */
     static getColorDocument = (doc: any): string => {
         switch (doc.nombre) {
             case DOCUMENTO.AUTORIZACION_SANITARIA:
@@ -50,5 +55,31 @@ export class ClientMethodsService {
                 return "bg-gray-50 border-gray-200"
         }
     }
+
+
+    /**
+     * 
+     * @param codClient 
+     * @param arrayEvaluation 
+     * @param tipoId 
+     * @returns 
+     */
+    static findDocByTipeId = (codClient: string, arrayEvaluation: any, tipoId: number): Evaluation => {
+        if (arrayEvaluation.length === 0) {
+            return {
+                codCliente: codClient,
+                tipoId,
+                detalle: '',
+                observaciones: '',
+            };
+        }
+        const doc = arrayEvaluation.find((d: any) => d.identificador === tipoId);
+        return {
+            codCliente: codClient,
+            tipoId: doc?.identificador ?? tipoId,
+            detalle: doc?.detalle || '',
+            observaciones: doc?.observaciones || '',
+        };
+    };
 
 }

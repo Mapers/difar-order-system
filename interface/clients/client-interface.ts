@@ -34,7 +34,6 @@ export interface IClientEvaluation {
   fechaRegistro: string
 }
 
-
 export interface IEvaluation {
   codigoInterno: string
   nombreComercial: string

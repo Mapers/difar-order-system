@@ -32,7 +32,7 @@ export default function ClientsPage() {
   const [showViewModal, setShowViewModal] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
   const [showFilters, setShowFilters] = useState(false)
-  const [codClient, setCodClient] = useState<any>("")
+  const [codClient, setCodClient] = useState<any>('')
 
   // Abrir modal de edición
   const handleEdit = (codClient: string) => {
@@ -42,8 +42,16 @@ export default function ClientsPage() {
 
   // Abrir modal de visualización
   const handleView = (codClient: string) => {
+    console.log(">>>>>>habre modal")
     setCodClient(codClient)
     setShowViewModal(true)
+  }
+
+  // cierra modal de visualización
+  const closeViewModal = () => {
+    console.log(">>>>>>cierra modal")
+    setCodClient('')
+    setShowViewModal(false)
   }
 
   // lista clientes con codigo de vendedor
@@ -273,7 +281,9 @@ export default function ClientsPage() {
 
         <ModalClientView
           open={showViewModal}
-          onOpenChange={setShowViewModal}
+          onOpenChange={(open) => {
+            if (!open) closeViewModal();
+          }}
           codClient={codClient}
         />
 
