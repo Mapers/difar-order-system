@@ -46,14 +46,14 @@ export interface IEvaluation {
   evaluacionId: string
   fechaEvaluacion: string
   categoria: string
-  estadoContribuyente: string | null
-  representanteLegal: string | null
-  itemLista: string | null
-  aprobadoDirTecnica: boolean | null
-  aprobadoGerente: boolean | null
-  observacionesGlobal: string | null
-  createdAt: string | null
-  updatedAt: string | null
+  estadoContribuyente: string
+  representanteLegal: string
+  itemLista: string
+  aprobadoDirTecnica: boolean
+  aprobadoGerente: boolean
+  observacionesGlobal: string
+  createdAt: string
+  updatedAt: string
 }
 
 

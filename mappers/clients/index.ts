@@ -50,12 +50,10 @@ export const mapEvaluationFromApi = (data: any): IEvaluation => ({
   telefono: data.Telefono ?? "No registrado",
   correoElectronico: data.correoElectronico ?? "Sin correo",
   evaluacionId: data.EvaluacionId ? data.EvaluacionId : "No asigando",
-  fechaEvaluacion: data.fecha_evaluacion
-    ? format(parseISO(data.fecha_evaluacion), "dd/MM/yyyy")
-    : "Sin fecha",
+  fechaEvaluacion: data.fecha_evaluacion ?? "No Registrado",
   categoria: data.categoria,
-  estadoContribuyente: data.estado_contribuyente,
-  representanteLegal: data.representante_legal,
+  estadoContribuyente: data.estado_contribuyente ? data.estado_contribuyente : "No registrado",
+  representanteLegal: data.representante_legal ?? "No registrado",
   itemLista: data.item_lista,
   aprobadoDirTecnica: data.aprobado_dir_tecnica,
   aprobadoGerente: data.aprobado_gerente,
@@ -69,7 +67,7 @@ export const mapEvaluationFromApi = (data: any): IEvaluation => ({
  * Transforma la respuesta cruda del backend
  * al modelo tipado ICalificacion.
  */
- export const mapEvaluacionCalificacionFromApi = (data: any): IEvaluacionCalif => ({
+export const mapEvaluacionCalificacionFromApi = (data: any): IEvaluacionCalif => ({
   dirTecnicaEstado: data.dir_tecnica_estado,
   gerenteEstado: data.gerente_estado,
   estado: data.resultado_final,

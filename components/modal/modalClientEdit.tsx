@@ -2,13 +2,11 @@
 
 import React, { useState, useEffect } from 'react'
 import { Dialog, DialogContent, DialogTitle, DialogHeader, DialogFooter } from "@/components/ui/dialog"
-import { User, FileText, CheckCircle, XCircle, Edit, AlertCircle, Plus, Save, X, MapPin, Calendar, ChevronDown, Check } from 'lucide-react'
+import { User, FileText, CheckCircle, Edit, X, MapPin, Calendar, ChevronDown, Check, Plus, Save } from 'lucide-react'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
 import { Separator } from "@/components/ui/separator"
 import { fetchCreateUpdateClienteEvaluacion, fetchEvaluationDocsClient, fetchGetDistricts, fetchGetDocumentsTypes, fetchGetProvincesCities, fetchGetSunatStatus, fetchGetZones } from '@/app/api/clients'
 import { useAuth } from '@/context/authContext';
@@ -16,8 +14,6 @@ import { Popover, PopoverTrigger, PopoverContent } from '../ui/popover';
 import { Command, CommandInput, CommandList, CommandGroup, CommandItem, CommandEmpty } from '../ui/command';
 import ModalLoader from './modalLoader'
 import { toast } from '@/hooks/use-toast'
-import DireccionTecnica from '../cliente/tabDireccionTecnica'
-import Calificacion from '../cliente/tabCalificacion'
 import TabDireccionTecnica from '../cliente/tabDireccionTecnica'
 import TabCalificacion from '../cliente/tabCalificacion'
 
@@ -89,25 +85,25 @@ const ModalClientEdit: React.FC<ModalVerificationProps> = ({
 
   const [formDataDireccionTecnica, setFormDataDireccionTecnica] = useState({
     autorizacion: {
-      codigo: codClient,
+      codCliente: codClient,
       tipoId: 1,
       detalle: '',
       observaciones: '',
     },
     situacion: {
-      codigo: codClient,
+      codCliente: codClient,
       tipoId: 2,
       detalle: '',
       observaciones: '',
     },
     registro: {
-      codigo: codClient,
+      codCliente: codClient,
       tipoId: 3,
       detalle: '',
       observaciones: '',
     },
     certificaciones: {
-      codigo: codClient,
+      codCliente: codClient,
       tipoId: 4,
       detalle: '',
       observaciones: '',
@@ -213,7 +209,7 @@ const ModalClientEdit: React.FC<ModalVerificationProps> = ({
     }
   };
 
-  // lista estados de sunat
+  // lista evaluación de un cliente
   const getEvaluationClient = async () => {
     try {
       setLoading(true);
@@ -779,6 +775,7 @@ const ModalClientEdit: React.FC<ModalVerificationProps> = ({
 
           {/* Tab 2: Dirección Técnica */}
           <TabDireccionTecnica
+            codClient={codClient}
             onClose={() => onOpenChange(false)}
             initialData={formDataDireccionTecnica}
           />
@@ -787,7 +784,7 @@ const ModalClientEdit: React.FC<ModalVerificationProps> = ({
             onClose={() => onOpenChange(false)}
             formData={formData}
             setFormData={setFormData}
-            // onSave={handleSave(formData)}
+          // onSave={handleSave(formData)}
           />
         </Tabs>
       </DialogContent>

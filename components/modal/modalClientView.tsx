@@ -2,30 +2,28 @@
 
 import React from 'react'
 import { Dialog, DialogContent, DialogTitle, DialogHeader, DialogFooter } from "@/components/ui/dialog"
-import { Eye, User, FileText, CheckCircle, XCircle, Edit, AlertCircle } from 'lucide-react'
+import { Eye, User, FileText, CheckCircle, XCircle, AlertCircle } from 'lucide-react'
 import { Tabs, TabsList, TabsTrigger, TabsContent, } from "@/components/ui/tabs"
 import { Card, CardContent, CardHeader, CardTitle, } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { IClient, IClientEvaluation, IEvaluacionCalif, IEvaluation } from '@/interface/clients/client-interface'
+import { IClientEvaluation, IEvaluacionCalif, IEvaluation } from '@/interface/clients/client-interface'
 import { DOCUMENTO, ESTADO_APROBACION } from '@/constants/clients'
 import { useEffect, useState } from "react"
-import { fetchEvaluationByCodClient, fetchEvaluationCalifByCodClient, fetchGetClientBycod, fetchGetDocObligatorios } from '@/app/api/clients'
+import { fetchEvaluationByCodClient, fetchEvaluationCalifByCodClient, fetchEvaluationDocsClient, fetchGetClientBycod, fetchGetDocObligatorios } from '@/app/api/clients'
 import { mapClientEvaluationFromApi, mapEvaluacionCalificacionFromApi, mapEvaluationFromApi } from '@/mappers/clients'
 import { ClientCardSkeleton } from '../skeleton/ZoneReportSkeleton'
 import { getEstadoVisual } from '@/utils/client'
 
 interface ModalVerificationProps {
   open: boolean
-  openModalEdit: (open: boolean) => void
   onOpenChange: (open: boolean) => void
   codClient: string
 }
 
-const ModalClientEvaluation: React.FC<ModalVerificationProps> = ({
+const ModalClientView: React.FC<ModalVerificationProps> = ({
   open,
-  openModalEdit,
   onOpenChange,
   codClient
 }) => {
@@ -33,6 +31,7 @@ const ModalClientEvaluation: React.FC<ModalVerificationProps> = ({
   const [loading, setLoading] = useState(false)
   const [client, setClient] = useState<IClientEvaluation | null>(null)
   const [evaluation, setEvaluation] = useState<any>({})
+  const [evaluationClient, setEvaluationClient] = useState<any>([])
   const [docObligatorios, setDocObligatorios] = useState<any>({})
   const [evaluacionCalificacion, setEvaluacionCalificacion] = useState<any>({})
 
@@ -63,30 +62,6 @@ const ModalClientEvaluation: React.FC<ModalVerificationProps> = ({
         return "bg-gray-50 border-gray-200"
     }
   }
-
-  const getCategoriaLabel = (categoria: string) => {
-    const categorias: Record<string, string> = {
-      A: "Categoría A",
-      B: "Categoría B",
-      C: "Categoría C",
-    }
-    return categorias[categoria] ?? "Categoría Desconocida"
-  }
-
-  const getEstadoContribuyenteLabel = (estado: string) => {
-    const estados: Record<string, string> = {
-      Activo: "Activo",
-      Inactivo: "Inactivo",
-    }
-    return estados[estado] ?? "Desconocido"
-  }
-
-  const handleEdit = (client: any) => {
-    console.log(`Editando evaluación para cliente: ${client.codigoInterno}`)
-    onOpenChange(false)
-    openModalEdit(true)
-  } 
-
 
   // lista documentos obligatorios
   const getDocObligatorios = async () => {
@@ -121,7 +96,7 @@ const ModalClientEvaluation: React.FC<ModalVerificationProps> = ({
     }
   };
 
-  // lista clientescon codigo de vendedor
+  // lista clientes con codigo de vendedor
   const getEvaluationCalifByCodClient = async (codClient: string) => {
     try {
       setLoading(true);
@@ -148,9 +123,9 @@ const ModalClientEvaluation: React.FC<ModalVerificationProps> = ({
     try {
       setLoading(true);
       const response = await fetchEvaluationByCodClient(codClient);
-      const rawClient = response.data?.data || {}
-      const evaluation: IEvaluation = mapEvaluationFromApi(rawClient);
-      setEvaluation(evaluation);
+      const rawEvaluation = response.data?.data || {}
+      const mappedEvaluation: IEvaluation = mapEvaluationFromApi(rawEvaluation);
+      setEvaluation(mappedEvaluation);
     } catch (error) {
       console.error("Error fetching client:", error);
     } finally {
@@ -158,6 +133,20 @@ const ModalClientEvaluation: React.FC<ModalVerificationProps> = ({
     }
   };
 
+  // lista evaluación de un cliente
+  const getEvaluationClient = async (codClient: string) => {
+    try {
+      setLoading(true);
+      const response = await fetchEvaluationDocsClient(codClient);
+      if (response && response.data.success && response.status === 200) {
+        setEvaluationClient(response.data?.data || [])
+      }
+    } catch (error) {
+      console.error("Error fetching evaluations:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (open && codClient) {
@@ -165,6 +154,7 @@ const ModalClientEvaluation: React.FC<ModalVerificationProps> = ({
       getClientByCod(codClient)
       getEvaluationnBycodCliente(codClient)
       getEvaluationCalifByCodClient(codClient)
+      getEvaluationClient(codClient)
     }
   }, [open, codClient])
 
@@ -260,7 +250,7 @@ const ModalClientEvaluation: React.FC<ModalVerificationProps> = ({
                           </div>
                           <div>
                             <Label className="text-xs text-blue-600">Categoría</Label>
-                            <p className="font-medium">{getCategoriaLabel(client.categoria)}</p>
+                            <p className="font-medium">client.categoria</p>
                           </div>
                         </CardContent>
                       </Card>
@@ -301,10 +291,10 @@ const ModalClientEvaluation: React.FC<ModalVerificationProps> = ({
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                   <div>
                     <Label className="text-xs text-gray-500">Código Interno</Label>
-                    <p className="font-medium">{evaluation.codigoInterno}</p>
+                    <p className="font-medium">{evaluation.codigoInterno ?? "nulll"}</p>
                   </div>
                   <div>
-                    <Label className="text-xs text-gray-500">Código Vendedoriuyiyuguuv</Label>
+                    <Label className="text-xs text-gray-500">Código Vendedor</Label>
                     <p className="font-medium">{client.codigoVendedor}</p>
                   </div>
                   <div className="">
@@ -321,7 +311,7 @@ const ModalClientEvaluation: React.FC<ModalVerificationProps> = ({
                   </div>
                   <div>
                     <Label className="text-xs text-gray-500">Categoría</Label>
-                    <p className="font-medium">{getCategoriaLabel(evaluation.categoria)}</p>
+                    <p className="font-medium">{evaluation.categoria}</p>
                   </div>
                   <div className="">
                     <Label className="text-xs text-gray-500">Dirección según ficha RUC</Label>
@@ -330,7 +320,7 @@ const ModalClientEvaluation: React.FC<ModalVerificationProps> = ({
                   <div>
                     <Label className="text-xs text-gray-500">Estado Contribuyente SUNAT</Label>
                     <p className="font-medium">
-                      {getEstadoContribuyenteLabel(evaluation.estadoContribuyenteSunat)}
+                      {evaluation.estadoContribuyente}
                     </p>
                   </div>
                   <div>
@@ -358,7 +348,7 @@ const ModalClientEvaluation: React.FC<ModalVerificationProps> = ({
             </TabsContent>
 
             {/* Tab Dirección Técnica */}
-            <TabsContent value="direccion-tecnica" className="space-y-6 mt-6">
+            {/* <TabsContent value="direccion-tecnica" className="space-y-6 mt-6">
               <div className="space-y-6">
                 <p className="text-sm font-medium text-gray-700">
                   Documentos obligatorios
@@ -380,7 +370,7 @@ const ModalClientEvaluation: React.FC<ModalVerificationProps> = ({
                             <div>
                               <Label className="text-xs text-gray-500">Detalle</Label>
                               <p className="font-medium text-sm">
-                                {doc.detalle ? doc.detalle : "No especificado"}
+                                {evaluationClient.detalle ? evaluationClient.detalle : "No especificado"}
                               </p>
                             </div>
 
@@ -389,12 +379,66 @@ const ModalClientEvaluation: React.FC<ModalVerificationProps> = ({
                                 Observaciones
                               </Label>
                               <p className="font-medium text-sm">
-                                {doc.observaciones ? doc.observaciones : "Sin observaciones"}
+                                {evaluationClient.observaciones ? evaluationClient.observaciones : "Sin observaciones"}
                               </p>
                             </div>
                           </CardContent>
                         </Card>
                       );
+                    })
+                  ) : (
+                    <p className="text-sm text-gray-500">
+                      No se han registrado documentos para este cliente.
+                    </p>
+                  )}
+                </div>
+              </div>
+            </TabsContent> */}
+
+            <TabsContent value="direccion-tecnica" className="space-y-6 mt-6">
+              <div className="space-y-6">
+                <p className="text-sm font-medium text-gray-700">
+                  Documentos obligatorios
+                </p>
+
+                <div className="space-y-4">
+                  {docObligatorios?.length ? (
+                    docObligatorios.map((doc: any) => {
+                      const colors = getColorDocument(doc)
+
+                      // Buscar documento en evaluationClient que coincida con doc.id o doc.nombre
+                      const docEval = evaluationClient.find(
+                        (evalDoc: any) =>
+                          evalDoc.identificador === doc.id
+                      )
+
+                      return (
+                        <Card key={doc.id} className={colors}>
+                          <CardHeader className="pb-3">
+                            <CardTitle className="text-sm font-medium">
+                              {doc.descripcion}
+                            </CardTitle>
+                          </CardHeader>
+
+                          <CardContent className="space-y-3">
+                            <div>
+                              <Label className="text-xs text-gray-500">Detalle</Label>
+                              <p className="font-medium text-sm">
+                                {docEval?.detalle ?? "No especificado"}
+                              </p>
+                            </div>
+
+                            <div>
+                              <Label className="text-xs text-gray-500">
+                                Observaciones
+                              </Label>
+                              <p className="font-medium text-sm">
+                                {docEval?.observaciones ?? "Sin observaciones"}
+                              </p>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      )
                     })
                   ) : (
                     <p className="text-sm text-gray-500">
@@ -531,4 +575,4 @@ const ModalClientEvaluation: React.FC<ModalVerificationProps> = ({
   )
 }
 
-export default ModalClientEvaluation
+export default ModalClientView

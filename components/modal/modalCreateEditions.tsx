@@ -2,13 +2,10 @@
 
 import React, { useState, useEffect } from 'react'
 import { Dialog, DialogContent, DialogTitle, DialogHeader, DialogFooter } from "@/components/ui/dialog"
-import { User, FileText, CheckCircle, XCircle, Edit, AlertCircle, Plus, Save, X, MapPin, Calendar, ChevronDown, Check } from 'lucide-react'
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { User, Plus, Save, X, MapPin, Calendar, ChevronDown, Check } from 'lucide-react'
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
 import { Separator } from "@/components/ui/separator"
 import { fetchCreateUpdateClienteEvaluacion, fetchGetDistricts, fetchGetDocumentsTypes, fetchGetProvincesCities, fetchGetSunatStatus, fetchGetZones } from '@/app/api/clients'
 import { useAuth } from '@/context/authContext';
@@ -16,10 +13,7 @@ import { Popover, PopoverTrigger, PopoverContent } from '../ui/popover';
 import { Command, CommandInput, CommandList, CommandGroup, CommandItem, CommandEmpty } from '../ui/command';
 import ModalLoader from './modalLoader'
 import { toast } from '@/hooks/use-toast'
-import DireccionTecnica from '../cliente/tabDireccionTecnica'
-import Calificacion from '../cliente/tabCalificacion'
-import TabDireccionTecnica from '../cliente/tabDireccionTecnica'
-import TabCalificacion from '../cliente/tabCalificacion'
+
 
 function cn(...classes: (string | boolean | undefined)[]) {
   return classes.filter(Boolean).join(' ');
@@ -28,13 +22,11 @@ function cn(...classes: (string | boolean | undefined)[]) {
 interface ModalVerificationProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  codClient: string
 }
 
 const ModalClientEdit: React.FC<ModalVerificationProps> = ({
   open,
   onOpenChange,
-  codClient
 }) => {
 
   const { user, isAuthenticated } = useAuth();
@@ -43,9 +35,6 @@ const ModalClientEdit: React.FC<ModalVerificationProps> = ({
   const [modalLoader, setModalLoader] = useState<'BONIFICADO' | 'ESCALA' | 'EVALUACION' | null>(null);
 
   // Estados para controlar modales y formulario
-  const [showCreateModal, setShowCreateModal] = useState(false)
-  const [showEditModal, setShowEditModal] = useState(false)
-  const [isSubmitting, setIsSubmitting] = useState(false)
   const [typeDocuments, setTypeDocuments] = useState<any>([])
   const [provincesCities, setProvincesCities] = useState<any>([])
   const [districts, setDistricts] = useState<any>([])
@@ -84,10 +73,6 @@ const ModalClientEdit: React.FC<ModalVerificationProps> = ({
     aprobGerente: false,
     observaciones: '',
   });
-
-
-
-
 
   // Manejo de cambios en inputs, soporta campos anidados con punto
   const handleInputChange = (field: string, value: any) => {
@@ -194,7 +179,7 @@ const ModalClientEdit: React.FC<ModalVerificationProps> = ({
     setIsLoading(true)
     try {
       const dataPayload = {
-        codigo: codClient,
+        codigo:formData.codigo,
         codigoVed: user?.codigo,
         nombre: formData.nombre,
         nombreComercial: formData.nombreComercial,
@@ -231,8 +216,8 @@ const ModalClientEdit: React.FC<ModalVerificationProps> = ({
       // Aquí puedes mostrar mensaje, cerrar modal, etc.
       setIsLoading(false)
 
-      setShowCreateModal(false);
-      setShowEditModal(false);
+      // setShowCreateModal(false);
+      // setShowEditModal(false);
       onOpenChange(false);
     } catch (error) {
       console.error('Error al guardar:', error);
@@ -246,7 +231,7 @@ const ModalClientEdit: React.FC<ModalVerificationProps> = ({
 
 
   useEffect(() => {
-    if (open && codClient) {
+    if (open) {
       getDocumentsType()
       getListProvincesCities()
       getListSunatStatus()
@@ -254,7 +239,7 @@ const ModalClientEdit: React.FC<ModalVerificationProps> = ({
       getListZones()
     }
 
-  }, [open, codClient])
+  }, [open])
 
 
   return (
@@ -282,11 +267,11 @@ const ModalClientEdit: React.FC<ModalVerificationProps> = ({
               <div className="space-y-2">
                 <Label htmlFor="codigoInterno">Código Interno *</Label>
                 <Input
-                  id="codigoInterno"
-                  value={codClient}
-                  onChange={(e) => handleInputChange("codigoInterno", e.target.value)}
+                  id="codigo"
+                  value={formData.codigo}
+                  onChange={(e) => handleInputChange("codigo", e.target.value)}
                   placeholder="CLI001"
-                  disabled
+                  required
                 />
               </div>
 

@@ -11,14 +11,14 @@ import { Skeleton } from "@/components/ui/skeleton"
 import debounce from 'lodash.debounce';
 import ModalCreateEditions from "@/components/modal/modalCreateEditions"
 import { Label } from "@radix-ui/react-label"
-import { fetchGetClients } from "@/app/api/clients"
 import { format, parseISO } from "date-fns"
 import { useAuth } from '@/context/authContext';
-import ModalClientEvaluation from "@/components/modal/modalClientEvaluation"
+import ModalClientEvaluation from "@/components/modal/modalClientView"
 import { IClient } from "@/interface/clients/client-interface"
 import { mapClientFromApi } from "@/mappers/clients"
 import { formatSafeDate } from "@/utils/date"
 import ModalClientEdit from "@/components/modal/modalClientEdit"
+import { ClientService } from "@/app/services/client/ClientService"
 
 export default function ClientsPage() {
   const { user, isAuthenticated } = useAuth();
@@ -83,30 +83,18 @@ export default function ClientsPage() {
 
 
 
-
-  // 🧠 Función de guardado
-  const handleSave = async () => {
-    try {
-      console.log("Guardando datos:", formData);
-      setShowCreateModal(false);
-    } catch (error) {
-      console.error("Error al guardar:", error);
-    }
-  };
-
-  // lista clinetes  con codigo de vendedor
-  const getClients = async () => {
+  // lista clientes con codigo de vendedor
+  const getAllClients = async () => {
     try {
       setLoading(true);
       setError(null);
       const codVendedor = user?.codigo;
       if (!codVendedor) {
         setError("Código de vendedor no disponible");
-        console.error("Código de vendedor no disponible");
         return;
       }
-      const response = await fetchGetClients(codVendedor);
-      const rawClients = response.data?.data?.data || response.data?.data || [];
+      const response = await ClientService.getAllClientsByCodVendedor(codVendedor);
+      const rawClients = response?.data || [];
       const mappedClients: IClient[] = rawClients.map(mapClientFromApi)
       setClients(mappedClients);
     } catch (error) {
@@ -124,9 +112,8 @@ export default function ClientsPage() {
   };
 
   useEffect(() => {
-    console.log(" user:", user)
     if (isAuthenticated && user?.codigo) {
-      getClients();
+      getAllClients();
     }
   }, [isAuthenticated, user?.codigo])
 
@@ -164,7 +151,6 @@ export default function ClientsPage() {
               <p className="text-red-800 text-sm">{error}</p>
             </div>
           )}
-
           <Card className="bg-white shadow-sm">
             <CardHeader className="pb-4">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -183,7 +169,6 @@ export default function ClientsPage() {
                 </Button>
               </div>
             </CardHeader>
-
             <CardContent className={`space-y-4 ${showFilters ? "block" : "hidden sm:block"}`}>
               <div className="space-y-2">
                 <Label htmlFor="search" className="text-sm font-medium">
@@ -310,15 +295,14 @@ export default function ClientsPage() {
         <ModalCreateEditions
           open={showCreateModal}
           onOpenChange={setShowCreateModal}
-          codClient={codClient}
         />
 
         <ModalClientEvaluation
           open={showViewModal}
-          openModalEdit={setShowEditModal}
           onOpenChange={setShowViewModal}
           codClient={codClient}
         />
+
         <ModalClientEdit
           open={showEditModal}
           onOpenChange={setShowEditModal}

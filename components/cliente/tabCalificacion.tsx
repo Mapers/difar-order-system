@@ -21,32 +21,7 @@ interface DireccionTecnicaProps {
 }
 
 const TabCalificacion: React.FC<DireccionTecnicaProps> = ({ onClose, formData, setFormData }) => {
-    // const [formData, setFormData] = useState({
-    //     // campos cliente
-    //     codigo: '',
-    //     codigoVed: '',
-    //     nombre: '',
-    //     nombreComercial: '',
-    //     ruc: '',
-    //     tipoDocIdent: '',
-    //     tipoCliente: '',
-    //     direccion: '',
-    //     telefono: '',
-    //     correoElectronico: '',
-    //     provincia: 0,
-    //     idZona: '',
-    //     idDistrito: 0,
-    //     fechaInicio: '',
-    //     //campos de la evaluacion
-    //     fechaEvaluacion: '',
-    //     categoria: '',
-    //     estadoSUNAT: '',
-    //     representanteLegal: '',
-    //     itemLista: '',
-    //     aprobDirTecnica: false,
-    //     aprobGerente: false,
-    //     observaciones: '',
-    // });
+ 
 
     const [isSubmitting, setIsSubmitting] = useState(false)
 

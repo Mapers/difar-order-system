@@ -1,87 +1,151 @@
+'use client'
+
 import React, { useState, useEffect } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Label } from "@/components/ui/label"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { DialogFooter } from "@/components/ui/dialog"
+import {
+    Card, CardContent, CardHeader, CardTitle,
+} from '@/components/ui/card'
+import { Label } from '@/components/ui/label'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import { DialogFooter } from '@/components/ui/dialog'
 import { Save, X, FileText } from 'lucide-react'
 import { toast } from '@/hooks/use-toast'
-import { TabsContent } from "@/components/ui/tabs"
+import { TabsContent } from '@/components/ui/tabs'
 import { fetchCreateEvaluationDocument } from '@/app/api/clients'
 
+/* ─── Tipos ──────────────────────────────────────────────────────────── */
 interface DocumentoData {
-    codigo: string
+    codCliente: string
     tipoId: number
     detalle: string
     observaciones: string
 }
 
-interface DireccionTecnicaProps {
-    onClose: () => void
-    // initialData?: {
-    //     autorizacion: DocumentoData
-    //     situacion: DocumentoData
-    //     registro: DocumentoData
-    //     certificaciones: DocumentoData
-    // }
-    initialData: any
+interface DireccionTecnicaData {
+    autorizacion: DocumentoData
+    situacion: DocumentoData
+    registro: DocumentoData
+    certificaciones: DocumentoData
 }
 
+interface DireccionTecnicaProps {
+    codClient: string              // ← vuelve a ser prop obligatoria
+    onClose: () => void
+    initialData: DireccionTecnicaData
+}
 
-const TabDireccionTecnica: React.FC<DireccionTecnicaProps> = ({ onClose, initialData }) => {
-    // Estados separados para cada card, inicializados con datos iniciales o vacíos
-    const [autorizacion, setAutorizacion] = useState<DocumentoData>(initialData.autorizacion)
-    const [situacion, setSituacion] = useState<DocumentoData>(initialData?.situacion)
-    const [registro, setRegistro] = useState<DocumentoData>(initialData?.registro)
-    const [certificaciones, setCertificaciones] = useState<DocumentoData>(initialData?.certificaciones)
+/* ─── Utilidad: copia con nuevo código ───────────────────────────────── */
+const withCodigo = (doc: DocumentoData, codCliente: string): DocumentoData => ({
+    ...doc,
+    codCliente,
+})
 
+const sameContent = (a: DocumentoData, b: DocumentoData) =>
+    a.detalle === b.detalle && a.observaciones === b.observaciones
+
+/* ─── Componente ─────────────────────────────────────────────────────── */
+const TabDireccionTecnica: React.FC<DireccionTecnicaProps> = ({
+    codClient,
+    onClose,
+    initialData,
+}) => {
+    /* Estado local inicializado con el código correcto */
+    const [autorizacion, setAutorizacion] = useState(() =>
+        withCodigo(initialData.autorizacion, codClient),
+    )
+    const [situacion, setSituacion] = useState(() =>
+        withCodigo(initialData.situacion, codClient),
+    )
+    const [registro, setRegistro] = useState(() =>
+        withCodigo(initialData.registro, codClient),
+    )
+    const [certificaciones, setCertificaciones] = useState(() =>
+        withCodigo(initialData.certificaciones, codClient),
+    )
     const [isSubmitting, setIsSubmitting] = useState(false)
 
-    // Función para comparar si dos documentos son iguales
-    const isEqual = (a: DocumentoData, b: DocumentoData) => {
-        return a.detalle === b.detalle && a.observaciones === b.observaciones
-    }
+    /* Si cambian los props, refresca el estado (p.e. abres otro cliente) */
+    useEffect(() => {
+        setAutorizacion(withCodigo(initialData.autorizacion, codClient))
+        setSituacion(withCodigo(initialData.situacion, codClient))
+        setRegistro(withCodigo(initialData.registro, codClient))
+        setCertificaciones(withCodigo(initialData.certificaciones, codClient))
+    }, [codClient, initialData])
 
-    // Función para guardar solo los documentos modificados
+    /* ------------------------------------------------------------------ */
     const handleSaveAll = async () => {
         setIsSubmitting(true)
         try {
-            const promises = []
+            const queue: Promise<any>[] = []
 
-            if (!initialData || !isEqual(autorizacion, initialData.autorizacion)) {
-                promises.push(fetchCreateEvaluationDocument(autorizacion))
-            }
-            if (!initialData || !isEqual(situacion, initialData.situacion)) {
-                promises.push(fetchCreateEvaluationDocument(situacion))
-            }
-            if (!initialData || !isEqual(registro, initialData.registro)) {
-                promises.push(fetchCreateEvaluationDocument(registro))
-            }
-            if (!initialData || !isEqual(certificaciones, initialData.certificaciones)) {
-                promises.push(fetchCreateEvaluationDocument(certificaciones))
+            const pushIfChanged = (curr: DocumentoData, base: DocumentoData) => {
+                if (!sameContent(curr, base)) queue.push(fetchCreateEvaluationDocument(curr))
             }
 
-            const results = await Promise.all(promises)
+            pushIfChanged(autorizacion, initialData.autorizacion)
+            pushIfChanged(situacion, initialData.situacion)
+            pushIfChanged(registro, initialData.registro)
+            pushIfChanged(certificaciones, initialData.certificaciones)
 
-            let successCount = 0
-            results.forEach(res => {
-                if (res.status === 201 && res.data.success) successCount++
-            })
+            if (queue.length === 0) {
+                toast({ title: 'Sin cambios', description: 'No hay nada que guardar', variant: 'warning' })
+                setIsSubmitting(false)
+                return
+            }
 
-            if (successCount === results.length) {
-                toast({ title: 'Éxito', description: 'Todos los documentos guardados correctamente', variant: 'success' })
+            const results = await Promise.all(queue)
+            const ok = results.filter(r => r.status === 201 && r.data?.success).length
+
+            if (ok === queue.length) {
+                toast({ title: 'Éxito', description: 'Documentos actualizados', variant: 'success' })
                 onClose()
             } else {
-                toast({ title: 'Atención', description: 'Algunos documentos no se guardaron correctamente', variant: 'warning' })
+                toast({ title: 'Atención', description: 'Algunos documentos no se actualizaron', variant: 'warning' })
             }
-        } catch (error) {
-            toast({ title: 'Error', description: 'Error al guardar documentos', variant: 'error' })
+        } catch {
+            toast({ title: 'Error', description: 'No se pudo guardar', variant: 'error' })
         } finally {
             setIsSubmitting(false)
         }
     }
 
+    /* ------------------------------------------------------------------ */
+    const renderCard = (
+        doc: DocumentoData,
+        set: React.Dispatch<React.SetStateAction<DocumentoData>>,
+        title: string,
+        color: 'blue' | 'green' | 'yellow' | 'purple',
+    ) => (
+        <Card className={`bg-${color}-50 border-${color}-200`}>
+            <CardHeader className="pb-3">
+                <CardTitle className={`text-sm font-medium text-${color}-900`}>{title}</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                        <Label>Detalle</Label>
+                        <Input
+                            placeholder="Detalle"
+                            value={doc.detalle}
+                            onChange={e => set({ ...doc, detalle: e.target.value })}
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <Label>Observaciones</Label>
+                        <Textarea
+                            placeholder="Observaciones"
+                            rows={2}
+                            value={doc.observaciones}
+                            onChange={e => set({ ...doc, observaciones: e.target.value })}
+                        />
+                    </div>
+                </div>
+            </CardContent>
+        </Card>
+    )
+
+    /* ------------------------------------------------------------------ */
     return (
         <TabsContent value="direccion-tecnica" className="space-y-6 mt-6">
             <h4 className="font-medium text-gray-900 flex items-center gap-2">
@@ -89,129 +153,10 @@ const TabDireccionTecnica: React.FC<DireccionTecnicaProps> = ({ onClose, initial
                 Documentación Obligatoria
             </h4>
 
-            {/* Autorización Sanitaria */}
-            <Card className="bg-blue-50 border-blue-200">
-                <CardHeader className="pb-3">
-                    <CardTitle className="text-sm font-medium text-blue-900">
-                        N° Resolución Directoral de Autorización Sanitaria
-                    </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="autorizacionSanitaria-detalle">Detalle</Label>
-                            <Input
-                                id="autorizacionDetalle"
-                                placeholder="Número de autorización"
-                                value={autorizacion.detalle}
-                                onChange={e => setAutorizacion({ ...autorizacion, detalle: e.target.value })}
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="autorizacionSanitaria-observaciones">Observaciones</Label>
-                            <Textarea
-                                id="autorizacionObservaciones"
-                                placeholder="Observaciones sobre la autorización"
-                                rows={2}
-                                value={autorizacion.observaciones}
-                                onChange={e => setAutorizacion({ ...autorizacion, observaciones: e.target.value })}
-                            />
-                        </div>
-                    </div>
-                </CardContent>
-            </Card>
-
-            {/* Situación de Funcionamiento */}
-            <Card className="bg-green-50 border-green-200">
-                <CardHeader className="pb-3">
-                    <CardTitle className="text-sm font-medium text-green-900">Situación de Funcionamiento</CardTitle>
-                </CardHeader>
-
-                <CardContent className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="situacionFuncionamiento-detalle">Detalle</Label>
-                            <Input
-                                id="situacionDetalle"
-                                placeholder="Estado de funcionamiento"
-                                value={situacion.detalle}
-                                onChange={e => setSituacion({ ...situacion, detalle: e.target.value })}
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="autorizacionSanitaria-observaciones">Observaciones</Label>
-                            <Textarea
-                                id="situacionObservaciones"
-                                placeholder="Observaciones sobre el funcionamiento"
-                                rows={2}
-                                value={situacion.observaciones}
-                                onChange={e => setSituacion({ ...situacion, observaciones: e.target.value })}
-                            />
-                        </div>
-                    </div>
-                </CardContent>
-            </Card>
-
-            {/* Número de Registro */}
-            <Card className="bg-yellow-50 border-yellow-200">
-                <CardHeader className="pb-3">
-                    <CardTitle className="text-sm font-medium text-yellow-900">Número de Registro</CardTitle>
-                </CardHeader>
-
-                <CardContent className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="numeroRegistro-detalle">Detalle</Label>
-                            <Input
-                                id="numeroRegistroDetalle"
-                                placeholder="Número de registro"
-                                value={registro.detalle}
-                                onChange={e => setRegistro({ ...registro, detalle: e.target.value })}
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="autorizacionSanitaria-observaciones">Observaciones</Label>
-                            <Textarea
-                                id="numeroRegistroObservaciones"
-                                placeholder="Observaciones sobre el registro"
-                                rows={2}
-                                value={registro.observaciones}
-                                onChange={e => setRegistro({ ...registro, observaciones: e.target.value })}
-                            />
-                        </div>
-                    </div>
-                </CardContent>
-            </Card>
-
-            {/* Certificaciones */}
-            <Card className="bg-purple-50 border-purple-200">
-                <CardHeader className="pb-3">
-                    <CardTitle className="text-sm font-medium text-purple-900">Certificaciones</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="certificaciones-detall">Detalle</Label>
-                            <Input
-                                id="certificacionesDetalle"
-                                placeholder="Certificaciones obtenidas"
-                                value={certificaciones.detalle}
-                                onChange={e => setCertificaciones({ ...certificaciones, detalle: e.target.value })}
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="autorizacionSanitaria-observaciones">Observaciones</Label>
-                            <Textarea
-                                id="certificacionesObservaciones"
-                                placeholder="Observaciones sobre las certificaciones"
-                                rows={2}
-                                value={certificaciones.observaciones}
-                                onChange={e => setCertificaciones({ ...certificaciones, observaciones: e.target.value })}
-                            />
-                        </div>
-                    </div>
-                </CardContent>
-            </Card>
+            {renderCard(autorizacion, setAutorizacion, 'N° Resolución Directoral de Autorización Sanitaria', 'blue')}
+            {renderCard(situacion, setSituacion, 'Situación de Funcionamiento', 'green')}
+            {renderCard(registro, setRegistro, 'Número de Registro', 'yellow')}
+            {renderCard(certificaciones, setCertificaciones, 'Certificaciones', 'purple')}
 
             <DialogFooter className="flex flex-col-reverse sm:flex-row gap-3 sm:gap-2 mt-6">
                 <Button
@@ -231,12 +176,12 @@ const TabDireccionTecnica: React.FC<DireccionTecnicaProps> = ({ onClose, initial
                     {isSubmitting ? (
                         <>
                             <div className="animate-spin mr-2 h-4 w-4 border-2 border-white border-t-transparent rounded-full" />
-                            Guardando...
+                            Guardando…
                         </>
                     ) : (
                         <>
                             <Save className="mr-2 h-4 w-4" />
-                            Guardar Dirección Técnica
+                            Guardar Cambios
                         </>
                     )}
                 </Button>
