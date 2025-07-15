@@ -11,8 +11,8 @@ import { Save, X, FileText } from 'lucide-react'
 import { toast } from '@/hooks/use-toast'
 import { TabsContent } from '@/components/ui/tabs'
 import { ClientMethodsService } from '@/app/dashboard/clientes/services/clientMethodsService'
-import { Evaluation } from '@/app/dashboard/clientes/types/client-interface'
 import { ClientService } from '@/app/services/client/ClientService'
+import { Evaluation } from '@/app/dashboard/clientes/types'
 
 
 interface DireccionTecnicaProps {

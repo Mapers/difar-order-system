@@ -82,7 +82,7 @@ export default function ClientsPage() {
     }
   };
 
-  // Abrir modal de creación
+  // Abre modal de crear evaluación
   const handleCreateNewEvaluation = () => {
     setShowCreateModal(true);
   };

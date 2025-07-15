@@ -1,7 +1,6 @@
 // import { IClient } from "@/app/models/Client";
 
 import apiClient from "@/app/api/client";
-import { responseCookiesToRequestCookies } from "next/dist/server/web/spec-extension/adapters/request-cookies";
 
 export class ClientService {
 
