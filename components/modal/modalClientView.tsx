@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button"
 import { ClientCardSkeleton } from '../skeleton/ZoneReportSkeleton'
 import { getEstadoVisual } from '@/utils/client'
 import { ClientMethodsService } from '@/app/dashboard/clientes/services/clientMethodsService'
-import { useClientData } from '@/app/dashboard/clientes/hooks/useClientData'
+import { useClienViewtData } from '@/app/dashboard/clientes/hooks/useClientViewData'
 
 interface ModalVerificationProps {
   open: boolean
@@ -21,7 +21,7 @@ interface ModalVerificationProps {
 
 const ModalClientView: React.FC<ModalVerificationProps> = ({ open, onOpenChange, codClient }) => {
 
-  const { client, evaluation, evaluationClient, docObligatorios, evaluacionCalificacion, loading, error } = useClientData(codClient);
+  const { client, evaluation, evaluationClient, docObligatorios, evaluacionCalificacion, loading, error } = useClienViewtData(codClient);
 
   if (!open) return null;
   return (

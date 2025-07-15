@@ -65,7 +65,6 @@ export class ClientService {
     return response.data
   };
 
-
   /**
    * 
    * @returns 
@@ -75,46 +74,70 @@ export class ClientService {
     return response.data
   };
 
+  // PARA EDITAR 
 
+  /**
+ * 
+ * @returns 
+ */
+  static async getDocumentsTypes(): Promise<any> {
+    const response = await apiClient.get(`/clientes/documento/tipo`);
+    return response.data
+  };
 
+  /**
+    * 
+    * @returns 
+    */
+  static async getProvincesCities(): Promise<any> {
+    const response = await apiClient.get(`/clientes/ciudad/provincias-ciudades`);
+    return response.data
+  };
 
+  /**
+   * 
+   * @returns 
+   */
+  static async getDistricts(): Promise<any> {
+    const response = await apiClient.get(`/clientes/ciudad/provincias-ciudades`);
+    return response.data
+  };
 
+  /**
+  * 
+  * @returns 
+  */
+  static async getZones(): Promise<any> {
+    const response = await apiClient.get(`/clientes/zone/list-zone`);
+    return response.data
+  };
 
-  // async getClientByCode(code: string): Promise<IClient | null> {
-  //   await new Promise(resolve => setTimeout(resolve, 300));
+  /**
+   * 
+   * @returns 
+   */
+  static async getSunatStatus(): Promise<any> {
+    const response = await apiClient.get(`/clientes/sunat/estado-sunat`);
+    return response.data
+  };
 
-  //   const client = mockClients.find(c => c.Codigo === code);
-  //   return client || null;
-  // }
+  /**
+   * 
+   * @returns 
+   */
+  static async getNextCode(): Promise<any> {
+    const response = await apiClient.get(`/clientes/created/next-code`);
+    return response.data
+  };
 
-  // async createClient(client: Omit<IClient, 'Codigo'>): Promise<IClient> {
-  //   await new Promise(resolve => setTimeout(resolve, 500));
+  /**
+   * 
+   * @param dataPayload 
+   * @returns 
+   */
+  static async createUpdateClienteEvaluacion(dataPayload: any): Promise<any> {
+    const response = await apiClient.post(`/clientes/create-update-cliente-evaluacion`, dataPayload);
+    return response.data
+  };
 
-  //   const newClient = {
-  //     ...client,
-  //     Codigo: `CLI-${(mockClients.length + 1).toString().padStart(3, '0')}`
-  //   };
-
-  //   mockClients.push(newClient);
-  //   return newClient;
-  // }
-
-  // async updateClient(code: string, clientData: Partial<IClient>): Promise<IClient> {
-  //   await new Promise(resolve => setTimeout(resolve, 500));
-
-  //   const index = mockClients.findIndex(c => c.Codigo === code);
-  //   if (index === -1) throw new Error("Cliente no encontrado");
-
-  //   mockClients[index] = { ...mockClients[index], ...clientData };
-  //   return mockClients[index];
-  // }
-
-  // async deleteClient(code: string): Promise<void> {
-  //   await new Promise(resolve => setTimeout(resolve, 300));
-
-  //   const index = mockClients.findIndex(c => c.Codigo === code);
-  //   if (index === -1) throw new Error("Cliente no encontrado");
-
-  //   mockClients.splice(index, 1);
-  // }
 }

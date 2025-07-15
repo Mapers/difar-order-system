@@ -1,19 +1,18 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import { Dialog, DialogContent, DialogTitle, DialogHeader, DialogFooter } from "@/components/ui/dialog"
 import { User, Plus, Save, X, MapPin, Calendar, ChevronDown, Check } from 'lucide-react'
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
-import { fetchCreateUpdateClienteEvaluacion, fetchGetDistricts, fetchGetDocumentsTypes, fetchGetProvincesCities, fetchGetSunatStatus, fetchGetZones } from '@/app/api/clients'
 import { useAuth } from '@/context/authContext';
 import { Popover, PopoverTrigger, PopoverContent } from '../ui/popover';
 import { Command, CommandInput, CommandList, CommandGroup, CommandItem, CommandEmpty } from '../ui/command';
-import ModalLoader from './modalLoader'
 import { toast } from '@/hooks/use-toast'
-
+import { ClientService } from '@/app/services/client/ClientService'
+import { useClientCreatedData } from '@/app/dashboard/clientes/hooks/useClientCreatedData'
 
 function cn(...classes: (string | boolean | undefined)[]) {
   return classes.filter(Boolean).join(' ');
@@ -24,29 +23,14 @@ interface ModalVerificationProps {
   onOpenChange: (open: boolean) => void
 }
 
-const ModalClientEdit: React.FC<ModalVerificationProps> = ({
-  open,
-  onOpenChange,
-}) => {
-
+const ModalCreateEvaluation: React.FC<ModalVerificationProps> = ({ open, onOpenChange }) => {
+  const { typeDocuments, provincesCities, districts, zones, sunatStatus, nextcode, loading, error } = useClientCreatedData(open);
   const { user, isAuthenticated } = useAuth();
-  const [loading, setLoading] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
-  const [modalLoader, setModalLoader] = useState<'BONIFICADO' | 'ESCALA' | 'EVALUACION' | null>(null);
-
-  // Estados para controlar modales y formulario
-  const [typeDocuments, setTypeDocuments] = useState<any>([])
-  const [provincesCities, setProvincesCities] = useState<any>([])
-  const [districts, setDistricts] = useState<any>([])
-  const [zones, setZones] = useState<any>([])
-  const [sunatStatus, setSunatStatus] = useState<any>([])
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const [isPopoverProvinceOpen, setIsPopoverProvinceOpen] = useState(false);
   const [isPopoverZoneOpen, setIsPopoverZoneOpen] = useState(false);
   const [isPopoverSunatOpen, setIsPopoverSunatOpen] = useState(false);
   const [isPopoverDistrictOpen, setIsPopoverDistrictOpen] = useState(false);
-  // Estado del formulario con estructura inicial
-
-
   const [formData, setFormData] = useState({
     // campos cliente
     codigo: '',
@@ -92,94 +76,12 @@ const ModalClientEdit: React.FC<ModalVerificationProps> = ({
     }
   }
 
-
-  // lista tipos de documento
-  const getDocumentsType = async () => {
-    try {
-      setLoading(true);
-      const response = await fetchGetDocumentsTypes();
-      console.log(" > Response:", response.data)
-      if (response && response.data.success && response.status === 200) {
-        setTypeDocuments(response.data?.data || [])
-      }
-    } catch (error) {
-      console.error("Error fetching types documents:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // lista provincias ciudades
-  const getListProvincesCities = async () => {
-    try {
-      setLoading(true);
-      const response = await fetchGetProvincesCities();
-      if (response && response.data.success && response.status === 200) {
-        setProvincesCities(response.data?.data || [])
-      }
-    } catch (error) {
-      console.error("Error fetching provinces cities:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-
-  // lista provincias ciudades
-  const getListDistricts = async () => {
-    try {
-      setLoading(true);
-      const response = await fetchGetDistricts();
-      if (response && response.data.success && response.status === 200) {
-        setDistricts(response.data?.data || [])
-      }
-    } catch (error) {
-      console.error("Error fetching districts:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-
-  // lista provincias ciudades
-  const getListZones = async () => {
-    try {
-      setLoading(true);
-      const response = await fetchGetZones();
-      if (response && response.data.success && response.status === 200) {
-        const filterZones = (response.data?.data || []).filter((zone: any) => zone.NombreZona !== null)
-        setZones(filterZones)
-      }
-    } catch (error) {
-      console.error("Error fetching districts:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // lista estados de sunat
-  const getListSunatStatus = async () => {
-    try {
-      setLoading(true);
-      const response = await fetchGetSunatStatus();
-      if (response && response.data.success && response.status === 200) {
-        setSunatStatus(response.data?.data || [])
-      }
-    } catch (error) {
-      console.error("Error fetching districts:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   // Simulación de guardar datos
   const handleSave = async () => {
-    // setIsSubmitting(true);
-    setModalLoader('EVALUACION')
-    setIsLoading(true)
+    setIsSubmitting(true);
     try {
       const dataPayload = {
-        codigo:formData.codigo,
+        codigo: nextcode,
         codigoVed: user?.codigo,
         nombre: formData.nombre,
         nombreComercial: formData.nombreComercial,
@@ -203,44 +105,21 @@ const ModalClientEdit: React.FC<ModalVerificationProps> = ({
         observaciones: '',
       };
       console.log(">>>>data enviado :", dataPayload);
-
-      const response = await fetchCreateUpdateClienteEvaluacion(dataPayload);
-      if (response.status === 201 && response?.data?.success) {
-        toast({ title: "Evaluación", description: response.data.message, variant: "success" })
+      const response = await ClientService.createUpdateClienteEvaluacion(dataPayload);
+      if (response.success) {
+        toast({ title: "Evaluación", description: response.message, variant: "success" })
       }
       else {
-        toast({ title: "Evaluación", description: response.data.message || "Evaluación no actualizada.", variant: "error" })
+        toast({ title: "Evaluación", description: response.message || "Evaluación no actualizada.", variant: "error" })
 
       }
-      console.log('Guardado exitoso:', response);
-      // Aquí puedes mostrar mensaje, cerrar modal, etc.
-      setIsLoading(false)
-
-      // setShowCreateModal(false);
-      // setShowEditModal(false);
       onOpenChange(false);
     } catch (error) {
       console.error('Error al guardar:', error);
-      // Manejo de error, mostrar alerta, etc.
     } finally {
-      // setIsSubmitting(false);
-      setIsLoading(false)
-      setModalLoader(null)
+      setIsSubmitting(false);
     }
   };
-
-
-  useEffect(() => {
-    if (open) {
-      getDocumentsType()
-      getListProvincesCities()
-      getListSunatStatus()
-      getListDistricts()
-      getListZones()
-    }
-
-  }, [open])
-
 
   return (
     <Dialog
@@ -268,13 +147,12 @@ const ModalClientEdit: React.FC<ModalVerificationProps> = ({
                 <Label htmlFor="codigoInterno">Código Interno *</Label>
                 <Input
                   id="codigo"
-                  value={formData.codigo}
-                  onChange={(e) => handleInputChange("codigo", e.target.value)}
+                  value={nextcode}
+                  // onChange={(e) => handleInputChange("codigo", e.target.value)}
                   placeholder="CLI001"
-                  required
+                  disabled
                 />
               </div>
-
               <div className="space-y-2">
                 <Label htmlFor="nombreComercial">Nombre Comercial *</Label>
                 <Input
@@ -661,8 +539,6 @@ const ModalClientEdit: React.FC<ModalVerificationProps> = ({
           <Button
             variant="outline"
             onClick={() => {
-              setShowCreateModal(false)
-              setShowEditModal(false)
               onOpenChange(false)
             }}
             className="w-full sm:w-auto"
@@ -672,33 +548,25 @@ const ModalClientEdit: React.FC<ModalVerificationProps> = ({
           </Button>
           <Button
             onClick={handleSave}
-            disabled={isLoading}
+            disabled={isSubmitting}
             className={`w-full sm:w-auto bg-blue-600 hover:bg-blue-700`}
           >
-            {/* {true ? (
+            {isSubmitting ? (
               <>
                 <div className="animate-spin mr-2 h-4 w-4 border-2 border-white border-t-transparent rounded-full" />
-                {showCreateModal ? "Creando..." : "Actualizando..."}
+                Creando...
               </>
             ) : (
               <>
                 <Save className="mr-2 h-4 w-4" />
-                {showCreateModal ? "Crear Evaluación" : "Actualizar Evaluación"}
+                Crear Evaluación
               </>
-            )} */}
-            <Save className="mr-2 h-4 w-4" />
-            Crear Evaluación
-            {/* {showCreateModal ? "Crear Evaluación" : "Actualizar Evaluación"} */}
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>
-      <ModalLoader
-        open={isLoading}
-        onOpenChange={setIsLoading}
-        caseKey={modalLoader ?? undefined}
-      />
     </Dialog>
   )
 }
 
-export default ModalClientEdit
+export default ModalCreateEvaluation

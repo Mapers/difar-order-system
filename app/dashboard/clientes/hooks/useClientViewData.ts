@@ -1,10 +1,9 @@
 import { useState, useEffect } from 'react';
-import { fetchGetClientBycod, fetchEvaluationByCodClient, fetchGetDocObligatorios, fetchEvaluationCalifByCodClient } from '@/app/api/clients';
 import { mapClientEvaluationFromApi, mapEvaluacionCalificacionFromApi, mapEvaluationFromApi } from '@/mappers/clients';
 import { IClientEvaluation } from '../types';
 import { ClientService } from '@/app/services/client/ClientService';
 
-export function useClientData(codClient?: string) {
+export function useClienViewtData(codClient?: string) {
     const [loading, setLoading] = useState(false);
     const [client, setClient] = useState<IClientEvaluation | null>(null);
     const [evaluation, setEvaluation] = useState<any>({});
@@ -39,33 +38,28 @@ export function useClientData(codClient?: string) {
 
             try {
                 const [clientRes, evalRes, evaClientRes, docOblRes, evalCalifRes] = await Promise.all(promises);
-
-                if (clientRes?.data) {
+                if (clientRes?.success) {
                     setClient(mapClientEvaluationFromApi(clientRes.data));
                 } else {
                     setClient(null);
                 }
-
-                if (evalRes?.data?.data) {
-                    setEvaluation(mapEvaluationFromApi(evalRes.data.data));
+                if (evalRes?.success) {
+                    setEvaluation(mapEvaluationFromApi(evalRes.data));
                 } else {
                     setEvaluation({});
                 }
-
-                if (evaClientRes?.data) {
+                if (evaClientRes?.success) {
                     setEvaluationClient(evaClientRes.data);
                 } else {
                     setEvaluationClient([]);
                 }
-
-                if (docOblRes?.data?.success) {
-                    setDocObligatorios(docOblRes.data.data || []);
+                if (docOblRes?.success) {
+                    setDocObligatorios(docOblRes.data || []);
                 } else {
                     setDocObligatorios([]);
                 }
-
-                if (evalCalifRes?.data?.data) {
-                    setEvaluacionCalificacion(mapEvaluacionCalificacionFromApi(evalCalifRes.data.data));
+                if (evalCalifRes?.success) {
+                    setEvaluacionCalificacion(mapEvaluacionCalificacionFromApi(evalCalifRes.data));
                 } else {
                     setEvaluacionCalificacion({});
                 }

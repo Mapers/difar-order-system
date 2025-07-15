@@ -8,16 +8,12 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { DialogFooter } from "@/components/ui/dialog"
 import { Save, X, FileText, CheckCircle, XCircle, User, AlertCircle } from 'lucide-react'
-import { toast } from '@/hooks/use-toast'
 import { TabsContent } from "@/components/ui/tabs"
 
 interface DireccionTecnicaProps {
     onClose: () => void
-    // onSave: (data: any) => Promise<void>
-    // handleInputChange: any
     formData?: any
     setFormData?: any
-    // onSave: (data:any) => Promise<void>
 }
 
 const TabCalificacion: React.FC<DireccionTecnicaProps> = ({ onClose, formData, setFormData }) => {
@@ -27,23 +23,6 @@ const TabCalificacion: React.FC<DireccionTecnicaProps> = ({ onClose, formData, s
 
     const handleInputChange = (field: string, value: string) => {
         setFormData((prev: any) => ({ ...prev, [field]: value }))
-    }
-
-    const handleSave = async () => {
-
-    }
-
-    const handleSubmit = async () => {
-        setIsSubmitting(true)
-        try {
-            // await onSave(formData)
-            toast({ title: 'Dirección Técnica', description: 'Datos guardados correctamente', variant: 'success' })
-            onClose()
-        } catch (error) {
-            toast({ title: 'Error', description: 'Error al guardar datos', variant: 'error' })
-        } finally {
-            setIsSubmitting(false)
-        }
     }
 
     return (

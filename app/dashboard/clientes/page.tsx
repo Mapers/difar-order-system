@@ -15,7 +15,7 @@ import { mapClientFromApi } from "@/mappers/clients"
 import { formatSafeDate } from "@/utils/date"
 import { ClientService } from "@/app/services/client/ClientService"
 import { ClientMethodsService } from "./services/clientMethodsService"
-import ModalCreateEditions from "@/components/modal/modalCreateEditions"
+import ModalCreateEditions from "@/components/modal/modalCreateEvaluation"
 import ModalClientEdit from "@/components/modal/modalClientEdit"
 import ModalClientView from "@/components/modal/modalClientView"
 
@@ -38,6 +38,13 @@ export default function ClientsPage() {
   const handleEdit = (codClient: string) => {
     setCodClient(codClient)
     setShowEditModal(true)
+  }
+
+  // cierra modal de edición
+  const closeEditModal = () => {
+    setCodClient('')
+    setShowViewModal(false)
+    setShowEditModal(false)
   }
 
   // Abrir modal de visualización
@@ -66,7 +73,7 @@ export default function ClientsPage() {
       const rawClients = response?.data || [];
       const mappedClients: IClient[] = rawClients.map(mapClientFromApi)
       setClients(mappedClients);
-      setFilteredClients(mappedClients); 
+      setFilteredClients(mappedClients);
     } catch (error) {
       console.error("Error fetching clients:", error);
       setError("Error al cargar los clientes");
@@ -279,15 +286,13 @@ export default function ClientsPage() {
 
         <ModalClientView
           open={showViewModal}
-          onOpenChange={(open) => {
-            if (!open) closeViewModal();
-          }}
+          onOpenChange={(open) => { if (!open) closeViewModal(); }}
           codClient={codClient}
         />
 
         <ModalClientEdit
           open={showEditModal}
-          onOpenChange={setShowEditModal}
+          onOpenChange={(open) => {if(!open) closeEditModal();}}
           codClient={codClient}
         />
 

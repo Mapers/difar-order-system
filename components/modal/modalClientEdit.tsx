@@ -8,15 +8,14 @@ import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
-import { fetchCreateUpdateClienteEvaluacion, fetchGetDistricts, fetchGetDocumentsTypes, fetchGetProvincesCities, fetchGetSunatStatus, fetchGetZones } from '@/app/api/clients'
 import { useAuth } from '@/context/authContext';
 import { Popover, PopoverTrigger, PopoverContent } from '../ui/popover';
 import { Command, CommandInput, CommandList, CommandGroup, CommandItem, CommandEmpty } from '../ui/command';
-import ModalLoader from './modalLoader'
 import { toast } from '@/hooks/use-toast'
 import TabDireccionTecnica from '../cliente/tabDireccionTecnica'
 import TabCalificacion from '../cliente/tabCalificacion'
 import { ClientService } from '@/app/services/client/ClientService'
+import { useClientEditData } from '@/app/dashboard/clientes/hooks/useClientEditData'
 
 function cn(...classes: (string | boolean | undefined)[]) {
   return classes.filter(Boolean).join(' ');
@@ -28,34 +27,15 @@ interface ModalVerificationProps {
   codClient: string
 }
 
-const ModalClientEdit: React.FC<ModalVerificationProps> = ({
-  open,
-  onOpenChange,
-  codClient,
-}) => {
+const ModalClientEdit: React.FC<ModalVerificationProps> = ({ open, onOpenChange, codClient }) => {
 
+  const { typeDocuments, provincesCities, districts, zones, sunatStatus, evaluationClient, loading, error } = useClientEditData(codClient);
   const { user, isAuthenticated } = useAuth();
-  const [loading, setLoading] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
-  const [modalLoader, setModalLoader] = useState<'BONIFICADO' | 'ESCALA' | 'EVALUACION' | null>(null);
-
-  // Estados para controlar modales y formulario
-  const [showCreateModal, setShowCreateModal] = useState(false)
-  const [showEditModal, setShowEditModal] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [typeDocuments, setTypeDocuments] = useState<any>([])
-  const [provincesCities, setProvincesCities] = useState<any>([])
-  const [districts, setDistricts] = useState<any>([])
-  const [zones, setZones] = useState<any>([])
-  const [sunatStatus, setSunatStatus] = useState<any>([])
-  const [evaluationClient, setEvaluationClient] = useState<any>([])
   const [isPopoverProvinceOpen, setIsPopoverProvinceOpen] = useState(false);
   const [isPopoverZoneOpen, setIsPopoverZoneOpen] = useState(false);
   const [isPopoverSunatOpen, setIsPopoverSunatOpen] = useState(false);
   const [isPopoverDistrictOpen, setIsPopoverDistrictOpen] = useState(false);
-  // Estado del formulario con estructura inicial
-
-
   const [formData, setFormData] = useState({
     // campos cliente
     codigo: '',
@@ -102,109 +82,10 @@ const ModalClientEdit: React.FC<ModalVerificationProps> = ({
     }
   }
 
-
-  // lista tipos de documento
-  const getDocumentsType = async () => {
-    try {
-      setLoading(true);
-      const response = await fetchGetDocumentsTypes();
-      console.log(" > Response:", response.data)
-      if (response && response.data.success && response.status === 200) {
-        setTypeDocuments(response.data?.data || [])
-      }
-    } catch (error) {
-      console.error("Error fetching types documents:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // lista provincias ciudades
-  const getListProvincesCities = async () => {
-    try {
-      setLoading(true);
-      const response = await fetchGetProvincesCities();
-      if (response && response.data.success && response.status === 200) {
-        setProvincesCities(response.data?.data || [])
-      }
-    } catch (error) {
-      console.error("Error fetching provinces cities:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-
-  // lista provincias ciudades
-  const getListDistricts = async () => {
-    try {
-      setLoading(true);
-      const response = await fetchGetDistricts();
-      if (response && response.data.success && response.status === 200) {
-        setDistricts(response.data?.data || [])
-      }
-    } catch (error) {
-      console.error("Error fetching districts:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-
-  // lista provincias ciudades
-  const getListZones = async () => {
-    try {
-      setLoading(true);
-      const response = await fetchGetZones();
-      if (response && response.data.success && response.status === 200) {
-        const filterZones = (response.data?.data || []).filter((zone: any) => zone.NombreZona !== null)
-        setZones(filterZones)
-      }
-    } catch (error) {
-      console.error("Error fetching districts:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // lista estados de sunat
-  const getListSunatStatus = async () => {
-    try {
-      setLoading(true);
-      const response = await fetchGetSunatStatus();
-      if (response && response.data.success && response.status === 200) {
-        setSunatStatus(response.data?.data || [])
-      }
-    } catch (error) {
-      console.error("Error fetching districts:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // lista evaluación de un cliente
-  const getEvaluationClient = async (codClient: string) => {
-    try {
-      setLoading(true);
-      const response = await ClientService.getEvaluationDocsClient(codClient);
-      if (response.success) {
-        setEvaluationClient(response.data || [])
-      }
-      else {
-        setEvaluationClient([])
-      }
-    } catch (error) {
-      console.error("Error fetching evaluations:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  
   // Simulación de guardar datos
   const handleSave = async () => {
-    // setIsSubmitting(true);
-    setModalLoader('EVALUACION')
-    setIsLoading(true)
+    setIsSubmitting(true);
     try {
       const dataPayload = {
         codigo: codClient,
@@ -231,65 +112,32 @@ const ModalClientEdit: React.FC<ModalVerificationProps> = ({
         observaciones: '',
       };
       console.log(">>>>data enviado :", dataPayload);
-
-      const response = await fetchCreateUpdateClienteEvaluacion(dataPayload);
-      if (response.status === 201 && response?.data?.success) {
-        toast({ title: "Evaluación", description: response.data.message, variant: "success" })
+      const response = await ClientService.createUpdateClienteEvaluacion(dataPayload);
+      if (response.success) {
+        toast({ title: "Evaluación", description: response.message, variant: "success" })
       }
       else {
-        toast({ title: "Evaluación", description: response.data.message || "Evaluación no actualizada.", variant: "error" })
-
+        toast({ title: "Evaluación", description: response.message || "Evaluación no actualizada.", variant: "error" })
       }
       console.log('Guardado exitoso:', response);
-      // Aquí puedes mostrar mensaje, cerrar modal, etc.
-      setIsLoading(false)
-
-      setShowCreateModal(false);
-      setShowEditModal(false);
-      onOpenChange(false);
     } catch (error) {
       console.error('Error al guardar:', error);
-      // Manejo de error, mostrar alerta, etc.
     } finally {
-      // setIsSubmitting(false);
-      setIsLoading(false)
-      setModalLoader(null)
+      setIsSubmitting(false);
     }
   };
 
 
-  useEffect(() => {
-    if (open && codClient) {
-      getDocumentsType()
-      getListProvincesCities()
-      getListSunatStatus()
-      getListDistricts()
-      getListZones()
-      getEvaluationClient(codClient)
-    }
 
-  }, [open, codClient])
-
-
+  if (!open) return null;
   return (
-    <Dialog
-      open={open}
-      onOpenChange={onOpenChange}
+    <Dialog open={open} onOpenChange={onOpenChange}
     >
       <DialogContent className="w-[95vw] max-w-6xl max-h-[90vh] overflow-y-auto mx-2">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            {showCreateModal ? (
-              <>
-                <Plus className="h-5 w-5 text-blue-600" />
-                Nueva Evaluación de Cliente
-              </>
-            ) : (
-              <>
-                <Edit className="h-5 w-5 text-orange-600" />
-                Editar Evaluación - {codClient}
-              </>
-            )}
+            <Edit className="h-5 w-5 text-orange-600" />
+            Editar Evaluación - {codClient}
           </DialogTitle>
         </DialogHeader>
 
@@ -720,8 +568,6 @@ const ModalClientEdit: React.FC<ModalVerificationProps> = ({
               <Button
                 variant="outline"
                 onClick={() => {
-                  setShowCreateModal(false)
-                  setShowEditModal(false)
                   onOpenChange(false)
                 }}
                 className="w-full sm:w-auto"
@@ -732,17 +578,17 @@ const ModalClientEdit: React.FC<ModalVerificationProps> = ({
               <Button
                 onClick={handleSave}
                 disabled={isSubmitting}
-                className={`w-full sm:w-auto ${showCreateModal ? "bg-blue-600 hover:bg-blue-700" : "bg-orange-600 hover:bg-orange-700"}`}
+                className={`w-full sm:w-auto bg-orange-600 hover:bg-orange-700`}
               >
                 {isSubmitting ? (
                   <>
                     <div className="animate-spin mr-2 h-4 w-4 border-2 border-white border-t-transparent rounded-full" />
-                    {showCreateModal ? "Creando..." : "Actualizando..."}
+                    Actualizando...
                   </>
                 ) : (
                   <>
                     <Save className="mr-2 h-4 w-4" />
-                    {showCreateModal ? "Crear Evaluación" : "Actualizar Evaluación"}
+                    Actualizar Evaluación
                   </>
                 )}
               </Button>
@@ -764,11 +610,7 @@ const ModalClientEdit: React.FC<ModalVerificationProps> = ({
           />
         </Tabs>
       </DialogContent>
-      <ModalLoader
-        open={isLoading}
-        onOpenChange={setIsLoading}
-        caseKey={modalLoader ?? undefined}
-      />
+
     </Dialog>
   )
 }
