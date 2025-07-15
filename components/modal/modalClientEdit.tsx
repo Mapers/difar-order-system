@@ -29,7 +29,7 @@ interface ModalVerificationProps {
 
 const ModalClientEdit: React.FC<ModalVerificationProps> = ({ open, onOpenChange, codClient }) => {
 
-  const { typeDocuments, provincesCities, districts, zones, sunatStatus, evaluationClient, loading, error } = useClientEditData(codClient);
+  const { typeDocuments, provincesCities, districts, zones, sunatStatus, evaluationClient, evaluacionCalificacion, loading, error } = useClientEditData(codClient);
   const { user, isAuthenticated } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isPopoverProvinceOpen, setIsPopoverProvinceOpen] = useState(false);
@@ -604,13 +604,10 @@ const ModalClientEdit: React.FC<ModalVerificationProps> = ({ open, onOpenChange,
 
           <TabCalificacion
             onClose={() => onOpenChange(false)}
-            formData={formData}
-            setFormData={setFormData}
-          // onSave={handleSave(formData)}
+            evaluacionCalificacion={evaluacionCalificacion}
           />
         </Tabs>
       </DialogContent>
-
     </Dialog>
   )
 }

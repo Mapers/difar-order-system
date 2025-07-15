@@ -10,6 +10,8 @@ export function useClientEditData(codClient?: string) {
     const [zones, setZones] = useState<any>([])
     const [sunatStatus, setSunatStatus] = useState<any>([])
     const [evaluationClient, setEvaluationClient] = useState<any>([])
+    const [evaluacionCalificacion, setEvaluacionCalificacion] = useState<any>({});
+
 
     useEffect(() => {
         if (!codClient) {
@@ -20,6 +22,7 @@ export function useClientEditData(codClient?: string) {
             setZones([]);
             setSunatStatus([]);
             setEvaluationClient([]);
+            setEvaluacionCalificacion({})
             setError(null);
             setLoading(false);
             return;
@@ -35,10 +38,11 @@ export function useClientEditData(codClient?: string) {
                 ClientService.getZones().catch(() => null),
                 ClientService.getSunatStatus().catch(() => null),
                 ClientService.getEvaluationDocsClient(codClient as string).catch(() => null),
+                ClientService.getEvaluationCalifByCodClient(codClient as string).catch(() => null),
             ];
 
             try {
-                const [documentRes, provinceRes, districtRes, zoneRes, sunaStatusRes, evaClientRes] = await Promise.all(promises);
+                const [documentRes, provinceRes, districtRes, zoneRes, sunaStatusRes, evaClientRes, evalCalifRes] = await Promise.all(promises);
                 if (documentRes?.success) {
                     setTypeDocuments(documentRes.data);
                 } else {
@@ -70,6 +74,11 @@ export function useClientEditData(codClient?: string) {
                 } else {
                     setEvaluationClient([]);
                 }
+                if (evalCalifRes?.success) {
+                    setEvaluacionCalificacion(evalCalifRes.data);
+                } else {
+                    setEvaluacionCalificacion({});
+                }
             } catch (e) {
                 // No debería llegar aquí porque cada fetch maneja su error, pero por si acaso:
                 setError('Error cargando datos del cliente');
@@ -82,5 +91,5 @@ export function useClientEditData(codClient?: string) {
         fetchData();
     }, [codClient]);
 
-    return { typeDocuments, provincesCities, districts, zones, sunatStatus, evaluationClient, loading, error };
+    return { typeDocuments, provincesCities, districts, zones, sunatStatus, evaluationClient, evaluacionCalificacion, loading, error };
 }

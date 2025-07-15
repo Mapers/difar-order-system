@@ -22,6 +22,7 @@ export class ClientMethodsService {
         }
     }
 
+
     /**
      * 
      * @param categoria 

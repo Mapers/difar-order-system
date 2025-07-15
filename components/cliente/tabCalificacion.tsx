@@ -9,21 +9,15 @@ import { Textarea } from "@/components/ui/textarea"
 import { DialogFooter } from "@/components/ui/dialog"
 import { Save, X, FileText, CheckCircle, XCircle, User, AlertCircle } from 'lucide-react'
 import { TabsContent } from "@/components/ui/tabs"
+import { ESTADO_APROBACION } from '@/constants/clients'
 
 interface DireccionTecnicaProps {
     onClose: () => void
-    formData?: any
-    setFormData?: any
+    evaluacionCalificacion: any
 }
 
-const TabCalificacion: React.FC<DireccionTecnicaProps> = ({ onClose, formData, setFormData }) => {
- 
+const TabCalificacion: React.FC<DireccionTecnicaProps> = ({ onClose, evaluacionCalificacion }) => {
 
-    const [isSubmitting, setIsSubmitting] = useState(false)
-
-    const handleInputChange = (field: string, value: string) => {
-        setFormData((prev: any) => ({ ...prev, [field]: value }))
-    }
 
     return (
         <TabsContent value="calificacion" className="space-y-6 mt-6">
@@ -46,13 +40,13 @@ const TabCalificacion: React.FC<DireccionTecnicaProps> = ({ onClose, formData, s
                             <div className="text-center">
                                 <p className="text-sm text-gray-600 mb-4">Estado de aprobación:</p>
                                 <Button
-                                    onClick={() => handleInputChange("aprobadoDirTecnica", !formData.aprobDirTecnica)}
-                                    className={`w-full h-12 text-sm sm:text-base font-bold transition-all duration-200 ${formData.aprobDirTecnica
-                                        ? "bg-green-600 hover:bg-green-700 text-white"
-                                        : "bg-red-600 hover:bg-red-700 text-white"
+                                    // onClick={() => handleInputChange("aprobadoDirTecnica", !formData.aprobDirTecnica)}
+                                    className={`w-full h-12 text-sm sm:text-base font-bold transition-all duration-200 ${evaluacionCalificacion.dir_tecnica_estado === ESTADO_APROBACION.PENDIENTE
+                                        ? "bg-red-600 hover:bg-red-700 text-white"
+                                        : "bg-green-600 hover:bg-green-700 text-white"
                                         }`}
                                 >
-                                    {formData.aprobDirTecnica ? (
+                                    {evaluacionCalificacion.dir_tecnica_estado === ESTADO_APROBACION.APROBADO ? (
                                         <div className="flex items-center gap-2">
                                             <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5" />
                                             <span className="hidden sm:inline">APROBADO</span>
@@ -66,7 +60,7 @@ const TabCalificacion: React.FC<DireccionTecnicaProps> = ({ onClose, formData, s
                                         </div>
                                     )}
                                 </Button>
-                                <p className="text-xs text-gray-500 mt-2">Haz clic para cambiar el estado</p>
+                                {/* <p className="text-xs text-gray-500 mt-2">Haz clic para cambiar el estado</p> */}
                             </div>
 
                             {/* Línea de firma */}
@@ -92,12 +86,12 @@ const TabCalificacion: React.FC<DireccionTecnicaProps> = ({ onClose, formData, s
                                 <p className="text-sm text-gray-600 mb-4">Estado de aprobación:</p>
                                 <Button
                                     // onClick={() => handleInputChange("aprobadoGerente", !formData.aprobadoGerente)}
-                                    className={`w-full h-12 text-sm sm:text-base font-bold transition-all duration-200 ${formData.aprobadoGerente
-                                        ? "bg-green-600 hover:bg-green-700 text-white"
-                                        : "bg-red-600 hover:bg-red-700 text-white"
+                                    className={`w-full h-12 text-sm sm:text-base font-bold transition-all duration-200 ${evaluacionCalificacion.gerente_estado === ESTADO_APROBACION.PENDIENTE
+                                        ? "bg-red-600 hover:bg-red-700 text-white"
+                                        : "bg-green-600 hover:bg-green-700 text-white"
                                         }`}
                                 >
-                                    {formData.aprobGerente ? (
+                                    {evaluacionCalificacion.gerente_estado === ESTADO_APROBACION.APROBADO ? (
                                         <div className="flex items-center gap-2">
                                             <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5" />
                                             <span className="hidden sm:inline">APROBADO</span>
@@ -111,7 +105,7 @@ const TabCalificacion: React.FC<DireccionTecnicaProps> = ({ onClose, formData, s
                                         </div>
                                     )}
                                 </Button>
-                                <p className="text-xs text-gray-500 mt-2">Haz clic para cambiar el estado</p>
+                                {/* <p className="text-xs text-gray-500 mt-2">Haz clic para cambiar el estado</p> */}
                             </div>
 
                             {/* Línea de firma */}
@@ -125,18 +119,21 @@ const TabCalificacion: React.FC<DireccionTecnicaProps> = ({ onClose, formData, s
                         </CardContent>
                     </Card>
                 </div>
-
                 {/* Observaciones globales */}
                 <div className="space-y-4">
                     <Label htmlFor="observacionesGlobal">Observaciones Globales</Label>
-                    <Textarea
-                        id="observacionesGlobal"
-                        // value={formData.observacionesGlobal}
-                        onChange={(e) => handleInputChange("observacionesGlobal", e.target.value)}
-                        placeholder="Observaciones generales sobre la evaluación del cliente..."
-                        rows={4}
-                        className="w-full"
-                    />
+                    {evaluacionCalificacion.observaciones_global ? (
+                        <Textarea
+                            id="observacionesGlobal"
+                            value={evaluacionCalificacion.observaciones_global}
+                            // onChange={(e) => handleInputChange("observacionesGlobal", e.target.value)}
+                            placeholder="Observaciones generales sobre la evaluación del cliente..."
+                            rows={4}
+                            className="w-full"
+                        />
+                    ) : (
+                        <p className="text-gray-500 italic">No existen observaciones globales.</p>
+                    )}
                 </div>
 
                 {/* Resultado final */}
@@ -146,15 +143,16 @@ const TabCalificacion: React.FC<DireccionTecnicaProps> = ({ onClose, formData, s
                     </CardHeader>
                     <CardContent>
                         <div className="flex items-center justify-center p-6">
-                            {formData.aprobDirTecnica && formData.aprobGerente ? (
-                                <div className="flex items-center gap-3 text-green-700">
-                                    <CheckCircle className="h-8 w-8" />
-                                    <span className="text-xl font-bold">CLIENTE APROBADO</span>
-                                </div>
-                            ) : formData.aprobDirTecnica === false || formData.aprobGerente === false ? (
+                            {evaluacionCalificacion.resultado_final === ESTADO_APROBACION.PENDIENTE ? (
                                 <div className="flex items-center gap-3 text-red-700">
                                     <XCircle className="h-8 w-8" />
                                     <span className="text-xl font-bold">CLIENTE NO APROBADO</span>
+                                </div>
+                            ) : evaluacionCalificacion.resultado_final === ESTADO_APROBACION.APROBADO ? (
+
+                                <div className="flex items-center gap-3 text-green-700">
+                                    <CheckCircle className="h-8 w-8" />
+                                    <span className="text-xl font-bold">CLIENTE APROBADO</span>
                                 </div>
                             ) : (
                                 <div className="flex items-center gap-3 text-yellow-700">
@@ -177,7 +175,7 @@ const TabCalificacion: React.FC<DireccionTecnicaProps> = ({ onClose, formData, s
                 </Button>
 
             </DialogFooter>
-        </TabsContent>
+        </TabsContent >
     )
 }
 
