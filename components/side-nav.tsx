@@ -79,8 +79,8 @@ export function SideNav() {
       <div className="flex h-20 items-center border-b px-6">
         <Link href="/dashboard" className="flex items-center gap-2">
           <Image
-            src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-4PCl6Z3X7LC9rMlLj2kiXPe5RImE88.png"
-            alt="DIFAR CHIMBOTE"
+            src="/difar-logo.png"
+            alt="Logo difar"
             width={120}
             height={60}
             className="object-contain"
