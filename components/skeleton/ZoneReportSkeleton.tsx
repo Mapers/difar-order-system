@@ -1,14 +1,10 @@
 import React from "react";
-import { Tabs, TabsList, TabsTrigger, TabsContent, } from "@/components/ui/tabs"
+import { Tabs, TabsContent, } from "@/components/ui/tabs"
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
-import { Skeleton } from "../ui/skeleton";
-import { Dialog, DialogContent, DialogTitle, DialogHeader, DialogFooter } from "@/components/ui/dialog"
 
 
-export default function ZoneReportSkeleton() {
-  return (
+export const ZoneReportSkeleton=()=> (
     <div className="rounded-md border bg-white">
-      {/* Tabs skeleton */}
       <div className="grid grid-cols-2 sm:grid-cols-4 w-full mb-2 gap-4 px-4 sm:px-6">
         {[...Array(4)].map((_, i) => (
           <div
@@ -19,7 +15,6 @@ export default function ZoneReportSkeleton() {
         ))}
       </div>
 
-      {/* Header skeleton */}
       <div className="bg-gradient-to-r from-indigo-600 to-indigo-800 px-4 sm:px-6 py-4 shadow-md mb-4">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
           <div className="h-6 sm:h-7 w-24 bg-gray-300 rounded animate-pulse"></div>
@@ -29,7 +24,6 @@ export default function ZoneReportSkeleton() {
         </div>
       </div>
 
-      {/* Report item skeleton */}
       <div className="mt-4 space-y-4 px-4 sm:px-6 py-1">
         {[...Array(1)].map((_, i) => (
           <div
@@ -51,7 +45,6 @@ export default function ZoneReportSkeleton() {
       </div>
     </div>
   );
-}
 
 
 export const ClientCardSkeleton = () => (

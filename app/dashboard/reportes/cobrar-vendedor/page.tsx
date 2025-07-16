@@ -9,7 +9,7 @@ import { Search } from "lucide-react"
 import { clientSchema } from "@/schemas/reports/documentoSchema"
 import { z } from 'zod'
 import { toast } from "@/hooks/use-toast"
-import ZoneReportSkeleton from "@/components/skeleton/ZoneReportSkeleton"
+import { ZoneReportSkeleton } from "@/components/skeleton/ZoneReportSkeleton"
 import ZoneCollectSellerReport from "@/components/reporte/zoneCollectSellerReport"
 import {
   Tabs,

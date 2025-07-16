@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Search} from "lucide-react"
+import { Search } from "lucide-react"
 import React, { useEffect, useState } from "react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -13,14 +13,9 @@ import { normalizeDocumentCode } from "@/utils/normalizeDocumentCode"
 import { documentoSchema } from '@/schemas/reports/documentoSchema'
 import { toast } from "@/hooks/use-toast"
 import ZoneClientReport from "@/components/reporte/zoneClientReport"
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { z } from 'zod'
-import ZoneReportSkeleton from "@/components/skeleton/ZoneReportSkeleton"
+import { ZoneReportSkeleton } from "@/components/skeleton/ZoneReportSkeleton"
 
 
 export default function DocumentClientPage() {

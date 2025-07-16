@@ -8,7 +8,7 @@ export const mapClientFromApi = (data: any): IClient => ({
   tipoDocumento: data.documento_abrev,
   numeroDocumento: data.documento_numero,
   categoria: data.categoria,
-  fechaEvaluacion: data.fecha_evaluacion ? data.fecha_evaluacion : "Sin evaluar",
+  fechaEvaluacion: data.fecha_evaluacion ? data.fecha_evaluacion : "Sin fecha",
   provincia: data.provincia,
   zona: data.zona,
   estado: data.estado,
@@ -32,12 +32,8 @@ export const mapClientEvaluationFromApi = (data: any): IClientEvaluation => ({
   representanteLegal: data.representante_lega ?? "No asignado",
   categoria: data.categoria_cliente ?? "No asignado",
   estado: data.estado,
-  fechaInicio: data.FECHA_INICIO
-    ? format(parseISO(data.FECHA_INICIO), "dd/MM/yyyy")
-    : "Sin fecha",
-  fechaRegistro: data.FechaRegistros
-    ? format(parseISO(data.FechaRegistros), "dd/MM/yyyy")
-    : "Sin fecha",
+  fechaInicio: data.FECHA_INICIO ? format(parseISO(data.FECHA_INICIO), "dd/MM/yyyy") : "Sin fecha",
+  fechaRegistro: data.FechaRegistros ? format(parseISO(data.FechaRegistros), "dd/MM/yyyy") : "Sin fecha",
 })
 
 // Evaluacion de un cliente
@@ -62,11 +58,7 @@ export const mapEvaluationFromApi = (data: any): IEvaluation => ({
   updatedAt: data.updated_at,
 });
 
-// 
-/**
- * Transforma la respuesta cruda del backend
- * al modelo tipado ICalificacion.
- */
+// Evaluacion de un cliente
 export const mapEvaluacionCalificacionFromApi = (data: any): IEvaluacionCalif => ({
   dirTecnicaEstado: data.dir_tecnica_estado,
   gerenteEstado: data.gerente_estado,

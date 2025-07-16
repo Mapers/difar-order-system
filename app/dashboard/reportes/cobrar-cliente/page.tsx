@@ -9,7 +9,7 @@ import { Check, ChevronDown, MapPin, Search, User, X } from "lucide-react"
 import { clientSchema } from "@/schemas/reports/documentoSchema"
 import { z } from 'zod'
 import { toast } from "@/hooks/use-toast"
-import ZoneReportSkeleton from "@/components/skeleton/ZoneReportSkeleton"
+import { ZoneReportSkeleton } from "@/components/skeleton/ZoneReportSkeleton"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Customer, IArea, Zone } from "@/interface/report/report-interface"
 import ZoneCollectClientReport from "@/components/reporte/zoneCollectClientReport"

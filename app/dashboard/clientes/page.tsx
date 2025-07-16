@@ -5,11 +5,10 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Search, Eye, Edit, Download, Plus, Filter, ChevronDown } from "lucide-react"
+import { Search, Eye, Edit, Download, Plus, Filter, ChevronDown, FileText, Phone, Mail, Building, CheckCircle, User, MapPin } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Label } from "@radix-ui/react-label"
 import { useAuth } from '@/context/authContext';
-import SkeletonClientRow from "@/components/skeleton/ClientListSkeleton"
 import { IClient } from "@/interface/clients/client-interface"
 import { mapClientFromApi } from "@/mappers/clients"
 import { formatSafeDate } from "@/utils/date"
@@ -18,6 +17,7 @@ import { ClientMethodsService } from "./services/clientMethodsService"
 import ModalCreateEditions from "@/components/modal/modalCreateEvaluation"
 import ModalClientEdit from "@/components/modal/modalClientEdit"
 import ModalClientView from "@/components/modal/modalClientView"
+import { SkeletonCardClient, SkeletonClientRow } from "@/components/skeleton/ClientSkeleton"
 
 export default function ClientsPage() {
   const { user, isAuthenticated } = useAuth();
@@ -185,6 +185,99 @@ export default function ClientsPage() {
                 {filteredClients.length} cliente{filteredClients.length !== 1 ? "s" : ""} encontrado{filteredClients.length !== 1 ? "s" : ""}
               </p>
             </div>
+
+
+            {/* LISTADO DE CLIENTES PARA MOVIL */}
+            <div className="block lg:hidden space-y-4">
+              {loading || !isAuthenticated ? (
+                Array.from({ length: 5 }).map((_, index) => (
+                  <SkeletonCardClient key={index} />
+                ))
+              ) : filteredClients.length > 0 ? (
+                filteredClients.map((cliente) => {
+                  const estadoAprobacion = ClientMethodsService.getEstadoAprobacion(cliente.estado);
+                  const IconoEstado = estadoAprobacion.icon;
+
+                  return (
+                    <Card key={cliente.codigoInterno} className="bg-white shadow-sm">
+                      <CardContent className="p-4">
+                        <div className="space-y-4">
+                          <div className="flex items-start justify-between">
+                            <div className="space-y-1 flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <h3 className="font-bold text-lg text-blue-600">{cliente.codigoInterno}</h3>
+                                <Badge className={estadoAprobacion.color}>
+                                  <IconoEstado className="w-3 h-3 mr-1" />
+                                  {estadoAprobacion.estado}
+                                </Badge>
+                              </div>
+                              <p className="font-medium text-gray-900 truncate max-w-xs">{cliente.razonSocial}</p>
+                              <p className="text-sm text-gray-600 truncate max-w-xs">{cliente.nombreComercial}</p>
+                            </div>
+                          </div>
+                          <div className="bg-blue-50 rounded-lg p-3 space-y-2">
+                            <div className="flex items-center gap-2">
+                              <FileText className="h-4 w-4 text-blue-600" />
+                              <span className="text-sm">
+                                <span className="font-medium">DNI:</span> {cliente.numeroDocumento}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="bg-green-50 rounded-lg p-3 space-y-2">
+                            <div className="flex items-center gap-2">
+                              <Building className="h-4 w-4 text-green-600" />
+                              <span className="text-sm">
+                                <span className="font-medium">Categoría:</span> {ClientMethodsService.getCategoriaLabel(cliente.categoria)}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="bg-purple-50 rounded-lg p-3 space-y-2">
+                            <div className="flex items-start gap-2">
+                              <MapPin className="h-4 w-4 text-purple-600 mt-0.5" />
+                              <div className="flex-1 min-w-0">
+                                {cliente.provincia} - Zona: {cliente.zona}
+                              </div>
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-2 gap-3 text-sm">
+                            <div>
+                              <Label className="text-xs text-gray-500">Fecha Evaluación</Label>
+                              <p className="font-medium">{cliente.fechaEvaluacion}</p>
+                            </div>
+                          </div>
+
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="flex-1 bg-transparent"
+                              onClick={() => handleView(cliente.codigoInterno)}
+                            >
+                              <Eye className="mr-2 h-4 w-4" />
+                              Ver
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="flex-1 bg-transparent"
+                              onClick={() => handleEdit(cliente.codigoInterno)}
+                            >
+                              <Edit className="mr-2 h-4 w-4" />
+                              Editar
+                            </Button>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })
+              ) : (
+                <p className="text-center text-gray-500">No hay clientes para mostrar.</p>
+              )}
+            </div>
+
+
+            {/* LISTADO DE CLIENTES PARA DESCKTOP */}
             <div className="hidden lg:block">
               <Card className="bg-white shadow-sm">
                 <div className="overflow-x-auto">
@@ -292,7 +385,7 @@ export default function ClientsPage() {
 
         <ModalClientEdit
           open={showEditModal}
-          onOpenChange={(open) => {if(!open) closeEditModal();}}
+          onOpenChange={(open) => { if (!open) closeEditModal(); }}
           codClient={codClient}
         />
 
