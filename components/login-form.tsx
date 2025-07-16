@@ -1,27 +1,26 @@
 "use client"
 
 import type React from "react"
-
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
-import { Lock, User, ArrowRight } from "lucide-react"
+import { ShoppingCart, Lock, User, ArrowRight } from "lucide-react"
 import { useAuth } from "@/context/authContext"
-import { toast } from "@/hooks/use-toast"
-import { UserLoginDTO } from "@/interface/auth-interface"
+import { SmsCheck, SmsSend, UserLoginDTO } from "@/app/services/auth/types"
+import { AuthService } from "@/app/services/auth/AuthService"
 import Image from "next/image"
 
-
 export function LoginForm() {
+  const { signin, sendDni, errors } = useAuth();
   const router = useRouter()
-  const { signin, loading, errors } = useAuth()
   const [dni, setDni] = useState("")
-  const [password, setPassword] = useState("")
-
-  const [loadingLogin, setLoadingLogin] = useState(false)
+  const [verificationCode, setVerificationCode] = useState(["", "", "", "", "", ""])
+  const [showVerification, setShowVerification] = useState(false)
+  const [codigoVerif, setCodigoVerif] = useState<string>("")
+  const [loading, setLoading] = useState(false)
 
   useEffect(() => {
     // Si el usuario viene del onboarding, mostrar un mensaje de bienvenida
@@ -33,37 +32,65 @@ export function LoginForm() {
   }, [])
 
   const handleDniSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
+    setLoading(true);
     try {
-      setLoadingLogin(true)
-      const formData: UserLoginDTO = { dni, password }
-      const response = await signin(formData);
-      if (response?.status === 200 && response.data.success) {
-        router.push("/dashboard")
-      }
-      else {
-        const message = response?.data.message || "Error al iniciar sesión"
-        toast({ title: "login", description: message, variant: "success" })
-
+      const formData: UserLoginDTO = { dni };
+      const numTelefono = await sendDni(formData);
+      if (numTelefono) {
+        const smsSend: SmsSend = {
+          dni: dni,
+          telefono: numTelefono,
+        };
+        const resInsert = await AuthService.insertToken(smsSend);
+        if (resInsert.success) {
+          setShowVerification(true);
+          setCodigoVerif(resInsert.data.codigo);
+          setVerificationCode(["", "", "", "", "", ""]);
+        }
       }
     } catch (error: any) {
-      console.log("errror:", error);
-      const message = error.response?.data.error.message
-      console.log("> message error signin:", message);
+      console.log(error);
     }
     finally {
-      setLoadingLogin(false)
+      setLoading(false);
     }
+  };
 
+
+  const handleVerificationSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    try {
+      setLoading(true)
+      const smsCheck: SmsCheck = {
+        dni,
+        codigo: codigoVerif
+
+      }
+      const response = await signin(smsCheck)
+      if (response.success) {
+        router.push("/dashboard")
+      }
+    } catch (error) {
+      console.log(error)
+    }
+    finally {
+      setLoading(false);
+    }
   }
-  useEffect(() => {
-    if (errors.length > 0) {
-      errors.forEach(err => {
-        toast({ title: "Iniciar Sesión", description: err, variant: "error" })
-      });
-    }
-  }, [errors]);
 
+  const handleCodeChange = (index: number, value: string) => {
+    if (value.length <= 1) {
+      const newCode = [...verificationCode]
+      newCode[index] = value
+      setVerificationCode(newCode)
+      // Auto-focus next input
+      if (value && index < 5) {
+        const nextInput = document.getElementById(`code-${index + 1}`)
+        nextInput?.focus()
+      }
+    }
+  }
 
   return (
     <div className="w-full max-w-md mx-auto">
@@ -84,65 +111,98 @@ export function LoginForm() {
         <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-indigo-500/20 rounded-xl -z-10"></div>
         <CardHeader className="space-y-1 pb-2">
           <CardTitle className="text-2xl text-center font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-            Iniciar Sesión
+            {showVerification ? "Verificación" : "Iniciar Sesión"}
           </CardTitle>
           <CardDescription className="text-center">
-            Ingrese su DNI para continuar
+            {showVerification ? "Ingrese el código de verificación" : "Ingrese su DNI para continuar"}
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleDniSubmit}>
-            <div className="grid gap-4">
-              <div className="grid gap-2">
-                <Label htmlFor="dni" className="text-gray-700">
-                  DNI
-                </Label>
-                <div className="relative">
-                  <User className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
-                  <Input
-                    id="dni"
-                    placeholder="Ingrese su DNI"
-                    value={dni}
-                    onChange={(e) => setDni(e.target.value)}
-                    required
-                    maxLength={8}
-                    pattern="[0-9]{8}"
-                    className="pl-10 text-center text-lg h-12 bg-white border-gray-200 focus:border-blue-500 focus:ring-blue-500"
-                  />
-
+          {!showVerification ? (
+            <form onSubmit={handleDniSubmit}>
+              <div className="grid gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="dni" className="text-gray-700">
+                    DNI
+                  </Label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+                    <Input
+                      id="dni"
+                      placeholder="Ingrese su DNI"
+                      value={dni}
+                      onChange={(e) => setDni(e.target.value)}
+                      required
+                      maxLength={8}
+                      pattern="[0-9]{8}"
+                      className="pl-10 text-center text-lg h-12 bg-white border-gray-200 focus:border-blue-500 focus:ring-blue-500"
+                    />
+                  </div>
                 </div>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
-                  <Input
-                    id="password"
-                    type="password"
-                    placeholder="Ingrese su Contraseña"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    className="pl-10 text-center text-lg h-12 bg-white border-gray-200 focus:border-blue-500 focus:ring-blue-500"
-                  />
-                </div>
+                <Button
+                  type="submit"
+                  className="w-full h-12 mt-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-medium rounded-lg shadow-md hover:shadow-lg transition-all"
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <div className="flex items-center justify-center">
+                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                      Enviando...
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-center">
+                      Enviar código
+                      <ArrowRight className="ml-2 h-5 w-5" />
+                    </div>
+                  )}
+                </Button>
               </div>
-              <Button
-                type="submit"
-                className="w-full h-12 mt-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-medium rounded-lg shadow-md hover:shadow-lg transition-all"
-                disabled={loading}
-              >
-                {loadingLogin ? (
-                  <div className="flex items-center justify-center">
-                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                    Iniciando sesión...
+            </form>
+          ) : (
+            <form onSubmit={handleVerificationSubmit}>
+              <div className="grid gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="verification-code" className="text-gray-700 text-center">
+                    Código de verificación
+                  </Label>
+                  <div className="flex justify-center gap-2 mt-2">
+                    {verificationCode.map((digit, index) => (
+                      <Input
+                        key={index}
+                        id={`code-${index}`}
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]"
+                        maxLength={1}
+                        value={digit}
+                        onChange={(e) => handleCodeChange(index, e.target.value)}
+                        className="w-12 h-14 text-center text-lg font-bold bg-white border-gray-200 focus:border-blue-500 focus:ring-blue-500"
+                        autoFocus={index === 0}
+                      />
+                    ))}
                   </div>
-                ) : (
-                  <div className="flex items-center justify-center">
-                    Iniciar sesión
-                    <ArrowRight className="ml-2 h-5 w-5" />
-                  </div>
-                )}
-              </Button>
-            </div>
-          </form>
+                  <p className="text-xs text-center text-gray-500 mt-2">Se ha enviado un código a su dispositivo</p>
+                </div>
+                <Button
+                  type="submit"
+                  className="w-full h-12 mt-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-medium rounded-lg shadow-md hover:shadow-lg transition-all"
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <div className="flex items-center justify-center">
+                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                      Verificando...
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-center">
+                      Verificar
+                      <Lock className="ml-2 h-5 w-5" />
+                    </div>
+                  )}
+                </Button>
+              </div>
+            </form>
+          )}
         </CardContent>
         <CardFooter className="flex justify-center pb-6">
           <p className="text-sm text-gray-500">Sistema seguro de gestión de pedidos</p>
@@ -151,4 +211,20 @@ export function LoginForm() {
     </div>
   )
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

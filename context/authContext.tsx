@@ -2,9 +2,9 @@
 
 import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { AuthContextType, User, UserLoginDTO, UserRegisterDTO } from '@/interface/auth-interface';
-import { loginRequest, registerRequest } from '@/app/api/auth';
 import { decodeToken, isTokenNearExpiry } from '@/app/utils/tokenUtils';
+import { AuthService } from '@/app/services/auth/AuthService';
+import { AuthContextType, SmsCheck, SmsSend, User, UserLoginDTO, UserRegisterDTO } from '@/app/services/auth/types';
 
 // Inicialización del contexto
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -21,6 +21,7 @@ export const useAuth = () => {
 // Provider
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const [user, setUser] = useState<User | null>(null);
+    const [token, setToken] = useState<string>("");
     const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
     const [errors, setErrors] = useState<string[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
@@ -42,7 +43,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const signup = async (userData: UserRegisterDTO) => {
         try {
             setLoading(true);
-            const res = await registerRequest(userData);
+            const res = await AuthService.registerRequest(userData);
 
             if (res && res.status === 201) {
                 const { user, token } = res.data;
@@ -69,38 +70,62 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
     };
 
-    const signin = async (userData: UserLoginDTO) => {
+
+    const sendDni = async (userData: UserLoginDTO) => {
         try {
             setLoading(true);
-            const res = await loginRequest(userData);
-            console.log("signin  res:", res)
-            console.log("signin :", res.data)
-            if (res && res.status === 200) {
-                const token = res.data.data;
+            const response = await AuthService.loginRequest(userData);
+            if (response.success) {
+                const token = response.data;
                 console.log("> Token", token);
-                localStorage.setItem("token", token);
+                // Decodificar token
                 const tokenResult = decodeToken(token);
-                console.log("> Token result", tokenResult);
+                console.log("> Token decoded:", tokenResult);
                 if (tokenResult.isValid && tokenResult.user) {
-                    console.log("> Token result valid :", tokenResult.user);
-                    setUser(tokenResult.user);
-                    setIsAuthenticated(true);
-                } else {
-                    clearAuthState();
-                    handleError(tokenResult.error || 'Token inválido');
+                    setToken(response.data)
+                    const telefono = tokenResult.user.telefono
+                    return telefono
                 }
-
-                return res;
             }
         } catch (error: any) {
-            const message = error.response?.data?.message || 'Error en el inicio de sesión';
+            const message = error.response?.data?.message || "Error en el inicio de sesión";
+            handleError(message);
+            console.error("> Error send dni:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+
+
+
+    const signin = async (smsCheck: SmsCheck) => {
+        try {
+            setLoading(true);
+
+            // Paso 3: Verificar token SMS con smsCheck
+            const resCheck = await AuthService.checkToken(smsCheck);
+
+            if (resCheck.success) {
+                // Guardar token y actualizar estado
+                localStorage.setItem("token", token);
+                const tokenResult = decodeToken(token);
+                console.log("> Token decoded:", tokenResult);
+                setUser(tokenResult.user);
+                setIsAuthenticated(true);
+                return resCheck;
+            } else {
+                clearAuthState();
+                handleError(resCheck.message || "Error en validación SMS");
+            }
+        } catch (error: any) {
+            const message = error.response?.data?.message || "Error en el inicio de sesión";
             handleError(message);
             console.error("> Error sign in:", error);
         } finally {
             setLoading(false);
         }
     };
-
     const logout = async () => {
         clearAuthState();
         router.push('/');
@@ -180,6 +205,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             value={{
                 user,
                 signup,
+                sendDni,
                 signin,
                 logout,
                 isAuthenticated,
