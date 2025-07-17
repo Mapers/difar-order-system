@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle, } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { ClientCardSkeleton } from '../skeleton/ZoneReportSkeleton'
+import { ClientCardSkeleton, SkeletonState } from '../skeleton/ZoneReportSkeleton'
 import { getEstadoVisual } from '@/utils/client'
 import { ClientMethodsService } from '@/app/dashboard/clientes/services/clientMethodsService'
 import { useClienViewtData } from '@/app/dashboard/clientes/hooks/useClientViewData'
@@ -64,7 +64,9 @@ const ModalClientView: React.FC<ModalVerificationProps> = ({ open, onOpenChange,
                 <CardContent className="p-6">
                   <div className="flex items-center justify-center">
                     {loading ? (
-                      null
+                      <>
+                        <SkeletonState />
+                      </>
                     ) : client ? (
                       (() => {
                         const estadoAprobacion = ClientMethodsService.getEstadoAprobacion(client.estado);
@@ -87,7 +89,7 @@ const ModalClientView: React.FC<ModalVerificationProps> = ({ open, onOpenChange,
                 </CardContent>
               </Card>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className={`grid grid-cols-1 ${loading ? "" : "md:grid-cols-2"} gap-6`}>
                 {loading ? (
                   <ClientCardSkeleton />
                 ) : !client ? (

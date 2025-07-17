@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { ClientService } from '@/app/services/client/ClientService';
+import { mapEvaluationFromApi } from '@/mappers/clients';
 
 export function useClientEditData(codClient?: string) {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [typeDocuments, setTypeDocuments] = useState<any>([])
+    const [evaluation, setEvaluation] = useState<any>({});
     const [provincesCities, setProvincesCities] = useState<any>([])
     const [districts, setDistricts] = useState<any>([])
     const [zones, setZones] = useState<any>([])
@@ -17,6 +19,7 @@ export function useClientEditData(codClient?: string) {
         if (!codClient) {
             // Si no hay codClient, limpia estados y no hace fetch
             setTypeDocuments([]);
+            setEvaluation([]);
             setProvincesCities([]);
             setDistricts([]);
             setZones([]);
@@ -33,6 +36,7 @@ export function useClientEditData(codClient?: string) {
             // Ejecutar todos los fetch en paralelo, manejando errores individualmente
             const promises = [
                 ClientService.getDocumentsTypes().catch(() => null),
+                ClientService.getEvaluationByCodClient(codClient as string).catch(() => null),
                 ClientService.getProvincesCities().catch(() => null),
                 ClientService.getDistricts().catch(() => null),
                 ClientService.getZones().catch(() => null),
@@ -42,11 +46,16 @@ export function useClientEditData(codClient?: string) {
             ];
 
             try {
-                const [documentRes, provinceRes, districtRes, zoneRes, sunaStatusRes, evaClientRes, evalCalifRes] = await Promise.all(promises);
+                const [documentRes, evalRes, provinceRes, districtRes, zoneRes, sunaStatusRes, evaClientRes, evalCalifRes] = await Promise.all(promises);
                 if (documentRes?.success) {
                     setTypeDocuments(documentRes.data);
                 } else {
                     setTypeDocuments([]);
+                }
+                if (evalRes?.success) {
+                    setEvaluation(mapEvaluationFromApi(evalRes.data));
+                } else {
+                    setEvaluation({});
                 }
                 if (provinceRes?.success) {
                     setProvincesCities(provinceRes.data);
@@ -91,5 +100,5 @@ export function useClientEditData(codClient?: string) {
         fetchData();
     }, [codClient]);
 
-    return { typeDocuments, provincesCities, districts, zones, sunatStatus, evaluationClient, evaluacionCalificacion, loading, error };
+    return { typeDocuments, evaluation, provincesCities, districts, zones, sunatStatus, evaluationClient, evaluacionCalificacion, loading, error };
 }

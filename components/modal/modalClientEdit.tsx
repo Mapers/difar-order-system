@@ -16,6 +16,7 @@ import TabDireccionTecnica from '../cliente/tabDireccionTecnica'
 import TabCalificacion from '../cliente/tabCalificacion'
 import { ClientService } from '@/app/services/client/ClientService'
 import { useClientEditData } from '@/app/dashboard/clientes/hooks/useClientEditData'
+import ModalLoader from './modalLoader'
 
 function cn(...classes: (string | boolean | undefined)[]) {
   return classes.filter(Boolean).join(' ');
@@ -29,7 +30,7 @@ interface ModalVerificationProps {
 
 const ModalClientEdit: React.FC<ModalVerificationProps> = ({ open, onOpenChange, codClient }) => {
 
-  const { typeDocuments, provincesCities, districts, zones, sunatStatus, evaluationClient, evaluacionCalificacion, loading, error } = useClientEditData(codClient);
+  const { typeDocuments, evaluation, provincesCities, districts, zones, sunatStatus, evaluationClient, evaluacionCalificacion, loading, error } = useClientEditData(codClient);
   const { user, isAuthenticated } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isPopoverProvinceOpen, setIsPopoverProvinceOpen] = useState(false);
@@ -82,7 +83,7 @@ const ModalClientEdit: React.FC<ModalVerificationProps> = ({ open, onOpenChange,
     }
   }
 
-  
+
   // Simulación de guardar datos
   const handleSave = async () => {
     setIsSubmitting(true);
@@ -111,13 +112,12 @@ const ModalClientEdit: React.FC<ModalVerificationProps> = ({ open, onOpenChange,
         aprobGerente: '',
         observaciones: '',
       };
-      console.log(">>>>data enviado :", dataPayload);
       const response = await ClientService.createUpdateClienteEvaluacion(dataPayload);
       if (response.success) {
-        toast({ title: "Evaluación", description: response.message, variant: "success" })
+        toast({ title: "Evaluación", description: "Actualizada correctamente", variant: "success" })
       }
       else {
-        toast({ title: "Evaluación", description: response.message || "Evaluación no actualizada.", variant: "error" })
+        toast({ title: "Evaluación", description: "Evaluación no actualizada.", variant: "error" })
       }
       console.log('Guardado exitoso:', response);
     } catch (error) {
@@ -128,8 +128,43 @@ const ModalClientEdit: React.FC<ModalVerificationProps> = ({ open, onOpenChange,
   };
 
 
+  useEffect(() => {
+    if (evaluation) {
+      setFormData({
+        codigo: codClient,
+        codigoVed: user?.codigo || '',
+        nombre: evaluation.razonSocial || '',
+        nombreComercial: evaluation.nombreComercial || '',
+        ruc: evaluation.ruc || '',
+        tipoDocIdent: evaluation.tipoDocIdent || '',
+        tipoCliente: evaluation.tipoCliente || '',
+        direccion: evaluation.direccion || '',
+        telefono: evaluation.telefono || '',
+        correoElectronico: evaluation.correoElectronico || '',
+        provincia: evaluation.provincia || 0,
+        idZona: evaluation.idZona || '',
+        idDistrito: evaluation.idDistrito || 0,
+        fechaInicio: evaluation.fechaInicio || '',
+        fechaEvaluacion: evaluation.fechaEvaluacion || '',
+        categoria: evaluation.categoria || '',
+        estadoSUNAT: evaluation.estadoSUNAT || '',
+        representanteLegal: evaluation.representanteLegal || '',
+        itemLista: evaluation.itemLista || '',
+        aprobDirTecnica: evaluation.aprobDirTecnica || false,
+        aprobGerente: evaluation.aprobGerente || false,
+        observaciones: evaluation.observaciones || '',
+      });
+    }
+  }, [evaluation, codClient, user?.codigo]);
+
 
   if (!open) return null;
+  if (loading) {
+    return (
+      <ModalLoader open={open} onOpenChange={onOpenChange} />
+    );
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}
     >

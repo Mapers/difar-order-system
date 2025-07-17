@@ -41,7 +41,7 @@ const TabCalificacion: React.FC<DireccionTecnicaProps> = ({ onClose, evaluacionC
                                 <p className="text-sm text-gray-600 mb-4">Estado de aprobación:</p>
                                 <Button
                                     // onClick={() => handleInputChange("aprobadoDirTecnica", !formData.aprobDirTecnica)}
-                                    className={`w-full h-12 text-sm sm:text-base font-bold transition-all duration-200 ${evaluacionCalificacion.dir_tecnica_estado === ESTADO_APROBACION.PENDIENTE
+                                    className={`w-full h-12 text-sm sm:text-base font-bold transition-all duration-200 ${evaluacionCalificacion.dir_tecnica_estado !== ESTADO_APROBACION.APROBADO
                                         ? "bg-red-600 hover:bg-red-700 text-white"
                                         : "bg-green-600 hover:bg-green-700 text-white"
                                         }`}
@@ -86,7 +86,7 @@ const TabCalificacion: React.FC<DireccionTecnicaProps> = ({ onClose, evaluacionC
                                 <p className="text-sm text-gray-600 mb-4">Estado de aprobación:</p>
                                 <Button
                                     // onClick={() => handleInputChange("aprobadoGerente", !formData.aprobadoGerente)}
-                                    className={`w-full h-12 text-sm sm:text-base font-bold transition-all duration-200 ${evaluacionCalificacion.gerente_estado === ESTADO_APROBACION.PENDIENTE
+                                    className={`w-full h-12 text-sm sm:text-base font-bold transition-all duration-200 ${evaluacionCalificacion.gerente_estado !== ESTADO_APROBACION.APROBADO
                                         ? "bg-red-600 hover:bg-red-700 text-white"
                                         : "bg-green-600 hover:bg-green-700 text-white"
                                         }`}

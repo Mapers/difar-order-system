@@ -276,7 +276,6 @@ export default function ClientsPage() {
               )}
             </div>
 
-
             {/* LISTADO DE CLIENTES PARA DESCKTOP */}
             <div className="hidden lg:block">
               <Card className="bg-white shadow-sm">

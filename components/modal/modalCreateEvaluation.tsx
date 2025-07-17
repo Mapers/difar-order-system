@@ -13,6 +13,7 @@ import { Command, CommandInput, CommandList, CommandGroup, CommandItem, CommandE
 import { toast } from '@/hooks/use-toast'
 import { ClientService } from '@/app/services/client/ClientService'
 import { useClientCreatedData } from '@/app/dashboard/clientes/hooks/useClientCreatedData'
+import ModalLoader from './modalLoader'
 
 function cn(...classes: (string | boolean | undefined)[]) {
   return classes.filter(Boolean).join(' ');
@@ -104,14 +105,12 @@ const ModalCreateEvaluation: React.FC<ModalVerificationProps> = ({ open, onOpenC
         aprobGerente: '',
         observaciones: '',
       };
-      console.log(">>>>data enviado :", dataPayload);
       const response = await ClientService.createUpdateClienteEvaluacion(dataPayload);
       if (response.success) {
-        toast({ title: "Evaluación", description: response.message, variant: "success" })
+        toast({ title: "Evaluación", description: "Creada correctamente", variant: "success" })
       }
       else {
-        toast({ title: "Evaluación", description: response.message || "Evaluación no actualizada.", variant: "error" })
-
+        toast({ title: "Evaluación", description: "Evaluación no creada.", variant: "error" })
       }
       onOpenChange(false);
     } catch (error) {
@@ -120,6 +119,7 @@ const ModalCreateEvaluation: React.FC<ModalVerificationProps> = ({ open, onOpenC
       setIsSubmitting(false);
     }
   };
+
 
   return (
     <Dialog
