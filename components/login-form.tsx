@@ -69,7 +69,7 @@ export function LoginForm() {
       }
       const response = await signin(smsCheck)
       if (response.success) {
-        router.push("/dashboard")
+        router.push("/dashboard/clientes")
       }
     } catch (error) {
       console.log(error)

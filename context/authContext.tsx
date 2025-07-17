@@ -97,8 +97,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
 
 
-
-
     const signin = async (smsCheck: SmsCheck) => {
         try {
             setLoading(true);
