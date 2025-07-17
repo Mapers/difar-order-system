@@ -22,14 +22,14 @@ export function LoginForm() {
   const [codigoVerif, setCodigoVerif] = useState<string>("")
   const [loading, setLoading] = useState(false)
 
-  useEffect(() => {
-    // Si el usuario viene del onboarding, mostrar un mensaje de bienvenida
-    const fromOnboarding = sessionStorage.getItem("from_onboarding")
-    if (fromOnboarding) {
-      sessionStorage.removeItem("from_onboarding")
-      // Aquí podrías mostrar un toast de bienvenida o alguna animación
-    }
-  }, [])
+  // useEffect(() => {
+  //   // Si el usuario viene del onboarding, mostrar un mensaje de bienvenida
+  //   const fromOnboarding = sessionStorage.getItem("from_onboarding")
+  //   if (fromOnboarding) {
+  //     sessionStorage.removeItem("from_onboarding")
+  //     // Aquí podrías mostrar un toast de bienvenida o alguna animación
+  //   }
+  // }, [])
 
   const handleDniSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

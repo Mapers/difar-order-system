@@ -134,7 +134,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const token = localStorage.getItem('token');
         if (token) {
             const tokenResult = decodeToken(token);
-
             if (tokenResult.isValid && tokenResult.user) {
                 setUser(tokenResult.user);
                 setIsAuthenticated(true);
@@ -148,7 +147,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // Verificar token al cargar la aplicación
     const checkToken = useCallback(() => {
         const token = localStorage.getItem('token');
-
         if (token) {
             const tokenResult = decodeToken(token);
 
@@ -168,7 +166,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         } else {
             setIsAuthenticated(false);
         }
-
         setLoading(false);
     }, [clearAuthState]);
 
