@@ -9,8 +9,8 @@ export const mapClientFromApi = (data: any): IClient => ({
   numeroDocumento: data.documento_numero || "No registrado",
   categoria: data.categoria || "No registrado",
   fechaEvaluacion: data.fecha_evaluacion ? data.fecha_evaluacion : "Sin fecha",
-  provincia: data.provincia || "No registrado",
-  zona: data.zona || "No registrado",
+  provincia: data.provincia || "--",
+  zona: data.zona || "--",
   estado: data.estado || "No registrado",
 })
 
