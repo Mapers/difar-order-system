@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { decodeToken, isTokenNearExpiry } from '@/app/utils/tokenUtils';
 import { AuthService } from '@/app/services/auth/AuthService';
 import { AuthContextType, SmsCheck, SmsSend, User, UserLoginDTO, UserRegisterDTO } from '@/app/services/auth/types';
+import { toast } from '@/hooks/use-toast';
 
 // Inicialización del contexto
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -75,12 +76,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         try {
             setLoading(true);
             const response = await AuthService.loginRequest(userData);
-            if (response.success) {
+            if (response && response.success) {
                 const token = response.data;
-                console.log("> Token", token);
-                // Decodificar token
                 const tokenResult = decodeToken(token);
-                console.log("> Token decoded:", tokenResult);
                 if (tokenResult.isValid && tokenResult.user) {
                     setToken(response.data)
                     const telefono = tokenResult.user.telefono
@@ -88,9 +86,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 }
             }
         } catch (error: any) {
-            const message = error.response?.data?.message || "Error en el inicio de sesión";
-            handleError(message);
-            console.error("> Error send dni:", error);
+            if (error.response) {
+                // return error.response.data
+                toast({ title: "Iniciar Sesión", description: error.response.data.message, variant: "warning" })
+
+            }
+            else {
+                // const message = typeof error === 'object' ? error.messaje : error
+                const message = "No cargó correctamente, por favor intente nuevamente."
+                handleError(message);
+                throw new Error(message)
+            }
         } finally {
             setLoading(false);
         }
@@ -100,30 +106,32 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const signin = async (smsCheck: SmsCheck) => {
         try {
             setLoading(true);
-
-            // Paso 3: Verificar token SMS con smsCheck
             const resCheck = await AuthService.checkToken(smsCheck);
-
             if (resCheck.success) {
-                // Guardar token y actualizar estado
                 localStorage.setItem("token", token);
                 const tokenResult = decodeToken(token);
-                console.log("> Token decoded:", tokenResult);
                 setUser(tokenResult.user);
                 setIsAuthenticated(true);
                 return resCheck;
-            } else {
-                clearAuthState();
-                handleError(resCheck.message || "Error en validación SMS");
-            }
+            } 
         } catch (error: any) {
-            const message = error.response?.data?.message || "Error en el inicio de sesión";
-            handleError(message);
-            console.error("> Error sign in:", error);
+            if (error.response) {
+                clearAuthState();
+                handleError(error.response.data.message || "Error en validación SMS");
+                return error.response.data
+            }
+            else {
+                // const message = typeof error === 'object' ? error.messaje : error
+                const message = "Error en validación SMS"
+                handleError(message);
+                throw new Error(message)
+            }
         } finally {
             setLoading(false);
         }
     };
+
+    // función logout
     const logout = async () => {
         clearAuthState();
         router.push('/');

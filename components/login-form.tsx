@@ -12,6 +12,7 @@ import { useAuth } from "@/context/authContext"
 import { SmsCheck, SmsSend, UserLoginDTO } from "@/app/services/auth/types"
 import { AuthService } from "@/app/services/auth/AuthService"
 import Image from "next/image"
+import { toast } from "@/hooks/use-toast"
 
 export function LoginForm() {
   const { signin, sendDni, errors } = useAuth();
@@ -19,7 +20,6 @@ export function LoginForm() {
   const [dni, setDni] = useState("")
   const [verificationCode, setVerificationCode] = useState(["", "", "", "", "", ""])
   const [showVerification, setShowVerification] = useState(false)
-  const [codigoVerif, setCodigoVerif] = useState<string>("")
   const [loading, setLoading] = useState(false)
 
   // useEffect(() => {
@@ -45,12 +45,11 @@ export function LoginForm() {
         const resInsert = await AuthService.insertToken(smsSend);
         if (resInsert.success) {
           setShowVerification(true);
-          setCodigoVerif(resInsert.data.codigo);
           setVerificationCode(["", "", "", "", "", ""]);
         }
       }
     } catch (error: any) {
-      console.log(error);
+      console.error(error);
     }
     finally {
       setLoading(false);
@@ -64,17 +63,24 @@ export function LoginForm() {
       setLoading(true)
       const smsCheck: SmsCheck = {
         dni,
-        codigo: codigoVerif
-
+        codigo: verificationCode.join('')
       }
       const response = await signin(smsCheck)
-      if (response.success) {
+
+      if (response && response?.success) {
         router.push("/dashboard/clientes")
       }
+      if (!response?.success) {
+        toast({ title: "Validación Código", description: response.message, variant: "warning" })
+        setVerificationCode(["", "", "", "", "", ""]);
+        (document.getElementById("code-0") as HTMLInputElement)?.focus();
+        setLoading(false);
+      }
     } catch (error) {
-      console.log(error)
+      console.error(error)
     }
     finally {
+
       setLoading(false);
     }
   }
