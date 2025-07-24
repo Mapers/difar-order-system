@@ -28,11 +28,3 @@ export const MESSAGES = {
     }
 } 
 
-export const NAME_ROLES = {
-    ADMIN:"ADMIN",
-    VENDEDOR:"VENDEDOR",
-    USUARIO:"USUARIO",
-    ADMIN_VENDEDOR:["ADMIN","VENDEDOR"],
-    ADMIN_USUARIO:["ADMIN","USUARIO"],
-    ALL:["ADMIN","VENDEDOR","USUARIO"]
-} 

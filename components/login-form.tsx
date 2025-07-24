@@ -68,7 +68,7 @@ export function LoginForm() {
       const response = await signin(smsCheck)
 
       if (response && response?.success) {
-        router.push("/dashboard/clientes")
+        router.push("/dashboard")
       }
       if (!response?.success) {
         toast({ title: "Validación Código", description: response.message, variant: "warning" })
