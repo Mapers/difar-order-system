@@ -1,4 +1,15 @@
-import { Home, Users, Tags, Package, ShoppingCart, FileText, BarChart2, LineChart } from "lucide-react";
+import {
+    Home,
+    Users,
+    Tags,
+    Package,
+    ShoppingCart,
+    FileText,
+    BarChart2,
+    LineChart,
+    GitBranch,
+    Receipt
+} from "lucide-react";
 
 export interface NavItem {
     title: string;
@@ -55,6 +66,18 @@ export const NAV_ITEMS: NavItem[] = [
         title: "Mis Pedidos",
         href: "/dashboard/mis-pedidos",
         icon: FileText,
+        roles: [NAME_ROLES.ADMIN],
+    },
+    {
+        title: "Estados de Pedidos",
+        href: "/dashboard/estados-pedidos",
+        icon: GitBranch,
+        roles: [NAME_ROLES.ADMIN],
+    },
+    {
+        title: "Comprobantes",
+        href: "/dashboard/comprobantes",
+        icon: Receipt,
         roles: [NAME_ROLES.ADMIN],
     },
     {

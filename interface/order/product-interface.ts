@@ -70,6 +70,8 @@ export interface IProduct {
   tieneBonificado: number;
   PUContado: string;
   PUCredito: string;
+  isbonificado?: number;
+  isescala?: number;
 }
 
 // Interfaz order item
@@ -87,6 +89,7 @@ export interface ISelectedProduct {
   product: IProduct
   quantity: number
   isBonification?: boolean
+  isEscale?: boolean
   bonificationId?: number
   appliedScale?: any
   finalPrice?: number

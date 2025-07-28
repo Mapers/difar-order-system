@@ -6,7 +6,22 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table"
-import { ShoppingCart, ArrowRight, ArrowLeft, Check, Search, Package, User, Phone, MapPin, Calendar, CreditCard, DollarSign, Coins } from "lucide-react"
+import {
+  ShoppingCart,
+  ArrowRight,
+  ArrowLeft,
+  Check,
+  Search,
+  Package,
+  User,
+  Phone,
+  MapPin,
+  Calendar,
+  CreditCard,
+  DollarSign,
+  Coins,
+  FileText
+} from "lucide-react"
 import { StepProgress } from "@/components/step-progress"
 import apiClient from "@/app/api/client"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -27,6 +42,8 @@ import { getBonificadosRequest, getEscalasRequest, getProductsRequest } from "@/
 import { ICurrentBonification, ICurrentScales, IEscala, IProduct, IPromocionRequest, ISelectedProduct, OrderItem } from "@/interface/order/product-interface"
 import { IClient, ICondicion, IDistrito, IMoneda, ITerritorio } from "@/interface/order/client-interface"
 import ModalLoader from "@/components/modal/modalLoader"
+import {useAuth} from "@/context/authContext";
+import {Textarea} from "@/components/ui/textarea";
 
 export default function OrderPage() {
   const router = useRouter()
@@ -45,12 +62,15 @@ export default function OrderPage() {
   const [conditions, setConditions] = useState<ICondicion[]>([])
   const [contactoPedido, setContactoPedido] = useState('');
   const [referenciaDireccion, setReferenciaDireccion] = useState('');
+  const [note, setNote] = useState('');
   const [unidadTerritorio, setUnidadTerritorio] = useState<ITerritorio>({
     NombreDistrito: "",
     nombreProvincia: '',
     nombreDepartamento: '',
     ubigeo: ''
   })
+  const auth = useAuth();
+
   const [loading, setLoading] = useState({
     clients: false,
     conditions: true,
@@ -119,8 +139,8 @@ export default function OrderPage() {
         idArticulo: idArticulo,
         cantidad: cantidad
       }
-      const response = await getEscalasRequest(requestEscala);
-      if (response?.data?.data?.data[0].Mensaje) return []
+      const response = await getEscalasRequest(requestEscala)
+      if (response.data.message === 404) return []
       return response?.data?.data?.data
     }
     catch (error) {
@@ -135,8 +155,8 @@ export default function OrderPage() {
         idArticulo: idArticulo,
         cantidad: cantidad
       }
-      const response = await getBonificadosRequest(requestBonificado);
-      if (response?.data?.data?.data[0].Mensaje) return []
+      const response = await getBonificadosRequest(requestBonificado)
+      if (response.data.message === 404) return []
       return response?.data?.data?.data
     }
     catch (error) {
@@ -149,7 +169,7 @@ export default function OrderPage() {
     if (search.client.length >= 4) {
       setLoading(prev => ({ ...prev, clients: true }));
       try {
-        const response = await fetchGetClients(search.client);
+        const response = await fetchGetClients(search.client, auth.user?.codigo || '');
         if (response.data?.data?.data.length === 0) {
           setClients([]);
         } else {
@@ -177,17 +197,20 @@ export default function OrderPage() {
     }
   }
 
-  const addProductToList = (appliedScale?: any) => {
+  const addProductToList = (isBonification: boolean, isEscale: boolean) => {
     setIsLoading(true)
     setTimeout(() => {
-      const finalPrice = appliedScale ? appliedScale.precio : selectedProduct!.PUContado
+      const appliedScale = '';
+      // const finalPrice = appliedScale ? appliedScale.precio : selectedProduct!.PUContado
       setSelectedProducts([
         ...selectedProducts,
         {
           product: selectedProduct!,
           quantity,
-          appliedScale,
-          finalPrice,
+          isBonification,
+          isEscale,
+          appliedScale
+          // finalPrice,
         },
       ])
       setSelectedProduct(null)
@@ -235,53 +258,35 @@ export default function OrderPage() {
     try {
       const idArticulo = selectedProduct.Codigo_Art;
       const cantidad = quantity;
-      const result = evaluarPromociones(selectedProduct);
 
-      switch (result) {
-        case PROMOCIONES.BONIFICADO:
-          setModalLoader('BONIFICADO');
-          setIsLoading(true);
-          const bonificaciones = await getBonificados(idArticulo, cantidad);
-          setIsLoading(false);
 
-          if (bonificaciones.length > 0) {
-            setCurrentBonification({
-              bonificaciones,
-              productoSolicitado: idArticulo,
-              nombreProductoSolicitado: selectedProduct.NombreItem,
-              cantidadSolicitada: cantidad,
-            });
-            setShowBonificationModal(true);
-          } else {
-            addProductToList();
-          }
-          break;
+      setModalLoader('BONIFICADO');
+      setIsLoading(true);
+      const bonificaciones = await getBonificados(idArticulo, cantidad);
+      setIsLoading(false);
+      console.log(bonificaciones)
 
-        case PROMOCIONES.ESCALA:
-          setModalLoader('ESCALA');
-          setIsLoading(true);
-          const escalasProductos = await getEscalas(idArticulo, cantidad);
-          setIsLoading(false);
+      setModalLoader('ESCALA');
+      setIsLoading(true);
+      const escalasProductos = await getEscalas(idArticulo, cantidad);
+      setIsLoading(false);
+      console.log(escalasProductos)
 
-          if (escalasProductos.length > 0) {
-            const aplicableScale = getApplicableScale(selectedProduct.Codigo_Art, cantidad, escalasProductos);
-            setCurrentScales({
-              escalas: escalasProductos,
-              productoSolicitado: idArticulo,
-              nombreProductoSolicitado: selectedProduct.NombreItem,
-              cantidadSolicitada: cantidad,
-              escalaAplicable: aplicableScale,
-            });
-            setShowScalesModal(true);
-          } else {
-            addProductToList();
-          }
-          break;
+      addProductToList(bonificaciones.length > 0, escalasProductos.length > 0);
 
-        case PROMOCIONES.NO_ESCALA_BONIFICADO:
-          addProductToList();
-          break;
-      }
+      // if (escalasProductos.length > 0) {
+      //   const aplicableScale = getApplicableScale(selectedProduct.Codigo_Art, cantidad, escalasProductos);
+      //   setCurrentScales({
+      //     escalas: escalasProductos,
+      //     productoSolicitado: idArticulo,
+      //     nombreProductoSolicitado: selectedProduct.NombreItem,
+      //     cantidadSolicitada: cantidad,
+      //     escalaAplicable: aplicableScale,
+      //   });
+      //   setShowScalesModal(true);
+      // } else {
+      //   addProductToList();
+      // }
     } catch (error) {
       console.error("Error al agregar producto:", error);
     } finally {
@@ -330,18 +335,25 @@ export default function OrderPage() {
       const pedidoData = {
         clientePedido: client,
         monedaPedido: currency?.value,
-        condicionPedido: condition?.Descripcion,
+        condicionPedido: condition?.CodigoCondicion,
         contactoPedido: contactoPedido,
         direccionEntrega: selectedClient?.Dirección,
         referenciaDireccion: referenciaDireccion,
         fechaPedido: moment(new Date()).format('yyyy-MM-DD'),
         usuario: 1,
+        vendedorPedido: auth.user?.codigo,
         detalles: selectedProducts.map(item => ({
           iditemPedido: item.product.IdArticulo,
           codigoitemPedido: item.product.Codigo_Art,
           cantPedido: item.quantity,
-          precioPedido: item?.finalPrice
-        }))
+          precioPedido: item?.finalPrice,
+          isbonificado: item.isBonification ? 1 : 0,
+          isescala: item.isEscale ? 1 : 0
+        })),
+        estadodePedido: 1,
+        telefonoPedido: selectedClient?.telefono,
+        horaPedido: moment(new Date()).format('HH:mm'),
+        notaPedido: note,
       }
 
       const response = await apiClient.post('/pedidos', pedidoData)
@@ -822,7 +834,7 @@ export default function OrderPage() {
             <CardContent className="space-y-6 pt-6">
               <div className="space-y-4">
                 <div className="flex items-center gap-2">
-                  <User className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
+                  <User className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600"/>
                   <h3 className="font-semibold text-gray-900 text-sm sm:text-base">Información del Cliente</h3>
                 </div>
 
@@ -836,14 +848,14 @@ export default function OrderPage() {
                       </div>
 
                       <div className="flex items-start gap-2">
-                        <Phone className="w-4 h-4 text-blue-600 mt-0.5" />
+                        <Phone className="w-4 h-4 text-blue-600 mt-0.5"/>
                         <div>
                           <Label className="text-xs text-gray-500">Teléfono</Label>
                           <p className="text-sm">{selectedClient?.telefono ?? '+52 ---------'}</p>
                         </div>
                       </div>
                       <div className="flex items-start gap-2">
-                        <User className="w-4 h-4 text-blue-600 mt-0.5" />
+                        <User className="w-4 h-4 text-blue-600 mt-0.5"/>
                         <div>
                           <Label className="text-xs text-gray-500">Contacto para el Pedido</Label>
                           <p className="text-sm">{contactoPedido ?? '-----'}</p>
@@ -853,10 +865,10 @@ export default function OrderPage() {
 
                     <div className="space-y-3">
                       <div className="flex items-start gap-2">
-                        <MapPin className="w-4 h-4 text-green-600 mt-0.5" />
+                        <MapPin className="w-4 h-4 text-green-600 mt-0.5"/>
                         <div>
                           <Label className="text-xs text-gray-500">Dirección de Entrega</Label>
-                          <p className="text-sm">{selectedClient?.Dirección ?? 'test direccion entrega ----'}</p>
+                          <p className="text-sm">{selectedClient?.Dirección ?? 'Direccion entrega ----'}</p>
                           {selectedClient?.referenciaDireccion && (
                             <p className="text-xs text-gray-600 mt-1">Ref: {selectedClient.referenciaDireccion}</p>
                           )}
@@ -864,7 +876,7 @@ export default function OrderPage() {
                       </div>
 
                       <div className="flex items-start gap-2">
-                        <MapPin className="w-4 h-4 text-purple-600 mt-0.5" />
+                        <MapPin className="w-4 h-4 text-purple-600 mt-0.5"/>
                         <div>
                           <Label className="text-xs text-gray-500">Zona</Label>
                           <p className="text-sm">
@@ -879,14 +891,14 @@ export default function OrderPage() {
               {/* condiciones de pago */}
               <div className="space-y-4">
                 <div className="flex items-center gap-2">
-                  <CreditCard className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
+                  <CreditCard className="w-4 h-4 sm:w-5 sm:h-5 text-green-600"/>
                   <h3 className="font-semibold text-gray-900 text-sm sm:text-base">Condiciones de Pago</h3>
                 </div>
 
                 <div className="bg-green-50 rounded-lg p-4 border border-green-100">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="flex items-start gap-2">
-                      <Calendar className="w-4 h-4 text-green-600 mt-0.5" />
+                      <Calendar className="w-4 h-4 text-green-600 mt-0.5"/>
                       <div>
                         <Label className="text-xs text-gray-500">Condición</Label>
                         <p className="font-medium text-sm"> {condition?.Descripcion}</p>
@@ -894,9 +906,9 @@ export default function OrderPage() {
                     </div>
                     <div className="flex items-start gap-2">
                       {currency?.value === "PEN" ? (
-                        <Coins className="w-4 h-4 text-green-600 mt-0.5" />
+                        <Coins className="w-4 h-4 text-green-600 mt-0.5"/>
                       ) : (
-                        <DollarSign className="w-4 h-4 text-green-600 mt-0.5" />
+                        <DollarSign className="w-4 h-4 text-green-600 mt-0.5"/>
                       )}
                       <div>
                         <Label className="text-xs text-gray-500">Moneda</Label>
@@ -908,10 +920,29 @@ export default function OrderPage() {
                 </div>
               </div>
 
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <FileText className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600"/>
+                  <h3 className="font-semibold text-gray-900 text-sm sm:text-base">Nota de Pedido</h3>
+                </div>
+
+                <div className="bg-white rounded-lg border border-gray-200">
+                  <Textarea
+                    placeholder="Escribe aquí cualquier observación adicional para el pedido..."
+                    className="min-h-[100px] resize-none border-0 focus-visible:ring-0"
+                    value={note}
+                    onChange={(e) => setNote(e.target.value)}
+                  />
+                  <div className="border-t px-3 py-2 bg-gray-50 text-xs text-gray-500">
+                    Esta información será incluida en el pedido.
+                  </div>
+                </div>
+              </div>
+
               {/* Lista de productos */}
               <div className="space-y-4">
                 <div className="flex items-center gap-2">
-                  <Package className="w-4 h-4 sm:w-5 sm:h-5 text-orange-600" />
+                  <Package className="w-4 h-4 sm:w-5 sm:h-5 text-orange-600"/>
                   <h3 className="font-semibold text-gray-900 text-sm sm:text-base">Productos Seleccionados</h3>
                 </div>
                 {/* <h3 className="text-lg font-medium text-gray-900">Productos</h3> */}
@@ -965,12 +996,14 @@ export default function OrderPage() {
                                   </span>
                                 )}
                                 {item.isBonification && (
-                                  <span className="text-green-600 text-sm">{currency?.value === "PEN" ? "S/." : "$"}0.00</span>
+                                  <span
+                                    className="text-green-600 text-sm">{currency?.value === "PEN" ? "S/." : "$"}0.00</span>
                                 )}
                               </div>
                             </TableCell>
 
-                            <TableCell className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900 text-right">
+                            <TableCell
+                              className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900 text-right">
                               {currency?.value === "PEN" ? "S/." : "$"}
                               {subtotal.toFixed(2)}
                             </TableCell>
@@ -1023,11 +1056,11 @@ export default function OrderPage() {
             </CardContent>
             <CardFooter className="flex justify-between border-t bg-gray-50 py-4">
               <Button type="button" variant="outline" onClick={prevStep}>
-                <ArrowLeft className="mr-2 h-4 w-4" />
+                <ArrowLeft className="mr-2 h-4 w-4"/>
                 Anterior
               </Button>
               <Button type="submit" className="bg-green-600 hover:bg-green-700">
-                <Check className="mr-2 h-4 w-4" />
+                <Check className="mr-2 h-4 w-4"/>
                 Confirmar Pedido
               </Button>
             </CardFooter>
