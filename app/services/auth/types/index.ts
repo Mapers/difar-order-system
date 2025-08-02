@@ -13,13 +13,28 @@ export interface SmsCheck {
 }
 
 export interface JwtPayload {
-    codigo: string,
-    telefono: string,
-    nombreCompleto: string,
-    idRol: number;
-    rolDescripcion: string;
+    usuario: {
+        usuario: string,
+        codigo: string,
+        telefono: string,
+        nombreCompleto: string,
+        rol: {
+            id: number,
+            nombre: string
+        };
+    },
+    menus: Menu[]
     iat: number;
     exp: number;
+}
+
+export interface Menu {
+    id: string,
+    nombre: string,
+    icono: string,
+    ruta: string,
+    id_padre: number,
+    orden: number
 }
 
 export interface User {
@@ -28,6 +43,7 @@ export interface User {
     nombreCompleto: string,
     idRol: number;
     rolDescripcion: string;
+    menus: Menu[]
 }
 
 export interface UserRegisterDTO {

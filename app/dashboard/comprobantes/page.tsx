@@ -20,6 +20,7 @@ import {
   Mail,
   MessageSquare,
   AlertTriangle,
+  Loader2, Truck
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -30,40 +31,50 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { format, parseISO } from "date-fns"
-import { Pagination, PaginationContent, PaginationItem, PaginationNext, PaginationPrevious } from "@/components/ui/pagination"
 import apiClient from "@/app/api/client"
-import { Skeleton } from "@/components/ui/skeleton"
 import {useAuth} from "@/context/authContext";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
+import { toast } from "@/components/ui/use-toast"
+import { DatePicker } from "@/components/ui/date-picker"
+import {GenerarGuiasModal} from "@/app/dashboard/comprobantes/generar-guias-modal";
 
 interface Comprobante {
-  id: number
-  fecha: string
-  tipo: string
+  idComprobanteCab: number
+  nroPedido: number
+  fecha_emision: string
   serie: string
   numero: string
-  rucDni: string
-  cliente: string
-  moneda: string
-  total: number
-  estado: string
-  pagado: boolean
-  enviado: boolean
-  leido: boolean
+  cliente_numdoc: string
+  cliente_denominacion: string
+  moneda: number
+  total: string
+  tipo_comprobante: number
   anulado: boolean
-  productos: {
-    descripcion: string
-    cantidad: number
-    precio: number
-    total: number
-  }[]
 }
 
-interface Pedido {
+interface TipoComprobante {
+  idTipoComprobante: number;
+  descripcion: string;
+  prefijoSerie: string;
+}
+
+interface SunatTransaccion {
+  idTransaction: number;
+  descripcion: string;
+}
+
+interface TipoDocSunat {
+  codigo: string;
+  descripcion: string;
+}
+
+export interface Pedido {
   idPedidocab: number
   nroPedido: string
   fechaPedido: string
   codigoCliente: string
   nombreCliente: string
+  condicionPedido: string
   RUC: string
   codigoVendedor: string
   is_migrado: string
@@ -77,67 +88,120 @@ export default function ComprobantesPage() {
   const [comprobantes, setComprobantes] = useState<Comprobante[]>([])
   const [pedidosPendientes, setPedidosPendientes] = useState<Pedido[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadingComprobantes, setLoadingComprobantes] = useState(false)
+  const [loadingPedidos, setLoadingPedidos] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
   const [filters, setFilters] = useState({
-    tipo: "todos",
+    tipo: "-1",
     estado: 4,
     fechaDesde: "",
     fechaHasta: ""
   })
   const auth = useAuth();
+  const [showGuiasModal, setShowGuiasModal] = useState(false)
+  const [isProcessingGuias, setIsProcessingGuias] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [totalItems, setTotalItems] = useState(0)
-  const [monthFrom, setMonthFrom] = useState("01")
-  const [yearFrom, setYearFrom] = useState("2024")
-  const [monthTo, setMonthTo] = useState("12")
-  const [yearTo, setYearTo] = useState("2024")
+  const [selectedOrder, setSelectedOrder] = useState<Pedido>(null)
+  const [showInvoiceModal, setShowInvoiceModal] = useState(false)
+  const [invoiceType, setInvoiceType] = useState("01")
+  const [isProcessingInvoice, setIsProcessingInvoice] = useState(false)
+  const [tiposComprobante, setTiposComprobante] = useState<TipoComprobante[]>([])
+  const [sunatTransacciones, setSunatTransacciones] = useState<SunatTransaccion[]>([])
+  const [tipoDocsSunat, setTipoDocsSunat] = useState<TipoDocSunat[]>([])
+  const [sunatTransaction, setSunatTransaction] = useState("")
+  const [tipoSunat, setTipoSunat] = useState("")
+  const [isCancelling, setIsCancelling] = useState(false)
+  const [comprobanteToCancel, setComprobanteToCancel] = useState<Comprobante | null>(null)
+  const [showCancelModal, setShowCancelModal] = useState(false)
 
   const fetchComprobantes = async () => {
     try {
-      setLoading(true)
+      setLoadingComprobantes(true)
+      let url = `/pedidos/comprobantes?`
 
-      let url
-      if (searchQuery) {
-        url = `/comprobantes/search?query=${encodeURIComponent(searchQuery)}&page=${currentPage}`
-      } else {
-        url = `/comprobantes?page=${currentPage}&tipo=${filters.tipo}&estado=${filters.estado}`
+      // Añadir filtros a la URL
+      const params = new URLSearchParams()
 
-        if (filters.fechaDesde && filters.fechaHasta) {
-          url += `&fechaDesde=${filters.fechaDesde}&fechaHasta=${filters.fechaHasta}`
-        }
+      if (filters.tipo !== '-1') {
+        params.append('tipoDoc', filters.tipo)
       }
 
+      if (filters.fechaDesde) {
+        params.append('fechaDesde', filters.fechaDesde)
+      }
+
+      if (filters.fechaHasta) {
+        params.append('fechaHasta', filters.fechaHasta)
+      }
+
+      if (searchQuery) {
+        params.append('busqueda', searchQuery)
+      }
+
+      url += params.toString()
+
       const response = await apiClient.get(url)
-      const { data: { data, pagination } } = response.data
+      const { data: { data } } = response.data
 
       setComprobantes(data)
-      setTotalPages(pagination.totalPages)
-      setTotalItems(pagination.totalItems)
     } catch (error) {
       console.error("Error fetching comprobantes:", error)
+      toast({
+        title: "Error",
+        description: "No se pudieron cargar los comprobantes",
+        variant: "destructive"
+      })
     } finally {
+      setLoadingComprobantes(false)
       setLoading(false)
     }
   }
 
   const fetchPedidosPendientes = async () => {
     try {
-      setLoading(true)
+      setLoadingPedidos(true)
       let url = `/pedidos/filter?busqueda=${encodeURIComponent(searchQuery)}&vendedor=${auth.user?.codigo}&estado=4`
 
-      // if (filters.estado !== -1) {
-      //   url += ``;
-      // }
-
       const response = await apiClient.get(url)
-      const { data: { data, pagination } } = response.data
+      const { data: { data } } = response.data
 
       setPedidosPendientes(data)
     } catch (error) {
       console.error("Error fetching orders:", error)
+      toast({
+        title: "Error",
+        description: "No se pudieron cargar los pedidos pendientes",
+        variant: "destructive"
+      })
     } finally {
+      setLoadingPedidos(false)
       setLoading(false)
+    }
+  }
+
+  const handleGenerarGuias = async () => {
+    setIsProcessingGuias(true)
+    try {
+      // Lógica para generar guías
+      // await apiClient.post(...)
+
+      toast({
+        title: "Éxito",
+        description: "Guías generadas correctamente",
+        variant: "default"
+      })
+      setShowGuiasModal(false)
+    } catch (error) {
+      console.error("Error generando guías:", error)
+      toast({
+        title: "Error",
+        description: "Ocurrió un error al generar las guías",
+        variant: "destructive"
+      })
+    } finally {
+      setIsProcessingGuias(false)
     }
   }
 
@@ -146,82 +210,173 @@ export default function ComprobantesPage() {
     fetchPedidosPendientes()
   }, [currentPage, searchQuery, filters])
 
-  const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target
-    setFilters(prev => ({ ...prev, [name]: value }))
-    setCurrentPage(1)
-  }
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [tiposResponse, transResponse, docsSunat] = await Promise.all([
+          apiClient.get('/pedidos/tiposCompr'),
+          apiClient.get('/pedidos/sunatTrans'),
+          apiClient.get('/pedidos/tipoDocSunat'),
+        ]);
 
-  const handleFilterSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    fetchComprobantes()
-  }
+        setTiposComprobante(tiposResponse.data.data.data);
+        setSunatTransacciones(transResponse.data.data.data);
+        setTipoDocsSunat(docsSunat.data.data.data);
 
-  const handlePreviousPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage(currentPage - 1)
+        if (tiposResponse.data.data.data && tiposResponse.data.data.data.length > 0) {
+          setInvoiceType(tiposResponse.data.data.data[0].idTipoComprobante.toString());
+        }
+
+        if (transResponse.data.data.data && transResponse.data.data.data.length > 0) {
+          setSunatTransaction(transResponse.data.data.data[0].idTransaction.toString());
+        }
+
+        if (docsSunat.data.data.data && docsSunat.data.data.data.length > 0) {
+          setTipoSunat(docsSunat.data.data.data[0].codigo);
+        }
+      } catch (error) {
+        console.error("Error fetching data:", error);
+        toast({
+          title: "Error",
+          description: "No se pudieron cargar los tipos de comprobante",
+          variant: "destructive"
+        })
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  const handleDateChange = (date: Date | undefined, field: 'fechaDesde' | 'fechaHasta') => {
+    if (date) {
+      const formattedDate = format(date, 'yyyy-MM-dd')
+      setFilters(prev => ({ ...prev, [field]: formattedDate }))
+    } else {
+      setFilters(prev => ({ ...prev, [field]: '' }))
     }
   }
 
-  const handleNextPage = () => {
-    if (currentPage < totalPages) {
-      setCurrentPage(currentPage + 1)
-    }
-  }
-
-  const getTipoComprobante = (tipo: string) => {
-    switch(tipo) {
-      case "01": return "Factura"
-      case "03": return "Boleta"
-      case "07": return "Nota de Crédito"
-      case "08": return "Nota de Débito"
-      default: return "Desconocido"
-    }
+  const getTipoComprobante = (tipo: number) => {
+    const tipoObj = tiposComprobante.find(t => t.idTipoComprobante === tipo)
+    return tipoObj ? tipoObj.descripcion : "Desconocido"
   }
 
   const getEstadoBadge = (comprobante: Comprobante) => {
     if (comprobante.anulado) {
-      return <Badge className="bg-red-100 text-red-800">Anulado</Badge>
+      return <Badge variant="destructive">Anulado</Badge>
     }
-    if (comprobante.leido) {
-      return <Badge className="bg-green-100 text-green-800">Leído</Badge>
-    }
-    if (comprobante.enviado) {
-      return <Badge className="bg-blue-100 text-blue-800">Enviado</Badge>
-    }
-    return <Badge className="bg-yellow-100 text-yellow-800">Pendiente</Badge>
+    return <Badge variant="success">Activo</Badge>
   }
 
   const calculateTotals = () => {
-    const facturas = comprobantes.filter(c => c.tipo === "01" && !c.anulado)
-    const boletas = comprobantes.filter(c => c.tipo === "03" && !c.anulado)
-    const notasCredito = comprobantes.filter(c => c.tipo === "07" && !c.anulado)
-    const notasDebito = comprobantes.filter(c => c.tipo === "08" && !c.anulado)
+    const facturas = comprobantes.filter(c => c.tipo_comprobante === 1 && !c.anulado)
+    const boletas = comprobantes.filter(c => c.tipo_comprobante === 2 && !c.anulado)
+    const notasCredito = comprobantes.filter(c => c.tipo_comprobante === 3 && !c.anulado)
+    const notasDebito = comprobantes.filter(c => c.tipo_comprobante === 4 && !c.anulado)
 
     return {
-      totalFacturas: facturas.reduce((sum, c) => sum + c.total, 0),
-      totalBoletas: boletas.reduce((sum, c) => sum + c.total, 0),
-      totalNotasCredito: notasCredito.reduce((sum, c) => sum + c.total, 0),
-      totalNotasDebito: notasDebito.reduce((sum, c) => sum + c.total, 0),
+      totalFacturas: facturas.reduce((sum, c) => sum + Number(c.total), 0),
+      totalBoletas: boletas.reduce((sum, c) => sum + Number(c.total), 0),
+      totalNotasCredito: notasCredito.reduce((sum, c) => sum + Number(c.total), 0),
+      totalNotasDebito: notasDebito.reduce((sum, c) => sum + Number(c.total), 0),
     }
   }
 
   const totals = calculateTotals()
 
   const handleInvoiceOrder = (pedido: Pedido) => {
-    // Implementar lógica de facturación
-    console.log("Facturando pedido:", pedido.id)
+    setSelectedOrder(pedido)
+    setShowInvoiceModal(true)
   }
 
-  // const clearFilters = () => {
-  //   setSearchQuery("")
-  //   setFilters({
-  //     tipo: "todos",
-  //     estado: "todos",
-  //     fechaDesde: "",
-  //     fechaHasta: ""
-  //   })
-  // }
+  const handleConfirmInvoice = async () => {
+    setIsProcessingInvoice(true);
+    try {
+      const tipoComprobante = tiposComprobante.find(
+        t => t.idTipoComprobante.toString() === invoiceType
+      )
+
+      const transaccionSunat = sunatTransacciones.find(
+        t => t.idTransaction.toString() === sunatTransaction
+      )
+
+      const tipoSunatT = tipoDocsSunat.find(
+        t => t.codigo === tipoSunat
+      )
+
+      const response = await apiClient.post(
+        `/pedidos/generateCompr?nroPedido=${selectedOrder.nroPedido}&tipoCompr=${tipoComprobante?.idTipoComprobante}&sunatTrans=${transaccionSunat?.idTransaction}&tipoDocSunat=${tipoSunatT}`
+      )
+
+      if (response.data.success) {
+        toast({
+          title: "Éxito",
+          description: "Comprobante generado correctamente",
+          variant: "default"
+        })
+        fetchComprobantes();
+        fetchPedidosPendientes();
+      } else {
+        toast({
+          title: "Error",
+          description: response.data.message || "Error al generar comprobante",
+          variant: "destructive"
+        })
+      }
+    } catch (error) {
+      console.error("Error al generar comprobante:", error);
+      toast({
+        title: "Error",
+        description: "Ocurrió un error al generar el comprobante",
+        variant: "destructive"
+      })
+    } finally {
+      setIsProcessingInvoice(false);
+      setShowInvoiceModal(false);
+    }
+  };
+
+  const handleCancelInvoice = (comprobante: Comprobante) => {
+    setComprobanteToCancel(comprobante)
+    setShowCancelModal(true)
+  }
+
+  const confirmCancelInvoice = async () => {
+    if (!comprobanteToCancel) return
+
+    setIsCancelling(true)
+    try {
+      const response = await apiClient.post(
+        `/pedidos/anularCompr?serie=${comprobanteToCancel.serie}&numero=${comprobanteToCancel.numero}&tipoCompr=${comprobanteToCancel.tipo_comprobante}&idCabecera=${comprobanteToCancel.idComprobanteCab}`
+      )
+
+      if (response.data.success) {
+        toast({
+          title: "Éxito",
+          description: "Comprobante anulado correctamente",
+          variant: "default"
+        })
+        fetchComprobantes()
+      } else {
+        toast({
+          title: "Error",
+          description: response.data.message || "Error al anular comprobante",
+          variant: "destructive"
+        })
+      }
+    } catch (error) {
+      console.error("Error al anular comprobante:", error)
+      toast({
+        title: "Error",
+        description: "Ocurrió un error al anular el comprobante",
+        variant: "destructive"
+      })
+    } finally {
+      setIsCancelling(false)
+      setShowCancelModal(false)
+      setComprobanteToCancel(null)
+    }
+  }
 
   return (
     <div className="grid gap-6">
@@ -231,46 +386,7 @@ export default function ComprobantesPage() {
             <h1 className="text-3xl font-bold tracking-tight text-gray-900">Gestión de Comprobantes</h1>
             <p className="text-gray-500">Administración de facturas, boletas y notas electrónicas</p>
           </div>
-          <div className="flex flex-col sm:flex-row gap-2">
-            <Button className="bg-blue-600 hover:bg-blue-700 flex items-center gap-2 w-full sm:w-auto">
-              <Plus className="h-4 w-4" />
-              <span className="hidden sm:inline">Emitir comprobante</span>
-              <span className="sm:hidden">Emitir</span>
-            </Button>
-            <Button variant="outline" className="flex items-center gap-2 bg-transparent w-full sm:w-auto">
-              <Download className="h-4 w-4" />
-              <span className="hidden sm:inline">Descargar Excel</span>
-              <span className="sm:hidden">Excel</span>
-            </Button>
-          </div>
         </div>
-
-        {/*<div className="flex items-center justify-between">*/}
-        {/*  <div className="text-sm text-gray-500">*/}
-        {/*    Mostrando {comprobantes.length} de {totalItems} comprobantes*/}
-        {/*  </div>*/}
-        {/*  <Pagination>*/}
-        {/*    <PaginationContent>*/}
-        {/*      <PaginationItem>*/}
-        {/*        <PaginationPrevious*/}
-        {/*          onClick={handlePreviousPage}*/}
-        {/*          className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}*/}
-        {/*        />*/}
-        {/*      </PaginationItem>*/}
-        {/*      <PaginationItem>*/}
-        {/*        <span className="px-4 py-2 text-sm font-medium">*/}
-        {/*          Página {currentPage} de {totalPages}*/}
-        {/*        </span>*/}
-        {/*      </PaginationItem>*/}
-        {/*      <PaginationItem>*/}
-        {/*        <PaginationNext*/}
-        {/*          onClick={handleNextPage}*/}
-        {/*          className={currentPage >= totalPages ? "pointer-events-none opacity-50" : ""}*/}
-        {/*        />*/}
-        {/*      </PaginationItem>*/}
-        {/*    </PaginationContent>*/}
-        {/*  </Pagination>*/}
-        {/*</div>*/}
       </div>
 
       <Tabs defaultValue="pendientes" className="w-full">
@@ -301,28 +417,10 @@ export default function ComprobantesPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {loading ? (
-                Array.from({length: 3}).map((_, index) => (
-                  <Card key={index} className="border border-gray-200 mb-4">
-                    <CardContent className="p-4">
-                      <div className="space-y-3">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <Skeleton className="h-5 w-24 mb-1" />
-                            <Skeleton className="h-4 w-16" />
-                          </div>
-                          <Skeleton className="h-5 w-20" />
-                        </div>
-                        <div className="space-y-2">
-                          <Skeleton className="h-4 w-full" />
-                          <Skeleton className="h-4 w-3/4" />
-                          <Skeleton className="h-4 w-1/2" />
-                        </div>
-                        <Skeleton className="h-8 w-full" />
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))
+              {loadingPedidos ? (
+                <div className="flex justify-center items-center h-64">
+                  <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+                </div>
               ) : pedidosPendientes.length === 0 ? (
                 <div className="text-center py-8">
                   <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
@@ -353,9 +451,6 @@ export default function ComprobantesPage() {
                                 <span className="hidden sm:inline">Facturar Ahora</span>
                                 <span className="sm:hidden">Facturar</span>
                               </Button>
-                              {/*<p className="text-xs text-gray-500 text-center">*/}
-                              {/*  {pedido.. === "6" ? "Se generará Factura" : "Se generará Boleta"}*/}
-                              {/*</p>*/}
                             </div>
                           </div>
 
@@ -374,14 +469,13 @@ export default function ComprobantesPage() {
                               <DollarSign className="h-3 w-3 sm:h-4 sm:w-4 text-gray-500 flex-shrink-0" />
                               <span className="text-gray-600">Total:</span>
                               <span className="font-bold text-green-600">
-                                {pedido.monedaPedido}
+                                {pedido.monedaPedido === 'PEN' ? 'S/ ' : '$ '}
                                 {Number(pedido.totalPedido).toFixed(2)}
                               </span>
                             </div>
                             <div className="flex items-center gap-2">
                               <Package className="h-3 w-3 sm:h-4 sm:w-4 text-gray-500 flex-shrink-0" />
                               <span className="text-gray-600">Productos:</span>
-                              {/*<span className="font-medium">{pedido.productos}</span>*/}
                             </div>
                           </div>
 
@@ -394,7 +488,7 @@ export default function ComprobantesPage() {
                             <div className="flex items-center gap-2">
                               <Clock className="h-3 w-3 sm:h-4 sm:w-4 text-gray-500 flex-shrink-0" />
                               <span className="text-gray-600">Condición:</span>
-                              {/*<span className="font-medium">{pedido.co}</span>*/}
+                              <span className="font-medium">{pedido.condicionPedido}</span>
                             </div>
                           </div>
                         </div>
@@ -415,7 +509,7 @@ export default function ComprobantesPage() {
                         </div>
                         <div className="text-left sm:text-right">
                           <p className="text-xl sm:text-2xl font-bold text-blue-900">
-                            S/{pedidosPendientes.reduce((sum, p) => sum + p.total, 0).toFixed(2)}
+                            S/{pedidosPendientes.reduce((sum, p) => sum + Number(p.totalPedido), 0).toFixed(2)}
                           </p>
                           <p className="text-xs sm:text-sm text-blue-700">Valor total</p>
                         </div>
@@ -432,78 +526,27 @@ export default function ComprobantesPage() {
           <Card className="bg-white shadow-sm">
             <CardContent className="p-3 sm:p-4 lg:p-6">
               <div className="space-y-4">
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 items-end">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                   <div className="space-y-1">
-                    <Label className="text-xs text-gray-500">Desde</Label>
-                    <Select value={monthFrom} onValueChange={setMonthFrom}>
-                      <SelectTrigger className="h-8 sm:h-9 text-xs sm:text-sm">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {Array.from({ length: 12 }, (_, i) => (
-                          <SelectItem key={i + 1} value={String(i + 1).padStart(2, "0")}>
-                            {format(new Date(2024, i, 1), "MMM")}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <Label className="text-xs text-gray-500">Fecha desde</Label>
+                    <DatePicker
+                      selected={filters.fechaDesde ? new Date(filters.fechaDesde) : undefined}
+                      onSelect={(date) => handleDateChange(date, 'fechaDesde')}
+                      placeholderText="Seleccionar fecha"
+                      className="text-xs sm:text-sm"
+                    />
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs text-gray-500">Año</Label>
-                    <Select value={yearFrom} onValueChange={setYearFrom}>
-                      <SelectTrigger className="h-8 sm:h-9 text-xs sm:text-sm">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="2023">2023</SelectItem>
-                        <SelectItem value="2024">2024</SelectItem>
-                        <SelectItem value="2025">2025</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <Label className="text-xs text-gray-500">Fecha hasta</Label>
+                    <DatePicker
+                      selected={filters.fechaHasta ? new Date(filters.fechaHasta) : undefined}
+                      onSelect={(date) => handleDateChange(date, 'fechaHasta')}
+                      placeholderText="Seleccionar fecha"
+                      className="text-xs sm:text-sm"
+                    />
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs text-gray-500">Hasta</Label>
-                    <Select value={monthTo} onValueChange={setMonthTo}>
-                      <SelectTrigger className="h-8 sm:h-9 text-xs sm:text-sm">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {Array.from({ length: 12 }, (_, i) => (
-                          <SelectItem key={i + 1} value={String(i + 1).padStart(2, "0")}>
-                            {format(new Date(2024, i, 1), "MMM")}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs text-gray-500">Año</Label>
-                    <Select value={yearTo} onValueChange={setYearTo}>
-                      <SelectTrigger className="h-8 sm:h-9 text-xs sm:text-sm">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="2023">2023</SelectItem>
-                        <SelectItem value="2024">2024</SelectItem>
-                        <SelectItem value="2025">2025</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="col-span-2 sm:col-span-1 lg:col-span-2 flex flex-col sm:flex-row gap-2">
-                    <Button className="h-8 sm:h-9 bg-blue-600 hover:bg-blue-700 text-xs sm:text-sm flex-1">
-                      Filtrar
-                    </Button>
-                    <Button variant="outline" className="h-8 sm:h-9 bg-transparent text-xs sm:text-sm flex-1">
-                      <Search className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
-                      <span className="hidden sm:inline">Buscar</span>
-                      <span className="sm:hidden">Buscar</span>
-                    </Button>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-                  <div className="space-y-1">
-                    <Label className="text-xs text-gray-500">Filtrar por tipo de Doc.</Label>
+                    <Label className="text-xs text-gray-500">Tipo de comprobante</Label>
                     <Select
                       value={filters.tipo}
                       onValueChange={(value) => setFilters(prev => ({ ...prev, tipo: value }))}
@@ -512,346 +555,538 @@ export default function ComprobantesPage() {
                         <SelectValue placeholder="Todos los tipos" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="todos">Todos los tipos</SelectItem>
-                        <SelectItem value="01">01 - Factura</SelectItem>
-                        <SelectItem value="03">03 - Boleta</SelectItem>
-                        <SelectItem value="07">07 - Nota de Crédito</SelectItem>
-                        <SelectItem value="08">08 - Nota de Débito</SelectItem>
+                        <SelectItem value="-1">Todos los tipos</SelectItem>
+                        {tiposComprobante.map((tipo) => (
+                          <SelectItem
+                            key={tipo.idTipoComprobante}
+                            value={tipo.idTipoComprobante.toString()}
+                          >
+                            {tipo.prefijoSerie} - {tipo.descripcion}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
-
                   <div className="space-y-1">
-                    <Label className="text-xs text-gray-500">Buscar por entidad</Label>
+                    <Label className="text-xs text-gray-500">Buscar cliente</Label>
                     <div className="relative">
                       <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-3 w-3 sm:h-4 sm:w-4" />
                       <Input
-                        placeholder="Buscar cliente..."
+                        placeholder="Buscar por nombre o documento..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         className="pl-8 sm:pl-10 text-xs sm:text-sm"
                       />
                     </div>
                   </div>
+                </div>
 
-                  <div className="space-y-1">
-                    <Label className="text-xs text-gray-500">Filtrar por estado</Label>
-                    <Select
-                      value={filters.estado}
-                      onValueChange={(value) => setFilters(prev => ({ ...prev, estado: value }))}
-                    >
-                      <SelectTrigger className="text-xs sm:text-sm">
-                        <SelectValue placeholder="Todos los estados" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="todos">Todos los estados</SelectItem>
-                        <SelectItem value="pendiente">Pendiente</SelectItem>
-                        <SelectItem value="enviado">Enviado</SelectItem>
-                        <SelectItem value="leido">Leído</SelectItem>
-                        <SelectItem value="anulado">Anulado</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                <div className="flex justify-end">
+                  <Button
+                    onClick={fetchComprobantes}
+                    disabled={loadingComprobantes}
+                    className="flex items-center gap-2"
+                  >
+                    {loadingComprobantes ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Search className="h-4 w-4" />
+                    )}
+                    Buscar
+                  </Button>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <div className="hidden lg:block">
-            <Card className="bg-white shadow-sm">
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Fecha
-                    </th>
-                    <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Tipo
-                    </th>
-                    <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Serie/Número
-                    </th>
-                    <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Cliente
-                    </th>
-                    <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Documento
-                    </th>
-                    <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Total
-                    </th>
-                    <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Estado
-                    </th>
-                    <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Acciones
-                    </th>
-                  </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                  {loading ? (
-                    Array.from({length: 5}).map((_, index) => (
-                      <tr key={index} className="border-b">
-                        <td className="p-4"><Skeleton className="h-4 w-[80px]" /></td>
-                        <td className="p-4"><Skeleton className="h-4 w-[80px]" /></td>
-                        <td className="p-4"><Skeleton className="h-4 w-[100px]" /></td>
-                        <td className="p-4"><Skeleton className="h-4 w-[150px]" /></td>
-                        <td className="p-4"><Skeleton className="h-4 w-[100px]" /></td>
-                        <td className="p-4"><Skeleton className="h-4 w-[80px]" /></td>
-                        <td className="p-4"><Skeleton className="h-4 w-[100px]" /></td>
-                        <td className="p-4">
-                          <div className="flex gap-2">
-                            <Skeleton className="h-8 w-8 rounded-md" />
-                            <Skeleton className="h-8 w-8 rounded-md" />
-                            <Skeleton className="h-8 w-8 rounded-md" />
-                          </div>
-                        </td>
+          {loadingComprobantes ? (
+            <div className="flex justify-center items-center h-64">
+              <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+            </div>
+          ) : (
+            <>
+              <div className="hidden lg:block">
+                <Card className="bg-white shadow-sm">
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Fecha
+                        </th>
+                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Tipo
+                        </th>
+                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Serie/Número
+                        </th>
+                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Cliente
+                        </th>
+                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Documento
+                        </th>
+                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Total
+                        </th>
+                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Estado
+                        </th>
+                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Acciones
+                        </th>
                       </tr>
-                    ))
-                  ) : comprobantes.length > 0 ? (
-                    comprobantes.map((comprobante) => (
-                      <tr key={comprobante.id} className="hover:bg-gray-50">
-                        <td className="p-4 text-sm">
-                          {format(parseISO(comprobante.fecha), "dd/MM/yyyy")}
-                        </td>
-                        <td className="p-4 text-sm">
-                          {getTipoComprobante(comprobante.tipo)}
-                        </td>
-                        <td className="p-4 font-medium text-sm">
-                          {comprobante.serie}-{comprobante.numero}
-                        </td>
-                        <td className="p-4">
-                          <div className="font-medium text-sm">{comprobante.cliente}</div>
-                        </td>
-                        <td className="p-4 text-sm">
-                          {comprobante.rucDni}
-                        </td>
-                        <td className="p-4 font-medium text-sm">
-                          {comprobante.moneda} {comprobante.total.toFixed(2)}
-                        </td>
-                        <td className="p-4">
-                          {getEstadoBadge(comprobante)}
-                        </td>
-                        <td className="p-4">
-                          <div className="flex gap-2">
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50">
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50">
-                              <Download className="h-4 w-4" />
-                            </Button>
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-8 w-8">
-                                  <MoreHorizontal className="h-4 w-4" />
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                      {comprobantes.length > 0 ? (
+                        comprobantes.map((comprobante) => (
+                          <tr key={comprobante.nroPedido} className="hover:bg-gray-50">
+                            <td className="p-4 text-sm">
+                              {format(parseISO(comprobante.fecha_emision), "dd/MM/yyyy")}
+                            </td>
+                            <td className="p-4 text-sm">
+                              {getTipoComprobante(comprobante.tipo_comprobante)}
+                            </td>
+                            <td className="p-4 font-medium text-sm">
+                              {comprobante.serie}-{comprobante.numero}
+                            </td>
+                            <td className="p-4">
+                              <div className="font-medium text-sm">{comprobante.cliente_denominacion}</div>
+                            </td>
+                            <td className="p-4 text-sm">
+                              {comprobante.cliente_numdoc}
+                            </td>
+                            <td className="p-4 font-medium text-sm">
+                              {comprobante.moneda === 1 ? 'S/ ' : '$ '} {Number(comprobante.total).toFixed(2)}
+                            </td>
+                            <td className="p-4">
+                              {getEstadoBadge(comprobante)}
+                            </td>
+                            <td className="p-4">
+                              <div className="flex gap-2">
+                                <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50">
+                                  <Eye className="h-4 w-4" />
                                 </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end" className="w-48">
-                                <DropdownMenuItem className="text-blue-600">
-                                  <Eye className="mr-2 h-4 w-4" />
-                                  Ver Detalle
-                                </DropdownMenuItem>
-                                <DropdownMenuItem className="text-green-600">
-                                  <Download className="mr-2 h-4 w-4" />
-                                  Descargar PDF
-                                </DropdownMenuItem>
-                                <DropdownMenuItem className="text-green-600">
-                                  <Send className="mr-2 h-4 w-4" />
-                                  Enviar al Cliente
-                                </DropdownMenuItem>
-                                <DropdownMenuItem className="text-blue-600">
-                                  <Mail className="mr-2 h-4 w-4" />
-                                  Enviar por Email
-                                </DropdownMenuItem>
-                                {!comprobante.anulado && (
-                                  <DropdownMenuItem className="text-red-600">
-                                    <XCircle className="mr-2 h-4 w-4" />
-                                    Anular Comprobante
-                                  </DropdownMenuItem>
-                                )}
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={8} className="text-center py-8 text-gray-500">
-                        No se encontraron comprobantes
-                      </td>
-                    </tr>
-                  )}
-                  </tbody>
-                </table>
-              </div>
-            </Card>
-          </div>
-
-          <div className="lg:hidden space-y-3">
-            {loading ? (
-              Array.from({length: 3}).map((_, index) => (
-                <Card key={index} className="border border-gray-200">
-                  <CardContent className="p-4">
-                    <div className="space-y-3">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <Skeleton className="h-5 w-24 mb-1" />
-                          <Skeleton className="h-4 w-16" />
-                        </div>
-                        <Skeleton className="h-5 w-20" />
-                      </div>
-                      <div className="space-y-2">
-                        <Skeleton className="h-4 w-full" />
-                        <Skeleton className="h-4 w-3/4" />
-                        <Skeleton className="h-4 w-1/2" />
-                      </div>
-                      <Skeleton className="h-8 w-full" />
-                    </div>
-                  </CardContent>
+                                <Button variant="ghost" size="icon" className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50">
+                                  <Download className="h-4 w-4" />
+                                </Button>
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                                      <MoreHorizontal className="h-4 w-4" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end" className="w-48">
+                                    <DropdownMenuItem className="text-blue-600">
+                                      <Eye className="mr-2 h-4 w-4" />
+                                      Ver Detalle
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem className="text-green-600">
+                                      <Download className="mr-2 h-4 w-4" />
+                                      Descargar PDF
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem className="text-green-600">
+                                      <Send className="mr-2 h-4 w-4" />
+                                      Enviar al Cliente
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem className="text-blue-600">
+                                      <Mail className="mr-2 h-4 w-4" />
+                                      Enviar por Email
+                                    </DropdownMenuItem>
+                                    {!comprobante.anulado && (
+                                      <DropdownMenuItem
+                                        className="text-red-600"
+                                        onClick={() => handleCancelInvoice(comprobante)}
+                                      >
+                                        <XCircle className="mr-2 h-4 w-4" />
+                                        Anular Comprobante
+                                      </DropdownMenuItem>
+                                    )}
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </div>
+                            </td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan={8} className="text-center py-8 text-gray-500">
+                            No se encontraron comprobantes
+                          </td>
+                        </tr>
+                      )}
+                      </tbody>
+                    </table>
+                  </div>
                 </Card>
-              ))
-            ) : comprobantes.length > 0 ? (
-              comprobantes.map((comprobante) => (
-                <Card key={comprobante.id} className="border border-gray-200">
-                  <CardContent className="p-4">
-                    <div className="space-y-3">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="font-semibold text-gray-900">
-                              {getTipoComprobante(comprobante.tipo)} {comprobante.serie}-{comprobante.numero}
-                            </span>
-                            {getEstadoBadge(comprobante)}
+              </div>
+
+              <div className="lg:hidden space-y-3">
+                {comprobantes.length > 0 ? (
+                  comprobantes.map((comprobante) => (
+                    <Card key={comprobante.idComprobanteCab} className="border border-gray-200">
+                      <CardContent className="p-4">
+                        <div className="space-y-3">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="font-semibold text-gray-900">
+                                  {getTipoComprobante(comprobante.tipo_comprobante)} {comprobante.serie}-{comprobante.numero}
+                                </span>
+                                {getEstadoBadge(comprobante)}
+                              </div>
+                              <p className="text-sm text-gray-600">
+                                {format(parseISO(comprobante.fecha_emision), "dd/MM/yyyy")}
+                              </p>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-lg font-bold text-gray-900">
+                                {comprobante.moneda === 1 ? 'S/ ' : '$ '} {Number(comprobante.total).toFixed(2)}
+                              </p>
+                              <p className="text-xs text-gray-500">Total</p>
+                            </div>
                           </div>
-                          <p className="text-sm text-gray-600">
-                            {format(parseISO(comprobante.fecha), "dd/MM/yyyy")}
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-lg font-bold text-gray-900">
-                            {comprobante.moneda} {comprobante.total.toFixed(2)}
-                          </p>
-                          <p className="text-xs text-gray-500">Total</p>
-                        </div>
-                      </div>
 
-                      <div className="border-t pt-3">
-                        <p className="font-medium text-gray-900 truncate">{comprobante.cliente}</p>
-                        <p className="text-sm text-gray-600">{comprobante.rucDni}</p>
-                      </div>
+                          <div className="border-t pt-3">
+                            <p className="font-medium text-gray-900 truncate">{comprobante.cliente_denominacion}</p>
+                            <p className="text-sm text-gray-600">{comprobante.cliente_numdoc}</p>
+                          </div>
 
-                      <div className="grid grid-cols-2 gap-3 text-xs">
-                        <div className="flex items-center gap-2">
-                          <span className="text-gray-500">Pagado:</span>
-                          {comprobante.pagado ? (
-                            <CheckCircle className="h-4 w-4 text-green-600" />
-                          ) : (
-                            <XCircle className="h-4 w-4 text-red-600" />
-                          )}
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-gray-500">Enviado:</span>
-                          {comprobante.enviado ? (
-                            <CheckCircle className="h-4 w-4 text-green-600" />
-                          ) : (
-                            <XCircle className="h-4 w-4 text-red-600" />
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="border-t pt-3">
-                        <div className="grid grid-cols-2 gap-2">
-                          <Button variant="outline" size="sm" className="text-xs bg-transparent">
-                            <Eye className="h-3 w-3 mr-1" />
-                            Ver
-                          </Button>
-                          <Button variant="outline" size="sm" className="text-xs bg-transparent">
-                            <Download className="h-3 w-3 mr-1" />
-                            PDF
-                          </Button>
-                          <Button variant="outline" size="sm" className="text-xs bg-transparent">
-                            <MessageSquare className="h-3 w-3 mr-1" />
-                            WhatsApp
-                          </Button>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
+                          <div className="border-t pt-3">
+                            <div className="grid grid-cols-2 gap-2">
                               <Button variant="outline" size="sm" className="text-xs bg-transparent">
-                                <MoreHorizontal className="h-3 w-3 mr-1" />
-                                Más
+                                <Eye className="h-3 w-3 mr-1" />
+                                Ver
                               </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-48">
-                              <DropdownMenuItem className="text-green-600">
-                                <Send className="mr-2 h-4 w-4" />
-                                Enviar al cliente
-                              </DropdownMenuItem>
-                              <DropdownMenuItem className="text-blue-600">
-                                <Mail className="mr-2 h-4 w-4" />
-                                Enviar por email
-                              </DropdownMenuItem>
-                              {!comprobante.anulado && (
-                                <DropdownMenuItem className="text-red-600">
-                                  <XCircle className="mr-2 h-4 w-4" />
-                                  Anular
-                                </DropdownMenuItem>
-                              )}
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                              <Button variant="outline" size="sm" className="text-xs bg-transparent">
+                                <Download className="h-3 w-3 mr-1" />
+                                PDF
+                              </Button>
+                              <Button variant="outline" size="sm" className="text-xs bg-transparent">
+                                <MessageSquare className="h-3 w-3 mr-1" />
+                                WhatsApp
+                              </Button>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="outline" size="sm" className="text-xs bg-transparent">
+                                    <MoreHorizontal className="h-3 w-3 mr-1" />
+                                    Más
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-48">
+                                  <DropdownMenuItem className="text-green-600">
+                                    <Send className="mr-2 h-4 w-4" />
+                                    Enviar al cliente
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem className="text-blue-600">
+                                    <Mail className="mr-2 h-4 w-4" />
+                                    Enviar por email
+                                  </DropdownMenuItem>
+                                  {!comprobante.anulado && (
+                                    <DropdownMenuItem
+                                      className="text-red-600"
+                                      onClick={() => handleCancelInvoice(comprobante)}
+                                    >
+                                      <XCircle className="mr-2 h-4 w-4" />
+                                      Anular
+                                    </DropdownMenuItem>
+                                  )}
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
-            ) : (
-              <div className="text-center py-8 text-gray-500">
-                No se encontraron comprobantes
+                      </CardContent>
+                    </Card>
+                  ))
+                ) : (
+                  <div className="text-center py-8 text-gray-500">
+                    No se encontraron comprobantes
+                  </div>
+                )}
               </div>
-            )}
-          </div>
 
-          <Card className="bg-white shadow-sm">
-            <CardContent className="p-3 sm:p-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 text-sm">
-                <div className="bg-blue-50 p-3 rounded-lg">
-                  <p className="text-blue-600 font-medium text-xs sm:text-sm">
-                    TOTAL FACTURAS
-                  </p>
-                  <p className="text-xl sm:text-2xl font-bold text-blue-700">
-                    S/{totals.totalFacturas.toFixed(2)}
-                  </p>
-                </div>
-                <div className="bg-green-50 p-3 rounded-lg">
-                  <p className="text-green-600 font-medium text-xs sm:text-sm">
-                    TOTAL BOLETAS
-                  </p>
-                  <p className="text-xl sm:text-2xl font-bold text-green-700">
-                    S/{totals.totalBoletas.toFixed(2)}
-                  </p>
-                </div>
-                <div className="bg-purple-50 p-3 rounded-lg">
-                  <p className="text-purple-600 font-medium text-xs sm:text-sm">
-                    TOTAL NOTAS CRÉDITO
-                  </p>
-                  <p className="text-xl sm:text-2xl font-bold text-purple-700">
-                    S/{totals.totalNotasCredito.toFixed(2)}
-                  </p>
-                </div>
-                <div className="bg-orange-50 p-3 rounded-lg">
-                  <p className="text-orange-600 font-medium text-xs sm:text-sm">
-                    TOTAL NOTAS DÉBITO
-                  </p>
-                  <p className="text-xl sm:text-2xl font-bold text-orange-700">
-                    S/{totals.totalNotasDebito.toFixed(2)}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              <Card className="bg-white shadow-sm">
+                <CardContent className="p-3 sm:p-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 text-sm">
+                    <div className="bg-blue-50 p-3 rounded-lg">
+                      <p className="text-blue-600 font-medium text-xs sm:text-sm">
+                        TOTAL FACTURAS
+                      </p>
+                      <p className="text-xl sm:text-2xl font-bold text-blue-700">
+                        S/{totals.totalFacturas.toFixed(2)}
+                      </p>
+                    </div>
+                    <div className="bg-green-50 p-3 rounded-lg">
+                      <p className="text-green-600 font-medium text-xs sm:text-sm">
+                        TOTAL BOLETAS
+                      </p>
+                      <p className="text-xl sm:text-2xl font-bold text-green-700">
+                        S/{totals.totalBoletas.toFixed(2)}
+                      </p>
+                    </div>
+                    <div className="bg-purple-50 p-3 rounded-lg">
+                      <p className="text-purple-600 font-medium text-xs sm:text-sm">
+                        TOTAL NOTAS CRÉDITO
+                      </p>
+                      <p className="text-xl sm:text-2xl font-bold text-purple-700">
+                        S/{totals.totalNotasCredito.toFixed(2)}
+                      </p>
+                    </div>
+                    <div className="bg-orange-50 p-3 rounded-lg">
+                      <p className="text-orange-600 font-medium text-xs sm:text-sm">
+                        TOTAL NOTAS DÉBITO
+                      </p>
+                      <p className="text-xl sm:text-2xl font-bold text-orange-700">
+                        S/{totals.totalNotasDebito.toFixed(2)}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </>
+          )}
         </TabsContent>
       </Tabs>
+
+      <Dialog open={showInvoiceModal} onOpenChange={setShowInvoiceModal}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Receipt className="h-5 w-5" />
+              Confirmar Facturación
+            </DialogTitle>
+          </DialogHeader>
+
+          {selectedOrder && (
+            <div className="space-y-4">
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <h4 className="font-medium text-gray-900 mb-2">Datos del Pedido</h4>
+                <div className="text-sm space-y-1">
+                  <p>
+                    <strong>Pedido:</strong> {selectedOrder.nroPedido}
+                  </p>
+                  <p>
+                    <strong>Cliente:</strong> {selectedOrder.nombreCliente}
+                  </p>
+                  <p>
+                    <strong>Documento:</strong> {selectedOrder.codigoCliente}
+                  </p>
+                  <p>
+                    <strong>Total:</strong> {selectedOrder.monedaPedido === 'PEN' ? 'S/ ' : '$ '}
+                    {Number(selectedOrder.totalPedido).toFixed(2)}
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="tipoComprobante" className="text-sm font-medium mb-2 block">
+                    Tipo de Comprobante
+                  </Label>
+                  <Select
+                    value={invoiceType}
+                    onValueChange={setInvoiceType}
+                    disabled={isProcessingInvoice}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccionar tipo"/>
+                    </SelectTrigger>
+                    <SelectContent>
+                      {tiposComprobante.map((tipo) => (
+                        <SelectItem
+                          key={tipo.idTipoComprobante}
+                          value={tipo.idTipoComprobante.toString()}
+                        >
+                          {tipo.prefijoSerie} - {tipo.descripcion}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="sunatTransaccion" className="text-sm font-medium mb-2 block">
+                    Transacción SUNAT
+                  </Label>
+                  <Select
+                    value={sunatTransaction}
+                    onValueChange={setSunatTransaction}
+                    disabled={isProcessingInvoice}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccionar transacción"/>
+                    </SelectTrigger>
+                    <SelectContent>
+                      {sunatTransacciones.map((trans) => (
+                        <SelectItem
+                          key={trans.idTransaction}
+                          value={trans.idTransaction.toString()}
+                        >
+                          {trans.descripcion}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="tipoDocSunat" className="text-sm font-medium mb-2 block">
+                    Tipo Doc.
+                  </Label>
+                  <Select
+                    value={tipoSunat}
+                    onValueChange={setTipoSunat}
+                    disabled={isProcessingInvoice}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccionar tipo documento"/>
+                    </SelectTrigger>
+                    <SelectContent>
+                      {tipoDocsSunat.map((trans) => (
+                        <SelectItem
+                          key={trans.codigo}
+                          value={trans.codigo}
+                        >
+                          {trans.descripcion}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-200">
+                <p className="text-sm text-yellow-800">
+                  <strong>¿Confirmas la facturación?</strong>
+                  <br/>
+                  Se generará el comprobante electrónico para este pedido. Esta acción no se puede deshacer.
+                </p>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0">
+            <Button
+              variant="outline"
+              onClick={() => setShowInvoiceModal(false)}
+              disabled={isProcessingInvoice}
+              className="w-full sm:w-auto"
+            >
+              Cancelar
+            </Button>
+            <div className="flex gap-2 w-full sm:w-auto">
+              <Button
+                onClick={() => {
+                  // setShowInvoiceModal(false)
+                  setShowGuiasModal(true)
+                }}
+                variant="outline"
+                className="flex-1"
+              >
+                <Truck className="mr-2 h-4 w-4" />
+                Generar Guías
+              </Button>
+              <Button
+                onClick={handleConfirmInvoice}
+                disabled={isProcessingInvoice || !invoiceType || !sunatTransaction}
+                className="bg-green-600 hover:bg-green-700 flex-1"
+              >
+                {isProcessingInvoice ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Procesando...
+                  </>
+                ) : (
+                  <>
+                    <Receipt className="mr-2 h-4 w-4" />
+                    Confirmar Facturación
+                  </>
+                )}
+              </Button>
+            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showCancelModal} onOpenChange={setShowCancelModal}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <XCircle className="h-5 w-5 text-red-600" />
+              Confirmar Anulación
+            </DialogTitle>
+          </DialogHeader>
+
+          {comprobanteToCancel && (
+            <div className="space-y-4">
+              <div className="bg-red-50 p-4 rounded-lg">
+                <h4 className="font-medium text-gray-900 mb-2">Datos del Comprobante</h4>
+                <div className="text-sm space-y-1">
+                  <p>
+                    <strong>Tipo:</strong> {getTipoComprobante(comprobanteToCancel.tipo_comprobante)}
+                  </p>
+                  <p>
+                    <strong>Serie/Número:</strong> {comprobanteToCancel.serie}-{comprobanteToCancel.numero}
+                  </p>
+                  <p>
+                    <strong>Cliente:</strong> {comprobanteToCancel.cliente_denominacion}
+                  </p>
+                  <p>
+                    <strong>Total:</strong> {comprobanteToCancel.moneda === 1 ? 'S/ ' : '$ '}
+                    {Number(comprobanteToCancel.total).toFixed(2)}
+                  </p>
+                </div>
+              </div>
+
+              <div className="bg-red-50 p-3 rounded-lg border border-red-200">
+                <p className="text-sm text-red-800">
+                  <strong>¿Estás seguro de anular este comprobante?</strong>
+                  <br />
+                  Esta acción no se puede deshacer y generará una nota de crédito si es necesario.
+                </p>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0">
+            <Button
+              variant="outline"
+              onClick={() => setShowCancelModal(false)}
+              disabled={isCancelling}
+              className="w-full sm:w-auto"
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={confirmCancelInvoice}
+              disabled={isCancelling}
+              variant="destructive"
+              className="w-full sm:w-auto"
+            >
+              {isCancelling ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Anulando...
+                </>
+              ) : (
+                <>
+                  <XCircle className="mr-2 h-4 w-4" />
+                  Confirmar Anulación
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <GenerarGuiasModal
+        open={showGuiasModal}
+        onOpenChange={setShowGuiasModal}
+        pedido={selectedOrder}
+        isProcessing={isProcessingGuias}
+        onGenerarGuias={handleGenerarGuias}
+      />
     </div>
   )
 }

@@ -18,7 +18,7 @@ import { useEffect, useState } from "react"
 import { Skeleton } from "@/components/ui/skeleton"
 import apiClient from "@/app/api/client"
 import {format, parseISO} from "date-fns";
-import {fetchGetConditions, fetchGetStatus, fetchUpdateStatusConfirm} from "@/app/api/takeOrders";
+import {fetchGetConditions, fetchGetStatus, fetchUpdateStatus, fetchUpdateStatusConfirm} from "@/app/api/takeOrders";
 import {
   Dialog,
   DialogContent,
@@ -27,9 +27,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import {DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger} from "@/components/ui/dropdown-menu";
 import {Label} from "@/components/ui/label";
-import {Textarea} from "@/components/ui/textarea";
 import {useAuth} from "@/context/authContext";
 interface Pedido {
   idPedidocab: number
@@ -231,6 +229,7 @@ export default function OrderStatusManagementPage() {
         setLoading(true);
         await fetchUpdateStatusConfirm(selectedOrder.nroPedido);
       }
+      await fetchUpdateStatus(selectedOrder.nroPedido, nextState);
       await fetchOrders();
 
       setIsChangeStateModalOpen(false);
@@ -308,7 +307,7 @@ export default function OrderStatusManagementPage() {
                 <SelectContent>
                   <SelectItem value={-1}>Todos</SelectItem>
                   {states.map(item => (
-                    <SelectItem value={item.id_estado_pedido}>{item.nombre_estado}</SelectItem>
+                    <SelectItem key={item.id_estado_pedido} value={item.id_estado_pedido}>{item.nombre_estado}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -355,12 +354,12 @@ export default function OrderStatusManagementPage() {
                   </tr>
                 ))
               ) : orders.length > 0 ? (
-                orders.map((order) => {
+                orders.map((order, index) => {
                   const stateInfo = getStateInfo(order.estadodePedido)
                   const StateIcon = stateInfo?.icon || Clock
 
                   return (
-                    <tr key={order.idPedidocab} className="border-b hover:bg-gray-50">
+                    <tr key={order.idPedidocab + '' + index} className="border-b hover:bg-gray-50">
                       <td className="p-4 font-medium text-sm">{order.nroPedido}</td>
                       <td className="p-4">
                         <div>
@@ -447,12 +446,12 @@ export default function OrderStatusManagementPage() {
                 </Card>
               ))
             ) : orders.length > 0 ? (
-              orders.map((order) => {
+              orders.map((order, index) => {
                 const stateInfo = getStateInfo(order.estadodePedido)
                 const StateIcon = stateInfo?.icon || Clock
 
                 return (
-                  <Card key={order.idPedidocab} className="border border-gray-200">
+                  <Card key={order.idPedidocab + '' + index} className="border border-gray-200">
                     <CardContent className="p-4">
                       <div className="flex justify-between items-start mb-3">
                         <div>

@@ -9,33 +9,66 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/authContext";
-import { NAME_ROLES, NAV_ITEMS } from "@/constants/roles";
+import {
+  Home,
+  Users,
+  Tags,
+  Package,
+  ShoppingCart,
+  FileText,
+  BarChart2,
+  LineChart,
+  GitBranch,
+  Receipt
+} from "lucide-react";
 
-/* ───────── tipos ───────── */
-type Role = typeof NAME_ROLES[keyof typeof NAME_ROLES];
-
-interface NavItem {
-  title: string;
-  href: string;
-  icon: React.ComponentType<{ className?: string }>;
-  roles: Role[];
-  children?: Omit<NavItem, "children" | "roles">[]; 
-}
+const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
+  "/dashboard": Home,
+  "/dashboard/clientes": Users,
+  "/dashboard/lista-precios-lote": Tags,
+  "/dashboard/productos": Package,
+  "/dashboard/tomar-pedido": ShoppingCart,
+  "/dashboard/mis-pedidos": FileText,
+  "/dashboard/estados-pedidos": GitBranch,
+  "/dashboard/comprobantes": Receipt,
+  "/dashboard/reportes": BarChart2,
+  "/dashboard/reportes/documento-cliente": LineChart,
+  "/dashboard/reportes/cobrar-cliente": LineChart,
+  "/dashboard/reportes/cobrar-vendedor": LineChart,
+};
 
 export function SideNav() {
   const pathname = usePathname();
   const [openItem, setOpenItem] = useState<string | null>(null);
-  const { user, logout } = useAuth(); // <-- necesitas exponer `user` en tu contexto
+  const { user, logout } = useAuth();
 
-  /* ───────── filtrado por rol ───────── */
-  const itemsForRole = useMemo(() => {
-    if (!user) return [];
+  /* ───────── estructuración de menús ───────── */
+  const menuItems = useMemo(() => {
+    if (!user?.menus || user.menus.length === 0) return [];
 
-    const role = user.rolDescripcion as Role;
+    // Convertir la lista plana de menús en una estructura jerárquica
+    const rootMenus = user.menus.filter(menu => !menu.id_padre);
+    const childMenus = user.menus.filter(menu => menu.id_padre);
 
-    // el padre se filtra por rol; los hijos heredan implícitamente
-    return NAV_ITEMS.filter((item) => item.roles.includes(role));
-  }, [user]);
+    return rootMenus.map(menu => {
+      const children = childMenus
+        .filter(child => child.id_padre === menu.id)
+        .map(child => ({
+          id: child.id,
+          title: child.nombre,
+          href: child.ruta,
+          icon: ICON_MAP[child.ruta] || LineChart,
+        }));
+
+      return {
+        id: menu.id,
+        title: menu.nombre,
+        href: menu.ruta,
+        icon: ICON_MAP[menu.ruta] || Home,
+        children: children.length > 0 ? children : undefined,
+      };
+    });
+  }, [user?.menus]);
 
   const toggleItem = (title: string) =>
     setOpenItem((prev) => (prev === title ? null : title));
@@ -57,8 +90,8 @@ export function SideNav() {
 
       <ScrollArea className="flex-1 py-4">
         <nav className="grid gap-1 px-2">
-          {itemsForRole.map((item) => (
-            <div key={item.href}>
+          {menuItems.map((item) => (
+            <div key={item.id}>
               {item.children ? (
                 /* ───── padre con sub‑menú ───── */
                 <button
@@ -117,7 +150,7 @@ export function SideNav() {
                 <div className="ml-8 mt-1 flex flex-col gap-1">
                   {item.children.map((sub) => (
                     <Link
-                      key={sub.href}
+                      key={sub.id}
                       href={sub.href}
                       className={cn(
                         "group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all hover:bg-blue-50",

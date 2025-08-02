@@ -37,11 +37,12 @@ export const decodeToken = (token: string | null | undefined): TokenDecodeResult
             };
         }
         const user: User = {
-            codigo: decoded.codigo,
-            telefono: decoded.telefono,
-            nombreCompleto: decoded.nombreCompleto,
-            idRol: decoded.idRol,
-            rolDescripcion: decoded.rolDescripcion
+            codigo: decoded.usuario.codigo,
+            telefono: decoded.usuario.telefono,
+            nombreCompleto: decoded.usuario.nombreCompleto,
+            idRol: decoded.usuario.rol.id,
+            rolDescripcion: decoded.usuario.rol.nombre,
+            menus: decoded.menus
         }
         return {
             isValid: true,

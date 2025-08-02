@@ -209,8 +209,8 @@ export default function OrderPage() {
           quantity,
           isBonification,
           isEscale,
-          appliedScale
-          // finalPrice,
+          appliedScale,
+          finalPrice: Number(selectedProduct?.PUContado),
         },
       ])
       setSelectedProduct(null)
@@ -264,13 +264,11 @@ export default function OrderPage() {
       setIsLoading(true);
       const bonificaciones = await getBonificados(idArticulo, cantidad);
       setIsLoading(false);
-      console.log(bonificaciones)
 
       setModalLoader('ESCALA');
       setIsLoading(true);
       const escalasProductos = await getEscalas(idArticulo, cantidad);
       setIsLoading(false);
-      console.log(escalasProductos)
 
       addProductToList(bonificaciones.length > 0, escalasProductos.length > 0);
 

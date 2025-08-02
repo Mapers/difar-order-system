@@ -15,7 +15,11 @@ export const fetchGetStatus = async (): Promise<any> => {
 };
 
 export const fetchUpdateStatusConfirm = async (nroPedido: string): Promise<any> => {
-    return apiClient.put(`tomarPedido/updateStatusConfirm`, { nroPedido });
+    return apiClient.put(`tomarPedido/updateStatusConfirm?nroPedido=${nroPedido}`);
+};
+
+export const fetchUpdateStatus = async (nroPedido: string, estado: number): Promise<any> => {
+    return apiClient.put(`tomarPedido/updateStatus?nroPedido=${nroPedido}&estado=${estado}`);
 };
 
 export const fetchGetZona = async (idZona: string): Promise<any> => {
