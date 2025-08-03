@@ -4,7 +4,6 @@ import Link from "next/link";
 import Image from "next/image";
 import { useState, useMemo } from "react";
 import { usePathname } from "next/navigation";
-import { LogOut, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
@@ -19,7 +18,11 @@ import {
   BarChart2,
   LineChart,
   GitBranch,
-  Receipt
+  Receipt,
+  LogOut,
+  ChevronDown,
+  UserCog,
+  Notebook
 } from "lucide-react";
 
 const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -35,6 +38,8 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   "/dashboard/reportes/documento-cliente": LineChart,
   "/dashboard/reportes/cobrar-cliente": LineChart,
   "/dashboard/reportes/cobrar-vendedor": LineChart,
+  "/dashboard/usuarios": UserCog,
+  "/dashboard/roles": Notebook,
 };
 
 export function SideNav() {

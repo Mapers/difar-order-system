@@ -681,18 +681,18 @@ export default function ComprobantesPage() {
                                       <Eye className="mr-2 h-4 w-4" />
                                       Ver Detalle
                                     </DropdownMenuItem>
-                                    <DropdownMenuItem className="text-green-600">
-                                      <Download className="mr-2 h-4 w-4" />
-                                      Descargar PDF
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem className="text-green-600">
-                                      <Send className="mr-2 h-4 w-4" />
-                                      Enviar al Cliente
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem className="text-blue-600">
-                                      <Mail className="mr-2 h-4 w-4" />
-                                      Enviar por Email
-                                    </DropdownMenuItem>
+                                    {/*<DropdownMenuItem className="text-green-600">*/}
+                                    {/*  <Download className="mr-2 h-4 w-4" />*/}
+                                    {/*  Descargar PDF*/}
+                                    {/*</DropdownMenuItem>*/}
+                                    {/*<DropdownMenuItem className="text-green-600">*/}
+                                    {/*  <Send className="mr-2 h-4 w-4" />*/}
+                                    {/*  Enviar al Cliente*/}
+                                    {/*</DropdownMenuItem>*/}
+                                    {/*<DropdownMenuItem className="text-blue-600">*/}
+                                    {/*  <Mail className="mr-2 h-4 w-4" />*/}
+                                    {/*  Enviar por Email*/}
+                                    {/*</DropdownMenuItem>*/}
                                     {!comprobante.anulado && (
                                       <DropdownMenuItem
                                         className="text-red-600"
@@ -774,14 +774,14 @@ export default function ComprobantesPage() {
                                   </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end" className="w-48">
-                                  <DropdownMenuItem className="text-green-600">
-                                    <Send className="mr-2 h-4 w-4" />
-                                    Enviar al cliente
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem className="text-blue-600">
-                                    <Mail className="mr-2 h-4 w-4" />
-                                    Enviar por email
-                                  </DropdownMenuItem>
+                                  {/*<DropdownMenuItem className="text-green-600">*/}
+                                  {/*  <Send className="mr-2 h-4 w-4" />*/}
+                                  {/*  Enviar al cliente*/}
+                                  {/*</DropdownMenuItem>*/}
+                                  {/*<DropdownMenuItem className="text-blue-600">*/}
+                                  {/*  <Mail className="mr-2 h-4 w-4" />*/}
+                                  {/*  Enviar por email*/}
+                                  {/*</DropdownMenuItem>*/}
                                   {!comprobante.anulado && (
                                     <DropdownMenuItem
                                       className="text-red-600"
