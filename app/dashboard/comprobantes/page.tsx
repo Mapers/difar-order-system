@@ -305,7 +305,7 @@ export default function ComprobantesPage() {
       )
 
       const response = await apiClient.post(
-        `/pedidos/generateCompr?nroPedido=${selectedOrder.nroPedido}&tipoCompr=${tipoComprobante?.idTipoComprobante}&sunatTrans=${transaccionSunat?.idTransaction}&tipoDocSunat=${tipoSunatT}`
+        `/pedidos/generateCompr?nroPedido=${selectedOrder.nroPedido}&tipoCompr=${tipoComprobante?.idTipoComprobante}&sunatTrans=${transaccionSunat?.idTransaction}&tipoDocSunat=${tipoSunatT?.codigo}`
       )
 
       if (response.data.success) {
@@ -347,7 +347,8 @@ export default function ComprobantesPage() {
     setIsCancelling(true)
     try {
       const response = await apiClient.post(
-        `/pedidos/anularCompr?serie=${comprobanteToCancel.serie}&numero=${comprobanteToCancel.numero}&tipoCompr=${comprobanteToCancel.tipo_comprobante}&idCabecera=${comprobanteToCancel.idComprobanteCab}`
+        `/pedidos/anularCompr?idCabecera=${comprobanteToCancel.idComprobanteCab}&tipoCompr=${comprobanteToCancel.tipo_comprobante}`,
+
       )
 
       if (response.data.success) {
