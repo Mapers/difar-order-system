@@ -2,8 +2,18 @@
 
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
-import { Loader2, Truck } from "lucide-react"
+import {FileText, Truck, Plus, Trash2, ChevronUp, ChevronDown, Search, UserPlus, XCircle} from "lucide-react"
 import {Pedido} from "@/app/dashboard/comprobantes/page";
+import {useState} from "react";
+import { Label } from "@/components/ui/label"
+import { Input } from "@/components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Textarea } from "@/components/ui/textarea"
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
+import {Remision} from "@/app/dashboard/comprobantes/remision";
+import {GuiaTransportista} from "@/app/dashboard/comprobantes/guia-transportista";
 
 interface GenerarGuiasModalProps {
   open: boolean
@@ -20,62 +30,61 @@ export function GenerarGuiasModal({
                                     isProcessing,
                                     onGenerarGuias
                                   }: GenerarGuiasModalProps) {
+  const [activeTab, setActiveTab] = useState("remision")
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="max-w-6xl h-[90vh] flex flex-col overflow-scroll">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Truck className="h-5 w-5" />
-            Generar Guías de Remisión
+          <DialogTitle className="flex items-center gap-2 text-xl">
+            <Truck className="h-5 w-5 text-blue-600" />
+            Generar Guías Electrónicas
           </DialogTitle>
         </DialogHeader>
 
-        {pedido && (
-          <div className="space-y-4">
-            <div className="bg-blue-50 p-4 rounded-lg">
-              <h4 className="font-medium text-gray-900 mb-2">Datos del Pedido</h4>
-              <div className="text-sm space-y-1">
-                <p><strong>Pedido:</strong> {pedido.nroPedido}</p>
-                <p><strong>Cliente:</strong> {pedido.nombreCliente}</p>
-                <p><strong>Documento:</strong> {pedido.codigoCliente}</p>
-              </div>
-            </div>
-
-            <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-200">
-              <p className="text-sm text-yellow-800">
-                <strong>¿Confirmas la generación de guías?</strong>
-                <br/>
-                Se generará la guía de remisión electrónica para este pedido.
-              </p>
-            </div>
+        <Tabs
+          value={activeTab}
+          onValueChange={setActiveTab}
+          className="flex-1 flex flex-col"
+        >
+          <div className="border-b">
+            <TabsList className="grid grid-cols-2 w-[400px] bg-transparent">
+              <TabsTrigger
+                value="remision"
+                className="flex items-center gap-2 py-4 px-4 data-[state=active]:border-b-2 data-[state=active]:border-blue-500"
+              >
+                <FileText className="h-4 w-4" />
+                Guía de Remisión
+              </TabsTrigger>
+              <TabsTrigger
+                value="transportista"
+                className="flex items-center gap-2 py-4 px-4 data-[state=active]:border-b-2 data-[state=active]:border-blue-500"
+              >
+                <Truck className="h-4 w-4" />
+                Guía Transportista
+              </TabsTrigger>
+            </TabsList>
           </div>
-        )}
 
-        <DialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0">
-          <Button
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            disabled={isProcessing}
-            className="w-full sm:w-auto"
-          >
+          <div className="flex-1 p-6 bg-gray-50">
+            <TabsContent value="remision" className="m-0 h-full">
+              <Remision />
+            </TabsContent>
+            <TabsContent value="transportista" className="m-0 h-full">
+              <GuiaTransportista />
+            </TabsContent>
+          </div>
+        </Tabs>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancelar
           </Button>
           <Button
             onClick={onGenerarGuias}
             disabled={isProcessing}
-            className="bg-green-600 hover:bg-green-700 w-full sm:w-auto"
+            className="bg-blue-600 hover:bg-blue-700"
           >
-            {isProcessing ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Procesando...
-              </>
-            ) : (
-              <>
-                <Truck className="mr-2 h-4 w-4" />
-                Generar Guías
-              </>
-            )}
+            {isProcessing ? 'Generando...' : 'Generar Guía'}
           </Button>
         </DialogFooter>
       </DialogContent>
