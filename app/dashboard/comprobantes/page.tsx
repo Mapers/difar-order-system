@@ -82,6 +82,7 @@ export interface Pedido {
   nombreVendedor: string
   totalPedido: string
   monedaPedido: string
+  cantidadPedidos: number
 }
 
 export default function ComprobantesPage() {
@@ -119,7 +120,7 @@ export default function ComprobantesPage() {
   const fetchComprobantes = async () => {
     try {
       setLoadingComprobantes(true)
-      let url = `/pedidos/comprobantes?`
+      let url = `/pedidos/comprobantes?vendedor=${auth.user?.codigo}&`
 
       // Añadir filtros a la URL
       const params = new URLSearchParams()
@@ -477,6 +478,7 @@ export default function ComprobantesPage() {
                             <div className="flex items-center gap-2">
                               <Package className="h-3 w-3 sm:h-4 sm:w-4 text-gray-500 flex-shrink-0" />
                               <span className="text-gray-600">Productos:</span>
+                              {pedido.cantidadPedidos}
                             </div>
                           </div>
 
@@ -1081,13 +1083,15 @@ export default function ComprobantesPage() {
         </DialogContent>
       </Dialog>
 
-      <GenerarGuiasModal
-        open={showGuiasModal}
-        onOpenChange={setShowGuiasModal}
-        pedido={selectedOrder}
-        isProcessing={isProcessingGuias}
-        onGenerarGuias={handleGenerarGuias}
-      />
+      {showGuiasModal && (
+        <GenerarGuiasModal
+          open={showGuiasModal}
+          onOpenChange={setShowGuiasModal}
+          pedido={selectedOrder}
+          isProcessing={isProcessingGuias}
+          onGenerarGuias={handleGenerarGuias}
+        />
+      )}
     </div>
   )
 }

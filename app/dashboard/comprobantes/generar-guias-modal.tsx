@@ -4,16 +4,12 @@ import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import {FileText, Truck, Plus, Trash2, ChevronUp, ChevronDown, Search, UserPlus, XCircle} from "lucide-react"
 import {Pedido} from "@/app/dashboard/comprobantes/page";
-import {useState} from "react";
-import { Label } from "@/components/ui/label"
-import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Textarea } from "@/components/ui/textarea"
+import {useEffect, useState} from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import {Remision} from "@/app/dashboard/comprobantes/remision";
 import {GuiaTransportista} from "@/app/dashboard/comprobantes/guia-transportista";
+import apiClient from "@/app/api/client";
+import {useAuth} from "@/context/authContext";
 
 interface GenerarGuiasModalProps {
   open: boolean
@@ -21,6 +17,16 @@ interface GenerarGuiasModalProps {
   pedido: Pedido | null
   isProcessing: boolean
   onGenerarGuias: () => Promise<void>
+}
+
+interface PedidoDet {
+  idPedidodet: number
+  idPedidocab: number
+  codigoitemPedido: string
+  cantPedido: string
+  precioPedido: string
+  productoNombre?: string
+  productoUnidad?: string
 }
 
 export function GenerarGuiasModal({
@@ -31,6 +37,25 @@ export function GenerarGuiasModal({
                                     onGenerarGuias
                                   }: GenerarGuiasModalProps) {
   const [activeTab, setActiveTab] = useState("remision")
+  const [detalles, setDetalles] = useState<PedidoDet[]>([])
+  const auth = useAuth();
+
+  const fetchPedido = async () => {
+    try {
+      console.log(pedido)
+      const resDet = await apiClient.get(`/pedidosDetalles/${pedido?.nroPedido || ''}/detalles?vendedor=${auth.user?.codigo}`)
+      const detallesData = resDet.data.data
+      setDetalles(detallesData)
+    } catch (err) {
+      console.error("Error fetching order details:", err)
+    }
+  }
+
+  useEffect(() => {
+    if (pedido) {
+      fetchPedido()
+    }
+  }, [pedido])
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -67,12 +92,16 @@ export function GenerarGuiasModal({
           </div>
 
           <div className="flex-1 p-6 bg-gray-50">
-            <TabsContent value="remision" className="m-0 h-full">
-              <Remision />
-            </TabsContent>
-            <TabsContent value="transportista" className="m-0 h-full">
-              <GuiaTransportista />
-            </TabsContent>
+            {detalles.length > 0 && (
+              <>
+                <TabsContent value="remision" className="m-0 h-full">
+                  <Remision detalles={detalles} pedido={pedido} />
+                </TabsContent>
+                <TabsContent value="transportista" className="m-0 h-full">
+                  <GuiaTransportista detalles={detalles} pedido={pedido} />
+                </TabsContent>
+              </>
+            )}
           </div>
         </Tabs>
         <DialogFooter>

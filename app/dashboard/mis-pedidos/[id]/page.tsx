@@ -9,6 +9,7 @@ import Link from "next/link"
 import { useEffect, useState } from "react"
 import { Skeleton } from "@/components/ui/skeleton"
 import apiClient from "@/app/api/client"
+import {useAuth} from "@/context/authContext";
 
 interface PedidoCab {
   idPedidocab: number
@@ -43,6 +44,7 @@ export default function OrderDetailsPage({ params }: { params: { id: string } })
   const [detalles, setDetalles] = useState<PedidoDet[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const auth = useAuth();
 
   useEffect(() => {
     const fetchPedido = async () => {
@@ -54,7 +56,7 @@ export default function OrderDetailsPage({ params }: { params: { id: string } })
         const pedidoData = resCab.data.data
 
         // Obtener detalles del pedido
-        const resDet = await apiClient.get(`/pedidosDetalles/${params?.id || ''}/detalles`)
+        const resDet = await apiClient.get(`/pedidosDetalles/${params?.id || ''}/detalles?vendedor=${auth.user?.codigo}`)
         const detallesData = resDet.data.data
 
         setPedido(pedidoData)

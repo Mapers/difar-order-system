@@ -119,15 +119,11 @@ interface Pedido {
   idPedidocab: number
   nroPedido: string
   fechaPedido: string
-  clienteNombre: string
-  condicionNombre: string
+  nombreCliente: string
+  condicionPedido: string
   monedaPedido: string
   estadodePedido: number
   totalPedido: string
-  detalles?: {
-    cantPedido: number
-    precioPedido: number
-  }[]
 }
 
 export default function MyOrdersPage() {
@@ -218,11 +214,6 @@ export default function MyOrdersPage() {
       cliente: client?.codigo || ""
     }))
     setCurrentPage(1)
-  }
-
-  const calculateTotal = (pedido: Pedido) => {
-    if (!pedido.detalles) return 0
-    return pedido.detalles.reduce((sum, item) => sum + (item.cantPedido * item.precioPedido), 0)
   }
 
   const handlePreviousPage = () => {
@@ -411,7 +402,7 @@ export default function MyOrdersPage() {
                         <div className="flex items-center gap-2">
                           <User className="h-4 w-4 text-gray-500"/>
                           <span className="text-gray-600">Cliente:</span>
-                          <span className="font-medium truncate">{pedido.clienteNombre}</span>
+                          <span className="font-medium truncate">{pedido.nombreCliente}</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <DollarSign className="h-4 w-4 text-gray-500"/>
@@ -424,13 +415,13 @@ export default function MyOrdersPage() {
                         <div className="flex items-center gap-2">
                           <Package className="h-4 w-4 text-gray-500"/>
                           <span className="text-gray-600">Condición:</span>
-                          <span className="font-medium">{pedido.condicionNombre}</span>
+                          <span className="font-medium">{pedido.condicionPedido}</span>
                         </div>
                       </div>
                     </div>
 
                     <div className="flex flex-col sm:flex-row gap-2">
-                      <Link href={`/dashboard/mis-pedidos/${pedido.idPedidocab}`}>
+                      <Link href={`/dashboard/mis-pedidos/${pedido.nroPedido}`}>
                         <Button
                           variant="outline"
                           size="sm"
