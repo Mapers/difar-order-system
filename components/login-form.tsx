@@ -50,6 +50,8 @@ export function LoginForm() {
       }
     } catch (error: any) {
       console.error(error);
+      setShowVerification(true);
+      setVerificationCode(["", "", "", "", "", ""]);
     }
     finally {
       setLoading(false);
