@@ -17,6 +17,6 @@ export interface PrecioLote {
 }
 
 export interface PriceListParams {
-    laboratorio: string,
-    descripcion: string
+    laboratorio?: string,
+    descripcion?: string
 }

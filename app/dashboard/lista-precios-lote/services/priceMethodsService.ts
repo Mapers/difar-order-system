@@ -33,7 +33,7 @@ export class PriceMethodsService {
             let matchesExpiration = true;
             if (expirationFilter !== "all") {
                 const today = new Date();
-                const expirationDate = new Date(item.kardex_VctoItem.split("/").reverse().join("-"));
+                const expirationDate = new Date(item.kardex_VctoItem);
                 const diffTime = expirationDate.getTime() - today.getTime();
                 const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
@@ -59,7 +59,7 @@ export class PriceMethodsService {
 
     static getExpirationStatus(expirationDate: string) {
         const today = new Date();
-        const expDate = new Date(expirationDate.split("/").reverse().join("-"));
+        const expDate = new Date(expirationDate);
         const diffTime = expDate.getTime() - today.getTime();
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
@@ -67,6 +67,16 @@ export class PriceMethodsService {
         if (diffDays <= 30) return { status: "Por vencer", variant: "destructive" as const };
         if (diffDays <= 90) return { status: "Próximo", variant: "secondary" as const };
         return { status: "Vigente", variant: "default" as const };
+    }
+
+    static truncateOrReplace(text: string, maxLength: number, replaceIfNull = "N/A") {
+        if (!text) {
+            return replaceIfNull;
+        }
+        if (text.length > maxLength) {
+            return text.slice(0, maxLength) + "...";
+        }
+        return text;
     }
 
 }
