@@ -14,7 +14,7 @@ import apiClient from '@/app/api/client'
 interface Usuario {
   id_usuario: number
   idVendedor: number | null
-  idUsuario: number | null
+  id: number | null
   codigo: string
   nombre_completo: string
   dni: string
@@ -173,7 +173,7 @@ export default function UsuariosPage() {
     try {
       if (!selectedUsuario || !selectedRol) return
 
-      await apiClient.put(`/usuarios/update/${selectedUsuario.id_usuario}`, {
+      await apiClient.put(`/usuarios/update/${selectedUsuario.id}`, {
         id_rol: parseInt(selectedRol),
         activo,
         dni: selectedUsuario.dni,

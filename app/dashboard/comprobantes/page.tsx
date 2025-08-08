@@ -50,6 +50,10 @@ interface Comprobante {
   total: string
   tipo_comprobante: number
   anulado: boolean
+  enlace: string
+  enlace_pdf: string
+  enlace_cdr: string
+  enlace_xml: string
 }
 
 interface TipoComprobante {
@@ -117,13 +121,20 @@ export default function ComprobantesPage() {
   const [comprobanteToCancel, setComprobanteToCancel] = useState<Comprobante | null>(null)
   const [showCancelModal, setShowCancelModal] = useState(false)
 
+  const [showPdfModal, setShowPdfModal] = useState(false)
+  const [currentPdfUrl, setCurrentPdfUrl] = useState("")
+
   const fetchComprobantes = async () => {
     try {
       setLoadingComprobantes(true)
-      let url = `/pedidos/comprobantes?vendedor=${auth.user?.codigo}&`
+      let url = `/pedidos/comprobantes`
 
       // Añadir filtros a la URL
       const params = new URLSearchParams()
+
+      if (auth.user?.idRol === 1) {
+        params.append('vendedor', auth.user?.codigo || '')
+      }
 
       if (filters.tipo !== '-1') {
         params.append('tipoDoc', filters.tipo)
@@ -163,7 +174,7 @@ export default function ComprobantesPage() {
   const fetchPedidosPendientes = async () => {
     try {
       setLoadingPedidos(true)
-      let url = `/pedidos/filter?busqueda=${encodeURIComponent(searchQuery)}&vendedor=${auth.user?.codigo}&estado=4`
+      let url = `/pedidos/filter?busqueda=${encodeURIComponent(searchQuery)}&estado=4`
 
       const response = await apiClient.get(url)
       const { data: { data } } = response.data
@@ -260,6 +271,11 @@ export default function ComprobantesPage() {
   const getTipoComprobante = (tipo: number) => {
     const tipoObj = tiposComprobante.find(t => t.idTipoComprobante === tipo)
     return tipoObj ? tipoObj.descripcion : "Desconocido"
+  }
+
+  const handleViewPdf = (pdfUrl: string) => {
+    setCurrentPdfUrl(pdfUrl)
+    setShowPdfModal(true)
   }
 
   const getEstadoBadge = (comprobante: Comprobante) => {
@@ -391,14 +407,16 @@ export default function ComprobantesPage() {
         </div>
       </div>
 
-      <Tabs defaultValue="pendientes" className="w-full">
+      <Tabs defaultValue={auth.user?.idRol !== 1 ? 'pendientes' : 'comprobantes'} className="w-full">
         <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="pendientes" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
-            <AlertTriangle className="h-3 w-3 sm:h-4 sm:w-4" />
-            <span className="hidden sm:inline">Pedidos por Facturar</span>
-            <span className="sm:hidden">Por Facturar</span>
-            <Badge className="bg-red-100 text-red-800 text-xs ml-1">{pedidosPendientes.length}</Badge>
-          </TabsTrigger>
+          {auth.user?.idRol !== 1 && (
+            <TabsTrigger value="pendientes" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+              <AlertTriangle className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden sm:inline">Pedidos por Facturar</span>
+              <span className="sm:hidden">Por Facturar</span>
+              <Badge className="bg-red-100 text-red-800 text-xs ml-1">{pedidosPendientes.length}</Badge>
+            </TabsTrigger>
+          )}
           <TabsTrigger value="comprobantes" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
             <FileText className="h-3 w-3 sm:h-4 sm:w-4" />
             <span className="hidden sm:inline">Comprobantes Emitidos</span>
@@ -406,124 +424,126 @@ export default function ComprobantesPage() {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="pendientes" className="space-y-4">
-          <Card className="bg-white shadow-sm">
-            <CardHeader>
-              <CardTitle className="text-base sm:text-lg text-orange-600 flex items-center gap-2">
-                <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5" />
-                <span className="hidden sm:inline">Pedidos Completados Pendientes por Facturar</span>
-                <span className="sm:hidden">Pedidos por Facturar</span>
-              </CardTitle>
-              <CardDescription className="text-xs sm:text-sm text-gray-600">
-                Estos pedidos están completados y listos para ser facturados
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {loadingPedidos ? (
-                <div className="flex justify-center items-center h-64">
-                  <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-                </div>
-              ) : pedidosPendientes.length === 0 ? (
-                <div className="text-center py-8">
-                  <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">¡Excelente!</h3>
-                  <p className="text-gray-600">No hay pedidos pendientes por facturar</p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {pedidosPendientes.map((pedido) => (
-                    <Card key={pedido.idPedidocab} className="border border-orange-200 bg-orange-50">
-                      <CardContent className="p-3 sm:p-4">
-                        <div className="flex flex-col gap-4">
-                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                            <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                              <h3 className="text-base sm:text-lg font-semibold text-gray-900">{pedido.nroPedido}</h3>
-                              <Badge className="bg-green-100 text-green-800 text-xs w-fit">
-                                <span className="hidden sm:inline">Completado - Listo para facturar</span>
-                                <span className="sm:hidden">Listo</span>
-                              </Badge>
+        {auth.user?.idRol !== 1 && (
+          <TabsContent value="pendientes" className="space-y-4">
+            <Card className="bg-white shadow-sm">
+              <CardHeader>
+                <CardTitle className="text-base sm:text-lg text-orange-600 flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5" />
+                  <span className="hidden sm:inline">Pedidos Completados Pendientes por Facturar</span>
+                  <span className="sm:hidden">Pedidos por Facturar</span>
+                </CardTitle>
+                <CardDescription className="text-xs sm:text-sm text-gray-600">
+                  Estos pedidos están completados y listos para ser facturados
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {loadingPedidos ? (
+                  <div className="flex justify-center items-center h-64">
+                    <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+                  </div>
+                ) : pedidosPendientes.length === 0 ? (
+                  <div className="text-center py-8">
+                    <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">¡Excelente!</h3>
+                    <p className="text-gray-600">No hay pedidos pendientes por facturar</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {pedidosPendientes.map((pedido) => (
+                      <Card key={pedido.idPedidocab} className="border border-orange-200 bg-orange-50">
+                        <CardContent className="p-3 sm:p-4">
+                          <div className="flex flex-col gap-4">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                              <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                                <h3 className="text-base sm:text-lg font-semibold text-gray-900">{pedido.nroPedido}</h3>
+                                <Badge className="bg-green-100 text-green-800 text-xs w-fit">
+                                  <span className="hidden sm:inline">Completado - Listo para facturar</span>
+                                  <span className="sm:hidden">Listo</span>
+                                </Badge>
+                              </div>
+                              <div className="flex flex-col gap-2">
+                                <Button
+                                  onClick={() => handleInvoiceOrder(pedido)}
+                                  className="bg-green-600 hover:bg-green-700 flex items-center gap-2 w-full sm:w-auto"
+                                  size="sm"
+                                >
+                                  <Receipt className="h-4 w-4" />
+                                  <span className="hidden sm:inline">Facturar Ahora</span>
+                                  <span className="sm:hidden">Facturar</span>
+                                </Button>
+                              </div>
                             </div>
-                            <div className="flex flex-col gap-2">
-                              <Button
-                                onClick={() => handleInvoiceOrder(pedido)}
-                                className="bg-green-600 hover:bg-green-700 flex items-center gap-2 w-full sm:w-auto"
-                                size="sm"
-                              >
-                                <Receipt className="h-4 w-4" />
-                                <span className="hidden sm:inline">Facturar Ahora</span>
-                                <span className="sm:hidden">Facturar</span>
-                              </Button>
-                            </div>
-                          </div>
 
-                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 text-xs sm:text-sm">
-                            <div className="flex items-center gap-2">
-                              <Calendar className="h-3 w-3 sm:h-4 sm:w-4 text-gray-500 flex-shrink-0" />
-                              <span className="text-gray-600">Fecha:</span>
-                              <span className="font-medium">{format(parseISO(pedido.fechaPedido), "dd/MM/yyyy")}</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <User className="h-3 w-3 sm:h-4 sm:w-4 text-gray-500 flex-shrink-0" />
-                              <span className="text-gray-600">Cliente:</span>
-                              <span className="font-medium truncate">{pedido.nombreCliente}</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <DollarSign className="h-3 w-3 sm:h-4 sm:w-4 text-gray-500 flex-shrink-0" />
-                              <span className="text-gray-600">Total:</span>
-                              <span className="font-bold text-green-600">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 text-xs sm:text-sm">
+                              <div className="flex items-center gap-2">
+                                <Calendar className="h-3 w-3 sm:h-4 sm:w-4 text-gray-500 flex-shrink-0" />
+                                <span className="text-gray-600">Fecha:</span>
+                                <span className="font-medium">{format(parseISO(pedido.fechaPedido), "dd/MM/yyyy")}</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <User className="h-3 w-3 sm:h-4 sm:w-4 text-gray-500 flex-shrink-0" />
+                                <span className="text-gray-600">Cliente:</span>
+                                <span className="font-medium truncate">{pedido.nombreCliente}</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <DollarSign className="h-3 w-3 sm:h-4 sm:w-4 text-gray-500 flex-shrink-0" />
+                                <span className="text-gray-600">Total:</span>
+                                <span className="font-bold text-green-600">
                                 {pedido.monedaPedido === 'PEN' ? 'S/ ' : '$ '}
-                                {Number(pedido.totalPedido).toFixed(2)}
+                                  {Number(pedido.totalPedido).toFixed(2)}
                               </span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Package className="h-3 w-3 sm:h-4 sm:w-4 text-gray-500 flex-shrink-0" />
+                                <span className="text-gray-600">Productos:</span>
+                                {pedido.cantidadPedidos}
+                              </div>
                             </div>
-                            <div className="flex items-center gap-2">
-                              <Package className="h-3 w-3 sm:h-4 sm:w-4 text-gray-500 flex-shrink-0" />
-                              <span className="text-gray-600">Productos:</span>
-                              {pedido.cantidadPedidos}
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 text-xs sm:text-sm">
+                              <div className="flex items-center gap-2">
+                                <Receipt className="h-3 w-3 sm:h-4 sm:w-4 text-gray-500 flex-shrink-0" />
+                                <span className="text-gray-600">Documento:</span>
+                                <span className="font-medium">{pedido.codigoCliente}</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Clock className="h-3 w-3 sm:h-4 sm:w-4 text-gray-500 flex-shrink-0" />
+                                <span className="text-gray-600">Condición:</span>
+                                <span className="font-medium">{pedido.condicionPedido}</span>
+                              </div>
                             </div>
                           </div>
+                        </CardContent>
+                      </Card>
+                    ))}
 
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 text-xs sm:text-sm">
-                            <div className="flex items-center gap-2">
-                              <Receipt className="h-3 w-3 sm:h-4 sm:w-4 text-gray-500 flex-shrink-0" />
-                              <span className="text-gray-600">Documento:</span>
-                              <span className="font-medium">{pedido.codigoCliente}</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Clock className="h-3 w-3 sm:h-4 sm:w-4 text-gray-500 flex-shrink-0" />
-                              <span className="text-gray-600">Condición:</span>
-                              <span className="font-medium">{pedido.condicionPedido}</span>
-                            </div>
+                    <Card className="bg-blue-50 border-blue-200">
+                      <CardContent className="p-3 sm:p-4">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                          <div>
+                            <h4 className="font-medium text-blue-900 text-sm sm:text-base">
+                              Total Pendiente por Facturar
+                            </h4>
+                            <p className="text-xs sm:text-sm text-blue-700">
+                              {pedidosPendientes.length} pedidos completados
+                            </p>
+                          </div>
+                          <div className="text-left sm:text-right">
+                            <p className="text-xl sm:text-2xl font-bold text-blue-900">
+                              S/{pedidosPendientes.reduce((sum, p) => sum + Number(p.totalPedido), 0).toFixed(2)}
+                            </p>
+                            <p className="text-xs sm:text-sm text-blue-700">Valor total</p>
                           </div>
                         </div>
                       </CardContent>
                     </Card>
-                  ))}
-
-                  <Card className="bg-blue-50 border-blue-200">
-                    <CardContent className="p-3 sm:p-4">
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                        <div>
-                          <h4 className="font-medium text-blue-900 text-sm sm:text-base">
-                            Total Pendiente por Facturar
-                          </h4>
-                          <p className="text-xs sm:text-sm text-blue-700">
-                            {pedidosPendientes.length} pedidos completados
-                          </p>
-                        </div>
-                        <div className="text-left sm:text-right">
-                          <p className="text-xl sm:text-2xl font-bold text-blue-900">
-                            S/{pedidosPendientes.reduce((sum, p) => sum + Number(p.totalPedido), 0).toFixed(2)}
-                          </p>
-                          <p className="text-xs sm:text-sm text-blue-700">Valor total</p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        )}
 
         <TabsContent value="comprobantes" className="space-y-4">
           <Card className="bg-white shadow-sm">
@@ -667,7 +687,12 @@ export default function ComprobantesPage() {
                             </td>
                             <td className="p-4">
                               <div className="flex gap-2">
-                                <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                  onClick={() => handleViewPdf(comprobante.enlace)}
+                                >
                                   <Eye className="h-4 w-4" />
                                 </Button>
                                 <Button variant="ghost" size="icon" className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50">
@@ -680,10 +705,10 @@ export default function ComprobantesPage() {
                                     </Button>
                                   </DropdownMenuTrigger>
                                   <DropdownMenuContent align="end" className="w-48">
-                                    <DropdownMenuItem className="text-blue-600">
-                                      <Eye className="mr-2 h-4 w-4" />
-                                      Ver Detalle
-                                    </DropdownMenuItem>
+                                    {/*<DropdownMenuItem className="text-blue-600">*/}
+                                    {/*  <Eye className="mr-2 h-4 w-4" />*/}
+                                    {/*  Ver Detalle*/}
+                                    {/*</DropdownMenuItem>*/}
                                     {/*<DropdownMenuItem className="text-green-600">*/}
                                     {/*  <Download className="mr-2 h-4 w-4" />*/}
                                     {/*  Descargar PDF*/}
@@ -757,7 +782,12 @@ export default function ComprobantesPage() {
 
                           <div className="border-t pt-3">
                             <div className="grid grid-cols-2 gap-2">
-                              <Button variant="outline" size="sm" className="text-xs bg-transparent">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="text-xs bg-transparent"
+                                onClick={() => handleViewPdf(comprobante.enlace)}
+                              >
                                 <Eye className="h-3 w-3 mr-1" />
                                 Ver
                               </Button>
@@ -1092,6 +1122,44 @@ export default function ComprobantesPage() {
           onGenerarGuias={handleGenerarGuias}
         />
       )}
+
+      <Dialog open={showPdfModal} onOpenChange={setShowPdfModal}>
+        <DialogContent className="max-w-4xl h-[90vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle>Visualizador de Comprobante</DialogTitle>
+          </DialogHeader>
+          <div className="flex-1 overflow-hidden">
+            {currentPdfUrl ? (
+              <iframe
+                src={currentPdfUrl}
+                className="w-full h-full border-0"
+                title="Visualizador de PDF"
+              />
+            ) : (
+              <div className="flex items-center justify-center h-full">
+                <Loader2 className="h-8 w-8 animate-spin" />
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowPdfModal(false)}
+            >
+              Cerrar
+            </Button>
+            <Button
+              onClick={() => {
+                window.open(currentPdfUrl, '_blank')
+                setShowPdfModal(false)
+              }}
+            >
+              <Download className="mr-2 h-4 w-4" />
+              Descargar PDF
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

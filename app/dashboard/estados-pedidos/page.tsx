@@ -140,12 +140,12 @@ export default function OrderStatusManagementPage() {
   const [stateChangeNotes, setStateChangeNotes] = useState("")
   const [newState, setNewState] = useState<number>(1)
   const [showDocumentAlert, setShowDocumentAlert] = useState(false)
-  const auth = useAuth();
+  // const auth = useAuth();
 
   const fetchOrders = async () => {
     try {
       setLoading(true)
-      let url = `/pedidos/filter?busqueda=${encodeURIComponent(searchQuery)}&vendedor=${auth.user?.codigo}`
+      let url = `/pedidos/filter?busqueda=${encodeURIComponent(searchQuery)}`
 
       if (filters.estado !== -1) {
         url += `&estado=${filters.estado}`;
@@ -520,33 +520,6 @@ export default function OrderStatusManagementPage() {
         </CardContent>
       </Card>
 
-      {/*<div className="flex items-center justify-between px-4 pb-4">*/}
-      {/*  <div className="text-sm text-gray-500">*/}
-      {/*    Mostrando {orders.length} de {totalItems} pedidos*/}
-      {/*  </div>*/}
-      {/*  <Pagination>*/}
-      {/*    <PaginationContent>*/}
-      {/*      <PaginationItem>*/}
-      {/*        <PaginationPrevious*/}
-      {/*          onClick={handlePreviousPage}*/}
-      {/*          className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}*/}
-      {/*        />*/}
-      {/*      </PaginationItem>*/}
-      {/*      <PaginationItem>*/}
-      {/*        <span className="px-4 py-2 text-sm font-medium">*/}
-      {/*          Página {currentPage} de {totalPages}*/}
-      {/*        </span>*/}
-      {/*      </PaginationItem>*/}
-      {/*      <PaginationItem>*/}
-      {/*        <PaginationNext*/}
-      {/*          onClick={handleNextPage}*/}
-      {/*          className={currentPage >= totalPages ? "pointer-events-none opacity-50" : ""}*/}
-      {/*        />*/}
-      {/*      </PaginationItem>*/}
-      {/*    </PaginationContent>*/}
-      {/*  </Pagination>*/}
-      {/*</div>*/}
-
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-base sm:text-lg">Leyenda: Estados y Documentos</CardTitle>
@@ -587,98 +560,10 @@ export default function OrderStatusManagementPage() {
               Cliente: {selectedOrder?.nombreCliente} - Estado: {getStateInfo(selectedOrder?.estadodePedido || 0)?.name}
             </DialogDescription>
           </DialogHeader>
-
-          {/*<div className="space-y-4">*/}
-          {/*  {selectedOrder?.documentos && selectedOrder.documentos.length > 0 ? (*/}
-          {/*    <div className="space-y-3">*/}
-          {/*      <h4 className="font-medium text-gray-900">Documentos Generados:</h4>*/}
-          {/*      {selectedOrder.documentos.map((doc: any, index: number) => (*/}
-          {/*        <Card key={index} className="border border-gray-200">*/}
-          {/*          <CardContent className="p-4">*/}
-          {/*            <div className="flex items-center justify-between">*/}
-          {/*              <div className="flex items-center gap-3">*/}
-          {/*                <div className="p-2 bg-blue-100 rounded-lg">*/}
-          {/*                  {doc.tipo === "Guía de Remisión" ? (*/}
-          {/*                    <Truck className="h-4 w-4 text-blue-600" />*/}
-          {/*                  ) : (*/}
-          {/*                    <Receipt className="h-4 w-4 text-blue-600" />*/}
-          {/*                  )}*/}
-          {/*                </div>*/}
-          {/*                <div>*/}
-          {/*                  <h5 className="font-medium text-sm">{doc.tipo}</h5>*/}
-          {/*                  <p className="text-xs text-gray-500">N° {doc.numero}</p>*/}
-          {/*                  <p className="text-xs text-gray-500">Fecha: {doc.fecha}</p>*/}
-          {/*                </div>*/}
-          {/*              </div>*/}
-          {/*              <div className="flex items-center gap-2">*/}
-          {/*                <Badge className="bg-green-100 text-green-800 text-xs">{doc.estado}</Badge>*/}
-          {/*                <DropdownMenu>*/}
-          {/*                  <DropdownMenuTrigger asChild>*/}
-          {/*                    <Button variant="ghost" size="sm">*/}
-          {/*                      <MoreHorizontal className="h-4 w-4" />*/}
-          {/*                    </Button>*/}
-          {/*                  </DropdownMenuTrigger>*/}
-          {/*                  <DropdownMenuContent align="end">*/}
-          {/*                    <DropdownMenuItem>*/}
-          {/*                      <Eye className="mr-2 h-4 w-4" />*/}
-          {/*                      Ver Documento*/}
-          {/*                    </DropdownMenuItem>*/}
-          {/*                    <DropdownMenuItem>*/}
-          {/*                      <Download className="mr-2 h-4 w-4" />*/}
-          {/*                      Descargar PDF*/}
-          {/*                    </DropdownMenuItem>*/}
-          {/*                    <DropdownMenuItem>*/}
-          {/*                      <Printer className="mr-2 h-4 w-4" />*/}
-          {/*                      Imprimir*/}
-          {/*                    </DropdownMenuItem>*/}
-          {/*                  </DropdownMenuContent>*/}
-          {/*                </DropdownMenu>*/}
-          {/*              </div>*/}
-          {/*            </div>*/}
-          {/*          </CardContent>*/}
-          {/*        </Card>*/}
-          {/*      ))}*/}
-          {/*    </div>*/}
-          {/*  ) : (*/}
-          {/*    <div className="text-center py-8">*/}
-          {/*      <FileText className="mx-auto h-12 w-12 text-gray-400 mb-4" />*/}
-          {/*      <h3 className="text-lg font-medium text-gray-900 mb-2">Sin Documentos Generados</h3>*/}
-          {/*      <p className="text-gray-500 mb-4">*/}
-          {/*        Este pedido aún no tiene documentos asociados. Los documentos se generan a partir del estado "Listo*/}
-          {/*        para Despacho".*/}
-          {/*      </p>*/}
-          {/*      {selectedOrder?.estado >= 4 && (*/}
-          {/*        <Button*/}
-          {/*          onClick={() => {*/}
-          {/*            setIsDocumentsModalOpen(false)*/}
-          {/*            window.location.href = "/comprobantes"*/}
-          {/*          }}*/}
-          {/*          className="bg-blue-600 hover:bg-blue-700"*/}
-          {/*        >*/}
-          {/*          <FileText className="mr-2 h-4 w-4" />*/}
-          {/*          Generar Documentos*/}
-          {/*        </Button>*/}
-          {/*      )}*/}
-          {/*    </div>*/}
-          {/*  )}*/}
-          {/*</div>*/}
-
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsDocumentsModalOpen(false)}>
               Cerrar
             </Button>
-            {/*{selectedOrder?.documentos && selectedOrder.documentos.length > 0 && (*/}
-            {/*  <Button*/}
-            {/*    onClick={() => {*/}
-            {/*      // Lógica para generar más documentos si es necesario*/}
-            {/*      alert("Funcionalidad para generar documentos adicionales")*/}
-            {/*    }}*/}
-            {/*    className="bg-blue-600 hover:bg-blue-700"*/}
-            {/*  >*/}
-            {/*    <FileText className="mr-2 h-4 w-4" />*/}
-            {/*    Generar Más Documentos*/}
-            {/*  </Button>*/}
-            {/*)}*/}
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -718,19 +603,6 @@ export default function OrderStatusManagementPage() {
                 {getStateInfo((selectedOrder?.estadodePedido || 0) + 1)?.description}
               </p>
             </div>
-
-            {/*{selectedOrder?.estadodePedido === 1 && (*/}
-            {/*  <div className="mt-4">*/}
-            {/*    <Label htmlFor="notes">Notas de Validación</Label>*/}
-            {/*    <Textarea*/}
-            {/*      id="notes"*/}
-            {/*      placeholder="Agregar notas sobre la validación del pedido..."*/}
-            {/*      value={stateChangeNotes}*/}
-            {/*      onChange={(e) => setStateChangeNotes(e.target.value)}*/}
-            {/*      className="mt-1"*/}
-            {/*    />*/}
-            {/*  </div>*/}
-            {/*)}*/}
           </div>
 
           <DialogFooter>
