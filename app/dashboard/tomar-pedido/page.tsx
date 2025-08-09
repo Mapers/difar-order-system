@@ -44,6 +44,8 @@ import { IClient, ICondicion, IDistrito, IMoneda, ITerritorio } from "@/interfac
 import ModalLoader from "@/components/modal/modalLoader"
 import {useAuth} from "@/context/authContext";
 import {Textarea} from "@/components/ui/textarea";
+import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select";
+import {LaboratorioModal} from "@/app/dashboard/tomar-pedido/laboratorio-modal";
 
 export default function OrderPage() {
   const router = useRouter()
@@ -69,6 +71,11 @@ export default function OrderPage() {
     nombreDepartamento: '',
     ubigeo: ''
   })
+  // Agrega al inicio con los demás estados
+  const [laboratorios, setLaboratorios] = useState<string[]>([]);
+  const [selectedLaboratorio, setSelectedLaboratorio] = useState<string | null>(null);
+  const [showLaboratorioModal, setShowLaboratorioModal] = useState(false);
+  const [tempSelectedProducts, setTempSelectedProducts] = useState<ISelectedProduct[]>([]);
   const auth = useAuth();
 
   const [loading, setLoading] = useState({
@@ -325,6 +332,46 @@ export default function OrderPage() {
     return subtotal + igv
   }
 
+  // Agrega este useEffect para extraer laboratorios
+  useEffect(() => {
+    if (products.length > 0) {
+      const labs = [...new Set(products.map(p => p.Descripcion))];
+      setLaboratorios(labs);
+    }
+  }, [products]);
+
+  const handleAddTempProduct = async (product: IProduct, quantity: number) => {
+    setIsLoading(true);
+    setModalLoader('BONIFICADO');
+
+    const bonificaciones = await getBonificados(product.Codigo_Art, quantity);
+    const escalasProductos = await getEscalas(product.Codigo_Art, quantity);
+
+    setIsLoading(false);
+    setModalLoader(null);
+
+    const newProduct: ISelectedProduct = {
+      product,
+      quantity,
+      isBonification: bonificaciones.length > 0,
+      isEscale: escalasProductos.length > 0,
+      appliedScale: null,
+      finalPrice: Number(product.PUContado),
+    };
+
+    setTempSelectedProducts(prev => [...prev, newProduct]);
+  };
+
+  const handleRemoveTempProduct = (index: number) => {
+    setTempSelectedProducts(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleConfirmSelection = () => {
+    setSelectedProducts(prev => [...prev, ...tempSelectedProducts]);
+    setTempSelectedProducts([]);
+    setShowLaboratorioModal(false);
+    setSelectedLaboratorio(null);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -639,6 +686,30 @@ export default function OrderPage() {
                         </Command>
                       </PopoverContent>
                     </Popover>
+                  </div>
+                  {/* Agrega esto en la sección de productos, antes del buscador de productos */}
+                  <div className="space-y-2">
+                    <Label htmlFor="laboratorio" className="text-gray-700">
+                      Seleccionar por laboratorio
+                    </Label>
+                    <Select
+                      value={selectedLaboratorio || ""}
+                      onValueChange={(value) => {
+                        setSelectedLaboratorio(value);
+                        setShowLaboratorioModal(true);
+                      }}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Selecciona un laboratorio" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {laboratorios.map((lab) => (
+                          <SelectItem key={lab} value={lab}>
+                            {lab}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
 
@@ -1065,6 +1136,18 @@ export default function OrderPage() {
           </Card>
         )}
       </form>
+
+      <LaboratorioModal
+        open={showLaboratorioModal && selectedLaboratorio !== null}
+        onOpenChange={setShowLaboratorioModal}
+        laboratorio={selectedLaboratorio || ""}
+        products={products}
+        onAddTempProduct={handleAddTempProduct}
+        tempSelectedProducts={tempSelectedProducts}
+        onRemoveTempProduct={handleRemoveTempProduct}
+        onConfirmSelection={handleConfirmSelection}
+        currency={currency}
+      />
     </div>
   )
 }
