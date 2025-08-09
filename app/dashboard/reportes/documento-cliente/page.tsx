@@ -16,6 +16,7 @@ import ZoneClientReport from "@/components/reporte/zoneClientReport"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { z } from 'zod'
 import { ZoneReportSkeleton } from "@/components/skeleton/ZoneReportSkeleton"
+import {useAuth} from "@/context/authContext";
 
 
 export default function DocumentClientPage() {
@@ -27,6 +28,7 @@ export default function DocumentClientPage() {
   const [selectedDocumentCode, setSelectedDocumentCode] = useState<string>("")
   const [documentCode, setDocumentCode] = useState<string>("")
   const [activeTab, setActiveTab] = useState<string>("0")
+  const auth = useAuth()
 
   const getTypesDocuments = async () => {
     try {
@@ -54,7 +56,7 @@ export default function DocumentClientPage() {
       const documento = `${selectedDocumentCode}-${normalizedDocumenCode}`
       documentoSchema.parse({ documento })
       const docClient: Document = { documento }
-      const response = await consultDocClientRequest(docClient)
+      const response = await consultDocClientRequest(docClient, auth.user?.idRol === 1 ? (auth.user?.codigo || null) : null)
       if (response.status !== 200) throw new Error("Error al consultar documento de cliente")
       const data = response?.data?.data
       setDataZoneClient(data)

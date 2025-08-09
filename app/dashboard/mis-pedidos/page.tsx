@@ -13,7 +13,7 @@ import {
   ChevronsUpDown,
   DollarSign,
   Clock,
-  CheckCircle, Truck, MapPin, Home, XCircle
+  CheckCircle, Truck, MapPin, Home, XCircle, UserCog, UserSearch
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Label } from "@/components/ui/label"
@@ -120,6 +120,7 @@ interface Pedido {
   nroPedido: string
   fechaPedido: string
   nombreCliente: string
+  nombreVendedor: string
   condicionPedido: string
   monedaPedido: string
   estadodePedido: number
@@ -150,10 +151,14 @@ export default function MyOrdersPage() {
       if (searchQuery) {
         url = `/pedidos/search?query=${encodeURIComponent(searchQuery)}&page=${currentPage}`
       } else {
-        url = `/pedidos?vendedor=${auth.user?.codigo}&cliente=${filters.cliente}`
+        url = `/pedidos?cliente=${filters.cliente}`
 
         if (filters.fechaDesde && filters.fechaHasta) {
           url += `&fechaDesde=${filters.fechaDesde}&fechaHasta=${filters.fechaHasta}`
+        }
+
+        if (auth.user?.idRol === 1) {
+          url += `&vendedor=${auth.user?.codigo}`;
         }
       }
 
@@ -417,6 +422,13 @@ export default function MyOrdersPage() {
                           <span className="text-gray-600">Condición:</span>
                           <span className="font-medium">{pedido.condicionPedido}</span>
                         </div>
+                        {auth.user?.idRol !== 1 && (
+                          <div className="flex items-center gap-2">
+                            <UserSearch className="h-4 w-4 text-gray-500"/>
+                            <span className="text-gray-600">Vendedor:</span>
+                            <span className="font-medium">{pedido.nombreVendedor}</span>
+                          </div>
+                        )}
                       </div>
                     </div>
 

@@ -18,6 +18,7 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs"
 import { Customer, Zone } from "@/interface/report/report-interface"
+import {useAuth} from "@/context/authContext";
 
 export default function CollectSellerPage() {
 
@@ -28,6 +29,7 @@ export default function CollectSellerPage() {
   const [loadingClient, setLoadingClient] = useState(false)
   const [dataClientSeller, setDataClientSeller] = useState<Zone[]>([])
   const [activeTab, setActiveTab] = useState<string>("0")
+  const auth = useAuth()
 
   const searchSeller = async () => {
     setLoadingClient(true)
@@ -42,7 +44,7 @@ export default function CollectSellerPage() {
         fechaCorte: dateCut
       }
       clientSchema.parse(customer)
-      const response = await balanceDocClientSellerRequest(customer)
+      const response = await balanceDocClientSellerRequest(customer, auth.user?.idRol === 1 ? (auth.user?.codigo || null) : null)
       if (response.status !== 200) throw new Error("Error al consultar documento de cliente")
       const data = response?.data?.data
       setDataClientSeller(data)

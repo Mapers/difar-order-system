@@ -17,6 +17,7 @@ import { Label } from "@radix-ui/react-label"
 import { Popover, PopoverContent, PopoverTrigger } from "@radix-ui/react-popover"
 import { Command, CommandInput, CommandList, CommandGroup, CommandItem, CommandEmpty } from "@/components/ui/command"
 import { cn } from "@/lib/utils"
+import {useAuth} from "@/context/authContext";
 
 export default function CollectClientPage() {
 
@@ -30,6 +31,7 @@ export default function CollectClientPage() {
   const [activeTab, setActiveTab] = useState<string>("0")
   const [selectedZona, setSelectedZona] = useState<IArea | null>(null)
   const [open, setOpen] = useState(false)
+  const auth = useAuth()
 
   const handleZonaSelected = (zona: IArea) => {
     const selectedZona = zonas.find((z) => z.IdZona === zona.IdZona)
@@ -54,7 +56,7 @@ export default function CollectClientPage() {
         idZona: selectedZona?.IdZona ?? null
       }
       clientSchema.parse(customer)
-      const response = await balanceDocClientRequest(customer)
+      const response = await balanceDocClientRequest(customer, auth.user?.idRol === 1 ? (auth.user?.codigo || null) : null)
       if (response.status !== 200) throw new Error("Error al consultar documento de cliente")
       const data = response?.data?.data
       setDataClient(data)

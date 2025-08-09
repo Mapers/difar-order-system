@@ -12,6 +12,7 @@ import { Pagination, PaginationContent, PaginationItem, PaginationNext, Paginati
 import apiClient from "@/app/api/client";
 import { balanceDocClientRequest, balanceDocClientSellerRequest, consultDocClientRequest, fetchTypeDocuments } from "@/app/api/reports"
 import { IDocument, IDocClient, IClient } from "@/interface/report-interface"
+import {useAuth} from "@/context/authContext";
 
 
 
@@ -27,6 +28,7 @@ export default function ReportsPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
+  const auth = useAuth()
 
   const docClient: IDocClient = {
     documento: "01-F001-9061"
@@ -62,7 +64,7 @@ export default function ReportsPage() {
   const fetchConsultDocClient = async () => {
     try {
       setLoading(true)
-      const response = await consultDocClientRequest(docClient)
+      const response = await consultDocClientRequest(docClient, auth.user?.idRol === 1 ? (auth.user?.codigo || null) : null)
       if (response.status !== 200) throw new Error("Error al consultar documento de cliente")
       const data = await response.data
       setDataDocClient(data.data.data || data)
@@ -77,7 +79,7 @@ export default function ReportsPage() {
   const fetchBalanceDocClientSeller = async () => {
     try {
       setLoading(true)
-      const response = await balanceDocClientSellerRequest(client)
+      const response = await balanceDocClientSellerRequest(client, auth.user?.idRol === 1 ? (auth.user?.codigo || null) : null)
       if (response.status !== 200) throw new Error("Error al obtener saldo de cliente vendedor")
       const data = await response.data
       setDataDocClientSeller(data.data.data || data)

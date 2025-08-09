@@ -127,7 +127,7 @@ export default function ComprobantesPage() {
   const fetchComprobantes = async () => {
     try {
       setLoadingComprobantes(true)
-      let url = `/pedidos/comprobantes`
+      let url = `/pedidos/comprobantes?`
 
       // Añadir filtros a la URL
       const params = new URLSearchParams()
