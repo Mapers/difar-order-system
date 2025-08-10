@@ -56,6 +56,23 @@ interface Comprobante {
   enlace_xml: string
 }
 
+interface GuiaRemision {
+  idGuiaRemCab: number
+  nroPedido: number
+  fecha_emision: string
+  serie: string
+  numero: string
+  cliente_num_doc: string
+  cliente_denominacion: string
+  peso_bruto_total: string
+  tipo_comprobante: number
+  anulado: boolean
+  enlace: string
+  enlace_pdf: string
+  enlace_cdr: string
+  enlace_xml: string
+}
+
 interface TipoComprobante {
   idTipoComprobante: number;
   descripcion: string;
@@ -87,6 +104,7 @@ export interface Pedido {
   totalPedido: string
   monedaPedido: string
   cantidadPedidos: number
+  direccionCliente: string
 }
 
 export default function ComprobantesPage() {
@@ -99,15 +117,18 @@ export default function ComprobantesPage() {
   const [filters, setFilters] = useState({
     tipo: "-1",
     estado: 4,
-    fechaDesde: "",
-    fechaHasta: ""
+    fechaDesde: format(new Date(), 'yyyy-MM-dd'),
+    fechaHasta: format(new Date(), 'yyyy-MM-dd')
   })
+  const [guiasRemision, setGuiasRemision] = useState<GuiaRemision[]>([]);
+  const [loadingGuias, setLoadingGuias] = useState(false);
+  const [filtersGuias, setFiltersGuias] = useState({
+    fechaDesde: format(new Date(), 'yyyy-MM-dd'),
+    fechaHasta: format(new Date(), 'yyyy-MM-dd')
+  });
   const auth = useAuth();
   const [showGuiasModal, setShowGuiasModal] = useState(false)
   const [isProcessingGuias, setIsProcessingGuias] = useState(false)
-  const [currentPage, setCurrentPage] = useState(1)
-  const [totalPages, setTotalPages] = useState(1)
-  const [totalItems, setTotalItems] = useState(0)
   const [selectedOrder, setSelectedOrder] = useState<Pedido>(null)
   const [showInvoiceModal, setShowInvoiceModal] = useState(false)
   const [invoiceType, setInvoiceType] = useState("01")
@@ -129,25 +150,20 @@ export default function ComprobantesPage() {
       setLoadingComprobantes(true)
       let url = `/pedidos/comprobantes?`
 
-      // Añadir filtros a la URL
       const params = new URLSearchParams()
 
       if (auth.user?.idRol === 1) {
         params.append('vendedor', auth.user?.codigo || '')
       }
-
       if (filters.tipo !== '-1') {
         params.append('tipoDoc', filters.tipo)
       }
-
       if (filters.fechaDesde) {
         params.append('fechaDesde', filters.fechaDesde)
       }
-
       if (filters.fechaHasta) {
         params.append('fechaHasta', filters.fechaHasta)
       }
-
       if (searchQuery) {
         params.append('busqueda', searchQuery)
       }
@@ -170,6 +186,42 @@ export default function ComprobantesPage() {
       setLoading(false)
     }
   }
+
+  const fetchGuiasRemision = async () => {
+    try {
+      setLoadingGuias(true);
+      let url = `/pedidos/guiasEmitidas?`;
+
+      const params = new URLSearchParams();
+
+      if (auth.user?.idRol === 1) {
+        params.append('vendedor', auth.user?.codigo || '')
+      }
+      if (filtersGuias.fechaDesde) {
+        params.append('fechaDesde', filtersGuias.fechaDesde);
+      }
+      if (filtersGuias.fechaHasta) {
+        params.append('fechaHasta', filtersGuias.fechaHasta);
+      }
+      if (searchQuery) {
+        params.append('busqueda', searchQuery);
+      }
+
+      url += params.toString();
+
+      const response = await apiClient.get(url);
+      setGuiasRemision(response.data.data.data || []);
+    } catch (error) {
+      console.error("Error fetching guías de remisión:", error);
+      toast({
+        title: "Error",
+        description: "No se pudieron cargar las guías de remisión",
+        variant: "destructive"
+      });
+    } finally {
+      setLoadingGuias(false);
+    }
+  };
 
   const fetchPedidosPendientes = async () => {
     try {
@@ -220,7 +272,13 @@ export default function ComprobantesPage() {
   useEffect(() => {
     fetchComprobantes()
     fetchPedidosPendientes()
-  }, [currentPage, searchQuery, filters])
+  }, [searchQuery, filters])
+
+  useEffect(() => {
+    if (filtersGuias.fechaDesde && filtersGuias.fechaHasta) {
+      fetchGuiasRemision();
+    }
+  }, [searchQuery, filtersGuias.fechaDesde, filtersGuias.fechaHasta]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -280,6 +338,13 @@ export default function ComprobantesPage() {
 
   const getEstadoBadge = (comprobante: Comprobante) => {
     if (comprobante.anulado) {
+      return <Badge variant="destructive">Anulado</Badge>
+    }
+    return <Badge variant="success">Activo</Badge>
+  }
+
+  const getEstadoGuiaBadge = (guia: GuiaRemision) => {
+    if (guia.anulado) {
       return <Badge variant="destructive">Anulado</Badge>
     }
     return <Badge variant="success">Activo</Badge>
@@ -353,6 +418,16 @@ export default function ComprobantesPage() {
     }
   };
 
+  const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target
+    setFilters(prev => ({ ...prev, [name]: value }))
+  }
+
+  const handleFilterGuiaChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target
+    setFiltersGuias(prev => ({ ...prev, [name]: value }))
+  }
+
   const handleCancelInvoice = (comprobante: Comprobante) => {
     setComprobanteToCancel(comprobante)
     setShowCancelModal(true)
@@ -408,7 +483,7 @@ export default function ComprobantesPage() {
       </div>
 
       <Tabs defaultValue={auth.user?.idRol !== 1 ? 'pendientes' : 'comprobantes'} className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
           {auth.user?.idRol !== 1 && (
             <TabsTrigger value="pendientes" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
               <AlertTriangle className="h-3 w-3 sm:h-4 sm:w-4" />
@@ -420,7 +495,12 @@ export default function ComprobantesPage() {
           <TabsTrigger value="comprobantes" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
             <FileText className="h-3 w-3 sm:h-4 sm:w-4" />
             <span className="hidden sm:inline">Comprobantes Emitidos</span>
-            <span className="sm:hidden">Emitidos</span>
+            <span className="sm:hidden">Comp. Emitidos</span>
+          </TabsTrigger>
+          <TabsTrigger value="guias" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+            <Truck className="h-3 w-3 sm:h-4 sm:w-4" />
+            <span className="hidden sm:inline">Guías Emitidas</span>
+            <span className="sm:hidden">Guías Emitidas</span>
           </TabsTrigger>
         </TabsList>
 
@@ -552,20 +632,24 @@ export default function ComprobantesPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                   <div className="space-y-1">
                     <Label className="text-xs text-gray-500">Fecha desde</Label>
-                    <DatePicker
-                      selected={filters.fechaDesde ? new Date(filters.fechaDesde) : undefined}
-                      onSelect={(date) => handleDateChange(date, 'fechaDesde')}
-                      placeholderText="Seleccionar fecha"
-                      className="text-xs sm:text-sm"
+                    <Input
+                      id="fechaDesde"
+                      type="date"
+                      className="bg-white"
+                      name="fechaDesde"
+                      value={filters.fechaDesde}
+                      onChange={handleFilterChange}
                     />
                   </div>
                   <div className="space-y-1">
                     <Label className="text-xs text-gray-500">Fecha hasta</Label>
-                    <DatePicker
-                      selected={filters.fechaHasta ? new Date(filters.fechaHasta) : undefined}
-                      onSelect={(date) => handleDateChange(date, 'fechaHasta')}
-                      placeholderText="Seleccionar fecha"
-                      className="text-xs sm:text-sm"
+                    <Input
+                      id="fechaHasta"
+                      type="date"
+                      className="bg-white"
+                      name="fechaHasta"
+                      value={filters.fechaHasta}
+                      onChange={handleFilterChange}
                     />
                   </div>
                   <div className="space-y-1">
@@ -877,6 +961,256 @@ export default function ComprobantesPage() {
                   </div>
                 </CardContent>
               </Card>
+            </>
+          )}
+        </TabsContent>
+
+        <TabsContent value="guias" className="space-y-4">
+          <Card className="bg-white shadow-sm">
+            <CardContent className="p-3 sm:p-4 lg:p-6">
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+                  <div className="space-y-1">
+                    <Label className="text-xs text-gray-500">Fecha desde</Label>
+                    <Input
+                      id="fechaDesde"
+                      type="date"
+                      className="bg-white"
+                      name="fechaDesde"
+                      value={filtersGuias.fechaDesde}
+                      onChange={handleFilterGuiaChange}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs text-gray-500">Fecha hasta</Label>
+                    <Input
+                      id="fechaHasta"
+                      type="date"
+                      className="bg-white"
+                      name="fechaHasta"
+                      value={filtersGuias.fechaHasta}
+                      onChange={handleFilterGuiaChange}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs text-gray-500">Buscar cliente/guía</Label>
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-3 w-3 sm:h-4 sm:w-4" />
+                      <Input
+                        placeholder="Buscar por nombre, documento o número..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="pl-8 sm:pl-10 text-xs sm:text-sm"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex justify-end">
+                  <Button
+                    onClick={fetchGuiasRemision}
+                    disabled={loadingGuias}
+                    className="flex items-center gap-2"
+                  >
+                    {loadingGuias ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Search className="h-4 w-4" />
+                    )}
+                    Buscar
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {loadingGuias ? (
+            <div className="flex justify-center items-center h-64">
+              <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+            </div>
+          ) : (
+            <>
+              <div className="hidden lg:block">
+                <Card className="bg-white shadow-sm">
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Fecha
+                        </th>
+                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Guía
+                        </th>
+                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Cliente
+                        </th>
+                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Documento
+                        </th>
+                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Estado
+                        </th>
+                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Acciones
+                        </th>
+                      </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                      {guiasRemision.length > 0 ? (
+                        guiasRemision.map((guia) => (
+                          <tr key={guia.idGuiaRemCab} className="hover:bg-gray-50">
+                            <td className="p-4 text-sm">
+                              {format(parseISO(guia.fecha_emision), "dd/MM/yyyy")}
+                            </td>
+                            <td className="p-4 font-medium text-sm">
+                              {guia.serie}-{guia.numero}
+                            </td>
+                            <td className="p-4">
+                              <div className="font-medium text-sm">{guia.cliente_denominacion}</div>
+                            </td>
+                            <td className="p-4 text-sm">
+                              {guia.cliente_num_doc}
+                            </td>
+                            <td className="p-4">
+                              {getEstadoGuiaBadge(guia.tipo_comprobante)}
+                            </td>
+                            <td className="p-4">
+                              <div className="flex gap-2">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                  onClick={() => handleViewPdf(guia.enlace_pdf)}
+                                >
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                                      <MoreHorizontal className="h-4 w-4" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end" className="w-48">
+                                    <DropdownMenuItem
+                                      className="text-blue-600"
+                                      onClick={() => handleViewPdf(guia.enlace_pdf)}
+                                    >
+                                      <Eye className="mr-2 h-4 w-4" />
+                                      Ver PDF
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      className="text-green-600"
+                                      onClick={() => window.open(guia.enlace_pdf, '_blank')}
+                                    >
+                                      <Download className="mr-2 h-4 w-4" />
+                                      Descargar PDF
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      className="text-green-600"
+                                      onClick={() => window.open(guia.enlace_xml, '_blank')}
+                                    >
+                                      <Download className="mr-2 h-4 w-4" />
+                                      Descargar XML
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </div>
+                            </td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan={7} className="text-center py-8 text-gray-500">
+                            No se encontraron guías de remisión
+                          </td>
+                        </tr>
+                      )}
+                      </tbody>
+                    </table>
+                  </div>
+                </Card>
+              </div>
+
+              <div className="lg:hidden space-y-3">
+                {guiasRemision.length > 0 ? (
+                  guiasRemision.map((guia) => (
+                    <Card key={guia.idGuiaRemCab} className="border border-gray-200">
+                      <CardContent className="p-4">
+                        <div className="space-y-3">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <div className="flex items-center gap-2 mb-1">
+                        <span className="font-semibold text-gray-900">
+                          {guia.serie}-{guia.numero}
+                        </span>
+                                <Badge variant={guia.estado === 'ACTIVO' ? 'success' : 'destructive'}>
+                                  {guia.estado}
+                                </Badge>
+                              </div>
+                              <p className="text-sm text-gray-600">
+                                {format(parseISO(guia.fecha_emision), "dd/MM/yyyy")}
+                              </p>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-sm text-gray-500">{guia.motivo_traslado}</p>
+                            </div>
+                          </div>
+
+                          <div className="border-t pt-3">
+                            <p className="font-medium text-gray-900 truncate">{guia.cliente_denominacion}</p>
+                            <p className="text-sm text-gray-600">{guia.cliente_numdoc}</p>
+                          </div>
+
+                          <div className="border-t pt-3">
+                            <div className="grid grid-cols-2 gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="text-xs bg-transparent"
+                                onClick={() => handleViewPdf(guia.enlace_pdf)}
+                              >
+                                <Eye className="h-3 w-3 mr-1" />
+                                Ver PDF
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="text-xs bg-transparent"
+                                onClick={() => window.open(guia.enlace_pdf, '_blank')}
+                              >
+                                <Download className="h-3 w-3 mr-1" />
+                                Descargar
+                              </Button>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="outline" size="sm" className="text-xs bg-transparent">
+                                    <MoreHorizontal className="h-3 w-3 mr-1" />
+                                    Más
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-48">
+                                  <DropdownMenuItem
+                                    className="text-green-600"
+                                    onClick={() => window.open(guia.enlace_xml, '_blank')}
+                                  >
+                                    <Download className="mr-2 h-4 w-4" />
+                                    Descargar XML
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))
+                ) : (
+                  <div className="text-center py-8 text-gray-500">
+                    No se encontraron guías de remisión
+                  </div>
+                )}
+              </div>
             </>
           )}
         </TabsContent>

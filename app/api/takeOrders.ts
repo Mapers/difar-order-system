@@ -30,3 +30,6 @@ export const fetchUnidaTerritorial = async (request:IDistrito ): Promise<any> =>
     return apiClient.post(`/tomarPedido/cliente/unidadterritorial`,request);
 };
 
+export const fetchGetDocTypeGuide = async (): Promise<any> => {
+    return apiClient.get(`tomarPedido/tipoDocsGuia`);
+};

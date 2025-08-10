@@ -7,18 +7,18 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Textarea } from "@/components/ui/textarea";
-import { useToast } from "@/components/ui/use-toast";
+import {toast, useToast} from "@/components/ui/use-toast";
 import { Pedido } from "@/app/dashboard/comprobantes/page";
 import apiClient from "@/app/api/client";
 
 interface PedidoDet {
-  idPedidodet: number;
-  idPedidocab: number;
-  codigoitemPedido: string;
-  cantPedido: string;
-  precioPedido: string;
-  productoNombre?: string;
-  productoUnidad?: string;
+  idPedidodet: number
+  idPedidocab: number
+  codigoitemPedido: string
+  cantPedido: string
+  precioPedido: string
+  productoNombre?: string
+  productoUnidad?: string
 }
 
 interface Conductor {
@@ -36,26 +36,29 @@ interface Vehiculo {
 interface RemisionModalProps {
   pedido: Pedido | null;
   detalles: PedidoDet[];
+  onOpenChange: (open: boolean) => void
 }
 
-export const Remision = ({ pedido, detalles }: RemisionModalProps) => {
+interface ReasonTrasGuide {
+  codigo: string
+  motivo_descr: string
+}
+
+export const Remision = ({ pedido, detalles, onOpenChange }: RemisionModalProps) => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
-
-  // Estado inicial basado en el pedido
+  const [serie, setSerie] = useState('');
   const [datosGuia, setDatosGuia] = useState({
-    serie: pedido?.serie || "",
-    numero: pedido?.numero || "",
     cliente: pedido?.nombreCliente || "",
-    clienteTipoDoc: pedido?.tipoDocumento || "6",
-    clienteNumDoc: pedido?.numeroDocumento || "",
+    clienteTipoDoc: "6",
+    clienteNumDoc: pedido?.codigoCliente || "",
     clienteDenominacion: pedido?.nombreCliente || "",
-    clienteDireccion: pedido?.direccion || "",
-    clienteEmail: pedido?.email || "",
+    clienteDireccion: pedido?.direccionCliente || "",
+    clienteEmail: "",
     fechaEmision: new Date().toISOString().split('T')[0],
     formatoPdf: "A4",
-    tipoTransporte: "01", // 01 = Transporte público por defecto
-    motivoTraslado: "01", // 01 = Venta por defecto
+    tipoTransporte: "01",
+    motivoTraslado: "",
     observaciones: "",
   });
 
@@ -68,17 +71,17 @@ export const Remision = ({ pedido, detalles }: RemisionModalProps) => {
 
   const [puntosUbicacion, setPuntosUbicacion] = useState({
     partida: {
-      ubigeo: "150101", // Código de Lima por defecto
-      direccion: "",
-      codigoSunat: "0000",
+      ubigeo: "021801",
+      direccion: "Manuel Villavicencio 783, Chimbote",
+      codigoSunat: "",
     },
     llegada: {
       ubigeo: "",
       direccion: "",
-      codigoSunat: "0000",
+      codigoSunat: "",
     },
   });
-
+  const [reasonTrasGuide, setReasonTrasGuide] = useState<ReasonTrasGuide[]>([])
   const [conductores, setConductores] = useState<Conductor[]>([
     {
       tipoDocumento: "1", // 1 = DNI por defecto
@@ -90,7 +93,6 @@ export const Remision = ({ pedido, detalles }: RemisionModalProps) => {
   ]);
 
   const [vehiculos, setVehiculos] = useState<Vehiculo[]>([{ placa: "" }]);
-  const [vehiculosSecundarios, setVehiculosSecundarios] = useState<Vehiculo[]>([]);
 
   const [datosTransportista, setDatosTransportista] = useState({
     tipoDocumento: "6", // 6 = RUC por defecto
@@ -99,40 +101,133 @@ export const Remision = ({ pedido, detalles }: RemisionModalProps) => {
     registroMtc: "",
   });
 
-  const [productos, setProductos] = useState<PedidoDet[]>(detalles);
+  const [productos, setProductos] = useState<PedidoDet[]>(detalles.map(item => ({
+    ...item,
+    productoUnidad: item.productoUnidad || 'KGM'
+  })));
+
+  const showToast = (title: string, description: string, variant: "default" | "destructive" = "default") => {
+    toast({
+      title,
+      description,
+      variant,
+    });
+  };
+
+  const validarCampos = () => {
+    if (!datosTraslado.pesoBruto) {
+      showToast("Error", "El peso bruto total es obligatorio", "destructive");
+      return false;
+    }
+
+    if (datosGuia.tipoTransporte === '01') {
+      if (!datosTransportista.numeroDocumento) {
+        showToast("Error", "El número de documento del transportista es obligatorio", "destructive");
+        return false;
+      }
+      if (!datosTransportista.denominacion) {
+        showToast("Error", "La razón social/nombre del transportista es obligatoria", "destructive");
+        return false;
+      }
+    }
+
+    if (!vehiculos[0].placa || vehiculos[0].placa.length !== 6) {
+      showToast("Error", "La placa del vehículo debe tener 6 caracteres", "destructive");
+      return false;
+    }
+
+    for (const [index, conductor] of conductores.entries()) {
+      if (!conductor.numeroDocumento) {
+        showToast("Error", `El número de documento del conductor ${index + 1} es obligatorio`, "destructive");
+        return false;
+      }
+      if (!conductor.nombre) {
+        showToast("Error", `El nombre del conductor ${index + 1} es obligatorio`, "destructive");
+        return false;
+      }
+      if (!conductor.apellidos) {
+        showToast("Error", `Los apellidos del conductor ${index + 1} son obligatorios`, "destructive");
+        return false;
+      }
+      if (!conductor.licencia || conductor.licencia.length < 9 || conductor.licencia.length > 10) {
+        showToast("Error", `La licencia del conductor ${index + 1} debe tener entre 9 y 10 caracteres`, "destructive");
+        return false;
+      }
+    }
+
+    if (!puntosUbicacion.llegada.direccion) {
+      showToast("Error", "La dirección de llegada es obligatoria", "destructive");
+      return false;
+    }
+
+    if (!datosGuia.observaciones) {
+      showToast("Error", "Las observaciones son obligatorias", "destructive");
+      return false;
+    }
+
+    return true;
+  };
+
+  const handlePlacaChange = (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
+    const value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6);
+    const newVehiculos = [...vehiculos];
+    newVehiculos[index].placa = value;
+    setVehiculos(newVehiculos);
+  };
+
+  const handleLicenciaChange = (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
+    const value = e.target.value.replace(/\D/g, '').slice(0, 10);
+    const newConductores = [...conductores];
+    newConductores[index].licencia = value;
+    setConductores(newConductores);
+  };
 
   // Efecto para cargar datos iniciales
   useEffect(() => {
     if (pedido) {
       setDatosGuia(prev => ({
         ...prev,
-        serie: pedido.serie || "",
-        numero: pedido.numero || "",
         cliente: pedido.nombreCliente || "",
-        clienteTipoDoc: pedido.tipoDocumento || "6",
-        clienteNumDoc: pedido.numeroDocumento || "",
+        clienteTipoDoc: "6",
+        clienteNumDoc: pedido.codigoCliente || "",
         clienteDenominacion: pedido.nombreCliente || "",
-        clienteDireccion: pedido.direccion || "",
-        clienteEmail: pedido.email || "",
+        clienteDireccion: pedido.direccionCliente || "",
       }));
     }
   }, [pedido]);
 
-  // Funciones para manejar conductores
-  const agregarConductor = () => {
-    if (conductores.length < 3) { // Máximo 3 conductores
-      setConductores([
-        ...conductores,
-        {
-          tipoDocumento: "1",
-          numeroDocumento: "",
-          nombre: "",
-          apellidos: "",
-          licencia: "",
-        },
-      ]);
-    }
-  };
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [tiposResponse, guiaResponse] = await Promise.all([
+          apiClient.get('/tomarPedido/motivosTrasGuia'),
+          apiClient.get('/tomarPedido/tipoDocsGuia'),
+        ]);
+
+        setReasonTrasGuide(tiposResponse.data.data.data);
+
+        if (tiposResponse.data.data.data && tiposResponse.data.data.data.length > 0) {
+          setDatosGuia(prev => ({
+            ...prev,
+            motivoTraslado: tiposResponse.data.data.data[0].codigo.toString(),
+          }));
+        }
+
+        if (guiaResponse.data.data.data && guiaResponse.data.data.data.length > 0) {
+          setSerie(guiaResponse.data.data.data.find(item => item.idTipoGuia === 1).prefijoSerie);
+        }
+      } catch (error) {
+        console.error("Error fetching data:", error);
+        toast({
+          title: "Error",
+          description: "No se pudieron cargar los tipos de comprobante",
+          variant: "destructive"
+        })
+      }
+    };
+
+    fetchData();
+  }, []);
 
   const eliminarConductor = (index: number) => {
     if (conductores.length > 1) { // No eliminar el último conductor
@@ -140,23 +235,16 @@ export const Remision = ({ pedido, detalles }: RemisionModalProps) => {
     }
   };
 
-  // Funciones para manejar vehículos
-  const agregarVehiculoSecundario = () => {
-    if (vehiculosSecundarios.length < 2) { // Máximo 2 vehículos secundarios
-      setVehiculosSecundarios([...vehiculosSecundarios, { placa: "" }]);
-    }
-  };
-
-  const eliminarVehiculoSecundario = (index: number) => {
-    setVehiculosSecundarios(vehiculosSecundarios.filter((_, i) => i !== index));
-  };
-
   // Función para enviar la guía
   const emitirGuia = async () => {
     setLoading(true);
 
+    if (!validarCampos()) {
+      setLoading(false);
+      return;
+    }
+
     try {
-      // Validaciones básicas
       if (!datosTransportista.numeroDocumento || !vehiculos[0].placa ||
         !conductores[0].numeroDocumento || !puntosUbicacion.partida.direccion) {
         toast({
@@ -167,13 +255,12 @@ export const Remision = ({ pedido, detalles }: RemisionModalProps) => {
         return;
       }
 
-      // Preparar datos para el endpoint de cabecera
       const guiaCabData = {
         p_nroPedido: pedido?.idPedidocab || null,
         p_operacion: "generar",
-        p_tipo_comprobante: "09", // 09 = Guía de remisión
-        p_serie: datosGuia.serie,
-        p_numero: datosGuia.numero,
+        p_tipo_comprobante: "7",
+        p_serie: serie,
+        p_numero: "",
         p_cliente_tipo_doc: datosGuia.clienteTipoDoc,
         p_cliente_num_doc: datosGuia.clienteNumDoc,
         p_cliente_denominacion: datosGuia.clienteDenominacion,
@@ -203,27 +290,20 @@ export const Remision = ({ pedido, detalles }: RemisionModalProps) => {
         p_punto_llegada_direccion: puntosUbicacion.llegada.direccion,
         p_punto_llegada_cod_estab_sunat: puntosUbicacion.llegada.codigoSunat,
         p_formato_de_pdf: datosGuia.formatoPdf,
-      };
-
-      const responseCab = await apiClient.post("/pedidos/generateGuiaCab", guiaCabData);
-      const idGuiaRemCab = responseCab.data.data.data.idGuiaRemCab;
-
-      for (const producto of productos) {
-        const guiaDetData = {
-          p_idGuiaRemCab: idGuiaRemCab,
-          p_unidad_de_medida: producto.productoUnidad || "NIU",
+        detalles: productos.map(producto => ({
+          p_unidad_de_medida: producto.productoUnidad || "KGM",
           p_codigo: producto.codigoitemPedido,
           p_descripcion: producto.productoNombre || "Producto sin descripción",
           p_cantidad: producto.cantPedido,
-        };
+        }))
+      };
 
-        await apiClient.post("/pedidos/generateGuiaDet", guiaDetData);
-      }
-
+      await apiClient.post("/pedidos/generateGuia", guiaCabData);
       toast({
         title: "Éxito",
         description: "Guía de remisión generada correctamente",
       });
+      onOpenChange(false);
     } catch (error) {
       console.error("Error al generar guía:", error);
       toast({
@@ -266,26 +346,18 @@ export const Remision = ({ pedido, detalles }: RemisionModalProps) => {
                 <div className="space-y-2">
                   <Label>Serie</Label>
                   <Input
-                    value={datosGuia.serie}
-                    onChange={(e) => setDatosGuia({...datosGuia, serie: e.target.value})}
+                    disabled
+                    value={serie}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Número</Label>
+                  <Label>Fecha de emisión</Label>
                   <Input
-                    value={datosGuia.numero}
-                    onChange={(e) => setDatosGuia({...datosGuia, numero: e.target.value})}
+                    type="date"
+                    value={datosGuia.fechaEmision}
+                    onChange={(e) => setDatosGuia({...datosGuia, fechaEmision: e.target.value})}
                   />
                 </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Fecha de emisión</Label>
-                <Input
-                  type="date"
-                  value={datosGuia.fechaEmision}
-                  onChange={(e) => setDatosGuia({...datosGuia, fechaEmision: e.target.value})}
-                />
               </div>
 
               <div className="space-y-2">
@@ -298,10 +370,14 @@ export const Remision = ({ pedido, detalles }: RemisionModalProps) => {
                     <SelectValue placeholder="Seleccione motivo" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="01">01 - Venta</SelectItem>
-                    <SelectItem value="02">02 - Compra</SelectItem>
-                    <SelectItem value="04">04 - Traslado entre establecimientos</SelectItem>
-                    <SelectItem value="13">13 - Otros</SelectItem>
+                    {reasonTrasGuide.map((trans) => (
+                      <SelectItem
+                        key={trans.codigo}
+                        value={trans.codigo}
+                      >
+                        {trans.motivo_descr}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -310,7 +386,17 @@ export const Remision = ({ pedido, detalles }: RemisionModalProps) => {
                 <Label>Tipo de transporte</Label>
                 <Select
                   value={datosGuia.tipoTransporte}
-                  onValueChange={(value) => setDatosGuia({...datosGuia, tipoTransporte: value})}
+                  onValueChange={(value) => {
+                    setDatosGuia({...datosGuia, tipoTransporte: value})
+                    if (value === '02') {
+                      setDatosTransportista({
+                        tipoDocumento: "6",
+                        numeroDocumento: "",
+                        denominacion: "",
+                        registroMtc: "",
+                      })
+                    }
+                  }}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Seleccione tipo" />
@@ -336,6 +422,7 @@ export const Remision = ({ pedido, detalles }: RemisionModalProps) => {
               <div className="space-y-2">
                 <Label>Cliente</Label>
                 <Input
+                  disabled
                   value={datosGuia.cliente}
                   onChange={(e) => setDatosGuia({...datosGuia, cliente: e.target.value})}
                 />
@@ -345,6 +432,7 @@ export const Remision = ({ pedido, detalles }: RemisionModalProps) => {
                 <div className="space-y-2">
                   <Label>Tipo de documento</Label>
                   <Select
+                    disabled
                     value={datosGuia.clienteTipoDoc}
                     onValueChange={(value) => setDatosGuia({...datosGuia, clienteTipoDoc: value})}
                   >
@@ -361,6 +449,7 @@ export const Remision = ({ pedido, detalles }: RemisionModalProps) => {
                 <div className="space-y-2">
                   <Label>Número de documento</Label>
                   <Input
+                    disabled
                     value={datosGuia.clienteNumDoc}
                     onChange={(e) => setDatosGuia({...datosGuia, clienteNumDoc: e.target.value})}
                   />
@@ -370,6 +459,7 @@ export const Remision = ({ pedido, detalles }: RemisionModalProps) => {
               <div className="space-y-2">
                 <Label>Dirección</Label>
                 <Input
+                  disabled
                   value={datosGuia.clienteDireccion}
                   onChange={(e) => setDatosGuia({...datosGuia, clienteDireccion: e.target.value})}
                 />
@@ -401,21 +491,20 @@ export const Remision = ({ pedido, detalles }: RemisionModalProps) => {
                   <Label>Ubigeo</Label>
                   <div className="flex gap-2">
                     <Input
+                      disabled
                       value={puntosUbicacion.partida.ubigeo}
                       onChange={(e) => setPuntosUbicacion({
                         ...puntosUbicacion,
                         partida: {...puntosUbicacion.partida, ubigeo: e.target.value}
                       })}
                     />
-                    <Button variant="outline" size="icon">
-                      <Search className="h-4 w-4" />
-                    </Button>
                   </div>
                 </div>
 
                 <div className="space-y-2">
                   <Label>Dirección</Label>
                   <Input
+                    disabled
                     value={puntosUbicacion.partida.direccion}
                     onChange={(e) => setPuntosUbicacion({
                       ...puntosUbicacion,
@@ -448,9 +537,6 @@ export const Remision = ({ pedido, detalles }: RemisionModalProps) => {
                         llegada: {...puntosUbicacion.llegada, ubigeo: e.target.value}
                       })}
                     />
-                    <Button variant="outline" size="icon">
-                      <Search className="h-4 w-4" />
-                    </Button>
                   </div>
                 </div>
 
@@ -520,7 +606,7 @@ export const Remision = ({ pedido, detalles }: RemisionModalProps) => {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="KGM">KGM - Kilogramo</SelectItem>
-                      <SelectItem value="TNE">TNE - Tonelada</SelectItem>
+                      {/*<SelectItem value="TNE">TNE - Tonelada</SelectItem>*/}
                     </SelectContent>
                   </Select>
                 </div>
@@ -550,6 +636,7 @@ export const Remision = ({ pedido, detalles }: RemisionModalProps) => {
                 <div className="space-y-2">
                   <Label>Tipo de documento</Label>
                   <Select
+                    disabled={datosGuia.tipoTransporte === '02'}
                     value={datosTransportista.tipoDocumento}
                     onValueChange={(value) => setDatosTransportista({...datosTransportista, tipoDocumento: value})}
                   >
@@ -566,12 +653,10 @@ export const Remision = ({ pedido, detalles }: RemisionModalProps) => {
                   <Label>Número de documento</Label>
                   <div className="flex gap-2">
                     <Input
+                      disabled={datosGuia.tipoTransporte === '02'}
                       value={datosTransportista.numeroDocumento}
                       onChange={(e) => setDatosTransportista({...datosTransportista, numeroDocumento: e.target.value})}
                     />
-                    <Button variant="outline" size="icon">
-                      <Search className="h-4 w-4" />
-                    </Button>
                   </div>
                 </div>
               </div>
@@ -579,6 +664,7 @@ export const Remision = ({ pedido, detalles }: RemisionModalProps) => {
               <div className="space-y-2">
                 <Label>Razón social / Nombre</Label>
                 <Input
+                  disabled={datosGuia.tipoTransporte === '02'}
                   value={datosTransportista.denominacion}
                   onChange={(e) => setDatosTransportista({...datosTransportista, denominacion: e.target.value})}
                 />
@@ -587,6 +673,7 @@ export const Remision = ({ pedido, detalles }: RemisionModalProps) => {
               <div className="space-y-2">
                 <Label>Registro MTC (opcional)</Label>
                 <Input
+                  disabled={datosGuia.tipoTransporte === '02'}
                   value={datosTransportista.registroMtc}
                   onChange={(e) => setDatosTransportista({...datosTransportista, registroMtc: e.target.value})}
                 />
@@ -608,46 +695,11 @@ export const Remision = ({ pedido, detalles }: RemisionModalProps) => {
                 <Label>Vehículo principal (Placa)</Label>
                 <Input
                   value={vehiculos[0].placa}
-                  onChange={(e) => {
-                    const newVehiculos = [...vehiculos];
-                    newVehiculos[0] = { placa: e.target.value };
-                    setVehiculos(newVehiculos);
-                  }}
+                  onChange={(e) => handlePlacaChange(e, 0)}
+                  placeholder="ABC123"
+                  maxLength={6}
                 />
               </div>
-
-              {vehiculosSecundarios.map((vehiculo, index) => (
-                <div key={index} className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <Label>Vehículo secundario {index + 1} (Placa)</Label>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => eliminarVehiculoSecundario(index)}
-                    >
-                      <Trash2 className="h-4 w-4 text-red-500" />
-                    </Button>
-                  </div>
-                  <Input
-                    value={vehiculo.placa}
-                    onChange={(e) => {
-                      const newVehiculos = [...vehiculosSecundarios];
-                      newVehiculos[index].placa = e.target.value;
-                      setVehiculosSecundarios(newVehiculos);
-                    }}
-                  />
-                </div>
-              ))}
-
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={agregarVehiculoSecundario}
-                disabled={vehiculosSecundarios.length >= 2}
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Agregar vehículo secundario
-              </Button>
             </CardContent>
           </Card>
 
@@ -737,26 +789,16 @@ export const Remision = ({ pedido, detalles }: RemisionModalProps) => {
                   <div className="space-y-2">
                     <Label>Número de licencia</Label>
                     <Input
-                      value={conductor.licencia}
-                      onChange={(e) => {
-                        const newConductores = [...conductores];
-                        newConductores[index].licencia = e.target.value;
-                        setConductores(newConductores);
-                      }}
+                      value={conductores[0].licencia}
+                      onChange={(e) => handleLicenciaChange(e, 0)}
+                      placeholder="123456789"
+                      minLength={9}
+                      maxLength={10}
                     />
                   </div>
                 </div>
               ))}
 
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={agregarConductor}
-                disabled={conductores.length >= 3}
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Agregar conductor
-              </Button>
             </CardContent>
           </Card>
         </div>
@@ -805,11 +847,11 @@ export const Remision = ({ pedido, detalles }: RemisionModalProps) => {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="NIU">NIU - Unidad</SelectItem>
+                        {/*<SelectItem value="NIU">NIU - Unidad</SelectItem>*/}
                         <SelectItem value="KGM">KGM - Kilogramo</SelectItem>
-                        <SelectItem value="LTR">LTR - Litro</SelectItem>
-                        <SelectItem value="MTR">MTR - Metro</SelectItem>
-                        <SelectItem value="TNE">TNE - Tonelada</SelectItem>
+                        {/*<SelectItem value="LTR">LTR - Litro</SelectItem>*/}
+                        {/*<SelectItem value="MTR">MTR - Metro</SelectItem>*/}
+                        {/*<SelectItem value="TNE">TNE - Tonelada</SelectItem>*/}
                       </SelectContent>
                     </Select>
                   </td>
@@ -826,7 +868,7 @@ export const Remision = ({ pedido, detalles }: RemisionModalProps) => {
         <CardHeader className="bg-blue-50 border-b">
           <CardTitle className="text-lg font-semibold flex items-center gap-2">
             <FileText className="h-5 w-5 text-blue-600" />
-            Observaciones
+            Observaciones <span className='text-red-500'>*</span>
           </CardTitle>
         </CardHeader>
         <CardContent className="p-6">

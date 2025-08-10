@@ -7,7 +7,6 @@ import {Pedido} from "@/app/dashboard/comprobantes/page";
 import {useEffect, useState} from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import {Remision} from "@/app/dashboard/comprobantes/remision";
-import {GuiaTransportista} from "@/app/dashboard/comprobantes/guia-transportista";
 import apiClient from "@/app/api/client";
 import {useAuth} from "@/context/authContext";
 
@@ -81,13 +80,13 @@ export function GenerarGuiasModal({
                 <FileText className="h-4 w-4" />
                 Guía de Remisión
               </TabsTrigger>
-              <TabsTrigger
-                value="transportista"
-                className="flex items-center gap-2 py-4 px-4 data-[state=active]:border-b-2 data-[state=active]:border-blue-500"
-              >
-                <Truck className="h-4 w-4" />
-                Guía Transportista
-              </TabsTrigger>
+              {/*<TabsTrigger*/}
+              {/*  value="transportista"*/}
+              {/*  className="flex items-center gap-2 py-4 px-4 data-[state=active]:border-b-2 data-[state=active]:border-blue-500"*/}
+              {/*>*/}
+              {/*  <Truck className="h-4 w-4" />*/}
+              {/*  Guía Transportista*/}
+              {/*</TabsTrigger>*/}
             </TabsList>
           </div>
 
@@ -95,11 +94,11 @@ export function GenerarGuiasModal({
             {detalles.length > 0 && (
               <>
                 <TabsContent value="remision" className="m-0 h-full">
-                  <Remision detalles={detalles} pedido={pedido} />
+                  <Remision onOpenChange={onOpenChange} detalles={detalles} pedido={pedido} />
                 </TabsContent>
-                <TabsContent value="transportista" className="m-0 h-full">
-                  <GuiaTransportista detalles={detalles} pedido={pedido} />
-                </TabsContent>
+                {/*<TabsContent value="transportista" className="m-0 h-full">*/}
+                {/*  <GuiaTransportista detalles={detalles} pedido={pedido} />*/}
+                {/*</TabsContent>*/}
               </>
             )}
           </div>
