@@ -3,7 +3,19 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, X, ChevronDown, LogOut } from "lucide-react";
+import {
+  Menu,
+  X,
+  ChevronDown,
+  LogOut,
+  Home,
+  Users,
+  Tags,
+  Package,
+  ShoppingCart,
+  FileText,
+  GitBranch, Receipt, BarChart2, LineChart, UserCog, Notebook
+} from "lucide-react";
 import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -12,19 +24,59 @@ import { useAuth } from "@/context/authContext";
 import { NavItem, NAV_ITEMS, Role } from "@/constants/roles";
 import { DialogTitle } from "@radix-ui/react-dialog";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden"
+import {ScrollArea} from "@/components/ui/scroll-area";
+
+const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
+  "/dashboard": Home,
+  "/dashboard/clientes": Users,
+  "/dashboard/lista-precios-lote": Tags,
+  "/dashboard/productos": Package,
+  "/dashboard/tomar-pedido": ShoppingCart,
+  "/dashboard/mis-pedidos": FileText,
+  "/dashboard/estados-pedidos": GitBranch,
+  "/dashboard/comprobantes": Receipt,
+  "/dashboard/reportes": BarChart2,
+  "/dashboard/reportes/documento-cliente": LineChart,
+  "/dashboard/reportes/cobrar-cliente": LineChart,
+  "/dashboard/reportes/cobrar-vendedor": LineChart,
+  "/dashboard/usuarios": UserCog,
+  "/dashboard/roles": Notebook,
+};
 
 export function MobileNav() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [openItem, setOpenItem] = useState<string | null>(null);
 
-  /* ───────── auth & filtrado ───────── */
   const { user, logout } = useAuth();
-  const itemsForRole = useMemo<NavItem[]>(() => {
-    if (!user) return [];
-    const role = user.rolDescripcion as Role;
-    return NAV_ITEMS.filter((i) => i.roles.includes(role));
-  }, [user]);
+
+  /* ───────── estructuración de menús ───────── */
+  const menuItems = useMemo(() => {
+    if (!user?.menus || user.menus.length === 0) return [];
+
+    // Convertir la lista plana de menús en una estructura jerárquica
+    const rootMenus = user.menus.filter(menu => !menu.id_padre);
+    const childMenus = user.menus.filter(menu => menu.id_padre);
+
+    return rootMenus.map(menu => {
+      const children = childMenus
+        .filter(child => child.id_padre === menu.id)
+        .map(child => ({
+          id: child.id,
+          title: child.nombre,
+          href: child.ruta,
+          icon: ICON_MAP[child.ruta] || LineChart,
+        }));
+
+      return {
+        id: menu.id,
+        title: menu.nombre,
+        href: menu.ruta,
+        icon: ICON_MAP[menu.ruta] || Home,
+        children: children.length > 0 ? children : undefined,
+      };
+    });
+  }, [user?.menus]);
 
   const toggleItem = (title: string) =>
     setOpenItem((prev) => (prev === title ? null : title));
@@ -68,119 +120,108 @@ export function MobileNav() {
                 className="object-contain"
               />
             </Link>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="ml-auto"
-              onClick={handleNav}
-            >
-              <X className="h-5 w-5" />
-              <span className="sr-only">Cerrar</span>
-            </Button>
           </div>
 
           {/* Navegación */}
-          <nav className="grid gap-1 p-4">
-            {itemsForRole.map((item) => (
-              <div key={item.href}>
-                {/* Con submenú */}
-                {item.children ? (
-                  <button
-                    type="button"
-                    onClick={() => toggleItem(item.title)}
-                    className={cn(
-                      "group flex w-full items-center justify-between rounded-lg px-3 py-3.5 text-sm font-medium transition-all hover:bg-blue-100",
-                      pathname.startsWith(item.href)
-                        ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md"
-                        : "text-gray-700 hover:text-blue-700",
-                    )}
-                  >
-                    <div className="flex items-center gap-3">
+          <ScrollArea className="flex-1 py-4">
+            <nav className="grid gap-1 px-2">
+              {menuItems.map((item) => (
+                <div key={item.id}>
+                  {item.children ? (
+                    /* ───── padre con sub‑menú ───── */
+                    <button
+                      type="button"
+                      onClick={() => toggleItem(item.title)}
+                      className={cn(
+                        "group flex w-full items-center justify-between rounded-lg px-3 py-3.5 text-sm font-medium transition-all hover:bg-blue-100",
+                        pathname.startsWith(item.href)
+                          ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md"
+                          : "text-gray-700 hover:text-blue-700",
+                      )}
+                    >
+                      <div className="flex items-center gap-3">
+                        <item.icon
+                          className={cn(
+                            "h-5 w-5",
+                            pathname.startsWith(item.href)
+                              ? "text-white"
+                              : "text-gray-500 group-hover:text-blue-600",
+                          )}
+                        />
+                        {item.title}
+                      </div>
+                      <ChevronDown
+                        className={cn(
+                          "h-4 w-4 transition-transform",
+                          openItem === item.title ? "rotate-180" : "rotate-0",
+                        )}
+                      />
+                    </button>
+                  ) : (
+                    /* ───── enlace simple ───── */
+                    <Link
+                      href={item.href}
+                      className={cn(
+                        "group flex items-center gap-3 rounded-lg px-3 py-3.5 text-sm font-medium transition-all hover:bg-blue-100",
+                        pathname === item.href
+                          ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md"
+                          : "text-gray-700 hover:text-blue-700",
+                      )}
+                    >
                       <item.icon
                         className={cn(
                           "h-5 w-5",
-                          pathname.startsWith(item.href)
+                          pathname === item.href
                             ? "text-white"
                             : "text-gray-500 group-hover:text-blue-600",
                         )}
                       />
                       {item.title}
-                    </div>
-                    <ChevronDown
-                      className={cn(
-                        "h-4 w-4 transition-transform",
-                        openItem === item.title ? "rotate-180" : "rotate-0",
-                      )}
-                    />
-                  </button>
-                ) : (
-                  /* Ítem simple */
-                  <Link
-                    href={item.href}
-                    onClick={handleNav}
-                    className={cn(
-                      "group flex items-center gap-3 rounded-lg px-3 py-3.5 text-sm font-medium transition-all hover:bg-blue-100",
-                      pathname === item.href
-                        ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md"
-                        : "text-gray-700 hover:text-blue-700",
-                    )}
-                  >
-                    <item.icon
-                      className={cn(
-                        "h-5 w-5",
-                        pathname === item.href
-                          ? "text-white"
-                          : "text-gray-500 group-hover:text-blue-600",
-                      )}
-                    />
-                    {item.title}
-                  </Link>
-                )}
+                    </Link>
+                  )}
 
-                {/* Sub‑ítems */}
-                {item.children && openItem === item.title && (
-                  <div className="ml-8 mt-1 flex flex-col gap-1">
-                    {item.children.map((sub) => (
-                      <Link
-                        key={sub.href}
-                        href={sub.href}
-                        onClick={handleNav}
-                        className={cn(
-                          "group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all hover:bg-blue-50",
-                          pathname === sub.href
-                            ? "bg-blue-100 text-blue-700"
-                            : "text-gray-600 hover:text-blue-700",
-                        )}
-                      >
-                        <sub.icon
+                  {/* sub‑items */}
+                  {item.children && openItem === item.title && (
+                    <div className="ml-8 mt-1 flex flex-col gap-1">
+                      {item.children.map((sub) => (
+                        <Link
+                          key={sub.id}
+                          href={sub.href}
                           className={cn(
-                            "h-4 w-4",
+                            "group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all hover:bg-blue-50",
                             pathname === sub.href
-                              ? "text-blue-700"
-                              : "text-gray-400 group-hover:text-blue-600",
+                              ? "bg-blue-100 text-blue-700"
+                              : "text-gray-600 hover:text-blue-700",
                           )}
-                        />
-                        {sub.title}
-                      </Link>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))}
+                        >
+                          <sub.icon
+                            className={cn(
+                              "h-4 w-4",
+                              pathname === sub.href
+                                ? "text-blue-700"
+                                : "text-gray-400 group-hover:text-blue-600",
+                            )}
+                          />
+                          {sub.title}
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </nav>
+          </ScrollArea>
 
-            {/* Cerrar sesión */}
+          <div className="mt-auto border-t p-4">
             <Button
               variant="outline"
-              onClick={() => {
-                logout();
-                handleNav();
-              }}
-              className="mt-4 w-full justify-start gap-2 text-red-600 hover:bg-red-50 hover:text-red-700"
+              className="w-full justify-start gap-2 text-red-600 hover:bg-red-50 hover:text-red-700"
+              onClick={logout}
             >
-              <LogOut className="h-4 w-4" />
+              <LogOut className="h-4 w-4"/>
               Cerrar sesión
             </Button>
-          </nav>
+          </div>
         </SheetContent>
       </Sheet>
     </header>

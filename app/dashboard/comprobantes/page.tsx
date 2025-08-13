@@ -71,6 +71,7 @@ interface GuiaRemision {
   enlace_pdf: string
   enlace_cdr: string
   enlace_xml: string
+  pdf_zip_base64: string
 }
 
 interface TipoComprobante {
@@ -335,6 +336,12 @@ export default function ComprobantesPage() {
     setCurrentPdfUrl(pdfUrl)
     setShowPdfModal(true)
   }
+
+  const handleViewPdfGuia = (base64String: string) => {
+    const pdfUrl = `data:application/pdf;base64,${base64String}`;
+    setCurrentPdfUrl(pdfUrl);
+    setShowPdfModal(true);
+  };
 
   const getEstadoBadge = (comprobante: Comprobante) => {
     if (comprobante.anulado) {
@@ -1081,7 +1088,7 @@ export default function ComprobantesPage() {
                                   variant="ghost"
                                   size="icon"
                                   className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                                  onClick={() => handleViewPdf(guia.enlace_pdf)}
+                                  onClick={() => handleViewPdfGuia(guia.pdf_zip_base64)}
                                 >
                                   <Eye className="h-4 w-4" />
                                 </Button>
@@ -1092,13 +1099,6 @@ export default function ComprobantesPage() {
                                     </Button>
                                   </DropdownMenuTrigger>
                                   <DropdownMenuContent align="end" className="w-48">
-                                    <DropdownMenuItem
-                                      className="text-blue-600"
-                                      onClick={() => handleViewPdf(guia.enlace_pdf)}
-                                    >
-                                      <Eye className="mr-2 h-4 w-4" />
-                                      Ver PDF
-                                    </DropdownMenuItem>
                                     <DropdownMenuItem
                                       className="text-green-600"
                                       onClick={() => window.open(guia.enlace_pdf, '_blank')}
@@ -1168,7 +1168,7 @@ export default function ComprobantesPage() {
                                 variant="outline"
                                 size="sm"
                                 className="text-xs bg-transparent"
-                                onClick={() => handleViewPdf(guia.enlace_pdf)}
+                                onClick={() => handleViewPdfGuia(guia.pdf_zip_base64)}
                               >
                                 <Eye className="h-3 w-3 mr-1" />
                                 Ver PDF

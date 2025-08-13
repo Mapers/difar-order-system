@@ -20,7 +20,7 @@ import {
   CreditCard,
   DollarSign,
   Coins,
-  FileText
+  FileText, X, Trash
 } from "lucide-react"
 import { StepProgress } from "@/components/step-progress"
 import apiClient from "@/app/api/client"
@@ -778,26 +778,47 @@ export default function OrderPage() {
                   <CardTitle className="text-xl font-semibold text-blue-700">Productos Seleccionados</CardTitle>
                 </CardHeader>
                 <CardContent className="pt-6">
-                  <div className="rounded-md border">
-                    <Table>
-                      <TableHeader className="bg-gray-50">
-                        <TableRow>
-                          <TableHead>Producto</TableHead>
-                          <TableHead className="text-right">Cantidad</TableHead>
-                          <TableHead className="text-right">Precio</TableHead>
-                          <TableHead className="text-right">Total</TableHead>
-                          <TableHead></TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
+                  <div className="hidden sm:block border rounded-md overflow-hidden">
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-gray-50">
+                        <tr>
+                          <th
+                            scope="col"
+                            className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                          >
+                            Producto
+                          </th>
+                          <th
+                            scope="col"
+                            className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                          >
+                            Cantidad
+                          </th>
+                          <th
+                            scope="col"
+                            className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                          >
+                            Precio Unit.
+                          </th>
+                          <th
+                            scope="col"
+                            className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                          >
+                            Subtotal
+                          </th>
+                          <th scope="col"></th>
+                        </tr>
+                        </thead>
+                        <tbody>
                         {selectedProducts.map((item, index) => {
                           const precioOriginal = item.product.PUContado;
                           const precioEscala = item.appliedScale?.precio_escala;
                           const precioUnitario = item.isBonification ? 0 : precioEscala ?? precioOriginal;
                           const subtotal = precioUnitario * item.quantity;
                           return (
-                            <TableRow key={index} className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}>
-                              <TableCell className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
+                            <tr key={index} className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}>
+                              <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
                                 <div className="flex items-center flex-wrap gap-1">
                                   {item.isBonification && (
                                     <Badge variant="outline" className="bg-yellow-50 text-yellow-700">
@@ -811,35 +832,37 @@ export default function OrderPage() {
                                   )}
                                   <span>{item.product.NombreItem}</span>
                                 </div>
-                              </TableCell>
-                              <TableCell className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-right">
+                              </td>
+                              <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-right">
                                 {item.quantity}
-                              </TableCell>
+                              </td>
 
-                              <TableCell className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-right">
+                              <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-right">
                                 <div className="flex flex-col items-end">
-                                  <span className={item.appliedScale ? "line-through text-gray-400 text-xs" : ""}>
-                                    {currency?.value === "PEN" ? "S/." : "$"}
-                                    {Number(precioOriginal).toFixed(2)}
-                                  </span>
+                                <span className={item.appliedScale ? "line-through text-gray-400 text-xs" : ""}>
+                                  {currency?.value === "PEN" ? "S/." : "$"}
+                                  {Number(precioOriginal).toFixed(2)}
+                                </span>
                                   {item.appliedScale && (
                                     <span className="text-purple-600 font-medium text-sm">
-                                      {currency?.value === "PEN" ? "S/." : "$"}
+                                    {currency?.value === "PEN" ? "S/." : "$"}
                                       {Number(precioEscala).toFixed(2)}
-                                    </span>
+                                  </span>
                                   )}
                                   {item.isBonification && (
-                                    <span className="text-green-600 text-sm">{currency?.value === "PEN" ? "S/." : "$"}0.00</span>
+                                    <span
+                                      className="text-green-600 text-sm">{currency?.value === "PEN" ? "S/." : "$"}0.00</span>
                                   )}
                                 </div>
-                              </TableCell>
+                              </td>
 
-                              <TableCell className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900 text-right">
+                              <td
+                                className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900 text-right">
                                 {currency?.value === "PEN" ? "S/." : "$"}
                                 {subtotal.toFixed(2)}
-                              </TableCell>
+                              </td>
 
-                              <TableCell className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
+                              <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
                                 <Button
                                   variant="ghost"
                                   size="sm"
@@ -848,18 +871,115 @@ export default function OrderPage() {
                                 >
                                   Eliminar
                                 </Button>
-                              </TableCell>
-                            </TableRow>
+                              </td>
+                            </tr>
                           );
                         })}
-                      </TableBody>
-                      <TableFooter>
-                        <TableRow>
-                          <TableCell colSpan={3}></TableCell>
-                          <TableCell className="px-4 py-3 text-right text-sm font-medium text-gray-900">
-                            Total:
-                          </TableCell>
-                          <TableCell className="px-4 py-3 whitespace-nowrap text-sm font-bold text-gray-900 text-right">
+                        </tbody>
+                        <TableFooter>
+                          <TableRow>
+                            <TableCell colSpan={3}></TableCell>
+                            <TableCell className="px-4 py-3 text-right text-sm font-medium text-gray-900">
+                              Total:
+                            </TableCell>
+                            <TableCell
+                              className="px-4 py-3 whitespace-nowrap text-sm font-bold text-gray-900 text-right">
+                              {currency?.value === "PEN" ? "S/." : "$"}
+                              {selectedProducts
+                                .reduce((sum, item) => {
+                                  const precioUnitario = item.isBonification
+                                    ? 0
+                                    : item.appliedScale?.precio_escala ?? item.product.PUContado
+                                  return sum + precioUnitario * item.quantity
+                                }, 0)
+                                .toFixed(2)}
+                            </TableCell>
+                          </TableRow>
+                        </TableFooter>
+                      </table>
+                    </div>
+                  </div>
+
+                  <div className="block sm:hidden space-y-3">
+                    {selectedProducts.map((item, index) => {
+                      const precioOriginal = item.product.PUContado;
+                      const precioEscala = item.appliedScale?.precio_escala;
+                      const precioUnitario = item.isBonification ? 0 : precioEscala ?? precioOriginal;
+                      const subtotal = precioUnitario * item.quantity;
+
+                      return (
+                        <Card key={index} className="p-4 relative">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="ml-auto absolute right-0 top-0 text-red-500"
+                            onClick={() => handleRemoveItem(index)}
+                          >
+                            <Trash className="h-5 w-5"/>
+                          </Button>
+                          <div className="space-y-3">
+                            <div className="flex justify-between items-start">
+                              <div className="flex-1 min-w-0">
+                                <div className="flex flex-wrap gap-1 mb-2">
+                                  {item.isBonification && (
+                                    <Badge variant="outline" className="bg-yellow-50 text-yellow-700">
+                                      Bonificado
+                                    </Badge>
+                                  )}
+                                  {item.appliedScale && (
+                                    <Badge variant="outline" className="bg-purple-50 text-purple-700">
+                                      Escala {item.appliedScale.porcentaje_descuento}% desc.
+                                    </Badge>
+                                  )}
+                                </div>
+                                <h4 className="font-medium text-sm truncate">{item.product.NombreItem}</h4>
+                                <p className="text-xs text-gray-500">Código: {item.product.IdArticulo}</p>
+                                <p className="text-xs text-gray-500">{item.product.Descripcion}</p>
+                              </div>
+                            </div>
+
+                            <div className="grid grid-cols-3 gap-4 text-sm">
+                              <div>
+                                <Label className="text-xs text-gray-500">Cantidad</Label>
+                                <p className="font-medium">{item.quantity}</p>
+                              </div>
+                              <div>
+                                <Label className="text-xs text-gray-500">Precio Unit.</Label>
+                                <div className="flex flex-col">
+                                  <span className={item.appliedScale ? "line-through text-gray-400 text-xs" : ""}>
+                                  {currency?.value === "PEN" ? "S/." : "$"}
+                                    {Number(precioOriginal).toFixed(2)}
+                                </span>
+                                  {item.appliedScale && (
+                                    <span className="text-purple-600 font-medium text-sm">
+                                    {currency?.value === "PEN" ? "S/." : "$"}
+                                      {Number(precioEscala).toFixed(2)}
+                                  </span>
+                                  )}
+                                  {item.isBonification && (
+                                    <span
+                                      className="text-green-600 text-sm">{currency?.value === "PEN" ? "S/." : "$"}0.00</span>
+                                  )}
+                                </div>
+                              </div>
+                              <div>
+                                <Label className="text-xs text-gray-500">Subtotal</Label>
+                                <p className="font-bold text-sm">
+                                  {currency?.value === "PEN" ? "S/." : "$"}
+                                  {subtotal.toFixed(2)}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        </Card>
+                      )
+                    })}
+
+                    <div className="bg-gray-50 rounded-lg border border-gray-200 p-4">
+                      <div className="space-y-2">
+                        <div className="flex justify-between items-center">
+                          <span className="font-medium text-gray-900">Total:</span>
+                          <span className="font-bold text-lg text-blue-700">
                             {currency?.value === "PEN" ? "S/." : "$"}
                             {selectedProducts
                               .reduce((sum, item) => {
@@ -869,15 +989,15 @@ export default function OrderPage() {
                                 return sum + precioUnitario * item.quantity
                               }, 0)
                               .toFixed(2)}
-                          </TableCell>
-                        </TableRow>
-                      </TableFooter>
-                    </Table>
+                          </span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </CardContent>
                 <CardFooter className="flex justify-between border-t bg-gray-50 py-4">
                   <Button type="button" variant="outline" onClick={prevStep}>
-                    <ArrowLeft className="mr-2 h-4 w-4" />
+                    <ArrowLeft className="mr-2 h-4 w-4"/>
                     Anterior
                   </Button>
                   <Button
@@ -887,7 +1007,7 @@ export default function OrderPage() {
                     className="bg-blue-600 hover:bg-blue-700"
                   >
                     Siguiente
-                    <ArrowRight className="ml-2 h-4 w-4" />
+                    <ArrowRight className="ml-2 h-4 w-4"/>
                   </Button>
                 </CardFooter>
               </Card>
@@ -989,51 +1109,53 @@ export default function OrderPage() {
                 </div>
               </div>
 
-              <div className="space-y-4">
-                <div className="flex items-center gap-2">
-                  <FileText className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600"/>
-                  <h3 className="font-semibold text-gray-900 text-sm sm:text-base">Nota de Pedido</h3>
-                </div>
-
-                <div className="bg-white rounded-lg border border-gray-200">
-                  <Textarea
-                    placeholder="Escribe aquí cualquier observación adicional para el pedido..."
-                    className="min-h-[100px] resize-none border-0 focus-visible:ring-0"
-                    value={note}
-                    onChange={(e) => setNote(e.target.value)}
-                  />
-                  <div className="border-t px-3 py-2 bg-gray-50 text-xs text-gray-500">
-                    Esta información será incluida en el pedido.
-                  </div>
-                </div>
-              </div>
-
               {/* Lista de productos */}
               <div className="space-y-4">
                 <div className="flex items-center gap-2">
                   <Package className="w-4 h-4 sm:w-5 sm:h-5 text-orange-600"/>
                   <h3 className="font-semibold text-gray-900 text-sm sm:text-base">Productos Seleccionados</h3>
                 </div>
-                {/* <h3 className="text-lg font-medium text-gray-900">Productos</h3> */}
-                <div className="rounded-md border">
-                  <Table>
-                    <TableHeader className="bg-gray-50">
-                      <TableRow>
-                        <TableHead>Producto</TableHead>
-                        <TableHead className="text-right">Cantidad</TableHead>
-                        <TableHead className="text-right">Precio</TableHead>
-                        <TableHead className="text-right">Subtotal</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
+                <div className="hidden sm:block border rounded-md overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-gray-50">
+                      <tr>
+                        <th
+                          scope="col"
+                          className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                        >
+                          Producto
+                        </th>
+                        <th
+                          scope="col"
+                          className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                        >
+                          Cantidad
+                        </th>
+                        <th
+                          scope="col"
+                          className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                        >
+                          Precio Unit.
+                        </th>
+                        <th
+                          scope="col"
+                          className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                        >
+                          Subtotal
+                        </th>
+                        <th scope="col"></th>
+                      </tr>
+                      </thead>
+                      <tbody>
                       {selectedProducts.map((item, index) => {
                         const precioOriginal = item.product.PUContado;
                         const precioEscala = item.appliedScale?.precio_escala;
                         const precioUnitario = item.isBonification ? 0 : precioEscala ?? precioOriginal;
                         const subtotal = precioUnitario * item.quantity;
                         return (
-                          <TableRow key={index} className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}>
-                            <TableCell className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
+                          <tr key={index} className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}>
+                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
                               <div className="flex items-center flex-wrap gap-1">
                                 {item.isBonification && (
                                   <Badge variant="outline" className="bg-yellow-50 text-yellow-700">
@@ -1047,12 +1169,12 @@ export default function OrderPage() {
                                 )}
                                 <span>{item.product.NombreItem}</span>
                               </div>
-                            </TableCell>
-                            <TableCell className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-right">
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-right">
                               {item.quantity}
-                            </TableCell>
+                            </td>
 
-                            <TableCell className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-right">
+                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-right">
                               <div className="flex flex-col items-end">
                                 <span className={item.appliedScale ? "line-through text-gray-400 text-xs" : ""}>
                                   {currency?.value === "PEN" ? "S/." : "$"}
@@ -1069,15 +1191,15 @@ export default function OrderPage() {
                                     className="text-green-600 text-sm">{currency?.value === "PEN" ? "S/." : "$"}0.00</span>
                                 )}
                               </div>
-                            </TableCell>
+                            </td>
 
-                            <TableCell
+                            <td
                               className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900 text-right">
                               {currency?.value === "PEN" ? "S/." : "$"}
                               {subtotal.toFixed(2)}
-                            </TableCell>
+                            </td>
 
-                            <TableCell className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
+                            <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
                               <Button
                                 variant="ghost"
                                 size="sm"
@@ -1086,40 +1208,126 @@ export default function OrderPage() {
                               >
                                 Eliminar
                               </Button>
-                            </TableCell>
-                          </TableRow>
+                            </td>
+                          </tr>
                         );
                       })}
-                    </TableBody>
-                    <TableFooter>
-                      <TableRow>
-                        <TableCell colSpan={3}></TableCell>
-                        <TableCell className="px-4 py-3 text-right text-sm font-medium text-gray-900">
-                          SubTotal:
-                        </TableCell>
-                        <TableCell className="px-4 py-3 whitespace-nowrap text-sm font-bold text-gray-900 text-right">
-                          {currency?.value === "PEN" ? "S/." : "$"}
-                          {calcularSubtotal(selectedProducts).toFixed(2)}
-                        </TableCell>
-                      </TableRow>
-                      <TableRow>
-                        <TableCell colSpan={3}></TableCell>
-                        <TableCell className="px-4 py-3 text-right text-sm font-medium text-gray-500">
-                          IGV (18%):
-                        </TableCell>
-                        <TableCell className="px-4 py-3 whitespace-nowrap text-sm font-bold text-gray-900 text-right">
-                          {currency?.value === "PEN" ? "S/." : "$"}
-                          {calcularIGV(selectedProducts).toFixed(2)}
-                        </TableCell>
-                      </TableRow>
-                    </TableFooter>
-                  </Table>
+                      </tbody>
+                      <TableFooter>
+                        <TableRow>
+                          <TableCell colSpan={3}></TableCell>
+                          <TableCell className="px-4 py-3 text-right text-sm font-medium text-gray-900">
+                            Total:
+                          </TableCell>
+                          <TableCell
+                            className="px-4 py-3 whitespace-nowrap text-sm font-bold text-gray-900 text-right">
+                            {currency?.value === "PEN" ? "S/." : "$"}
+                            {selectedProducts
+                              .reduce((sum, item) => {
+                                const precioUnitario = item.isBonification
+                                  ? 0
+                                  : item.appliedScale?.precio_escala ?? item.product.PUContado
+                                return sum + precioUnitario * item.quantity
+                              }, 0)
+                              .toFixed(2)}
+                          </TableCell>
+                        </TableRow>
+                      </TableFooter>
+                    </table>
+                  </div>
+                </div>
+
+                <div className="block sm:hidden space-y-3">
+                  {selectedProducts.map((item, index) => {
+                    const precioOriginal = item.product.PUContado;
+                    const precioEscala = item.appliedScale?.precio_escala;
+                    const precioUnitario = item.isBonification ? 0 : precioEscala ?? precioOriginal;
+                    const subtotal = precioUnitario * item.quantity;
+
+                    return (
+                      <Card key={index} className="p-4">
+                        <div className="space-y-3">
+                          <div className="flex justify-between items-start">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex flex-wrap gap-1 mb-2">
+                                {item.isBonification && (
+                                  <Badge variant="outline" className="bg-yellow-50 text-yellow-700">
+                                    Bonificado
+                                  </Badge>
+                                )}
+                                {item.appliedScale && (
+                                  <Badge variant="outline" className="bg-purple-50 text-purple-700">
+                                    Escala {item.appliedScale.porcentaje_descuento}% desc.
+                                  </Badge>
+                                )}
+                              </div>
+                              <h4 className="font-medium text-sm truncate">{item.product.NombreItem}</h4>
+                              <p className="text-xs text-gray-500">Código: {item.product.IdArticulo}</p>
+                              <p className="text-xs text-gray-500">{item.product.Descripcion}</p>
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-3 gap-4 text-sm">
+                            <div>
+                              <Label className="text-xs text-gray-500">Cantidad</Label>
+                              <p className="font-medium">{item.quantity}</p>
+                            </div>
+                            <div>
+                              <Label className="text-xs text-gray-500">Precio Unit.</Label>
+                              <div className="flex flex-col">
+                                  <span className={item.appliedScale ? "line-through text-gray-400 text-xs" : ""}>
+                                  {currency?.value === "PEN" ? "S/." : "$"}
+                                    {Number(precioOriginal).toFixed(2)}
+                                </span>
+                                {item.appliedScale && (
+                                  <span className="text-purple-600 font-medium text-sm">
+                                    {currency?.value === "PEN" ? "S/." : "$"}
+                                    {Number(precioEscala).toFixed(2)}
+                                  </span>
+                                )}
+                                {item.isBonification && (
+                                  <span
+                                    className="text-green-600 text-sm">{currency?.value === "PEN" ? "S/." : "$"}0.00</span>
+                                )}
+                              </div>
+                            </div>
+                            <div>
+                              <Label className="text-xs text-gray-500">Subtotal</Label>
+                              <p className="font-bold text-sm">
+                                {currency?.value === "PEN" ? "S/." : "$"}
+                                {subtotal.toFixed(2)}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </Card>
+                    )
+                  })}
                 </div>
               </div>
               <div className="rounded-lg bg-blue-50 p-4 flex justify-between items-center">
                 <div className="text-lg font-medium text-blue-900">Total del Pedido:</div>
                 <div className="text-xl font-bold text-blue-900">
                   {currency?.value === "PEN" ? "S/." : "$"} {calcularTotal(selectedProducts).toFixed(2)}
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <FileText className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600"/>
+                  <h3 className="font-semibold text-gray-900 text-sm sm:text-base">Nota de Pedido</h3>
+                </div>
+
+                <div className="bg-white rounded-lg border border-gray-200">
+                  <Textarea
+                    placeholder="Escribe aquí cualquier observación adicional para el pedido..."
+                    className="min-h-[100px] resize-none border-0 focus-visible:ring-0"
+                    value={note}
+                    onChange={(e) => setNote(e.target.value)}
+                  />
+                  <div className="border-t px-3 py-2 bg-gray-50 text-xs text-gray-500">
+                    Esta información será incluida en el pedido.
+                  </div>
                 </div>
               </div>
             </CardContent>
