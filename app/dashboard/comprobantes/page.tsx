@@ -42,7 +42,7 @@ import Link from "next/link";
 interface Comprobante {
   idComprobanteCab: number
   nroPedido: number
-  fecha_emision: string
+  fecha_envio: string
   serie: string
   numero: string
   cliente_numdoc: string
@@ -228,7 +228,7 @@ export default function ComprobantesPage() {
   const fetchPedidosPendientes = async () => {
     try {
       setLoadingPedidos(true)
-      let url = `/pedidos/filter?busqueda=${encodeURIComponent(searchQuery)}&estado=4`
+      let url = `/pedidos/porFacturar?busqueda=${encodeURIComponent(searchQuery)}&estado=4`
 
       const response = await apiClient.get(url)
       const { data: { data } } = response.data
@@ -767,7 +767,7 @@ export default function ComprobantesPage() {
                         comprobantes.map((comprobante) => (
                           <tr key={comprobante.nroPedido} className="hover:bg-gray-50">
                             <td className="p-4 text-sm">
-                              {format(parseISO(comprobante.fecha_emision), "dd/MM/yyyy")}
+                              {format(parseISO(comprobante.fecha_envio), "dd/MM/yyyy")}
                             </td>
                             <td className="p-4 text-sm">
                               {getTipoComprobante(comprobante.tipo_comprobante)}
@@ -797,9 +797,9 @@ export default function ComprobantesPage() {
                                 >
                                   <Eye className="h-4 w-4" />
                                 </Button>
-                                <Button variant="ghost" size="icon" className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50">
-                                  <Download className="h-4 w-4" />
-                                </Button>
+                                {/*<Button variant="ghost" size="icon" className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50">*/}
+                                {/*  <Download className="h-4 w-4" />*/}
+                                {/*</Button>*/}
                                 <DropdownMenu>
                                   <DropdownMenuTrigger asChild>
                                     <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -866,7 +866,7 @@ export default function ComprobantesPage() {
                                 {getEstadoBadge(comprobante)}
                               </div>
                               <p className="text-sm text-gray-600">
-                                {format(parseISO(comprobante.fecha_emision), "dd/MM/yyyy")}
+                                {format(parseISO(comprobante.fecha_envio), "dd/MM/yyyy")}
                               </p>
                             </div>
                             <div className="text-right">
@@ -893,14 +893,14 @@ export default function ComprobantesPage() {
                                 <Eye className="h-3 w-3 mr-1" />
                                 Ver
                               </Button>
-                              <Button variant="outline" size="sm" className="text-xs bg-transparent">
-                                <Download className="h-3 w-3 mr-1" />
-                                PDF
-                              </Button>
-                              <Button variant="outline" size="sm" className="text-xs bg-transparent">
-                                <MessageSquare className="h-3 w-3 mr-1" />
-                                WhatsApp
-                              </Button>
+                              {/*<Button variant="outline" size="sm" className="text-xs bg-transparent">*/}
+                              {/*  <Download className="h-3 w-3 mr-1" />*/}
+                              {/*  PDF*/}
+                              {/*</Button>*/}
+                              {/*<Button variant="outline" size="sm" className="text-xs bg-transparent">*/}
+                              {/*  <MessageSquare className="h-3 w-3 mr-1" />*/}
+                              {/*  WhatsApp*/}
+                              {/*</Button>*/}
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                   <Button variant="outline" size="sm" className="text-xs bg-transparent">
