@@ -32,7 +32,11 @@ export default function OrderDetailsPage({ params }: { params: { id: string } })
         const pedidoData = resCab.data.data
 
         // Obtener detalles del pedido
-        const resDet = await apiClient.get(`/pedidosDetalles/${id || ''}/detalles?vendedor=${auth.user?.codigo}`)
+        let url = `/pedidosDetalles/${id || ''}/detalles`
+        if (auth.user?.idRol === 1) {
+          url += `?vendedor=${auth.user?.codigo}`
+        }
+        const resDet = await apiClient.get(url)
         const detallesData = resDet.data.data
 
         setPedido(pedidoData)

@@ -20,7 +20,7 @@ import {
   Mail,
   MessageSquare,
   AlertTriangle,
-  Loader2, Truck
+  Loader2, Truck, Wallet
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -37,6 +37,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { toast } from "@/components/ui/use-toast"
 import { DatePicker } from "@/components/ui/date-picker"
 import {GenerarGuiasModal} from "@/app/dashboard/comprobantes/generar-guias-modal";
+import Link from "next/link";
 
 interface Comprobante {
   idComprobanteCab: number
@@ -549,7 +550,7 @@ export default function ComprobantesPage() {
                                   <span className="sm:hidden">Listo</span>
                                 </Badge>
                               </div>
-                              <div className="flex flex-col gap-2">
+                              <div className="flex flex-row gap-2">
                                 <Button
                                   onClick={() => handleInvoiceOrder(pedido)}
                                   className="bg-green-600 hover:bg-green-700 flex items-center gap-2 w-full sm:w-auto"
@@ -558,6 +559,16 @@ export default function ComprobantesPage() {
                                   <Receipt className="h-4 w-4" />
                                   <span className="hidden sm:inline">Facturar Ahora</span>
                                   <span className="sm:hidden">Facturar</span>
+                                </Button>
+                                <Button
+                                  className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto"
+                                  size="sm"
+                                >
+                                  <Link href={`/dashboard/comprobantes/${pedido.nroPedido}`} className='flex items-center gap-2'>
+                                    <Eye className="h-4 w-4" />
+                                    <span className="hidden sm:inline">Detalles</span>
+                                    <span className="sm:hidden">Detalles</span>
+                                  </Link>
                                 </Button>
                               </div>
                             </div>
@@ -574,7 +585,7 @@ export default function ComprobantesPage() {
                                 <span className="font-medium truncate">{pedido.nombreCliente}</span>
                               </div>
                               <div className="flex items-center gap-2">
-                                <DollarSign className="h-3 w-3 sm:h-4 sm:w-4 text-gray-500 flex-shrink-0" />
+                                <Wallet className="h-3 w-3 sm:h-4 sm:w-4 text-gray-500 flex-shrink-0" />
                                 <span className="text-gray-600">Total:</span>
                                 <span className="font-bold text-green-600">
                                 {pedido.monedaPedido === 'PEN' ? 'S/ ' : '$ '}

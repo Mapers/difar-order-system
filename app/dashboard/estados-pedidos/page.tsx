@@ -655,7 +655,7 @@ export default function OrderStatusManagementPage() {
               >
                 Cancelar
               </Button>
-              {(detalle.length > 0 && selectedOrder.estadodePedido ===  2) && (
+              {(detalle.length > 0 && selectedOrder.estadodePedido ===  1) && (
                 <Dialog>
                   <DialogTrigger asChild>
                     <Button

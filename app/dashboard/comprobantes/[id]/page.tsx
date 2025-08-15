@@ -164,7 +164,7 @@ export default function OrderDetailsPage({ params }: { params: { id: string } })
       <div className="grid gap-6">
         <div className="flex flex-col gap-2">
           <div className="flex items-center gap-4">
-            <Link href="/dashboard/mis-pedidos">
+            <Link href="/dashboard/comprobantes">
               <Button variant="outline" size="icon" className="h-8 w-8">
                 <ArrowLeft className="h-4 w-4" />
                 <span className="sr-only">Volver</span>
@@ -192,7 +192,7 @@ export default function OrderDetailsPage({ params }: { params: { id: string } })
       <div className="grid gap-6">
         <div className="flex flex-col gap-2">
           <div className="flex items-center gap-4">
-            <Link href="/dashboard/estados-pedidos">
+            <Link href="/dashboard/comprobantes">
               <Button variant="outline" size="icon" className="h-8 w-8">
                 <ArrowLeft className="h-4 w-4" />
                 <span className="sr-only">Volver</span>
@@ -210,7 +210,7 @@ export default function OrderDetailsPage({ params }: { params: { id: string } })
     <div className="grid gap-6">
       <div className="flex flex-col gap-2">
         <div className="flex items-center gap-4">
-          <Link href="/dashboard/estados-pedidos">
+          <Link href="/dashboard/comprobantes">
             <Button variant="outline" size="icon" className="h-8 w-8">
               <ArrowLeft className="h-4 w-4" />
               <span className="sr-only">Volver</span>
