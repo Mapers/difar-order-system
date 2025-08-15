@@ -1,0 +1,319 @@
+import { PDFDocument, StandardFonts, rgb } from "pdf-lib"
+import {Pedido, PedidoDet} from "@/app/dashboard/estados-pedidos/page";
+
+function money(n: string) {
+  return "S/ " + Number(n).toFixed(2)
+}
+
+type TableLayout = {
+  x: number
+  y: number
+  widths: { qty: number; desc: number; lot: number; due: number; unit: number; amt: number }
+  paddingX: number
+  rowH: number
+  headerH: number
+}
+
+export async function generateOrderPdf(order: Pedido, items: PedidoDet[]): Promise<Blob> {
+  const pdfDoc = await PDFDocument.create()
+  let page = pdfDoc.addPage([595.28, 841.89]) // A4
+  const { width, height } = page.getSize()
+  const margin = 36
+  const contentWidth = width - margin * 2
+
+  const helv = await pdfDoc.embedFont(StandardFonts.Helvetica)
+  const helvBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold)
+
+  let y = height - margin
+
+  // Widget superior derecho con título y número centrados
+  const title = "RECIBO DE VENTA"
+  const numberStr = "Nro. " + String(order?.nroPedido || 0)
+  const titleSize = 16
+  const numSize = 14
+  const padX = 16
+  const padY = 12
+  const gap = 8
+
+  const titleW = helvBold.widthOfTextAtSize(title, titleSize)
+  const numW = helvBold.widthOfTextAtSize(numberStr, numSize)
+  const widgetW = Math.max(190, Math.max(titleW, numW) + padX * 2)
+  const widgetH = padY * 2 + titleSize + gap + numSize
+
+  const widgetX = width - margin - widgetW
+  const widgetY = y - widgetH + 2 // pegado arriba
+
+  // Dibujar rectángulo redondeado (borde gris claro, fondo muy claro)
+  drawRoundedRect(page, widgetX, widgetY, widgetW, widgetH, 10, {
+    fill: rgb(0.985, 0.985, 0.985),
+    stroke: rgb(0.74, 0.74, 0.74),
+    borderWidth: 1,
+  })
+
+  // Texto centrado dentro del widget
+  const centerX = widgetX + widgetW / 2
+  const titleX = centerX - titleW / 2
+  const titleY = widgetY + widgetH - padY - titleSize + 2
+  page.drawText(title, { x: titleX, y: titleY, size: titleSize, font: helvBold })
+
+  const numX = centerX - numW / 2
+  const numY = titleY - gap - numSize
+  page.drawText(numberStr, { x: numX, y: numY, size: numSize, font: helvBold })
+
+  // Continuar el contenido por debajo del widget
+  y -= widgetH + 10
+  line(page, margin, y, width - margin, y, 1, rgb(0.8, 0.8, 0.8))
+  y -= 10
+
+  // Datos cabecera
+  y = drawKeyVal(page, "Fecha de Emisión:", order.fechaPedido, margin, y, helvBold, helv)
+  y = drawKeyVal(page, "Cliente:", order.nombreCliente, margin, y, helvBold, helv)
+  y = drawKeyVal(page, "DNI/RUC:", order.codigoCliente, margin, y, helvBold, helv)
+  y = drawKeyVal(page, "Dirección:", order?.direccionEntrega || '-', margin, y, helvBold, helv)
+  y -= 6
+
+  // Tabla
+  const layout: TableLayout = {
+    x: margin,
+    y,
+    widths: {
+      qty: 40,
+      desc: contentWidth - (40 + 70 + 70 + 75 + 85),
+      lot: 70,
+      due: 70,
+      unit: 75,
+      amt: 85,
+    },
+    paddingX: 6,
+    rowH: 16,
+    headerH: 20,
+  }
+
+  // Encabezado de tabla
+  y = drawTableHeader(page, layout, helvBold, helv, width, height)
+
+  // Filas
+  for (const item of items) {
+    const descMaxWidth = layout.widths.desc - layout.paddingX * 2
+    const descLines = wrapText(item.productoNombre, helv, 10, descMaxWidth)
+    const dynamicRowH = Math.max(layout.rowH, descLines.length * 12 + 6)
+
+    // Salto de página si no cabe
+    if (y - dynamicRowH < margin + 70) {
+      page = pdfDoc.addPage([595.28, 841.89])
+      y = 841.89 - margin
+      y = drawTableHeader(page, layout, helvBold, helv, width, height)
+    }
+
+    const rowTop = y
+    const rowBottom = y - dynamicRowH
+
+    // Líneas verticales y borde inferior de la fila
+    const xPositions = computeColumnXs(layout)
+    for (const x of xPositions) {
+      line(page, x, rowTop, x, rowBottom, 0.5, rgb(0.9, 0.9, 0.9))
+    }
+    line(page, layout.x, rowBottom, layout.x + totalWidth(layout), rowBottom, 0.5, rgb(0.85, 0.85, 0.85))
+
+    // Contenido
+    const baseY = rowTop - 12
+    drawCellText(page, String(item.cantPedido), layout.x + layout.paddingX, baseY, helv, 10, "left")
+
+    let textY = baseY
+    for (const l of descLines) {
+      page.drawText(l, { x: xPositions[1] + layout.paddingX, y: textY, size: 10, font: helv })
+      textY -= 12
+    }
+
+    drawCellText(page, item.codigoitemPedido, xPositions[2] + layout.paddingX, baseY, helv, 10, "left")
+    drawCellText(page, "0.00", xPositions[3] + layout.paddingX, baseY, helv, 10, "left")
+
+    const unitStr = money(item.precioPedido)
+    drawCellText(page, unitStr, xPositions[4] + layout.widths.unit - layout.paddingX, baseY, helv, 10, "right")
+
+    const amtStr = money(String(Number(item.precioPedido) * Number(item.cantPedido)))
+    drawCellText(page, amtStr, xPositions[5] + layout.widths.amt - layout.paddingX, baseY, helvBold, 10, "right")
+
+    y -= dynamicRowH
+  }
+
+  // Total
+  y -= 8
+  const totalVal = items.reduce((s, it) => s + Number(it.precioPedido) * Number(it.cantPedido), 0)
+  const totalStr = money(totalVal.toString())
+
+  const tableRight = layout.x + totalWidth(layout)
+  const totalLabel = "TOTAL:"
+  const labelW = helvBold.widthOfTextAtSize(totalLabel, 12)
+  const valW = helvBold.widthOfTextAtSize(totalStr, 12)
+
+  drawCellText(page, totalLabel, tableRight - valW - 10 - labelW, y, helvBold, 12, "left")
+  drawCellText(page, totalStr, tableRight - valW, y, helvBold, 12, "left")
+
+  y -= 28
+  page.drawText("SON: " + order.totalPedido, { x: margin, y, size: 10, font: helv })
+
+  const pdfBytes = await pdfDoc.save()
+  return new Blob([pdfBytes], { type: "application/pdf" })
+}
+
+function drawTableHeader(page: any, layout: TableLayout, helvBold: any, helv: any, pageW: number, pageH: number) {
+  const headerTop = layout.y
+  const headerBottom = layout.y - layout.headerH
+  const totalW = totalWidth(layout)
+
+  page.drawRectangle({
+    x: layout.x,
+    y: headerBottom,
+    width: totalW,
+    height: layout.headerH,
+    color: rgb(0.96, 0.96, 0.96),
+  })
+  line(page, layout.x, headerBottom, layout.x + totalW, headerBottom, 0.8, rgb(0.8, 0.8, 0.8))
+
+  const xs = computeColumnXs(layout)
+  for (const x of xs) {
+    line(page, x, headerTop, x, headerBottom, 0.8, rgb(0.85, 0.85, 0.85))
+  }
+
+  const textY = headerTop - 13
+  page.drawText("CANT.", { x: xs[0] + layout.paddingX, y: textY, size: 10, font: helvBold })
+  page.drawText("DESCRIPCIÓN", { x: xs[1] + layout.paddingX, y: textY, size: 10, font: helvBold })
+  page.drawText("CÓDIGO", { x: xs[2] + layout.paddingX, y: textY, size: 10, font: helvBold })
+  page.drawText("VCTO.", { x: xs[3] + layout.paddingX, y: textY, size: 10, font: helvBold })
+
+  const unitLabel = "P. UNIT."
+  const amtLabel = "IMPORTE"
+  const unitXRight = xs[4] + layout.widths.unit - layout.paddingX
+  const amtXRight = xs[5] + layout.widths.amt - layout.paddingX
+  page.drawText(unitLabel, {
+    x: unitXRight - helvBold.widthOfTextAtSize(unitLabel, 10),
+    y: textY,
+    size: 10,
+    font: helvBold,
+  })
+  page.drawText(amtLabel, {
+    x: amtXRight - helvBold.widthOfTextAtSize(amtLabel, 10),
+    y: textY,
+    size: 10,
+    font: helvBold,
+  })
+
+  return headerBottom - 2
+}
+
+function computeColumnXs(layout: TableLayout) {
+  const xs: number[] = []
+  let acc = layout.x
+  xs.push(acc)
+  acc += layout.widths.qty
+  xs.push(acc)
+  acc += layout.widths.desc
+  xs.push(acc)
+  acc += layout.widths.lot
+  xs.push(acc)
+  acc += layout.widths.due
+  xs.push(acc)
+  acc += layout.widths.unit
+  xs.push(acc)
+  acc += layout.widths.amt
+  xs.push(acc)
+  return xs
+}
+
+function totalWidth(layout: TableLayout) {
+  const w = layout.widths
+  return w.qty + w.desc + w.lot + w.due + w.unit + w.amt
+}
+
+function drawCellText(
+  page: any,
+  text: string,
+  x: number,
+  y: number,
+  font: any,
+  size: number,
+  align: "left" | "right" = "left",
+) {
+  let tx = x
+  if (align === "right") {
+    tx = x - font.widthOfTextAtSize(text, size)
+  }
+  page.drawText(text, { x: tx, y, size, font })
+}
+
+function wrapText(text: string, font: any, size: number, maxWidth: number) {
+  const words = text.split(/\s+/)
+  const lines: string[] = []
+  let current = ""
+
+  for (const w of words) {
+    const test = current ? current + " " + w : w
+    const width = font.widthOfTextAtSize(test, size)
+    if (width <= maxWidth) {
+      current = test
+    } else {
+      if (current) lines.push(current)
+      if (font.widthOfTextAtSize(w, size) > maxWidth) {
+        let cut = w
+        while (font.widthOfTextAtSize(cut, size) > maxWidth && cut.length > 1) {
+          cut = cut.slice(0, -1)
+        }
+        lines.push(cut + "…")
+        current = ""
+      } else {
+        current = w
+      }
+    }
+  }
+  if (current) lines.push(current)
+  return lines
+}
+
+function drawKeyVal(page: any, key: string, value: string, x: number, y: number, keyFont: any, valFont: any) {
+  page.drawText(key, { x, y, size: 10, font: keyFont })
+  page.drawText(value, { x: x + 110, y, size: 10, font: valFont })
+  return y - 14
+}
+
+function line(page: any, x1: number, y1: number, x2: number, y2: number, thickness: number, color: any) {
+  page.drawLine({ start: { x: x1, y: y1 }, end: { x: x2, y: y2 }, thickness, color })
+}
+
+// Dibuja un rectángulo con esquinas redondeadas usando un path SVG
+function drawRoundedRect(
+  page: any,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  r: number,
+  opts: { fill?: any; stroke?: any; borderWidth?: number } = {},
+) {
+  const rr = Math.min(r, w / 2, h / 2)
+  const path = roundedRectSvgPath(x, y, w, h, rr)
+  page.drawSvgPath(path, {
+    color: opts.fill,
+    borderColor: opts.stroke,
+    borderWidth: opts.borderWidth ?? 1,
+  })
+}
+
+function roundedRectSvgPath(x: number, y: number, w: number, h: number, r: number) {
+  // Path con origen en (x,y) esquina inferior izquierda
+  // Mueve sentido horario
+  const x2 = x + w
+  const y2 = y + h
+  return [
+    `M ${x + r} ${y}`,
+    `L ${x2 - r} ${y}`,
+    `Q ${x2} ${y} ${x2} ${y + r}`,
+    `L ${x2} ${y2 - r}`,
+    `Q ${x2} ${y2} ${x2 - r} ${y2}`,
+    `L ${x + r} ${y2}`,
+    `Q ${x} ${y2} ${x} ${y2 - r}`,
+    `L ${x} ${y + r}`,
+    `Q ${x} ${y} ${x + r} ${y}`,
+    "Z",
+  ].join(" ")
+}

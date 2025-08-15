@@ -45,7 +45,7 @@ import {
 } from "@/components/ui/popover"
 import {fetchGetClients} from "@/app/api/takeOrders";
 
-const ORDER_STATES = [
+export const ORDER_STATES = [
   {
     id: 1,
     name: "Pendiente",
@@ -239,10 +239,6 @@ export default function MyOrdersPage() {
   }
 
   const getStateInfo = (stateId: number) => {
-    return ORDER_STATES.find(state => state.id === stateId)
-  }
-
-  const getStatusText = (stateId: number) => {
     return ORDER_STATES.find(state => state.id === stateId)
   }
 

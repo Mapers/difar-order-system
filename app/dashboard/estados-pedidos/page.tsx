@@ -14,7 +14,7 @@ import {
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { useEffect, useState } from "react"
+import {useEffect, useRef, useState} from "react"
 import { Skeleton } from "@/components/ui/skeleton"
 import apiClient from "@/app/api/client"
 import {format, parseISO} from "date-fns";
@@ -25,23 +25,38 @@ import {
   DialogDescription,
   DialogFooter,
   DialogHeader,
-  DialogTitle,
+  DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog"
 import {Label} from "@/components/ui/label";
 import {useAuth} from "@/context/authContext";
-interface Pedido {
+import Link from "next/link";
+import {generateOrderPdf} from "@/lib/pdf";
+export interface Pedido {
   idPedidocab: number
   nroPedido: string
   fechaPedido: string
-  codigoCliente: string
   nombreCliente: string
-  RUC: string
-  codigoVendedor: string
-  is_migrado: string
-  estadodePedido: number
   nombreVendedor: string
-  totalPedido: string
+  condicionPedido: string
   monedaPedido: string
+  estadodePedido: number
+  totalPedido: string
+  notaPedido: string
+  contactoPedido: string
+  telefonoPedido: string
+  direccionEntrega?: string
+  referenciaDireccion?: string
+  codigoCliente: string
+}
+
+export interface PedidoDet {
+  idPedidodet: number
+  idPedidocab: number
+  codigoitemPedido: string
+  cantPedido: string
+  precioPedido: string
+  productoNombre: string
+  productoUnidad: string
 }
 
 interface Status {
@@ -126,11 +141,13 @@ const ORDER_STATES = [
 
 export default function OrderStatusManagementPage() {
   const [orders, setOrders] = useState<Pedido[]>([])
+  const [detalle, setDetalle] = useState<PedidoDet[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
   const [filters, setFilters] = useState({
     estado: -1,
   })
+  const auth = useAuth()
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [states, setStates] = useState<Status[]>([])
@@ -140,7 +157,8 @@ export default function OrderStatusManagementPage() {
   const [stateChangeNotes, setStateChangeNotes] = useState("")
   const [newState, setNewState] = useState<number>(1)
   const [showDocumentAlert, setShowDocumentAlert] = useState(false)
-  // const auth = useAuth();
+  const [pdfUrl, setPdfUrl] = useState<string>("")
+  const objectUrlRef = useRef<string | null>(null)
 
   const fetchOrders = async () => {
     try {
@@ -161,6 +179,15 @@ export default function OrderStatusManagementPage() {
       console.error("Error fetching orders:", error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const fetchPedidoDetalle = async (id: string) => {
+    try {
+      const resDet = await apiClient.get(`/pedidosDetalles/${id}/detalles?vendedor=${auth.user?.codigo}`)
+      const detallesData = resDet.data.data
+      setDetalle(detallesData)
+    } catch (err) {
     }
   }
 
@@ -188,19 +215,8 @@ export default function OrderStatusManagementPage() {
     return orders.filter(order => order.estadodePedido === stateId).length
   }
 
-  const handlePreviousPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage(currentPage - 1)
-    }
-  }
-
-  const handleNextPage = () => {
-    if (currentPage < totalPages) {
-      setCurrentPage(currentPage + 1)
-    }
-  }
-
-  const handleStateChange = (order: Pedido) => {
+  const handleStateChange = async (order: Pedido) => {
+    await fetchPedidoDetalle(order.nroPedido);
     setSelectedOrder(order)
     setNewState(order.estadodePedido + 1)
     setIsChangeStateModalOpen(true)
@@ -245,6 +261,33 @@ export default function OrderStatusManagementPage() {
       setLoading(false);
     }
   };
+
+  const handleDownload = () => {
+    if (!pdfUrl) return
+    const a = document.createElement("a")
+    a.href = pdfUrl
+    a.download = `boleta_${selectedOrder.nroPedido}.pdf`
+    a.click()
+  }
+
+  useEffect(() => {
+    if (selectedOrder) {
+      const build = async () => {
+        const blob = await generateOrderPdf(selectedOrder, detalle)
+        if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current)
+        const url = URL.createObjectURL(blob)
+        objectUrlRef.current = url
+        setPdfUrl(url)
+      }
+      build()
+      return () => {
+        if (objectUrlRef.current) {
+          URL.revokeObjectURL(objectUrlRef.current)
+          objectUrlRef.current = null
+        }
+      }
+    }
+  }, [selectedOrder])
 
   return (
     <div className="grid gap-6">
@@ -359,7 +402,7 @@ export default function OrderStatusManagementPage() {
                   const StateIcon = stateInfo?.icon || Clock
 
                   return (
-                    <tr key={order.idPedidocab + '' + index} className="border-b hover:bg-gray-50">
+                    <tr key={index} className="border-b hover:bg-gray-50">
                       <td className="p-4 font-medium text-sm">{order.nroPedido}</td>
                       <td className="p-4">
                         <div>
@@ -391,18 +434,16 @@ export default function OrderStatusManagementPage() {
                             <Edit className="h-3 w-3 mr-1" />
                             Cambiar
                           </Button>
-                          {order.estadodePedido >= 4 && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleViewDocuments(order)}
-                              className="text-blue-600 hover:text-blue-700 bg-transparent text-xs"
-                              disabled
-                            >
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-blue-600 hover:text-blue-700 bg-transparent text-xs"
+                          >
+                            <Link href={`/dashboard/estados-pedidos/${order.nroPedido}`} className='flex'>
                               <Eye className="h-3 w-3 mr-1" />
-                              Documentos
-                            </Button>
-                          )}
+                              Ver detalle
+                            </Link>
+                          </Button>
                         </div>
                       </td>
                     </tr>
@@ -451,7 +492,7 @@ export default function OrderStatusManagementPage() {
                 const StateIcon = stateInfo?.icon || Clock
 
                 return (
-                  <Card key={order.idPedidocab + '' + index} className="border border-gray-200">
+                  <Card key={index} className="border border-gray-200">
                     <CardContent className="p-4">
                       <div className="flex justify-between items-start mb-3">
                         <div>
@@ -605,21 +646,55 @@ export default function OrderStatusManagementPage() {
             </div>
           </div>
 
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setIsChangeStateModalOpen(false)}
-              disabled={loading}
-            >
-              Cancelar
-            </Button>
-            <Button
-              onClick={confirmStateChange}
-              disabled={loading}
-            >
-              {loading ? 'Procesando...' : 'Confirmar Cambio'}
-            </Button>
-          </DialogFooter>
+          {selectedOrder && (
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setIsChangeStateModalOpen(false)}
+                disabled={loading}
+              >
+                Cancelar
+              </Button>
+              {(detalle.length > 0 && selectedOrder.estadodePedido ===  2) && (
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="text-red-600 hover:text-red-700 bg-transparent text-xs"
+                    >
+                      <FileText className="h-3 w-3 mr-1" />
+                      Ver PDF
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-[95vw] w-[1000px] max-h-[90vh] p-0 overflow-hidden">
+                    <DialogHeader className="px-4 py-3 border-b">
+                      <div className="flex items-center justify-between">
+                        <DialogTitle>PDF — {selectedOrder.nroPedido}</DialogTitle>
+                        <Button size="sm" onClick={handleDownload}>
+                          <Download className="w-4 h-4 mr-2" />
+                          Descargar
+                        </Button>
+                      </div>
+                    </DialogHeader>
+                    <div className="w-full h-[60vh]">
+                      {pdfUrl ? (
+                        <iframe title="Recibo PDF" src={pdfUrl} className="w-full h-full" />
+                      ) : (
+                        <div className="p-6">Generando PDF…</div>
+                      )}
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              )}
+              <Button
+                onClick={confirmStateChange}
+                disabled={loading}
+              >
+                {loading ? 'Procesando...' : 'Confirmar Cambio'}
+              </Button>
+            </DialogFooter>
+          )}
         </DialogContent>
       </Dialog>
     </div>

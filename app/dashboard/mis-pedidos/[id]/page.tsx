@@ -4,47 +4,23 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { ArrowLeft, Printer, FileDown } from "lucide-react"
+import {ArrowLeft, Printer, FileDown, Clock} from "lucide-react"
 import Link from "next/link"
 import { useEffect, useState } from "react"
 import { Skeleton } from "@/components/ui/skeleton"
 import apiClient from "@/app/api/client"
 import {useAuth} from "@/context/authContext";
-
-interface PedidoCab {
-  idPedidocab: number
-  fechaPedido: string
-  clientePedido: string
-  clienteNombre?: string
-  condicionPedido: string
-  condicionNombre?: string
-  monedaPedido: string
-  estadodePedido: number
-  direccionEntrega: string
-  referenciaDireccion: string
-  telefonoPedido: string
-  contactoPedido: string
-  notaPedido: string
-  formaPago: string
-  vendedorPedido: string
-}
-
-interface PedidoDet {
-  idPedidodet: number
-  idPedidocab: number
-  codigoitemPedido: string
-  cantPedido: string
-  precioPedido: string
-  productoNombre?: string
-  productoUnidad?: string
-}
+import {ORDER_STATES} from "@/app/dashboard/mis-pedidos/page";
+import { use } from 'react'
+import {Pedido, PedidoDet} from "@/app/dashboard/estados-pedidos/page";
 
 export default function OrderDetailsPage({ params }: { params: { id: string } }) {
-  const [pedido, setPedido] = useState<PedidoCab | null>(null)
+  const [pedido, setPedido] = useState<Pedido | null>(null)
   const [detalles, setDetalles] = useState<PedidoDet[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const auth = useAuth();
+  const { id } = use(params)
 
   useEffect(() => {
     const fetchPedido = async () => {
@@ -52,11 +28,11 @@ export default function OrderDetailsPage({ params }: { params: { id: string } })
         setLoading(true)
 
         // Obtener cabecera del pedido
-        const resCab = await apiClient.get(`/pedidos/${params?.id || ''}`)
+        const resCab = await apiClient.get(`/pedidos/${id || ''}`)
         const pedidoData = resCab.data.data
 
         // Obtener detalles del pedido
-        const resDet = await apiClient.get(`/pedidosDetalles/${params?.id || ''}/detalles?vendedor=${auth.user?.codigo}`)
+        const resDet = await apiClient.get(`/pedidosDetalles/${id || ''}/detalles?vendedor=${auth.user?.codigo}`)
         const detallesData = resDet.data.data
 
         setPedido(pedidoData)
@@ -84,13 +60,8 @@ export default function OrderDetailsPage({ params }: { params: { id: string } })
 
   const { subtotal, igv, total } = calculateTotals()
 
-  const mapEstadoPedido = (estado: number): string => {
-    switch(estado) {
-      case 1: return "En proceso"
-      case 2: return "Pendiente"
-      case 3: return "Entregado"
-      default: return "Desconocido"
-    }
+  const getStateInfo = (stateId: number) => {
+    return ORDER_STATES.find(state => state.id === stateId)
   }
 
   if (loading) {
@@ -216,7 +187,7 @@ export default function OrderDetailsPage({ params }: { params: { id: string } })
             </Button>
           </Link>
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-gray-900">
-            Pedido #{pedido.idPedidocab}
+            Pedido #{pedido.nroPedido}
           </h1>
         </div>
         <p className="text-gray-500">Información completa del pedido y sus productos.</p>
@@ -244,7 +215,7 @@ export default function OrderDetailsPage({ params }: { params: { id: string } })
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <p className="text-sm font-medium text-gray-500">Número de Pedido:</p>
-                <p className="text-gray-900 font-medium">{pedido.idPedidocab}</p>
+                <p className="text-gray-900 font-medium">{pedido.nroPedido}</p>
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-500">Fecha:</p>
@@ -254,7 +225,7 @@ export default function OrderDetailsPage({ params }: { params: { id: string } })
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-500">Condición:</p>
-                <p className="text-gray-900">{pedido.condicionNombre || pedido.condicionPedido}</p>
+                <p className="text-gray-900">{pedido.condicionPedido}</p>
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-500">Moneda:</p>
@@ -264,31 +235,16 @@ export default function OrderDetailsPage({ params }: { params: { id: string } })
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-500">Vendedor:</p>
-                <p className="text-gray-900">{pedido.vendedorPedido || "No especificado"}</p>
+                <p className="text-gray-900">{pedido.nombreVendedor || "No especificado"}</p>
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-500">Forma de Pago:</p>
-                <p className="text-gray-900">{pedido.formaPago || "No especificada"}</p>
+                <p className="text-gray-900">{pedido.monedaPedido || "No especificada"}</p>
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-500">Estado:</p>
-                <Badge
-                  variant={
-                    mapEstadoPedido(pedido.estadodePedido) === "Entregado"
-                      ? "default"
-                      : mapEstadoPedido(pedido.estadodePedido) === "En proceso"
-                        ? "secondary"
-                        : "outline"
-                  }
-                  className={
-                    mapEstadoPedido(pedido.estadodePedido) === "Entregado"
-                      ? "bg-green-100 text-green-800 hover:bg-green-100"
-                      : mapEstadoPedido(pedido.estadodePedido) === "En proceso"
-                        ? "bg-blue-100 text-blue-800 hover:bg-blue-100"
-                        : "bg-amber-100 text-amber-800 hover:bg-amber-100"
-                  }
-                >
-                  {mapEstadoPedido(pedido.estadodePedido)}
+                <Badge className={`${getStateInfo(pedido.estadodePedido)?.color} flex items-center gap-1 text-xs`}>
+                  {getStateInfo(pedido.estadodePedido)?.name || 'Desconocido'}
                 </Badge>
               </div>
               {pedido.notaPedido && (
@@ -312,7 +268,7 @@ export default function OrderDetailsPage({ params }: { params: { id: string } })
               <div>
                 <p className="text-sm font-medium text-gray-500">Cliente:</p>
                 <p className="text-gray-900 font-medium">
-                  {pedido.clienteNombre || pedido.clientePedido}
+                  {pedido.nombreCliente}
                 </p>
               </div>
               <div>
