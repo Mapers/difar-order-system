@@ -31,6 +31,8 @@ import {Label} from "@/components/ui/label";
 import {useAuth} from "@/context/authContext";
 import Link from "next/link";
 import {generateOrderPdf} from "@/lib/pdf";
+import {TimelineModal} from "@/app/dashboard/estados-pedidos/timeline-modal";
+
 export interface Pedido {
   idPedidocab: number
   nroPedido: string
@@ -53,10 +55,14 @@ export interface PedidoDet {
   idPedidodet: number
   idPedidocab: number
   codigoitemPedido: string
+  iditemPedido?: string
   cantPedido: string
   precioPedido: string
   productoNombre: string
   productoUnidad: string
+  isBonification?: boolean
+  isEscale?: boolean
+  appliedScale?: any
 }
 
 interface Status {
@@ -246,6 +252,15 @@ export default function OrderStatusManagementPage() {
         await fetchUpdateStatusConfirm(selectedOrder.nroPedido);
       }
       await fetchUpdateStatus(selectedOrder.nroPedido, nextState);
+
+      await apiClient.post(`/pedidos/state`, {
+        nroPedido: selectedOrder.nroPedido,
+        estadoAnterior: selectedOrder.estadodePedido,
+        estadoNuevo: nextState,
+        usuario: auth.user?.nombreCompleto || 'Usuario desconocido',
+        nota: stateChangeNotes,
+      })
+
       await fetchOrders();
 
       setIsChangeStateModalOpen(false);
@@ -444,6 +459,7 @@ export default function OrderStatusManagementPage() {
                               Ver detalle
                             </Link>
                           </Button>
+                          <TimelineModal pedido={order} />
                         </div>
                       </td>
                     </tr>
@@ -536,17 +552,17 @@ export default function OrderStatusManagementPage() {
                           <Edit className="h-3 w-3 mr-1" />
                           Cambiar Estado
                         </Button>
-                        {order.estadodePedido >= 4 && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleViewDocuments(order)}
-                            className="flex-1 text-blue-600 hover:text-blue-700 bg-transparent text-xs"
-                          >
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-blue-600 hover:text-blue-700 bg-transparent text-xs"
+                        >
+                          <Link href={`/dashboard/estados-pedidos/${order.nroPedido}`} className='flex'>
                             <Eye className="h-3 w-3 mr-1" />
-                            Ver Documentos
-                          </Button>
-                        )}
+                            Ver detalle
+                          </Link>
+                        </Button>
+                        <TimelineModal pedido={order} />
                       </div>
                     </CardContent>
                   </Card>

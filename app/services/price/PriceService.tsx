@@ -15,8 +15,18 @@ export class PriceService {
     return response.data;
   }
 
+  static async getPricesAll(params?: PriceListParams): Promise<any> {
+    const response = await apiClient.get('/price/list-prices-lote/all', { params });
+    return response.data;
+  }
+
   static async getLaboratories(): Promise<any> {
     const response = await apiClient.get('/price/laboratories');
+    return response.data;
+  }
+
+  static async getProductLots(code: string): Promise<any> {
+    const response = await apiClient.get(`/price/list-prices-lote/${code}`);
     return response.data;
   }
 }

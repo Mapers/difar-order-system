@@ -26,9 +26,20 @@ export async function generateOrderPdf(order: Pedido, items: PedidoDet[]): Promi
 
   let y = height - margin
 
+  // Cargar y agregar el logo
+  let logoImage = null;
+  try {
+    // Fetch del logo desde la ruta pública
+    const logoResponse = await fetch('/difar-logo.png');
+    const logoBuffer = await logoResponse.arrayBuffer();
+    logoImage = await pdfDoc.embedPng(logoBuffer);
+  } catch (error) {
+    console.warn('No se pudo cargar el logo:', error);
+  }
+
   // Widget superior derecho con título y número centrados
   const title = "RECIBO DE VENTA"
-  const numberStr = "Nro. " + String(order?.nroPedido || 0)
+  const numberStr = "Nro. " + String(order?.nroPedido || 0).padStart(10, '0')
   const titleSize = 16
   const numSize = 14
   const padX = 16
@@ -40,8 +51,31 @@ export async function generateOrderPdf(order: Pedido, items: PedidoDet[]): Promi
   const widgetW = Math.max(190, Math.max(titleW, numW) + padX * 2)
   const widgetH = padY * 2 + titleSize + gap + numSize
 
+  const logoWidth = 60
+  const logoHeight = 30
+  const logoX = margin
+  const logoY = y - logoHeight
+
   const widgetX = width - margin - widgetW
   const widgetY = y - widgetH + 2 // pegado arriba
+
+  if (logoImage) {
+    page.drawImage(logoImage, {
+      x: logoX,
+      y: logoY,
+      width: logoWidth,
+      height: logoHeight,
+    });
+  } else {
+    // Fallback: texto DIFAR si no hay logo
+    page.drawText("DIFAR", {
+      x: logoX,
+      y: logoY + logoHeight / 2 - 6,
+      size: 14,
+      font: helvBold,
+      color: rgb(0.2, 0.2, 0.2),
+    });
+  }
 
   // Dibujar rectángulo redondeado (borde gris claro, fondo muy claro)
   drawRoundedRect(page, widgetX, widgetY, widgetW, widgetH, 10, {
@@ -138,7 +172,7 @@ export async function generateOrderPdf(order: Pedido, items: PedidoDet[]): Promi
   }
 
   // Total
-  y -= 8
+  y -= 12
   const totalVal = items.reduce((s, it) => s + Number(it.precioPedido) * Number(it.cantPedido), 0)
   const totalStr = money(totalVal.toString())
 
@@ -151,7 +185,8 @@ export async function generateOrderPdf(order: Pedido, items: PedidoDet[]): Promi
   drawCellText(page, totalStr, tableRight - valW, y, helvBold, 12, "left")
 
   y -= 28
-  page.drawText("SON: " + order.totalPedido, { x: margin, y, size: 10, font: helv })
+  const totalText = numberToText(totalVal) + " SOLES"
+  page.drawText("SON: " + totalText, { x: margin, y, size: 10, font: helv })
 
   const pdfBytes = await pdfDoc.save()
   return new Blob([pdfBytes], { type: "application/pdf" })
@@ -219,6 +254,83 @@ function computeColumnXs(layout: TableLayout) {
   acc += layout.widths.amt
   xs.push(acc)
   return xs
+}
+
+function numberToText(num: number): string {
+  const unidades = ['', 'UNO', 'DOS', 'TRES', 'CUATRO', 'CINCO', 'SEIS', 'SIETE', 'OCHO', 'NUEVE'];
+  const decenas = ['', 'DIEZ', 'VEINTE', 'TREINTA', 'CUARENTA', 'CINCUENTA', 'SESENTA', 'SETENTA', 'OCHENTA', 'NOVENTA'];
+  const especiales = ['', 'ONCE', 'DOCE', 'TRECE', 'CATORCE', 'QUINCE', 'DIECISÉIS', 'DIECISIETE', 'DIECIOCHO', 'DIECINUEVE'];
+  const centenas = ['', 'CIENTO', 'DOSCIENTOS', 'TRESCIENTOS', 'CUATROCIENTOS', 'QUINIENTOS', 'SEISCIENTOS', 'SETECIENTOS', 'OCHOCIENTOS', 'NOVECIENTOS'];
+
+  const entero = Math.floor(num);
+  const decimal = Math.round((num - entero) * 100);
+
+  let texto = '';
+
+  if (entero === 0) {
+    texto = 'CERO';
+  } else if (entero < 10) {
+    texto = unidades[entero];
+  } else if (entero < 20) {
+    texto = especiales[entero - 10];
+  } else if (entero < 100) {
+    const decena = Math.floor(entero / 10);
+    const unidad = entero % 10;
+
+    if (unidad === 0) {
+      texto = decenas[decena];
+    } else if (decena === 1) {
+      texto = 'DIECI' + unidades[unidad];
+    } else if (decena === 2) {
+      texto = 'VEINTI' + unidades[unidad];
+    } else {
+      texto = decenas[decena] + ' Y ' + unidades[unidad];
+    }
+  } else if (entero < 1000) {
+    const centena = Math.floor(entero / 100);
+    const resto = entero % 100;
+
+    if (centena === 1 && resto === 0) {
+      texto = 'CIEN';
+    } else {
+      texto = centenas[centena];
+      if (resto > 0) {
+        texto += ' ' + numberToText(resto);
+      }
+    }
+  } else if (entero < 1000000) {
+    const miles = Math.floor(entero / 1000);
+    const resto = entero % 1000;
+
+    if (miles === 1) {
+      texto = 'MIL';
+    } else {
+      texto = numberToText(miles) + ' MIL';
+    }
+
+    if (resto > 0) {
+      texto += ' ' + numberToText(resto);
+    }
+  } else if (entero < 1000000000) {
+    const millones = Math.floor(entero / 1000000);
+    const resto = entero % 1000000;
+
+    if (millones === 1) {
+      texto = 'UN MILLÓN';
+    } else {
+      texto = numberToText(millones) + ' MILLONES';
+    }
+
+    if (resto > 0) {
+      texto += ' ' + numberToText(resto);
+    }
+  }
+
+  if (decimal > 0) {
+    texto += ' CON ' + decimal.toString().padStart(2, '0') + '/100';
+  }
+
+  return texto;
 }
 
 function totalWidth(layout: TableLayout) {

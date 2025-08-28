@@ -20,7 +20,7 @@ import {
   Mail,
   MessageSquare,
   AlertTriangle,
-  Loader2, Truck, Wallet
+  Loader2, Truck, Wallet, RefreshCw
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -107,6 +107,10 @@ export interface Pedido {
   monedaPedido: string
   cantidadPedidos: number
   direccionCliente: string
+
+  errorObservaciones?: string
+  errorCodigo?: string
+  errorFecha?: string
 }
 
 export default function ComprobantesPage() {
@@ -545,21 +549,41 @@ export default function ComprobantesPage() {
                             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                               <div className="flex flex-col sm:flex-row sm:items-center gap-2">
                                 <h3 className="text-base sm:text-lg font-semibold text-gray-900">{pedido.nroPedido}</h3>
-                                <Badge className="bg-green-100 text-green-800 text-xs w-fit">
-                                  <span className="hidden sm:inline">Completado - Listo para facturar</span>
-                                  <span className="sm:hidden">Listo</span>
-                                </Badge>
+                                {pedido.errorObservaciones ? (
+                                  <Badge className="bg-red-100 text-red-800 text-xs w-fit">
+                                    <AlertTriangle className="h-3 w-3 mr-1" />
+                                    <span className="hidden sm:inline">Error en facturación</span>
+                                    <span className="sm:hidden">Error</span>
+                                  </Badge>
+                                ) : (
+                                  <Badge className="bg-green-100 text-green-800 text-xs w-fit">
+                                    <span className="hidden sm:inline">Completado - Listo para facturar</span>
+                                    <span className="sm:hidden">Listo</span>
+                                  </Badge>
+                                )}
                               </div>
                               <div className="flex flex-row gap-2">
-                                <Button
-                                  onClick={() => handleInvoiceOrder(pedido)}
-                                  className="bg-green-600 hover:bg-green-700 flex items-center gap-2 w-full sm:w-auto"
-                                  size="sm"
-                                >
-                                  <Receipt className="h-4 w-4" />
-                                  <span className="hidden sm:inline">Facturar Ahora</span>
-                                  <span className="sm:hidden">Facturar</span>
-                                </Button>
+                                {!pedido.errorObservaciones ?
+                                  <Button
+                                    onClick={() => handleInvoiceOrder(pedido)}
+                                    className="bg-green-600 hover:bg-green-700 flex items-center gap-2 w-full sm:w-auto"
+                                    size="sm"
+                                  >
+                                    <Receipt className="h-4 w-4" />
+                                    <span className="hidden sm:inline">Facturar Ahora</span>
+                                    <span className="sm:hidden">Facturar</span>
+                                  </Button> :
+                                  <Button
+                                    onClick={() => handleInvoiceOrder(pedido)}
+                                    variant="outline"
+                                    size="sm"
+                                    className="text-red-700 border-red-300 hover:bg-red-200 text-xs"
+                                  >
+                                    <RefreshCw className="h-4 w-4" />
+                                    <span className="hidden sm:inline">Reintentar Factura</span>
+                                    <span className="sm:hidden">Reintentar</span>
+                                  </Button>
+                                }
                                 <Button
                                   className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto"
                                   size="sm"
@@ -572,6 +596,26 @@ export default function ComprobantesPage() {
                                 </Button>
                               </div>
                             </div>
+
+                            {pedido.errorObservaciones && (
+                              <div className="bg-red-100 border border-red-200 rounded-md p-3">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <AlertTriangle className="h-4 w-4 text-red-600" />
+                                  <h4 className="font-medium text-red-800 text-sm">Error en facturación</h4>
+                                </div>
+                                <div className="text-xs text-red-700 space-y-1">
+                                  {pedido.errorObservaciones && (
+                                    <p><strong>Observación:</strong> {pedido.errorObservaciones.split('|')[3]}</p>
+                                  )}
+                                  {pedido.errorCodigo && (
+                                    <p><strong>Código error:</strong> {pedido.errorCodigo}</p>
+                                  )}
+                                  {pedido.errorFecha && (
+                                    <p><strong>Fecha error:</strong> {format(parseISO(pedido.errorFecha), "dd/MM/yyyy HH:mm")}</p>
+                                  )}
+                                </div>
+                              </div>
+                            )}
 
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 text-xs sm:text-sm">
                               <div className="flex items-center gap-2">

@@ -20,3 +20,10 @@ export interface PriceListParams {
     laboratorio?: string,
     descripcion?: string
 }
+
+export interface LoteInfo {
+    numeroLote: string;
+    stock: number;
+    fechaVencimiento: string;
+    estado: string
+}

@@ -1,15 +1,13 @@
 'use client'
 
 import { useState, useEffect } from "react"
-import {Search, Download, Calendar, Package, AlertCircle} from "lucide-react"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import {Search, Download, Eye} from "lucide-react"
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card"
 import { PriceService } from "@/app/services/price/PriceService"
 import { PriceMethodsService } from "./services/priceMethodsService"
 import MultiSelectLaboratory from "@/components/price/multiSelectLaboratory"
 import { useLaboratoriesData } from "./hooks/useLaboratoriesData"
-import { SkeletonClientRow } from "@/components/skeleton/ClientSkeleton"
-import { PrecioLote, PriceListParams } from "./types"
+import { PrecioLote, PriceListParams, LoteInfo } from "./types"
 import { Badge } from "@/components/ui/badge"
 import { useAuth } from '@/context/authContext';
 import debounce from 'lodash.debounce';
@@ -17,8 +15,16 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {Skeleton} from "@/components/ui/skeleton";
-
-
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import ExportPdfButton from "@/app/dashboard/lista-precios-lote/export-pdf-button";
 
 export default function PricePage() {
   const { user, isAuthenticated } = useAuth();
@@ -27,15 +33,15 @@ export default function PricePage() {
   const [expirationFilter, setExpirationFilter] = useState("all")
   const [listPricesLots, setListPricesLots] = useState<PrecioLote[]>([])
   const [filteredPricesLot, setFilteredPricesLot] = useState<any>([])
-
-  // const [laboratories, setLaboratories] = useState<any>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [currentDateTime, setCurrentDateTime] = useState<{ date: string; time: string }>({
     date: "",
     time: "",
   });
-
+  const [selectedProduct, setSelectedProduct] = useState<PrecioLote | null>(null)
+  const [lotDetails, setLotDetails] = useState<LoteInfo[]>([])
+  const [loadingLots, setLoadingLots] = useState(false)
 
   const debouncedFetchPricesLots = debounce(async () => {
     setLoading(true);
@@ -47,20 +53,17 @@ export default function PricePage() {
         payload.descripcion = searchTerm;
         const response = await PriceService.getPricesLot(payload);
         const data = response.data || [];
-        // setListPricesLots(data);
         setFilteredPricesLot(data);
       } else if (selectedLabs.length > 0) {
         payload.laboratorio = selectedLabs.join(",");
         const response = await PriceService.getPricesLot(payload);
         const data = response.data || [];
-        // setListPricesLots(data);
         setFilteredPricesLot(data);
       }
       else {
         const response = await PriceService.getPricesLot(payload);
         const data = response.data || [];
         setListPricesLots(data);
-        // setFilteredPricesLot(data);
       }
 
     } catch (error) {
@@ -70,16 +73,46 @@ export default function PricePage() {
     }
   }, 500);
 
+  const formatDateToDDMMYYYY = (dateString: string): string => {
+    if (!dateString) return '';
+
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return dateString;
+
+      const day = date.getUTCDate().toString().padStart(2, '0');
+      const month = (date.getMonth() + 1).toString().padStart(2, '0');
+      const year = date.getFullYear();
+
+      return `${day}/${month}/${year}`;
+    } catch (error) {
+      return dateString;
+    }
+  };
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setSearchTerm(value)
-    // setSearch((prev) => ({ ...prev, client: value }));
-    // if (value === '') {
-    //   setSelectedClient(null);
-    // }
   }
 
+  const fetchLotDetails = async (productCode: string) => {
+    setLoadingLots(true);
+    try {
+      // Asumiendo que tienes un servicio para obtener los lotes
+      const response = await PriceService.getProductLots(productCode);
+      setLotDetails(response.data || []);
+    } catch (error) {
+      setError("Error al cargar los detalles del lote");
+      setLotDetails([]);
+    } finally {
+      setLoadingLots(false);
+    }
+  }
+
+  const handleViewLots = (product: PrecioLote) => {
+    setSelectedProduct(product);
+    fetchLotDetails(product.prod_codigo);
+  }
 
   const { laboratories, loadingLab, errorLab } = useLaboratoriesData()
 
@@ -110,6 +143,15 @@ export default function PricePage() {
     setFilteredPricesLot(filtered);
   }, [searchTerm, listPricesLots]);
 
+  let payloadL = {
+    descripcion: '',
+    laboratorio: ''
+  };
+  if (searchTerm.length >= 4) {
+    payloadL.descripcion = searchTerm;
+  } else if (selectedLabs.length > 0) {
+    payloadL.laboratorio = selectedLabs.join(",");
+  }
 
   return (
     <div className="grid gap-6">
@@ -138,32 +180,7 @@ export default function PricePage() {
             </div>
 
             <div className="space-y-2">
-              <Label>Estado</Label>
-              <div className="flex gap-2">
-                <Button
-                  variant={expirationFilter === "30days" ? "destructive" : "outline"}
-                  size="sm"
-                  onClick={() => setExpirationFilter(expirationFilter === "30days" ? "all" : "30days")}
-                  className="flex-1 gap-1 text-xs"
-                >
-                  <Calendar className="h-3 w-3"/>
-                  Por Vencer
-                </Button>
-                <Button
-                  variant={expirationFilter === "expired" ? "destructive" : "outline"}
-                  size="sm"
-                  onClick={() => setExpirationFilter(expirationFilter === "expired" ? "all" : "expired")}
-                  className="flex-1 gap-1 text-xs"
-                >
-                  <AlertCircle className="h-3 w-3"/>
-                  Vencidos
-                </Button>
-              </div>
-            </div>
-
-            <div className="space-y-2">
               <Label>Laboratorios</Label>
-              {/* Mantengo tu componente MultiSelectLaboratory original */}
               <MultiSelectLaboratory
                 laboratories={laboratories}
                 selectedLabs={selectedLabs}
@@ -184,10 +201,7 @@ export default function PricePage() {
               </CardDescription>
             </div>
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" className="gap-1">
-                <Download className="h-4 w-4"/>
-                Exportar
-              </Button>
+              <ExportPdfButton payload={payloadL} />
               <div className="text-sm text-gray-500">
                 {currentDateTime.date} | {currentDateTime.time}
               </div>
@@ -206,11 +220,10 @@ export default function PricePage() {
                 <th className="text-left p-4 font-medium text-sm">Medida</th>
                 <th className="text-left p-4 font-medium text-sm">Principio Activo</th>
                 <th className="text-left p-4 font-medium text-sm">Stock</th>
-                <th className="text-left p-4 font-medium text-sm">Lote</th>
-                <th className="text-left p-4 font-medium text-sm">Vencimiento</th>
                 <th className="text-left p-4 font-medium text-sm">P. Contado</th>
                 <th className="text-left p-4 font-medium text-sm">P. Crédito</th>
                 <th className="text-left p-4 font-medium text-sm">Estado</th>
+                <th className="text-left p-4 font-medium text-sm">Acciones</th>
               </tr>
               </thead>
               <tbody>
@@ -224,10 +237,9 @@ export default function PricePage() {
                     <td className="p-4"><Skeleton className="h-4 w-[80px]"/></td>
                     <td className="p-4"><Skeleton className="h-4 w-[100px]"/></td>
                     <td className="p-4"><Skeleton className="h-4 w-[80px]"/></td>
+                    <td className="p-4"><Skeleton className="h-4 w-[100px]"/></td>
+                    <td className="p-4"><Skeleton className="h-4 w-[100px]"/></td>
                     <td className="p-4"><Skeleton className="h-4 w-[80px]"/></td>
-                    <td className="p-4"><Skeleton className="h-4 w-[100px]"/></td>
-                    <td className="p-4"><Skeleton className="h-4 w-[100px]"/></td>
-                    <td className="p-4"><Skeleton className="h-4 w-[100px]"/></td>
                     <td className="p-4"><Skeleton className="h-4 w-[80px]"/></td>
                   </tr>
                 ))
@@ -251,30 +263,92 @@ export default function PricePage() {
                       </td>
                       <td className="p-4 text-sm">{item.prod_presentacion}</td>
                       <td className="p-4 text-sm">{item.prod_medida}</td>
-                      <td
-                        className="p-4 text-sm">{PriceMethodsService.truncateOrReplace(item.prod_principio, 10)}</td>
+                      <td className="p-4 text-sm">{PriceMethodsService.truncateOrReplace(item.prod_principio, 10)}</td>
                       <td className="p-4 text-sm text-right">
                         {Number(item.kardex_saldoCant).toLocaleString("es-ES", {minimumFractionDigits: 2})}
                       </td>
-                      <td className="p-4 text-sm font-mono">{item.kardex_lote}</td>
-                      <td className="p-4 text-sm">{item.kardex_VctoItem}</td>
                       <td className="p-4 text-sm text-right font-mono">
-                        ${Number(item.precio_contado).toLocaleString("es-ES", {minimumFractionDigits: 2})}
+                        S/ {item.precio_contado}
                       </td>
                       <td className="p-4 text-sm text-right font-mono">
-                        ${Number(item.precio_credito).toLocaleString("es-ES", {minimumFractionDigits: 2})}
+                        S/ {item.precio_credito}
                       </td>
                       <td className="p-4">
                         <Badge variant={expirationStatus.variant} className="text-xs">
                           {expirationStatus.status}
                         </Badge>
                       </td>
+                      <td className="p-4">
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="gap-1"
+                              onClick={() => handleViewLots(item)}
+                            >
+                              <Eye className="h-4 w-4"/>
+                              Ver Lotes
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+                            <DialogHeader>
+                              <DialogTitle>Detalles de Lotes - {selectedProduct?.prod_codigo}</DialogTitle>
+                              <DialogDescription>
+                                {selectedProduct?.prod_descripcion}
+                              </DialogDescription>
+                            </DialogHeader>
+
+                            {loadingLots ? (
+                              <div className="space-y-4">
+                                {Array.from({length: 3}).map((_, index) => (
+                                  <Skeleton key={index} className="h-12 w-full"/>
+                                ))}
+                              </div>
+                            ) : lotDetails.length > 0 ? (
+                              <Table>
+                                <TableHeader>
+                                  <TableRow>
+                                    <TableHead>Lote</TableHead>
+                                    <TableHead>Stock</TableHead>
+                                    <TableHead>Fecha Vencimiento</TableHead>
+                                    <TableHead>Estado</TableHead>
+                                  </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                  {lotDetails.map((lot, index) => {
+                                    const lotStatus = PriceMethodsService.getExpirationStatus(lot.fechaVencimiento);
+                                    return (
+                                      <TableRow key={index}>
+                                        <TableCell className="font-mono">{lot.numeroLote}</TableCell>
+                                        <TableCell>
+                                          {Number(lot.stock).toLocaleString("es-ES", {minimumFractionDigits: 2})}
+                                        </TableCell>
+                                        <TableCell>{formatDateToDDMMYYYY(lot.fechaVencimiento)}</TableCell>
+                                        <TableCell>
+                                          <Badge variant={lotStatus.variant}>
+                                            {lotStatus.status}
+                                          </Badge>
+                                        </TableCell>
+                                      </TableRow>
+                                    );
+                                  })}
+                                </TableBody>
+                              </Table>
+                            ) : (
+                              <div className="text-center py-8 text-gray-500">
+                                No se encontraron lotes para este producto
+                              </div>
+                            )}
+                          </DialogContent>
+                        </Dialog>
+                      </td>
                     </tr>
                   );
                 })
               ) : (
                 <tr>
-                  <td colSpan={12} className="text-center py-8 text-gray-500">
+                  <td colSpan={10} className="text-center py-8 text-gray-500">
                     No se encontraron resultados
                   </td>
                 </tr>
@@ -285,6 +359,63 @@ export default function PricePage() {
         </CardContent>
       </Card>
 
+      {/* Modal para versión móvil */}
+      <Dialog>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Detalles de Lotes - {selectedProduct?.prod_codigo}</DialogTitle>
+            <DialogDescription>
+              {selectedProduct?.prod_descripcion}
+            </DialogDescription>
+          </DialogHeader>
+
+          {loadingLots ? (
+            <div className="space-y-4">
+              {Array.from({length: 3}).map((_, index) => (
+                <Skeleton key={index} className="h-12 w-full"/>
+              ))}
+            </div>
+          ) : lotDetails.length > 0 ? (
+            <div className="space-y-4">
+              {lotDetails.map((lot, index) => {
+                const lotStatus = PriceMethodsService.getExpirationStatus(lot.fechaVencimiento);
+                return (
+                  <Card key={index}>
+                    <CardContent className="p-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label>Lote</Label>
+                          <p className="font-mono">{lot.numeroLote}</p>
+                        </div>
+                        <div>
+                          <Label>Stock</Label>
+                          <p>{Number(lot.stock).toLocaleString("es-ES", {minimumFractionDigits: 2})}</p>
+                        </div>
+                        <div>
+                          <Label>Vencimiento</Label>
+                          <p>{lot.fechaVencimiento}</p>
+                        </div>
+                        <div>
+                          <Label>Estado</Label>
+                          <Badge variant={lotStatus.variant}>
+                            {lotStatus.status}
+                          </Badge>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-gray-500">
+              No se encontraron lotes para este producto
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Versión móvil */}
       <div className="lg:hidden overflow-auto">
         {loading || loadingLab || !isAuthenticated ? (
           Array.from({length: 3}).map((_, index) => (
@@ -301,7 +432,6 @@ export default function PricePage() {
                 <div className="space-y-2 mb-3">
                   <Skeleton className="h-4 w-full"/>
                   <Skeleton className="h-4 w-3/4"/>
-                  <Skeleton className="h-4 w-1/2"/>
                 </div>
 
                 <div className="flex gap-2">
@@ -337,38 +467,36 @@ export default function PricePage() {
                         <span className="text-xs text-gray-500">Presentación:</span>
                         <p className="text-xs">{item.prod_presentacion}</p>
                       </div>
-                      <div>
-                        <span className="text-xs text-gray-500">Stock:</span>
-                        <p className="text-xs text-right">
-                          {Number(item.kardex_saldoCant).toLocaleString("es-ES", {minimumFractionDigits: 2})}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2">
-                      <div>
-                        <span className="text-xs text-gray-500">Lote:</span>
-                        <p className="text-xs font-mono">{item.kardex_lote}</p>
-                      </div>
-                      <div>
-                        <span className="text-xs text-gray-500">Vence:</span>
-                        <p className="text-xs">{item.kardex_VctoItem}</p>
-                      </div>
                     </div>
                     <div className="grid grid-cols-2 gap-2">
                       <div>
                         <span className="text-xs text-gray-500">P. Contado:</span>
                         <p className="text-xs font-mono">
-                          ${Number(item.precio_contado).toLocaleString("es-ES", {minimumFractionDigits: 2})}
+                          S/ {item.precio_contado}
                         </p>
                       </div>
                       <div>
                         <span className="text-xs text-gray-500">P. Crédito:</span>
                         <p className="text-xs font-mono">
-                          ${Number(item.precio_credito).toLocaleString("es-ES", {minimumFractionDigits: 2})}
+                          S/ {item.precio_credito}
                         </p>
                       </div>
                     </div>
                   </div>
+
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full gap-1"
+                        onClick={() => handleViewLots(item)}
+                      >
+                        <Eye className="h-4 w-4"/>
+                        Ver Lotes
+                      </Button>
+                    </DialogTrigger>
+                  </Dialog>
                 </CardContent>
               </Card>
             );

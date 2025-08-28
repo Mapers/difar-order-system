@@ -7,35 +7,49 @@ import {TableBody, TableCell, TableHeader, TableRow, Table, TableHead} from "@/c
 import {Input} from "@/components/ui/input";
 import {Button} from "@/components/ui/button";
 import {Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 export const LaboratorioModal = ({
-                            open,
-                            onOpenChange,
-                            laboratorio,
-                            products,
-                            onAddTempProduct,
-                            tempSelectedProducts,
-                            onRemoveTempProduct,
-                            onConfirmSelection,
-                            currency
-                          }: {
+                                   open,
+                                   onOpenChange,
+                                   laboratorio,
+                                   products,
+                                   onAddTempProduct,
+                                   tempSelectedProducts,
+                                   onRemoveTempProduct,
+                                   onConfirmSelection,
+                                   currency
+                                 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   laboratorio: string;
   products: IProduct[];
-  onAddTempProduct: (product: IProduct, quantity: number) => void;
+  onAddTempProduct: (product: IProduct, quantity: number, priceType: 'contado' | 'credito') => void;
   tempSelectedProducts: ISelectedProduct[];
   onRemoveTempProduct: (index: number) => void;
   onConfirmSelection: () => void;
   currency: IMoneda | null;
 }) => {
   const [quantities, setQuantities] = useState<Record<string, number>>({});
+  const [priceTypes, setPriceTypes] = useState<Record<string, 'contado' | 'credito'>>({});
 
   const handleQuantityChange = (productId: string, value: number) => {
     setQuantities(prev => ({
       ...prev,
       [productId]: value > 0 ? value : 1
     }));
+  };
+
+  const handlePriceTypeChange = (productId: string, value: 'contado' | 'credito') => {
+    setPriceTypes(prev => ({
+      ...prev,
+      [productId]: value
+    }));
+  };
+
+  const formatPrice = (price: number) => {
+    return `${currency?.value === "PEN" ? "S/." : "$$"}${price.toFixed(2)}`;
   };
 
   const labProducts = products.filter(p => p.Descripcion === laboratorio);
@@ -46,7 +60,7 @@ export const LaboratorioModal = ({
         <DialogHeader>
           <DialogTitle>Productos de {laboratorio}</DialogTitle>
           <DialogDescription>
-            Selecciona las cantidades para cada producto
+            Selecciona las cantidades y tipo de precio para cada producto
           </DialogDescription>
         </DialogHeader>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[70vh]">
@@ -57,48 +71,73 @@ export const LaboratorioModal = ({
                   <TableRow>
                     <TableHead>Producto</TableHead>
                     <TableHead>Stock</TableHead>
-                    <TableHead>Precio</TableHead>
+                    <TableHead className="w-40">Precio</TableHead>
                     <TableHead>Cantidad</TableHead>
                     <TableHead></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {labProducts.map((product) => (
-                    <TableRow key={product.Codigo_Art}>
-                      <TableCell>
-                        <div className="font-medium">{product.NombreItem}</div>
-                        <div className="text-sm text-gray-500">{product.Codigo_Art}</div>
-                      </TableCell>
-                      <TableCell>{product.Stock}</TableCell>
-                      <TableCell>
-                        {currency?.value === "PEN" ? "S/." : "$"}
-                        {Number(product.PUContado).toFixed(2)}
-                      </TableCell>
-                      <TableCell>
-                        <Input
-                          type="number"
-                          min="1"
-                          value={quantities[product.Codigo_Art] || 1}
-                          onChange={(e) => handleQuantityChange(
-                            product.Codigo_Art,
-                            parseInt(e.target.value) || 1
-                          )}
-                          className="w-20"
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Button
-                          size="sm"
-                          onClick={() => onAddTempProduct(
-                            product,
-                            quantities[product.Codigo_Art] || 1
-                          )}
-                        >
-                          Agregar
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {labProducts.map((product) => {
+                    const currentPriceType = priceTypes[product.Codigo_Art] || 'contado';
+                    const contadoPrice = Number(product.PUContado);
+                    const creditoPrice = Number(product.PUCredito);
+
+                    return (
+                      <TableRow key={product.Codigo_Art}>
+                        <TableCell>
+                          <div className="font-medium">{product.NombreItem}</div>
+                          <div className="text-sm text-gray-500">{product.Codigo_Art}</div>
+                        </TableCell>
+                        <TableCell>{product.Stock}</TableCell>
+                        <TableCell>
+                          <RadioGroup
+                            value={currentPriceType}
+                            onValueChange={(value: 'contado' | 'credito') =>
+                              handlePriceTypeChange(product.Codigo_Art, value)
+                            }
+                            className="flex flex-col gap-2"
+                          >
+                            <div className="flex items-center space-x-2">
+                              <RadioGroupItem value="contado" id={`${product.Codigo_Art}-contado`} />
+                              <Label htmlFor={`${product.Codigo_Art}-contado`} className="text-sm cursor-pointer">
+                                Contado: {formatPrice(contadoPrice)}
+                              </Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <RadioGroupItem value="credito" id={`${product.Codigo_Art}-credito`} />
+                              <Label htmlFor={`${product.Codigo_Art}-credito`} className="text-sm cursor-pointer">
+                                Crédito: {formatPrice(creditoPrice)}
+                              </Label>
+                            </div>
+                          </RadioGroup>
+                        </TableCell>
+                        <TableCell>
+                          <Input
+                            type="number"
+                            min="1"
+                            value={quantities[product.Codigo_Art] || 1}
+                            onChange={(e) => handleQuantityChange(
+                              product.Codigo_Art,
+                              parseInt(e.target.value) || 1
+                            )}
+                            className="w-20"
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            size="sm"
+                            onClick={() => onAddTempProduct(
+                              product,
+                              quantities[product.Codigo_Art] || 1,
+                              currentPriceType
+                            )}
+                          >
+                            Agregar
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </div>
@@ -123,11 +162,13 @@ export const LaboratorioModal = ({
                           ×
                         </Button>
                       </div>
+                      <div className="text-sm text-gray-600 mb-1">
+                        Precio:
+                      </div>
                       <div className="flex justify-between text-sm">
                         <span>{item.quantity} unidades</span>
                         <span>
-                          {currency?.value === "PEN" ? "S/." : "$"}
-                          {(item.finalPrice * item.quantity).toFixed(2)}
+                          {formatPrice(item.finalPrice * item.quantity)}
                         </span>
                       </div>
                     </div>
@@ -136,11 +177,10 @@ export const LaboratorioModal = ({
                     <div className="flex justify-between font-medium">
                       <span>Total:</span>
                       <span>
-                        {currency?.value === "PEN" ? "S/." : "$"}
-                        {tempSelectedProducts.reduce(
+                        {formatPrice(tempSelectedProducts.reduce(
                           (sum, item) => sum + (item.finalPrice * item.quantity),
                           0
-                        ).toFixed(2)}
+                        ))}
                       </span>
                     </div>
                     <Button

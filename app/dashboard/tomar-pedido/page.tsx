@@ -20,7 +20,8 @@ import {
   CreditCard,
   DollarSign,
   Coins,
-  FileText, X, Trash
+  FileText,
+  Trash
 } from "lucide-react"
 import { StepProgress } from "@/components/step-progress"
 import apiClient from "@/app/api/client"
@@ -35,7 +36,6 @@ import { Popover, PopoverContent, PopoverTrigger } from "@radix-ui/react-popover
 import { CommandEmpty, CommandGroup, CommandInput, CommandList, Command, CommandItem } from "@/components/ui/command"
 import ModalBonification from "@/components/modal/modalBonification"
 import ModalEscale from "@/components/modal/modalEscale"
-import { evaluarPromociones } from "@/utils/order"
 import { monedas, PROMOCIONES } from "@/constants"
 import { fetchGetClients, fetchGetConditions, fetchGetZona, fetchUnidaTerritorial } from "@/app/api/takeOrders"
 import { getBonificadosRequest, getEscalasRequest, getProductsRequest } from "@/app/api/products"
@@ -77,6 +77,7 @@ export default function OrderPage() {
   const [showLaboratorioModal, setShowLaboratorioModal] = useState(false);
   const [tempSelectedProducts, setTempSelectedProducts] = useState<ISelectedProduct[]>([]);
   const auth = useAuth();
+  const [priceType, setPriceType] = useState<'contado' | 'credito'>('contado');
 
   const [loading, setLoading] = useState({
     clients: false,
@@ -100,11 +101,9 @@ export default function OrderPage() {
 
   // Estados para modales
   const [isCheckingBonification, setIsCheckingBonification] = useState(false)
-  const [showBonificationModal, setShowBonificationModal] = useState(false)
   const [currentBonification, setCurrentBonification] = useState<ICurrentBonification | null>(null)
 
   // Estados para escalas
-  const [showScalesModal, setShowScalesModal] = useState(false)
   const [currentScales, setCurrentScales] = useState<ICurrentScales | null>(null)
 
   // order
@@ -208,7 +207,10 @@ export default function OrderPage() {
     setIsLoading(true)
     setTimeout(() => {
       const appliedScale = '';
-      // const finalPrice = appliedScale ? appliedScale.precio : selectedProduct!.PUContado
+      const finalPrice = priceType === 'contado'
+        ? Number(selectedProduct?.PUContado)
+        : Number(selectedProduct?.PUCredito);
+      console.log(priceType, selectedProduct?.PUCredito, selectedProduct?.PUContado)
       setSelectedProducts([
         ...selectedProducts,
         {
@@ -217,7 +219,7 @@ export default function OrderPage() {
           isBonification,
           isEscale,
           appliedScale,
-          finalPrice: Number(selectedProduct?.PUContado),
+          finalPrice,
         },
       ])
       setSelectedProduct(null)
@@ -278,20 +280,6 @@ export default function OrderPage() {
       setIsLoading(false);
 
       addProductToList(bonificaciones.length > 0, escalasProductos.length > 0);
-
-      // if (escalasProductos.length > 0) {
-      //   const aplicableScale = getApplicableScale(selectedProduct.Codigo_Art, cantidad, escalasProductos);
-      //   setCurrentScales({
-      //     escalas: escalasProductos,
-      //     productoSolicitado: idArticulo,
-      //     nombreProductoSolicitado: selectedProduct.NombreItem,
-      //     cantidadSolicitada: cantidad,
-      //     escalaAplicable: aplicableScale,
-      //   });
-      //   setShowScalesModal(true);
-      // } else {
-      //   addProductToList();
-      // }
     } catch (error) {
       console.error("Error al agregar producto:", error);
     } finally {
@@ -299,6 +287,7 @@ export default function OrderPage() {
       setModalLoader(null);
     }
   };
+
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setSearch((prev) => ({ ...prev, client: value }));
@@ -317,7 +306,7 @@ export default function OrderPage() {
     return productos.reduce((sum, item) => {
       const precioUnitario = item.isBonification
         ? 0
-        : item.appliedScale?.precio_escala ?? item.product.PUContado
+        : item.appliedScale?.precio_escala ?? item.finalPrice
       return sum + precioUnitario * item.quantity
     }, 0)
   }
@@ -329,7 +318,7 @@ export default function OrderPage() {
   const calcularTotal = (productos: ISelectedProduct[]): number => {
     const subtotal = calcularSubtotal(productos)
     const igv = calcularIGV(productos)
-    return subtotal + igv
+    return subtotal
   }
 
   // Agrega este useEffect para extraer laboratorios
@@ -340,7 +329,7 @@ export default function OrderPage() {
     }
   }, [products]);
 
-  const handleAddTempProduct = async (product: IProduct, quantity: number) => {
+  const handleAddTempProduct = async (product: IProduct, quantity: number, priceType: 'contado' | 'credito') => {
     setIsLoading(true);
     setModalLoader('BONIFICADO');
 
@@ -356,7 +345,7 @@ export default function OrderPage() {
       isBonification: bonificaciones.length > 0,
       isEscale: escalasProductos.length > 0,
       appliedScale: null,
-      finalPrice: Number(product.PUContado),
+      finalPrice: Number(priceType === 'contado' ? product.PUContado : product.PUCredito),
     };
 
     setTempSelectedProducts(prev => [...prev, newProduct]);
@@ -584,132 +573,180 @@ export default function OrderPage() {
               <CardContent className="space-y-6 pt-6">
 
                 <div className="lg:col-span-2 space-y-2">
-                  <Label htmlFor="producto" className="text-sm font-medium">
-                    Producto
-                  </Label>
-                  <div className="relative">
-                    <Popover open={open} onOpenChange={setOpen}>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          role="combobox"
-                          aria-expanded={open}
-                          className="w-full justify-between h-10 sm:h-12 px-3 text-left font-normal text-sm"
-                        >
-                          {selectedProduct ? (
-                            <div className="flex flex-col items-start min-w-0 flex-1">
-                              <span className="font-medium truncate w-full">
-                                {selectedProduct.NombreItem}
-                              </span>
-                              <span className="text-xs text-gray-500 truncate w-full">
-                                {selectedProduct.Codigo_Art} | {selectedProduct.Descripcion}
-                              </span>
-                            </div>
-                          ) : (
-                            <span className="text-gray-500">Buscar producto...</span>
-                          )}
-                          <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent
-                        className="z-[999] w-[calc(100vw-2rem)] sm:w-full p-0"
-                        align="start"
-                        side="bottom"
-                      >
-                        <Command shouldFilter={false}>
-                          <CommandInput
-                            placeholder="Buscar por código, nombre o laboratorio..."
-                            value={searchQuery}
-                            onValueChange={setSearchQuery}
-                            className="text-sm"
-                          />
-                          <CommandList>
-                            <CommandEmpty>No se encontraron productos.</CommandEmpty>
-                            <CommandGroup heading="Resultados">
-                              {filteredProducts.map((product) => (
-                                <CommandItem
-                                  key={product.Codigo_Art}
-                                  value={product.Codigo_Art}
-                                  onSelect={() => handleProductSelect(product)}
-                                  className="py-3"
-                                >
-                                  <div className="flex items-start gap-2 w-full">
-                                    <div className="bg-blue-100 p-2 rounded-md shrink-0">
-                                      <Package className="h-3 w-3 sm:h-4 sm:w-4 text-blue-600" />
-                                    </div>
-                                    <div className="flex flex-col flex-1 min-w-0">
-                                      <div className="flex justify-between items-start w-full gap-2">
-                                        <span className="font-medium text-sm truncate flex-1">
-                                          {product.NombreItem}
-                                        </span>
-                                        <div className="flex flex-wrap gap-1 shrink-0">
-                                          <Badge
-                                            variant="outline"
-                                            className="bg-green-50 text-green-700 text-xs"
-                                          >
-                                            Stock: {product.Stock}
-                                          </Badge>
-                                          {product.tieneBonificado === 1 && (
-                                            <Badge
-                                              variant="outline"
-                                              className="bg-yellow-50 text-yellow-700 text-xs"
-                                            >
-                                              Bonif.
-                                            </Badge>
-                                          )}
-                                          {product.tieneEscala === 1 && (
-                                            <Badge
-                                              variant="outline"
-                                              className="bg-purple-50 text-purple-700 text-xs"
-                                            >
-                                              Escalas
-                                            </Badge>
-                                          )}
+                  <div className="flex flex-col sm:flex-row items-start gap-2">
+                    <div className="flex-1 space-y-2">
+                      <Label htmlFor="producto" className="text-sm font-medium">
+                        Producto
+                      </Label>
+                      <div className="relative">
+                        <Popover open={open} onOpenChange={setOpen}>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              role="combobox"
+                              aria-expanded={open}
+                              className="w-full justify-between h-10 sm:h-12 px-3 text-left font-normal text-sm"
+                            >
+                              {selectedProduct ? (
+                                <div className="flex flex-col items-start min-w-0 flex-1">
+                                  <span className="font-medium truncate w-full">
+                                    {selectedProduct.NombreItem}
+                                  </span>
+                                                      <span className="text-xs text-gray-500 truncate w-full">
+                                    {selectedProduct.Codigo_Art} | {selectedProduct.Descripcion}
+                                  </span>
+                                </div>
+                              ) : (
+                                <span className="text-gray-500">Buscar producto...</span>
+                              )}
+                              <Search className="ml-2 h-4 w-4 shrink-0 opacity-50"/>
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent
+                            className="z-[999] w-[calc(100vw-2rem)] sm:w-full p-0"
+                            align="start"
+                            side="bottom"
+                          >
+                            <Command shouldFilter={false}>
+                              <CommandInput
+                                placeholder="Buscar por código, nombre o laboratorio..."
+                                value={searchQuery}
+                                onValueChange={setSearchQuery}
+                                className="text-sm"
+                              />
+                              <CommandList>
+                                <CommandEmpty>No se encontraron productos.</CommandEmpty>
+                                <CommandGroup heading="Resultados">
+                                  {filteredProducts.map((product) => (
+                                    <CommandItem
+                                      key={product.Codigo_Art}
+                                      value={product.Codigo_Art}
+                                      onSelect={() => handleProductSelect(product)}
+                                      className="py-3"
+                                    >
+                                      <div className="flex items-start gap-2 w-full">
+                                        <div className="bg-blue-100 p-2 rounded-md shrink-0">
+                                          <Package className="h-3 w-3 sm:h-4 sm:w-4 text-blue-600"/>
+                                        </div>
+                                        <div className="flex flex-col flex-1 min-w-0">
+                                          <div className="flex justify-between items-start w-full gap-2">
+                        <span className="font-medium text-sm truncate flex-1">
+                          {product.NombreItem}
+                        </span>
+                                            <div className="flex flex-wrap gap-1 shrink-0">
+                                              <Badge
+                                                variant="outline"
+                                                className="bg-green-50 text-green-700 text-xs"
+                                              >
+                                                Stock: {product.Stock}
+                                              </Badge>
+                                              {product.tieneBonificado === 1 && (
+                                                <Badge
+                                                  variant="outline"
+                                                  className="bg-yellow-50 text-yellow-700 text-xs"
+                                                >
+                                                  Bonif.
+                                                </Badge>
+                                              )}
+                                              {product.tieneEscala === 1 && (
+                                                <Badge
+                                                  variant="outline"
+                                                  className="bg-purple-50 text-purple-700 text-xs"
+                                                >
+                                                  Escalas
+                                                </Badge>
+                                              )}
+                                            </div>
+                                          </div>
+                                          <div className="flex justify-between items-center w-full mt-1">
+                        <span className="text-xs text-gray-500 truncate">
+                          <span className="font-medium">Código:</span>{" "}
+                          {product.Codigo_Art}
+                        </span>
+                                            <span className="text-xs text-gray-500 truncate">
+                          <span className="font-medium">Lab:</span>{" "}
+                                              {product.Descripcion}
+                        </span>
+                                          </div>
+                                          {/* Mostrar ambos precios en los resultados */}
+                                          <div className="flex justify-between mt-2 text-xs">
+                        <span className="text-green-600">
+                          Contado: {currency?.value === "PEN" ? "S/." : "$"}
+                          {Number(product.PUContado).toFixed(2)}
+                        </span>
+                                            <span className="text-blue-600">
+                          Crédito: {currency?.value === "PEN" ? "S/." : "$"}
+                                              {Number(product.PUCredito).toFixed(2)}
+                        </span>
+                                          </div>
                                         </div>
                                       </div>
-                                      <div className="flex justify-between items-center w-full mt-1">
-                                        <span className="text-xs text-gray-500 truncate">
-                                          <span className="font-medium">Código:</span>{" "}
-                                          {product.Codigo_Art}
-                                        </span>
-                                        <span className="text-xs text-gray-500 truncate">
-                                          <span className="font-medium">Lab:</span>{" "}
-                                          {product.Descripcion}
-                                        </span>
-                                      </div>
-                                    </div>
-                                  </div>
-                                </CommandItem>
-                              ))}
-                            </CommandGroup>
-                          </CommandList>
-                        </Command>
-                      </PopoverContent>
-                    </Popover>
-                  </div>
-                  {/* Agrega esto en la sección de productos, antes del buscador de productos */}
-                  <div className="space-y-2">
-                    <Label htmlFor="laboratorio" className="text-gray-700">
-                      Seleccionar por laboratorio
-                    </Label>
-                    <Select
-                      value={selectedLaboratorio || ""}
-                      onValueChange={(value) => {
-                        setSelectedLaboratorio(value);
-                        setShowLaboratorioModal(true);
-                      }}
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Selecciona un laboratorio" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {laboratorios.map((lab) => (
-                          <SelectItem key={lab} value={lab}>
-                            {lab}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                                    </CommandItem>
+                                  ))}
+                                </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+
+                      {selectedProduct && (
+                        <div className="grid grid-cols-2 gap-2 mt-2">
+                          <div
+                            className={`border rounded-md p-2 cursor-pointer text-center ${
+                              priceType === 'contado'
+                                ? 'border-blue-500 bg-blue-50 text-blue-700'
+                                : 'border-gray-200 bg-gray-50 text-gray-700'
+                            }`}
+                            onClick={() => setPriceType('contado')}
+                          >
+                            <div className="font-medium">Contado</div>
+                            <div className="text-sm">
+                              {currency?.value === "PEN" ? "S/." : "$"}
+                              {Number(selectedProduct.PUContado).toFixed(2)}
+                            </div>
+                          </div>
+                          <div
+                            className={`border rounded-md p-2 cursor-pointer text-center ${
+                              priceType === 'credito'
+                                ? 'border-blue-500 bg-blue-50 text-blue-700'
+                                : 'border-gray-200 bg-gray-50 text-gray-700'
+                            }`}
+                            onClick={() => setPriceType('credito')}
+                          >
+                            <div className="font-medium">Crédito</div>
+                            <div className="text-sm">
+                              {currency?.value === "PEN" ? "S/." : "$"}
+                              {Number(selectedProduct.PUCredito).toFixed(2)}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="space-y-2 sm:w-48 transition-all duration-200">
+                      <Label htmlFor="laboratorio" className="text-gray-700 text-xs sm:text-sm hidden sm:block">
+                        Filtrar por lab
+                      </Label>
+                      <Select
+                        value={selectedLaboratorio || ""}
+                        onValueChange={(value) => {
+                          setSelectedLaboratorio(value);
+                          setShowLaboratorioModal(true);
+                        }}
+                      >
+                        <SelectTrigger className="w-full sm:h-10 text-xs sm:text-sm bg-gray-50 border-gray-200">
+                          <SelectValue placeholder="Laboratorio"/>
+                        </SelectTrigger>
+                        <SelectContent>
+                          {laboratorios.map((lab) => (
+                            <SelectItem key={lab} value={lab} className="text-xs sm:text-sm">
+                              {lab}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                 </div>
 
@@ -733,7 +770,7 @@ export default function OrderPage() {
                   onClick={handleAddProduct}
                   className="w-full bg-indigo-600 hover:bg-indigo-700"
                 >
-                  <ShoppingCart className="mr-2 h-4 w-4" />
+                  <ShoppingCart className="mr-2 h-4 w-4"/>
                   Agregar Producto
                 </Button>
               </CardContent>
@@ -752,26 +789,26 @@ export default function OrderPage() {
             />
 
             {/* Modal de bonificaciones */}
-            <ModalBonification
-              open={showBonificationModal}
-              onOpenChange={setShowBonificationModal}
-              currentBonification={currentBonification}
-              products={products}
-              setSelectedProducts={setSelectedProducts}
-              addProductToList={addProductToList}
-              currency={currency}
-            />
+            {/*<ModalBonification*/}
+            {/*  open={showBonificationModal}*/}
+            {/*  onOpenChange={setShowBonificationModal}*/}
+            {/*  currentBonification={currentBonification}*/}
+            {/*  products={products}*/}
+            {/*  setSelectedProducts={setSelectedProducts}*/}
+            {/*  addProductToList={addProductToList}*/}
+            {/*  currency={currency}*/}
+            {/*/>*/}
 
             {/* Modald de escalas  */}
-            <ModalEscale
-              open={showScalesModal}
-              onOpenChange={setShowScalesModal}
-              currentScales={currentScales}
-              products={products}
-              setSelectedProducts={setSelectedProducts}
-              addProductToList={addProductToList}
-              currency={currency}
-            />
+            {/*<ModalEscale*/}
+            {/*  open={showScalesModal}*/}
+            {/*  onOpenChange={setShowScalesModal}*/}
+            {/*  currentScales={currentScales}*/}
+            {/*  products={products}*/}
+            {/*  setSelectedProducts={setSelectedProducts}*/}
+            {/*  addProductToList={addProductToList}*/}
+            {/*  currency={currency}*/}
+            {/*/>*/}
             {selectedProducts.length > 0 && (
               <Card className="shadow-md bg-white">
                 <CardHeader className="border-b bg-gray-50">
@@ -812,7 +849,7 @@ export default function OrderPage() {
                         </thead>
                         <tbody>
                         {selectedProducts.map((item, index) => {
-                          const precioOriginal = item.product.PUContado;
+                          const precioOriginal = item.finalPrice;
                           const precioEscala = item.appliedScale?.precio_escala;
                           const precioUnitario = item.isBonification ? 0 : precioEscala ?? precioOriginal;
                           const subtotal = precioUnitario * item.quantity;
@@ -889,7 +926,7 @@ export default function OrderPage() {
                                 .reduce((sum, item) => {
                                   const precioUnitario = item.isBonification
                                     ? 0
-                                    : item.appliedScale?.precio_escala ?? item.product.PUContado
+                                    : item.appliedScale?.precio_escala ?? item.finalPrice
                                   return sum + precioUnitario * item.quantity
                                 }, 0)
                                 .toFixed(2)}
@@ -902,7 +939,7 @@ export default function OrderPage() {
 
                   <div className="block sm:hidden space-y-3">
                     {selectedProducts.map((item, index) => {
-                      const precioOriginal = item.product.PUContado;
+                      const precioOriginal = item.finalPrice;
                       const precioEscala = item.appliedScale?.precio_escala;
                       const precioUnitario = item.isBonification ? 0 : precioEscala ?? precioOriginal;
                       const subtotal = precioUnitario * item.quantity;
@@ -985,7 +1022,7 @@ export default function OrderPage() {
                               .reduce((sum, item) => {
                                 const precioUnitario = item.isBonification
                                   ? 0
-                                  : item.appliedScale?.precio_escala ?? item.product.PUContado
+                                  : item.appliedScale?.precio_escala ?? item.finalPrice
                                 return sum + precioUnitario * item.quantity
                               }, 0)
                               .toFixed(2)}
@@ -1149,7 +1186,7 @@ export default function OrderPage() {
                       </thead>
                       <tbody>
                       {selectedProducts.map((item, index) => {
-                        const precioOriginal = item.product.PUContado;
+                        const precioOriginal = item.finalPrice;
                         const precioEscala = item.appliedScale?.precio_escala;
                         const precioUnitario = item.isBonification ? 0 : precioEscala ?? precioOriginal;
                         const subtotal = precioUnitario * item.quantity;
@@ -1226,7 +1263,7 @@ export default function OrderPage() {
                               .reduce((sum, item) => {
                                 const precioUnitario = item.isBonification
                                   ? 0
-                                  : item.appliedScale?.precio_escala ?? item.product.PUContado
+                                  : item.appliedScale?.precio_escala ?? item.finalPrice
                                 return sum + precioUnitario * item.quantity
                               }, 0)
                               .toFixed(2)}
@@ -1239,7 +1276,7 @@ export default function OrderPage() {
 
                 <div className="block sm:hidden space-y-3">
                   {selectedProducts.map((item, index) => {
-                    const precioOriginal = item.product.PUContado;
+                    const precioOriginal = item.finalPrice;
                     const precioEscala = item.appliedScale?.precio_escala;
                     const precioUnitario = item.isBonification ? 0 : precioEscala ?? precioOriginal;
                     const subtotal = precioUnitario * item.quantity;
