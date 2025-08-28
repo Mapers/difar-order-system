@@ -112,8 +112,8 @@ const ExportPdfButton = ({ payload }) => {
         })
 
         yPosition = pageHeight - margin - 50
-        const columnWidths = [50, 50, 150, 30, 45, 45, 50, 55, 45]
-        const columns = ['COD.', 'LAB.', 'DESCRIPCIÓN', 'UM', 'STOCK', 'PRECIO', 'LOTE', 'FEC.VENC.', 'COD.ALT.']
+        const columnWidths = [50, 50, 150, 30, 45, 47, 47, 50, 55]
+        const columns = ['COD.', 'LAB.', 'DESCRIPCIÓN', 'UM', 'STOCK', 'P.CONTADO', 'P.CREDITO', 'LOTE', 'FEC.VENC.']
 
         let xPosition = margin
         columns.forEach((column, index) => {
@@ -185,12 +185,12 @@ const ExportPdfButton = ({ payload }) => {
           item.prod_medida || '',
           item.kardex_saldoCant || '',
           item.precio_contado || '',
+          item.precio_credito || '',
           item.kardex_lote || '',
           item.kardex_VctoItem || '',
-          item.kardex_saldoCant || ''
         ]
 
-        const columnWidths = [50, 50, 150, 30, 45, 45, 50, 55, 45]
+        const columnWidths = [50, 50, 150, 30, 45, 47, 47, 50, 55]
         let xPosition = margin
 
         let maxLines = 1
