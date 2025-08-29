@@ -720,25 +720,25 @@ export default function UsuariosPage() {
                   <p>Cargando usuarios...</p>
                 </div>
               ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Nombre</TableHead>
-                      <TableHead>Documento</TableHead>
-                      <TableHead>Teléfono</TableHead>
-                      <TableHead>Rol</TableHead>
-                      <TableHead>Estado</TableHead>
-                      <TableHead>Acciones</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre</th>
+                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Documento</th>
+                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Teléfono</th>
+                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rol</th>
+                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
+                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
                     {usuarios.map((usuario, index) => (
-                      <TableRow key={index}>
-                        <TableCell className="font-medium">{usuario.nombre_completo}</TableCell>
-                        <TableCell>{usuario.dni}</TableCell>
-                        <TableCell>{usuario.telefono}</TableCell>
-                        <TableCell>{usuario.nombre_rol}</TableCell>
-                        <TableCell>
+                      <tr key={index}>
+                        <td className="font-medium">{usuario.nombre_completo}</td>
+                        <td>{usuario.dni}</td>
+                        <td>{usuario.telefono}</td>
+                        <td>{usuario.nombre_rol}</td>
+                        <td>
                           {usuario.activo ? (
                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                               <Check className="h-3 w-3 mr-1" /> Activo
@@ -748,8 +748,8 @@ export default function UsuariosPage() {
                               <X className="h-3 w-3 mr-1" /> Inactivo
                             </span>
                           )}
-                        </TableCell>
-                        <TableCell>
+                        </td>
+                        <td>
                           <div className="flex space-x-2">
                             <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
                               <DialogTrigger asChild>
@@ -839,11 +839,11 @@ export default function UsuariosPage() {
                               </DialogContent>
                             </Dialog>
                           </div>
-                        </TableCell>
-                      </TableRow>
+                        </td>
+                      </tr>
                     ))}
-                  </TableBody>
-                </Table>
+                  </tbody>
+                </table>
               )}
             </CardContent>
           </Card>

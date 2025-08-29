@@ -222,7 +222,7 @@ export default function PricePage() {
                 <th className="text-left p-4 font-medium text-sm">Stock</th>
                 <th className="text-left p-4 font-medium text-sm">P. Contado</th>
                 <th className="text-left p-4 font-medium text-sm">P. Crédito</th>
-                <th className="text-left p-4 font-medium text-sm">Estado</th>
+                {/*<th className="text-left p-4 font-medium text-sm">Estado</th>*/}
                 <th className="text-left p-4 font-medium text-sm">Acciones</th>
               </tr>
               </thead>
@@ -239,7 +239,7 @@ export default function PricePage() {
                     <td className="p-4"><Skeleton className="h-4 w-[80px]"/></td>
                     <td className="p-4"><Skeleton className="h-4 w-[100px]"/></td>
                     <td className="p-4"><Skeleton className="h-4 w-[100px]"/></td>
-                    <td className="p-4"><Skeleton className="h-4 w-[80px]"/></td>
+                    {/*<td className="p-4"><Skeleton className="h-4 w-[80px]"/></td>*/}
                     <td className="p-4"><Skeleton className="h-4 w-[80px]"/></td>
                   </tr>
                 ))
@@ -273,11 +273,11 @@ export default function PricePage() {
                       <td className="p-4 text-sm text-right font-mono">
                         S/ {item.precio_credito}
                       </td>
-                      <td className="p-4">
-                        <Badge variant={expirationStatus.variant} className="text-xs">
-                          {expirationStatus.status}
-                        </Badge>
-                      </td>
+                      {/*<td className="p-4">*/}
+                      {/*  <Badge variant={expirationStatus.variant} className="text-xs">*/}
+                      {/*    {expirationStatus.status}*/}
+                      {/*  </Badge>*/}
+                      {/*</td>*/}
                       <td className="p-4">
                         <Dialog>
                           <DialogTrigger asChild>
