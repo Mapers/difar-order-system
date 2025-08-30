@@ -3,12 +3,11 @@
 import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from '@/components/ui/dialog'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Search, Plus, Edit, Trash2, User, Check, X, Users, UserCheck, Eye } from 'lucide-react'
+import { Search, Plus, Edit, Trash2, User, Check, X, Users, UserCheck, Eye, ChevronDown, ChevronUp } from 'lucide-react'
 import { useToast } from '@/components/ui/use-toast'
 import apiClient from '@/app/api/client'
 
@@ -97,6 +96,25 @@ export default function UsuariosPage() {
     ObsUsuario: '',
     ClaveUsuarios: '0000'
   })
+
+  // Estados para diseño responsivo
+  const [isMobile, setIsMobile] = useState(false)
+  const [expandedRows, setExpandedRows] = useState<Record<number, boolean>>({})
+
+  // Verificar el tamaño de la pantalla
+  useEffect(() => {
+    const checkIsMobile = () => setIsMobile(window.innerWidth < 768)
+    checkIsMobile()
+    window.addEventListener('resize', checkIsMobile)
+    return () => window.removeEventListener('resize', checkIsMobile)
+  }, [])
+
+  const toggleRowExpansion = (id: number) => {
+    setExpandedRows(prev => ({
+      ...prev,
+      [id]: !prev[id]
+    }))
+  }
 
   const fetchUsuarios = async () => {
     try {
@@ -299,7 +317,6 @@ export default function UsuariosPage() {
         comisionVend: 0.0000,
         comisionCobranza: 0.0000,
         empRegistro: '20481321892',
-        ciudad: '',
         activo: 1
       });
       fetchVendedores()
@@ -344,25 +361,6 @@ export default function UsuariosPage() {
       })
     }
   }
-
-  // const handleDeleteVendedor = async (id: number) => {
-  //   if (!confirm('¿Está seguro de que desea eliminar este vendedor?')) return
-  //
-  //   try {
-  //     await apiClient.delete(`/vendedores/delete/${id}`)
-  //     toast({
-  //       title: 'Éxito',
-  //       description: 'Vendedor eliminado correctamente'
-  //     })
-  //     fetchVendedores()
-  //   } catch (error: any) {
-  //     toast({
-  //       title: 'Error',
-  //       description: error.response?.data?.message || 'No se pudo eliminar el vendedor',
-  //       variant: 'destructive'
-  //     })
-  //   }
-  // }
 
   // Funciones para mantenedor de usuarios generales
   const handleCreateUsuario = async () => {
@@ -423,25 +421,6 @@ export default function UsuariosPage() {
     }
   }
 
-  // const handleDeleteUsuario = async (id: number) => {
-  //   if (!confirm('¿Está seguro de que desea eliminar este usuario?')) return
-  //
-  //   try {
-  //     await apiClient.delete(`/usuarios-no-web/delete/${id}`)
-  //     toast({
-  //       title: 'Éxito',
-  //       description: 'Usuario general eliminado correctamente'
-  //     })
-  //     fetchUsuariosNoWeb()
-  //   } catch (error: any) {
-  //     toast({
-  //       title: 'Error',
-  //       description: error.response?.data?.message || 'No se pudo eliminar el usuario',
-  //       variant: 'destructive'
-  //     })
-  //   }
-  // }
-
   useEffect(() => {
     fetchUsuarios()
     fetchVendedores()
@@ -467,8 +446,169 @@ export default function UsuariosPage() {
     }
   }, [busquedaUsuarios])
 
+  // Componente para mostrar tarjetas en vista móvil
+  const MobileUsuarioCard = ({ usuario }: { usuario: Usuario }) => (
+    <Card className="mb-4">
+      <CardContent className="p-4">
+        <div className="flex justify-between items-start mb-3">
+          <div>
+            <h3 className="font-semibold">{usuario.nombre_completo}</h3>
+            <p className="text-sm text-gray-600">DNI: {usuario.dni}</p>
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => toggleRowExpansion(usuario.id_usuario)}
+          >
+            {expandedRows[usuario.id_usuario] ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          </Button>
+        </div>
+
+        <div className="flex justify-between items-center mb-2">
+          <span className="text-sm">Teléfono:</span>
+          <span className="text-sm">{usuario.telefono}</span>
+        </div>
+
+        <div className="flex justify-between items-center mb-2">
+          <span className="text-sm">Rol:</span>
+          <span className="text-sm">{usuario.nombre_rol}</span>
+        </div>
+
+        <div className="flex justify-between items-center mb-3">
+          <span className="text-sm">Estado:</span>
+          {usuario.activo ? (
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+              <Check className="h-3 w-3 mr-1" /> Activo
+            </span>
+          ) : (
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+              <X className="h-3 w-3 mr-1" /> Inactivo
+            </span>
+          )}
+        </div>
+
+        {expandedRows[usuario.id_usuario] && (
+          <div className="mt-3 pt-3 border-t">
+            <Button
+              className="w-full mb-2"
+              onClick={() => {
+                setSelectedUsuario(usuario)
+                setSelectedRol(usuario.id_rol.toString())
+                setActivo(usuario.activo)
+                setShowEditDialog(true)
+              }}
+            >
+              <Edit className="h-4 w-4 mr-2" />
+              Editar
+            </Button>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  )
+
+  // Componente para mostrar tarjetas de vendedores en vista móvil
+  const MobileVendedorCard = ({ vendedor }: { vendedor: Vendedor }) => (
+    <Card className="mb-4">
+      <CardContent className="p-4">
+        <div className="flex justify-between items-start mb-3">
+          <div>
+            <h3 className="font-semibold">{vendedor.nombres} {vendedor.apellidos}</h3>
+            <p className="text-sm text-gray-600">Código: {vendedor.codigo}</p>
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => toggleRowExpansion(vendedor.idVendedor)}
+          >
+            {expandedRows[vendedor.idVendedor] ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          </Button>
+        </div>
+
+        <div className="flex justify-between items-center mb-2">
+          <span className="text-sm">DNI:</span>
+          <span className="text-sm">{vendedor.DNI}</span>
+        </div>
+
+        <div className="flex justify-between items-center mb-2">
+          <span className="text-sm">Teléfono:</span>
+          <span className="text-sm">{vendedor.telefono}</span>
+        </div>
+
+        <div className="flex justify-between items-center mb-3">
+          <span className="text-sm">Estado:</span>
+          {vendedor.activo === 1 ? (
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+              Activo
+            </span>
+          ) : (
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+              Inactivo
+            </span>
+          )}
+        </div>
+
+        {expandedRows[vendedor.idVendedor] && (
+          <div className="mt-3 pt-3 border-t flex space-x-2">
+            <Button
+              className="flex-1"
+              onClick={() => {
+                setEditingVendedor(vendedor)
+                setShowVendedorDialog(true)
+              }}
+            >
+              <Edit className="h-4 w-4 mr-2" />
+              Editar
+            </Button>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  )
+
+  // Componente para mostrar tarjetas de usuarios generales en vista móvil
+  const MobileUsuarioGeneralCard = ({ usuario }: { usuario: UsuarioNoWeb }) => (
+    <Card className="mb-4">
+      <CardContent className="p-4">
+        <div className="flex justify-between items-start mb-3">
+          <div>
+            <h3 className="font-semibold">{usuario.NombreUsuarios}</h3>
+            <p className="text-sm text-gray-600">Emp. Reg: {usuario.EmpRegistros}</p>
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => toggleRowExpansion(usuario.IdUsuarios)}
+          >
+            {expandedRows[usuario.IdUsuarios] ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          </Button>
+        </div>
+
+        <div className="flex justify-between items-center mb-3">
+          <span className="text-sm">Observación:</span>
+          <span className="text-sm">{usuario.ObsUsuario}</span>
+        </div>
+
+        {expandedRows[usuario.IdUsuarios] && (
+          <div className="mt-3 pt-3 border-t flex space-x-2">
+            <Button
+              className="flex-1"
+              onClick={() => {
+                setEditingUsuario(usuario)
+                setShowUsuarioDialog(true)
+              }}
+            >
+              <Edit className="h-4 w-4 mr-2" />
+              Editar
+            </Button>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  )
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-4 md:p-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold">Gestión de Usuarios</h1>
@@ -490,7 +630,7 @@ export default function UsuariosPage() {
               activo: 1
             })
             setShowVendedorDialog(true)
-          }}>
+          }} className="w-full sm:w-auto">
             <Plus className="h-4 w-4 mr-2" />
             Nuevo Vendedor
           </Button>
@@ -499,12 +639,12 @@ export default function UsuariosPage() {
         {activeTab === 'usuarios-web' && (
           <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
             <DialogTrigger asChild>
-              <Button className="flex items-center gap-2">
+              <Button className="flex items-center gap-2 w-full sm:w-auto">
                 <Plus className="h-4 w-4" />
                 Nuevo Usuario Web
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-md">
+            <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Registrar Nuevo Usuario</DialogTitle>
               </DialogHeader>
@@ -558,7 +698,7 @@ export default function UsuariosPage() {
                                 setTelefono(v.telefono)
                               }}
                             >
-                              <p className="font-medium">{v.nombre_completo}</p>
+                              <p className="font-medium">{v.nombres} {v.apellidos}</p>
                               <p className="text-sm text-gray-600">DNI: {v.DNI} - Teléfono: {v.telefono}</p>
                             </div>
                           ))}
@@ -689,7 +829,7 @@ export default function UsuariosPage() {
               ClaveUsuarios: '0000',
             })
             setShowUsuarioDialog(true)
-          }}>
+          }} className="w-full sm:w-auto">
             <Plus className="h-4 w-4 mr-2" />
             Nuevo Usuario
           </Button>
@@ -697,18 +837,21 @@ export default function UsuariosPage() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid grid-cols-3 mb-4">
-          <TabsTrigger value="usuarios-web" className="flex items-center gap-2">
+        <TabsList className="grid grid-cols-3 mb-4 w-full">
+          <TabsTrigger value="usuarios-web" className="flex items-center gap-2 text-xs sm:text-sm">
             <UserCheck className="h-4 w-4" />
-            Usuarios Web
+            <span className="hidden sm:inline">Usuarios Web</span>
+            <span className="sm:hidden">Web</span>
           </TabsTrigger>
-          <TabsTrigger value="vendedores" className="flex items-center gap-2">
+          <TabsTrigger value="vendedores" className="flex items-center gap-2 text-xs sm:text-sm">
             <Users className="h-4 w-4" />
-            Vendedores
+            <span className="hidden sm:inline">Vendedores</span>
+            <span className="sm:hidden">Vend</span>
           </TabsTrigger>
-          <TabsTrigger value="usuarios-generales" className="flex items-center gap-2">
+          <TabsTrigger value="usuarios-generales" className="flex items-center gap-2 text-xs sm:text-sm">
             <User className="h-4 w-4" />
-            Usuarios Generales
+            <span className="hidden sm:inline">Usuarios</span>
+            <span className="sm:hidden">Generales</span>
           </TabsTrigger>
         </TabsList>
 
@@ -719,9 +862,16 @@ export default function UsuariosPage() {
                 <div className="flex justify-center items-center h-64">
                   <p>Cargando usuarios...</p>
                 </div>
+              ) : isMobile ? (
+                <div className="p-2">
+                  {usuarios.map((usuario) => (
+                    <MobileUsuarioCard key={usuario.id_usuario + '|' + usuario.id_rol} usuario={usuario} />
+                  ))}
+                </div>
               ) : (
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
                     <tr>
                       <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre</th>
                       <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Documento</th>
@@ -730,26 +880,26 @@ export default function UsuariosPage() {
                       <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
                       <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
                     </tr>
-                  </thead>
-                  <tbody>
+                    </thead>
+                    <tbody>
                     {usuarios.map((usuario, index) => (
                       <tr key={index}>
-                        <td className="font-medium">{usuario.nombre_completo}</td>
-                        <td>{usuario.dni}</td>
-                        <td>{usuario.telefono}</td>
-                        <td>{usuario.nombre_rol}</td>
-                        <td>
+                        <td className="p-4 text-sm">{usuario.nombre_completo}</td>
+                        <td className="p-4 text-sm">{usuario.dni}</td>
+                        <td className="p-4 text-sm">{usuario.telefono}</td>
+                        <td className="p-4 text-sm">{usuario.nombre_rol}</td>
+                        <td className="p-4 text-sm">
                           {usuario.activo ? (
                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                              <Check className="h-3 w-3 mr-1" /> Activo
-                            </span>
+                                <Check className="h-3 w-3 mr-1" /> Activo
+                              </span>
                           ) : (
                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                              <X className="h-3 w-3 mr-1" /> Inactivo
-                            </span>
+                                <X className="h-3 w-3 mr-1" /> Inactivo
+                              </span>
                           )}
                         </td>
-                        <td>
+                        <td className="p-4 text-sm">
                           <div className="flex space-x-2">
                             <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
                               <DialogTrigger asChild>
@@ -765,7 +915,7 @@ export default function UsuariosPage() {
                                   <Edit className="h-4 w-4 text-blue-600" />
                                 </Button>
                               </DialogTrigger>
-                              <DialogContent className="max-w-md">
+                              <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
                                 <DialogHeader>
                                   <DialogTitle>Editar Usuario</DialogTitle>
                                 </DialogHeader>
@@ -842,8 +992,9 @@ export default function UsuariosPage() {
                         </td>
                       </tr>
                     ))}
-                  </tbody>
-                </table>
+                    </tbody>
+                  </table>
+                </div>
               )}
             </CardContent>
           </Card>
@@ -852,60 +1003,63 @@ export default function UsuariosPage() {
         <TabsContent value="vendedores">
           <Card>
             <CardContent className='p-0'>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Código</TableHead>
-                    <TableHead>Nombre</TableHead>
-                    <TableHead>DNI</TableHead>
-                    <TableHead>Teléfono</TableHead>
-                    <TableHead>Estado</TableHead>
-                    <TableHead>Acciones</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
+              {isMobile ? (
+                <div className="p-2">
                   {vendedores.map((vendedor) => (
-                    <TableRow key={vendedor.idVendedor}>
-                      <TableCell>{vendedor.codigo}</TableCell>
-                      <TableCell>{vendedor.nombres} {vendedor.apellidos}</TableCell>
-                      <TableCell>{vendedor.DNI}</TableCell>
-                      <TableCell>{vendedor.telefono}</TableCell>
-                      <TableCell>
-                        {vendedor.activo === 1 ? (
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                            Activo
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                            Inactivo
-                          </span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex space-x-2">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => {
-                              setEditingVendedor(vendedor)
-                              setShowVendedorDialog(true)
-                            }}
-                          >
-                            <Edit className="h-4 w-4 text-blue-600" />
-                          </Button>
-                          {/*<Button*/}
-                          {/*  variant="ghost"*/}
-                          {/*  size="icon"*/}
-                          {/*  onClick={() => handleDeleteVendedor(vendedor.idVendedor)}*/}
-                          {/*>*/}
-                          {/*  <Trash2 className="h-4 w-4 text-red-600" />*/}
-                          {/*</Button>*/}
-                        </div>
-                      </TableCell>
-                    </TableRow>
+                    <MobileVendedorCard key={vendedor.idVendedor + '|' + vendedor.empRegistro} vendedor={vendedor} />
                   ))}
-                </TableBody>
-              </Table>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead>
+                      <tr>
+                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Código</th>
+                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre</th>
+                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">DNI</th>
+                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Teléfono</th>
+                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
+                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {vendedores.map((vendedor, index) => (
+                        <tr key={index}>
+                          <td className="p-4 text-sm">{vendedor.codigo}</td>
+                          <td className="p-4 text-sm">{vendedor.nombres} {vendedor.apellidos}</td>
+                          <td className="p-4 text-sm">{vendedor.DNI}</td>
+                          <td className="p-4 text-sm">{vendedor.telefono}</td>
+                          <td className="p-4 text-sm">
+                            {vendedor.activo === 1 ? (
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                Activo
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                Inactivo
+                              </span>
+                            )}
+                          </td>
+                          <td className="p-4 text-sm">
+                            <div className="flex space-x-2">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => {
+                                  setEditingVendedor(vendedor)
+                                  setShowVendedorDialog(true)
+                                }}
+                              >
+                                <Edit className="h-4 w-4 text-blue-600" />
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -913,53 +1067,56 @@ export default function UsuariosPage() {
         <TabsContent value="usuarios-generales">
           <Card>
             <CardContent className='p-0'>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Nombre</TableHead>
-                    <TableHead>Emp. Registro</TableHead>
-                    <TableHead>Observación</TableHead>
-                    <TableHead>Acciones</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
+              {isMobile ? (
+                <div className="p-2">
                   {usuariosNoWeb.map((usuario) => (
-                    <TableRow key={usuario.IdUsuarios}>
-                      <TableCell>{usuario.NombreUsuarios}</TableCell>
-                      <TableCell>{usuario.EmpRegistros}</TableCell>
-                      <TableCell>{usuario.ObsUsuario}</TableCell>
-                      <TableCell>
-                        <div className="flex space-x-2">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => {
-                              setEditingUsuario(usuario)
-                              setShowUsuarioDialog(true)
-                            }}
-                          >
-                            <Edit className="h-4 w-4 text-blue-600" />
-                          </Button>
-                          {/*<Button*/}
-                          {/*  variant="ghost"*/}
-                          {/*  size="icon"*/}
-                          {/*  onClick={() => handleDeleteUsuario(usuario.IdUsuarios)}*/}
-                          {/*>*/}
-                          {/*  <Trash2 className="h-4 w-4 text-red-600" />*/}
-                          {/*</Button>*/}
-                        </div>
-                      </TableCell>
-                    </TableRow>
+                    <MobileUsuarioGeneralCard key={usuario.IdUsuarios} usuario={usuario} />
                   ))}
-                </TableBody>
-              </Table>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead>
+                      <tr>
+                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre</th>
+                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Emp. Registro</th>
+                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Observación</th>
+                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {usuariosNoWeb.map((usuario, index) => (
+                        <tr key={index}>
+                          <td className="p-4 text-sm">{usuario.NombreUsuarios}</td>
+                          <td className="p-4 text-sm">{usuario.EmpRegistros}</td>
+                          <td className="p-4 text-sm">{usuario.ObsUsuario}</td>
+                          <td className="p-4 text-sm">
+                            <div className="flex space-x-2">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => {
+                                  setEditingUsuario(usuario)
+                                  setShowUsuarioDialog(true)
+                                }}
+                              >
+                                <Edit className="h-4 w-4 text-blue-600" />
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
       </Tabs>
 
       <Dialog open={showVendedorDialog} onOpenChange={setShowVendedorDialog}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {editingVendedor ? 'Editar Vendedor' : 'Crear Nuevo Vendedor'}
@@ -1159,7 +1316,7 @@ export default function UsuariosPage() {
       </Dialog>
 
       <Dialog open={showUsuarioDialog} onOpenChange={setShowUsuarioDialog}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {editingUsuario ? 'Editar Usuario General' : 'Crear Nuevo Usuario General'}
@@ -1193,7 +1350,7 @@ export default function UsuariosPage() {
                 placeholder="Empresa de Registro (11 caracteres máximo)"
                 value={editingUsuario ? editingUsuario.EmpRegistros : newUsuario.EmpRegistros}
                 onChange={(e) => {
-                  const value = e.target.value.slice(0, 11); // Limitar a 11 caracteres
+                  const value = e.target.value.slice(0, 11);
                   editingUsuario
                     ? setEditingUsuario({...editingUsuario, EmpRegistros: value})
                     : setNewUsuario({...newUsuario, EmpRegistros: value})
@@ -1225,7 +1382,7 @@ export default function UsuariosPage() {
                 placeholder="Clave (4 caracteres máximo)"
                 value={editingUsuario ? editingUsuario.ClaveUsuarios : newUsuario.ClaveUsuarios}
                 onChange={(e) => {
-                  const value = e.target.value.slice(0, 4); // Limitar a 4 caracteres
+                  const value = e.target.value.slice(0, 4);
                   editingUsuario
                     ? setEditingUsuario({...editingUsuario, ClaveUsuarios: value})
                     : setNewUsuario({...newUsuario, ClaveUsuarios: value})
