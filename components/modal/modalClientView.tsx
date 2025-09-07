@@ -12,6 +12,7 @@ import { ClientCardSkeleton, SkeletonState } from '../skeleton/ZoneReportSkeleto
 import { getEstadoVisual } from '@/utils/client'
 import { ClientMethodsService } from '@/app/dashboard/clientes/services/clientMethodsService'
 import { useClienViewtData } from '@/app/dashboard/clientes/hooks/useClientViewData'
+import moment from "moment";
 
 interface ModalVerificationProps {
   open: boolean
@@ -193,7 +194,7 @@ const ModalClientView: React.FC<ModalVerificationProps> = ({ open, onOpenChange,
                 <div>
                   <Label className="text-xs text-gray-500">Estado Contribuyente SUNAT</Label>
                   <p className="font-medium">
-                    {evaluation.estadoContribuyente}
+                    {evaluation.estadoSUNAT}
                   </p>
                 </div>
                 <div>
@@ -206,7 +207,7 @@ const ModalClientView: React.FC<ModalVerificationProps> = ({ open, onOpenChange,
                 </div>
                 <div>
                   <Label className="text-xs text-gray-500">Fecha Evaluación</Label>
-                  <p className="font-medium">{evaluation.fechaEvaluacion}</p>
+                  <p className="font-medium">{moment(evaluation.fechaEvaluacion, 'yyyy-MM-DD').format('DD/MM/yyyy')}</p>
                 </div>
                 <div>
                   <Label className="text-xs text-gray-500">Item Lista</Label>

@@ -41,6 +41,7 @@ export const mapEvaluationFromApi = (data: any): IEvaluation => ({
   codigoInterno: data.Codigo || "No registrado",
   nombreComercial: data.NombreComercial || "No registrado",
   razonSocial: data.RazonSocial || "No registrado",
+  tipoDocIdent: data.tipoDocIdent || '',
   ruc: data.RUC || "No registrado",
   direccion: data.Dirección || "No registrado",
   telefono: data.Telefono || "No registrado",
@@ -48,7 +49,7 @@ export const mapEvaluationFromApi = (data: any): IEvaluation => ({
   evaluacionId: data.EvaluacionId || "No asigando",
   fechaEvaluacion: data.fecha_evaluacion || "No Registrado",
   categoria: data.categoria || "No registrado",
-  estadoContribuyente: data.estado_contribuyente || "No registrado",
+  estadoSUNAT: data.estado_contribuyente || "No registrado",
   representanteLegal: data.representante_legal || "No registrado",
   itemLista: data.item_lista || "No registrado",
   aprobadoDirTecnica: data.aprobado_dir_tecnica || "No registrado",
@@ -56,6 +57,11 @@ export const mapEvaluationFromApi = (data: any): IEvaluation => ({
   observacionesGlobal: data.observaciones_global || "No registrado",
   createdAt: data.created_at || "No registrado",
   updatedAt: data.updated_at || "No registrado",
+  idZona: data.idZona || 0,
+  provincia: data.provincia || 0,
+  idDistrito: data.idDistrito || 0,
+  numRegistro: data.num_registro || '',
+  fechaInicio: data.FECHA_INICIO || "No Registrado",
 });
 
 // Evaluacion de un cliente

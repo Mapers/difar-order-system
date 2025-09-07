@@ -45,7 +45,7 @@ export interface IEvaluation {
   evaluacionId: string
   fechaEvaluacion: string
   categoria: string
-  estadoContribuyente: string
+  estadoSUNAT: string
   representanteLegal: string
   itemLista: string
   aprobadoDirTecnica: boolean

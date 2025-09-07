@@ -17,6 +17,7 @@ import TabCalificacion from '../cliente/tabCalificacion'
 import { ClientService } from '@/app/services/client/ClientService'
 import { useClientEditData } from '@/app/dashboard/clientes/hooks/useClientEditData'
 import ModalLoader from './modalLoader'
+import moment from "moment";
 
 function cn(...classes: (string | boolean | undefined)[]) {
   return classes.filter(Boolean).join(' ');
@@ -53,7 +54,7 @@ const ModalClientEdit: React.FC<ModalVerificationProps> = ({ open, onOpenChange,
     idZona: '',
     idDistrito: 0,
     fechaInicio: '',
-    //campos de la evaluacion
+    numRegistro: '',
     fechaEvaluacion: '',
     categoria: '',
     estadoSUNAT: '',
@@ -111,6 +112,7 @@ const ModalClientEdit: React.FC<ModalVerificationProps> = ({ open, onOpenChange,
         aprobDirTecnica: ' ',
         aprobGerente: '',
         observaciones: '',
+        numRegistro: formData.numRegistro || ''
       };
       const response = await ClientService.createUpdateClienteEvaluacion(dataPayload);
       if (response.success) {
@@ -130,6 +132,7 @@ const ModalClientEdit: React.FC<ModalVerificationProps> = ({ open, onOpenChange,
 
   useEffect(() => {
     if (evaluation) {
+      console.log(evaluation)
       setFormData({
         codigo: codClient,
         codigoVed: user?.codigo || '',
@@ -153,6 +156,7 @@ const ModalClientEdit: React.FC<ModalVerificationProps> = ({ open, onOpenChange,
         aprobDirTecnica: evaluation.aprobDirTecnica || false,
         aprobGerente: evaluation.aprobGerente || false,
         observaciones: evaluation.observaciones || '',
+        numRegistro: evaluation.numRegistro || ''
       });
     }
   }, [evaluation, codClient, user?.codigo]);
@@ -584,7 +588,7 @@ const ModalClientEdit: React.FC<ModalVerificationProps> = ({ open, onOpenChange,
                     <Label htmlFor="numRegistro">Número de Registro</Label>
                     <Input
                       id="numRegistro"
-                      // value={formData.numRegistro}
+                      value={formData.numRegistro}
                       onChange={(e) => handleInputChange("numRegistro", e.target.value)}
                       placeholder="REG001"
                     />
