@@ -10,7 +10,7 @@ interface UseInactivityProps {
 
 export const useInactivity = ({
                                 timeout = 5 * 60 * 1000,
-                                warningTime = 60 * 1000,
+                                warningTime = 59 * 1000,
                                 onLogout,
                               }: UseInactivityProps) => {
   const [isWarning, setIsWarning] = useState(false);

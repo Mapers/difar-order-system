@@ -87,6 +87,7 @@ export const LaboratorioModal = ({
                         <TableCell>
                           <div className="font-medium">{product.NombreItem}</div>
                           <div className="text-sm text-gray-500">{product.Codigo_Art}</div>
+                          {product.Descripcion}
                         </TableCell>
                         <TableCell>{product.Stock}</TableCell>
                         <TableCell>

@@ -127,20 +127,20 @@ const TabDireccionTecnica: React.FC<DireccionTecnicaProps> = ({
                 <FileText className="h-4 w-4 text-green-600" />
                 Documentación Obligatoria
             </h4>
-            {(!evaluationClient || evaluationClient.length === 0) ? (
-                <Card className="bg-yellow-50 border-yellow-200 p-6">
-                    <p className="text-yellow-800 font-medium">
-                        No existe evaluación para este cliente.
-                    </p>
-                </Card>
-            ) : (
+            {/*{(!evaluationClient || evaluationClient.length === 0) ? (*/}
+            {/*    <Card className="bg-yellow-50 border-yellow-200 p-6">*/}
+            {/*        <p className="text-yellow-800 font-medium">*/}
+            {/*            No existe evaluación para este cliente.*/}
+            {/*        </p>*/}
+            {/*    </Card>*/}
+            {/*) : (*/}
                 <>
                     {renderCard(autorizacion, setAutorizacion, 'N° Resolución Directoral de Autorización Sanitaria', 'blue')}
                     {renderCard(situacion, setSituacion, 'Situación de Funcionamiento', 'green')}
                     {renderCard(registro, setRegistro, 'Número de Registro', 'yellow')}
                     {renderCard(certificaciones, setCertificaciones, 'Certificaciones', 'purple')}
                 </>
-            )}
+            {/*)}*/}
             <DialogFooter className="flex flex-col-reverse sm:flex-row gap-3 sm:gap-2 mt-6">
                 <Button
                     variant="outline"
@@ -153,7 +153,8 @@ const TabDireccionTecnica: React.FC<DireccionTecnicaProps> = ({
                 </Button>
                 <Button
                     onClick={handleSaveAll}
-                    disabled={isSubmitting || !evaluationClient || evaluationClient.length === 0}
+                    disabled={isSubmitting}
+                    // disabled={isSubmitting || !evaluationClient || evaluationClient.length === 0}
                     className="w-full sm:w-auto bg-green-600 hover:bg-green-700"
                 >
                     {isSubmitting ? (

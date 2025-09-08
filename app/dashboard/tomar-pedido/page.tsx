@@ -725,7 +725,7 @@ export default function OrderPage() {
                     </div>
 
                     <div className="space-y-2 sm:w-48 transition-all duration-200">
-                      <Label htmlFor="laboratorio" className="text-gray-700 text-xs sm:text-sm hidden sm:block">
+                      <Label htmlFor="laboratorio" className="text-sm font-medium">
                         Filtrar por lab
                       </Label>
                       <Select
