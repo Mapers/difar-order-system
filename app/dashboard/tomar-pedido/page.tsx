@@ -1369,6 +1369,7 @@ export default function OrderPage() {
                     const precioEscala = item.appliedScale?.precio_escala;
                     const precioUnitario = item.isBonification ? 0 : precioEscala ?? precioOriginal;
                     const subtotal = precioUnitario * item.quantity;
+                    const lote = productosConLotes.find(x => x.prod_codigo === item.product.Codigo_Art)?.loteSeleccionado || '|'
 
                     return (
                       <Card key={index} className="p-4">
@@ -1393,7 +1394,11 @@ export default function OrderPage() {
                             </div>
                           </div>
 
-                          <div className="grid grid-cols-3 gap-4 text-sm">
+                          <div className="grid grid-cols-4 gap-4 text-sm">
+                            <div>
+                              <Label className="text-xs text-gray-500">Lote - Fec.Venc</Label>
+                              <p className="font-medium">{lote.split('|')[0]} - Vence: {format(parseISO(lote.split('|')[1]), "dd/MM/yyyy")}</p>
+                            </div>
                             <div>
                               <Label className="text-xs text-gray-500">Cantidad</Label>
                               <p className="font-medium">{item.quantity}</p>
