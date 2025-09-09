@@ -17,10 +17,10 @@ const ContactInfo: React.FC<ClientRowProps> = ({ client, referenciaDireccion, co
   const [showFullDireccion, setShowFullDireccion] = useState(false);
 
   const renderDireccion = () => {
-    const isLong = client.Dirección.length > 20;
+    const isLong = client.Dirección?.length > 20;
     const text = showFullDireccion || !isLong
       ? client.Dirección
-      : client.Dirección.slice(0, 20) + '...';
+      : client.Dirección?.slice(0, 20) + '...';
 
     return (
       <p className="text-sm text-gray-900 flex items-center gap-1">

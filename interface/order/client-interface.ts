@@ -5,7 +5,7 @@ export interface IClient {
   Nombre: string;
   NombreComercial: string;
   RUC: string;
-  Dirección: string;
+  Dirección?: string;
   Provincia: number;
   idDistrito: number;
   IdZona: string;

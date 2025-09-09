@@ -6,6 +6,10 @@ export const fetchGetClients = async (query: string, seller: string): Promise<an
     return apiClient.get(`/tomarPedido/cliente/search?query=${encodeURIComponent(query)}&vendedor=${seller}`);
 };
 
+export const fetchGetAllClients = async (seller: string): Promise<any> => {
+    return apiClient.get(`/tomarPedido/cliente/all?vendedor=${seller}`);
+};
+
 export const fetchGetConditions = async (query: string): Promise<any> => {
     return apiClient.get(`tomarPedido/condiciones?query=${encodeURIComponent(query)}`);
 };

@@ -21,7 +21,7 @@ import {
   DollarSign,
   Coins,
   FileText,
-  Trash
+  Trash, CheckSquare, Loader2
 } from "lucide-react"
 import { StepProgress } from "@/components/step-progress"
 import apiClient from "@/app/api/client"
@@ -37,7 +37,13 @@ import { CommandEmpty, CommandGroup, CommandInput, CommandList, Command, Command
 import ModalBonification from "@/components/modal/modalBonification"
 import ModalEscale from "@/components/modal/modalEscale"
 import { monedas, PROMOCIONES } from "@/constants"
-import { fetchGetClients, fetchGetConditions, fetchGetZona, fetchUnidaTerritorial } from "@/app/api/takeOrders"
+import {
+  fetchGetAllClients,
+  fetchGetClients,
+  fetchGetConditions,
+  fetchGetZona,
+  fetchUnidaTerritorial
+} from "@/app/api/takeOrders"
 import { getBonificadosRequest, getEscalasRequest, getProductsRequest } from "@/app/api/products"
 import { ICurrentBonification, ICurrentScales, IEscala, IProduct, IPromocionRequest, ISelectedProduct, OrderItem } from "@/interface/order/product-interface"
 import { IClient, ICondicion, IDistrito, IMoneda, ITerritorio } from "@/interface/order/client-interface"
@@ -46,6 +52,22 @@ import {useAuth} from "@/context/authContext";
 import {Textarea} from "@/components/ui/textarea";
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select";
 import {LaboratorioModal} from "@/app/dashboard/tomar-pedido/laboratorio-modal";
+import {Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader} from "@/components/ui/dialog";
+import {DialogTitle} from "@radix-ui/react-dialog";
+import {PriceService} from "@/app/services/price/PriceService";
+import {format, parseISO} from "date-fns";
+
+interface LoteProducto {
+  value: string
+}
+
+interface ProductoConLotes {
+  prod_codigo: string
+  prod_descripcion: string
+  cantidadPedido: number
+  lotes: LoteProducto[]
+  loteSeleccionado?: string
+}
 
 export default function OrderPage() {
   const router = useRouter()
@@ -61,6 +83,7 @@ export default function OrderPage() {
   const [condition, setCondition] = useState<ICondicion | null>(null)
   const [currency, setCurrency] = useState<IMoneda | null>(null)
   const [clients, setClients] = useState<IClient[]>([])
+  const [clientsFiltered, setClientsFiltered] = useState<IClient[]>([])
   const [conditions, setConditions] = useState<ICondicion[]>([])
   const [contactoPedido, setContactoPedido] = useState('');
   const [referenciaDireccion, setReferenciaDireccion] = useState('');
@@ -110,7 +133,9 @@ export default function OrderPage() {
   const [orderItems, setOrderItems] = useState<OrderItem[]>([])
   const [products, setProducts] = useState<IProduct[]>([])
 
-
+  const [showLotesModal, setShowLotesModal] = useState(false);
+  const [productosConLotes, setProductosConLotes] = useState<ProductoConLotes[]>([]);
+  const [loadingLotes, setLoadingLotes] = useState(false);
 
   const steps = ["Cliente", "Productos", "Resumen"]
   // obtiene una zona por id
@@ -170,26 +195,22 @@ export default function OrderPage() {
     }
   }
 
-  // lista clientes  con funcion debouse 
-  const debouncedFetchClients = debounce(async () => {
-    if (search.client.length >= 4) {
-      setLoading(prev => ({ ...prev, clients: true }));
-      try {
-        const response = await fetchGetClients(search.client, auth.user?.codigo || '');
-        if (response.data?.data?.data.length === 0) {
-          setClients([]);
-        } else {
-          setClients(response.data?.data?.data || []);
-        }
-      } catch (error) {
-        console.error("Error fetching clients:", error);
-      } finally {
-        setLoading(prev => ({ ...prev, clients: false }));
+  const debouncedFetchClients = async () => {
+    setLoading(prev => ({ ...prev, clients: true }));
+    try {
+      const response = await fetchGetAllClients(auth.user?.codigo || '');
+      if (response.data?.data?.data.length === 0) {
+        setClients([])
+      } else {
+        setClients(response.data?.data?.data || [])
+        setClientsFiltered(response.data?.data?.data || [])
       }
-    } else {
-      setClients([]);
+    } catch (error) {
+      console.error("Error fetching clients:", error);
+    } finally {
+      setLoading(prev => ({ ...prev, clients: false }))
     }
-  }, 500);
+  }
 
   // lista las condiciones
   const fetchConditions = async () => {
@@ -231,7 +252,16 @@ export default function OrderPage() {
 
   useEffect(() => {
     debouncedFetchClients();
-    return () => debouncedFetchClients.cancel();
+  }, []);
+
+  useEffect(() => {
+    if (search.client) {
+      setClientsFiltered(clients.filter(item =>
+        item.RUC.includes(search.client) ||
+        item.Nombre.toUpperCase().includes(search.client.toUpperCase())))
+    } else {
+      setClientsFiltered(clients)
+    }
   }, [search.client]);
 
   useEffect(() => {
@@ -254,13 +284,51 @@ export default function OrderPage() {
     fetchProducts()
   }, [search.product])
 
-  const getApplicableScale = (productCode: string, quantity: number, productosEscala: IEscala[]) => {
-    if (!productosEscala) return null
-    return productosEscala.find((scale: IEscala) =>
-      scale.IdArticulo === productCode && quantity >= scale.minimo &&
-      (scale.maximo === null || quantity <= scale.maximo)
-    ) || null
+  const handleLoteChange = (productIndex: number, value: string) => {
+    setProductosConLotes(prev => {
+      const updated = [...prev];
+      updated[productIndex].loteSeleccionado = value;
+      return updated;
+    });
+  };
+
+  const handleConfirmarLotes = async () => {
+    nextStep()
+    setShowLotesModal(false)
   }
+
+  const handleListarLotes = async () => {
+    try {
+      setShowLotesModal(true)
+      setLoadingLotes(true)
+
+      const productos: ProductoConLotes[] = []
+
+      for (const producto of selectedProducts) {
+        const response = await PriceService.getProductLots(producto.product.Codigo_Art)
+        const lotes = response.data.map((lote: any) => ({
+          value: lote.numeroLote + '|' + lote.fechaVencimiento,
+          numeroLote: lote.numeroLote,
+          fechaVencimiento: lote.fechaVencimiento
+        }))
+
+        productos.push({
+          prod_codigo: producto.product.Codigo_Art,
+          prod_descripcion: producto.product.NombreItem,
+          cantidadPedido: producto.quantity,
+          lotes: lotes,
+          loteSeleccionado: lotes.length > 0 ? lotes[0].value : "",
+        })
+      }
+
+      setProductosConLotes(productos);
+      setLoadingLotes(false);
+    } catch (e) {
+      console.error("Error al obtener lotes:", e);
+      setLoadingLotes(false);
+      // Mostrar mensaje de error
+    }
+  };
 
   const handleAddProduct = async () => {
     if (!selectedProduct) return;
@@ -366,6 +434,12 @@ export default function OrderPage() {
     e.preventDefault()
 
     try {
+      const lotesData = productosConLotes.map(producto => ({
+        codigoProducto: producto.prod_codigo,
+        lote: producto.loteSeleccionado?.split('|')[0],
+        fechaVencimiento: format(parseISO(producto.loteSeleccionado?.split('|')[1]), "dd/MM/yyyy")
+      }));
+
       const pedidoData = {
         clientePedido: client,
         monedaPedido: currency?.value,
@@ -382,7 +456,9 @@ export default function OrderPage() {
           cantPedido: item.quantity,
           precioPedido: item?.finalPrice,
           isbonificado: item.isBonification ? 1 : 0,
-          isescala: item.isEscale ? 1 : 0
+          isescala: item.isEscale ? 1 : 0,
+          lote: lotesData.find(x => x.codigoProducto === item.product.Codigo_Art)?.lote,
+          fecVenc: lotesData.find(x => x.codigoProducto === item.product.Codigo_Art)?.fechaVencimiento,
         })),
         estadodePedido: 1,
         telefonoPedido: selectedClient?.telefono,
@@ -514,9 +590,9 @@ export default function OrderPage() {
                   <div className="p-4">
                     <Skeleton className="h-4 w-full" />
                   </div>
-                ) : clients.length > 0 ? (
+                ) : clientsFiltered.length > 0 ? (
                   <div className="max-h-60 overflow-y-auto border space-y-1">
-                    {clients.map((c) => (
+                    {clientsFiltered.map((c) => (
                       <div
                         key={c.codigo}
                         className="relative flex  w-full cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground"
@@ -828,19 +904,19 @@ export default function OrderPage() {
                           </th>
                           <th
                             scope="col"
-                            className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                            className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
                           >
                             Cantidad
                           </th>
                           <th
                             scope="col"
-                            className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                            className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
                           >
                             Precio Unit.
                           </th>
                           <th
                             scope="col"
-                            className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                            className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
                           >
                             Subtotal
                           </th>
@@ -1039,11 +1115,11 @@ export default function OrderPage() {
                   </Button>
                   <Button
                     type="button"
-                    onClick={nextStep}
+                    onClick={handleListarLotes}
                     disabled={!isStepValid()}
                     className="bg-blue-600 hover:bg-blue-700"
                   >
-                    Siguiente
+                    Seleccionar Lotes y Continuar
                     <ArrowRight className="ml-2 h-4 w-4"/>
                   </Button>
                 </CardFooter>
@@ -1167,6 +1243,12 @@ export default function OrderPage() {
                           scope="col"
                           className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                         >
+                          Lote - Fec.Venc
+                        </th>
+                        <th
+                          scope="col"
+                          className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                        >
                           Cantidad
                         </th>
                         <th
@@ -1186,10 +1268,12 @@ export default function OrderPage() {
                       </thead>
                       <tbody>
                       {selectedProducts.map((item, index) => {
-                        const precioOriginal = item.finalPrice;
-                        const precioEscala = item.appliedScale?.precio_escala;
-                        const precioUnitario = item.isBonification ? 0 : precioEscala ?? precioOriginal;
-                        const subtotal = precioUnitario * item.quantity;
+                        const precioOriginal = item.finalPrice
+                        const precioEscala = item.appliedScale?.precio_escala
+                        const precioUnitario = item.isBonification ? 0 : precioEscala ?? precioOriginal
+                        const subtotal = precioUnitario * item.quantity
+                        const lote = productosConLotes.find(x => x.prod_codigo === item.product.Codigo_Art)?.loteSeleccionado || '|'
+
                         return (
                           <tr key={index} className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}>
                             <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
@@ -1207,6 +1291,11 @@ export default function OrderPage() {
                                 <span>{item.product.NombreItem}</span>
                               </div>
                             </td>
+
+                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-left">
+                              {lote.split('|')[0]} - Vence: {format(parseISO(lote.split('|')[1]), "dd/MM/yyyy")}
+                            </td>
+
                             <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-right">
                               {item.quantity}
                             </td>
@@ -1252,7 +1341,7 @@ export default function OrderPage() {
                       </tbody>
                       <TableFooter>
                         <TableRow>
-                          <TableCell colSpan={3}></TableCell>
+                          <TableCell colSpan={4}></TableCell>
                           <TableCell className="px-4 py-3 text-right text-sm font-medium text-gray-900">
                             Total:
                           </TableCell>
@@ -1393,6 +1482,80 @@ export default function OrderPage() {
         onConfirmSelection={handleConfirmSelection}
         currency={currency}
       />
+
+      <Dialog open={showLotesModal} onOpenChange={setShowLotesModal}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Package className="h-5 w-5" />
+              Seleccionar Lotes
+            </DialogTitle>
+            <DialogDescription>
+              Seleccione los lotes y cantidades para los productos
+            </DialogDescription>
+          </DialogHeader>
+
+          {loadingLotes ? (
+            <div className="flex justify-center items-center h-64">
+              <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+            </div>
+          ) : (
+            <div className="space-y-6 grid grid-cols-1 gap-4">
+              {productosConLotes.map((producto, productIndex) => (
+                <Card key={productIndex}>
+                  <CardHeader className="bg-gray-50 py-3">
+                    <CardTitle className="text-sm font-medium">
+                      {producto.prod_codigo} - {producto.prod_descripcion}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-4">
+                    <div className="grid grid-cols-1 gap-4">
+                      <div>
+                        <Label htmlFor={`lote-${productIndex}`}>Seleccionar Lote</Label>
+                        <Select
+                          value={producto.loteSeleccionado}
+                          onValueChange={(value) => handleLoteChange(productIndex, value)}
+                        >
+                          <SelectTrigger id={`lote-${productIndex}`}>
+                            <SelectValue placeholder="Seleccione un lote" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {producto.lotes.map((lote, loteIndex) => (
+                              <SelectItem
+                                key={loteIndex}
+                                value={lote.value}
+                              >
+                                {lote.value.split('|')[0]} - Vence: {format(parseISO(lote.value.split('|')[1]), "dd/MM/yyyy")}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowLotesModal(false)}
+              disabled={loadingLotes}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleConfirmarLotes}
+              disabled={loadingLotes || productosConLotes.length === 0}
+            >
+              <CheckSquare className="mr-2 h-4 w-4" />
+              Confirmar Lotes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

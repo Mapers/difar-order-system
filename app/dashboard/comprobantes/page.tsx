@@ -164,10 +164,6 @@ export default function ComprobantesPage() {
   const [showPdfModal, setShowPdfModal] = useState(false)
   const [currentPdfUrl, setCurrentPdfUrl] = useState("")
 
-  const [showLotesModal, setShowLotesModal] = useState(false)
-  const [productosConLotes, setProductosConLotes] = useState<ProductoConLotes[]>([])
-  const [loadingLotes, setLoadingLotes] = useState(false)
-
   const fetchComprobantes = async () => {
     try {
       setLoadingComprobantes(true)
@@ -403,12 +399,6 @@ export default function ComprobantesPage() {
   const handleConfirmarFacturacionConLotes = async () => {
     setIsProcessingInvoice(true);
     try {
-      const lotesData = productosConLotes.map(producto => ({
-        codigoProducto: producto.prod_codigo,
-        numeroLote: String(producto.loteSeleccionado).split('|')[0],
-        fechaVenc: format(parseISO(String(producto.loteSeleccionado).split('|')[1]), "dd/MM/yyyy"),
-      }))
-
       const tipoComprobante = tiposComprobante.find(
         t => t.idTipoComprobante.toString() === invoiceType
       )
@@ -423,9 +413,7 @@ export default function ComprobantesPage() {
 
       const response = await apiClient.post(
         `/pedidos/generateCompr?nroPedido=${selectedOrder.nroPedido}&tipoCompr=${tipoComprobante?.idTipoComprobante}&sunatTrans=${transaccionSunat?.idTransaction}&tipoDocSunat=${tipoSunatT?.codigo}`,
-        {
-          detalles: lotesData
-        }
+        {}
       )
 
       if (response.data.success) {
@@ -452,59 +440,9 @@ export default function ComprobantesPage() {
       })
     } finally {
       setIsProcessingInvoice(false)
-      setShowLotesModal(false)
       setShowInvoiceModal(false)
     }
   };
-
-  const handleConfirmarLotes = async () => {
-    try {
-      setShowLotesModal(true)
-      setShowInvoiceModal(false)
-
-      setLoadingLotes(true)
-
-      // Obtener detalles del pedido
-      const resDet = await apiClient.get(`/pedidosDetalles/${selectedOrder.nroPedido}/detalles?vendedor=${auth.user?.codigo}`)
-      const detallesData = resDet.data.data
-
-      const productos: ProductoConLotes[] = [];
-
-      for (const producto of detallesData) {
-        const response = await PriceService.getProductLots(producto.codigoitemPedido);
-        const lotes = response.data.map((lote: any) => ({
-          value: lote.numeroLote + '|' + lote.fechaVencimiento,
-        }))
-
-        productos.push({
-          prod_codigo: producto.codigoitemPedido,
-          prod_descripcion: producto.productoNombre,
-          cantidadPedido: producto.cantidad,
-          lotes: lotes,
-          loteSeleccionado: lotes.length > 0 ? lotes[0].value : "",
-        })
-      }
-
-      setProductosConLotes(productos)
-      setLoadingLotes(false)
-    } catch (e) {
-      console.error("Error al obtener lotes:", e)
-      setLoadingLotes(false)
-      toast({
-        title: "Error",
-        description: "No se pudieron cargar los lotes de los productos",
-        variant: "destructive"
-      })
-    }
-  }
-
-  const handleLoteChange = (productIndex: number, loteNumero: string) => {
-    setProductosConLotes(prev => {
-      const updated = [...prev]
-      updated[productIndex].loteSeleccionado = loteNumero
-      return updated
-    })
-  }
 
   const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target
@@ -1486,7 +1424,7 @@ export default function ComprobantesPage() {
                 Generar Guías
               </Button>
               <Button
-                onClick={handleConfirmarLotes}
+                onClick={handleConfirmarFacturacionConLotes}
                 disabled={isProcessingInvoice || !invoiceType || !sunatTransaction}
                 className="bg-green-600 hover:bg-green-700 flex-1"
               >
@@ -1621,89 +1559,6 @@ export default function ComprobantesPage() {
             >
               <Download className="mr-2 h-4 w-4" />
               Descargar PDF
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={showLotesModal} onOpenChange={setShowLotesModal}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Package className="h-5 w-5" />
-              Seleccionar Lotes - Pedido {selectedOrder?.nroPedido}
-            </DialogTitle>
-            <DialogDescription>
-              Seleccione los lotes y cantidades para facturar
-            </DialogDescription>
-          </DialogHeader>
-
-          {loadingLotes ? (
-            <div className="flex justify-center items-center h-64">
-              <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-            </div>
-          ) : (
-            <div className="space-y-6 grid grid-cols-1 gap-4">
-              {productosConLotes.map((producto, productIndex) => (
-                <Card key={productIndex}>
-                  <CardHeader className="bg-gray-50 py-3">
-                    <CardTitle className="text-sm font-medium">
-                      {producto.prod_codigo} - {producto.prod_descripcion}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-4">
-                    <div className="grid grid-cols-1 gap-4">
-                      <div>
-                        <Label htmlFor={`lote-${productIndex}`}>Seleccionar Lote</Label>
-                        <Select
-                          value={producto.loteSeleccionado}
-                          onValueChange={(value) => handleLoteChange(productIndex, value)}
-                        >
-                          <SelectTrigger id={`lote-${productIndex}`}>
-                            <SelectValue placeholder="Seleccione un lote" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {producto.lotes.map((lote, loteIndex) => (
-                              <SelectItem
-                                key={loteIndex}
-                                value={lote.value}
-                              >
-                                {lote.value.split('|')[0]} - Vence: {format(parseISO(lote.value.split('|')[1]), "dd/MM/yyyy")}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
-
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setShowLotesModal(false)}
-              disabled={loadingLotes || isProcessingInvoice}
-            >
-              Cancelar
-            </Button>
-            <Button
-              onClick={handleConfirmarFacturacionConLotes}
-              disabled={loadingLotes || isProcessingInvoice || productosConLotes.length === 0}
-            >
-              {isProcessingInvoice ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Procesando...
-                </>
-              ) : (
-                <>
-                  <CheckSquare className="mr-2 h-4 w-4" />
-                  Confirmar Lotes y Facturar
-                </>
-              )}
             </Button>
           </DialogFooter>
         </DialogContent>
