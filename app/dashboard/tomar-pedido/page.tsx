@@ -21,7 +21,8 @@ import {
   DollarSign,
   Coins,
   FileText,
-  Trash, CheckSquare, Loader2
+  Trash, CheckSquare, Loader2,
+  Locate, Building
 } from "lucide-react"
 import { StepProgress } from "@/components/step-progress"
 import apiClient from "@/app/api/client"
@@ -231,8 +232,18 @@ export default function OrderPage() {
       const finalPrice = priceType === 'contado'
         ? Number(selectedProduct?.PUContado)
         : Number(selectedProduct?.PUCredito);
-      console.log(priceType, selectedProduct?.PUCredito, selectedProduct?.PUContado)
       setSelectedProducts([
+        ...selectedProducts,
+        {
+          product: selectedProduct!,
+          quantity,
+          isBonification,
+          isEscale,
+          appliedScale,
+          finalPrice,
+        },
+      ])
+      handleListarLotes([
         ...selectedProducts,
         {
           product: selectedProduct!,
@@ -252,7 +263,7 @@ export default function OrderPage() {
 
   useEffect(() => {
     debouncedFetchClients();
-  }, []);
+  }, [])
 
   useEffect(() => {
     if (search.client) {
@@ -293,18 +304,18 @@ export default function OrderPage() {
   };
 
   const handleConfirmarLotes = async () => {
-    nextStep()
     setShowLotesModal(false)
   }
 
-  const handleListarLotes = async () => {
+  const handleListarLotes = async (local?: ISelectedProduct[]) => {
     try {
       setShowLotesModal(true)
       setLoadingLotes(true)
 
+      const productsList = local || selectedProduct;
       const productos: ProductoConLotes[] = []
 
-      for (const producto of selectedProducts) {
+      for (const producto of productsList) {
         const response = await PriceService.getProductLots(producto.product.Codigo_Art)
         const lotes = response.data.map((lote: any) => ({
           value: lote.numeroLote + '|' + lote.fechaVencimiento,
@@ -428,6 +439,7 @@ export default function OrderPage() {
     setTempSelectedProducts([]);
     setShowLaboratorioModal(false);
     setSelectedLaboratorio(null);
+    handleListarLotes([...selectedProducts, ...tempSelectedProducts])
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -587,24 +599,116 @@ export default function OrderPage() {
                   />
                 </div>
                 {loading.clients ? (
-                  <div className="p-4">
-                    <Skeleton className="h-4 w-full" />
+                  <div className="p-4 space-y-2">
+                    <Skeleton className="h-10 w-full" />
+                    <Skeleton className="h-10 w-full" />
+                    <Skeleton className="h-10 w-full" />
                   </div>
                 ) : clientsFiltered.length > 0 ? (
-                  <div className="max-h-60 overflow-y-auto border space-y-1">
-                    {clientsFiltered.map((c) => (
-                      <div
-                        key={c.codigo}
-                        className="relative flex  w-full cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground"
-                        onClick={() => handleClientSelect(c)}
-                      >
-                        {c.Nombre} ({c.codigo})
-                      </div>
+                  <>
+                  <div className="hidden sm:block border rounded-md overflow-x-auto h-[300px]">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-gray-50">
+                      <tr>
+                        <th scope="col"
+                            className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nombre
+                        </th>
+                        <th scope="col"
+                            className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nombre Comercial
+                        </th>
+                        <th scope="col"
+                            className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Dirección
+                        </th>
+                        <th scope="col"
+                            className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">RUC
+                        </th>
+                        <th scope="col"
+                            className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Acción
+                        </th>
+                      </tr>
+                      </thead>
+                      <tbody>
+                      {clientsFiltered.map((c) => (
+                        <tr key={c.codigo}>
+                          <td className="p-4 text-sm">
+                            <div className="font-medium">{c.Nombre}</div>
+                          </td>
+                          <td className="p-4 text-sm">
+                            {c.NombreComercial || "No especificado"}
+                          </td>
+                          <td className="p-4 text-sm">
+                            {c.Dirección || "No especificada"}
+                          </td>
+                          <td className="p-4 text-sm">
+                            {c.RUC || "No especificado"}
+                          </td>
+                          <td className="p-4 text-sm">
+                            <Button
+                              type="button"
+                              size="sm"
+                              onClick={() => handleClientSelect(c)}
+                              className="bg-blue-600 hover:bg-blue-700"
+                            >
+                              Seleccionar
+                            </Button>
+                          </td>
+                        </tr>
+                      ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  <div className="sm:hidden space-y-3 overflow-x-auto h-[300px]">
+                    {clientsFiltered.map((item, index) => (
+                      <Card key={index} className="p-4">
+                        <div className="space-y-4">
+                          <div className="flex justify-between items-start">
+                            <div className="flex-1 min-w-0 space-y-3">
+                              <div className="flex items-start gap-2">
+                                <User className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                                <h4 className="font-semibold text-gray-800">{item.Nombre}</h4>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Building className="h-4 w-4 text-gray-500 flex-shrink-0" />
+                                <p className="text-sm text-gray-600">
+                                  {item.NombreComercial || "No especificado"}
+                                </p>
+                              </div>
+                              <div className="flex items-start gap-2">
+                                <MapPin className="h-4 w-4 text-gray-500 mt-0.5 flex-shrink-0" />
+                                <p className="text-sm text-gray-600">
+                                  {item.Dirección || "No especificada"}
+                                </p>
+                              </div>
+                              {item.RUC && (
+                                <div className="flex items-center gap-2">
+                                  <CreditCard className="h-4 w-4 text-gray-500 flex-shrink-0" />
+                                  <p className="text-xs font-mono text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                                    {item.RUC}
+                                  </p>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="flex justify-end pt-2">
+                            <Button
+                              type="button"
+                              size="sm"
+                              onClick={() => handleClientSelect(item)}
+                              className="bg-blue-600 hover:bg-blue-700 flex items-center gap-1.5"
+                            >
+                              <Check className="h-3.5 w-3.5" />
+                              Seleccionar
+                            </Button>
+                          </div>
+                        </div>
+                      </Card>
                     ))}
                   </div>
+                  </>
                 ) : !selectedClient ? (
-                  <div className="p-4 text-sm text-gray-500">
-                    No se encontraron clientes
+                  <div className="p-4 text-sm text-gray-500 text-center">
+                    No se encontraron clientes que coincidan con la búsqueda
                   </div>
                 ) : null}
               </div>
@@ -614,9 +718,9 @@ export default function OrderPage() {
                 contactoPedido={contactoPedido}
                 onChangeReferenciaDireccion={handleChangeReferenciaDireccion}
                 onChangeContactoPedido={handleChangeContactoPedido}
-
               />}
-              {selectedClient && <FinancialZone client={selectedClient} nameZone={nameZone} unidadTerritorio={unidadTerritorio} />}
+              {selectedClient &&
+                <FinancialZone client={selectedClient} nameZone={nameZone} unidadTerritorio={unidadTerritorio}/>}
               {selectedClient &&
                 <PaymentCondition
                   conditions={conditions}
@@ -635,7 +739,7 @@ export default function OrderPage() {
                 className="bg-blue-600 hover:bg-blue-700"
               >
                 Siguiente
-                <ArrowRight className="ml-2 h-4 w-4" />
+                <ArrowRight className="ml-2 h-4 w-4"/>
               </Button>
             </CardFooter>
           </Card>
@@ -904,6 +1008,12 @@ export default function OrderPage() {
                           </th>
                           <th
                             scope="col"
+                            className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                          >
+                            Lote - Fec.Venc
+                          </th>
+                          <th
+                            scope="col"
                             className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
                           >
                             Cantidad
@@ -929,6 +1039,8 @@ export default function OrderPage() {
                           const precioEscala = item.appliedScale?.precio_escala;
                           const precioUnitario = item.isBonification ? 0 : precioEscala ?? precioOriginal;
                           const subtotal = precioUnitario * item.quantity;
+                          const lote = productosConLotes.find(x => x.prod_codigo === item.product.Codigo_Art)?.loteSeleccionado || '|'
+
                           return (
                             <tr key={index} className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}>
                               <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
@@ -946,6 +1058,11 @@ export default function OrderPage() {
                                   <span>{item.product.NombreItem}</span>
                                 </div>
                               </td>
+
+                              <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-left">
+                                {lote.split('|')[0]} - Vence: {lote.split('|')[1].length > 0 && format(parseISO(lote.split('|')[1]), "dd/MM/yyyy")}
+                              </td>
+
                               <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-right">
                                 {item.quantity}
                               </td>
@@ -1113,15 +1230,22 @@ export default function OrderPage() {
                     <ArrowLeft className="mr-2 h-4 w-4"/>
                     Anterior
                   </Button>
-                  <Button
-                    type="button"
-                    onClick={handleListarLotes}
-                    disabled={!isStepValid()}
-                    className="bg-blue-600 hover:bg-blue-700"
-                  >
-                    Seleccionar Lotes y Continuar
-                    <ArrowRight className="ml-2 h-4 w-4"/>
-                  </Button>
+
+                  <div className='flex'>
+                    <Button className='mr-4' type="button" variant="outline" onClick={() => setShowLotesModal(true)}>
+                      <Package className="mr-2 h-4 w-4"/>
+                      Cambiar Lotes
+                    </Button>
+                    <Button
+                      type="button"
+                      onClick={nextStep}
+                      disabled={!isStepValid()}
+                      className="bg-blue-600 hover:bg-blue-700"
+                    >
+                      Siguiente
+                      <ArrowRight className="ml-2 h-4 w-4"/>
+                    </Button>
+                  </div>
                 </CardFooter>
               </Card>
             )}
