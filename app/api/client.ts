@@ -2,7 +2,8 @@ import axios from 'axios';
 import { toast } from "@/hooks/use-toast"
 
 const apiClient = axios.create({
-    baseURL: 'https://3qavkuqp3f.us-west-2.awsapprunner.com/api',
+  //  baseURL: 'https://3qavkuqp3f.us-west-2.awsapprunner.com/api',
+    baseURL: 'https://backend-difar.backend-l23.click/api',
   // baseURL: 'http://localhost:4000/api',
   timeout: 20000,
   // headers: {
@@ -52,5 +53,6 @@ const apiClient = axios.create({
 // )
 
 export default apiClient;
+
 
 
