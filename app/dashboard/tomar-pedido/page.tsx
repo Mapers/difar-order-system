@@ -591,6 +591,7 @@ export default function OrderPage() {
   const handleProductSelect = (product: IProduct) => {
     setSelectedProduct(product)
     setOpen(false)
+    setPriceEdit(Number(product.PUContado))
   }
 
   const handleConditionSelect = (condition: ICondicion) => {
