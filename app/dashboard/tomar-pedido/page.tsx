@@ -57,6 +57,7 @@ import {Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader} fr
 import {DialogTitle} from "@radix-ui/react-dialog";
 import {PriceService} from "@/app/services/price/PriceService";
 import {format, parseISO} from "date-fns";
+import {Combobox} from "@/app/dashboard/mis-pedidos/page";
 
 interface LoteProducto {
   value: string
@@ -70,6 +71,18 @@ interface ProductoConLotes {
   loteSeleccionado?: string
 }
 
+interface Seller {
+  idVendedor: number
+  codigo: string
+  nombres: string
+  apellidos: string
+  DNI: string
+  telefono: string
+  comisionVend: number
+  comisionCobranza: number
+  empRegistro: string
+}
+
 export default function OrderPage() {
   const router = useRouter()
   const [currentStep, setCurrentStep] = useState(0)
@@ -79,6 +92,7 @@ export default function OrderPage() {
   // Estados para cliente
   const [client, setClient] = useState("")
   const [clientName, setClientName] = useState("")
+  const [sellerSearch, setSellerSearch] = useState("")
   const [nameZone, setNameZone] = useState("")
   const [selectedClient, setSelectedClient] = useState<IClient | null>(null)
   const [condition, setCondition] = useState<ICondicion | null>(null)
@@ -89,6 +103,9 @@ export default function OrderPage() {
   const [contactoPedido, setContactoPedido] = useState('');
   const [referenciaDireccion, setReferenciaDireccion] = useState('');
   const [note, setNote] = useState('');
+  const [sellers, setSellers] = useState<Seller[]>([])
+  const [sellersFiltered, setSellersFiltered] = useState<Seller[]>([])
+  const [seller, setSeller] = useState<Seller>(null)
   const [unidadTerritorio, setUnidadTerritorio] = useState<ITerritorio>({
     NombreDistrito: "",
     nombreProvincia: '',
@@ -199,7 +216,7 @@ export default function OrderPage() {
   const debouncedFetchClients = async () => {
     setLoading(prev => ({ ...prev, clients: true }));
     try {
-      const response = await fetchGetAllClients(auth.user?.codigo || '');
+      const response = await fetchGetAllClients(auth.user?.codigo || '', auth.user?.idRol === 3);
       if (response.data?.data?.data.length === 0) {
         setClients([])
       } else {
@@ -210,6 +227,26 @@ export default function OrderPage() {
       console.error("Error fetching clients:", error);
     } finally {
       setLoading(prev => ({ ...prev, clients: false }))
+    }
+  }
+
+  const fetchVendedores = async () => {
+    try {
+      const response = await apiClient.get('/usuarios/listar/vendedores')
+      const vendedoresTransformados = response.data.data.data.map((v: any) => ({
+        idVendedor: v.idVendedor,
+        codigo: v.Codigo_Vend,
+        nombres: v.Nombres,
+        apellidos: v.Apellidos,
+        DNI: v.DNI,
+        telefono: v.Telefonos,
+        comisionVend: v.ComisionVend,
+        comisionCobranza: v.ComisionCobranza,
+        empRegistro: v.EmpRegistro,
+      }));
+      setSellers(vendedoresTransformados);
+    } catch (error) {
+      setSellers([]);
     }
   }
 
@@ -262,18 +299,33 @@ export default function OrderPage() {
 
 
   useEffect(() => {
-    debouncedFetchClients();
-  }, [])
+    if (auth.user) {
+      debouncedFetchClients();
+      if (auth.user?.idRol === 3) {
+        fetchVendedores();
+      }
+    }
+  }, [auth.user])
 
   useEffect(() => {
     if (search.client) {
       setClientsFiltered(clients.filter(item =>
-        item.RUC.includes(search.client) ||
-        item.Nombre.toUpperCase().includes(search.client.toUpperCase())))
+        item.RUC?.includes(search.client) ||
+        item.Nombre?.toUpperCase().includes(search.client.toUpperCase())))
     } else {
       setClientsFiltered(clients)
     }
   }, [search.client]);
+
+  useEffect(() => {
+    if (sellerSearch.length > 0) {
+      setSellersFiltered(sellers.filter(item =>
+        item.codigo?.includes(sellerSearch) ||
+        `${item.nombres} ${item.apellidos}`.toUpperCase().includes(sellerSearch.toUpperCase())))
+    } else {
+      setSellersFiltered(sellers)
+    }
+  }, [sellers, sellerSearch]);
 
   useEffect(() => {
     fetchConditions()
@@ -318,18 +370,21 @@ export default function OrderPage() {
       for (const producto of productsList) {
         const response = await PriceService.getProductLots(producto.product.Codigo_Art)
         const lotes = response.data.map((lote: any) => ({
-          value: lote.numeroLote + '|' + lote.fechaVencimiento,
+          value: lote.numeroLote + '|' + lote.fechaVencimiento +
+            '|' + (Number(lote.stock) >= 0 ?  Number(lote.stock).toFixed(2) : '-'),
           numeroLote: lote.numeroLote,
           fechaVencimiento: lote.fechaVencimiento
         }))
 
-        productos.push({
-          prod_codigo: producto.product.Codigo_Art,
-          prod_descripcion: producto.product.NombreItem,
-          cantidadPedido: producto.quantity,
-          lotes: lotes,
-          loteSeleccionado: lotes.length > 0 ? lotes[0].value : "",
-        })
+        if (lotes.some(item => item.numeroLote !== null && item.fechaVencimiento !== null)) {
+          productos.push({
+            prod_codigo: producto.product.Codigo_Art,
+            prod_descripcion: producto.product.NombreItem,
+            cantidadPedido: producto.quantity,
+            lotes: lotes,
+            loteSeleccionado: lotes.length > 0 ? lotes[0].value : "",
+          })
+        }
       }
 
       setProductosConLotes(productos);
@@ -461,7 +516,7 @@ export default function OrderPage() {
         referenciaDireccion: referenciaDireccion,
         fechaPedido: moment(new Date()).format('yyyy-MM-DD'),
         usuario: 1,
-        vendedorPedido: auth.user?.codigo,
+        vendedorPedido: auth.user?.idRol === 3 ? seller.codigo : auth.user?.codigo,
         detalles: selectedProducts.map(item => ({
           iditemPedido: item.product.IdArticulo,
           codigoitemPedido: item.product.Codigo_Art,
@@ -501,6 +556,10 @@ export default function OrderPage() {
     }
   }
 
+  const handleSellerSelect = (seller1: Seller) => {
+    console.log(seller1)
+    setSeller(seller1)
+  }
 
   const handleChangeContactoPedido = (e: React.ChangeEvent<HTMLInputElement>) => {
     setContactoPedido(e.target.value);
@@ -556,7 +615,7 @@ export default function OrderPage() {
   const isStepValid = () => {
     switch (currentStep) {
       case 0: // Client step
-        return !!client && currency && condition
+        return !!client && currency && condition && (auth.user?.idRol == 3 ? (!!seller) : true)
       case 1: // Products step
         return selectedProducts.length > 0
       default:
@@ -712,6 +771,25 @@ export default function OrderPage() {
                   </div>
                 ) : null}
               </div>
+              {(selectedClient && auth.user?.idRol === 3) && (
+                <Combobox<Seller>
+                  items={sellersFiltered}
+                  value={seller?.codigo ?? null}
+                  onSearchChange={setSellerSearch}
+                  onSelect={handleSellerSelect}
+                  getItemKey={(client) => client.codigo}
+                  getItemLabel={(client) => (
+                    <div>
+                      <span>{`${client.nombres} ${client.apellidos}`}</span>
+                      <span className='text-blue-400'> {client.codigo}</span>
+                    </div>
+                  )}
+                  placeholder="Buscar vendedor..."
+                  emptyText="No se encontraron vendedores"
+                  searchText="Escribe al menos 3 vendedores..."
+                  loadingText="Buscando vendedores..."
+                />
+              )}
               {selectedClient && <ContactInfo
                 client={selectedClient}
                 referenciaDireccion={referenciaDireccion}
@@ -1014,6 +1092,12 @@ export default function OrderPage() {
                           </th>
                           <th
                             scope="col"
+                            className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                          >
+                            Stock
+                          </th>
+                          <th
+                            scope="col"
                             className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
                           >
                             Cantidad
@@ -1039,7 +1123,11 @@ export default function OrderPage() {
                           const precioEscala = item.appliedScale?.precio_escala;
                           const precioUnitario = item.isBonification ? 0 : precioEscala ?? precioOriginal;
                           const subtotal = precioUnitario * item.quantity;
-                          const lote = productosConLotes.find(x => x.prod_codigo === item.product.Codigo_Art)?.loteSeleccionado || '|'
+                          const lote = productosConLotes.find(x => x.prod_codigo === item.product.Codigo_Art)?.loteSeleccionado || '||'
+                          const split = lote.split('|');
+                          const cod = split[0];
+                          const fec = split[1];
+                          const stk = split[2];
 
                           return (
                             <tr key={index} className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}>
@@ -1060,7 +1148,11 @@ export default function OrderPage() {
                               </td>
 
                               <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-left">
-                                {lote.split('|')[0]} - Vence: {lote.split('|')[1].length > 0 && format(parseISO(lote.split('|')[1]), "dd/MM/yyyy")}
+                                {cod} - Vence: {fec.length > 0 && format(parseISO(fec), "dd/MM/yyyy")}
+                              </td>
+
+                              <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-right">
+                                {stk}
                               </td>
 
                               <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-right">
@@ -1136,7 +1228,11 @@ export default function OrderPage() {
                       const precioEscala = item.appliedScale?.precio_escala;
                       const precioUnitario = item.isBonification ? 0 : precioEscala ?? precioOriginal;
                       const subtotal = precioUnitario * item.quantity;
-                      const lote = productosConLotes.find(x => x.prod_codigo === item.product.Codigo_Art)?.loteSeleccionado || '|'
+                      const lote = productosConLotes.find(x => x.prod_codigo === item.product.Codigo_Art)?.loteSeleccionado || '||'
+                      const split = lote.split('|');
+                      const cod = split[0];
+                      const fec = split[1];
+                      const stk = split[2];
 
                       return (
                         <Card key={index} className="p-4 relative">
@@ -1169,11 +1265,15 @@ export default function OrderPage() {
                               </div>
                             </div>
 
-                            <div className="grid grid-cols-4 gap-4 text-sm">
+                            <div className="grid grid-cols-3 gap-4 text-sm">
                               <div>
                                 <Label className="text-xs text-gray-500">Lote - Fec.Venc</Label>
-                                <p className="font-medium">{lote.split('|')[0]} -
-                                  Vence: {lote.split('|')[1].length > 0 && format(parseISO(lote.split('|')[1]), "dd/MM/yyyy")}</p>
+                                <p className="font-medium">{cod} -
+                                  Vence: {fec.length > 0 && format(parseISO(fec), "dd/MM/yyyy")}</p>
+                              </div>
+                              <div>
+                                <Label className="text-xs text-gray-500">Stock</Label>
+                                <p className="font-medium">{stk}</p>
                               </div>
                               <div>
                                 <Label className="text-xs text-gray-500">Cantidad</Label>
@@ -1214,7 +1314,7 @@ export default function OrderPage() {
                     <div className="bg-gray-50 rounded-lg border border-gray-200 p-4">
                       <div className="space-y-2">
                         <div className="flex justify-between items-center">
-                          <span className="font-medium text-gray-900">Total:</span>
+                        <span className="font-medium text-gray-900">Total:</span>
                           <span className="font-bold text-lg text-blue-700">
                             {currency?.value === "PEN" ? "S/." : "$"}
                             {selectedProducts
@@ -1379,6 +1479,12 @@ export default function OrderPage() {
                           scope="col"
                           className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                         >
+                          Stock
+                        </th>
+                        <th
+                          scope="col"
+                          className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                        >
                           Cantidad
                         </th>
                         <th
@@ -1402,8 +1508,11 @@ export default function OrderPage() {
                         const precioEscala = item.appliedScale?.precio_escala
                         const precioUnitario = item.isBonification ? 0 : precioEscala ?? precioOriginal
                         const subtotal = precioUnitario * item.quantity
-                        const lote = productosConLotes.find(x => x.prod_codigo === item.product.Codigo_Art)?.loteSeleccionado || '|'
-
+                        const lote = productosConLotes.find(x => x.prod_codigo === item.product.Codigo_Art)?.loteSeleccionado || '||'
+                        const split = lote.split('|');
+                        const cod = split[0];
+                        const fec = split[1];
+                        const stk = split[2];
                         return (
                           <tr key={index} className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}>
                             <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
@@ -1423,11 +1532,11 @@ export default function OrderPage() {
                             </td>
 
                             <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-left">
-                              {lote.split('|')[0]} - Vence: {format(parseISO(lote.split('|')[1]), "dd/MM/yyyy")}
+                              {cod} - Vence: {fec.length > 0 && format(parseISO(fec), "dd/MM/yyyy")}
                             </td>
 
                             <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-right">
-                              {item.quantity}
+                              {stk}
                             </td>
 
                             <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-right">
@@ -1499,7 +1608,11 @@ export default function OrderPage() {
                     const precioEscala = item.appliedScale?.precio_escala;
                     const precioUnitario = item.isBonification ? 0 : precioEscala ?? precioOriginal;
                     const subtotal = precioUnitario * item.quantity;
-                    const lote = productosConLotes.find(x => x.prod_codigo === item.product.Codigo_Art)?.loteSeleccionado || '|'
+                    const lote = productosConLotes.find(x => x.prod_codigo === item.product.Codigo_Art)?.loteSeleccionado || '||'
+                    const split = lote.split('|');
+                    const cod = split[0];
+                    const fec = split[1];
+                    const stk = split[2];
 
                     return (
                       <Card key={index} className="p-4">
@@ -1524,10 +1637,15 @@ export default function OrderPage() {
                             </div>
                           </div>
 
-                          <div className="grid grid-cols-4 gap-4 text-sm">
+                          <div className="grid grid-cols-3 gap-4 text-sm">
                             <div>
                               <Label className="text-xs text-gray-500">Lote - Fec.Venc</Label>
-                              <p className="font-medium">{lote.split('|')[0]} - Vence: {format(parseISO(lote.split('|')[1]), "dd/MM/yyyy")}</p>
+                              <p className="font-medium">{cod} -
+                                Vence: {fec.length > 0 && format(parseISO(fec), "dd/MM/yyyy")}</p>
+                            </div>
+                            <div>
+                              <Label className="text-xs text-gray-500">Stock</Label>
+                              <p className="font-medium">{stk}</p>
                             </div>
                             <div>
                               <Label className="text-xs text-gray-500">Cantidad</Label>
@@ -1655,14 +1773,22 @@ export default function OrderPage() {
                             <SelectValue placeholder="Seleccione un lote" />
                           </SelectTrigger>
                           <SelectContent>
-                            {producto.lotes.map((lote, loteIndex) => (
-                              <SelectItem
-                                key={loteIndex}
-                                value={lote.value}
-                              >
-                                {lote.value.split('|')[0]} - Vence: {format(parseISO(lote.value.split('|')[1]), "dd/MM/yyyy")}
-                              </SelectItem>
-                            ))}
+                            {producto.lotes.map((lote, loteIndex) => {
+                              const split = lote.value.split('|');
+                              const cod = split[0];
+                              const fec = split[1];
+                              const stk = split[2];
+                              return (
+                                (
+                                  <SelectItem
+                                    key={loteIndex}
+                                    value={lote.value}
+                                  >
+                                    {cod} - Vence: {format(parseISO(fec), "dd/MM/yyyy")} - Stk: {stk}
+                                  </SelectItem>
+                                )
+                              )
+                            })}
                           </SelectContent>
                         </Select>
                       </div>

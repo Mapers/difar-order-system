@@ -249,7 +249,7 @@ export default function ComprobantesPage() {
 
       const response = await apiClient.get(url)
       const { data: { data } } = response.data
-
+      console.log(data)
       setPedidosPendientes(data)
     } catch (error) {
       console.error("Error fetching orders:", error)

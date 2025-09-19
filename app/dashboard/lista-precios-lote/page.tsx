@@ -165,7 +165,7 @@ export default function PricePage() {
           <CardTitle className="text-lg font-semibold text-gray-800">Filtros</CardTitle>
         </CardHeader>
         <CardContent className="pt-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Búsqueda</Label>
               <div className="relative">
@@ -452,9 +452,6 @@ export default function PricePage() {
                       <h3 className="font-bold text-blue-600 text-sm">{item.prod_codigo}</h3>
                       <p className="text-xs text-gray-500">{item.laboratorio_Descripcion}</p>
                     </div>
-                    <Badge variant={expirationStatus.variant} className="text-xs">
-                      {expirationStatus.status}
-                    </Badge>
                   </div>
 
                   <div className="space-y-2 mb-3">
@@ -496,6 +493,56 @@ export default function PricePage() {
                         Ver Lotes
                       </Button>
                     </DialogTrigger>
+                    <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+                      <DialogHeader>
+                        <DialogTitle>Detalles de Lotes - {selectedProduct?.prod_codigo}</DialogTitle>
+                        <DialogDescription>
+                          {selectedProduct?.prod_descripcion}
+                        </DialogDescription>
+                      </DialogHeader>
+
+                      {loadingLots ? (
+                        <div className="space-y-4">
+                          {Array.from({length: 3}).map((_, index) => (
+                            <Skeleton key={index} className="h-12 w-full"/>
+                          ))}
+                        </div>
+                      ) : lotDetails.length > 0 ? (
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Lote</TableHead>
+                              <TableHead>Stock</TableHead>
+                              <TableHead>Fecha Vencimiento</TableHead>
+                              <TableHead>Estado</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {lotDetails.map((lot, index) => {
+                              const lotStatus = PriceMethodsService.getExpirationStatus(lot.fechaVencimiento);
+                              return (
+                                <TableRow key={index}>
+                                  <TableCell className="font-mono">{lot.numeroLote}</TableCell>
+                                  <TableCell>
+                                    {Number(lot.stock).toLocaleString("es-ES", {minimumFractionDigits: 2})}
+                                  </TableCell>
+                                  <TableCell>{formatDateToDDMMYYYY(lot.fechaVencimiento)}</TableCell>
+                                  <TableCell>
+                                    <Badge variant={lotStatus.variant}>
+                                      {lotStatus.status}
+                                    </Badge>
+                                  </TableCell>
+                                </TableRow>
+                              );
+                            })}
+                          </TableBody>
+                        </Table>
+                      ) : (
+                        <div className="text-center py-8 text-gray-500">
+                          No se encontraron lotes para este producto
+                        </div>
+                      )}
+                    </DialogContent>
                   </Dialog>
                 </CardContent>
               </Card>
