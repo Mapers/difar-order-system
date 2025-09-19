@@ -25,14 +25,15 @@ export const LaboratorioModal = ({
   onOpenChange: (open: boolean) => void;
   laboratorio: string;
   products: IProduct[];
-  onAddTempProduct: (product: IProduct, quantity: number, priceType: 'contado' | 'credito') => void;
+  onAddTempProduct: (product: IProduct, quantity: number, priceType: 'contado' | 'credito' | 'custom', customPrice?: number) => void;
   tempSelectedProducts: ISelectedProduct[];
   onRemoveTempProduct: (index: number) => void;
   onConfirmSelection: () => void;
   currency: IMoneda | null;
 }) => {
   const [quantities, setQuantities] = useState<Record<string, number>>({});
-  const [priceTypes, setPriceTypes] = useState<Record<string, 'contado' | 'credito'>>({});
+  const [priceTypes, setPriceTypes] = useState<Record<string, 'contado' | 'credito' | 'custom'>>({});
+  const [customPrices, setCustomPrices] = useState<Record<string, number>>({});
 
   const handleQuantityChange = (productId: string, value: number) => {
     setQuantities(prev => ({
@@ -41,10 +42,17 @@ export const LaboratorioModal = ({
     }));
   };
 
-  const handlePriceTypeChange = (productId: string, value: 'contado' | 'credito') => {
+  const handlePriceTypeChange = (productId: string, value: 'contado' | 'credito' | 'custom') => {
     setPriceTypes(prev => ({
       ...prev,
       [productId]: value
+    }));
+  };
+
+  const handleCustomPriceChange = (productId: string, value: number) => {
+    setCustomPrices(prev => ({
+      ...prev,
+      [productId]: value > 0 ? value : 0
     }));
   };
 
@@ -78,36 +86,55 @@ export const LaboratorioModal = ({
                 </TableHeader>
                 <TableBody>
                   {labProducts.map((product) => {
-                    const currentPriceType = priceTypes[product.Codigo_Art] || 'contado';
+                    const productId = product.Codigo_Art;
+                    const currentPriceType = priceTypes[productId] || 'contado';
                     const contadoPrice = Number(product.PUContado);
                     const creditoPrice = Number(product.PUCredito);
+                    const customPrice = customPrices[productId] || contadoPrice;
 
                     return (
-                      <TableRow key={product.Codigo_Art}>
+                      <TableRow key={productId}>
                         <TableCell>
                           <div className="font-medium">{product.NombreItem}</div>
-                          <div className="text-sm text-gray-500">{product.Codigo_Art}</div>
-                          {/*{product.Descripcion}*/}
+                          <div className="text-sm text-gray-500">{productId}</div>
                         </TableCell>
                         <TableCell>{product.Stock}</TableCell>
                         <TableCell>
                           <RadioGroup
                             value={currentPriceType}
-                            onValueChange={(value: 'contado' | 'credito') =>
-                              handlePriceTypeChange(product.Codigo_Art, value)
+                            onValueChange={(value: 'contado' | 'credito' | 'custom') =>
+                              handlePriceTypeChange(productId, value)
                             }
                             className="flex flex-col gap-2"
                           >
                             <div className="flex items-center space-x-2">
-                              <RadioGroupItem value="contado" id={`${product.Codigo_Art}-contado`} />
-                              <Label htmlFor={`${product.Codigo_Art}-contado`} className="text-sm cursor-pointer">
+                              <RadioGroupItem value="contado" id={`${productId}-contado`}/>
+                              <Label htmlFor={`${productId}-contado`} className="text-sm cursor-pointer">
                                 Contado: {formatPrice(contadoPrice)}
                               </Label>
                             </div>
                             <div className="flex items-center space-x-2">
-                              <RadioGroupItem value="credito" id={`${product.Codigo_Art}-credito`} />
-                              <Label htmlFor={`${product.Codigo_Art}-credito`} className="text-sm cursor-pointer">
+                              <RadioGroupItem value="credito" id={`${productId}-credito`}/>
+                              <Label htmlFor={`${productId}-credito`} className="text-sm cursor-pointer">
                                 Crédito: {formatPrice(creditoPrice)}
+                              </Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <RadioGroupItem value="custom" id={`${productId}-custom`}/>
+                              <Label htmlFor={`${productId}-custom`} className="text-sm cursor-pointer flex items-center gap-2">
+                                Personalizado:
+                                <Input
+                                  type="number"
+                                  min="0"
+                                  step="0.01"
+                                  value={customPrice}
+                                  onChange={(e) => handleCustomPriceChange(
+                                    productId,
+                                    parseFloat(e.target.value) || 0
+                                  )}
+                                  className="h-6 w-20 text-center text-xs"
+                                  onClick={(e) => e.stopPropagation()}
+                                />
                               </Label>
                             </div>
                           </RadioGroup>
@@ -116,9 +143,9 @@ export const LaboratorioModal = ({
                           <Input
                             type="number"
                             min="1"
-                            value={quantities[product.Codigo_Art] || 1}
+                            value={quantities[productId] || 1}
                             onChange={(e) => handleQuantityChange(
-                              product.Codigo_Art,
+                              productId,
                               parseInt(e.target.value) || 1
                             )}
                             className="w-20"
@@ -129,8 +156,9 @@ export const LaboratorioModal = ({
                             size="sm"
                             onClick={() => onAddTempProduct(
                               product,
-                              quantities[product.Codigo_Art] || 1,
-                              currentPriceType
+                              quantities[productId] || 1,
+                              currentPriceType,
+                              currentPriceType === 'custom' ? customPrice : undefined
                             )}
                           >
                             Agregar
@@ -164,7 +192,7 @@ export const LaboratorioModal = ({
                         </Button>
                       </div>
                       <div className="text-sm text-gray-600 mb-1">
-                        Precio:
+                        Precio: {formatPrice(item.finalPrice)}
                       </div>
                       <div className="flex justify-between text-sm">
                         <span>{item.quantity} unidades</span>

@@ -93,4 +93,5 @@ export interface ISelectedProduct {
   bonificationId?: number
   appliedScale?: any
   finalPrice?: number
+  isEdit?: boolean
 }

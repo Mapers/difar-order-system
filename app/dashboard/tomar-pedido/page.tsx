@@ -112,13 +112,15 @@ export default function OrderPage() {
     nombreDepartamento: '',
     ubigeo: ''
   })
+  const [isEditPrice, setIsEditPrice] = useState(false);
+  const [priceEdit, setPriceEdit] = useState(0);
   // Agrega al inicio con los demás estados
   const [laboratorios, setLaboratorios] = useState<string[]>([]);
   const [selectedLaboratorio, setSelectedLaboratorio] = useState<string | null>(null);
   const [showLaboratorioModal, setShowLaboratorioModal] = useState(false);
   const [tempSelectedProducts, setTempSelectedProducts] = useState<ISelectedProduct[]>([]);
   const auth = useAuth();
-  const [priceType, setPriceType] = useState<'contado' | 'credito'>('contado');
+  const [priceType, setPriceType] = useState<'contado' | 'credito' | 'custom'>('contado');
 
   const [loading, setLoading] = useState({
     clients: false,
@@ -268,7 +270,9 @@ export default function OrderPage() {
       const appliedScale = '';
       const finalPrice = priceType === 'contado'
         ? Number(selectedProduct?.PUContado)
-        : Number(selectedProduct?.PUCredito);
+        : priceType === 'credito'
+          ? Number(selectedProduct?.PUCredito)
+          : priceEdit;
       setSelectedProducts([
         ...selectedProducts,
         {
@@ -278,6 +282,7 @@ export default function OrderPage() {
           isEscale,
           appliedScale,
           finalPrice,
+          isEdit: priceType === 'custom'
         },
       ])
       handleListarLotes([
@@ -463,7 +468,7 @@ export default function OrderPage() {
     }
   }, [products]);
 
-  const handleAddTempProduct = async (product: IProduct, quantity: number, priceType: 'contado' | 'credito') => {
+  const handleAddTempProduct = async (product: IProduct, quantity: number, priceType: 'contado' | 'credito' | 'custom', customPrice?: number) => {
     setIsLoading(true);
     setModalLoader('BONIFICADO');
 
@@ -479,7 +484,12 @@ export default function OrderPage() {
       isBonification: bonificaciones.length > 0,
       isEscale: escalasProductos.length > 0,
       appliedScale: null,
-      finalPrice: Number(priceType === 'contado' ? product.PUContado : product.PUCredito),
+      finalPrice: Number(priceType === 'contado'
+        ? product.PUContado
+        : priceType === 'credito'
+          ? product.PUCredito
+          : customPrice),
+      isEdit: priceType === 'custom'
     };
 
     setTempSelectedProducts(prev => [...prev, newProduct]);
@@ -526,6 +536,7 @@ export default function OrderPage() {
           isescala: item.isEscale ? 1 : 0,
           lote: lotesData.find(x => x.codigoProducto === item.product.Codigo_Art)?.lote,
           fecVenc: lotesData.find(x => x.codigoProducto === item.product.Codigo_Art)?.fechaVencimiento,
+          isEdit: item.isEdit ? 'S' : 'N'
         })),
         estadodePedido: 1,
         telefonoPedido: selectedClient?.telefono,
@@ -888,9 +899,9 @@ export default function OrderPage() {
                                         </div>
                                         <div className="flex flex-col flex-1 min-w-0">
                                           <div className="flex justify-between items-start w-full gap-2">
-                        <span className="font-medium text-sm truncate flex-1">
-                          {product.NombreItem}
-                        </span>
+                                            <span className="font-medium text-sm truncate flex-1">
+                                              {product.NombreItem}
+                                            </span>
                                             <div className="flex flex-wrap gap-1 shrink-0">
                                               <Badge
                                                 variant="outline"
@@ -917,25 +928,24 @@ export default function OrderPage() {
                                             </div>
                                           </div>
                                           <div className="flex justify-between items-center w-full mt-1">
-                        <span className="text-xs text-gray-500 truncate">
-                          <span className="font-medium">Código:</span>{" "}
-                          {product.Codigo_Art}
-                        </span>
                                             <span className="text-xs text-gray-500 truncate">
-                          <span className="font-medium">Lab:</span>{" "}
-                                              {product.Descripcion}
-                        </span>
+                                              <span className="font-medium">Código:</span>{" "}
+                                                {product.Codigo_Art}
+                                              </span>
+                                              <span className="text-xs text-gray-500 truncate">
+                                              <span className="font-medium">Lab:</span>{" "}
+                                                {product.Descripcion}
+                                            </span>
                                           </div>
-                                          {/* Mostrar ambos precios en los resultados */}
                                           <div className="flex justify-between mt-2 text-xs">
-                        <span className="text-green-600">
-                          Contado: {currency?.value === "PEN" ? "S/." : "$"}
-                          {Number(product.PUContado).toFixed(2)}
-                        </span>
+                                            <span className="text-green-600">
+                                              Contado: {currency?.value === "PEN" ? "S/." : "$"}
+                                              {Number(product.PUContado).toFixed(2)}
+                                            </span>
                                             <span className="text-blue-600">
-                          Crédito: {currency?.value === "PEN" ? "S/." : "$"}
+                                              Crédito: {currency?.value === "PEN" ? "S/." : "$"}
                                               {Number(product.PUCredito).toFixed(2)}
-                        </span>
+                                            </span>
                                           </div>
                                         </div>
                                       </div>
@@ -949,14 +959,17 @@ export default function OrderPage() {
                       </div>
 
                       {selectedProduct && (
-                        <div className="grid grid-cols-2 gap-2 mt-2">
+                        <div className="grid grid-cols-3 gap-2 mt-2">
                           <div
                             className={`border rounded-md p-2 cursor-pointer text-center ${
                               priceType === 'contado'
                                 ? 'border-blue-500 bg-blue-50 text-blue-700'
                                 : 'border-gray-200 bg-gray-50 text-gray-700'
                             }`}
-                            onClick={() => setPriceType('contado')}
+                            onClick={() => {
+                              setPriceType('contado')
+                              setIsEditPrice(false)
+                            }}
                           >
                             <div className="font-medium">Contado</div>
                             <div className="text-sm">
@@ -970,12 +983,39 @@ export default function OrderPage() {
                                 ? 'border-blue-500 bg-blue-50 text-blue-700'
                                 : 'border-gray-200 bg-gray-50 text-gray-700'
                             }`}
-                            onClick={() => setPriceType('credito')}
+                            onClick={() => {
+                              setPriceType('credito')
+                              setIsEditPrice(false)
+                            }}
                           >
                             <div className="font-medium">Crédito</div>
                             <div className="text-sm">
                               {currency?.value === "PEN" ? "S/." : "$"}
                               {Number(selectedProduct.PUCredito).toFixed(2)}
+                            </div>
+                          </div>
+                          <div
+                            className={`border rounded-md p-2 cursor-pointer text-center ${
+                              priceType === 'custom'
+                                ? 'border-blue-500 bg-blue-50 text-blue-700'
+                                : 'border-gray-200 bg-gray-50 text-gray-700'
+                            }`}
+                            onClick={() => {
+                              setPriceType('custom')
+                              setIsEditPrice(true)
+                            }}
+                          >
+                            <div className="font-medium">Custom</div>
+                            <div className="text-sm flex items-center justify-center">
+                              {currency?.value === "PEN" ? "S/." : "$"}
+                              <Input
+                                     type="number"
+                                     min="1"
+                                     step="1"
+                                     value={priceEdit}
+                                     onChange={(e) => setPriceEdit(Number.parseInt(e.target.value) || 1)}
+                                     className="bg-white h-[20px] ml-1 w-[80px] text-center"
+                              />
                             </div>
                           </div>
                         </div>
@@ -1200,7 +1240,7 @@ export default function OrderPage() {
                         </tbody>
                         <TableFooter>
                           <TableRow>
-                            <TableCell colSpan={3}></TableCell>
+                            <TableCell colSpan={4}></TableCell>
                             <TableCell className="px-4 py-3 text-right text-sm font-medium text-gray-900">
                               Total:
                             </TableCell>
