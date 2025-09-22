@@ -112,7 +112,6 @@ export default function OrderPage() {
     nombreDepartamento: '',
     ubigeo: ''
   })
-  const [isEditPrice, setIsEditPrice] = useState(false);
   const [priceEdit, setPriceEdit] = useState(0);
   // Agrega al inicio con los demás estados
   const [laboratorios, setLaboratorios] = useState<string[]>([]);
@@ -282,7 +281,8 @@ export default function OrderPage() {
           isEscale,
           appliedScale,
           finalPrice,
-          isEdit: priceType === 'custom'
+          isEdit: priceType === 'custom',
+          isAuthorize: priceType === 'custom' && priceEdit < Number(selectedProduct?.PUContado),
         },
       ])
       handleListarLotes([
@@ -376,18 +376,21 @@ export default function OrderPage() {
         const response = await PriceService.getProductLots(producto.product.Codigo_Art)
         const lotes = response.data.map((lote: any) => ({
           value: lote.numeroLote + '|' + lote.fechaVencimiento +
-            '|' + (Number(lote.stock) >= 0 ?  Number(lote.stock).toFixed(2) : '-'),
+            '|' + (Number(lote.stock) >= 0 ?  Number(lote.stock).toFixed(2) : 0),
           numeroLote: lote.numeroLote,
-          fechaVencimiento: lote.fechaVencimiento
+          fechaVencimiento: lote.fechaVencimiento,
+          stock: Number(lote.stock).toFixed(2),
         }))
 
-        if (lotes.some(item => item.numeroLote !== null && item.fechaVencimiento !== null)) {
+        const lotesFiltered = lotes.filter(item => item.stock > 0);
+
+        if (lotesFiltered.some(item => item.numeroLote !== null && item.fechaVencimiento !== null)) {
           productos.push({
             prod_codigo: producto.product.Codigo_Art,
             prod_descripcion: producto.product.NombreItem,
             cantidadPedido: producto.quantity,
-            lotes: lotes,
-            loteSeleccionado: lotes.length > 0 ? lotes[0].value : "",
+            lotes: lotesFiltered,
+            loteSeleccionado: lotesFiltered.length > 0 ? lotesFiltered[0].value : "",
           })
         }
       }
@@ -536,7 +539,8 @@ export default function OrderPage() {
           isescala: item.isEscale ? 1 : 0,
           lote: lotesData.find(x => x.codigoProducto === item.product.Codigo_Art)?.lote,
           fecVenc: lotesData.find(x => x.codigoProducto === item.product.Codigo_Art)?.fechaVencimiento,
-          isEdit: item.isEdit ? 'S' : 'N'
+          isEdit: item.isEdit ? 'S' : 'N',
+          isAuthorize: item.isAuthorize ? 'S' : 'N',
         })),
         estadodePedido: 1,
         telefonoPedido: selectedClient?.telefono,
@@ -969,7 +973,6 @@ export default function OrderPage() {
                             }`}
                             onClick={() => {
                               setPriceType('contado')
-                              setIsEditPrice(false)
                             }}
                           >
                             <div className="font-medium">Contado</div>
@@ -986,7 +989,6 @@ export default function OrderPage() {
                             }`}
                             onClick={() => {
                               setPriceType('credito')
-                              setIsEditPrice(false)
                             }}
                           >
                             <div className="font-medium">Crédito</div>
@@ -1003,7 +1005,6 @@ export default function OrderPage() {
                             }`}
                             onClick={() => {
                               setPriceType('custom')
-                              setIsEditPrice(true)
                             }}
                           >
                             <div className="font-medium">Custom</div>
@@ -1109,292 +1110,324 @@ export default function OrderPage() {
             {/*  currency={currency}*/}
             {/*/>*/}
             {selectedProducts.length > 0 && (
-              <Card className="shadow-md bg-white">
-                <CardHeader className="border-b bg-gray-50">
-                  <CardTitle className="text-xl font-semibold text-blue-700">Productos Seleccionados</CardTitle>
-                </CardHeader>
-                <CardContent className="pt-6">
-                  <div className="hidden sm:block border rounded-md overflow-hidden">
-                    <div className="overflow-x-auto">
-                      <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50">
-                        <tr>
-                          <th
-                            scope="col"
-                            className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                          >
-                            Producto
-                          </th>
-                          <th
-                            scope="col"
-                            className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                          >
-                            Lote - Fec.Venc
-                          </th>
-                          <th
-                            scope="col"
-                            className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                          >
-                            Stock
-                          </th>
-                          <th
-                            scope="col"
-                            className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
-                          >
-                            Cantidad
-                          </th>
-                          <th
-                            scope="col"
-                            className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
-                          >
-                            Precio Unit.
-                          </th>
-                          <th
-                            scope="col"
-                            className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
-                          >
-                            Subtotal
-                          </th>
-                          <th scope="col"></th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        {selectedProducts.map((item, index) => {
-                          const precioOriginal = item.finalPrice;
-                          const precioEscala = item.appliedScale?.precio_escala;
-                          const precioUnitario = item.isBonification ? 0 : precioEscala ?? precioOriginal;
-                          const subtotal = precioUnitario * item.quantity;
-                          const lote = productosConLotes.find(x => x.prod_codigo === item.product.Codigo_Art)?.loteSeleccionado || '||'
-                          const split = lote.split('|');
-                          const cod = split[0];
-                          const fec = split[1];
-                          const stk = split[2];
+                <Card className="shadow-md bg-white">
+                  <CardHeader className="border-b bg-gray-50">
+                    <CardTitle className="text-xl font-semibold text-blue-700">Productos Seleccionados</CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-6">
+                    <div className="hidden sm:block border rounded-md overflow-hidden">
+                      <div className="overflow-x-auto">
+                        <table className="min-w-full divide-y divide-gray-200">
+                          <thead className="bg-gray-50">
+                          <tr>
+                            <th
+                                scope="col"
+                                className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                            >
+                              Producto
+                            </th>
+                            <th
+                                scope="col"
+                                className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                            >
+                              Lote - Fec.Venc
+                            </th>
+                            <th
+                                scope="col"
+                                className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                            >
+                              Stock
+                            </th>
+                            <th
+                                scope="col"
+                                className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
+                            >
+                              Cantidad
+                            </th>
+                            <th
+                                scope="col"
+                                className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
+                            >
+                              Precio Unit.
+                            </th>
+                            <th
+                                scope="col"
+                                className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
+                            >
+                              Subtotal
+                            </th>
+                            <th scope="col"></th>
+                          </tr>
+                          </thead>
+                          <tbody>
+                          {selectedProducts.map((item, index) => {
+                            const precioOriginal = item.finalPrice;
+                            const precioEscala = item.appliedScale?.precio_escala;
+                            const precioUnitario = item.isBonification ? 0 : precioEscala ?? precioOriginal;
+                            const subtotal = precioUnitario * item.quantity;
+                            const lote = productosConLotes.find(x => x.prod_codigo === item.product.Codigo_Art)?.loteSeleccionado || '||'
+                            const split = lote.split('|');
+                            const cod = split[0];
+                            const fec = split[1];
+                            const stk = split[2];
 
-                          return (
-                            <tr key={index} className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}>
-                              <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
-                                <div className="flex items-center flex-wrap gap-1">
-                                  {item.isBonification && (
-                                    <Badge variant="outline" className="bg-yellow-50 text-yellow-700">
-                                      Bonificado
-                                    </Badge>
-                                  )}
-                                  {item.appliedScale && (
-                                    <Badge variant="outline" className="bg-purple-50 text-purple-700">
-                                      Escala {item.appliedScale.porcentaje_descuento}% desc.
-                                    </Badge>
-                                  )}
-                                  <span>{item.product.NombreItem}</span>
-                                </div>
-                              </td>
+                            let rowBgClass = index % 2 === 0 ? "bg-white" : "bg-gray-50";
+                            if (item.isAuthorize) {
+                              rowBgClass = "bg-blue-50 border-l-4 border-l-blue-500";
+                            } else if (item.isEdit) {
+                              rowBgClass = "bg-green-50 border-l-4 border-l-green-500";
+                            }
 
-                              <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-left">
-                                {cod} - Vence: {fec.length > 0 && format(parseISO(fec), "dd/MM/yyyy")}
-                              </td>
+                            return (
+                                <tr key={index} className={rowBgClass}>
+                                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
+                                    <div className="flex items-center flex-wrap gap-1">
+                                      {item.isBonification && (
+                                          <Badge variant="outline" className="bg-yellow-50 text-yellow-700">
+                                            Bonificado
+                                          </Badge>
+                                      )}
+                                      {item.appliedScale && (
+                                          <Badge variant="outline" className="bg-purple-50 text-purple-700">
+                                            Escala {item.appliedScale.porcentaje_descuento}% desc.
+                                          </Badge>
+                                      )}
+                                      <span>{item.product.NombreItem}</span>
+                                      {item.isAuthorize && (
+                                          <Badge variant="outline" className="bg-blue-100 text-blue-700 border-blue-300">
+                                            Por Autorizar
+                                          </Badge>
+                                      )}
+                                      {(item.isEdit && !item.isAuthorize) && (
+                                          <Badge variant="outline" className="bg-green-100 text-green-700 border-green-300">
+                                            Editado
+                                          </Badge>
+                                      )}
+                                    </div>
+                                  </td>
 
-                              <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-right">
-                                {stk}
-                              </td>
+                                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-left">
+                                    {cod} - Vence: {fec.length > 0 && format(parseISO(fec), "dd/MM/yyyy")}
+                                  </td>
 
-                              <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-right">
-                                {item.quantity}
-                              </td>
+                                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-right">
+                                    {stk}
+                                  </td>
 
-                              <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-right">
-                                <div className="flex flex-col items-end">
-                                <span className={item.appliedScale ? "line-through text-gray-400 text-xs" : ""}>
-                                  {currency?.value === "PEN" ? "S/." : "$"}
-                                  {Number(precioOriginal).toFixed(2)}
-                                </span>
-                                  {item.appliedScale && (
-                                    <span className="text-purple-600 font-medium text-sm">
+                                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-right">
+                                    {item.quantity}
+                                  </td>
+
+                                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-right">
+                                    <div className="flex flex-col items-end">
+                      <span className={item.appliedScale ? "line-through text-gray-400 text-xs" : ""}>
+                        {currency?.value === "PEN" ? "S/." : "$"}
+                        {Number(precioOriginal).toFixed(2)}
+                      </span>
+                                      {item.appliedScale && (
+                                          <span className="text-purple-600 font-medium text-sm">
+                          {currency?.value === "PEN" ? "S/." : "$"}
+                                            {Number(precioEscala).toFixed(2)}
+                        </span>
+                                      )}
+                                      {item.isBonification && (
+                                          <span className="text-green-600 text-sm">{currency?.value === "PEN" ? "S/." : "$"}0.00</span>
+                                      )}
+                                    </div>
+                                  </td>
+
+                                  <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900 text-right">
                                     {currency?.value === "PEN" ? "S/." : "$"}
-                                      {Number(precioEscala).toFixed(2)}
-                                  </span>
-                                  )}
-                                  {item.isBonification && (
-                                    <span
-                                      className="text-green-600 text-sm">{currency?.value === "PEN" ? "S/." : "$"}0.00</span>
-                                  )}
-                                </div>
-                              </td>
+                                    {subtotal.toFixed(2)}
+                                  </td>
 
-                              <td
-                                className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900 text-right">
+                                  <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => handleRemoveItem(index)}
+                                        className="text-red-600 hover:text-red-800 hover:bg-red-50"
+                                    >
+                                      Eliminar
+                                    </Button>
+                                  </td>
+                                </tr>
+                            );
+                          })}
+                          </tbody>
+                          <TableFooter>
+                            <TableRow>
+                              <TableCell colSpan={4}></TableCell>
+                              <TableCell className="px-4 py-3 text-right text-sm font-medium text-gray-900">
+                                Total:
+                              </TableCell>
+                              <TableCell className="px-4 py-3 whitespace-nowrap text-sm font-bold text-gray-900 text-right">
                                 {currency?.value === "PEN" ? "S/." : "$"}
-                                {subtotal.toFixed(2)}
-                              </td>
-
-                              <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleRemoveItem(index)}
-                                  className="text-red-600 hover:text-red-800 hover:bg-red-50"
-                                >
-                                  Eliminar
-                                </Button>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                        </tbody>
-                        <TableFooter>
-                          <TableRow>
-                            <TableCell colSpan={4}></TableCell>
-                            <TableCell className="px-4 py-3 text-right text-sm font-medium text-gray-900">
-                              Total:
-                            </TableCell>
-                            <TableCell
-                              className="px-4 py-3 whitespace-nowrap text-sm font-bold text-gray-900 text-right">
-                              {currency?.value === "PEN" ? "S/." : "$"}
-                              {selectedProducts
-                                .reduce((sum, item) => {
-                                  const precioUnitario = item.isBonification
-                                    ? 0
-                                    : item.appliedScale?.precio_escala ?? item.finalPrice
-                                  return sum + precioUnitario * item.quantity
-                                }, 0)
-                                .toFixed(2)}
-                            </TableCell>
-                          </TableRow>
-                        </TableFooter>
-                      </table>
+                                {selectedProducts
+                                    .reduce((sum, item) => {
+                                      const precioUnitario = item.isBonification
+                                          ? 0
+                                          : item.appliedScale?.precio_escala ?? item.finalPrice
+                                      return sum + precioUnitario * item.quantity
+                                    }, 0)
+                                    .toFixed(2)}
+                              </TableCell>
+                            </TableRow>
+                          </TableFooter>
+                        </table>
+                      </div>
                     </div>
-                  </div>
 
-                  <div className="block sm:hidden space-y-3">
-                    {selectedProducts.map((item, index) => {
-                      const precioOriginal = item.finalPrice;
-                      const precioEscala = item.appliedScale?.precio_escala;
-                      const precioUnitario = item.isBonification ? 0 : precioEscala ?? precioOriginal;
-                      const subtotal = precioUnitario * item.quantity;
-                      const lote = productosConLotes.find(x => x.prod_codigo === item.product.Codigo_Art)?.loteSeleccionado || '||'
-                      const split = lote.split('|');
-                      const cod = split[0];
-                      const fec = split[1];
-                      const stk = split[2];
+                    <div className="block sm:hidden space-y-3">
+                      {selectedProducts.map((item, index) => {
+                        const precioOriginal = item.finalPrice;
+                        const precioEscala = item.appliedScale?.precio_escala;
+                        const precioUnitario = item.isBonification ? 0 : precioEscala ?? precioOriginal;
+                        const subtotal = precioUnitario * item.quantity;
+                        const lote = productosConLotes.find(x => x.prod_codigo === item.product.Codigo_Art)?.loteSeleccionado || '||'
+                        const split = lote.split('|');
+                        const cod = split[0];
+                        const fec = split[1];
+                        const stk = split[2];
 
-                      return (
-                        <Card key={index} className="p-4 relative">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="ml-auto absolute right-0 top-0 text-red-500"
-                            onClick={() => handleRemoveItem(index)}
-                          >
-                            <Trash className="h-5 w-5"/>
-                          </Button>
-                          <div className="space-y-3">
-                            <div className="flex justify-between items-start">
-                              <div className="flex-1 min-w-0">
-                                <div className="flex flex-wrap gap-1 mb-2">
-                                  {item.isBonification && (
-                                    <Badge variant="outline" className="bg-yellow-50 text-yellow-700">
-                                      Bonificado
-                                    </Badge>
-                                  )}
-                                  {item.appliedScale && (
-                                    <Badge variant="outline" className="bg-purple-50 text-purple-700">
-                                      Escala {item.appliedScale.porcentaje_descuento}% desc.
-                                    </Badge>
-                                  )}
+                        let cardBgClass = "bg-white";
+                        let borderClass = "";
+                        if (item.isAuthorize) {
+                          cardBgClass = "bg-blue-50";
+                          borderClass = "border-l-4 border-l-blue-500";
+                        } else if (item.isEdit) {
+                          cardBgClass = "bg-green-50";
+                          borderClass = "border-l-4 border-l-green-500";
+                        }
+
+                        return (
+                            <Card key={index} className={`p-4 relative ${cardBgClass} ${borderClass}`}>
+                              <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="ml-auto absolute right-0 top-0 text-red-500"
+                                  onClick={() => handleRemoveItem(index)}
+                              >
+                                <Trash className="h-5 w-5"/>
+                              </Button>
+                              <div className="space-y-3">
+                                <div className="flex justify-between items-start">
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex flex-wrap gap-1 mb-2">
+                                      {item.isAuthorize && (
+                                          <Badge variant="outline" className="bg-blue-100 text-blue-700 border-blue-300">
+                                            Por Autorizar
+                                          </Badge>
+                                      )}
+                                      {(item.isEdit && !item.isAuthorize) && (
+                                          <Badge variant="outline" className="bg-green-100 text-green-700 border-green-300">
+                                            Editado
+                                          </Badge>
+                                      )}
+                                      {item.isBonification && (
+                                          <Badge variant="outline" className="bg-yellow-50 text-yellow-700">
+                                            Bonificado
+                                          </Badge>
+                                      )}
+                                      {item.appliedScale && (
+                                          <Badge variant="outline" className="bg-purple-50 text-purple-700">
+                                            Escala {item.appliedScale.porcentaje_descuento}% desc.
+                                          </Badge>
+                                      )}
+                                    </div>
+                                    <h4 className="font-medium text-sm truncate">{item.product.NombreItem}</h4>
+                                    <p className="text-xs text-gray-500">Código: {item.product.IdArticulo}</p>
+                                    <p className="text-xs text-gray-500">{item.product.Descripcion}</p>
+                                  </div>
                                 </div>
-                                <h4 className="font-medium text-sm truncate">{item.product.NombreItem}</h4>
-                                <p className="text-xs text-gray-500">Código: {item.product.IdArticulo}</p>
-                                <p className="text-xs text-gray-500">{item.product.Descripcion}</p>
-                              </div>
-                            </div>
 
-                            <div className="grid grid-cols-3 gap-4 text-sm">
-                              <div>
-                                <Label className="text-xs text-gray-500">Lote - Fec.Venc</Label>
-                                <p className="font-medium">{cod} -
-                                  Vence: {fec.length > 0 && format(parseISO(fec), "dd/MM/yyyy")}</p>
-                              </div>
-                              <div>
-                                <Label className="text-xs text-gray-500">Stock</Label>
-                                <p className="font-medium">{stk}</p>
-                              </div>
-                              <div>
-                                <Label className="text-xs text-gray-500">Cantidad</Label>
-                                <p className="font-medium">{item.quantity}</p>
-                              </div>
-                              <div>
-                                <Label className="text-xs text-gray-500">Precio Unit.</Label>
-                                <div className="flex flex-col">
-                                  <span className={item.appliedScale ? "line-through text-gray-400 text-xs" : ""}>
-                                  {currency?.value === "PEN" ? "S/." : "$"}
-                                    {Number(precioOriginal).toFixed(2)}
-                                </span>
-                                  {item.appliedScale && (
-                                    <span className="text-purple-600 font-medium text-sm">
-                                    {currency?.value === "PEN" ? "S/." : "$"}
-                                      {Number(precioEscala).toFixed(2)}
-                                  </span>
-                                  )}
-                                  {item.isBonification && (
-                                    <span
-                                      className="text-green-600 text-sm">{currency?.value === "PEN" ? "S/." : "$"}0.00</span>
-                                  )}
+                                <div className="grid grid-cols-3 gap-4 text-sm">
+                                  <div>
+                                    <Label className="text-xs text-gray-500">Lote - Fec.Venc</Label>
+                                    <p className="font-medium">{cod} - Vence: {fec.length > 0 && format(parseISO(fec), "dd/MM/yyyy")}</p>
+                                  </div>
+                                  <div>
+                                    <Label className="text-xs text-gray-500">Stock</Label>
+                                    <p className="font-medium">{stk}</p>
+                                  </div>
+                                  <div>
+                                    <Label className="text-xs text-gray-500">Cantidad</Label>
+                                    <p className="font-medium">{item.quantity}</p>
+                                  </div>
+                                  <div>
+                                    <Label className="text-xs text-gray-500">Precio Unit.</Label>
+                                    <div className="flex flex-col">
+                      <span className={item.appliedScale ? "line-through text-gray-400 text-xs" : ""}>
+                        {currency?.value === "PEN" ? "S/." : "$"}
+                        {Number(precioOriginal).toFixed(2)}
+                      </span>
+                                      {item.appliedScale && (
+                                          <span className="text-purple-600 font-medium text-sm">
+                          {currency?.value === "PEN" ? "S/." : "$"}
+                                            {Number(precioEscala).toFixed(2)}
+                        </span>
+                                      )}
+                                      {item.isBonification && (
+                                          <span className="text-green-600 text-sm">{currency?.value === "PEN" ? "S/." : "$"}0.00</span>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <div>
+                                    <Label className="text-xs text-gray-500">Subtotal</Label>
+                                    <p className="font-bold text-sm">
+                                      {currency?.value === "PEN" ? "S/." : "$"}
+                                      {subtotal.toFixed(2)}
+                                    </p>
+                                  </div>
                                 </div>
                               </div>
-                              <div>
-                                <Label className="text-xs text-gray-500">Subtotal</Label>
-                                <p className="font-bold text-sm">
-                                  {currency?.value === "PEN" ? "S/." : "$"}
-                                  {subtotal.toFixed(2)}
-                                </p>
-                              </div>
-                            </div>
+                            </Card>
+                        )
+                      })}
+
+                      <div className="bg-gray-50 rounded-lg border border-gray-200 p-4">
+                        <div className="space-y-2">
+                          <div className="flex justify-between items-center">
+                            <span className="font-medium text-gray-900">Total:</span>
+                            <span className="font-bold text-lg text-blue-700">
+                {currency?.value === "PEN" ? "S/." : "$"}
+                              {selectedProducts
+                                  .reduce((sum, item) => {
+                                    const precioUnitario = item.isBonification
+                                        ? 0
+                                        : item.appliedScale?.precio_escala ?? item.finalPrice
+                                    return sum + precioUnitario * item.quantity
+                                  }, 0)
+                                  .toFixed(2)}
+              </span>
                           </div>
-                        </Card>
-                      )
-                    })}
-
-                    <div className="bg-gray-50 rounded-lg border border-gray-200 p-4">
-                      <div className="space-y-2">
-                        <div className="flex justify-between items-center">
-                        <span className="font-medium text-gray-900">Total:</span>
-                          <span className="font-bold text-lg text-blue-700">
-                            {currency?.value === "PEN" ? "S/." : "$"}
-                            {selectedProducts
-                              .reduce((sum, item) => {
-                                const precioUnitario = item.isBonification
-                                  ? 0
-                                  : item.appliedScale?.precio_escala ?? item.finalPrice
-                                return sum + precioUnitario * item.quantity
-                              }, 0)
-                              .toFixed(2)}
-                          </span>
                         </div>
                       </div>
                     </div>
-                  </div>
-                </CardContent>
-                <CardFooter className="flex justify-between border-t bg-gray-50 py-4">
-                  <Button type="button" variant="outline" onClick={prevStep}>
-                    <ArrowLeft className="mr-2 h-4 w-4"/>
-                    Anterior
-                  </Button>
+                  </CardContent>
+                  <CardFooter className="flex justify-between border-t bg-gray-50 py-4">
+                    <Button type="button" variant="outline" onClick={prevStep}>
+                      <ArrowLeft className="mr-2 h-4 w-4"/>
+                      Anterior
+                    </Button>
 
-                  <div className='flex'>
-                    <Button className='mr-4' type="button" variant="outline" onClick={() => setShowLotesModal(true)}>
-                      <Package className="mr-2 h-4 w-4"/>
-                      Cambiar Lotes
-                    </Button>
-                    <Button
-                      type="button"
-                      onClick={nextStep}
-                      disabled={!isStepValid()}
-                      className="bg-blue-600 hover:bg-blue-700"
-                    >
-                      Siguiente
-                      <ArrowRight className="ml-2 h-4 w-4"/>
-                    </Button>
-                  </div>
-                </CardFooter>
-              </Card>
+                    <div className='flex'>
+                      <Button className='mr-4' type="button" variant="outline" onClick={() => setShowLotesModal(true)}>
+                        <Package className="mr-2 h-4 w-4"/>
+                        Cambiar Lotes
+                      </Button>
+                      <Button
+                          type="button"
+                          onClick={nextStep}
+                          disabled={!isStepValid()}
+                          className="bg-blue-600 hover:bg-blue-700"
+                      >
+                        Siguiente
+                        <ArrowRight className="ml-2 h-4 w-4"/>
+                      </Button>
+                    </div>
+                  </CardFooter>
+                </Card>
             )}
           </div>
         )}
@@ -1554,8 +1587,16 @@ export default function OrderPage() {
                         const cod = split[0];
                         const fec = split[1];
                         const stk = split[2];
+
+                        let rowBgClass = index % 2 === 0 ? "bg-white" : "bg-gray-50";
+                        if (item.isAuthorize) {
+                          rowBgClass = "bg-blue-50 border-l-4 border-l-blue-500";
+                        } else if (item.isEdit) {
+                          rowBgClass = "bg-green-50 border-l-4 border-l-green-500";
+                        }
+
                         return (
-                          <tr key={index} className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}>
+                          <tr key={index} className={rowBgClass}>
                             <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
                               <div className="flex items-center flex-wrap gap-1">
                                 {item.isBonification && (
@@ -1569,6 +1610,16 @@ export default function OrderPage() {
                                   </Badge>
                                 )}
                                 <span>{item.product.NombreItem}</span>
+                                {item.isAuthorize && (
+                                    <Badge variant="outline" className="bg-blue-100 text-blue-700 border-blue-300">
+                                      Por Autorizar
+                                    </Badge>
+                                )}
+                                {(item.isEdit && !item.isAuthorize) && (
+                                    <Badge variant="outline" className="bg-green-100 text-green-700 border-green-300">
+                                      Editado
+                                    </Badge>
+                                )}
                               </div>
                             </td>
 
@@ -1655,12 +1706,32 @@ export default function OrderPage() {
                     const fec = split[1];
                     const stk = split[2];
 
+                    let cardBgClass = "bg-white";
+                    let borderClass = "";
+                    if (item.isAuthorize) {
+                      cardBgClass = "bg-blue-50";
+                      borderClass = "border-l-4 border-l-blue-500";
+                    } else if (item.isEdit) {
+                      cardBgClass = "bg-green-50";
+                      borderClass = "border-l-4 border-l-green-500";
+                    }
+
                     return (
-                      <Card key={index} className="p-4">
+                      <Card key={index} className={`p-4 relative ${cardBgClass} ${borderClass}`}>
                         <div className="space-y-3">
                           <div className="flex justify-between items-start">
                             <div className="flex-1 min-w-0">
                               <div className="flex flex-wrap gap-1 mb-2">
+                                {item.isAuthorize && (
+                                    <Badge variant="outline" className="bg-blue-100 text-blue-700 border-blue-300">
+                                      Por Autorizar
+                                    </Badge>
+                                )}
+                                {(item.isEdit && !item.isAuthorize) && (
+                                    <Badge variant="outline" className="bg-green-100 text-green-700 border-green-300">
+                                      Editado
+                                    </Badge>
+                                )}
                                 {item.isBonification && (
                                   <Badge variant="outline" className="bg-yellow-50 text-yellow-700">
                                     Bonificado

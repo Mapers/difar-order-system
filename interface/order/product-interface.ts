@@ -94,4 +94,5 @@ export interface ISelectedProduct {
   appliedScale?: any
   finalPrice?: number
   isEdit?: boolean
+  isAuthorize?: boolean
 }
