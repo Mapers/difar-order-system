@@ -58,6 +58,7 @@ import {DialogTitle} from "@radix-ui/react-dialog";
 import {PriceService} from "@/app/services/price/PriceService";
 import {format, parseISO} from "date-fns";
 import {Combobox} from "@/app/dashboard/mis-pedidos/page";
+import {useLaboratoriesData} from "@/app/dashboard/lista-precios-lote/hooks/useLaboratoriesData";
 
 interface LoteProducto {
   value: string
@@ -114,7 +115,7 @@ export default function OrderPage() {
   })
   const [priceEdit, setPriceEdit] = useState(0);
   // Agrega al inicio con los demás estados
-  const [laboratorios, setLaboratorios] = useState<string[]>([]);
+  const { laboratories } = useLaboratoriesData()
   const [selectedLaboratorio, setSelectedLaboratorio] = useState<string | null>(null);
   const [showLaboratorioModal, setShowLaboratorioModal] = useState(false);
   const [tempSelectedProducts, setTempSelectedProducts] = useState<ISelectedProduct[]>([]);
@@ -462,14 +463,6 @@ export default function OrderPage() {
     const igv = calcularIGV(productos)
     return subtotal
   }
-
-  // Agrega este useEffect para extraer laboratorios
-  useEffect(() => {
-    if (products.length > 0) {
-      const labs = [...new Set(products.map(p => p.Descripcion))];
-      setLaboratorios(labs);
-    }
-  }, [products]);
 
   const handleAddTempProduct = async (product: IProduct, quantity: number, priceType: 'contado' | 'credito' | 'custom', customPrice?: number) => {
     setIsLoading(true);
@@ -1039,9 +1032,9 @@ export default function OrderPage() {
                           <SelectValue placeholder="Laboratorio"/>
                         </SelectTrigger>
                         <SelectContent>
-                          {laboratorios.map((lab) => (
-                            <SelectItem key={lab} value={lab} className="text-xs sm:text-sm">
-                              {lab}
+                          {laboratories.map((lab) => (
+                            <SelectItem key={lab.IdLineaGe} value={lab.IdLineaGe} className="text-xs sm:text-sm">
+                              {lab.Descripcion}
                             </SelectItem>
                           ))}
                         </SelectContent>
