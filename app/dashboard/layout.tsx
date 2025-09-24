@@ -34,7 +34,7 @@ export default function DashboardLayout({
                 console.log('Desconectado de realtime');
             })
 
-            setSocketLocal(socket);
+            setSocketLocal(socketClient);
         }
     }, [user]);
 
