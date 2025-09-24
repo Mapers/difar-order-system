@@ -516,6 +516,7 @@ export default function OrderPage() {
 
       const pedidoData = {
         clientePedido: client,
+        clienteNamePedido: clientName,
         monedaPedido: currency?.value,
         condicionPedido: condition?.CodigoCondicion,
         contactoPedido: contactoPedido,

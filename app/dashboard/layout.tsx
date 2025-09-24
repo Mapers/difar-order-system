@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { ShoppingCart, User, Calendar, MapPin, DollarSign } from "lucide-react";
+import { ShoppingCart, User, Calendar } from "lucide-react";
 
 export default function DashboardLayout({
                                             children,
@@ -52,18 +52,6 @@ export default function DashboardLayout({
             })
         }
     }, [socketLocal]);
-
-    const handleAcceptOrder = () => {
-        console.log('Orden aceptada:', newOrderData);
-        setVisibleModalNewOrder(false);
-    };
-
-    const formatCurrency = (amount: number) => {
-        return new Intl.NumberFormat('es-PE', {
-            style: 'currency',
-            currency: 'PEN'
-        }).format(amount);
-    };
 
     const formatDate = (dateString: string) => {
         return new Date(dateString).toLocaleString('es-PE', {
@@ -119,12 +107,6 @@ export default function DashboardLayout({
                                     <Calendar className="h-4 w-4 text-blue-500" />
                                     <span>{formatDate(newOrderData.fecha || new Date().toISOString())}</span>
                                 </div>
-                                <div className="flex items-center gap-2 text-sm">
-                                    <DollarSign className="h-4 w-4 text-green-500" />
-                                    <span className="font-semibold">
-                                        {formatCurrency(newOrderData.total || newOrderData.monto || 0)}
-                                    </span>
-                                </div>
                             </div>
 
                             <div className="flex gap-3 pt-2">
@@ -134,12 +116,6 @@ export default function DashboardLayout({
                                     onClick={() => setVisibleModalNewOrder(false)}
                                 >
                                     Cerrar
-                                </Button>
-                                <Button
-                                    className="flex-1 bg-green-600 hover:bg-green-700"
-                                    onClick={handleAcceptOrder}
-                                >
-                                    Aceptar
                                 </Button>
                             </div>
 
