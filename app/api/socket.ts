@@ -1,6 +1,6 @@
 import {io} from "socket.io-client";
 
-const SOCKET_URL = "https://backend-difar.backend-l23.click:3002";
+const SOCKET_URL = "https://backend-difar.backend-l23.click";
 
 const socket = io(SOCKET_URL);
 
