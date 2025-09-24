@@ -26,11 +26,11 @@ export default function DashboardLayout({
         if (user?.idRol && !socketLocal?.connected) {
             const socketClient = socket;
             console.log('socket executing...');
-            socket.on('connect', () => {
+            socketClient.on('connect', () => {
                 console.log('Corriendo conexión realtime');
             })
 
-            socket.on('disconnect', () => {
+            socketClient.on('disconnect', () => {
                 console.log('Desconectado de realtime');
             })
 
@@ -41,6 +41,7 @@ export default function DashboardLayout({
     useEffect(() => {
         if (socketLocal) {
             socketLocal.on('notification:newOrder', data => {
+                console.log('data newOrder', data);
                 setNewOrderData(data);
                 setVisibleModalNewOrder(true);
 
@@ -49,6 +50,7 @@ export default function DashboardLayout({
                 }, 10000);
             })
             socketLocal.on('notification:newApprove', data => {
+                console.log('data newApprove', data);
                 setNewOrderData(data);
                 setVisibleModalNewOrder(true);
 
