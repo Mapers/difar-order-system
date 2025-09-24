@@ -21,6 +21,7 @@ export default function DashboardLayout({
     const [socketLocal, setSocketLocal] = useState<Socket>();
     const [visibleModalNewOrder, setVisibleModalNewOrder] = useState(false);
     const [newOrderData, setNewOrderData] = useState<any>(null);
+    const [audio] = useState(new Audio('/sounds/beep.mp3'));
 
     useEffect(() => {
         if (user?.idRol && !socketLocal?.connected) {
@@ -42,21 +43,23 @@ export default function DashboardLayout({
         if (socketLocal) {
             socketLocal.on('notification:newOrder', data => {
                 console.log('data newOrder', data);
+                audio.play();
                 setNewOrderData(data);
                 setVisibleModalNewOrder(true);
 
                 setTimeout(() => {
                     setVisibleModalNewOrder(false);
-                }, 10000);
+                }, 30000);
             })
             socketLocal.on('notification:newApprove', data => {
                 console.log('data newApprove', data);
+                audio.play();
                 setNewOrderData(data);
                 setVisibleModalNewOrder(true);
 
                 setTimeout(() => {
                     setVisibleModalNewOrder(false);
-                }, 10000);
+                }, 30000);
             })
         }
     }, [socketLocal]);
@@ -128,7 +131,7 @@ export default function DashboardLayout({
                             </div>
 
                             <div className="text-xs text-gray-500 text-center">
-                                Este mensaje se cerrará automáticamente en 10 segundos
+                                Este mensaje se cerrará automáticamente en 30 segundos
                             </div>
                         </div>
                     )}
