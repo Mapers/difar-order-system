@@ -133,8 +133,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     // función logout
     const logout = async () => {
-        // clearAuthState();
-        // router.push('/');
+        clearAuthState();
+        router.push('/');
     };
 
     // Función para refrescar el token (verificar estado actual)
