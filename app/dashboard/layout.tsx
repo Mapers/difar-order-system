@@ -1,18 +1,155 @@
-import type React from "react"
+'use client'
+
+import React, {useEffect, useState} from "react"
 import { SideNav } from "@/components/side-nav"
 import { MobileNav } from "@/components/mobile-nav"
+import socket from "@/app/api/socket";
+import {useAuth} from "@/context/authContext";
+import {Socket} from "socket.io-client";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import { ShoppingCart, User, Calendar, MapPin, DollarSign } from "lucide-react";
 
 export default function DashboardLayout({
-  children,
-}: {
-  children: React.ReactNode
+                                            children,
+                                        }: {
+    children: React.ReactNode
 }) {
-  return (
-    <div className="flex min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50">
-      <SideNav />
-      <MobileNav />
-      <div className="flex-1 p-4 pt-20 md:p-8 md:pl-72 md:pt-8">{children}</div>
-    </div>
-  )
-}
+    const { user } = useAuth()
+    const [socketLocal, setSocketLocal] = useState<Socket>();
+    const [visibleModalNewOrder, setVisibleModalNewOrder] = useState(false);
+    const [newOrderData, setNewOrderData] = useState<any>(null);
 
+    useEffect(() => {
+        if (user?.idRol && !socketLocal?.connected) {
+            setSocketLocal(socket);
+            console.log('socket executing...');
+            socket.on('connect', () => {
+                console.log('Corriendo conexión realtime');
+            })
+        }
+    }, [user]);
+
+    useEffect(() => {
+        if (socketLocal) {
+            socketLocal.on('notification:newOrder', data => {
+                setNewOrderData(data);
+                setVisibleModalNewOrder(true);
+
+                setTimeout(() => {
+                    setVisibleModalNewOrder(false);
+                }, 10000);
+            })
+            socketLocal.on('notification:newApprove', data => {
+                setNewOrderData(data);
+                setVisibleModalNewOrder(true);
+
+                setTimeout(() => {
+                    setVisibleModalNewOrder(false);
+                }, 10000);
+            })
+        }
+    }, [socketLocal]);
+
+    const handleAcceptOrder = () => {
+        console.log('Orden aceptada:', newOrderData);
+        setVisibleModalNewOrder(false);
+    };
+
+    const formatCurrency = (amount: number) => {
+        return new Intl.NumberFormat('es-PE', {
+            style: 'currency',
+            currency: 'PEN'
+        }).format(amount);
+    };
+
+    const formatDate = (dateString: string) => {
+        return new Date(dateString).toLocaleString('es-PE', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    };
+
+    return (
+        <div className="flex min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50">
+            <SideNav />
+            <MobileNav />
+            <div className="flex-1 p-4 pt-20 md:p-8 md:pl-72 md:pt-8">{children}</div>
+
+            <Dialog open={visibleModalNewOrder} onOpenChange={setVisibleModalNewOrder}>
+                <DialogContent className="sm:max-w-md md:max-w-lg">
+                    <DialogHeader>
+                        <div className="flex items-center gap-2">
+                            <div className="p-2 bg-green-100 rounded-full">
+                                <ShoppingCart className="h-6 w-6 text-green-600" />
+                            </div>
+                            <div>
+                                <DialogTitle className="text-lg">¡Nueva Orden Recibida!</DialogTitle>
+                                <DialogDescription>
+                                    {newOrderData ? newOrderData.message : 'Sin asignación'}
+                                </DialogDescription>
+                            </div>
+                        </div>
+                    </DialogHeader>
+
+                    {newOrderData && (
+                        <div className="space-y-4">
+                            <Card>
+                                <CardContent className="p-4">
+                                    <div className="flex items-center gap-3">
+                                        <User className="h-5 w-5 text-gray-500" />
+                                        <div>
+                                            <p className="font-semibold">{newOrderData.cliente?.nombre || 'Cliente'}</p>
+                                            <p className="text-sm text-gray-600">{newOrderData.cliente?.ruc || 'Sin RUC'}</p>
+                                        </div>
+                                        <Badge variant="secondary" className="ml-auto">
+                                            #{newOrderData.numeroOrden || newOrderData.id}
+                                        </Badge>
+                                    </div>
+                                </CardContent>
+                            </Card>
+
+                            <div className="grid grid-cols-2 gap-3">
+                                <div className="flex items-center gap-2 text-sm">
+                                    <Calendar className="h-4 w-4 text-blue-500" />
+                                    <span>{formatDate(newOrderData.fecha || new Date().toISOString())}</span>
+                                </div>
+                                <div className="flex items-center gap-2 text-sm">
+                                    <DollarSign className="h-4 w-4 text-green-500" />
+                                    <span className="font-semibold">
+                                        {formatCurrency(newOrderData.total || newOrderData.monto || 0)}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div className="flex gap-3 pt-2">
+                                <Button
+                                    variant="outline"
+                                    className="flex-1"
+                                    onClick={() => setVisibleModalNewOrder(false)}
+                                >
+                                    Cerrar
+                                </Button>
+                                <Button
+                                    className="flex-1 bg-green-600 hover:bg-green-700"
+                                    onClick={handleAcceptOrder}
+                                >
+                                    Aceptar
+                                </Button>
+                            </div>
+
+                            <div className="text-xs text-gray-500 text-center">
+                                Este mensaje se cerrará automáticamente en 10 segundos
+                            </div>
+                        </div>
+                    )}
+                </DialogContent>
+            </Dialog>
+        </div>
+    )
+}

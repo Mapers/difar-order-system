@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react';
+import {createContext, useContext, useEffect, useState, ReactNode, useCallback, use} from 'react';
 import { useRouter } from 'next/navigation';
 import { decodeToken, isTokenNearExpiry } from '@/app/utils/tokenUtils';
 import { AuthService } from '@/app/services/auth/AuthService';
@@ -133,8 +133,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     // función logout
     const logout = async () => {
-        clearAuthState();
-        router.push('/');
+        // clearAuthState();
+        // router.push('/');
     };
 
     // Función para refrescar el token (verificar estado actual)

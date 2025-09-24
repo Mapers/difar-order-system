@@ -468,11 +468,11 @@ export default function OrderPage() {
     setIsLoading(true);
     setModalLoader('BONIFICADO');
 
-    const bonificaciones = await getBonificados(product.Codigo_Art, quantity);
-    const escalasProductos = await getEscalas(product.Codigo_Art, quantity);
+    const bonificaciones = await getBonificados(product.Codigo_Art, quantity)
+    const escalasProductos = await getEscalas(product.Codigo_Art, quantity)
 
-    setIsLoading(false);
-    setModalLoader(null);
+    setIsLoading(false)
+    setModalLoader(null)
 
     const newProduct: ISelectedProduct = {
       product,
@@ -485,15 +485,16 @@ export default function OrderPage() {
         : priceType === 'credito'
           ? product.PUCredito
           : customPrice),
-      isEdit: priceType === 'custom'
-    };
+      isEdit: priceType === 'custom',
+      isAuthorize: (priceType === 'custom' && customPrice != null) && customPrice < Number(product.PUContado),
+    }
 
     setTempSelectedProducts(prev => [...prev, newProduct]);
-  };
+  }
 
   const handleRemoveTempProduct = (index: number) => {
-    setTempSelectedProducts(prev => prev.filter((_, i) => i !== index));
-  };
+    setTempSelectedProducts(prev => prev.filter((_, i) => i !== index))
+  }
 
   const handleConfirmSelection = () => {
     setSelectedProducts(prev => [...prev, ...tempSelectedProducts]);
@@ -839,7 +840,7 @@ export default function OrderPage() {
               </CardHeader>
               <CardContent className="space-y-6 pt-6">
 
-                <div className="lg:col-span-2 space-y-2">
+                <div className="col-span-1 space-y-2">
                   <div className="flex flex-col sm:flex-row items-start gap-2">
                     <div className="flex-1 space-y-2">
                       <Label htmlFor="producto" className="text-sm font-medium">
@@ -1186,14 +1187,14 @@ export default function OrderPage() {
                                           </Badge>
                                       )}
                                       <span>{item.product.NombreItem}</span>
+                                      {item.isEdit && (
+                                          <Badge variant="outline" className="bg-green-100 text-green-700 border-green-300">
+                                            Editado
+                                          </Badge>
+                                      )}
                                       {item.isAuthorize && (
                                           <Badge variant="outline" className="bg-blue-100 text-blue-700 border-blue-300">
                                             Por Autorizar
-                                          </Badge>
-                                      )}
-                                      {(item.isEdit && !item.isAuthorize) && (
-                                          <Badge variant="outline" className="bg-green-100 text-green-700 border-green-300">
-                                            Editado
                                           </Badge>
                                       )}
                                     </div>
@@ -1307,14 +1308,14 @@ export default function OrderPage() {
                                 <div className="flex justify-between items-start">
                                   <div className="flex-1 min-w-0">
                                     <div className="flex flex-wrap gap-1 mb-2">
+                                      {item.isEdit && (
+                                          <Badge variant="outline" className="bg-green-100 text-green-700 border-green-300">
+                                            Editado
+                                          </Badge>
+                                      )}
                                       {item.isAuthorize && (
                                           <Badge variant="outline" className="bg-blue-100 text-blue-700 border-blue-300">
                                             Por Autorizar
-                                          </Badge>
-                                      )}
-                                      {(item.isEdit && !item.isAuthorize) && (
-                                          <Badge variant="outline" className="bg-green-100 text-green-700 border-green-300">
-                                            Editado
                                           </Badge>
                                       )}
                                       {item.isBonification && (
@@ -1603,14 +1604,14 @@ export default function OrderPage() {
                                   </Badge>
                                 )}
                                 <span>{item.product.NombreItem}</span>
+                                {item.isEdit && (
+                                    <Badge variant="outline" className="bg-green-100 text-green-700 border-green-300">
+                                      Editado
+                                    </Badge>
+                                )}
                                 {item.isAuthorize && (
                                     <Badge variant="outline" className="bg-blue-100 text-blue-700 border-blue-300">
                                       Por Autorizar
-                                    </Badge>
-                                )}
-                                {(item.isEdit && !item.isAuthorize) && (
-                                    <Badge variant="outline" className="bg-green-100 text-green-700 border-green-300">
-                                      Editado
                                     </Badge>
                                 )}
                               </div>
@@ -1715,14 +1716,14 @@ export default function OrderPage() {
                           <div className="flex justify-between items-start">
                             <div className="flex-1 min-w-0">
                               <div className="flex flex-wrap gap-1 mb-2">
+                                {item.isEdit && (
+                                    <Badge variant="outline" className="bg-green-100 text-green-700 border-green-300">
+                                      Editado
+                                    </Badge>
+                                )}
                                 {item.isAuthorize && (
                                     <Badge variant="outline" className="bg-blue-100 text-blue-700 border-blue-300">
                                       Por Autorizar
-                                    </Badge>
-                                )}
-                                {(item.isEdit && !item.isAuthorize) && (
-                                    <Badge variant="outline" className="bg-green-100 text-green-700 border-green-300">
-                                      Editado
                                     </Badge>
                                 )}
                                 {item.isBonification && (
