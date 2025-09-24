@@ -107,7 +107,7 @@ export default function DashboardLayout({
                                             <p className="text-sm text-gray-600">{newOrderData.cliente?.ruc || 'Sin RUC'}</p>
                                         </div>
                                         <Badge variant="secondary" className="ml-auto">
-                                            #{newOrderData.numeroOrden || newOrderData.id}
+                                            #{String(newOrderData.numeroOrden || newOrderData.id).padStart(10, '0')}
                                         </Badge>
                                     </div>
                                 </CardContent>
