@@ -1,6 +1,6 @@
 'use client'
 
-import React, {useEffect, useState} from "react"
+import React, {use, useEffect, useState} from "react"
 import { SideNav } from "@/components/side-nav"
 import { MobileNav } from "@/components/mobile-nav"
 import socket from "@/app/api/socket";
@@ -43,23 +43,29 @@ export default function DashboardLayout({
         if (socketLocal) {
             socketLocal.on('notification:newOrder', data => {
                 console.log('data newOrder', data);
-                audio.play();
-                setNewOrderData(data);
-                setVisibleModalNewOrder(true);
 
-                setTimeout(() => {
-                    setVisibleModalNewOrder(false);
-                }, 30000);
+                if (user?.idRol !== 1) {
+                    audio.play();
+                    setNewOrderData(data);
+                    setVisibleModalNewOrder(true);
+
+                    setTimeout(() => {
+                        setVisibleModalNewOrder(false);
+                    }, 30000);
+                }
             })
             socketLocal.on('notification:newApprove', data => {
                 console.log('data newApprove', data);
-                audio.play();
-                setNewOrderData(data);
-                setVisibleModalNewOrder(true);
 
-                setTimeout(() => {
-                    setVisibleModalNewOrder(false);
-                }, 30000);
+                if (user?.idRol !== 1) {
+                    audio.play();
+                    setNewOrderData(data);
+                    setVisibleModalNewOrder(true);
+
+                    setTimeout(() => {
+                        setVisibleModalNewOrder(false);
+                    }, 30000);
+                }
             })
         }
     }, [socketLocal]);

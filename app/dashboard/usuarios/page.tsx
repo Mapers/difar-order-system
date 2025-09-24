@@ -72,7 +72,6 @@ export default function UsuariosPage() {
   const [activo, setActivo] = useState(true)
   const { toast } = useToast()
 
-  // Estados para mantenedores
   const [activeTab, setActiveTab] = useState('usuarios-web')
   const [showVendedorDialog, setShowVendedorDialog] = useState(false)
   const [showUsuarioDialog, setShowUsuarioDialog] = useState(false)
@@ -89,6 +88,8 @@ export default function UsuariosPage() {
     empRegistro: '20481321892',
     activo: 1
   })
+  const [dniError, setDniError] = useState('')
+  const [telefonoError, setTelefonoError] = useState('')
 
   const [newUsuario, setNewUsuario] = useState({
     NombreUsuarios: '',
@@ -97,11 +98,9 @@ export default function UsuariosPage() {
     ClaveUsuarios: '0000'
   })
 
-  // Estados para diseño responsivo
   const [isMobile, setIsMobile] = useState(false)
   const [expandedRows, setExpandedRows] = useState<Record<number, boolean>>({})
 
-  // Verificar el tamaño de la pantalla
   useEffect(() => {
     const checkIsMobile = () => setIsMobile(window.innerWidth < 768)
     checkIsMobile()
@@ -171,32 +170,6 @@ export default function UsuariosPage() {
     }
   }
 
-  const fetchVendedoresNoUsuarios = async () => {
-    try {
-      const response = await apiClient.get(`/usuarios/search/vendedor?busqueda=${busquedaVendedor}`)
-      setVendedoresNoUsuarios(response.data.data.data)
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'No se pudieron buscar vendedores',
-        variant: 'destructive'
-      })
-    }
-  }
-
-  const fetchUsuariosNoWebBusqueda = async () => {
-    try {
-      const response = await apiClient.get(`/usuarios/search/usuario?busqueda=${busquedaUsuarios}`)
-      setUsuariosNoWebBusqueda(response.data.data.data)
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'No se pudieron buscar usuarios',
-        variant: 'destructive'
-      })
-    }
-  }
-
   const fetchRoles = async () => {
     try {
       const response = await apiClient.get('/roles/listar')
@@ -212,11 +185,27 @@ export default function UsuariosPage() {
 
   const handleAddUsuario = async () => {
     try {
-      if ((!selectedVendedor && !selectedUsuarioNoWeb) || !selectedRol || !dni) {
+      let hasError = false
+
+      if (!dni || dni.length !== 8) {
+        setDniError('El DNI es obligatorio y debe tener 8 dígitos')
+        hasError = true
+      }
+
+      if (!telefono || telefono.length !== 9) {
+        setTelefonoError('El teléfono es obligatorio y debe tener 9 dígitos')
+        hasError = true
+      }
+
+      if (!selectedRol) {
+        hasError = true
+      }
+
+      if (hasError) {
         toast({
-          title: 'Error',
-          description: 'Debe completar todos los campos obligatorios',
-          variant: 'destructive'
+          title: "Error de validación",
+          description: "Por favor complete todos los campos obligatorios correctamente",
+          variant: "destructive"
         })
         return
       }
@@ -287,7 +276,6 @@ export default function UsuariosPage() {
     }
   }
 
-  // Funciones para mantenedor de vendedores
   const handleCreateVendedor = async () => {
     try {
       const payload = {
@@ -362,7 +350,6 @@ export default function UsuariosPage() {
     }
   }
 
-  // Funciones para mantenedor de usuarios generales
   const handleCreateUsuario = async () => {
     try {
       const payload = {
@@ -430,23 +417,25 @@ export default function UsuariosPage() {
 
   useEffect(() => {
     if (busquedaVendedor) {
-      const timer = setTimeout(() => {
-        fetchVendedoresNoUsuarios()
-      }, 500)
-      return () => clearTimeout(timer)
+      setVendedoresNoUsuarios(vendedores.filter(item =>
+          item.DNI.includes(busquedaVendedor) ||
+          `${item.nombres} ${item.apellidos}`.toLowerCase().includes(busquedaVendedor.toLowerCase()),))
+    } else {
+      setVendedoresNoUsuarios(vendedores)
     }
-  }, [busquedaVendedor])
+  }, [busquedaVendedor, vendedores])
 
   useEffect(() => {
     if (busquedaUsuarios) {
-      const timer = setTimeout(() => {
-        fetchUsuariosNoWebBusqueda()
-      }, 500)
-      return () => clearTimeout(timer)
+      setUsuariosNoWebBusqueda(usuariosNoWeb.filter(item =>
+          item.NombreUsuarios.toLowerCase().includes(busquedaVendedor.toLowerCase()) ||
+          item.ObsUsuario.toLowerCase().includes(busquedaVendedor.toLowerCase()) ||
+          item.EmpRegistros.toLowerCase().includes(busquedaVendedor.toLowerCase())))
+    } else {
+      setUsuariosNoWebBusqueda(usuariosNoWeb)
     }
-  }, [busquedaUsuarios])
+  }, [busquedaUsuarios, usuariosNoWeb])
 
-  // Componente para mostrar tarjetas en vista móvil
   const MobileUsuarioCard = ({ usuario }: { usuario: Usuario }) => (
     <Card className="mb-4">
       <CardContent className="p-4">
@@ -507,7 +496,6 @@ export default function UsuariosPage() {
     </Card>
   )
 
-  // Componente para mostrar tarjetas de vendedores en vista móvil
   const MobileVendedorCard = ({ vendedor }: { vendedor: Vendedor }) => (
     <Card className="mb-4">
       <CardContent className="p-4">
@@ -566,7 +554,6 @@ export default function UsuariosPage() {
     </Card>
   )
 
-  // Componente para mostrar tarjetas de usuarios generales en vista móvil
   const MobileUsuarioGeneralCard = ({ usuario }: { usuario: UsuarioNoWeb }) => (
     <Card className="mb-4">
       <CardContent className="p-4">
@@ -637,186 +624,238 @@ export default function UsuariosPage() {
         )}
 
         {activeTab === 'usuarios-web' && (
-          <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-            <DialogTrigger asChild>
-              <Button className="flex items-center gap-2 w-full sm:w-auto">
-                <Plus className="h-4 w-4" />
-                Nuevo Usuario Web
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>Registrar Nuevo Usuario</DialogTitle>
-              </DialogHeader>
-
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium mb-1">Tipo de Usuario</label>
-                  <Select
-                    value={userType}
-                    onValueChange={(value) => {
-                      setUserType(value)
-                      setSelectedVendedor(null)
-                      setSelectedUsuarioNoWeb(null)
-                      setBusquedaVendedor('')
-                      setBusquedaUsuarios('')
-                    }}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleccionar tipo"/>
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="vendedor">Vendedor</SelectItem>
-                      <SelectItem value="usuario">Usuario General</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {userType === 'vendedor' && (
-                  <>
-                    <div>
-                      <label className="block text-sm font-medium mb-1">Buscar Vendedor</label>
-                      <div className="relative">
-                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400"/>
-                        <Input
-                          placeholder="Buscar por nombre o DNI..."
-                          className="pl-10"
-                          value={busquedaVendedor}
-                          onChange={(e) => setBusquedaVendedor(e.target.value)}
-                        />
-                      </div>
-
-                      {vendedoresNoUsuarios.length > 0 && (
-                        <div className="mt-2 border rounded-lg max-h-60 overflow-y-auto">
-                          {vendedoresNoUsuarios.map((v) => (
-                            <div
-                              key={v.idVendedor}
-                              className={`p-3 hover:bg-gray-50 cursor-pointer ${selectedVendedor?.idVendedor === v.idVendedor ? 'bg-blue-50' : ''}`}
-                              onClick={() => {
-                                setSelectedVendedor(v)
-                                setDni(v.DNI)
-                                setTelefono(v.telefono)
-                              }}
-                            >
-                              <p className="font-medium">{v.nombres} {v.apellidos}</p>
-                              <p className="text-sm text-gray-600">DNI: {v.DNI} - Teléfono: {v.telefono}</p>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium mb-1">DNI</label>
-                      <Input
-                        value={dni}
-                        onChange={(e) => setDni(e.target.value)}
-                        placeholder="DNI del vendedor"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium mb-1">Teléfono</label>
-                      <Input
-                        value={telefono}
-                        onChange={(e) => setTelefono(e.target.value)}
-                        placeholder="Teléfono del vendedor"
-                      />
-                    </div>
-                  </>
-                )}
-
-                {userType === 'usuario' && (
-                  <>
-                    <div>
-                      <label className="block text-sm font-medium mb-1">Buscar Usuario</label>
-                      <div className="relative">
-                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400"/>
-                        <Input
-                          placeholder="Buscar por nombre usuario o empRegistro..."
-                          className="pl-10"
-                          value={busquedaUsuarios}
-                          onChange={(e) => setBusquedaUsuarios(e.target.value)}
-                        />
-                      </div>
-
-                      {usuariosNoWebBusqueda.length > 0 && (
-                        <div className="mt-2 border rounded-lg max-h-60 overflow-y-auto">
-                          {usuariosNoWebBusqueda.map((v) => (
-                            <div
-                              key={v.IdUsuarios}
-                              className={`p-3 hover:bg-gray-50 cursor-pointer ${selectedUsuarioNoWeb?.IdUsuarios === v.IdUsuarios ? 'bg-blue-50' : ''}`}
-                              onClick={() => {
-                                setSelectedUsuarioNoWeb(v)
-                                setDni(v.ObsUsuario || '')
-                              }}
-                            >
-                              <p className="font-medium">{v.NombreUsuarios}</p>
-                              <p className="text-sm text-gray-600">CodEmp: {v.EmpRegistros} - Código: {v.ObsUsuario}</p>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium mb-1">DNI</label>
-                      <Input
-                        value={dni}
-                        onChange={(e) => setDni(e.target.value)}
-                        placeholder="Ingrese DNI del usuario"
-                        required
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium mb-1">Teléfono</label>
-                      <Input
-                        value={telefono}
-                        onChange={(e) => setTelefono(e.target.value)}
-                        placeholder="Ingrese teléfono del usuario"
-                      />
-                    </div>
-                  </>
-                )}
-
-                <div>
-                  <label className="block text-sm font-medium mb-1">Rol</label>
-                  <Select value={selectedRol} onValueChange={setSelectedRol}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleccionar rol"/>
-                    </SelectTrigger>
-                    <SelectContent>
-                      {roles.map((rol) => (
-                        <SelectItem key={rol.id} value={rol.id.toString()}>
-                          {rol.nombre}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="flex items-center space-x-2">
-                  <label className="text-sm font-medium">Activo</label>
-                  <input
-                    type="checkbox"
-                    checked={activo}
-                    onChange={(e) => setActivo(e.target.checked)}
-                    className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  />
-                </div>
-              </div>
-
-              <div className="flex justify-end gap-2 mt-4">
-                <Button variant="outline" onClick={() => setShowAddDialog(false)}>
-                  Cancelar
+            <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+              <DialogTrigger asChild>
+                <Button className="flex items-center gap-2 w-full sm:w-auto">
+                  <Plus className="h-4 w-4" />
+                  Nuevo Usuario Web
                 </Button>
-                <Button onClick={handleAddUsuario}>
-                  Registrar
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
+              </DialogTrigger>
+              <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>Registrar Nuevo Usuario</DialogTitle>
+                </DialogHeader>
+
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Tipo de Usuario</label>
+                    <Select
+                        value={userType}
+                        onValueChange={(value) => {
+                          setUserType(value)
+                          setSelectedVendedor(null)
+                          setSelectedUsuarioNoWeb(null)
+                          setBusquedaVendedor('')
+                          setBusquedaUsuarios('')
+                          setDniError('')
+                          setTelefonoError('')
+                        }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Seleccionar tipo"/>
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="vendedor">Vendedor</SelectItem>
+                        <SelectItem value="usuario">Usuario General</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {userType === 'vendedor' && (
+                      <>
+                        <div>
+                          <label className="block text-sm font-medium mb-1">Buscar Vendedor</label>
+                          <div className="relative">
+                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400"/>
+                            <Input
+                                placeholder="Buscar por nombre o DNI..."
+                                className="pl-10"
+                                value={busquedaVendedor}
+                                onChange={(e) => setBusquedaVendedor(e.target.value)}
+                            />
+                          </div>
+
+                          {vendedoresNoUsuarios.length > 0 && (
+                              <div className="mt-2 border rounded-lg max-h-60 overflow-y-auto">
+                                {vendedoresNoUsuarios.map((v) => (
+                                    <div
+                                        key={v.idVendedor}
+                                        className={`p-3 hover:bg-gray-50 cursor-pointer ${selectedVendedor?.idVendedor === v.idVendedor ? 'bg-blue-50' : ''}`}
+                                        onClick={() => {
+                                          setSelectedVendedor(v)
+                                          setDni(v.DNI)
+                                          setTelefono(v.telefono)
+                                          setDniError('')
+                                          setTelefonoError('')
+                                        }}
+                                    >
+                                      <p className="font-medium">{v.nombres} {v.apellidos}</p>
+                                      <p className="text-sm text-gray-600">DNI: {v.DNI} - Teléfono: {v.telefono}</p>
+                                    </div>
+                                ))}
+                              </div>
+                          )}
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium mb-1">DNI *</label>
+                          <Input
+                              value={dni}
+                              onChange={(e) => {
+                                const value = e.target.value.replace(/\D/g, '').slice(0, 8)
+                                setDni(value)
+                                if (value.length > 0 && value.length !== 8) {
+                                  setDniError('El DNI debe tener 8 dígitos')
+                                } else {
+                                  setDniError('')
+                                }
+                              }}
+                              placeholder="Ingrese DNI (8 dígitos)"
+                              className={dniError ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}
+                          />
+                          {dniError && <p className="text-red-500 text-xs mt-1">{dniError}</p>}
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium mb-1">Teléfono *</label>
+                          <Input
+                              value={telefono}
+                              onChange={(e) => {
+                                const value = e.target.value.replace(/\D/g, '').slice(0, 9)
+                                setTelefono(value)
+                                if (value.length > 0 && value.length !== 9) {
+                                  setTelefonoError('El teléfono debe tener 9 dígitos')
+                                } else {
+                                  setTelefonoError('')
+                                }
+                              }}
+                              placeholder="Ingrese teléfono (9 dígitos)"
+                              className={telefonoError ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}
+                          />
+                          {telefonoError && <p className="text-red-500 text-xs mt-1">{telefonoError}</p>}
+                        </div>
+                      </>
+                  )}
+
+                  {userType === 'usuario' && (
+                      <>
+                        <div>
+                          <label className="block text-sm font-medium mb-1">Buscar Usuario</label>
+                          <div className="relative">
+                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400"/>
+                            <Input
+                                placeholder="Buscar por nombre usuario o empRegistro..."
+                                className="pl-10"
+                                value={busquedaUsuarios}
+                                onChange={(e) => setBusquedaUsuarios(e.target.value)}
+                            />
+                          </div>
+
+                          {usuariosNoWebBusqueda.length > 0 && (
+                              <div className="mt-2 border rounded-lg max-h-60 overflow-y-auto">
+                                {usuariosNoWebBusqueda.map((v) => (
+                                    <div
+                                        key={v.IdUsuarios}
+                                        className={`p-3 hover:bg-gray-50 cursor-pointer ${selectedUsuarioNoWeb?.IdUsuarios === v.IdUsuarios ? 'bg-blue-50' : ''}`}
+                                        onClick={() => {
+                                          setSelectedUsuarioNoWeb(v)
+                                          setDni(v.ObsUsuario || '')
+                                          setDniError('')
+                                          setTelefonoError('')
+                                        }}
+                                    >
+                                      <p className="font-medium">{v.NombreUsuarios}</p>
+                                      <p className="text-sm text-gray-600">CodEmp: {v.EmpRegistros} - Código: {v.ObsUsuario}</p>
+                                    </div>
+                                ))}
+                              </div>
+                          )}
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium mb-1">DNI *</label>
+                          <Input
+                              value={dni}
+                              onChange={(e) => {
+                                const value = e.target.value.replace(/\D/g, '').slice(0, 8)
+                                setDni(value)
+                                if (value.length > 0 && value.length !== 8) {
+                                  setDniError('El DNI debe tener 8 dígitos')
+                                } else {
+                                  setDniError('')
+                                }
+                              }}
+                              placeholder="Ingrese DNI (8 dígitos)"
+                              className={dniError ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}
+                              required
+                          />
+                          {dniError && <p className="text-red-500 text-xs mt-1">{dniError}</p>}
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium mb-1">Teléfono *</label>
+                          <Input
+                              value={telefono}
+                              onChange={(e) => {
+                                const value = e.target.value.replace(/\D/g, '').slice(0, 9)
+                                setTelefono(value)
+                                if (value.length > 0 && value.length !== 9) {
+                                  setTelefonoError('El Celular debe tener 9 dígitos')
+                                } else {
+                                  setTelefonoError('')
+                                }
+                              }}
+                              placeholder="Ingrese Celular (9 dígitos)"
+                              className={telefonoError ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}
+                              required
+                          />
+                          {telefonoError && <p className="text-red-500 text-xs mt-1">{telefonoError}</p>}
+                        </div>
+                      </>
+                  )}
+
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Rol *</label>
+                    <Select value={selectedRol} onValueChange={setSelectedRol}>
+                      <SelectTrigger className={!selectedRol ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}>
+                        <SelectValue placeholder="Seleccionar rol"/>
+                      </SelectTrigger>
+                      <SelectContent>
+                        {roles.map((rol) => (
+                            <SelectItem key={rol.id} value={rol.id.toString()}>
+                              {rol.nombre}
+                            </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {!selectedRol && <p className="text-red-500 text-xs mt-1">Debe seleccionar un rol</p>}
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <label className="text-sm font-medium">Activo</label>
+                    <input
+                        type="checkbox"
+                        checked={activo}
+                        onChange={(e) => setActivo(e.target.checked)}
+                        className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-2 mt-4">
+                  <Button variant="outline" onClick={() => {
+                    setShowAddDialog(false)
+                    setDniError('')
+                    setTelefonoError('')
+                  }}>
+                    Cancelar
+                  </Button>
+                  <Button onClick={handleAddUsuario} disabled={!!dniError || !!telefonoError || !selectedRol}>
+                    Registrar
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
         )}
 
         {activeTab === 'usuarios-generales' && (
@@ -875,7 +914,7 @@ export default function UsuariosPage() {
                     <tr>
                       <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre</th>
                       <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Documento</th>
-                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Teléfono</th>
+                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Celular</th>
                       <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rol</th>
                       <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
                       <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
@@ -937,18 +976,30 @@ export default function UsuariosPage() {
                                         ...selectedUsuario!,
                                         dni: e.target.value
                                       })}
+                                      disabled
                                     />
                                   </div>
 
                                   <div>
-                                    <label className="block text-sm font-medium mb-1">Teléfono</label>
+                                    <label className="block text-sm font-medium mb-1">Celular</label>
                                     <Input
+                                        placeholder="Ingrese Celular (9 dígitos)"
+                                        className={telefonoError ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}
                                       value={selectedUsuario?.telefono || ''}
-                                      onChange={(e) => setSelectedUsuario({
-                                        ...selectedUsuario!,
-                                        telefono: e.target.value
-                                      })}
+                                      onChange={(e) => {
+                                        const value = e.target.value.replace(/\D/g, '').slice(0, 9)
+                                        setSelectedUsuario({
+                                          ...selectedUsuario!,
+                                          telefono: value
+                                        })
+                                        if (value.length > 0 && value.length !== 9) {
+                                          setTelefonoError('El Celular debe tener 9 dígitos')
+                                        } else {
+                                          setTelefonoError('')
+                                        }
+                                      }}
                                     />
+                                    {telefonoError && <p className="text-red-500 text-xs mt-1">{telefonoError}</p>}
                                   </div>
 
                                   <div>
