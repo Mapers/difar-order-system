@@ -24,11 +24,17 @@ export default function DashboardLayout({
 
     useEffect(() => {
         if (user?.idRol && !socketLocal?.connected) {
-            setSocketLocal(socket);
+            const socketClient = socket;
             console.log('socket executing...');
             socket.on('connect', () => {
                 console.log('Corriendo conexión realtime');
             })
+
+            socket.on('disconnect', () => {
+                console.log('Desconectado de realtime');
+            })
+
+            setSocketLocal(socket);
         }
     }, [user]);
 
