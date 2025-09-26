@@ -40,7 +40,7 @@ export default function DashboardLayout({
     }, [user]);
 
     useEffect(() => {
-        if (socketLocal) {
+        if (socketLocal && user) {
             socketLocal.on('notification:newOrder', data => {
                 console.log('data newOrder', data);
 
@@ -48,10 +48,6 @@ export default function DashboardLayout({
                     audio.play();
                     setNewOrderData(data);
                     setVisibleModalNewOrder(true);
-
-                    setTimeout(() => {
-                        setVisibleModalNewOrder(false);
-                    }, 30000);
                 }
             })
             socketLocal.on('notification:newApprove', data => {
@@ -61,14 +57,10 @@ export default function DashboardLayout({
                     audio.play();
                     setNewOrderData(data);
                     setVisibleModalNewOrder(true);
-
-                    setTimeout(() => {
-                        setVisibleModalNewOrder(false);
-                    }, 30000);
                 }
             })
         }
-    }, [socketLocal]);
+    }, [socketLocal, user]);
 
     const formatDate = (dateString: string) => {
         return new Date(dateString).toLocaleString('es-PE', {
@@ -134,10 +126,6 @@ export default function DashboardLayout({
                                 >
                                     Cerrar
                                 </Button>
-                            </div>
-
-                            <div className="text-xs text-gray-500 text-center">
-                                Este mensaje se cerrará automáticamente en 30 segundos
                             </div>
                         </div>
                     )}
