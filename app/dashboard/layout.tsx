@@ -21,7 +21,11 @@ export default function DashboardLayout({
     const [socketLocal, setSocketLocal] = useState<Socket>();
     const [visibleModalNewOrder, setVisibleModalNewOrder] = useState(false);
     const [newOrderData, setNewOrderData] = useState<any>(null);
-    const [audio] = useState(new Audio('/sounds/beep.mp3'));
+    const [audio, setAudio] = useState<HTMLAudioElement | null>(null);
+
+    useEffect(() => {
+        setAudio(new Audio('/sounds/beep.mp3'));
+    }, []);
 
     useEffect(() => {
         if (user?.idRol && !socketLocal?.connected) {
