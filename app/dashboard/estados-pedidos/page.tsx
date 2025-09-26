@@ -63,6 +63,10 @@ export interface PedidoDet {
   isBonification?: boolean
   isEscale?: boolean
   appliedScale?: any
+  fec_venc_lote?: string
+  cod_lote?: string
+  is_autorizado?: string
+  is_editado?: string
 }
 
 interface Status {

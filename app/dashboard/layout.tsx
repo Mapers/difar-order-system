@@ -49,7 +49,7 @@ export default function DashboardLayout({
                 console.log('data newOrder', data);
 
                 if (user?.idRol !== 1) {
-                    audio.play();
+                    audio?.play();
                     setNewOrderData(data);
                     setVisibleModalNewOrder(true);
                 }
@@ -58,7 +58,7 @@ export default function DashboardLayout({
                 console.log('data newApprove', data);
 
                 if (user?.idRol !== 1) {
-                    audio.play();
+                    audio?.play();
                     setNewOrderData(data);
                     setVisibleModalNewOrder(true);
                 }

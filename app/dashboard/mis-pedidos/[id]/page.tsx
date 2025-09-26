@@ -4,10 +4,22 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { ArrowLeft, Printer, FileDown, Clock, Plus, Trash, Edit, X, Save } from "lucide-react"
+import {
+  ArrowLeft,
+  Printer,
+  FileDown,
+  Clock,
+  Plus,
+  Trash,
+  Edit,
+  X,
+  Save,
+  Check,
+  Pen,
+  ArrowBigDownDash
+} from "lucide-react"
 import Link from "next/link"
 import { useEffect, useState } from "react"
-import { Skeleton } from "@/components/ui/skeleton"
 import apiClient from "@/app/api/client"
 import { useAuth } from "@/context/authContext"
 import { ORDER_STATES } from "@/app/dashboard/mis-pedidos/page"
@@ -101,19 +113,6 @@ export default function OrderDetailsPage({ params }: { params: { id: string } })
 
   const getStateInfo = (stateId: number) => {
     return ORDER_STATES.find(state => state.id === stateId)
-  }
-
-  const canEdit = pedido?.estadodePedido === 1
-
-  const handleEditToggle = async () => {
-    if (isEditing) {
-      setTempDetalles(detalles)
-    } else {
-      const resProducts = await getProductsRequest()
-      const productsData = resProducts.data?.data?.data || []
-      setProducts(productsData)
-    }
-    setIsEditing(!isEditing)
   }
 
   const handleSaveChanges = async () => {
@@ -271,20 +270,22 @@ export default function OrderDetailsPage({ params }: { params: { id: string } })
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-gray-900">
             Pedido #{pedido.nroPedido}
           </h1>
+
+          {auth.user?.idRol !== 1 && (
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" className="gap-2 bg-green-700 text-white" disabled>
+                  <Check className="h-4 w-4"/>
+                  <span className="hidden sm:inline">APROBAR</span>
+                </Button>
+                <Button variant="outline" className="gap-2 bg-red-700 text-white" disabled>
+                  <X className="h-4 w-4"/>
+                  <span className="hidden sm:inline">RECHAZAR</span>
+                </Button>
+              </div>
+          )}
         </div>
         <p className="text-gray-500">Información completa del pedido y sus productos.</p>
       </div>
-
-      {/*<div className="flex justify-end gap-2">*/}
-      {/*  <Button variant="outline" className="gap-2" disabled>*/}
-      {/*    <Printer className="h-4 w-4"/>*/}
-      {/*    <span className="hidden sm:inline">Imprimir</span>*/}
-      {/*  </Button>*/}
-      {/*  <Button variant="outline" className="gap-2" disabled>*/}
-      {/*    <FileDown className="h-4 w-4"/>*/}
-      {/*    <span className="hidden sm:inline">Descargar PDF</span>*/}
-      {/*  </Button>*/}
-      {/*</div>*/}
 
       <div className="grid gap-6 md:grid-cols-2">
         <Card className="shadow-md bg-white">
@@ -460,13 +461,15 @@ export default function OrderDetailsPage({ params }: { params: { id: string } })
             )}
           </div>
         </CardHeader>
+
         <CardContent className="p-0">
-          <div className="rounded-md border m-4 hidden md:block">
+          <div className="rounded-md border m-4 hidden lg:block">
             <Table>
               <TableHeader className="bg-gray-50">
                 <TableRow>
                   <TableHead>Código</TableHead>
                   <TableHead>Producto</TableHead>
+                  <TableHead>Lote - Fec.Venc</TableHead>
                   <TableHead className="text-right">Cantidad</TableHead>
                   <TableHead className="text-right">Precio Unitario</TableHead>
                   <TableHead className="text-right">Total</TableHead>
@@ -475,49 +478,126 @@ export default function OrderDetailsPage({ params }: { params: { id: string } })
               </TableHeader>
               <TableBody>
                 {(isEditing ? tempDetalles : detalles).map((item, index) => (
-                  <TableRow key={item.idPedidodet || index} className="hover:bg-gray-50">
-                    <TableCell>{item.codigoitemPedido}</TableCell>
-                    <TableCell>{item.productoNombre || "Producto no especificado"}</TableCell>
-                    <TableCell className="text-right">
-                      {isEditing ? (
-                        <Input
-                          type="number"
-                          min="1"
-                          value={item.cantPedido}
-                          onChange={(e) => handleQuantityChange(index, Number(e.target.value))}
-                          className="w-20 text-right"
-                        />
-                      ) : (
-                        Number(item.cantPedido)
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {pedido.monedaPedido === "PEN" ? "S/ " : "$"} {item.precioPedido}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {pedido.monedaPedido === "PEN" ? "S/ " : "$"}
-                      {(item.cantPedido * Number(item.precioPedido)).toFixed(2)}{" "}
-                    </TableCell>
-                    {isEditing && (
-                      <TableCell className="text-right">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleRemoveItem(index)}
-                          className="text-red-600 hover:text-red-800"
-                        >
-                          <Trash className="h-4 w-4"/>
-                        </Button>
+                    <TableRow key={item.idPedidodet || index} className="hover:bg-gray-50">
+                      <TableCell>{item.codigoitemPedido}</TableCell>
+                      <TableCell className='flex'>
+                        {item.is_editado === 'S' && <Pen className="h-4 w-4 mr-2 text-blue-600" />}
+                        {item.is_autorizado === 'S' && <ArrowBigDownDash className="h-5 w-5 mr-2 text-orange-600" />}
+                        {item.productoNombre || "Producto no especificado"}
                       </TableCell>
-                    )}
-                  </TableRow>
+                      <TableCell>{item.cod_lote || ''} - {item.fec_venc_lote || ''}</TableCell>
+                      <TableCell className="text-right">
+                        {isEditing ? (
+                            <Input
+                                type="number"
+                                min="1"
+                                value={item.cantPedido}
+                                onChange={(e) => handleQuantityChange(index, Number(e.target.value))}
+                                className="w-20 text-right"
+                            />
+                        ) : (
+                            Number(item.cantPedido)
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {pedido.monedaPedido === "PEN" ? "S/ " : "$"} {item.precioPedido}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {pedido.monedaPedido === "PEN" ? "S/ " : "$"}
+                        {(item.cantPedido * Number(item.precioPedido)).toFixed(2)}{" "}
+                      </TableCell>
+                      {isEditing && (
+                          <TableCell className="text-right">
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleRemoveItem(index)}
+                                className="text-red-600 hover:text-red-800"
+                            >
+                              <Trash className="h-4 w-4"/>
+                            </Button>
+                          </TableCell>
+                      )}
+                    </TableRow>
                 ))}
               </TableBody>
             </Table>
           </div>
 
-          {/* Vista móvil similar con opciones de edición */}
+          <div className="lg:hidden space-y-3 p-4">
+            {(isEditing ? tempDetalles : detalles).map((item, index) => (
+                <Card key={item.idPedidodet || index} className="shadow-sm border">
+                  <CardContent className="p-4">
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <p className="font-medium text-sm text-gray-500">Código</p>
+                          <p className="font-semibold">{item.codigoitemPedido}</p>
+                        </div>
+                        {isEditing && (
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleRemoveItem(index)}
+                                className="text-red-600 hover:text-red-800 h-8 w-8 p-0"
+                            >
+                              <Trash className="h-4 w-4"/>
+                            </Button>
+                        )}
+                      </div>
+
+                      <div>
+                        <p className="font-medium text-sm text-gray-500">Producto</p>
+                        <p className="font-semibold flex">
+                          {item.is_editado === 'S' && <Pen className="h-4 w-4 mr-2 text-blue-600" />}
+                          {item.is_autorizado === 'S' && <ArrowBigDownDash className="h-5 w-5 mr-2 text-orange-600" />}
+                          {item.productoNombre || "Producto no especificado"}
+                        </p>
+                      </div>
+
+                      <div>
+                        <p className="font-medium text-sm text-gray-500">Lote - Fec.Venc</p>
+                        <p>{item.cod_lote || ''} - {item.fec_venc_lote || ''}</p>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <p className="font-medium text-sm text-gray-500">Cantidad</p>
+                          {isEditing ? (
+                              <Input
+                                  type="number"
+                                  min="1"
+                                  value={item.cantPedido}
+                                  onChange={(e) => handleQuantityChange(index, Number(e.target.value))}
+                                  className="w-full"
+                              />
+                          ) : (
+                              <p className="font-semibold">{Number(item.cantPedido)}</p>
+                          )}
+                        </div>
+
+                        <div>
+                          <p className="font-medium text-sm text-gray-500">Precio Unitario</p>
+                          <p className="font-semibold">
+                            {pedido.monedaPedido === "PEN" ? "S/ " : "$"} {item.precioPedido}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="border-t pt-2">
+                        <p className="font-medium text-sm text-gray-500">Total</p>
+                        <p className="font-bold text-lg text-teal-700">
+                          {pedido.monedaPedido === "PEN" ? "S/ " : "$"}
+                          {(item.cantPedido * Number(item.precioPedido)).toFixed(2)}
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+            ))}
+          </div>
         </CardContent>
+
         <CardFooter className="flex justify-end border-t bg-gray-50 p-4">
           <div className="w-full max-w-xs space-y-2">
             <div className="flex justify-between text-sm">

@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import {ArrowLeft, Printer, FileDown, Clock} from "lucide-react"
+import {ArrowLeft, Printer, FileDown, Clock, Pen, ArrowBigDownDash} from "lucide-react"
 import Link from "next/link"
 import { useEffect, useState } from "react"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -12,6 +12,7 @@ import apiClient from "@/app/api/client"
 import {useAuth} from "@/context/authContext";
 import {ORDER_STATES} from "@/app/dashboard/mis-pedidos/page";
 import { use } from 'react'
+import {PedidoDet} from "@/app/dashboard/estados-pedidos/page";
 
 interface PedidoCab {
   idPedidocab: number
@@ -29,16 +30,6 @@ interface PedidoCab {
   direccionEntrega: string
   referenciaDireccion?: string
 
-}
-
-interface PedidoDet {
-  idPedidodet: number
-  idPedidocab: number
-  codigoitemPedido: string
-  cantPedido: string
-  precioPedido: string
-  productoNombre?: string
-  productoUnidad?: string
 }
 
 export default function OrderDetailsPage({ params }: { params: { id: string } }) {
@@ -329,13 +320,13 @@ export default function OrderDetailsPage({ params }: { params: { id: string } })
           <CardTitle className="text-xl font-semibold text-teal-700">Productos</CardTitle>
         </CardHeader>
         <CardContent className="p-0">
-          {/* Tabla para pantallas medianas y grandes */}
           <div className="rounded-md border m-4 hidden md:block">
             <Table>
               <TableHeader className="bg-gray-50">
                 <TableRow>
                   <TableHead>Código</TableHead>
                   <TableHead>Producto</TableHead>
+                  <TableHead>Lote - Fec.Venc</TableHead>
                   <TableHead className="text-right">Cantidad</TableHead>
                   <TableHead className="text-right">Precio Unitario</TableHead>
                   <TableHead className="text-right">Total</TableHead>
@@ -346,7 +337,12 @@ export default function OrderDetailsPage({ params }: { params: { id: string } })
                   detalles.map((item) => (
                     <TableRow key={item.idPedidodet} className="hover:bg-gray-50">
                       <TableCell>{item.codigoitemPedido}</TableCell>
-                      <TableCell>{item.productoNombre || "Producto no especificado"}</TableCell>
+                      <TableCell className='flex'>
+                        {item.is_editado === 'S' && <Pen className="h-4 w-4 mr-2 text-blue-600" />}
+                        {item.is_autorizado === 'S' && <ArrowBigDownDash className="h-5 w-5 mr-2 text-orange-600" />}
+                        {item.productoNombre || "Producto no especificado"}
+                      </TableCell>
+                      <TableCell>{item.cod_lote || ''} - {item.fec_venc_lote || ''}</TableCell>
                       <TableCell className="text-right">
                         {Number(item.cantPedido)}
                       </TableCell>
@@ -370,12 +366,13 @@ export default function OrderDetailsPage({ params }: { params: { id: string } })
             </Table>
           </div>
 
-          {/* Vista de tarjetas para móviles */}
           <div className="m-4 space-y-4 md:hidden">
             {detalles.length > 0 ? (
               detalles.map((item) => (
                 <div key={item.idPedidodet} className="border rounded-md p-3 bg-gray-50">
-                  <div className="font-medium mb-2">
+                  <div className="font-medium mb-2 flex">
+                    {item.is_editado === 'S' && <Pen className="h-4 w-4 mr-2 text-blue-600" />}
+                    {item.is_autorizado === 'S' && <ArrowBigDownDash className="h-5 w-5 mr-2 text-orange-600" />}
                     {item.productoNombre || "Producto no especificado"}
                   </div>
                   <div className="grid grid-cols-2 gap-2 text-sm">
@@ -386,6 +383,10 @@ export default function OrderDetailsPage({ params }: { params: { id: string } })
                     <div>
                       <p className="text-gray-500">Unidad:</p>
                       <p className="font-medium">{item.productoUnidad || "und"}</p>
+                    </div>
+                    <div>
+                      <p className="font-medium text-sm text-gray-500">Lote - Fec.Venc</p>
+                      <p>{item.cod_lote || ''} - {item.fec_venc_lote || ''}</p>
                     </div>
                     <div>
                       <p className="text-gray-500">Cantidad:</p>

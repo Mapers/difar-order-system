@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { ArrowLeft, Printer, FileDown, Clock, Plus, Trash, Edit, X, Save } from "lucide-react"
+import {ArrowLeft, Printer, FileDown, Clock, Plus, Trash, Edit, X, Save, Pen, ArrowBigDownDash} from "lucide-react"
 import Link from "next/link"
 import { useEffect, useState } from "react"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -486,6 +486,7 @@ export default function OrderDetailsPage({ params }: { params: { id: string } })
                 <TableRow>
                   <TableHead>Código</TableHead>
                   <TableHead>Producto</TableHead>
+                  <TableHead>Lote - Fec.Venc</TableHead>
                   <TableHead className="text-right">Cantidad</TableHead>
                   <TableHead className="text-right">Precio Unitario</TableHead>
                   <TableHead className="text-right">Total</TableHead>
@@ -496,7 +497,12 @@ export default function OrderDetailsPage({ params }: { params: { id: string } })
                 {(isEditing ? tempDetalles : detalles).map((item, index) => (
                   <TableRow key={item.idPedidodet || index} className="hover:bg-gray-50">
                     <TableCell>{item.codigoitemPedido}</TableCell>
-                    <TableCell>{item.productoNombre || "Producto no especificado"}</TableCell>
+                    <TableCell className='flex'>
+                      {item.is_editado === 'S' && <Pen className="h-4 w-4 mr-2 text-blue-600" />}
+                      {item.is_autorizado === 'S' && <ArrowBigDownDash className="h-5 w-5 mr-2 text-orange-600" />}
+                      {item.productoNombre || "Producto no especificado"}
+                    </TableCell>
+                    <TableCell>{item.cod_lote || ''} - {item.fec_venc_lote || ''}</TableCell>
                     <TableCell className="text-right">
                       {isEditing ? (
                         <Input
@@ -535,7 +541,78 @@ export default function OrderDetailsPage({ params }: { params: { id: string } })
             </Table>
           </div>
 
-          {/* Vista móvil similar con opciones de edición */}
+          <div className="lg:hidden space-y-3 p-4">
+            {(isEditing ? tempDetalles : detalles).map((item, index) => (
+                <Card key={item.idPedidodet || index} className="shadow-sm border">
+                  <CardContent className="p-4">
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <p className="font-medium text-sm text-gray-500">Código</p>
+                          <p className="font-semibold">{item.codigoitemPedido}</p>
+                        </div>
+                        {isEditing && (
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleRemoveItem(index)}
+                                className="text-red-600 hover:text-red-800 h-8 w-8 p-0"
+                            >
+                              <Trash className="h-4 w-4"/>
+                            </Button>
+                        )}
+                      </div>
+
+                      <div>
+                        <p className="font-medium text-sm text-gray-500">Producto</p>
+                        <p className="font-semibold flex">
+                          {item.is_editado === 'S' && <Pen className="h-4 w-4 mr-2 text-blue-600" />}
+                          {item.is_autorizado === 'S' && <ArrowBigDownDash className="h-5 w-5 mr-2 text-orange-600" />}
+                          {item.productoNombre || "Producto no especificado"}
+                        </p>
+                      </div>
+
+                      <div>
+                        <p className="font-medium text-sm text-gray-500">Lote - Fec.Venc</p>
+                        <p>{item.cod_lote || ''} - {item.fec_venc_lote || ''}</p>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <p className="font-medium text-sm text-gray-500">Cantidad</p>
+                          {isEditing ? (
+                              <Input
+                                  type="number"
+                                  min="1"
+                                  value={item.cantPedido}
+                                  onChange={(e) => handleQuantityChange(index, Number(e.target.value))}
+                                  className="w-full"
+                              />
+                          ) : (
+                              <p className="font-semibold">{Number(item.cantPedido)}</p>
+                          )}
+                        </div>
+
+                        <div>
+                          <p className="font-medium text-sm text-gray-500">Precio Unitario</p>
+                          <p className="font-semibold">
+                            {pedido.monedaPedido === "PEN" ? "S/ " : "$"} {item.precioPedido}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="border-t pt-2">
+                        <p className="font-medium text-sm text-gray-500">Total</p>
+                        <p className="font-bold text-lg text-teal-700">
+                          {pedido.monedaPedido === "PEN" ? "S/ " : "$"}
+                          {(item.cantPedido * Number(item.precioPedido)).toFixed(2)}
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+            ))}
+          </div>
         </CardContent>
         <CardFooter className="flex justify-end border-t bg-gray-50 p-4">
           <div className="w-full max-w-xs space-y-2">
