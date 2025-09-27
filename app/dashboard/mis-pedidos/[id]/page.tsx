@@ -315,7 +315,7 @@ export default function OrderDetailsPage({ params }: { params: { id: string } })
             </h1>
           </div>
 
-          {(auth.user?.idRol !== 1 && (pedido.por_autorizar === 'S' && pedido.is_autorizado === '')) && (
+          {(auth.user?.idRol !== 1 && (pedido.por_autorizar === 'S' && (pedido.is_autorizado === '' || pedido.is_autorizado === null))) && (
               <div className="flex justify-end gap-2">
                 <Button
                     variant="outline"
