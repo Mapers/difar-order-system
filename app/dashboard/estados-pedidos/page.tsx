@@ -10,7 +10,7 @@ import {
   Home,
   XCircle,
   Truck,
-  MapPin, CheckCircle, Clock, Edit, FileText, MoreHorizontal, Download, Printer, Receipt
+  MapPin, CheckCircle, Clock, Edit, FileText, MoreHorizontal, Download, Printer, Receipt, OctagonAlert
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -32,6 +32,7 @@ import {useAuth} from "@/context/authContext";
 import Link from "next/link";
 import {generateOrderPdf} from "@/lib/pdf";
 import {TimelineModal} from "@/app/dashboard/estados-pedidos/timeline-modal";
+import {ORDER_STATES} from "@/app/dashboard/mis-pedidos/page";
 
 export interface Pedido {
   idPedidocab: number
@@ -49,6 +50,8 @@ export interface Pedido {
   direccionEntrega?: string
   referenciaDireccion?: string
   codigoCliente: string
+  por_autorizar: string
+  is_autorizado: string
 }
 
 export interface PedidoDet {
@@ -73,81 +76,6 @@ interface Status {
   nombre_estado: string
   id_estado_pedido: number
 }
-
-const ORDER_STATES = [
-  {
-    id: 1,
-    name: "Pendiente",
-    description: "Pedido registrado, sin validación ni asignación de stock.",
-    documents: "Ninguno",
-    icon: Clock,
-    color: "bg-gray-100 text-gray-800",
-    borderColor: "border-gray-300",
-  },
-  {
-    id: 2,
-    name: "Validado / Confirmado",
-    description: "Se valida stock, cliente y condiciones de venta.",
-    documents: "Ninguno",
-    icon: CheckCircle,
-    color: "bg-blue-100 text-blue-800",
-    borderColor: "border-blue-300",
-  },
-  {
-    id: 3,
-    name: "En Preparación",
-    description: "Se separa el stock y se alista el pedido físicamente.",
-    documents: "Ninguno (solo preparación)",
-    icon: Package,
-    color: "bg-yellow-100 text-yellow-800",
-    borderColor: "border-yellow-300",
-  },
-  {
-    id: 4,
-    name: "Listo para Despacho",
-    description: "El pedido está completamente preparado y aquí se generan los documentos:",
-    documents: "Guía → primero / Factura/Boleta → después de la guía",
-    icon: Truck,
-    color: "bg-orange-100 text-orange-800",
-    borderColor: "border-orange-300",
-  },
-  {
-    id: 5,
-    name: "Enviado a Reparto",
-    description: "El pedido se entrega al transportista. El repartidor lleva la guía y la factura.",
-    documents: "Ya emitidos antes",
-    icon: MapPin,
-    color: "bg-purple-100 text-purple-800",
-    borderColor: "border-purple-300",
-  },
-  {
-    id: 6,
-    name: "En Reparto / En Camino",
-    description: "Pedido en tránsito.",
-    documents: "Ya emitidos antes",
-    icon: Truck,
-    color: "bg-indigo-100 text-indigo-800",
-    borderColor: "border-indigo-300",
-  },
-  {
-    id: 7,
-    name: "Entregado",
-    description: "Pedido entregado al cliente.",
-    documents: "Ya emitidos antes",
-    icon: Home,
-    color: "bg-green-100 text-green-800",
-    borderColor: "border-green-300",
-  },
-  {
-    id: 8,
-    name: "Devuelto / Anulado",
-    description: "Si el cliente no recibe o rechaza el pedido.",
-    documents: "Nota de crédito, si aplica",
-    icon: XCircle,
-    color: "bg-red-100 text-red-800",
-    borderColor: "border-red-300",
-  },
-]
 
 export default function OrderStatusManagementPage() {
   const [orders, setOrders] = useState<Pedido[]>([])
@@ -237,7 +165,9 @@ export default function OrderStatusManagementPage() {
     setIsDocumentsModalOpen(true)
   }
 
-  const getStateInfo = (stateId: number) => {
+  const getStateInfo = (stateId: number, porAutorizar: string, isAutorizado: string) => {
+    if (porAutorizar === 'S' && isAutorizado === 'N') return ORDER_STATES.find(e => e.id === -2);
+    if (porAutorizar === 'S' && isAutorizado === '') return ORDER_STATES.find(e => e.id === -1);
     return ORDER_STATES.find(state => state.id === stateId)
   }
 
@@ -417,7 +347,7 @@ export default function OrderStatusManagementPage() {
                 ))
               ) : orders.length > 0 ? (
                 orders.map((order, index) => {
-                  const stateInfo = getStateInfo(order.estadodePedido)
+                  const stateInfo = getStateInfo(order.estadodePedido, order.por_autorizar, order.is_autorizado)
                   const StateIcon = stateInfo?.icon || Clock
 
                   return (
@@ -447,7 +377,7 @@ export default function OrderStatusManagementPage() {
                             variant="outline"
                             size="sm"
                             onClick={() => handleStateChange(order)}
-                            disabled={order.estadodePedido >= 8}
+                            disabled={order.estadodePedido >= 8 || (order.por_autorizar === 'S' && (order.is_autorizado === 'N' || order.is_autorizado === '')) }
                             className="text-xs"
                           >
                             <Edit className="h-3 w-3 mr-1" />
@@ -508,7 +438,7 @@ export default function OrderStatusManagementPage() {
               ))
             ) : orders.length > 0 ? (
               orders.map((order, index) => {
-                const stateInfo = getStateInfo(order.estadodePedido)
+                const stateInfo = getStateInfo(order.estadodePedido, order.por_autorizar, order.is_autorizado)
                 const StateIcon = stateInfo?.icon || Clock
 
                 return (
@@ -521,10 +451,16 @@ export default function OrderStatusManagementPage() {
                             {format(parseISO(order.fechaPedido), "dd/MM/yyyy")}
                           </p>
                         </div>
-                        <Badge className={`${stateInfo?.color} flex items-center gap-1 text-xs`}>
-                          <StateIcon className="h-3 w-3" />
-                          {stateInfo?.name || 'Desconocido'}
-                        </Badge>
+                        {(order.por_autorizar === 'S' && order.is_autorizado === 'N')
+                            ? <Badge className={`bg-teal-100 text-teal-800 flex items-center gap-1 text-xs`}>
+                              <OctagonAlert className="h-3 w-3" />
+                              POR AUTORIZAR
+                            </Badge>
+                            : <Badge className={`${stateInfo?.color} flex items-center gap-1 text-xs`}>
+                              <StateIcon className="h-3 w-3" />
+                              {stateInfo?.name || 'Desconocido'}
+                            </Badge>
+                        }
                       </div>
 
                       <div className="space-y-2 mb-3">
@@ -550,7 +486,7 @@ export default function OrderStatusManagementPage() {
                           variant="outline"
                           size="sm"
                           onClick={() => handleStateChange(order)}
-                          disabled={order.estadodePedido >= 8}
+                          disabled={order.estadodePedido >= 8 || (order.por_autorizar === 'S' && order.is_autorizado === 'N')}
                           className="flex-1 text-xs"
                         >
                           <Edit className="h-3 w-3 mr-1" />
@@ -618,7 +554,7 @@ export default function OrderStatusManagementPage() {
               Documentos del Pedido {selectedOrder?.idPedidocab}
             </DialogTitle>
             <DialogDescription>
-              Cliente: {selectedOrder?.nombreCliente} - Estado: {getStateInfo(selectedOrder?.estadodePedido || 0)?.name}
+              Cliente: {selectedOrder?.nombreCliente} - Estado: {getStateInfo(selectedOrder?.estadodePedido || 0, selectedOrder?.por_autorizar, selectedOrder?.is_autorizado)?.name}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -642,8 +578,8 @@ export default function OrderStatusManagementPage() {
             <div>
               <Label>Estado Actual</Label>
               <div className="mt-1">
-                <Badge className={getStateInfo(selectedOrder?.estadodePedido || 0)?.color}>
-                  {getStateInfo(selectedOrder?.estadodePedido || 0)?.name}
+                <Badge className={getStateInfo(selectedOrder?.estadodePedido, selectedOrder?.por_autorizar, selectedOrder?.is_autorizado)?.color}>
+                  {getStateInfo(selectedOrder?.estadodePedido, selectedOrder?.por_autorizar, selectedOrder?.is_autorizado)?.name}
                 </Badge>
               </div>
             </div>
@@ -652,8 +588,8 @@ export default function OrderStatusManagementPage() {
               <Label htmlFor="new-state">Nuevo Estado</Label>
               <div className="mt-2 p-3 border rounded-md bg-gray-50">
                 <div className="flex items-center gap-2">
-                  <Badge className={getStateInfo((selectedOrder?.estadodePedido || 0) + 1)?.color}>
-                    {getStateInfo((selectedOrder?.estadodePedido || 0) + 1)?.name}
+                  <Badge className={getStateInfo((selectedOrder?.estadodePedido || 0) + 1, selectedOrder?.por_autorizar, selectedOrder?.is_autorizado)?.color}>
+                    {getStateInfo((selectedOrder?.estadodePedido || 0) + 1, selectedOrder?.por_autorizar, selectedOrder?.is_autorizado)?.name}
                   </Badge>
                   <span className="text-sm text-gray-600">
               (Siguiente estado)
@@ -661,7 +597,7 @@ export default function OrderStatusManagementPage() {
                 </div>
               </div>
               <p className="mt-2 text-sm text-gray-500">
-                {getStateInfo((selectedOrder?.estadodePedido || 0) + 1)?.description}
+                {getStateInfo((selectedOrder?.estadodePedido || 0) + 1, selectedOrder?.por_autorizar, selectedOrder?.is_autorizado)?.description}
               </p>
             </div>
           </div>

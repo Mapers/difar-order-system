@@ -4,7 +4,20 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import {ArrowLeft, Printer, FileDown, Clock, Plus, Trash, Edit, X, Save, Pen, ArrowBigDownDash} from "lucide-react"
+import {
+  ArrowLeft,
+  Printer,
+  FileDown,
+  Clock,
+  Plus,
+  Trash,
+  Edit,
+  X,
+  Save,
+  Pen,
+  ArrowBigDownDash,
+  OctagonAlert
+} from "lucide-react"
 import Link from "next/link"
 import { useEffect, useState } from "react"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -99,7 +112,9 @@ export default function OrderDetailsPage({ params }: { params: { id: string } })
 
   const { subtotal, igv, total } = calculateTotals(isEditing ? tempDetalles : detalles)
 
-  const getStateInfo = (stateId: number) => {
+  const getStateInfo = (stateId: number, porAutorizar: string, isAutorizado: string) => {
+    if (porAutorizar === 'S' && isAutorizado === 'N') return ORDER_STATES.find(e => e.id === -2);
+    if (porAutorizar === 'S' && isAutorizado === '') return ORDER_STATES.find(e => e.id === -1);
     return ORDER_STATES.find(state => state.id === stateId)
   }
 
@@ -344,8 +359,8 @@ export default function OrderDetailsPage({ params }: { params: { id: string } })
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-500">Estado:</p>
-                <Badge className={`${getStateInfo(pedido.estadodePedido)?.color} flex items-center gap-1 text-xs`}>
-                  {getStateInfo(pedido.estadodePedido)?.name || 'Desconocido'}
+                <Badge className={`${getStateInfo(pedido.estadodePedido, pedido.por_autorizar, pedido.is_autorizado)?.color} flex items-center gap-1 text-xs`}>
+                  {getStateInfo(pedido.estadodePedido, pedido.por_autorizar, pedido.is_autorizado)?.name || 'Desconocido'}
                 </Badge>
               </div>
               {pedido.notaPedido && (

@@ -18,7 +18,7 @@ import {
   MapPin,
   Home,
   XCircle,
-  UserSearch
+  UserSearch, OctagonAlert
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Label } from "@/components/ui/label"
@@ -118,6 +118,25 @@ export const ORDER_STATES = [
     color: "bg-red-100 text-red-800",
     borderColor: "border-red-300",
   },
+
+  {
+    id: -1,
+    name: "POR AUTORIZAR",
+    description: "Si el cliente no recibe o rechaza el pedido.",
+    documents: "Nota de crédito, si aplica",
+    icon: XCircle,
+    color: "bg-teal-100 text-teal-800",
+    borderColor: "border-red-300",
+  },
+  {
+    id: -2,
+    name: "RECHAZADO",
+    description: "Si el cliente no recibe o rechaza el pedido.",
+    documents: "Nota de crédito, si aplica",
+    icon: XCircle,
+    color: "bg-red-100 text-red-800",
+    borderColor: "border-red-300",
+  },
 ]
 
 interface Pedido {
@@ -130,6 +149,8 @@ interface Pedido {
   monedaPedido: string
   estadodePedido: number
   totalPedido: string
+  is_autorizado: string
+  por_autorizar: string
 }
 
 export default function MyOrdersPage() {
@@ -238,7 +259,9 @@ export default function MyOrdersPage() {
     }
   }
 
-  const getStateInfo = (stateId: number) => {
+  const getStateInfo = (stateId: number, porAutorizar: string, isAutorizado: string) => {
+    if (porAutorizar === 'S' && isAutorizado === 'N') return ORDER_STATES.find(e => e.id === -2);
+    if (porAutorizar === 'S' && isAutorizado === '') return ORDER_STATES.find(e => e.id === -1);
     return ORDER_STATES.find(state => state.id === stateId)
   }
 
@@ -252,40 +275,6 @@ export default function MyOrdersPage() {
       <Card className="shadow-md">
         <CardHeader className="flex flex-col sm:flex-row justify-between gap-4 sm:items-center border-b bg-gray-50">
           <CardTitle className="text-xl font-semibold text-teal-700">Filtros de Búsqueda</CardTitle>
-          {/*<div className="flex flex-col sm:flex-row gap-4 sm:items-center">*/}
-          {/*  <div className="relative">*/}
-          {/*    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500"/>*/}
-          {/*    <Input*/}
-          {/*      type="search"*/}
-          {/*      placeholder="Buscar pedidos..."*/}
-          {/*      className="pl-8 bg-white"*/}
-          {/*      value={searchQuery}*/}
-          {/*      onChange={(e) => {*/}
-          {/*        setSearchQuery(e.target.value)*/}
-          {/*        setCurrentPage(1)*/}
-          {/*      }}*/}
-          {/*    />*/}
-          {/*  </div>*/}
-            {/*<div className="w-full sm:w-40">*/}
-            {/*  <Select*/}
-            {/*    value={filters.estado}*/}
-            {/*    onValueChange={(value) => {*/}
-            {/*      setFilters(prev => ({...prev, estado: value}))*/}
-            {/*      setCurrentPage(1)*/}
-            {/*    }}*/}
-            {/*  >*/}
-            {/*    <SelectTrigger className="bg-white">*/}
-            {/*      <SelectValue placeholder="Estado"/>*/}
-            {/*    </SelectTrigger>*/}
-            {/*    <SelectContent>*/}
-            {/*      <SelectItem value="todos">Todos</SelectItem>*/}
-            {/*      <SelectItem value="Entregado">Entregados</SelectItem>*/}
-            {/*      <SelectItem value="En proceso">En proceso</SelectItem>*/}
-            {/*      <SelectItem value="Pendiente">Pendientes</SelectItem>*/}
-            {/*    </SelectContent>*/}
-            {/*  </Select>*/}
-            {/*</div>*/}
-          {/*</div>*/}
         </CardHeader>
         <CardContent className="p-0">
           <form onSubmit={handleFilterSubmit} className="p-4 grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -381,7 +370,7 @@ export default function MyOrdersPage() {
           ))
         ) : orders.length > 0 ? (
           orders.map((pedido) => {
-            const stateInfo = getStateInfo(pedido.estadodePedido)
+            const stateInfo = getStateInfo(pedido.estadodePedido, pedido.por_autorizar, pedido.is_autorizado)
             const StateIcon = stateInfo?.icon || Clock
 
             return (
@@ -465,33 +454,6 @@ export default function MyOrdersPage() {
           </div>
         )}
       </div>
-
-      {/*<div className="flex items-center justify-between px-4 pb-4">*/}
-      {/*  <div className="text-sm text-gray-500">*/}
-      {/*    Mostrando {orders.length} de {totalItems} pedidos*/}
-      {/*  </div>*/}
-      {/*  <Pagination>*/}
-      {/*    <PaginationContent>*/}
-      {/*      <PaginationItem>*/}
-      {/*        <PaginationPrevious*/}
-      {/*          onClick={handlePreviousPage}*/}
-      {/*          className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}*/}
-      {/*        />*/}
-      {/*      </PaginationItem>*/}
-      {/*      <PaginationItem>*/}
-      {/*        <span className="px-4 py-2 text-sm font-medium">*/}
-      {/*          Página {currentPage} de {totalPages}*/}
-      {/*        </span>*/}
-      {/*      </PaginationItem>*/}
-      {/*      <PaginationItem>*/}
-      {/*        <PaginationNext*/}
-      {/*          onClick={handleNextPage}*/}
-      {/*          className={currentPage >= totalPages ? "pointer-events-none opacity-50" : ""}*/}
-      {/*        />*/}
-      {/*      </PaginationItem>*/}
-      {/*    </PaginationContent>*/}
-      {/*  </Pagination>*/}
-      {/*</div>*/}
     </div>
   )
 }

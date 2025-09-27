@@ -16,7 +16,7 @@ import {
   Save,
   Check,
   Pen,
-  ArrowBigDownDash
+  ArrowBigDownDash, OctagonAlert, CheckCircle, XCircle
 } from "lucide-react"
 import Link from "next/link"
 import { useEffect, useState } from "react"
@@ -40,6 +40,7 @@ import {getBonificadosRequest, getEscalasRequest, getProductsRequest} from "@/ap
 import {IPromocionRequest} from "@/interface/order/product-interface";
 import ModalLoader from "@/components/modal/modalLoader";
 import * as moment from "moment/moment";
+import {AuthorizationModal} from "@/app/components/modals/authorization-modal";
 
 interface IProduct {
   IdArticulo: string
@@ -64,6 +65,45 @@ export default function OrderDetailsPage({ params }: { params: { id: string } })
   const [quantity, setQuantity] = useState(1)
   const [modalLoader, setModalLoader] = useState<'BONIFICADO' | 'ESCALA' | 'EVALUACION' | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+
+  const [authorizationModalOpen, setAuthorizationModalOpen] = useState(false)
+  const [authorizationAction, setAuthorizationAction] = useState<'authorize' | 'reject'>('authorize')
+  const [authorizationLoading, setAuthorizationLoading] = useState(false)
+
+  const handleAuthorization = async () => {
+    if (!pedido) return
+
+    try {
+      setAuthorizationLoading(true)
+
+      if (authorizationAction === 'authorize') {
+        await apiClient.post('/pedidos/autorizar', {
+          nroPedido: pedido.nroPedido,
+          status: 'S',
+        })
+
+        setPedido(prev => prev ? { ...prev, is_autorizado: 'S' } : null)
+      } else {
+        await apiClient.post('/pedidos/autorizar', {
+          nroPedido: pedido.nroPedido,
+          status: 'N'
+        })
+
+        setPedido(prev => prev ? { ...prev, is_autorizado: 'N' } : null)
+      }
+
+      setAuthorizationModalOpen(false)
+    } catch (error) {
+      console.error('Error en autorización:', error)
+    } finally {
+      setAuthorizationLoading(false)
+    }
+  }
+
+  const openAuthorizationModal = (action: 'authorize' | 'reject') => {
+    setAuthorizationAction(action)
+    setAuthorizationModalOpen(true)
+  }
 
   const auth = useAuth();
   const { id } = use(params)
@@ -111,7 +151,9 @@ export default function OrderDetailsPage({ params }: { params: { id: string } })
 
   const { subtotal, igv, total } = calculateTotals(isEditing ? tempDetalles : detalles)
 
-  const getStateInfo = (stateId: number) => {
+  const getStateInfo = (stateId: number, porAutorizar: string, isAutorizado: string) => {
+    if (porAutorizar === 'S' && isAutorizado === 'N') return ORDER_STATES.find(e => e.id === -2);
+    if (porAutorizar === 'S' && isAutorizado === '') return ORDER_STATES.find(e => e.id === -1);
     return ORDER_STATES.find(state => state.id === stateId)
   }
 
@@ -260,25 +302,37 @@ export default function OrderDetailsPage({ params }: { params: { id: string } })
   return (
     <div className="grid gap-6">
       <div className="flex flex-col gap-2">
-        <div className="flex items-center gap-4">
-          <Link href="/dashboard/mis-pedidos">
-            <Button variant="outline" size="icon" className="h-8 w-8">
-              <ArrowLeft className="h-4 w-4"/>
-              <span className="sr-only">Volver</span>
-            </Button>
-          </Link>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-gray-900">
-            Pedido #{pedido.nroPedido}
-          </h1>
+        <div className="flex items-center justify-between gap-4">
+          <div className='flex items-center gap-4'>
+            <Link href="/dashboard/mis-pedidos">
+              <Button variant="outline" size="icon" className="h-8 w-8">
+                <ArrowLeft className="h-4 w-4"/>
+                <span className="sr-only">Volver</span>
+              </Button>
+            </Link>
+            <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-gray-900">
+              Pedido #{pedido.nroPedido}
+            </h1>
+          </div>
 
-          {auth.user?.idRol !== 1 && (
+          {(auth.user?.idRol !== 1 && (pedido.por_autorizar === 'S' && pedido.is_autorizado === '')) && (
               <div className="flex justify-end gap-2">
-                <Button variant="outline" className="gap-2 bg-green-700 text-white" disabled>
-                  <Check className="h-4 w-4"/>
-                  <span className="hidden sm:inline">APROBAR</span>
+                <Button
+                    variant="outline"
+                    className="gap-2 bg-green-600 hover:bg-green-700 text-white"
+                    onClick={() => openAuthorizationModal('authorize')}
+                    disabled={authorizationLoading}
+                >
+                  <CheckCircle className="h-4 w-4"/>
+                  <span className="hidden sm:inline">AUTORIZAR</span>
                 </Button>
-                <Button variant="outline" className="gap-2 bg-red-700 text-white" disabled>
-                  <X className="h-4 w-4"/>
+                <Button
+                    variant="outline"
+                    className="gap-2 bg-red-600 hover:bg-red-700 text-white"
+                    onClick={() => openAuthorizationModal('reject')}
+                    disabled={authorizationLoading}
+                >
+                  <XCircle className="h-4 w-4"/>
                   <span className="hidden sm:inline">RECHAZAR</span>
                 </Button>
               </div>
@@ -326,8 +380,8 @@ export default function OrderDetailsPage({ params }: { params: { id: string } })
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-500">Estado:</p>
-                <Badge className={`${getStateInfo(pedido.estadodePedido)?.color} flex items-center gap-1 text-xs`}>
-                  {getStateInfo(pedido.estadodePedido)?.name || 'Desconocido'}
+                <Badge className={`${getStateInfo(pedido.estadodePedido, pedido.por_autorizar, pedido.is_autorizado)?.color} flex items-center gap-1 text-xs`}>
+                  {getStateInfo(pedido.estadodePedido, pedido.por_autorizar, pedido.is_autorizado)?.name || 'Desconocido'}
                 </Badge>
               </div>
               {pedido.notaPedido && (
@@ -633,6 +687,15 @@ export default function OrderDetailsPage({ params }: { params: { id: string } })
         open={isLoading}
         onOpenChange={setIsLoading}
         caseKey={modalLoader ?? undefined}
+      />
+
+      <AuthorizationModal
+          open={authorizationModalOpen}
+          onOpenChange={setAuthorizationModalOpen}
+          pedido={pedido}
+          action={authorizationAction}
+          onConfirm={handleAuthorization}
+          loading={authorizationLoading}
       />
     </div>
   )
