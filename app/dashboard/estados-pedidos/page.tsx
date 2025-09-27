@@ -167,7 +167,7 @@ export default function OrderStatusManagementPage() {
 
   const getStateInfo = (stateId: number, porAutorizar: string, isAutorizado: string) => {
     if (porAutorizar === 'S' && isAutorizado === 'N') return ORDER_STATES.find(e => e.id === -2);
-    if (porAutorizar === 'S' && isAutorizado === '') return ORDER_STATES.find(e => e.id === -1);
+    if (porAutorizar === 'S' && (isAutorizado === '' || isAutorizado === null)) return ORDER_STATES.find(e => e.id === -1);
     return ORDER_STATES.find(state => state.id === stateId)
   }
 
