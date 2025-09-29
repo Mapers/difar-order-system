@@ -8,7 +8,7 @@ function money(n: string) {
 type TableLayout = {
   x: number
   y: number
-  widths: { qty: number; desc: number; lot: number; due: number; unit: number; amt: number }
+  widths: { qty: number; desc: number; code: number; lot: number; due: number; unit: number; amt: number }
   paddingX: number
   rowH: number
   headerH: number
@@ -16,7 +16,7 @@ type TableLayout = {
 
 export async function generateOrderPdf(order: Pedido, items: PedidoDet[]): Promise<Blob> {
   const pdfDoc = await PDFDocument.create()
-  let page = pdfDoc.addPage([595.28, 841.89]) // A4
+  let page = pdfDoc.addPage([595.28, 841.89])
   const { width, height } = page.getSize()
   const margin = 36
   const contentWidth = width - margin * 2
@@ -26,10 +26,8 @@ export async function generateOrderPdf(order: Pedido, items: PedidoDet[]): Promi
 
   let y = height - margin
 
-  // Cargar y agregar el logo
   let logoImage = null;
   try {
-    // Fetch del logo desde la ruta pública
     const logoResponse = await fetch('/difar-logo.png');
     const logoBuffer = await logoResponse.arrayBuffer();
     logoImage = await pdfDoc.embedPng(logoBuffer);
@@ -37,7 +35,6 @@ export async function generateOrderPdf(order: Pedido, items: PedidoDet[]): Promi
     console.warn('No se pudo cargar el logo:', error);
   }
 
-  // Widget superior derecho con título y número centrados
   const title = "RECIBO DE VENTA"
   const numberStr = "Nro. " + String(order?.nroPedido || 0).padStart(10, '0')
   const titleSize = 16
@@ -57,7 +54,7 @@ export async function generateOrderPdf(order: Pedido, items: PedidoDet[]): Promi
   const logoY = y - logoHeight
 
   const widgetX = width - margin - widgetW
-  const widgetY = y - widgetH + 2 // pegado arriba
+  const widgetY = y - widgetH + 2
 
   if (logoImage) {
     page.drawImage(logoImage, {
@@ -67,7 +64,6 @@ export async function generateOrderPdf(order: Pedido, items: PedidoDet[]): Promi
       height: logoHeight,
     });
   } else {
-    // Fallback: texto DIFAR si no hay logo
     page.drawText("DIFAR", {
       x: logoX,
       y: logoY + logoHeight / 2 - 6,
@@ -77,14 +73,12 @@ export async function generateOrderPdf(order: Pedido, items: PedidoDet[]): Promi
     });
   }
 
-  // Dibujar rectángulo redondeado (borde gris claro, fondo muy claro)
   drawRoundedRect(page, widgetX, widgetY, widgetW, widgetH, 10, {
     fill: rgb(0.985, 0.985, 0.985),
     stroke: rgb(0.74, 0.74, 0.74),
     borderWidth: 1,
   })
 
-  // Texto centrado dentro del widget
   const centerX = widgetX + widgetW / 2
   const titleX = centerX - titleW / 2
   const titleY = widgetY + widgetH - padY - titleSize + 2
@@ -94,45 +88,71 @@ export async function generateOrderPdf(order: Pedido, items: PedidoDet[]): Promi
   const numY = titleY - gap - numSize
   page.drawText(numberStr, { x: numX, y: numY, size: numSize, font: helvBold })
 
-  // Continuar el contenido por debajo del widget
   y -= widgetH + 10
   line(page, margin, y, width - margin, y, 1, rgb(0.8, 0.8, 0.8))
-  y -= 10
+  y -= 15
 
-  // Datos cabecera
-  y = drawKeyVal(page, "Fecha de Emisión:", order.fechaPedido, margin, y, helvBold, helv)
-  y = drawKeyVal(page, "Cliente:", order.nombreCliente, margin, y, helvBold, helv)
-  y = drawKeyVal(page, "DNI/RUC:", order.codigoCliente, margin, y, helvBold, helv)
-  y = drawKeyVal(page, "Dirección:", order?.direccionEntrega || '-', margin, y, helvBold, helv)
-  y -= 6
+  const col1X = margin
+  let col1Y = y
 
-  // Tabla
+  page.drawText("Fecha de Emisión:", { x: col1X, y: col1Y, size: 10, font: helvBold })
+  page.drawText(order.fechaPedido, { x: col1X + 100, y: col1Y, size: 10, font: helv })
+  col1Y -= 14
+
+  const nombreComercialLines = wrapText(order.nombreComercial.trim(), helv, 10, contentWidth - 100)
+  page.drawText("Nombre Comercial:", { x: col1X, y: col1Y, size: 10, font: helvBold })
+  let nombreY = col1Y
+  for (const line of nombreComercialLines) {
+    page.drawText(line, { x: col1X + 100, y: nombreY, size: 10, font: helv })
+    nombreY -= 12
+  }
+  col1Y -= (nombreComercialLines.length * 12) + 2
+
+  const direccionLines = wrapText(order?.direccionEntrega || '-', helv, 10, contentWidth - 100)
+  page.drawText("Dirección:", { x: col1X, y: col1Y, size: 10, font: helvBold })
+  let direccionY = col1Y
+  for (const line of direccionLines) {
+    page.drawText(line, { x: col1X + 100, y: direccionY, size: 10, font: helv })
+    direccionY -= 12
+  }
+  col1Y -= (direccionLines.length * 12) + 2
+
+  const col2X = width / 2 + 10
+
+  page.drawText("Condición:", { x: col1X, y: col1Y, size: 10, font: helvBold })
+  page.drawText(order?.condicionPedido || '-', { x: col1X + 100, y: col1Y, size: 10, font: helv })
+
+
+  page.drawText("Vendedor:", { x: col2X, y: col1Y, size: 10, font: helvBold })
+  page.drawText(order?.nombreVendedor || '-', { x: col2X + 60, y: col1Y, size: 10, font: helv })
+
+  col1Y -= (direccionLines.length * 12) + 10
+  y = Math.min(col1Y, y)
+
   const layout: TableLayout = {
     x: margin,
     y,
     widths: {
-      qty: 40,
-      desc: contentWidth - (40 + 70 + 70 + 75 + 85),
-      lot: 70,
-      due: 70,
-      unit: 75,
-      amt: 85,
+      qty: 40,        // CANT.
+      desc: 135,      // DESCRIPCIÓN
+      code: 60,       // CÓDIGO
+      lot: 70,        // LOTE (nuevo)
+      due: 70,        // FEC. VENC.
+      unit: 70,       // P. UNIT.
+      amt: 80,        // IMPORTE
     },
     paddingX: 6,
     rowH: 16,
     headerH: 20,
   }
 
-  // Encabezado de tabla
   y = drawTableHeader(page, layout, helvBold, helv, width, height)
 
-  // Filas
   for (const item of items) {
     const descMaxWidth = layout.widths.desc - layout.paddingX * 2
     const descLines = wrapText(item.productoNombre, helv, 10, descMaxWidth)
     const dynamicRowH = Math.max(layout.rowH, descLines.length * 12 + 6)
 
-    // Salto de página si no cabe
     if (y - dynamicRowH < margin + 70) {
       page = pdfDoc.addPage([595.28, 841.89])
       y = 841.89 - margin
@@ -142,15 +162,14 @@ export async function generateOrderPdf(order: Pedido, items: PedidoDet[]): Promi
     const rowTop = y
     const rowBottom = y - dynamicRowH
 
-    // Líneas verticales y borde inferior de la fila
     const xPositions = computeColumnXs(layout)
     for (const x of xPositions) {
       line(page, x, rowTop, x, rowBottom, 0.5, rgb(0.9, 0.9, 0.9))
     }
     line(page, layout.x, rowBottom, layout.x + totalWidth(layout), rowBottom, 0.5, rgb(0.85, 0.85, 0.85))
 
-    // Contenido
     const baseY = rowTop - 12
+
     drawCellText(page, String(item.cantPedido), layout.x + layout.paddingX, baseY, helv, 10, "left")
 
     let textY = baseY
@@ -160,18 +179,22 @@ export async function generateOrderPdf(order: Pedido, items: PedidoDet[]): Promi
     }
 
     drawCellText(page, item.codigoitemPedido, xPositions[2] + layout.paddingX, baseY, helv, 10, "left")
-    drawCellText(page, "0.00", xPositions[3] + layout.paddingX, baseY, helv, 10, "left")
+
+    const lote = item.cod_lote || '-'
+    drawCellText(page, lote, xPositions[3] + layout.paddingX, baseY, helv, 10, "left")
+
+    const fechaVenc = item.fec_venc_lote || '-'
+    drawCellText(page, fechaVenc, xPositions[4] + layout.paddingX, baseY, helv, 10, "left")
 
     const unitStr = money(item.precioPedido)
-    drawCellText(page, unitStr, xPositions[4] + layout.widths.unit - layout.paddingX, baseY, helv, 10, "right")
+    drawCellText(page, unitStr, xPositions[5] + layout.widths.unit - layout.paddingX, baseY, helv, 10, "right")
 
     const amtStr = money(String(Number(item.precioPedido) * Number(item.cantPedido)))
-    drawCellText(page, amtStr, xPositions[5] + layout.widths.amt - layout.paddingX, baseY, helvBold, 10, "right")
+    drawCellText(page, amtStr, xPositions[6] + layout.widths.amt - layout.paddingX, baseY, helvBold, 10, "right")
 
     y -= dynamicRowH
   }
 
-  // Total
   y -= 12
   const totalVal = items.reduce((s, it) => s + Number(it.precioPedido) * Number(it.cantPedido), 0)
   const totalStr = money(totalVal.toString())
@@ -212,21 +235,25 @@ function drawTableHeader(page: any, layout: TableLayout, helvBold: any, helv: an
   }
 
   const textY = headerTop - 13
+
   page.drawText("CANT.", { x: xs[0] + layout.paddingX, y: textY, size: 10, font: helvBold })
   page.drawText("DESCRIPCIÓN", { x: xs[1] + layout.paddingX, y: textY, size: 10, font: helvBold })
   page.drawText("CÓDIGO", { x: xs[2] + layout.paddingX, y: textY, size: 10, font: helvBold })
-  page.drawText("VCTO.", { x: xs[3] + layout.paddingX, y: textY, size: 10, font: helvBold })
+  page.drawText("LOTE", { x: xs[3] + layout.paddingX, y: textY, size: 10, font: helvBold })
+  page.drawText("FEC. VENC.", { x: xs[4] + layout.paddingX, y: textY, size: 10, font: helvBold })
 
   const unitLabel = "P. UNIT."
   const amtLabel = "IMPORTE"
-  const unitXRight = xs[4] + layout.widths.unit - layout.paddingX
-  const amtXRight = xs[5] + layout.widths.amt - layout.paddingX
+  const unitXRight = xs[5] + layout.widths.unit - layout.paddingX
+  const amtXRight = xs[6] + layout.widths.amt - layout.paddingX
+
   page.drawText(unitLabel, {
     x: unitXRight - helvBold.widthOfTextAtSize(unitLabel, 10),
     y: textY,
     size: 10,
     font: helvBold,
   })
+
   page.drawText(amtLabel, {
     x: amtXRight - helvBold.widthOfTextAtSize(amtLabel, 10),
     y: textY,
@@ -240,19 +267,20 @@ function drawTableHeader(page: any, layout: TableLayout, helvBold: any, helv: an
 function computeColumnXs(layout: TableLayout) {
   const xs: number[] = []
   let acc = layout.x
-  xs.push(acc)
+  xs.push(acc) // qty
   acc += layout.widths.qty
-  xs.push(acc)
+  xs.push(acc) // desc
   acc += layout.widths.desc
-  xs.push(acc)
+  xs.push(acc) // code
+  acc += layout.widths.code
+  xs.push(acc) // lot
   acc += layout.widths.lot
-  xs.push(acc)
+  xs.push(acc) // due
   acc += layout.widths.due
-  xs.push(acc)
+  xs.push(acc) // unit
   acc += layout.widths.unit
-  xs.push(acc)
-  acc += layout.widths.amt
-  xs.push(acc)
+  xs.push(acc) // amt
+  xs.push(acc) // final position
   return xs
 }
 
@@ -335,17 +363,17 @@ function numberToText(num: number): string {
 
 function totalWidth(layout: TableLayout) {
   const w = layout.widths
-  return w.qty + w.desc + w.lot + w.due + w.unit + w.amt
+  return w.qty + w.desc + w.code + w.lot + w.due + w.unit + w.amt
 }
 
 function drawCellText(
-  page: any,
-  text: string,
-  x: number,
-  y: number,
-  font: any,
-  size: number,
-  align: "left" | "right" = "left",
+    page: any,
+    text: string,
+    x: number,
+    y: number,
+    font: any,
+    size: number,
+    align: "left" | "right" = "left",
 ) {
   let tx = x
   if (align === "right") {
@@ -382,25 +410,18 @@ function wrapText(text: string, font: any, size: number, maxWidth: number) {
   return lines
 }
 
-function drawKeyVal(page: any, key: string, value: string, x: number, y: number, keyFont: any, valFont: any) {
-  page.drawText(key, { x, y, size: 10, font: keyFont })
-  page.drawText(value, { x: x + 110, y, size: 10, font: valFont })
-  return y - 14
-}
-
 function line(page: any, x1: number, y1: number, x2: number, y2: number, thickness: number, color: any) {
   page.drawLine({ start: { x: x1, y: y1 }, end: { x: x2, y: y2 }, thickness, color })
 }
 
-// Dibuja un rectángulo con esquinas redondeadas usando un path SVG
 function drawRoundedRect(
-  page: any,
-  x: number,
-  y: number,
-  w: number,
-  h: number,
-  r: number,
-  opts: { fill?: any; stroke?: any; borderWidth?: number } = {},
+    page: any,
+    x: number,
+    y: number,
+    w: number,
+    h: number,
+    r: number,
+    opts: { fill?: any; stroke?: any; borderWidth?: number } = {},
 ) {
   const rr = Math.min(r, w / 2, h / 2)
   const path = roundedRectSvgPath(x, y, w, h, rr)
@@ -412,8 +433,6 @@ function drawRoundedRect(
 }
 
 function roundedRectSvgPath(x: number, y: number, w: number, h: number, r: number) {
-  // Path con origen en (x,y) esquina inferior izquierda
-  // Mueve sentido horario
   const x2 = x + w
   const y2 = y + h
   return [

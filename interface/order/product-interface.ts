@@ -70,6 +70,8 @@ export interface IProduct {
   tieneBonificado: number;
   PUContado: string;
   PUCredito: string;
+  PUPorMayor: string;
+  PUPorMenor: string;
   isbonificado?: number;
   isescala?: number;
 }

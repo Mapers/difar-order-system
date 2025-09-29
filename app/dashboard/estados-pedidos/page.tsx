@@ -39,6 +39,7 @@ export interface Pedido {
   nroPedido: string
   fechaPedido: string
   nombreCliente: string
+  nombreComercial: string
   nombreVendedor: string
   condicionPedido: string
   monedaPedido: string
@@ -47,6 +48,7 @@ export interface Pedido {
   notaPedido: string
   contactoPedido: string
   telefonoPedido: string
+  direccionCliente?: string
   direccionEntrega?: string
   referenciaDireccion?: string
   codigoCliente: string
@@ -246,7 +248,7 @@ export default function OrderStatusManagementPage() {
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2 sm:gap-4">
-        {ORDER_STATES.map((state) => {
+        {ORDER_STATES.filter(item => item.id !== -1 && item.id !== -2).map((state) => {
           const Icon = state.icon
           const count = getStateCount(state.id)
 
@@ -523,7 +525,7 @@ export default function OrderStatusManagementPage() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
-            {ORDER_STATES.map((state) => {
+            {ORDER_STATES.filter(item => item.id !== -1 && item.id !== -2).map((state) => {
               const Icon = state.icon
               return (
                 <div key={state.id} className="flex items-start gap-2 p-2 rounded-lg bg-gray-50">
@@ -623,17 +625,17 @@ export default function OrderStatusManagementPage() {
                       Ver PDF
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="max-w-[95vw] w-[1000px] max-h-[90vh] p-0 overflow-hidden">
-                    <DialogHeader className="px-4 py-3 border-b">
+                  <DialogContent className="min-w-[90vw] h-[95vh] p-0 overflow-hidden">
+                    <DialogHeader className="px-4 py-3 border-b w-[100%] absolute bg-white">
                       <div className="flex items-center justify-between">
-                        <DialogTitle>PDF — {selectedOrder.nroPedido}</DialogTitle>
+                        <DialogTitle>PDF — {String(selectedOrder.nroPedido).padStart(10, '0')}</DialogTitle>
                         <Button size="sm" onClick={handleDownload}>
                           <Download className="w-4 h-4 mr-2" />
                           Descargar
                         </Button>
                       </div>
                     </DialogHeader>
-                    <div className="w-full h-[60vh]">
+                    <div className="w-full h-full mt-16">
                       {pdfUrl ? (
                         <iframe title="Recibo PDF" src={pdfUrl} className="w-full h-full" />
                       ) : (

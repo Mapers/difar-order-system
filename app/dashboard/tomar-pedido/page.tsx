@@ -120,7 +120,7 @@ export default function OrderPage() {
   const [showLaboratorioModal, setShowLaboratorioModal] = useState(false);
   const [tempSelectedProducts, setTempSelectedProducts] = useState<ISelectedProduct[]>([]);
   const auth = useAuth();
-  const [priceType, setPriceType] = useState<'contado' | 'credito' | 'custom'>('contado');
+  const [priceType, setPriceType] = useState<'contado' | 'credito' | 'porMayor' | 'porMenor' | 'custom'>('contado');
 
   const [loading, setLoading] = useState({
     clients: false,
@@ -272,7 +272,11 @@ export default function OrderPage() {
         ? Number(selectedProduct?.PUContado)
         : priceType === 'credito'
           ? Number(selectedProduct?.PUCredito)
-          : priceEdit;
+          : priceType === 'porMenor'
+                  ? Number(selectedProduct?.PUPorMenor)
+                  : priceType === 'porMayor'
+                      ? Number(selectedProduct?.PUPorMayor)
+                      : priceEdit;
       setSelectedProducts([
         ...selectedProducts,
         {
@@ -464,7 +468,7 @@ export default function OrderPage() {
     return subtotal
   }
 
-  const handleAddTempProduct = async (product: IProduct, quantity: number, priceType: 'contado' | 'credito' | 'custom', customPrice?: number) => {
+  const handleAddTempProduct = async (product: IProduct, quantity: number, priceType: 'contado' | 'credito' | 'porMayor' | 'porMenor' | 'custom', customPrice?: number) => {
     setIsLoading(true);
     setModalLoader('BONIFICADO');
 
@@ -484,7 +488,11 @@ export default function OrderPage() {
         ? product.PUContado
         : priceType === 'credito'
           ? product.PUCredito
-          : customPrice),
+          : priceType === 'porMenor'
+                  ? product.PUPorMenor
+                  : priceType === 'porMayor'
+                      ? product.PUPorMayor
+                      : customPrice),
       isEdit: priceType === 'custom',
       isAuthorize: (priceType === 'custom' && customPrice != null) && customPrice < Number(product.PUContado),
     }
@@ -557,6 +565,7 @@ export default function OrderPage() {
     setSelectedClient(c)
     setClient(c.codigo)
     setClientName(c.Nombre)
+    setContactoPedido(c.Nombre)
     setSearch({ ...search, client: `${c.Nombre} (${c.codigo})` })
     if (c.IdZona) {
       getZona(c.IdZona)
@@ -574,6 +583,13 @@ export default function OrderPage() {
   const handleChangeContactoPedido = (e: React.ChangeEvent<HTMLInputElement>) => {
     setContactoPedido(e.target.value);
   };
+
+  const handleUpdateClient = (updatedFields: { telefono?: string; Dirección?: string }) => {
+    if (selectedClient) {
+      setSelectedClient(prev => prev ? { ...prev, ...updatedFields } : null);
+    }
+  };
+
   const handleChangeReferenciaDireccion = (e: React.ChangeEvent<HTMLInputElement>) => {
     setReferenciaDireccion(e.target.value);
   };
@@ -807,6 +823,7 @@ export default function OrderPage() {
                 contactoPedido={contactoPedido}
                 onChangeReferenciaDireccion={handleChangeReferenciaDireccion}
                 onChangeContactoPedido={handleChangeContactoPedido}
+                onUpdateClient={handleUpdateClient}
               />}
               {selectedClient &&
                 <FinancialZone client={selectedClient} nameZone={nameZone} unidadTerritorio={unidadTerritorio}/>}
@@ -959,7 +976,7 @@ export default function OrderPage() {
                       </div>
 
                       {selectedProduct && (
-                        <div className="grid grid-cols-3 gap-2 mt-2">
+                        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 mt-2">
                           <div
                             className={`border rounded-md p-2 cursor-pointer text-center ${
                               priceType === 'contado'
@@ -990,6 +1007,38 @@ export default function OrderPage() {
                             <div className="text-sm">
                               {currency?.value === "PEN" ? "S/." : "$"}
                               {Number(selectedProduct.PUCredito).toFixed(2)}
+                            </div>
+                          </div>
+                          <div
+                              className={`border rounded-md p-2 cursor-pointer text-center ${
+                                  priceType === 'porMayor'
+                                      ? 'border-blue-500 bg-blue-50 text-blue-700'
+                                      : 'border-gray-200 bg-gray-50 text-gray-700'
+                              }`}
+                              onClick={() => {
+                                setPriceType('porMayor')
+                              }}
+                          >
+                            <div className="font-medium">Por Mayor</div>
+                            <div className="text-sm">
+                              {currency?.value === "PEN" ? "S/." : "$"}
+                              {Number(selectedProduct.PUPorMayor).toFixed(2)}
+                            </div>
+                          </div>
+                          <div
+                              className={`border rounded-md p-2 cursor-pointer text-center ${
+                                  priceType === 'porMenor'
+                                      ? 'border-blue-500 bg-blue-50 text-blue-700'
+                                      : 'border-gray-200 bg-gray-50 text-gray-700'
+                              }`}
+                              onClick={() => {
+                                setPriceType('porMenor')
+                              }}
+                          >
+                            <div className="font-medium">Por Menor</div>
+                            <div className="text-sm">
+                              {currency?.value === "PEN" ? "S/." : "$"}
+                              {Number(selectedProduct.PUPorMenor).toFixed(2)}
                             </div>
                           </div>
                           <div

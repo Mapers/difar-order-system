@@ -26,7 +26,7 @@ export const LaboratorioModal = ({
   onOpenChange: (open: boolean) => void;
   laboratorio: string;
   products: IProduct[];
-  onAddTempProduct: (product: IProduct, quantity: number, priceType: 'contado' | 'credito' | 'custom', customPrice?: number) => void;
+  onAddTempProduct: (product: IProduct, quantity: number, priceType: 'contado' | 'credito' | 'porMayor' | 'porMenor' | 'custom', customPrice?: number) => void;
   tempSelectedProducts: ISelectedProduct[];
   onRemoveTempProduct: (index: number) => void;
   onConfirmSelection: () => void;
@@ -34,7 +34,7 @@ export const LaboratorioModal = ({
 }) => {
   const { laboratories } = useLaboratoriesData()
   const [quantities, setQuantities] = useState<Record<string, number>>({});
-  const [priceTypes, setPriceTypes] = useState<Record<string, 'contado' | 'credito' | 'custom'>>({});
+  const [priceTypes, setPriceTypes] = useState<Record<string, 'contado' | 'credito' | 'porMayor' | 'porMenor' | 'custom'>>({});
   const [customPrices, setCustomPrices] = useState<Record<string, number>>({});
   const [products, setProducts] = useState<IProduct[]>([])
   const [loading, setLoading] = useState(false)
@@ -46,7 +46,7 @@ export const LaboratorioModal = ({
     }));
   };
 
-  const handlePriceTypeChange = (productId: string, value: 'contado' | 'credito' | 'custom') => {
+  const handlePriceTypeChange = (productId: string, value: 'contado' | 'credito' | 'porMayor' | 'porMenor' | 'custom') => {
     setPriceTypes(prev => ({
       ...prev,
       [productId]: value
@@ -127,6 +127,8 @@ export const LaboratorioModal = ({
                               const currentPriceType = priceTypes[productId] || 'contado';
                               const contadoPrice = Number(product.PUContado);
                               const creditoPrice = Number(product.PUCredito);
+                              const porMayor = Number(product.PUPorMayor);
+                              const porMenor = Number(product.PUPorMenor);
                               const customPrice = customPrices[productId] || contadoPrice;
 
                               return (
@@ -139,7 +141,7 @@ export const LaboratorioModal = ({
                                     <TableCell>
                                       <RadioGroup
                                           value={currentPriceType}
-                                          onValueChange={(value: 'contado' | 'credito' | 'custom') =>
+                                          onValueChange={(value: 'contado' | 'credito' | 'porMayor' | 'porMenor' | 'custom') =>
                                               handlePriceTypeChange(productId, value)
                                           }
                                           className="flex flex-col gap-2"
@@ -154,6 +156,18 @@ export const LaboratorioModal = ({
                                           <RadioGroupItem value="credito" id={`${productId}-credito`}/>
                                           <Label htmlFor={`${productId}-credito`} className="text-sm cursor-pointer">
                                             Crédito: {formatPrice(creditoPrice)}
+                                          </Label>
+                                        </div>
+                                        <div className="flex items-center space-x-2">
+                                          <RadioGroupItem value="porMayor" id={`${productId}-porMayor`}/>
+                                          <Label htmlFor={`${productId}-porMayor`} className="text-sm cursor-pointer">
+                                            Por Mayor: {formatPrice(porMayor)}
+                                          </Label>
+                                        </div>
+                                        <div className="flex items-center space-x-2">
+                                          <RadioGroupItem value="porMenor" id={`${productId}-porMenor`}/>
+                                          <Label htmlFor={`${productId}-porMenor`} className="text-sm cursor-pointer">
+                                            Por Menor: {formatPrice(porMenor)}
                                           </Label>
                                         </div>
                                         <div className="flex items-center space-x-2">
