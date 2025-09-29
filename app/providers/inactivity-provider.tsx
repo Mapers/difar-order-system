@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, useState, ReactNode, useEffect } from "react";
 import { useAuth } from "@/context/authContext";
 import {useInactivity} from "@/app/hooks/useInactivity";
 import {InactivityWarningModal} from "@/app/components/inactivity-warning-modal";
@@ -25,20 +25,30 @@ interface InactivityProviderProps {
 }
 
 export function InactivityProvider({ children }: InactivityProviderProps) {
-  const { logout, isAuthenticated  } = useAuth();
+  const { logout, isAuthenticated, user } = useAuth();
   const [showExpiredModal, setShowExpiredModal] = useState(false);
+  const [shouldCheckInactivity, setShouldCheckInactivity] = useState(false);
+
+  useEffect(() => {
+    if (user?.idRol === 1) {
+      setShouldCheckInactivity(false);
+    } else {
+      setShouldCheckInactivity(isAuthenticated);
+    }
+  }, [isAuthenticated, user]);
 
   const handleLogout = () => {
-    console.log('isAuthenticated', isAuthenticated)
     if (isAuthenticated) {
+      localStorage.removeItem('lastActivityTime');
       logout();
       setShowExpiredModal(true);
     }
   };
 
   const { isWarning, timeLeft, resetTimer } = useInactivity({
-    timeout: 5 * 60 * 1000,
+    timeout: 8 * 60 * 60 * 1000,
     onLogout: handleLogout,
+    shouldCheckInactivity: shouldCheckInactivity
   });
 
   const handleContinue = () => {
@@ -49,25 +59,24 @@ export function InactivityProvider({ children }: InactivityProviderProps) {
     setShowExpiredModal(false);
   };
 
-  // No mostrar modales si el usuario no está autenticado
-  const shouldShowWarning = isWarning && isAuthenticated;
+  const shouldShowWarning = isWarning && shouldCheckInactivity;
 
   return (
-    <InactivityContext.Provider value={{ resetInactivityTimer: resetTimer }}>
-      {children}
+      <InactivityContext.Provider value={{ resetInactivityTimer: resetTimer }}>
+        {children}
 
-      <InactivityWarningModal
-        isOpen={shouldShowWarning}
-        timeLeft={timeLeft}
-        onContinue={handleContinue}
-        onLogout={handleLogout}
-        isAuthenticated={isAuthenticated}
-      />
+        <InactivityWarningModal
+            isOpen={shouldShowWarning}
+            timeLeft={timeLeft}
+            onContinue={handleContinue}
+            onLogout={handleLogout}
+            isAuthenticated={isAuthenticated}
+        />
 
-      <SessionExpiredModal
-        isOpen={showExpiredModal}
-        onClose={handleCloseExpiredModal}
-      />
-    </InactivityContext.Provider>
+        <SessionExpiredModal
+            isOpen={showExpiredModal}
+            onClose={handleCloseExpiredModal}
+        />
+      </InactivityContext.Provider>
   );
 }

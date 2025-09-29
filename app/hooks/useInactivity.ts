@@ -6,18 +6,19 @@ interface UseInactivityProps {
   timeout?: number;
   warningTime?: number;
   onLogout: () => void;
+  shouldCheckInactivity: boolean;
 }
 
 export const useInactivity = ({
                                 timeout = 5 * 60 * 1000,
                                 warningTime = 59 * 1000,
                                 onLogout,
+                                shouldCheckInactivity
                               }: UseInactivityProps) => {
   const [isWarning, setIsWarning] = useState(false);
   const [timeLeft, setTimeLeft] = useState<number>(warningTime);
   const [lastActivity, setLastActivity] = useState<number>(Date.now());
-
-  // Referencias para los timers
+  const STORAGE_KEY = 'lastActivityTime';
   const inactivityTimerRef = useRef<NodeJS.Timeout | null>(null);
   const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -63,6 +64,9 @@ export const useInactivity = ({
   // Efecto para manejar los event listeners
   useEffect(() => {
     const handleActivity = () => {
+      if (shouldCheckInactivity) {
+        localStorage.setItem(STORAGE_KEY, Date.now().toString());
+      }
       setLastActivity(Date.now());
     };
 
@@ -78,7 +82,7 @@ export const useInactivity = ({
       });
       clearAllTimers();
     };
-  }, [clearAllTimers]);
+  }, [clearAllTimers, shouldCheckInactivity]);
 
   // Efecto para verificar inactividad
   useEffect(() => {
@@ -115,11 +119,29 @@ export const useInactivity = ({
     };
   }, [lastActivity, timeout, warningTime, isWarning, onLogout, clearAllTimers]);
 
-  // Iniciar el temporizador al montar
   useEffect(() => {
-    startInactivityTimer();
+    if (shouldCheckInactivity) {
+      startInactivityTimer();
+    } else {
+      clearAllTimers()
+    }
     return () => clearAllTimers();
-  }, [startInactivityTimer, clearAllTimers]);
+  }, [startInactivityTimer, clearAllTimers, shouldCheckInactivity]);
+
+  useEffect(() => {
+    if (shouldCheckInactivity) {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        const storedTime = parseInt(stored, 10);
+        const currentTime = Date.now();
+        const elapsed = currentTime - storedTime;
+
+        if (elapsed >= timeout) {
+          onLogout()
+        }
+      }
+    }
+  }, [shouldCheckInactivity]);
 
   return {
     isWarning,
