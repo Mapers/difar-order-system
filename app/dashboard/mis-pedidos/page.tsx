@@ -43,7 +43,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
-import {fetchGetClients} from "@/app/api/takeOrders";
+import {fetchGetAllClients, fetchGetClients} from "@/app/api/takeOrders";
 
 export const ORDER_STATES = [
   {
@@ -156,6 +156,7 @@ interface Pedido {
 export default function MyOrdersPage() {
   const [orders, setOrders] = useState<Pedido[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadingClients, setLoadingClients] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
   const [filters, setFilters] = useState({
     cliente: "",
@@ -164,6 +165,7 @@ export default function MyOrdersPage() {
   })
   const [clientSearch, setClientSearch] = useState("")
   const [clients, setClients] = useState<IClient[]>([])
+  const [clientsFiltered, setClientsFiltered] = useState<IClient[]>([])
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [totalItems, setTotalItems] = useState(0)
@@ -206,25 +208,35 @@ export default function MyOrdersPage() {
   }, [currentPage, searchQuery, filters])
 
   useEffect(() => {
-    if (clientSearch.length > 2) {
-      const timer = setTimeout(() => {
-        fetchClients(clientSearch)
-      }, 300)
-
-      return () => clearTimeout(timer)
+    if (auth.user) {
+      debouncedFetchClients();
     }
-  }, [clientSearch])
+  }, [auth.user])
 
-  const fetchClients = async (search: string) => {
+  useEffect(() => {
+    if (clientSearch) {
+      setClientsFiltered(clients.filter(item =>
+          item.RUC?.includes(clientSearch) ||
+          item.Nombre?.toUpperCase().includes(clientSearch.toUpperCase())))
+    } else {
+      setClientsFiltered(clients)
+    }
+  }, [clientSearch]);
+
+  const debouncedFetchClients = async () => {
+    setLoadingClients(true);
     try {
-      const response = await fetchGetClients(encodeURIComponent(search), auth.user?.codigo || '')
+      const response = await fetchGetAllClients(auth.user?.codigo || '', auth.user?.idRol === 3);
       if (response.data?.data?.data.length === 0) {
-        setClients([]);
+        setClients([])
       } else {
-        setClients(response.data?.data?.data || []);
+        setClients(response.data?.data?.data || [])
+        setClientsFiltered(response.data?.data?.data || [])
       }
     } catch (error) {
-      console.error("Error fetching clients:", error)
+      console.error("Error fetching clients:", error);
+    } finally {
+      setLoadingClients(false)
     }
   }
 
@@ -309,7 +321,7 @@ export default function MyOrdersPage() {
                 Cliente
               </Label>
               <Combobox<IClient>
-                items={clients}
+                items={clientsFiltered}
                 value={filters.cliente}
                 onSearchChange={setClientSearch}
                 onSelect={handleClientSelect}
