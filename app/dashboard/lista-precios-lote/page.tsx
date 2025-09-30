@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from "react"
-import {Search, Download, Eye, ChevronLeft, ChevronRight} from "lucide-react"
+import {Search, Download, Eye, ChevronLeft, ChevronRight, DollarSign} from "lucide-react"
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card"
 import { PriceService } from "@/app/services/price/PriceService"
 import { PriceMethodsService } from "./services/priceMethodsService"
@@ -43,6 +43,7 @@ export default function PricePage() {
   const [selectedProduct, setSelectedProduct] = useState<PrecioLote | null>(null)
   const [lotDetails, setLotDetails] = useState<LoteInfo[]>([])
   const [loadingLots, setLoadingLots] = useState(false)
+  const [priceDetails, setPriceDetails] = useState<PrecioLote | null>(null)
 
   // Estados para paginación
   const [currentPage, setCurrentPage] = useState(1)
@@ -118,6 +119,10 @@ export default function PricePage() {
   const handleViewLots = (product: PrecioLote) => {
     setSelectedProduct(product);
     fetchLotDetails(product.prod_codigo);
+  }
+
+  const handleViewPrices = (product: PrecioLote) => {
+    setPriceDetails(product);
   }
 
   const { laboratories, loadingLab, errorLab } = useLaboratoriesData()
@@ -349,69 +354,132 @@ export default function PricePage() {
                               S/ {item.precio_credito}
                             </td>
                             <td className="p-4">
-                              <Dialog>
-                                <DialogTrigger asChild>
-                                  <Button
-                                      variant="outline"
-                                      size="sm"
-                                      className="gap-1"
-                                      onClick={() => handleViewLots(item)}
-                                  >
-                                    <Eye className="h-4 w-4"/>
-                                    Ver Lotes
-                                  </Button>
-                                </DialogTrigger>
-                                <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-                                  <DialogHeader>
-                                    <DialogTitle>Detalles de Lotes - {selectedProduct?.prod_codigo}</DialogTitle>
-                                    <DialogDescription>
-                                      {selectedProduct?.prod_descripcion}
-                                    </DialogDescription>
-                                  </DialogHeader>
+                              <div className="flex gap-2">
+                                {/* Botón Ver Lotes */}
+                                <Dialog>
+                                  <DialogTrigger asChild>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="gap-1"
+                                        onClick={() => handleViewLots(item)}
+                                    >
+                                      <Eye className="h-4 w-4"/>
+                                      Lotes
+                                    </Button>
+                                  </DialogTrigger>
+                                  <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+                                    <DialogHeader>
+                                      <DialogTitle>Detalles de Lotes - {selectedProduct?.prod_codigo}</DialogTitle>
+                                      <DialogDescription>
+                                        {selectedProduct?.prod_descripcion}
+                                      </DialogDescription>
+                                    </DialogHeader>
 
-                                  {loadingLots ? (
-                                      <div className="space-y-4">
-                                        {Array.from({length: 3}).map((_, index) => (
-                                            <Skeleton key={index} className="h-12 w-full"/>
-                                        ))}
-                                      </div>
-                                  ) : lotDetails.length > 0 ? (
-                                      <Table>
-                                        <TableHeader>
-                                          <TableRow>
-                                            <TableHead>Lote</TableHead>
-                                            <TableHead>Stock</TableHead>
-                                            <TableHead>Fecha Vencimiento</TableHead>
-                                            <TableHead>Estado</TableHead>
-                                          </TableRow>
-                                        </TableHeader>
-                                        <TableBody>
-                                          {lotDetails.map((lot, index) => {
-                                            const lotStatus = PriceMethodsService.getExpirationStatus(lot.fechaVencimiento);
-                                            return (
-                                                <TableRow key={index}>
-                                                  <TableCell className="font-mono">{lot.numeroLote}</TableCell>
-                                                  <TableCell>
-                                                    {Number(lot.stock).toLocaleString("es-ES", {minimumFractionDigits: 2})}
-                                                  </TableCell>
-                                                  <TableCell>{formatDateToDDMMYYYY(lot.fechaVencimiento)}</TableCell>
-                                                  <TableCell>
-                                                    <Badge variant={lotStatus.variant}>
-                                                      {lotStatus.status}
-                                                    </Badge>
-                                                  </TableCell>
-                                                </TableRow>
-                                            );
-                                          })}
-                                        </TableBody>
-                                      </Table>
-                                  ) : (
-                                      <div className="text-center py-8 text-gray-500">
-                                        No se encontraron lotes para este producto
-                                      </div>
-                                  )}
-                                </DialogContent>
-                              </Dialog>
+                                    {loadingLots ? (
+                                        <div className="space-y-4">
+                                          {Array.from({length: 3}).map((_, index) => (
+                                              <Skeleton key={index} className="h-12 w-full"/>
+                                          ))}
+                                        </div>
+                                    ) : lotDetails.length > 0 ? (
+                                        <Table>
+                                          <TableHeader>
+                                            <TableRow>
+                                              <TableHead>Lote</TableHead>
+                                              <TableHead>Stock</TableHead>
+                                              <TableHead>Fecha Vencimiento</TableHead>
+                                              <TableHead>Estado</TableHead>
+                                            </TableRow>
+                                          </TableHeader>
+                                          <TableBody>
+                                            {lotDetails.map((lot, index) => {
+                                              const lotStatus = PriceMethodsService.getExpirationStatus(lot.fechaVencimiento);
+                                              return (
+                                                  <TableRow key={index}>
+                                                    <TableCell className="font-mono">{lot.numeroLote}</TableCell>
+                                                    <TableCell>
+                                                      {Number(lot.stock).toLocaleString("es-ES", {minimumFractionDigits: 2})}
+                                                    </TableCell>
+                                                    <TableCell>{formatDateToDDMMYYYY(lot.fechaVencimiento)}</TableCell>
+                                                    <TableCell>
+                                                      <Badge variant={lotStatus.variant}>
+                                                        {lotStatus.status}
+                                                      </Badge>
+                                                    </TableCell>
+                                                  </TableRow>
+                                              );
+                                            })}
+                                          </TableBody>
+                                        </Table>
+                                    ) : (
+                                        <div className="text-center py-8 text-gray-500">
+                                          No se encontraron lotes para este producto
+                                        </div>
+                                    )}
+                                  </DialogContent>
+                                </Dialog>
+
+                                {/* Botón Ver Precios */}
+                                <Dialog>
+                                  <DialogTrigger asChild>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="gap-1"
+                                        onClick={() => handleViewPrices(item)}
+                                    >
+                                      <DollarSign className="h-4 w-4"/>
+                                      Precios
+                                    </Button>
+                                  </DialogTrigger>
+                                  <DialogContent className="max-w-md">
+                                    <DialogHeader>
+                                      <DialogTitle>Detalles de Precios</DialogTitle>
+                                      <DialogDescription>
+                                        {priceDetails?.prod_codigo} - {priceDetails?.prod_descripcion}
+                                      </DialogDescription>
+                                    </DialogHeader>
+
+                                    {priceDetails && (
+                                        <div className="space-y-4 py-4">
+                                          <div className="grid grid-cols-2 gap-4">
+                                            <div className="space-y-2">
+                                              <Label className="text-sm font-medium">Precio Contado</Label>
+                                              <div className="text-lg font-mono font-semibold text-green-600">
+                                                S/ {priceDetails.precio_contado}
+                                              </div>
+                                            </div>
+                                            <div className="space-y-2">
+                                              <Label className="text-sm font-medium">Precio Crédito</Label>
+                                              <div className="text-lg font-mono font-semibold text-blue-600">
+                                                S/ {priceDetails.precio_credito}
+                                              </div>
+                                            </div>
+                                          </div>
+
+                                          <div className="border-t pt-4">
+                                            <h4 className="text-sm font-medium mb-3">Bonificaciones</h4>
+                                            <div className="grid grid-cols-2 gap-4">
+                                              <div className="space-y-1">
+                                                <Label className="text-xs text-gray-500">Bonificación Contado</Label>
+                                                <div className="text-sm font-mono">
+                                                  S/ {priceDetails.precio_bonif_cont}
+                                                </div>
+                                              </div>
+                                              <div className="space-y-1">
+                                                <Label className="text-xs text-gray-500">Bonificación Crédito</Label>
+                                                <div className="text-sm font-mono">
+                                                  S/ {priceDetails.precio_bonif_cred}
+                                                </div>
+                                              </div>
+                                            </div>
+                                          </div>
+                                        </div>
+                                    )}
+                                  </DialogContent>
+                                </Dialog>
+                              </div>
                             </td>
                           </tr>
                       );
@@ -508,62 +576,6 @@ export default function PricePage() {
           )}
         </Card>
 
-        {/* Modal para versión móvil */}
-        <Dialog>
-          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Detalles de Lotes - {selectedProduct?.prod_codigo}</DialogTitle>
-              <DialogDescription>
-                {selectedProduct?.prod_descripcion}
-              </DialogDescription>
-            </DialogHeader>
-
-            {loadingLots ? (
-                <div className="space-y-4">
-                  {Array.from({length: 3}).map((_, index) => (
-                      <Skeleton key={index} className="h-12 w-full"/>
-                  ))}
-                </div>
-            ) : lotDetails.length > 0 ? (
-                <div className="space-y-4">
-                  {lotDetails.map((lot, index) => {
-                    const lotStatus = PriceMethodsService.getExpirationStatus(lot.fechaVencimiento);
-                    return (
-                        <Card key={index}>
-                          <CardContent className="p-4">
-                            <div className="grid grid-cols-2 gap-4">
-                              <div>
-                                <Label>Lote</Label>
-                                <p className="font-mono">{lot.numeroLote}</p>
-                              </div>
-                              <div>
-                                <Label>Stock</Label>
-                                <p>{Number(lot.stock).toLocaleString("es-ES", {minimumFractionDigits: 2})}</p>
-                              </div>
-                              <div>
-                                <Label>Vencimiento</Label>
-                                <p>{lot.fechaVencimiento}</p>
-                              </div>
-                              <div>
-                                <Label>Estado</Label>
-                                <Badge variant={lotStatus.variant}>
-                                  {lotStatus.status}
-                                </Badge>
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                    );
-                  })}
-                </div>
-            ) : (
-                <div className="text-center py-8 text-gray-500">
-                  No se encontraron lotes para este producto
-                </div>
-            )}
-          </DialogContent>
-        </Dialog>
-
         {/* Versión móvil */}
         <div className="lg:hidden overflow-auto">
           {loading || loadingLab || !isAuthenticated ? (
@@ -630,69 +642,132 @@ export default function PricePage() {
                           </div>
                         </div>
 
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                className="w-full gap-1"
-                                onClick={() => handleViewLots(item)}
-                            >
-                              <Eye className="h-4 w-4"/>
-                              Ver Lotes
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-                            <DialogHeader>
-                              <DialogTitle>Detalles de Lotes - {selectedProduct?.prod_codigo}</DialogTitle>
-                              <DialogDescription>
-                                {selectedProduct?.prod_descripcion}
-                              </DialogDescription>
-                            </DialogHeader>
+                        <div className="flex gap-2">
+                          {/* Botón Ver Lotes - Móvil */}
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="flex-1 gap-1"
+                                  onClick={() => handleViewLots(item)}
+                              >
+                                <Eye className="h-4 w-4"/>
+                                Lotes
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+                              <DialogHeader>
+                                <DialogTitle>Detalles de Lotes - {selectedProduct?.prod_codigo}</DialogTitle>
+                                <DialogDescription>
+                                  {selectedProduct?.prod_descripcion}
+                                </DialogDescription>
+                              </DialogHeader>
 
-                            {loadingLots ? (
-                                <div className="space-y-4">
-                                  {Array.from({length: 3}).map((_, index) => (
-                                      <Skeleton key={index} className="h-12 w-full"/>
-                                  ))}
-                                </div>
-                            ) : lotDetails.length > 0 ? (
-                                <Table>
-                                  <TableHeader>
-                                    <TableRow>
-                                      <TableHead>Lote</TableHead>
-                                      <TableHead>Stock</TableHead>
-                                      <TableHead>Fecha Vencimiento</TableHead>
-                                      <TableHead>Estado</TableHead>
-                                    </TableRow>
-                                  </TableHeader>
-                                  <TableBody>
-                                    {lotDetails.map((lot, index) => {
-                                      const lotStatus = PriceMethodsService.getExpirationStatus(lot.fechaVencimiento);
-                                      return (
-                                          <TableRow key={index}>
-                                            <TableCell className="font-mono">{lot.numeroLote}</TableCell>
-                                            <TableCell>
-                                              {Number(lot.stock).toLocaleString("es-ES", {minimumFractionDigits: 2})}
-                                            </TableCell>
-                                            <TableCell>{formatDateToDDMMYYYY(lot.fechaVencimiento)}</TableCell>
-                                            <TableCell>
-                                              <Badge variant={lotStatus.variant}>
-                                                {lotStatus.status}
-                                              </Badge>
-                                            </TableCell>
-                                          </TableRow>
-                                      );
-                                    })}
-                                  </TableBody>
-                                </Table>
-                            ) : (
-                                <div className="text-center py-8 text-gray-500">
-                                  No se encontraron lotes para este producto
-                                </div>
-                            )}
-                          </DialogContent>
-                        </Dialog>
+                              {loadingLots ? (
+                                  <div className="space-y-4">
+                                    {Array.from({length: 3}).map((_, index) => (
+                                        <Skeleton key={index} className="h-12 w-full"/>
+                                    ))}
+                                  </div>
+                              ) : lotDetails.length > 0 ? (
+                                  <Table>
+                                    <TableHeader>
+                                      <TableRow>
+                                        <TableHead>Lote</TableHead>
+                                        <TableHead>Stock</TableHead>
+                                        <TableHead>Fecha Vencimiento</TableHead>
+                                        <TableHead>Estado</TableHead>
+                                      </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                      {lotDetails.map((lot, index) => {
+                                        const lotStatus = PriceMethodsService.getExpirationStatus(lot.fechaVencimiento);
+                                        return (
+                                            <TableRow key={index}>
+                                              <TableCell className="font-mono">{lot.numeroLote}</TableCell>
+                                              <TableCell>
+                                                {Number(lot.stock).toLocaleString("es-ES", {minimumFractionDigits: 2})}
+                                              </TableCell>
+                                              <TableCell>{formatDateToDDMMYYYY(lot.fechaVencimiento)}</TableCell>
+                                              <TableCell>
+                                                <Badge variant={lotStatus.variant}>
+                                                  {lotStatus.status}
+                                                </Badge>
+                                              </TableCell>
+                                            </TableRow>
+                                        );
+                                      })}
+                                    </TableBody>
+                                  </Table>
+                              ) : (
+                                  <div className="text-center py-8 text-gray-500">
+                                    No se encontraron lotes para este producto
+                                  </div>
+                              )}
+                            </DialogContent>
+                          </Dialog>
+
+                          {/* Botón Ver Precios - Móvil */}
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="flex-1 gap-1"
+                                  onClick={() => handleViewPrices(item)}
+                              >
+                                <DollarSign className="h-4 w-4"/>
+                                Precios
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent className="max-w-md">
+                              <DialogHeader>
+                                <DialogTitle>Detalles de Precios</DialogTitle>
+                                <DialogDescription>
+                                  {priceDetails?.prod_codigo} - {priceDetails?.prod_descripcion}
+                                </DialogDescription>
+                              </DialogHeader>
+
+                              {priceDetails && (
+                                  <div className="space-y-4 py-4">
+                                    <div className="grid grid-cols-2 gap-4">
+                                      <div className="space-y-2">
+                                        <Label className="text-sm font-medium">Precio Contado</Label>
+                                        <div className="text-lg font-mono font-semibold text-green-600">
+                                          S/ {priceDetails.precio_contado}
+                                        </div>
+                                      </div>
+                                      <div className="space-y-2">
+                                        <Label className="text-sm font-medium">Precio Crédito</Label>
+                                        <div className="text-lg font-mono font-semibold text-blue-600">
+                                          S/ {priceDetails.precio_credito}
+                                        </div>
+                                      </div>
+                                    </div>
+
+                                    <div className="border-t pt-4">
+                                      <h4 className="text-sm font-medium mb-3">Bonificaciones</h4>
+                                      <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-1">
+                                          <Label className="text-xs text-gray-500">Bonificación Contado</Label>
+                                          <div className="text-sm font-mono">
+                                            S/ {priceDetails.precio_bonif_cont}
+                                          </div>
+                                        </div>
+                                        <div className="space-y-1">
+                                          <Label className="text-xs text-gray-500">Bonificación Crédito</Label>
+                                          <div className="text-sm font-mono">
+                                            S/ {priceDetails.precio_bonif_cred}
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                              )}
+                            </DialogContent>
+                          </Dialog>
+                        </div>
                       </CardContent>
                     </Card>
                 );

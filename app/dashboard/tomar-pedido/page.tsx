@@ -1019,7 +1019,7 @@ export default function OrderPage() {
                                 setPriceType('porMayor')
                               }}
                           >
-                            <div className="font-medium">Por Mayor</div>
+                            <div className="font-medium">Bonif Contado</div>
                             <div className="text-sm">
                               {currency?.value === "PEN" ? "S/." : "$"}
                               {Number(selectedProduct.PUPorMayor).toFixed(2)}
@@ -1035,7 +1035,7 @@ export default function OrderPage() {
                                 setPriceType('porMenor')
                               }}
                           >
-                            <div className="font-medium">Por Menor</div>
+                            <div className="font-medium">Bonif Crédito</div>
                             <div className="text-sm">
                               {currency?.value === "PEN" ? "S/." : "$"}
                               {Number(selectedProduct.PUPorMenor).toFixed(2)}

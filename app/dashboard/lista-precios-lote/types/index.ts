@@ -14,6 +14,8 @@ export interface PrecioLote {
     kardex_VctoItem: string;
     precio_contado: string;
     precio_credito: string;
+    precio_bonif_cont: string;
+    precio_bonif_cred: string;
 }
 
 export interface PriceListParams {

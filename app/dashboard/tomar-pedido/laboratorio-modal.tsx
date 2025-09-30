@@ -161,13 +161,13 @@ export const LaboratorioModal = ({
                                         <div className="flex items-center space-x-2">
                                           <RadioGroupItem value="porMayor" id={`${productId}-porMayor`}/>
                                           <Label htmlFor={`${productId}-porMayor`} className="text-sm cursor-pointer">
-                                            Por Mayor: {formatPrice(porMayor)}
+                                            Bonif Cont: {formatPrice(porMayor)}
                                           </Label>
                                         </div>
                                         <div className="flex items-center space-x-2">
                                           <RadioGroupItem value="porMenor" id={`${productId}-porMenor`}/>
                                           <Label htmlFor={`${productId}-porMenor`} className="text-sm cursor-pointer">
-                                            Por Menor: {formatPrice(porMenor)}
+                                            Bonif Créd: {formatPrice(porMenor)}
                                           </Label>
                                         </div>
                                         <div className="flex items-center space-x-2">
