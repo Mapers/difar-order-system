@@ -26,6 +26,15 @@ export const fetchUpdateStatus = async (nroPedido: string, estado: number): Prom
     return apiClient.put(`tomarPedido/updateStatus?nroPedido=${nroPedido}&estado=${estado}`);
 };
 
+export const fetchUpdateClientRef = async (code: string, address: string, phone: string, refAddress: string): Promise<any> => {
+    return apiClient.post(`tomarPedido/cliente/updateRef`, {
+        code: code,
+        address: address,
+        phone: phone,
+        refAddress: refAddress,
+    });
+};
+
 export const fetchGetZona = async (idZona: string): Promise<any> => {
     return apiClient.get(`/tomarPedido/cliente/zona/${encodeURIComponent(idZona)}`);
 };

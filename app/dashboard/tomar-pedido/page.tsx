@@ -22,12 +22,12 @@ import {
   Coins,
   FileText,
   Trash, CheckSquare, Loader2,
-  Locate, Building
+  Locate, Building, Info
 } from "lucide-react"
 import { StepProgress } from "@/components/step-progress"
 import apiClient from "@/app/api/client"
 import { Skeleton } from "@/components/ui/skeleton"
-import * as moment from 'moment'
+import moment from 'moment'
 import ContactInfo from "@/components/cliente/contactInfo"
 import FinancialZone from "@/components/cliente/financialZone"
 import PaymentCondition from "@/components/cliente/paymentCondition"
@@ -43,7 +43,7 @@ import {
   fetchGetClients,
   fetchGetConditions,
   fetchGetZona,
-  fetchUnidaTerritorial
+  fetchUnidaTerritorial, fetchUpdateClientRef,
 } from "@/app/api/takeOrders"
 import { getBonificadosRequest, getEscalasRequest, getProductsRequest } from "@/app/api/products"
 import { ICurrentBonification, ICurrentScales, IEscala, IProduct, IPromocionRequest, ISelectedProduct, OrderItem } from "@/interface/order/product-interface"
@@ -144,7 +144,6 @@ export default function OrderPage() {
 
   // Estados para modales
   const [isCheckingBonification, setIsCheckingBonification] = useState(false)
-  const [currentBonification, setCurrentBonification] = useState<ICurrentBonification | null>(null)
 
   // Estados para escalas
   const [currentScales, setCurrentScales] = useState<ICurrentScales | null>(null)
@@ -156,6 +155,12 @@ export default function OrderPage() {
   const [showLotesModal, setShowLotesModal] = useState(false);
   const [productosConLotes, setProductosConLotes] = useState<ProductoConLotes[]>([]);
   const [loadingLotes, setLoadingLotes] = useState(false);
+  const [showClientDataConfirmModal, setShowClientDataConfirmModal] = useState(false)
+  const [editedClientData, setEditedClientData] = useState({
+    Dirección: '',
+    telefono: '',
+    referencia: ''
+  })
 
   const steps = ["Cliente", "Productos", "Resumen"]
   // obtiene una zona por id
@@ -468,6 +473,15 @@ export default function OrderPage() {
     return subtotal
   }
 
+  const checkClientDataChanges = () => {
+    const hasChanges =
+        selectedClient?.Dirección !== editedClientData.Dirección ||
+        selectedClient?.telefono !== editedClientData.telefono ||
+        referenciaDireccion !== editedClientData.referencia
+
+    return hasChanges && editedClientData.Dirección !== ''
+  }
+
   const handleAddTempProduct = async (product: IProduct, quantity: number, priceType: 'contado' | 'credito' | 'porMayor' | 'porMenor' | 'custom', customPrice?: number) => {
     setIsLoading(true);
     setModalLoader('BONIFICADO');
@@ -512,9 +526,17 @@ export default function OrderPage() {
     handleListarLotes([...selectedProducts, ...tempSelectedProducts])
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
 
+    if (checkClientDataChanges()) {
+      setShowClientDataConfirmModal(true);
+    } else {
+      // handleSaveOrder();
+    }
+  }
+
+  const handleSaveOrder = async () => {
     try {
       const lotesData = productosConLotes.map(producto => ({
         codigoProducto: producto.prod_codigo,
@@ -561,12 +583,35 @@ export default function OrderPage() {
     }
   }
 
+  const updateClientData = async () => {
+    if (!selectedClient) return
+
+    try {
+      await fetchUpdateClientRef(
+          selectedClient?.codigo,
+          selectedClient?.Dirección,
+          selectedClient?.telefono,
+          referenciaDireccion
+      )
+      console.log('Datos del cliente actualizados exitosamente')
+    } catch (error) {
+      console.error('Error al actualizar datos del cliente:', error)
+      throw error
+    }
+  }
+
   const handleClientSelect = (c: IClient) => {
     setSelectedClient(c)
     setClient(c.codigo)
     setClientName(c.Nombre)
     setContactoPedido(c.Nombre)
+    setReferenciaDireccion(c.referenciaDireccion || '')
     setSearch({ ...search, client: `${c.Nombre} (${c.codigo})` })
+    setEditedClientData({
+      telefono: c.telefono,
+      referencia: c.referenciaDireccion,
+      Dirección: c.Dirección
+    })
     if (c.IdZona) {
       getZona(c.IdZona)
     }
@@ -593,8 +638,6 @@ export default function OrderPage() {
   const handleChangeReferenciaDireccion = (e: React.ChangeEvent<HTMLInputElement>) => {
     setReferenciaDireccion(e.target.value);
   };
-
-
 
   const filteredProducts = products.filter(
     (product) =>
@@ -1969,6 +2012,52 @@ export default function OrderPage() {
             >
               <CheckSquare className="mr-2 h-4 w-4" />
               Confirmar Lotes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showClientDataConfirmModal} onOpenChange={setShowClientDataConfirmModal}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Info className="h-5 w-5 text-blue-600" />
+              Confirmar Actualización de Datos
+            </DialogTitle>
+            <DialogDescription>
+              Se detectaron cambios en los datos del cliente
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="p-4 bg-blue-50 border border-blue-200 rounded-md">
+              <p className="text-sm text-blue-800 font-medium mb-2">
+                ¿Desea guardar estos cambios permanentemente para futuras ventas?
+              </p>
+              <p className="text-xs text-blue-700">
+                Los nuevos datos del cliente se asociarán a su código y se utilizarán en próximos pedidos.
+              </p>
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+                variant="outline"
+                onClick={() => {
+                  handleSaveOrder();
+                }}
+                className="flex-1"
+            >
+              {'Confirmar Pedido'}
+            </Button>
+            <Button
+                onClick={() => {
+                  handleSaveOrder();
+                  updateClientData();
+                }}
+                className="flex-1 bg-blue-600 hover:bg-blue-700"
+            >
+              {'Guardar Datos y Confirmar Pedido'}
             </Button>
           </DialogFooter>
         </DialogContent>
