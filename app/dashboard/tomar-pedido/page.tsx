@@ -532,7 +532,7 @@ export default function OrderPage() {
     if (checkClientDataChanges()) {
       setShowClientDataConfirmModal(true);
     } else {
-      // handleSaveOrder();
+      handleSaveOrder();
     }
   }
 
