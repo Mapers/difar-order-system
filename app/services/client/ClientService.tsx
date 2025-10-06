@@ -139,4 +139,12 @@ export class ClientService {
     return response.data
   };
 
+  /**
+   *
+   * @returns
+   */
+  static async getClientsByZone(zone: string): Promise<any> {
+    const response = await apiClient.get(`/rutas/clients/by-zone?zone=${zone}`);
+    return response.data
+  };
 }

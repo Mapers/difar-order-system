@@ -46,6 +46,7 @@ import apiClient from "@/app/api/client"
 import {getProductsRequest} from "@/app/api/products";
 import {Tabs, TabsContent, TabsList, TabsTrigger} from "@/components/ui/tabs";
 import {useAuth} from "@/context/authContext";
+import {Bonificacion, Escala} from "@/app/dashboard/lista-precios-lote/types";
 
 interface Producto {
     IdArticulo: number;
@@ -59,23 +60,6 @@ interface Producto {
     PUPorMenor: string;
     escalaCount: number;
     bonificacionCount: number;
-}
-
-interface Escala {
-    id: number
-    desde: number
-    hasta: number
-    precio: number
-}
-
-interface Bonificacion {
-    id: number
-    compra: number
-    lleva: number
-    descripcion: string
-    esMismoProducto: boolean
-    productoBonificado?: string
-    descripcionProducto?: string
 }
 
 export default function ScaleBonusManagementPage() {
@@ -856,7 +840,7 @@ export default function ScaleBonusManagementPage() {
                                             <div className="flex justify-between items-center">
                                                 <span className="text-xs text-gray-500">Stock:</span>
                                                 <Badge variant="outline" className="bg-gray-50 text-gray-700 text-xs">
-                                                    Stk. {producto.Stock || 0}
+                                                    Stk. {Number(producto.Stock || 0)}
                                                 </Badge>
                                             </div>
                                         </div>

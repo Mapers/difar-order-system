@@ -7,7 +7,7 @@ import { PriceService } from "@/app/services/price/PriceService"
 import { PriceMethodsService } from "./services/priceMethodsService"
 import MultiSelectLaboratory from "@/components/price/multiSelectLaboratory"
 import { useLaboratoriesData } from "./hooks/useLaboratoriesData"
-import { PrecioLote, PriceListParams, LoteInfo } from "./types"
+import {PrecioLote, PriceListParams, LoteInfo, Escala, Bonificacion} from "./types"
 import { Badge } from "@/components/ui/badge"
 import { useAuth } from '@/context/authContext';
 import debounce from 'lodash.debounce';
@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/dialog"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import ExportPdfButton from "@/app/dashboard/lista-precios-lote/export-pdf-button";
+import apiClient from "@/app/api/client";
 
 export default function PricePage() {
   const { user, isAuthenticated } = useAuth();
@@ -49,6 +50,10 @@ export default function PricePage() {
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(20)
   const [totalPages, setTotalPages] = useState(1)
+
+  const [escalas, setEscalas] = useState<Escala[]>([])
+  const [bonificaciones, setBonificaciones] = useState<Bonificacion[]>([])
+  const [loadingDetails, setLoadingDetails] = useState(false)
 
   const debouncedFetchPricesLots = debounce(async () => {
     setLoading(true);
@@ -116,6 +121,35 @@ export default function PricePage() {
     }
   }
 
+  const fetchProductDetails = async (productId: string) => {
+    setLoadingDetails(true)
+    try {
+      const response = await apiClient.get(`/articulos/bonusScale/getByProd?code=${productId}`)
+      const data = response.data?.data || {}
+      setEscalas((data.scale || []).map((item: any, index: number) => ({
+        id: index,
+        desde: Number(item.minimo),
+        hasta: Number(item.maximo),
+        precio: Number(item.Precio),
+      })))
+      setBonificaciones((data.bonus || []).map((item: any, index: number) => ({
+        id: index,
+        compra: Number(item.Factor),
+        lleva: Number(item.Cantidad),
+        descripcion: item.Descripcion,
+        esMismoProducto: item.mismoProduct === 'S',
+        productoBonificado: item.mismoProduct === 'S' ? null : item.IdArticuloBonif,
+        descripcionProducto: item.mismoProduct === 'S' ? null : item.DescArticuloBonif
+      })))
+    } catch (error) {
+      console.error("Error fetching product details:", error)
+      setEscalas([])
+      setBonificaciones([])
+    } finally {
+      setLoadingDetails(false)
+    }
+  }
+
   const handleViewLots = (product: PrecioLote) => {
     setSelectedProduct(product);
     fetchLotDetails(product.prod_codigo);
@@ -123,6 +157,7 @@ export default function PricePage() {
 
   const handleViewPrices = (product: PrecioLote) => {
     setPriceDetails(product);
+    fetchProductDetails(product.prod_codigo);
   }
 
   const { laboratories, loadingLab, errorLab } = useLaboratoriesData()
@@ -420,7 +455,6 @@ export default function PricePage() {
                                   </DialogContent>
                                 </Dialog>
 
-                                {/* Botón Ver Precios */}
                                 <Dialog>
                                   <DialogTrigger asChild>
                                     <Button
@@ -433,7 +467,7 @@ export default function PricePage() {
                                       Precios
                                     </Button>
                                   </DialogTrigger>
-                                  <DialogContent className="max-w-md">
+                                  <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
                                     <DialogHeader>
                                       <DialogTitle>Detalles de Precios</DialogTitle>
                                       <DialogDescription>
@@ -442,7 +476,7 @@ export default function PricePage() {
                                     </DialogHeader>
 
                                     {priceDetails && (
-                                        <div className="space-y-4 py-4">
+                                        <div className="space-y-6 py-4">
                                           <div className="grid grid-cols-2 gap-4">
                                             <div className="space-y-2">
                                               <Label className="text-sm font-medium">Precio Contado</Label>
@@ -459,7 +493,6 @@ export default function PricePage() {
                                           </div>
 
                                           <div className="border-t pt-4">
-                                            <h4 className="text-sm font-medium mb-3">Bonificaciones</h4>
                                             <div className="grid grid-cols-2 gap-4">
                                               <div className="space-y-1">
                                                 <Label className="text-xs text-gray-500">Bonificación Contado</Label>
@@ -475,6 +508,65 @@ export default function PricePage() {
                                               </div>
                                             </div>
                                           </div>
+
+                                          {escalas.length > 0 && (
+                                              <div className="border-t pt-4">
+                                                <h4 className="text-sm font-medium mb-3">Escalas de Precio</h4>
+                                                {loadingDetails ? (
+                                                    <div className="space-y-2">
+                                                      {Array.from({ length: 3 }).map((_, index) => (
+                                                          <Skeleton key={index} className="h-8 w-full" />
+                                                      ))}
+                                                    </div>
+                                                ) : (
+                                                    <div className="space-y-2">
+                                                      {escalas.map((escala) => (
+                                                          <div key={escala.id} className="flex justify-between items-center p-2 bg-gray-50 rounded">
+                    <span className="text-sm">
+                      {escala.desde} - {escala.hasta} unidades
+                    </span>
+                                                            <span className="text-sm font-mono font-semibold">
+                      S/ {escala.precio.toFixed(2)}
+                    </span>
+                                                          </div>
+                                                      ))}
+                                                    </div>
+                                                )}
+                                              </div>
+                                          )}
+
+                                          {bonificaciones.length > 0 && (
+                                              <div className="border-t pt-4">
+                                                <h4 className="text-sm font-medium mb-3">Productos Bonificados</h4>
+                                                {loadingDetails ? (
+                                                    <div className="space-y-2">
+                                                      {Array.from({ length: 2 }).map((_, index) => (
+                                                          <Skeleton key={index} className="h-12 w-full" />
+                                                      ))}
+                                                    </div>
+                                                ) : (
+                                                    <div className="space-y-3">
+                                                      {bonificaciones.map((bonificacion) => (
+                                                          <div key={bonificacion.id} className="p-3 bg-gray-50 rounded border">
+                                                            <div className="flex justify-between items-start mb-2">
+                      <span className="text-sm font-medium">
+                        Compra {bonificacion.compra}, lleva {bonificacion.lleva}
+                      </span>
+                                                            </div>
+                                                            <p className="text-xs text-gray-600 mb-1">
+                                                              {bonificacion.descripcion}
+                                                            </p>
+                                                            {!bonificacion.esMismoProducto && bonificacion.descripcionProducto && (
+                                                                <p className="text-xs text-blue-600">
+                                                                  Producto: {bonificacion.descripcionProducto}
+                                                                </p>
+                                                            )}
+                                                          </div>
+                                                      ))}
+                                                    </div>
+                                                )}
+                                              </div>
+                                          )}
                                         </div>
                                     )}
                                   </DialogContent>
@@ -708,20 +800,19 @@ export default function PricePage() {
                             </DialogContent>
                           </Dialog>
 
-                          {/* Botón Ver Precios - Móvil */}
                           <Dialog>
                             <DialogTrigger asChild>
                               <Button
                                   variant="outline"
                                   size="sm"
-                                  className="flex-1 gap-1"
+                                  className="gap-1"
                                   onClick={() => handleViewPrices(item)}
                               >
                                 <DollarSign className="h-4 w-4"/>
                                 Precios
                               </Button>
                             </DialogTrigger>
-                            <DialogContent className="max-w-md">
+                            <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
                               <DialogHeader>
                                 <DialogTitle>Detalles de Precios</DialogTitle>
                                 <DialogDescription>
@@ -730,7 +821,8 @@ export default function PricePage() {
                               </DialogHeader>
 
                               {priceDetails && (
-                                  <div className="space-y-4 py-4">
+                                  <div className="space-y-6 py-4">
+                                    {/* Precios principales */}
                                     <div className="grid grid-cols-2 gap-4">
                                       <div className="space-y-2">
                                         <Label className="text-sm font-medium">Precio Contado</Label>
@@ -747,7 +839,6 @@ export default function PricePage() {
                                     </div>
 
                                     <div className="border-t pt-4">
-                                      <h4 className="text-sm font-medium mb-3">Bonificaciones</h4>
                                       <div className="grid grid-cols-2 gap-4">
                                         <div className="space-y-1">
                                           <Label className="text-xs text-gray-500">Bonificación Contado</Label>
@@ -763,6 +854,67 @@ export default function PricePage() {
                                         </div>
                                       </div>
                                     </div>
+
+                                    {/* Sección de Escalas - Solo si hay datos */}
+                                    {escalas.length > 0 && (
+                                        <div className="border-t pt-4">
+                                          <h4 className="text-sm font-medium mb-3">Escalas de Precio</h4>
+                                          {loadingDetails ? (
+                                              <div className="space-y-2">
+                                                {Array.from({ length: 3 }).map((_, index) => (
+                                                    <Skeleton key={index} className="h-8 w-full" />
+                                                ))}
+                                              </div>
+                                          ) : (
+                                              <div className="space-y-2">
+                                                {escalas.map((escala) => (
+                                                    <div key={escala.id} className="flex justify-between items-center p-2 bg-gray-50 rounded">
+                    <span className="text-sm">
+                      {escala.desde} - {escala.hasta} unidades
+                    </span>
+                                                      <span className="text-sm font-mono font-semibold">
+                      S/ {escala.precio.toFixed(2)}
+                    </span>
+                                                    </div>
+                                                ))}
+                                              </div>
+                                          )}
+                                        </div>
+                                    )}
+
+                                    {/* Sección de Bonificados - Solo si hay datos */}
+                                    {bonificaciones.length > 0 && (
+                                        <div className="border-t pt-4">
+                                          <h4 className="text-sm font-medium mb-3">Productos Bonificados</h4>
+                                          {loadingDetails ? (
+                                              <div className="space-y-2">
+                                                {Array.from({ length: 2 }).map((_, index) => (
+                                                    <Skeleton key={index} className="h-12 w-full" />
+                                                ))}
+                                              </div>
+                                          ) : (
+                                              <div className="space-y-3">
+                                                {bonificaciones.map((bonificacion) => (
+                                                    <div key={bonificacion.id} className="p-3 bg-gray-50 rounded border">
+                                                      <div className="flex justify-between items-start mb-2">
+                      <span className="text-sm font-medium">
+                        Compra {bonificacion.compra}, lleva {bonificacion.lleva}
+                      </span>
+                                                      </div>
+                                                      <p className="text-xs text-gray-600 mb-1">
+                                                        {bonificacion.descripcion}
+                                                      </p>
+                                                      {!bonificacion.esMismoProducto && bonificacion.descripcionProducto && (
+                                                          <p className="text-xs text-blue-600">
+                                                            Producto: {bonificacion.descripcionProducto}
+                                                          </p>
+                                                      )}
+                                                    </div>
+                                                ))}
+                                              </div>
+                                          )}
+                                        </div>
+                                    )}
                                   </div>
                               )}
                             </DialogContent>

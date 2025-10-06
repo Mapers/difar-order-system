@@ -29,3 +29,20 @@ export interface LoteInfo {
     fechaVencimiento: string;
     estado: string
 }
+
+export interface Escala {
+    id: number
+    desde: number
+    hasta: number
+    precio: number
+}
+
+export interface Bonificacion {
+    id: number
+    compra: number
+    lleva: number
+    descripcion: string
+    esMismoProducto: boolean
+    productoBonificado?: string
+    descripcionProducto?: string
+}

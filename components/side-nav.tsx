@@ -22,7 +22,7 @@ import {
   LogOut,
   ChevronDown,
   UserCog,
-  Notebook, Gift
+  Notebook, Gift, Map
 } from "lucide-react";
 
 const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -41,6 +41,7 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   "/dashboard/usuarios": UserCog,
   "/dashboard/roles": Notebook,
   "/dashboard/escalas-bonificaciones": Gift,
+  "/dashboard/ruta-semanal": Map,
 };
 
 export function SideNav() {
