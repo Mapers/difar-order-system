@@ -119,7 +119,7 @@ export default function OrderPage() {
   const [selectedLaboratorio, setSelectedLaboratorio] = useState<string | null>(null);
   const [showLaboratorioModal, setShowLaboratorioModal] = useState(false);
   const [tempSelectedProducts, setTempSelectedProducts] = useState<ISelectedProduct[]>([]);
-  const auth = useAuth();
+  const { user } = useAuth();
   const [priceType, setPriceType] = useState<'contado' | 'credito' | 'porMayor' | 'porMenor' | 'custom'>('contado');
 
   const [loading, setLoading] = useState({
@@ -223,7 +223,7 @@ export default function OrderPage() {
   const debouncedFetchClients = async () => {
     setLoading(prev => ({ ...prev, clients: true }));
     try {
-      const response = await fetchGetAllClients(auth.user?.codigo || '', auth.user?.idRol === 3);
+      const response = await fetchGetAllClients(user?.codigo || '', user?.idRol && [2, 3].includes(user.idRol));
       if (response.data?.data?.data.length === 0) {
         setClients([])
       } else {
@@ -314,13 +314,13 @@ export default function OrderPage() {
 
 
   useEffect(() => {
-    if (auth.user) {
+    if (user) {
       debouncedFetchClients();
-      if (auth.user?.idRol === 3) {
+      if (user?.idRol && [2, 3].includes(user.idRol)) {
         fetchVendedores();
       }
     }
-  }, [auth.user])
+  }, [user])
 
   useEffect(() => {
     if (search.client) {
@@ -554,7 +554,7 @@ export default function OrderPage() {
         referenciaDireccion: referenciaDireccion,
         fechaPedido: moment(new Date()).format('yyyy-MM-DD'),
         usuario: 1,
-        vendedorPedido: auth.user?.idRol === 3 ? seller.codigo : auth.user?.codigo,
+        vendedorPedido: (user?.idRol && [2, 3].includes(user.idRol)) ? seller.codigo : user?.codigo,
         detalles: selectedProducts.map(item => ({
           iditemPedido: item.product.IdArticulo,
           codigoitemPedido: item.product.Codigo_Art,
@@ -685,7 +685,7 @@ export default function OrderPage() {
   const isStepValid = () => {
     switch (currentStep) {
       case 0: // Client step
-        return !!client && currency && condition && (auth.user?.idRol == 3 ? (!!seller) : true)
+        return !!client && currency && condition && ((user?.idRol && [2, 3].includes(user.idRol)) ? (!!seller) : true)
       case 1: // Products step
         return selectedProducts.length > 0
       default:
@@ -841,7 +841,7 @@ export default function OrderPage() {
                   </div>
                 ) : null}
               </div>
-              {(selectedClient && auth.user?.idRol === 3) && (
+              {(selectedClient && (user?.idRol && [2, 3].includes(user.idRol))) && (
                 <Combobox<Seller>
                   items={sellersFiltered}
                   value={seller?.codigo ?? null}

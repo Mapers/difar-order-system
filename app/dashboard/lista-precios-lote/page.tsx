@@ -309,18 +309,24 @@ export default function PricePage() {
 
         <Card className="bg-white shadow-sm overflow-auto">
           <CardHeader className="border-b">
-            <div className="flex justify-between items-center">
-              <div>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div className="space-y-1">
                 <CardTitle className="text-lg font-semibold text-gray-800">Lista de Productos</CardTitle>
-                <CardDescription>
-                  Mostrando {paginatedData.length} de {filteredPricesLot.length} productos
-                  (Página {currentPage} de {totalPages})
+                <CardDescription className="flex flex-col xs:flex-row xs:items-center gap-1 xs:gap-2">
+                  <span>Mostrando {paginatedData.length} de {filteredPricesLot.length} productos</span>
+                  <span>(Página {currentPage} de {totalPages})</span>
                 </CardDescription>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3">
                 <ExportPdfButton payload={payloadL} />
-                <div className="text-sm text-gray-500">
-                  {currentDateTime.date} | {currentDateTime.time}
+                <div className="text-sm text-gray-500 text-right">
+                  <div className="hidden sm:block">
+                    {currentDateTime.date} | {currentDateTime.time}
+                  </div>
+                  <div className="sm:hidden flex flex-col">
+                    <span>{currentDateTime.date}</span>
+                    <span>{currentDateTime.time}</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -494,18 +500,18 @@ export default function PricePage() {
 
                                           <div className="border-t pt-4">
                                             <div className="grid grid-cols-2 gap-4">
-                                              <div className="space-y-1">
+                                              {Number(priceDetails.precio_bonif_cont) > 0 && <div className="space-y-1">
                                                 <Label className="text-xs text-gray-500">Bonificación Contado</Label>
                                                 <div className="text-sm font-mono">
                                                   S/ {priceDetails.precio_bonif_cont}
                                                 </div>
-                                              </div>
-                                              <div className="space-y-1">
+                                              </div>}
+                                              {Number(priceDetails.precio_bonif_cred) > 0 && <div className="space-y-1">
                                                 <Label className="text-xs text-gray-500">Bonificación Crédito</Label>
                                                 <div className="text-sm font-mono">
                                                   S/ {priceDetails.precio_bonif_cred}
                                                 </div>
-                                              </div>
+                                              </div>}
                                             </div>
                                           </div>
 
@@ -586,350 +592,387 @@ export default function PricePage() {
                 </tbody>
               </table>
             </div>
+
+            {/* Versión móvil */}
+            <div className="lg:hidden overflow-auto">
+              {loading || loadingLab || !isAuthenticated ? (
+                  Array.from({length: 3}).map((_, index) => (
+                      <Card key={index} className="border border-gray-200">
+                        <CardContent className="p-4">
+                          <div className="flex justify-between items-start mb-3">
+                            <div>
+                              <Skeleton className="h-5 w-24 mb-1"/>
+                              <Skeleton className="h-4 w-16"/>
+                            </div>
+                            <Skeleton className="h-5 w-20"/>
+                          </div>
+
+                          <div className="space-y-2 mb-3">
+                            <Skeleton className="h-4 w-full"/>
+                            <Skeleton className="h-4 w-3/4"/>
+                          </div>
+
+                          <div className="flex gap-2">
+                            <Skeleton className="h-8 w-full"/>
+                            <Skeleton className="h-8 w-full"/>
+                          </div>
+                        </CardContent>
+                      </Card>
+                  ))
+              ) : paginatedData.length > 0 ? (
+                  paginatedData.map((item: any, index) => {
+                    const expirationStatus = PriceMethodsService.getExpirationStatus(item.kardex_VctoItem);
+                    return (
+                        <Card key={`${item.prod_codigo}-${item.kardex_lote}-${index}`} className="border border-gray-200">
+                          <CardContent className="p-4">
+                            <div className="flex justify-between items-start mb-3">
+                              <div>
+                                <h3 className="font-bold text-blue-600 text-sm">{item.prod_codigo}</h3>
+                                <p className="text-xs text-gray-500">{item.laboratorio_Descripcion}</p>
+                              </div>
+                            </div>
+
+                            <div className="space-y-2 mb-3">
+                              <div>
+                                <p className="font-medium text-sm truncate">{item.prod_descripcion}</p>
+                                <p className="text-xs text-gray-500">{item.prod_principio}</p>
+                              </div>
+                              <div className="grid grid-cols-2 gap-2">
+                                <div>
+                                  <span className="text-xs text-gray-500">Presentación:</span>
+                                  <p className="text-xs">{item.prod_presentacion}</p>
+                                </div>
+                              </div>
+                              <div className="grid grid-cols-2 gap-2">
+                                <div>
+                                  <span className="text-xs text-gray-500">P. Contado:</span>
+                                  <p className="text-xs font-mono">
+                                    S/ {item.precio_contado}
+                                  </p>
+                                </div>
+                                <div>
+                                  <span className="text-xs text-gray-500">P. Crédito:</span>
+                                  <p className="text-xs font-mono">
+                                    S/ {item.precio_credito}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="flex gap-2">
+                              {/* Botón Ver Lotes - Móvil */}
+                              <Dialog>
+                                <DialogTrigger asChild>
+                                  <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="flex-1 gap-1"
+                                      onClick={() => handleViewLots(item)}
+                                  >
+                                    <Eye className="h-4 w-4"/>
+                                    Lotes
+                                  </Button>
+                                </DialogTrigger>
+                                <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+                                  <DialogHeader>
+                                    <DialogTitle>Detalles de Lotes - {selectedProduct?.prod_codigo}</DialogTitle>
+                                    <DialogDescription>
+                                      {selectedProduct?.prod_descripcion}
+                                    </DialogDescription>
+                                  </DialogHeader>
+
+                                  {loadingLots ? (
+                                      <div className="space-y-4">
+                                        {Array.from({length: 3}).map((_, index) => (
+                                            <Skeleton key={index} className="h-12 w-full"/>
+                                        ))}
+                                      </div>
+                                  ) : lotDetails.length > 0 ? (
+                                      <Table>
+                                        <TableHeader>
+                                          <TableRow>
+                                            <TableHead>Lote</TableHead>
+                                            <TableHead>Stock</TableHead>
+                                            <TableHead>Fecha Vencimiento</TableHead>
+                                            <TableHead>Estado</TableHead>
+                                          </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                          {lotDetails.map((lot, index) => {
+                                            const lotStatus = PriceMethodsService.getExpirationStatus(lot.fechaVencimiento);
+                                            return (
+                                                <TableRow key={index}>
+                                                  <TableCell className="font-mono">{lot.numeroLote}</TableCell>
+                                                  <TableCell>
+                                                    {Number(lot.stock).toLocaleString("es-ES", {minimumFractionDigits: 2})}
+                                                  </TableCell>
+                                                  <TableCell>{formatDateToDDMMYYYY(lot.fechaVencimiento)}</TableCell>
+                                                  <TableCell>
+                                                    <Badge variant={lotStatus.variant}>
+                                                      {lotStatus.status}
+                                                    </Badge>
+                                                  </TableCell>
+                                                </TableRow>
+                                            );
+                                          })}
+                                        </TableBody>
+                                      </Table>
+                                  ) : (
+                                      <div className="text-center py-8 text-gray-500">
+                                        No se encontraron lotes para este producto
+                                      </div>
+                                  )}
+                                </DialogContent>
+                              </Dialog>
+
+                              <Dialog>
+                                <DialogTrigger asChild>
+                                  <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="gap-1"
+                                      onClick={() => handleViewPrices(item)}
+                                  >
+                                    <DollarSign className="h-4 w-4"/>
+                                    Precios
+                                  </Button>
+                                </DialogTrigger>
+                                <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                                  <DialogHeader>
+                                    <DialogTitle>Detalles de Precios</DialogTitle>
+                                    <DialogDescription>
+                                      {priceDetails?.prod_codigo} - {priceDetails?.prod_descripcion}
+                                    </DialogDescription>
+                                  </DialogHeader>
+
+                                  {priceDetails && (
+                                      <div className="space-y-6 py-4">
+                                        {/* Precios principales */}
+                                        <div className="grid grid-cols-2 gap-4">
+                                          <div className="space-y-2">
+                                            <Label className="text-sm font-medium">Precio Contado</Label>
+                                            <div className="text-lg font-mono font-semibold text-green-600">
+                                              S/ {priceDetails.precio_contado}
+                                            </div>
+                                          </div>
+                                          <div className="space-y-2">
+                                            <Label className="text-sm font-medium">Precio Crédito</Label>
+                                            <div className="text-lg font-mono font-semibold text-blue-600">
+                                              S/ {priceDetails.precio_credito}
+                                            </div>
+                                          </div>
+                                        </div>
+
+                                        <div className="border-t pt-4">
+                                          <div className="grid grid-cols-2 gap-4">
+                                            {Number(priceDetails.precio_bonif_cont) > 0 && <div className="space-y-1">
+                                              <Label className="text-xs text-gray-500">Bonificación Contado</Label>
+                                              <div className="text-sm font-mono">
+                                                S/ {priceDetails.precio_bonif_cont}
+                                              </div>
+                                            </div>}
+                                            {Number(priceDetails.precio_bonif_cred) > 0 && <div className="space-y-1">
+                                              <Label className="text-xs text-gray-500">Bonificación Crédito</Label>
+                                              <div className="text-sm font-mono">
+                                                S/ {priceDetails.precio_bonif_cred}
+                                              </div>
+                                            </div>}
+                                          </div>
+                                        </div>
+
+                                        {/* Sección de Escalas - Solo si hay datos */}
+                                        {escalas.length > 0 && (
+                                            <div className="border-t pt-4">
+                                              <h4 className="text-sm font-medium mb-3">Escalas de Precio</h4>
+                                              {loadingDetails ? (
+                                                  <div className="space-y-2">
+                                                    {Array.from({ length: 3 }).map((_, index) => (
+                                                        <Skeleton key={index} className="h-8 w-full" />
+                                                    ))}
+                                                  </div>
+                                              ) : (
+                                                  <div className="space-y-2">
+                                                    {escalas.map((escala) => (
+                                                        <div key={escala.id} className="flex justify-between items-center p-2 bg-gray-50 rounded">
+                    <span className="text-sm">
+                      {escala.desde} - {escala.hasta} unidades
+                    </span>
+                                                          <span className="text-sm font-mono font-semibold">
+                      S/ {escala.precio.toFixed(2)}
+                    </span>
+                                                        </div>
+                                                    ))}
+                                                  </div>
+                                              )}
+                                            </div>
+                                        )}
+
+                                        {/* Sección de Bonificados - Solo si hay datos */}
+                                        {bonificaciones.length > 0 && (
+                                            <div className="border-t pt-4">
+                                              <h4 className="text-sm font-medium mb-3">Productos Bonificados</h4>
+                                              {loadingDetails ? (
+                                                  <div className="space-y-2">
+                                                    {Array.from({ length: 2 }).map((_, index) => (
+                                                        <Skeleton key={index} className="h-12 w-full" />
+                                                    ))}
+                                                  </div>
+                                              ) : (
+                                                  <div className="space-y-3">
+                                                    {bonificaciones.map((bonificacion) => (
+                                                        <div key={bonificacion.id} className="p-3 bg-gray-50 rounded border">
+                                                          <div className="flex justify-between items-start mb-2">
+                      <span className="text-sm font-medium">
+                        Compra {bonificacion.compra}, lleva {bonificacion.lleva}
+                      </span>
+                                                          </div>
+                                                          <p className="text-xs text-gray-600 mb-1">
+                                                            {bonificacion.descripcion}
+                                                          </p>
+                                                          {!bonificacion.esMismoProducto && bonificacion.descripcionProducto && (
+                                                              <p className="text-xs text-blue-600">
+                                                                Producto: {bonificacion.descripcionProducto}
+                                                              </p>
+                                                          )}
+                                                        </div>
+                                                    ))}
+                                                  </div>
+                                              )}
+                                            </div>
+                                        )}
+                                      </div>
+                                  )}
+                                </DialogContent>
+                              </Dialog>
+                            </div>
+                          </CardContent>
+                        </Card>
+                    );
+                  })
+              ) : (
+                  <div className="text-center py-8 text-gray-500">
+                    No se encontraron productos
+                  </div>
+              )}
+            </div>
           </CardContent>
 
-          {/* Paginador */}
           {filteredPricesLot.length > 0 && (
-              <div className="border-t bg-gray-50 px-4 py-3 flex items-center justify-between sm:px-6">
-                <div className="flex items-center space-x-4">
-                  <div className="flex items-center space-x-2">
-                    <Label htmlFor="itemsPerPage" className="text-sm text-gray-700 whitespace-nowrap">
-                      Mostrar:
-                    </Label>
-                    <select
-                        id="itemsPerPage"
-                        value={itemsPerPage}
-                        onChange={handleItemsPerPageChange}
-                        className="border border-gray-300 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value={10}>10</option>
-                      <option value={20}>20</option>
-                      <option value={50}>50</option>
-                      <option value={100}>100</option>
-                    </select>
+              <div className="border-t bg-gray-50 px-4 py-3">
+                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                  <div className="flex flex-col xs:flex-row xs:items-center gap-3">
+                    <div className="flex items-center gap-2">
+                      <Label htmlFor="itemsPerPage" className="text-sm text-gray-700 whitespace-nowrap">
+                        Mostrar:
+                      </Label>
+                      <select
+                          id="itemsPerPage"
+                          value={itemsPerPage}
+                          onChange={handleItemsPerPageChange}
+                          className="border border-gray-300 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-20"
+                      >
+                        <option value={10}>10</option>
+                        <option value={20}>20</option>
+                        <option value={50}>50</option>
+                        <option value={100}>100</option>
+                      </select>
+                    </div>
+                    <div className="text-sm text-gray-700 whitespace-nowrap">
+                      Página <span className="font-medium">{currentPage}</span> de <span className="font-medium">{totalPages}</span>
+                    </div>
                   </div>
-                  <div className="text-sm text-gray-700">
-                    Página <span className="font-medium">{currentPage}</span> de <span className="font-medium">{totalPages}</span>
-                  </div>
-                </div>
 
-                <div className="flex items-center space-x-2">
-                  <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={goToPrevPage}
-                      disabled={currentPage === 1}
-                      className="flex items-center gap-1"
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                    Anterior
-                  </Button>
+                  <div className="flex flex-col sm:flex-row items-center gap-3">
+                    <div className="flex items-center gap-2 w-full sm:w-auto justify-center">
+                      <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={goToPrevPage}
+                          disabled={currentPage === 1}
+                          className="flex items-center gap-1 flex-1 sm:flex-none justify-center"
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                        <span className="hidden xs:inline">Anterior</span>
+                      </Button>
 
-                  {/* Números de página */}
-                  <div className="flex space-x-1">
-                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                      let pageNum;
-                      if (totalPages <= 5) {
-                        pageNum = i + 1;
-                      } else if (currentPage <= 3) {
-                        pageNum = i + 1;
-                      } else if (currentPage >= totalPages - 2) {
-                        pageNum = totalPages - 4 + i;
-                      } else {
-                        pageNum = currentPage - 2 + i;
-                      }
+                      <div className="flex items-center gap-1">
+                        {Array.from({ length: Math.min(totalPages <= 5 ? totalPages : 3, totalPages) }, (_, i) => {
+                          let pageNum;
+                          if (totalPages <= 5) {
+                            pageNum = i + 1;
+                          } else if (currentPage <= 2) {
+                            pageNum = i + 1;
+                          } else if (currentPage >= totalPages - 1) {
+                            pageNum = totalPages - (totalPages <= 5 ? totalPages : 3) + i + 1;
+                          } else {
+                            pageNum = currentPage - 1 + i;
+                          }
 
-                      return (
-                          <Button
-                              key={pageNum}
-                              variant={currentPage === pageNum ? "default" : "outline"}
-                              size="sm"
-                              onClick={() => goToPage(pageNum)}
-                              className="w-8 h-8 p-0"
+                          return (
+                              <Button
+                                  key={pageNum}
+                                  variant={currentPage === pageNum ? "default" : "outline"}
+                                  size="sm"
+                                  onClick={() => goToPage(pageNum)}
+                                  className="w-8 h-8 p-0 text-xs sm:text-sm"
+                              >
+                                {pageNum}
+                              </Button>
+                          );
+                        })}
+
+                        {totalPages > 5 && currentPage < totalPages - 2 && (
+                            <span className="px-2 text-sm text-gray-500">...</span>
+                        )}
+
+                        {totalPages > 5 && currentPage < totalPages - 1 && (
+                            <Button
+                                variant={currentPage === totalPages ? "default" : "outline"}
+                                size="sm"
+                                onClick={() => goToPage(totalPages)}
+                                className="w-8 h-8 p-0 text-xs sm:text-sm"
+                            >
+                              {totalPages}
+                            </Button>
+                        )}
+                      </div>
+
+                      <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={goToNextPage}
+                          disabled={currentPage === totalPages}
+                          className="flex items-center gap-1 flex-1 sm:flex-none justify-center"
+                      >
+                        <span className="hidden xs:inline">Siguiente</span>
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
+                    </div>
+
+                    {totalPages > 5 && (
+                        <div className="flex items-center gap-2 sm:hidden w-full justify-center">
+                          <Label htmlFor="pageSelect" className="text-sm text-gray-700 whitespace-nowrap">
+                            Ir a:
+                          </Label>
+                          <select
+                              id="pageSelect"
+                              value={currentPage}
+                              onChange={(e) => goToPage(Number(e.target.value))}
+                              className="border border-gray-300 rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                           >
-                            {pageNum}
-                          </Button>
-                      );
-                    })}
+                            {Array.from({ length: totalPages }, (_, i) => (
+                                <option key={i + 1} value={i + 1}>
+                                  {i + 1}
+                                </option>
+                            ))}
+                          </select>
+                        </div>
+                    )}
                   </div>
-
-                  <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={goToNextPage}
-                      disabled={currentPage === totalPages}
-                      className="flex items-center gap-1"
-                  >
-                    Siguiente
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
                 </div>
               </div>
           )}
         </Card>
-
-        {/* Versión móvil */}
-        <div className="lg:hidden overflow-auto">
-          {loading || loadingLab || !isAuthenticated ? (
-              Array.from({length: 3}).map((_, index) => (
-                  <Card key={index} className="border border-gray-200">
-                    <CardContent className="p-4">
-                      <div className="flex justify-between items-start mb-3">
-                        <div>
-                          <Skeleton className="h-5 w-24 mb-1"/>
-                          <Skeleton className="h-4 w-16"/>
-                        </div>
-                        <Skeleton className="h-5 w-20"/>
-                      </div>
-
-                      <div className="space-y-2 mb-3">
-                        <Skeleton className="h-4 w-full"/>
-                        <Skeleton className="h-4 w-3/4"/>
-                      </div>
-
-                      <div className="flex gap-2">
-                        <Skeleton className="h-8 w-full"/>
-                        <Skeleton className="h-8 w-full"/>
-                      </div>
-                    </CardContent>
-                  </Card>
-              ))
-          ) : paginatedData.length > 0 ? (
-              paginatedData.map((item: any, index) => {
-                const expirationStatus = PriceMethodsService.getExpirationStatus(item.kardex_VctoItem);
-                return (
-                    <Card key={`${item.prod_codigo}-${item.kardex_lote}-${index}`} className="border border-gray-200">
-                      <CardContent className="p-4">
-                        <div className="flex justify-between items-start mb-3">
-                          <div>
-                            <h3 className="font-bold text-blue-600 text-sm">{item.prod_codigo}</h3>
-                            <p className="text-xs text-gray-500">{item.laboratorio_Descripcion}</p>
-                          </div>
-                        </div>
-
-                        <div className="space-y-2 mb-3">
-                          <div>
-                            <p className="font-medium text-sm truncate">{item.prod_descripcion}</p>
-                            <p className="text-xs text-gray-500">{item.prod_principio}</p>
-                          </div>
-                          <div className="grid grid-cols-2 gap-2">
-                            <div>
-                              <span className="text-xs text-gray-500">Presentación:</span>
-                              <p className="text-xs">{item.prod_presentacion}</p>
-                            </div>
-                          </div>
-                          <div className="grid grid-cols-2 gap-2">
-                            <div>
-                              <span className="text-xs text-gray-500">P. Contado:</span>
-                              <p className="text-xs font-mono">
-                                S/ {item.precio_contado}
-                              </p>
-                            </div>
-                            <div>
-                              <span className="text-xs text-gray-500">P. Crédito:</span>
-                              <p className="text-xs font-mono">
-                                S/ {item.precio_credito}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="flex gap-2">
-                          {/* Botón Ver Lotes - Móvil */}
-                          <Dialog>
-                            <DialogTrigger asChild>
-                              <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="flex-1 gap-1"
-                                  onClick={() => handleViewLots(item)}
-                              >
-                                <Eye className="h-4 w-4"/>
-                                Lotes
-                              </Button>
-                            </DialogTrigger>
-                            <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-                              <DialogHeader>
-                                <DialogTitle>Detalles de Lotes - {selectedProduct?.prod_codigo}</DialogTitle>
-                                <DialogDescription>
-                                  {selectedProduct?.prod_descripcion}
-                                </DialogDescription>
-                              </DialogHeader>
-
-                              {loadingLots ? (
-                                  <div className="space-y-4">
-                                    {Array.from({length: 3}).map((_, index) => (
-                                        <Skeleton key={index} className="h-12 w-full"/>
-                                    ))}
-                                  </div>
-                              ) : lotDetails.length > 0 ? (
-                                  <Table>
-                                    <TableHeader>
-                                      <TableRow>
-                                        <TableHead>Lote</TableHead>
-                                        <TableHead>Stock</TableHead>
-                                        <TableHead>Fecha Vencimiento</TableHead>
-                                        <TableHead>Estado</TableHead>
-                                      </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                      {lotDetails.map((lot, index) => {
-                                        const lotStatus = PriceMethodsService.getExpirationStatus(lot.fechaVencimiento);
-                                        return (
-                                            <TableRow key={index}>
-                                              <TableCell className="font-mono">{lot.numeroLote}</TableCell>
-                                              <TableCell>
-                                                {Number(lot.stock).toLocaleString("es-ES", {minimumFractionDigits: 2})}
-                                              </TableCell>
-                                              <TableCell>{formatDateToDDMMYYYY(lot.fechaVencimiento)}</TableCell>
-                                              <TableCell>
-                                                <Badge variant={lotStatus.variant}>
-                                                  {lotStatus.status}
-                                                </Badge>
-                                              </TableCell>
-                                            </TableRow>
-                                        );
-                                      })}
-                                    </TableBody>
-                                  </Table>
-                              ) : (
-                                  <div className="text-center py-8 text-gray-500">
-                                    No se encontraron lotes para este producto
-                                  </div>
-                              )}
-                            </DialogContent>
-                          </Dialog>
-
-                          <Dialog>
-                            <DialogTrigger asChild>
-                              <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="gap-1"
-                                  onClick={() => handleViewPrices(item)}
-                              >
-                                <DollarSign className="h-4 w-4"/>
-                                Precios
-                              </Button>
-                            </DialogTrigger>
-                            <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-                              <DialogHeader>
-                                <DialogTitle>Detalles de Precios</DialogTitle>
-                                <DialogDescription>
-                                  {priceDetails?.prod_codigo} - {priceDetails?.prod_descripcion}
-                                </DialogDescription>
-                              </DialogHeader>
-
-                              {priceDetails && (
-                                  <div className="space-y-6 py-4">
-                                    {/* Precios principales */}
-                                    <div className="grid grid-cols-2 gap-4">
-                                      <div className="space-y-2">
-                                        <Label className="text-sm font-medium">Precio Contado</Label>
-                                        <div className="text-lg font-mono font-semibold text-green-600">
-                                          S/ {priceDetails.precio_contado}
-                                        </div>
-                                      </div>
-                                      <div className="space-y-2">
-                                        <Label className="text-sm font-medium">Precio Crédito</Label>
-                                        <div className="text-lg font-mono font-semibold text-blue-600">
-                                          S/ {priceDetails.precio_credito}
-                                        </div>
-                                      </div>
-                                    </div>
-
-                                    <div className="border-t pt-4">
-                                      <div className="grid grid-cols-2 gap-4">
-                                        <div className="space-y-1">
-                                          <Label className="text-xs text-gray-500">Bonificación Contado</Label>
-                                          <div className="text-sm font-mono">
-                                            S/ {priceDetails.precio_bonif_cont}
-                                          </div>
-                                        </div>
-                                        <div className="space-y-1">
-                                          <Label className="text-xs text-gray-500">Bonificación Crédito</Label>
-                                          <div className="text-sm font-mono">
-                                            S/ {priceDetails.precio_bonif_cred}
-                                          </div>
-                                        </div>
-                                      </div>
-                                    </div>
-
-                                    {/* Sección de Escalas - Solo si hay datos */}
-                                    {escalas.length > 0 && (
-                                        <div className="border-t pt-4">
-                                          <h4 className="text-sm font-medium mb-3">Escalas de Precio</h4>
-                                          {loadingDetails ? (
-                                              <div className="space-y-2">
-                                                {Array.from({ length: 3 }).map((_, index) => (
-                                                    <Skeleton key={index} className="h-8 w-full" />
-                                                ))}
-                                              </div>
-                                          ) : (
-                                              <div className="space-y-2">
-                                                {escalas.map((escala) => (
-                                                    <div key={escala.id} className="flex justify-between items-center p-2 bg-gray-50 rounded">
-                    <span className="text-sm">
-                      {escala.desde} - {escala.hasta} unidades
-                    </span>
-                                                      <span className="text-sm font-mono font-semibold">
-                      S/ {escala.precio.toFixed(2)}
-                    </span>
-                                                    </div>
-                                                ))}
-                                              </div>
-                                          )}
-                                        </div>
-                                    )}
-
-                                    {/* Sección de Bonificados - Solo si hay datos */}
-                                    {bonificaciones.length > 0 && (
-                                        <div className="border-t pt-4">
-                                          <h4 className="text-sm font-medium mb-3">Productos Bonificados</h4>
-                                          {loadingDetails ? (
-                                              <div className="space-y-2">
-                                                {Array.from({ length: 2 }).map((_, index) => (
-                                                    <Skeleton key={index} className="h-12 w-full" />
-                                                ))}
-                                              </div>
-                                          ) : (
-                                              <div className="space-y-3">
-                                                {bonificaciones.map((bonificacion) => (
-                                                    <div key={bonificacion.id} className="p-3 bg-gray-50 rounded border">
-                                                      <div className="flex justify-between items-start mb-2">
-                      <span className="text-sm font-medium">
-                        Compra {bonificacion.compra}, lleva {bonificacion.lleva}
-                      </span>
-                                                      </div>
-                                                      <p className="text-xs text-gray-600 mb-1">
-                                                        {bonificacion.descripcion}
-                                                      </p>
-                                                      {!bonificacion.esMismoProducto && bonificacion.descripcionProducto && (
-                                                          <p className="text-xs text-blue-600">
-                                                            Producto: {bonificacion.descripcionProducto}
-                                                          </p>
-                                                      )}
-                                                    </div>
-                                                ))}
-                                              </div>
-                                          )}
-                                        </div>
-                                    )}
-                                  </div>
-                              )}
-                            </DialogContent>
-                          </Dialog>
-                        </div>
-                      </CardContent>
-                    </Card>
-                );
-              })
-          ) : (
-              <div className="text-center py-8 text-gray-500">
-                No se encontraron productos
-              </div>
-          )}
-        </div>
       </div>
   )
 }

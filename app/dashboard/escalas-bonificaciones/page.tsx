@@ -17,7 +17,7 @@ import {
     X,
     Save,
     ArrowLeft,
-    DollarSign
+    DollarSign, Eye
 } from "lucide-react"
 import {
     Dialog,
@@ -77,6 +77,8 @@ export default function ScaleBonusManagementPage() {
     const [escalas, setEscalas] = useState<Escala[]>([])
     const [nuevaEscala, setNuevaEscala] = useState<Escala>({ desde: 1, hasta: 1, precio: 0, id: Date.now(), })
     const [bonificaciones, setBonificaciones] = useState<Bonificacion[]>([])
+    const [isViewModalOpen, setIsViewModalOpen] = useState(false)
+    const [viewingProduct, setViewingProduct] = useState<Producto | null>(null)
     const [nuevaBonificacion, setNuevaBonificacion] = useState<Bonificacion>({
         compra: 1,
         lleva: 1,
@@ -160,6 +162,12 @@ export default function ScaleBonusManagementPage() {
         product.Codigo_Art.toLowerCase().includes(productSearchQuery.toLowerCase()) ||
         String(product?.Presentacion).toLowerCase().includes(productSearchQuery.toLowerCase())
     )
+
+    const handleViewProduct = async (producto: Producto) => {
+        setViewingProduct(producto)
+        await fetchProductDetails(producto.Codigo_Art)
+        setIsViewModalOpen(true)
+    }
 
     const handleProductSelect = (product: Producto) => {
         setSelectedProduct(product)
@@ -294,16 +302,17 @@ export default function ScaleBonusManagementPage() {
                                     Nuevo Producto
                                 </Button>
                             </DialogTrigger>
-                            <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
-                                <DialogHeader>
-                                    <DialogTitle>Agregar Producto al Sistema de Promociones</DialogTitle>
-                                    <DialogDescription>
+                            <DialogContent className="max-w-[95vw] lg:max-w-4xl h-[95vh] sm:h-[90vh] mx-2 sm:mx-4 overflow-hidden flex flex-col">
+                                <DialogHeader className="flex-shrink-0 px-1 sm:px-0">
+                                    <DialogTitle className="text-lg sm:text-xl">Agregar Producto al Sistema de Promociones</DialogTitle>
+                                    <DialogDescription className="text-sm">
                                         Selecciona un producto y configura sus escalas y bonificaciones
                                     </DialogDescription>
                                 </DialogHeader>
 
-                                <div className="space-y-6">
-                                    <div className="space-y-4">
+                                <div className="flex-1 overflow-y-auto space-y-4 px-1 sm:px-0 py-2">
+                                    {/* Búsqueda de Producto */}
+                                    <div className="space-y-3">
                                         <div className="space-y-2">
                                             <Label htmlFor="product-search" className="text-sm font-medium">
                                                 Buscar Producto
@@ -315,25 +324,25 @@ export default function ScaleBonusManagementPage() {
                                                             variant="outline"
                                                             role="combobox"
                                                             aria-expanded={popoverOpen}
-                                                            className="w-full justify-between h-12 px-3 text-left font-normal text-sm"
+                                                            className="w-full justify-between h-12 px-3 text-left font-normal text-sm min-h-12"
                                                         >
                                                             {selectedProduct ? (
-                                                                <div className="flex flex-col items-start min-w-0 flex-1">
-                                                                    <span className="font-medium truncate w-full">
-                                                                        {selectedProduct.NombreItem}
-                                                                    </span>
+                                                                <div className="flex flex-col items-start min-w-0 flex-1 overflow-hidden">
+                                            <span className="font-medium truncate w-full text-sm">
+                                                {selectedProduct.NombreItem}
+                                            </span>
                                                                     <span className="text-xs text-gray-500 truncate w-full">
-                                                                        {selectedProduct.Codigo_Art} | {selectedProduct.Presentacion}
-                                                                    </span>
+                                                {selectedProduct.Codigo_Art} | {selectedProduct.Presentacion}
+                                            </span>
                                                                 </div>
                                                             ) : (
-                                                                <span className="text-gray-500">Buscar producto...</span>
+                                                                <span className="text-gray-500 truncate">Buscar producto...</span>
                                                             )}
                                                             <Search className="ml-2 h-4 w-4 shrink-0 opacity-50"/>
                                                         </Button>
                                                     </PopoverTrigger>
                                                     <PopoverContent
-                                                        className="p-0"
+                                                        className="p-0 w-[90vw] sm:w-[500px] max-w-[95vw]"
                                                         align="start"
                                                         side="bottom"
                                                     >
@@ -342,29 +351,29 @@ export default function ScaleBonusManagementPage() {
                                                                 placeholder="Buscar por código, nombre o laboratorio..."
                                                                 value={productSearchQuery}
                                                                 onValueChange={setProductSearchQuery}
-                                                                className="text-sm"
+                                                                className="text-sm h-11"
                                                             />
-                                                            <CommandList>
-                                                                <CommandEmpty>
+                                                            <CommandList className="max-h-[60vh]">
+                                                                <CommandEmpty className="py-6 text-center">
                                                                     {productsLoading ? "Buscando productos..." : "No se encontraron productos."}
                                                                 </CommandEmpty>
-                                                                <CommandGroup heading="Resultados">
+                                                                <CommandGroup heading="Resultados" className="overflow-y-auto">
                                                                     {filteredAllProducts.map((product) => (
                                                                         <CommandItem
                                                                             key={product.Codigo_Art}
                                                                             value={product.Codigo_Art}
                                                                             onSelect={() => handleProductSelect(product)}
-                                                                            className="py-3"
+                                                                            className="py-2 sm:py-3"
                                                                         >
-                                                                            <div className="flex items-start gap-2 w-full">
-                                                                                <div className="bg-blue-100 p-2 rounded-md shrink-0">
+                                                                            <div className="flex items-start gap-2 w-full min-w-0">
+                                                                                <div className="bg-blue-100 p-1.5 sm:p-2 rounded-md shrink-0 mt-0.5">
                                                                                     <Package className="h-3 w-3 sm:h-4 sm:w-4 text-blue-600"/>
                                                                                 </div>
                                                                                 <div className="flex flex-col flex-1 min-w-0">
-                                                                                    <div className="flex justify-between items-start w-full gap-2">
-                                                                                        <span className="font-medium text-sm truncate flex-1">
-                                                                                            {product.NombreItem}
-                                                                                        </span>
+                                                                                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start w-full gap-1 sm:gap-2">
+                                                                <span className="font-medium text-sm break-words flex-1">
+                                                                    {product.NombreItem}
+                                                                </span>
                                                                                         <div className="flex flex-wrap gap-1 shrink-0">
                                                                                             <Badge
                                                                                                 variant="outline"
@@ -374,23 +383,21 @@ export default function ScaleBonusManagementPage() {
                                                                                             </Badge>
                                                                                         </div>
                                                                                     </div>
-                                                                                    <div className="flex justify-between items-center w-full mt-1">
-                                                                                        <span className="text-xs text-gray-500 truncate">
-                                                                                            <span className="font-medium">Código:</span>{" "}
-                                                                                            {product.Codigo_Art}
-                                                                                        </span>
-                                                                                        <span className="text-xs text-gray-500 truncate">
-                                                                                            <span className="font-medium">Lab:</span>{" "}
-                                                                                            {product.Presentacion}
-                                                                                        </span>
+                                                                                    <div className="flex flex-col xs:flex-row xs:justify-between xs:items-center w-full mt-1 gap-1">
+                                                                <span className="text-xs text-gray-500 break-words">
+                                                                    <span className="font-medium">Código:</span> {product.Codigo_Art}
+                                                                </span>
+                                                                                        <span className="text-xs text-gray-500 break-words">
+                                                                    <span className="font-medium">Lab:</span> {product.Presentacion}
+                                                                </span>
                                                                                     </div>
-                                                                                    <div className="flex justify-between mt-2 text-xs">
-                                                                                        <span className="text-green-600">
-                                                                                            Contado: S/.{Number(product.PUContado).toFixed(2)}
-                                                                                        </span>
-                                                                                        <span className="text-blue-600">
-                                                                                            Crédito: S/.{Number(product.PUCredito).toFixed(2)}
-                                                                                        </span>
+                                                                                    <div className="flex flex-col xs:flex-row xs:justify-between mt-2 text-xs gap-1">
+                                                                <span className="text-green-600 whitespace-nowrap">
+                                                                    Contado: S/.{Number(product.PUContado).toFixed(2)}
+                                                                </span>
+                                                                                        <span className="text-blue-600 whitespace-nowrap">
+                                                                    Crédito: S/.{Number(product.PUCredito).toFixed(2)}
+                                                                </span>
                                                                                     </div>
                                                                                 </div>
                                                                             </div>
@@ -405,32 +412,34 @@ export default function ScaleBonusManagementPage() {
                                         </div>
                                     </div>
 
+                                    {/* Configuración de Escalas y Bonificaciones */}
                                     {selectedProduct && (
                                         <Tabs defaultValue="escalas" className="w-full">
-                                            <TabsList className="grid w-full grid-cols-2 mb-6">
-                                                <TabsTrigger value="escalas" className="flex items-center gap-2">
-                                                    <TrendingUp className="h-4 w-4" />
-                                                    Escalas de Precio
+                                            <TabsList className="grid w-full grid-cols-2 mb-4 sm:mb-6 h-10 sm:h-11">
+                                                <TabsTrigger value="escalas" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+                                                    <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4" />
+                                                    <span className="truncate">Escalas</span>
                                                 </TabsTrigger>
-                                                <TabsTrigger value="bonificaciones" className="flex items-center gap-2">
-                                                    <Gift className="h-4 w-4" />
-                                                    Bonificaciones
+                                                <TabsTrigger value="bonificaciones" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+                                                    <Gift className="h-3 w-3 sm:h-4 sm:w-4" />
+                                                    <span className="truncate">Bonificaciones</span>
                                                 </TabsTrigger>
                                             </TabsList>
 
+                                            {/* Escalas de Precio */}
                                             <TabsContent value="escalas" className="space-y-4">
                                                 <Card>
-                                                    <CardHeader className="bg-purple-50 border-b">
-                                                        <CardTitle className="flex items-center gap-2 text-purple-700 text-lg">
-                                                            <TrendingUp className="h-5 w-5" />
+                                                    <CardHeader className="bg-purple-50 border-b p-4">
+                                                        <CardTitle className="flex items-center gap-2 text-purple-700 text-base sm:text-lg">
+                                                            <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5" />
                                                             Escalas de Precio
                                                         </CardTitle>
-                                                        <CardDescription>
+                                                        <CardDescription className="text-sm">
                                                             Define rangos de cantidad con precios especiales por volumen
                                                         </CardDescription>
                                                     </CardHeader>
                                                     <CardContent className="space-y-4 pt-4">
-                                                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                                        <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-3 gap-3">
                                                             <div className="space-y-2">
                                                                 <Label htmlFor="desde" className="text-sm font-medium">Desde</Label>
                                                                 <Input
@@ -439,7 +448,7 @@ export default function ScaleBonusManagementPage() {
                                                                     min="1"
                                                                     value={nuevaEscala.desde}
                                                                     onChange={(e) => setNuevaEscala({ ...nuevaEscala, desde: parseInt(e.target.value) || 1 })}
-                                                                    className="h-10"
+                                                                    className="h-10 text-sm"
                                                                     placeholder="Ej: 10"
                                                                 />
                                                             </div>
@@ -451,7 +460,7 @@ export default function ScaleBonusManagementPage() {
                                                                     min={nuevaEscala.desde}
                                                                     value={nuevaEscala.hasta}
                                                                     onChange={(e) => setNuevaEscala({ ...nuevaEscala, hasta: parseInt(e.target.value) || 1 })}
-                                                                    className="h-10"
+                                                                    className="h-10 text-sm"
                                                                     placeholder="Ej: 50"
                                                                 />
                                                             </div>
@@ -466,7 +475,7 @@ export default function ScaleBonusManagementPage() {
                                                                         min="0.01"
                                                                         value={nuevaEscala.precio}
                                                                         onChange={(e) => setNuevaEscala({ ...nuevaEscala, precio: parseFloat(e.target.value) || 0 })}
-                                                                        className="h-10 pl-9"
+                                                                        className="h-10 pl-9 text-sm"
                                                                         placeholder="0.00"
                                                                     />
                                                                 </div>
@@ -475,7 +484,7 @@ export default function ScaleBonusManagementPage() {
 
                                                         <Button
                                                             onClick={handleAddEscala}
-                                                            className="w-full bg-purple-600 hover:bg-purple-700 h-10"
+                                                            className="w-full bg-purple-600 hover:bg-purple-700 h-10 text-sm"
                                                             disabled={!nuevaEscala.desde || !nuevaEscala.hasta || !nuevaEscala.precio}
                                                         >
                                                             <Plus className="h-4 w-4 mr-2" />
@@ -486,23 +495,23 @@ export default function ScaleBonusManagementPage() {
                                                             <div className="space-y-3">
                                                                 <div className="flex items-center justify-between">
                                                                     <h4 className="font-semibold text-sm">Escalas configuradas</h4>
-                                                                    <Badge variant="outline" className="bg-purple-50 text-purple-700">
+                                                                    <Badge variant="outline" className="bg-purple-50 text-purple-700 text-xs">
                                                                         {escalas.length} activas
                                                                     </Badge>
                                                                 </div>
-                                                                <div className="border rounded-lg divide-y max-h-60 overflow-y-auto">
+                                                                <div className="border rounded-lg divide-y max-h-48 sm:max-h-60 overflow-y-auto">
                                                                     {escalas.map((escala) => (
-                                                                        <div key={escala.id} className="flex items-center justify-between p-4 hover:bg-gray-50">
-                                                                            <div className="flex-1">
-                                                                                <div className="flex items-center gap-3">
-                                                                                    <div className="bg-purple-100 p-2 rounded-md">
-                                                                                        <TrendingUp className="h-4 w-4 text-purple-600" />
+                                                                        <div key={escala.id} className="flex items-center justify-between p-3 sm:p-4 hover:bg-gray-50">
+                                                                            <div className="flex-1 min-w-0">
+                                                                                <div className="flex items-center gap-2 sm:gap-3">
+                                                                                    <div className="bg-purple-100 p-1.5 sm:p-2 rounded-md shrink-0">
+                                                                                        <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 text-purple-600" />
                                                                                     </div>
-                                                                                    <div>
-                                                                                        <div className="font-medium text-sm">
+                                                                                    <div className="min-w-0 flex-1">
+                                                                                        <div className="font-medium text-sm break-words">
                                                                                             {escala.desde} - {escala.hasta} unidades
                                                                                         </div>
-                                                                                        <div className="text-sm text-gray-600">
+                                                                                        <div className="text-sm text-gray-600 break-words">
                                                                                             Precio: <span className="font-semibold text-green-600">S/ {escala.precio.toFixed(2)}</span> c/u
                                                                                         </div>
                                                                                     </div>
@@ -512,19 +521,19 @@ export default function ScaleBonusManagementPage() {
                                                                                 variant="ghost"
                                                                                 size="sm"
                                                                                 onClick={() => handleRemoveEscala(escala.id)}
-                                                                                className="h-8 w-8 p-0 text-red-600 hover:bg-red-50"
+                                                                                className="h-7 w-7 sm:h-8 sm:w-8 p-0 text-red-600 hover:bg-red-50 shrink-0 ml-2"
                                                                             >
-                                                                                <X className="h-4 w-4" />
+                                                                                <X className="h-3 w-3 sm:h-4 sm:w-4" />
                                                                             </Button>
                                                                         </div>
                                                                     ))}
                                                                 </div>
                                                             </div>
                                                         ) : (
-                                                            <div className="text-center py-8 border-2 border-dashed border-gray-300 rounded-lg">
-                                                                <TrendingUp className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                                                                <h4 className="font-medium text-gray-900 mb-1">No hay escalas configuradas</h4>
-                                                                <p className="text-sm text-gray-500">
+                                                            <div className="text-center py-6 sm:py-8 border-2 border-dashed border-gray-300 rounded-lg">
+                                                                <TrendingUp className="h-8 w-8 sm:h-12 sm:w-12 text-gray-400 mx-auto mb-2 sm:mb-3" />
+                                                                <h4 className="font-medium text-gray-900 mb-1 text-sm sm:text-base">No hay escalas configuradas</h4>
+                                                                <p className="text-xs sm:text-sm text-gray-500">
                                                                     Agrega rangos de cantidad con precios especiales
                                                                 </p>
                                                             </div>
@@ -533,19 +542,20 @@ export default function ScaleBonusManagementPage() {
                                                 </Card>
                                             </TabsContent>
 
+                                            {/* Bonificaciones */}
                                             <TabsContent value="bonificaciones" className="space-y-4">
                                                 <Card>
-                                                    <CardHeader className="bg-yellow-50 border-b">
-                                                        <CardTitle className="flex items-center gap-2 text-yellow-700 text-lg">
-                                                            <Gift className="h-5 w-5" />
+                                                    <CardHeader className="bg-yellow-50 border-b p-4">
+                                                        <CardTitle className="flex items-center gap-2 text-yellow-700 text-base sm:text-lg">
+                                                            <Gift className="h-4 w-4 sm:h-5 sm:w-5" />
                                                             Bonificaciones
                                                         </CardTitle>
-                                                        <CardDescription>
+                                                        <CardDescription className="text-sm">
                                                             Configura promociones de "compra y lleva" - Puede ser del mismo producto u otros productos
                                                         </CardDescription>
                                                     </CardHeader>
                                                     <CardContent className="space-y-4 pt-4">
-                                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                                                             <div className="space-y-2">
                                                                 <Label htmlFor="compra" className="text-sm font-medium">Compra</Label>
                                                                 <Input
@@ -554,7 +564,7 @@ export default function ScaleBonusManagementPage() {
                                                                     min="1"
                                                                     value={nuevaBonificacion.compra}
                                                                     onChange={(e) => setNuevaBonificacion({ ...nuevaBonificacion, compra: parseInt(e.target.value) || 1 })}
-                                                                    className="h-10"
+                                                                    className="h-10 text-sm"
                                                                     placeholder="Ej: 3"
                                                                 />
                                                             </div>
@@ -566,30 +576,30 @@ export default function ScaleBonusManagementPage() {
                                                                     min="1"
                                                                     value={nuevaBonificacion.lleva}
                                                                     onChange={(e) => setNuevaBonificacion({ ...nuevaBonificacion, lleva: parseInt(e.target.value) || 1 })}
-                                                                    className="h-10"
+                                                                    className="h-10 text-sm"
                                                                     placeholder="Ej: 1"
                                                                 />
                                                             </div>
                                                         </div>
 
-                                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
                                                             <div className="space-y-2">
-                                                                <Label htmlFor="descripcion" className="text-sm font-medium">Descripción de la promoción</Label>
+                                                                <Label htmlFor="descripcion" className="text-sm font-medium">Descripción</Label>
                                                                 <Input
                                                                     id="descripcion"
                                                                     placeholder={
                                                                         nuevaBonificacion.esMismoProducto
-                                                                            ? "Ej: Compra 3 unidades y lleva 1 gratis"
-                                                                            : "Ej: Compra 3 unidades y lleva 1 producto X gratis"
+                                                                            ? "Ej: Compra 3 lleva 1 gratis"
+                                                                            : "Ej: Compra 3 lleva 1 producto X gratis"
                                                                     }
                                                                     value={nuevaBonificacion.descripcion}
                                                                     onChange={(e) => setNuevaBonificacion({ ...nuevaBonificacion, descripcion: e.target.value })}
-                                                                    className="h-10"
+                                                                    className="h-10 text-sm"
                                                                 />
                                                             </div>
 
-                                                            <div>
-                                                                <div className="flex items-center space-x-2">
+                                                            <div className="space-y-2">
+                                                                <div className="flex items-center space-x-2 h-10">
                                                                     <input
                                                                         type="checkbox"
                                                                         id="esMismoProducto"
@@ -603,45 +613,48 @@ export default function ScaleBonusManagementPage() {
                                                                         className="h-4 w-4 text-blue-600 rounded"
                                                                     />
                                                                     <Label htmlFor="esMismoProducto" className="text-sm font-medium">
-                                                                        Bonificar el mismo producto
+                                                                        Mismo producto
                                                                     </Label>
                                                                 </div>
 
                                                                 {!nuevaBonificacion.esMismoProducto && (
-                                                                    <div className="space-y-2 mt-3">
+                                                                    <div className="space-y-2">
+                                                                        <Label className="text-sm font-medium">Producto a bonificar</Label>
                                                                         <Popover>
                                                                             <PopoverTrigger asChild>
                                                                                 <Button
                                                                                     variant="outline"
                                                                                     role="combobox"
-                                                                                    className="w-full justify-between h-10 text-left font-normal"
+                                                                                    className="w-full justify-between h-10 text-left font-normal text-sm min-h-10"
                                                                                 >
                                                                                     {nuevaBonificacion.descripcionProducto ? (
-                                                                                        <div className="flex flex-col items-start min-w-0 flex-1">
-                                                                                    <span className="font-medium truncate w-full">
-                                                                                        {nuevaBonificacion.descripcionProducto}
-                                                                                    </span>
+                                                                                        <div className="flex flex-col items-start min-w-0 flex-1 overflow-hidden">
+                                                                    <span className="font-medium truncate w-full text-sm">
+                                                                        {nuevaBonificacion.descripcionProducto}
+                                                                    </span>
                                                                                             {nuevaBonificacion.productoBonificado && (
                                                                                                 <span className="text-xs text-gray-500 truncate w-full">
-                                                                                            Código: {nuevaBonificacion.productoBonificado}
-                                                                                        </span>
+                                                                            Código: {nuevaBonificacion.productoBonificado}
+                                                                        </span>
                                                                                             )}
                                                                                         </div>
                                                                                     ) : (
-                                                                                        <span className="text-gray-500">Seleccionar producto a bonificar...</span>
+                                                                                        <span className="text-gray-500 truncate">Seleccionar producto...</span>
                                                                                     )}
                                                                                     <Search className="ml-2 h-4 w-4 shrink-0 opacity-50"/>
                                                                                 </Button>
                                                                             </PopoverTrigger>
-                                                                            <PopoverContent className="p-0" align="start">
+                                                                            <PopoverContent className="p-0 w-[90vw] sm:w-[400px] max-w-[95vw]" align="start">
                                                                                 <Command>
                                                                                     <CommandInput
                                                                                         placeholder="Buscar producto..."
-                                                                                        className="h-9"
+                                                                                        className="h-9 text-sm"
                                                                                     />
-                                                                                    <CommandList>
-                                                                                        <CommandEmpty>No se encontraron productos.</CommandEmpty>
-                                                                                        <CommandGroup className="max-h-60 overflow-y-auto">
+                                                                                    <CommandList className="max-h-[50vh]">
+                                                                                        <CommandEmpty className="py-4 text-center text-sm">
+                                                                                            No se encontraron productos.
+                                                                                        </CommandEmpty>
+                                                                                        <CommandGroup className="overflow-y-auto">
                                                                                             {allProducts.map((product) => (
                                                                                                 <CommandItem
                                                                                                     key={product.Codigo_Art}
@@ -653,19 +666,19 @@ export default function ScaleBonusManagementPage() {
                                                                                                             descripcionProducto: product.NombreItem
                                                                                                         })
                                                                                                     }}
-                                                                                                    className="py-3"
+                                                                                                    className="py-2"
                                                                                                 >
-                                                                                                    <div className="flex items-start gap-2 w-full">
-                                                                                                        <div className="bg-green-100 p-2 rounded-md shrink-0">
-                                                                                                            <Package className="h-3 w-3 sm:h-4 sm:w-4 text-green-600"/>
+                                                                                                    <div className="flex items-start gap-2 w-full min-w-0">
+                                                                                                        <div className="bg-green-100 p-1.5 rounded-md shrink-0 mt-0.5">
+                                                                                                            <Package className="h-3 w-3 text-green-600"/>
                                                                                                         </div>
                                                                                                         <div className="flex flex-col flex-1 min-w-0">
-                                                                                                    <span className="font-medium text-sm truncate">
-                                                                                                        {product.NombreItem}
-                                                                                                    </span>
-                                                                                                            <span className="text-xs text-gray-500 truncate">
-                                                                                                        {product.Codigo_Art} | {product.Presentacion}
-                                                                                                    </span>
+                                                                                    <span className="font-medium text-sm break-words">
+                                                                                        {product.NombreItem}
+                                                                                    </span>
+                                                                                                            <span className="text-xs text-gray-500 break-words">
+                                                                                        {product.Codigo_Art} | {product.Presentacion}
+                                                                                    </span>
                                                                                                         </div>
                                                                                                     </div>
                                                                                                 </CommandItem>
@@ -679,9 +692,10 @@ export default function ScaleBonusManagementPage() {
                                                                 )}
                                                             </div>
                                                         </div>
+
                                                         <Button
                                                             onClick={handleAddBonificacion}
-                                                            className="w-full bg-yellow-600 hover:bg-yellow-700 h-10"
+                                                            className="w-full bg-yellow-600 hover:bg-yellow-700 h-10 text-sm"
                                                             disabled={
                                                                 !nuevaBonificacion.compra ||
                                                                 !nuevaBonificacion.lleva ||
@@ -697,20 +711,20 @@ export default function ScaleBonusManagementPage() {
                                                             <div className="space-y-3">
                                                                 <div className="flex items-center justify-between">
                                                                     <h4 className="font-semibold text-sm">Bonificaciones configuradas</h4>
-                                                                    <Badge variant="outline" className="bg-yellow-50 text-yellow-700">
+                                                                    <Badge variant="outline" className="bg-yellow-50 text-yellow-700 text-xs">
                                                                         {bonificaciones.length} activas
                                                                     </Badge>
                                                                 </div>
-                                                                <div className="border rounded-lg divide-y max-h-60 overflow-y-auto">
+                                                                <div className="border rounded-lg divide-y max-h-48 sm:max-h-60 overflow-y-auto">
                                                                     {bonificaciones.map((bonificacion) => (
-                                                                        <div key={bonificacion.id} className="flex items-center justify-between p-4 hover:bg-gray-50">
-                                                                            <div className="flex-1">
-                                                                                <div className="flex items-center gap-3">
-                                                                                    <div className="bg-yellow-100 p-2 rounded-md">
-                                                                                        <Gift className="h-4 w-4 text-yellow-600" />
+                                                                        <div key={bonificacion.id} className="flex items-center justify-between p-3 sm:p-4 hover:bg-gray-50">
+                                                                            <div className="flex-1 min-w-0">
+                                                                                <div className="flex items-center gap-2 sm:gap-3">
+                                                                                    <div className="bg-yellow-100 p-1.5 sm:p-2 rounded-md shrink-0">
+                                                                                        <Gift className="h-3 w-3 sm:h-4 sm:w-4 text-yellow-600" />
                                                                                     </div>
-                                                                                    <div>
-                                                                                        <div className="font-medium text-sm">
+                                                                                    <div className="min-w-0 flex-1">
+                                                                                        <div className="font-medium text-sm break-words">
                                                                                             Compra {bonificacion.compra} lleva {bonificacion.lleva}
                                                                                             {!bonificacion.esMismoProducto && (
                                                                                                 <Badge variant="outline" className="ml-2 bg-blue-50 text-blue-700 text-xs">
@@ -718,9 +732,11 @@ export default function ScaleBonusManagementPage() {
                                                                                                 </Badge>
                                                                                             )}
                                                                                         </div>
-                                                                                        <div className="text-sm text-gray-600">{bonificacion.descripcion}</div>
+                                                                                        <div className="text-sm text-gray-600 break-words">
+                                                                                            {bonificacion.descripcion}
+                                                                                        </div>
                                                                                         {!bonificacion.esMismoProducto && bonificacion.descripcionProducto && (
-                                                                                            <div className="text-xs text-blue-600 mt-1">
+                                                                                            <div className="text-xs text-blue-600 mt-1 break-words">
                                                                                                 Producto: {bonificacion.descripcionProducto}
                                                                                             </div>
                                                                                         )}
@@ -731,19 +747,19 @@ export default function ScaleBonusManagementPage() {
                                                                                 variant="ghost"
                                                                                 size="sm"
                                                                                 onClick={() => handleRemoveBonificacion(bonificacion.id)}
-                                                                                className="h-8 w-8 p-0 text-red-600 hover:bg-red-50"
+                                                                                className="h-7 w-7 sm:h-8 sm:w-8 p-0 text-red-600 hover:bg-red-50 shrink-0 ml-2"
                                                                             >
-                                                                                <X className="h-4 w-4" />
+                                                                                <X className="h-3 w-3 sm:h-4 sm:w-4" />
                                                                             </Button>
                                                                         </div>
                                                                     ))}
                                                                 </div>
                                                             </div>
                                                         ) : (
-                                                            <div className="text-center py-8 border-2 border-dashed border-gray-300 rounded-lg">
-                                                                <Gift className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                                                                <h4 className="font-medium text-gray-900 mb-1">No hay bonificaciones</h4>
-                                                                <p className="text-sm text-gray-500">
+                                                            <div className="text-center py-6 sm:py-8 border-2 border-dashed border-gray-300 rounded-lg">
+                                                                <Gift className="h-8 w-8 sm:h-12 sm:w-12 text-gray-400 mx-auto mb-2 sm:mb-3" />
+                                                                <h4 className="font-medium text-gray-900 mb-1 text-sm sm:text-base">No hay bonificaciones</h4>
+                                                                <p className="text-xs sm:text-sm text-gray-500">
                                                                     Configura promociones de compra y lleva gratis
                                                                 </p>
                                                             </div>
@@ -753,22 +769,21 @@ export default function ScaleBonusManagementPage() {
                                             </TabsContent>
                                         </Tabs>
                                     )}
-
                                 </div>
 
-                                <DialogFooter>
+                                <DialogFooter className="flex-shrink-0 px-1 sm:px-0 pt-4 border-t">
                                     <Button variant="outline" disabled={loadingSave} onClick={() => {
                                         setIsProductModalOpen(false)
                                         setSelectedProduct(null)
                                         setEscalas([])
                                         setBonificaciones([])
-                                    }}>
+                                    }} className="w-full sm:w-auto h-10 text-sm">
                                         Cancelar
                                     </Button>
                                     <Button
                                         onClick={() => selectedProduct && handleAddProductToManagement(selectedProduct)}
                                         disabled={!selectedProduct || loadingSave}
-                                        className="bg-blue-600 hover:bg-blue-700"
+                                        className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto h-10 text-sm"
                                     >
                                         <Plus className="mr-2 h-4 w-4" />
                                         Guardar
@@ -846,6 +861,15 @@ export default function ScaleBonusManagementPage() {
                                         </div>
 
                                         <div className="flex gap-2">
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => handleViewProduct(producto)}
+                                                className="flex-1 text-xs bg-blue-50 text-blue-700 hover:bg-blue-100"
+                                            >
+                                                <Eye className="h-3 w-3 mr-1" />
+                                                Ver
+                                            </Button>
                                             <Button
                                                 variant="outline"
                                                 size="sm"
@@ -1252,6 +1276,134 @@ export default function ScaleBonusManagementPage() {
                         <Button onClick={handleSaveChanges} disabled={loadingSave} className="bg-green-600 hover:bg-green-700">
                             <Save className="mr-2 h-4 w-4" />
                             Guardar Cambios
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={isViewModalOpen} onOpenChange={setIsViewModalOpen}>
+                <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <Package className="h-5 w-5" />
+                            Detalles de Promociones - {viewingProduct?.NombreItem}
+                        </DialogTitle>
+                        <DialogDescription>
+                            Código: {viewingProduct?.Codigo_Art} | Precio Base: S/ {Number(viewingProduct?.PUContado).toFixed(2)}
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <Tabs defaultValue="escalas" className="w-full">
+                        <TabsList className="grid w-full grid-cols-2 mb-6">
+                            <TabsTrigger value="escalas" className="flex items-center gap-2">
+                                <TrendingUp className="h-4 w-4" />
+                                Escalas de Precio ({escalas.length})
+                            </TabsTrigger>
+                            <TabsTrigger value="bonificaciones" className="flex items-center gap-2">
+                                <Gift className="h-4 w-4" />
+                                Bonificaciones ({bonificaciones.length})
+                            </TabsTrigger>
+                        </TabsList>
+
+                        <TabsContent value="escalas" className="space-y-4">
+                            <Card>
+                                <CardContent className="pt-4">
+                                    {escalas.length > 0 ? (
+                                        <div className="space-y-3">
+                                            <div className="border rounded-lg divide-y">
+                                                {escalas.map((escala, index) => (
+                                                    <div key={escala.id} className="flex items-center justify-between p-4 hover:bg-gray-50">
+                                                        <div className="flex-1">
+                                                            <div className="flex items-center gap-3">
+                                                                <div className="bg-purple-100 p-2 rounded-md">
+                                                                    <TrendingUp className="h-4 w-4 text-purple-600" />
+                                                                </div>
+                                                                <div>
+                                                                    <div className="font-medium text-sm">
+                                                                        Escala {index + 1}: {escala.desde} - {escala.hasta} unidades
+                                                                    </div>
+                                                                    <div className="text-sm text-gray-600">
+                                                                        Precio especial: <span className="font-semibold text-green-600">S/ {escala.precio.toFixed(2)}</span> c/u
+                                                                    </div>
+                                                                    <div className="text-xs text-gray-500 mt-1">
+                                                                        Comparado con precio base: <span className="font-medium">S/ {Number(viewingProduct?.PUContado).toFixed(2)}</span>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <Badge variant="outline" className="bg-green-50 text-green-700">
+                                                            {(((Number(viewingProduct?.PUContado) - escala.precio) / Number(viewingProduct?.PUContado)) * 100).toFixed(1)}% desc.
+                                                        </Badge>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="text-center py-8 border-2 border-dashed border-gray-300 rounded-lg">
+                                            <TrendingUp className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+                                            <h4 className="font-medium text-gray-900 mb-1">No hay escalas configuradas</h4>
+                                            <p className="text-sm text-gray-500">
+                                                Este producto no tiene escalas de precio configuradas
+                                            </p>
+                                        </div>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        </TabsContent>
+
+                        <TabsContent value="bonificaciones" className="space-y-4">
+                            <Card>
+                                <CardContent className="pt-4">
+                                    {bonificaciones.length > 0 ? (
+                                        <div className="space-y-3">
+                                            <div className="border rounded-lg divide-y">
+                                                {bonificaciones.map((bonificacion, index) => (
+                                                    <div key={bonificacion.id} className="flex items-center justify-between p-4 hover:bg-gray-50">
+                                                        <div className="flex-1">
+                                                            <div className="flex items-center gap-3">
+                                                                <div className="bg-yellow-100 p-2 rounded-md">
+                                                                    <Gift className="h-4 w-4 text-yellow-600" />
+                                                                </div>
+                                                                <div>
+                                                                    <div className="font-medium text-sm">
+                                                                        Promoción {index + 1}: Compra {bonificacion.compra} lleva {bonificacion.lleva} gratis
+                                                                    </div>
+                                                                    <div className="text-sm text-gray-600">{bonificacion.descripcion}</div>
+                                                                    {!bonificacion.esMismoProducto && bonificacion.descripcionProducto && (
+                                                                        <div className="text-xs text-blue-600 mt-1">
+                                                                            Producto bonificado: {bonificacion.descripcionProducto}
+                                                                        </div>
+                                                                    )}
+                                                                    <div className="text-xs text-gray-500 mt-1">
+                                                                        Tipo: {bonificacion.esMismoProducto ? 'Mismo producto' : 'Producto diferente'}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <Badge variant="outline" className="bg-blue-50 text-blue-700">
+                                                            {(bonificacion.lleva / bonificacion.compra * 100).toFixed(0)}% bonif.
+                                                        </Badge>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="text-center py-8 border-2 border-dashed border-gray-300 rounded-lg">
+                                            <Gift className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+                                            <h4 className="font-medium text-gray-900 mb-1">No hay bonificaciones</h4>
+                                            <p className="text-sm text-gray-500">
+                                                Este producto no tiene bonificaciones configuradas
+                                            </p>
+                                        </div>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        </TabsContent>
+                    </Tabs>
+
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsViewModalOpen(false)}>
+                            Cerrar
                         </Button>
                     </DialogFooter>
                 </DialogContent>
