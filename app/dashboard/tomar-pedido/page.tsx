@@ -900,10 +900,9 @@ export default function OrderPage() {
                 <CardTitle className="text-xl font-semibold text-blue-700">Agregar Productos</CardTitle>
               </CardHeader>
               <CardContent className="space-y-6 pt-6">
-
-                <div className="col-span-1 space-y-2">
-                  <div className="flex flex-col sm:flex-row items-start gap-2">
-                    <div className="flex-1 space-y-2">
+                <div className="flex-1 overflow-y-auto space-y-4 px-1 sm:px-0 py-2">
+                  <div className="space-y-3">
+                    <div className="space-y-2">
                       <Label htmlFor="producto" className="text-sm font-medium">
                         Producto
                       </Label>
@@ -914,11 +913,11 @@ export default function OrderPage() {
                               variant="outline"
                               role="combobox"
                               aria-expanded={open}
-                              className="w-full justify-between h-10 sm:h-12 px-3 text-left font-normal text-sm"
+                              className="w-full justify-between h-12 px-3 text-left font-normal text-sm min-h-12"
                             >
                               {selectedProduct ? (
-                                <div className="flex flex-col items-start min-w-0 flex-1">
-                                  <span className="font-medium truncate w-full">
+                                <div className="flex flex-col items-start min-w-0 flex-1 overflow-hidden">
+                                  <span className="font-medium truncate w-full text-sm">
                                     {selectedProduct.NombreItem}
                                   </span>
                                                       <span className="text-xs text-gray-500 truncate w-full">
@@ -1052,7 +1051,7 @@ export default function OrderPage() {
                               {Number(selectedProduct.PUCredito).toFixed(2)}
                             </div>
                           </div>
-                          <div
+                          {Number(selectedProduct.PUPorMayor) > 0 && <div
                               className={`border rounded-md p-2 cursor-pointer text-center ${
                                   priceType === 'porMayor'
                                       ? 'border-blue-500 bg-blue-50 text-blue-700'
@@ -1067,8 +1066,8 @@ export default function OrderPage() {
                               {currency?.value === "PEN" ? "S/." : "$"}
                               {Number(selectedProduct.PUPorMayor).toFixed(2)}
                             </div>
-                          </div>
-                          <div
+                          </div>}
+                          {Number(selectedProduct.PUPorMenor) > 0 && <div
                               className={`border rounded-md p-2 cursor-pointer text-center ${
                                   priceType === 'porMenor'
                                       ? 'border-blue-500 bg-blue-50 text-blue-700'
@@ -1083,7 +1082,7 @@ export default function OrderPage() {
                               {currency?.value === "PEN" ? "S/." : "$"}
                               {Number(selectedProduct.PUPorMenor).toFixed(2)}
                             </div>
-                          </div>
+                          </div>}
                           <div
                             className={`border rounded-md p-2 cursor-pointer text-center ${
                               priceType === 'custom'
