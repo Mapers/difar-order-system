@@ -910,105 +910,107 @@ export default function OrderPage() {
                         <Popover open={open} onOpenChange={setOpen}>
                           <PopoverTrigger asChild>
                             <Button
-                              variant="outline"
-                              role="combobox"
-                              aria-expanded={open}
-                              className="w-full justify-between h-12 px-3 text-left font-normal text-sm min-h-12"
+                                variant="outline"
+                                role="combobox"
+                                aria-expanded={open}
+                                className="w-full justify-between h-12 px-3 text-left font-normal text-sm min-h-12 relative"
                             >
                               {selectedProduct ? (
-                                <div className="flex flex-col items-start min-w-0 flex-1 overflow-hidden">
-                                  <span className="font-medium truncate w-full text-sm">
-                                    {selectedProduct.NombreItem}
-                                  </span>
-                                                      <span className="text-xs text-gray-500 truncate w-full">
-                                    {selectedProduct.Codigo_Art} | {selectedProduct.Descripcion}
-                                  </span>
-                                </div>
+                                  <div className="flex flex-col items-start min-w-0 flex-1 overflow-hidden w-full pr-8">
+            <span className="font-medium text-sm truncate w-full block max-w-[calc(100%-3rem)]">
+              {selectedProduct.NombreItem}
+            </span>
+                                    <span className="text-xs text-gray-500 truncate w-full block max-w-[calc(100%-3rem)] mt-0.5">
+              {selectedProduct.Codigo_Art} | {selectedProduct.Descripcion}
+            </span>
+                                  </div>
                               ) : (
-                                <span className="text-gray-500">Buscar producto...</span>
+                                  <span className="text-gray-500 text-sm truncate block max-w-[calc(100%-3rem)]">Buscar producto...</span>
                               )}
-                              <Search className="ml-2 h-4 w-4 shrink-0 opacity-50"/>
+                              <Search className="h-4 w-4 shrink-0 opacity-50 absolute right-3 top-1/2 transform -translate-y-1/2" />
                             </Button>
                           </PopoverTrigger>
                           <PopoverContent
-                            className="z-[999] w-[calc(100vw-2rem)] sm:w-full p-0"
-                            align="start"
-                            side="bottom"
+                              className="z-[999] w-[calc(100vw-2rem)] sm:w-full p-0 max-w-[95vw]"
+                              align="start"
+                              side="bottom"
                           >
                             <Command shouldFilter={false}>
                               <CommandInput
-                                placeholder="Buscar por código, nombre o laboratorio..."
-                                value={searchQuery}
-                                onValueChange={setSearchQuery}
-                                className="text-sm"
+                                  placeholder="Buscar por código, nombre o laboratorio..."
+                                  value={searchQuery}
+                                  onValueChange={setSearchQuery}
+                                  className="text-sm h-11"
                               />
-                              <CommandList>
-                                <CommandEmpty>No se encontraron productos.</CommandEmpty>
-                                <CommandGroup heading="Resultados">
+                              <CommandList className="max-h-[60vh]">
+                                <CommandEmpty className="py-6 text-center text-sm">
+                                  No se encontraron productos.
+                                </CommandEmpty>
+                                <CommandGroup heading="Resultados" className="overflow-y-auto">
                                   {filteredProducts.map((product) => (
-                                    <CommandItem
-                                      key={product.Codigo_Art}
-                                      value={product.Codigo_Art}
-                                      onSelect={() => handleProductSelect(product)}
-                                      className="py-3"
-                                    >
-                                      <div className="flex items-start gap-2 w-full">
-                                        <div className="bg-blue-100 p-2 rounded-md shrink-0">
-                                          <Package className="h-3 w-3 sm:h-4 sm:w-4 text-blue-600"/>
-                                        </div>
-                                        <div className="flex flex-col flex-1 min-w-0">
-                                          <div className="flex justify-between items-start w-full gap-2">
-                                            <span className="font-medium text-sm truncate flex-1">
-                                              {product.NombreItem}
-                                            </span>
-                                            <div className="flex flex-wrap gap-1 shrink-0">
-                                              <Badge
-                                                variant="outline"
-                                                className="bg-green-50 text-green-700 text-xs"
-                                              >
-                                                Stock: {product.Stock}
-                                              </Badge>
-                                              {product.tieneBonificado === 1 && (
+                                      <CommandItem
+                                          key={product.Codigo_Art}
+                                          value={product.Codigo_Art}
+                                          onSelect={() => handleProductSelect(product)}
+                                          className="py-3"
+                                      >
+                                        <div className="flex items-start gap-2 w-full min-w-0">
+                                          <div className="bg-blue-100 p-2 rounded-md shrink-0">
+                                            <Package className="h-3 w-3 sm:h-4 sm:w-4 text-blue-600"/>
+                                          </div>
+                                          <div className="flex flex-col flex-1 min-w-0">
+                                            <div className="flex justify-between items-start w-full gap-2">
+                      <span className="font-medium text-sm truncate flex-1 max-w-[200px]">
+                        {product.NombreItem}
+                      </span>
+                                              <div className="flex flex-wrap gap-1 shrink-0">
                                                 <Badge
-                                                  variant="outline"
-                                                  className="bg-yellow-50 text-yellow-700 text-xs"
+                                                    variant="outline"
+                                                    className="bg-green-50 text-green-700 text-xs"
                                                 >
-                                                  Bonif.
+                                                  Stock: {product.Stock}
                                                 </Badge>
-                                              )}
-                                              {product.tieneEscala === 1 && (
-                                                <Badge
-                                                  variant="outline"
-                                                  className="bg-purple-50 text-purple-700 text-xs"
-                                                >
-                                                  Escalas
-                                                </Badge>
-                                              )}
+                                                {product.tieneBonificado === 1 && (
+                                                    <Badge
+                                                        variant="outline"
+                                                        className="bg-yellow-50 text-yellow-700 text-xs"
+                                                    >
+                                                      Bonif.
+                                                    </Badge>
+                                                )}
+                                                {product.tieneEscala === 1 && (
+                                                    <Badge
+                                                        variant="outline"
+                                                        className="bg-purple-50 text-purple-700 text-xs"
+                                                    >
+                                                      Escalas
+                                                    </Badge>
+                                                )}
+                                              </div>
+                                            </div>
+                                            <div className="flex justify-between items-center w-full mt-1">
+                      <span className="text-xs text-gray-500 truncate max-w-[120px]">
+                        <span className="font-medium">Código:</span>{" "}
+                        {product.Codigo_Art}
+                        </span>
+                                              <span className="text-xs text-gray-500 truncate max-w-[120px]">
+                        <span className="font-medium">Lab:</span>{" "}
+                                                {product.Descripcion}
+                      </span>
+                                            </div>
+                                            <div className="flex justify-between mt-2 text-xs">
+                      <span className="text-green-600">
+                        Contado: {currency?.value === "PEN" ? "S/." : "$"}
+                        {Number(product.PUContado).toFixed(2)}
+                      </span>
+                                              <span className="text-blue-600">
+                        Crédito: {currency?.value === "PEN" ? "S/." : "$"}
+                                                {Number(product.PUCredito).toFixed(2)}
+                      </span>
                                             </div>
                                           </div>
-                                          <div className="flex justify-between items-center w-full mt-1">
-                                            <span className="text-xs text-gray-500 truncate">
-                                              <span className="font-medium">Código:</span>{" "}
-                                                {product.Codigo_Art}
-                                              </span>
-                                              <span className="text-xs text-gray-500 truncate">
-                                              <span className="font-medium">Lab:</span>{" "}
-                                                {product.Descripcion}
-                                            </span>
-                                          </div>
-                                          <div className="flex justify-between mt-2 text-xs">
-                                            <span className="text-green-600">
-                                              Contado: {currency?.value === "PEN" ? "S/." : "$"}
-                                              {Number(product.PUContado).toFixed(2)}
-                                            </span>
-                                            <span className="text-blue-600">
-                                              Crédito: {currency?.value === "PEN" ? "S/." : "$"}
-                                              {Number(product.PUCredito).toFixed(2)}
-                                            </span>
-                                          </div>
                                         </div>
-                                      </div>
-                                    </CommandItem>
+                                      </CommandItem>
                                   ))}
                                 </CommandGroup>
                               </CommandList>
@@ -1580,7 +1582,6 @@ export default function OrderPage() {
                   </div>
                 </div>
               </div>
-              {/* condiciones de pago */}
               <div className="space-y-4">
                 <div className="flex items-center gap-2">
                   <CreditCard className="w-4 h-4 sm:w-5 sm:h-5 text-green-600"/>
@@ -1612,7 +1613,6 @@ export default function OrderPage() {
                 </div>
               </div>
 
-              {/* Lista de productos */}
               <div className="space-y-4">
                 <div className="flex items-center gap-2">
                   <Package className="w-4 h-4 sm:w-5 sm:h-5 text-orange-600"/>

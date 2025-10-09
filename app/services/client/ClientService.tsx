@@ -9,8 +9,10 @@ export class ClientService {
    * @param codVendedor 
    * @returns 
    */
-  static async getAllClientsByCodVendedor(codVendedor: string): Promise<any> {
-    const response = await apiClient.get(`/clientes/listar/${codVendedor}`);
+  static async getAllClientsByCodVendedor(codVendedor: string | null): Promise<any> {
+    const response = await apiClient.post(`/clientes/listar`, {
+      codVendedor
+    });
     return response.data;
   }
 

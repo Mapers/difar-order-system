@@ -57,6 +57,8 @@ import {ClientService} from "@/app/services/client/ClientService";
 import {Combobox} from "@/app/dashboard/mis-pedidos/page";
 import moment from "moment";
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import ExcelJS from 'exceljs';
+import { Download } from "lucide-react";
 
 interface ClientZone {
     Codigo: string
@@ -166,6 +168,8 @@ export default function RutaSemanalPage() {
     const [zones, setZones] = useState<Zone[]>([])
     const [clientsByZone, setClientsByZone] = useState<ClientZone[]>([])
     const [loadingClientsByZone, setLoadingClientsByZone] = useState<boolean>(false)
+    const [searchCliente, setSearchCliente] = useState("")
+    const [selectedZones, setSelectedZones] = useState<string[]>([])
     const [rutaEditando, setRutaEditando] = useState<Ruta | null>(null)
     const [newRuta, setNewRuta] = useState({
         nombre: "",
@@ -179,6 +183,8 @@ export default function RutaSemanalPage() {
     const [sellerSearch, setSellerSearch] = useState("")
     const [errors, setErrors] = useState<{[key: string]: string}>({})
     const [showDeleteConfirmModal, setShowDeleteConfirmModal] = useState(false)
+    const [fechaInicio, setFechaInicio] = useState<string>(moment().format('YYYY-MM-DD'))
+    const [fechaFin, setFechaFin] = useState<string>(moment().format('YYYY-MM-DD'))
 
     // KPIs
     const kpis = {
@@ -198,9 +204,6 @@ export default function RutaSemanalPage() {
         }
         if (!newRuta.vendedorId) {
             newErrors.vendedorId = "Debe seleccionar un vendedor"
-        }
-        if (!newRuta.zonaSeleccionada) {
-            newErrors.zonaSeleccionada = "Debe seleccionar una zona"
         }
         if (farmaciasSeleccionadas.length === 0) {
             newErrors.farmacias = "Debe seleccionar al menos una farmacia"
@@ -460,15 +463,29 @@ export default function RutaSemanalPage() {
     const fetchHistoryRutas = async () => {
         setLoadingHistory(true)
         try {
-            const response = await apiClient.get('/rutas/history')
+            const params: any = {}
+
+            if (fechaInicio) {
+                params.fecha_inicio = fechaInicio
+            }
+            if (fechaFin) {
+                params.fecha_fin = fechaFin
+            }
+
+            const response = await apiClient.post('/rutas/history', params)
             const data = response.data?.data || []
             setHistory(data)
         } catch (error) {
             console.error("Error fetching routes:", error)
-            setRutas([])
+            setHistory([])
         } finally {
             setLoadingHistory(false)
         }
+    }
+
+    const limpiarFiltros = () => {
+        setFechaInicio("")
+        setFechaFin("")
     }
 
     const fetchRutasBySeller = async () => {
@@ -542,24 +559,60 @@ export default function RutaSemanalPage() {
         return Array.from(rutasMap.values())
     }
 
-    const fetchClientsByZones = async () => {
+    const fetchClientsByZones = async (zonaId?: string) => {
         setLoadingClientsByZone(true)
         try {
-            setFarmaciasSeleccionadas([]);
-            const response = await ClientService.getClientsByZone(newRuta.zonaSeleccionada)
-            const data = response.data || []
-            setClientsByZone(data.map((item: ClientZone) => ({
-                ...item,
-                latitud: Number(item.latitud),
-                longitud: Number(item.longitud),
-            })))
+            // Si se pasa una zona específica, cargar solo esa zona
+            if (zonaId) {
+                const response = await ClientService.getClientsByZone(zonaId)
+                const data = response.data || []
+                const nuevosClientes = data.map((item: ClientZone) => ({
+                    ...item,
+                    latitud: Number(item.latitud),
+                    longitud: Number(item.longitud),
+                }))
+
+                setClientsByZone(prev => {
+                    const clientesUnicos = [...prev]
+                    nuevosClientes.forEach(nuevoCliente => {
+                        if (!clientesUnicos.find(c => c.Codigo === nuevoCliente.Codigo)) {
+                            clientesUnicos.push(nuevoCliente)
+                        }
+                    })
+                    return clientesUnicos
+                })
+            } else {
+                setClientsByZone([])
+            }
         } catch (error) {
             console.error("Error fetching clients by zone:", error)
-            setClientsByZone([])
         } finally {
             setLoadingClientsByZone(false)
         }
     }
+
+    const agregarZona = async (zonaId: string) => {
+        if (!selectedZones.includes(zonaId)) {
+            setSelectedZones(prev => [...prev, zonaId])
+            await fetchClientsByZones(zonaId)
+        }
+    }
+
+    const removerZona = (zonaId: string) => {
+        setSelectedZones(prev => prev.filter(id => id !== zonaId))
+    }
+
+    const limpiarTodasLasZonas = () => {
+        setSelectedZones([])
+        setClientsByZone([])
+        setFarmaciasSeleccionadas([])
+    }
+
+    const clientesFiltrados = clientsByZone.filter(client =>
+        client.NombreComercial?.toLowerCase().includes(searchCliente.toLowerCase()) ||
+        client.Codigo?.toLowerCase().includes(searchCliente.toLowerCase()) ||
+        client.Nombre?.toLowerCase().includes(searchCliente.toLowerCase())
+    )
 
     useEffect(() => {
         if (sellerSearch.length > 0) {
@@ -579,7 +632,10 @@ export default function RutaSemanalPage() {
 
     useEffect(() => {
         if (newRuta.zonaSeleccionada != '') {
-            fetchClientsByZones()
+            if (!selectedZones.includes(newRuta.zonaSeleccionada)) {
+                agregarZona(newRuta.zonaSeleccionada)
+            }
+            setNewRuta(prev => ({...prev, zonaSeleccionada: ""}))
         }
     }, [newRuta.zonaSeleccionada]);
 
@@ -595,6 +651,82 @@ export default function RutaSemanalPage() {
             fetchRutasBySeller();
         }
     }, [selectedSeller, user]);
+
+    useEffect(() => {
+        if (activeTab === "historial") {
+            fetchHistoryRutas()
+        }
+    }, [fechaInicio, fechaFin, activeTab])
+
+    const exportarConfiguracionesExcel = async () => {
+        try {
+            const workbook = new ExcelJS.Workbook();
+            workbook.creator = 'Sistema Rutas';
+            workbook.created = new Date();
+
+            const worksheet = workbook.addWorksheet('Configuraciones Rutas');
+
+            worksheet.columns = [
+                { header: 'Nombre Ruta', key: 'nombre', width: 25 },
+                { header: 'Día', key: 'dia', width: 12 },
+                { header: 'Vendedor', key: 'vendedor', width: 25 },
+                { header: 'Zona', key: 'zona', width: 20 },
+                { header: 'Estado', key: 'estado', width: 15 },
+                { header: 'Total Direcciones', key: 'totalDirecciones', width: 8 },
+                { header: 'Farmacias Asignadas', key: 'farmacias', width: 35 },
+                { header: 'Fecha Creación', key: 'fechaCreacion', width: 15 },
+                { header: 'Activa', key: 'activa', width: 8 }
+            ];
+
+            worksheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFF' } };
+            worksheet.getRow(1).fill = {
+                type: 'pattern',
+                pattern: 'solid',
+                fgColor: { argb: '2E5AA7' }
+            };
+
+            rutas.forEach(ruta => {
+                worksheet.addRow({
+                    nombre: ruta.nombre,
+                    dia: ruta.dia,
+                    vendedor: ruta.vendedorNombre,
+                    zona: ruta.zonaNombre,
+                    estado: ruta.estado === 'C' ? 'Completada' : ruta.estado === 'P' ? 'En Proceso' : 'Pendiente',
+                    totalDirecciones: ruta.clientes.length,
+                    farmacias: ruta.clientes.map(cliente => cliente.NombreComercial).join(', '),
+                    fechaCreacion: moment(ruta.fechaCreacion, 'yyyy-MM-DDTHH:mm').format('DD/MM/YYYY'),
+                    activa: ruta.activa ? 'Sí' : 'No'
+                });
+            });
+
+            worksheet.eachRow((row) => {
+                row.alignment = { vertical: 'middle', horizontal: 'left' };
+                row.border = {
+                    top: { style: 'thin' },
+                    left: { style: 'thin' },
+                    bottom: { style: 'thin' },
+                    right: { style: 'thin' }
+                };
+            });
+
+            const buffer = await workbook.xlsx.writeBuffer();
+            const blob = new Blob([buffer], {
+                type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            });
+
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `Configuraciones_Rutas_${moment().format('DD-MM-YYYY_HH-mm')}.xlsx`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+
+        } catch (error) {
+            console.error('Error al exportar Excel:', error);
+        }
+    };
 
     return (
         <div className="grid gap-6">
@@ -674,13 +806,24 @@ export default function RutaSemanalPage() {
                                         Crea y gestiona las rutas que se asignarán a los vendedores cada semana
                                     </CardDescription>
                                 </div>
-                                <Button
-                                    onClick={abrirModalNuevaRuta}
-                                    className="flex items-center gap-2 w-full sm:w-auto"
-                                >
-                                    <Plus className="h-4 w-4" />
-                                    Nueva Ruta
-                                </Button>
+                                <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                                    <Button
+                                        onClick={exportarConfiguracionesExcel}
+                                        variant="outline"
+                                        className="flex items-center gap-2 w-full sm:w-auto"
+                                        disabled={rutas.length === 0 || loadingRutas}
+                                    >
+                                        <Download className="h-4 w-4" />
+                                        Exportar Excel
+                                    </Button>
+                                    <Button
+                                        onClick={abrirModalNuevaRuta}
+                                        className="flex items-center gap-2 w-full sm:w-auto"
+                                    >
+                                        <Plus className="h-4 w-4" />
+                                        Nueva Ruta
+                                    </Button>
+                                </div>
                             </CardHeader>
                             <CardContent>
                                 {loadingRutas ? (
@@ -1007,6 +1150,58 @@ export default function RutaSemanalPage() {
                     <TabsContent value="historial" className="space-y-6">
                         <Card>
                             <CardHeader>
+                                <CardTitle>Filtros del Historial</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="fechaInicio">Fecha Inicio</Label>
+                                        <Input
+                                            id="fechaInicio"
+                                            type="date"
+                                            value={fechaInicio}
+                                            onChange={(e) => setFechaInicio(e.target.value)}
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="fechaFin">Fecha Fin</Label>
+                                        <Input
+                                            id="fechaFin"
+                                            type="date"
+                                            value={fechaFin}
+                                            onChange={(e) => setFechaFin(e.target.value)}
+                                        />
+                                    </div>
+                                    <div className="space-y-2 flex items-end">
+                                        <div className="flex gap-2">
+                                            <Button
+                                                variant="outline"
+                                                onClick={limpiarFiltros}
+                                                className="flex-1"
+                                            >
+                                                <X className="h-4 w-4 mr-2" />
+                                                Limpiar
+                                            </Button>
+                                            <Button
+                                                onClick={fetchHistoryRutas}
+                                                disabled={loadingHistory}
+                                                className="flex-1"
+                                            >
+                                                {loadingHistory ? (
+                                                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                                ) : (
+                                                    <Filter className="h-4 w-4 mr-2" />
+                                                )}
+                                                Filtrar
+                                            </Button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        <Card>
+                            <CardHeader>
                                 <CardTitle>Historial de Visitas</CardTitle>
                                 <CardDescription>
                                     Registro completo de todas las visitas realizadas por los vendedores
@@ -1286,8 +1481,45 @@ export default function RutaSemanalPage() {
                             </div>
                         </div>
 
+                        {/* Sección de Zonas Seleccionadas */}
+                        {selectedZones.length > 0 && (
+                            <div className="space-y-3">
+                                <div className="flex justify-between items-center">
+                                    <Label>Zonas Seleccionadas ({selectedZones.length})</Label>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={limpiarTodasLasZonas}
+                                        className="text-red-600 hover:text-red-700"
+                                    >
+                                        <X className="h-4 w-4 mr-1" />
+                                        Limpiar Todas
+                                    </Button>
+                                </div>
+                                <div className="flex flex-wrap gap-2">
+                                    {selectedZones.map(zonaId => {
+                                        const zona = zones.find(z => z.IdZona === zonaId)
+                                        return (
+                                            <Badge key={zonaId} variant="secondary" className="flex items-center gap-1">
+                                                {zona?.NombreZona || zonaId}
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    className="h-4 w-4 p-0 hover:bg-red-100"
+                                                    onClick={() => removerZona(zonaId)}
+                                                >
+                                                    <X className="h-3 w-3" />
+                                                </Button>
+                                            </Badge>
+                                        )
+                                    })}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Selector de Zona */}
                         <div className="space-y-2">
-                            <Label htmlFor="zona">Zona *</Label>
+                            <Label htmlFor="zona">Agregar Zona</Label>
                             <Select
                                 value={newRuta.zonaSeleccionada}
                                 onValueChange={(value) => {
@@ -1298,17 +1530,19 @@ export default function RutaSemanalPage() {
                                 <SelectTrigger id="zona" className={errors.zonaSeleccionada ? "border-red-500" : ""}>
                                     <div className="flex items-center gap-2">
                                         <MapPin className="h-4 w-4" />
-                                        <SelectValue placeholder="Seleccionar zona" />
+                                        <SelectValue placeholder="Seleccionar zona para agregar" />
                                     </div>
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {zones.map((zona) => (
-                                        <SelectItem key={zona.IdZona} value={zona.IdZona}>
-                                            <div className="flex items-center gap-2">
-                                                {zona.NombreZona}
-                                            </div>
-                                        </SelectItem>
-                                    ))}
+                                    {zones
+                                        .filter(zona => !selectedZones.includes(zona.IdZona)) // Filtrar zonas ya seleccionadas
+                                        .map((zona) => (
+                                            <SelectItem key={zona.IdZona} value={zona.IdZona}>
+                                                <div className="flex items-center gap-2">
+                                                    {zona.NombreZona}
+                                                </div>
+                                            </SelectItem>
+                                        ))}
                                 </SelectContent>
                             </Select>
                             {errors.zonaSeleccionada && (
@@ -1319,13 +1553,25 @@ export default function RutaSemanalPage() {
                             )}
                         </div>
 
-                        {newRuta.zonaSeleccionada && (
+                        {/* Sección de Búsqueda y Farmacias */}
+                        {selectedZones.length > 0 && (
                             <div className="space-y-4">
                                 <div className="flex justify-between items-center">
-                                    <Label>Farmacias en Zona {newRuta.zonaSeleccionada} *</Label>
+                                    <Label>Farmacias en Zonas Seleccionadas</Label>
                                     <Badge variant="outline">
                                         {farmaciasSeleccionadas.length} seleccionadas
                                     </Badge>
+                                </div>
+
+                                {/* Buscador */}
+                                <div className="space-y-2">
+                                    <Label htmlFor="buscarFarmacia">Buscar Farmacia</Label>
+                                    <Input
+                                        id="buscarFarmacia"
+                                        placeholder="Buscar por nombre comercial, RUC o representante..."
+                                        value={searchCliente}
+                                        onChange={(e) => setSearchCliente(e.target.value)}
+                                    />
                                 </div>
 
                                 {errors.farmacias && (
@@ -1338,48 +1584,84 @@ export default function RutaSemanalPage() {
                                 )}
 
                                 <div className="border rounded-lg divide-y max-h-96 overflow-y-auto">
-                                    {loadingClientsByZone && Array.from({ length: 3 }).map((_, index) => (
-                                        <Skeleton key={index} className="h-32 w-full" />
-                                    ))}
-                                    {!loadingClientsByZone && clientsByZone.map((client) => (
-                                        <div key={client.Codigo} className="flex items-start gap-3 p-4 hover:bg-gray-50">
-                                            <Checkbox
-                                                checked={farmaciasSeleccionadas.includes(client.Codigo)}
-                                                onCheckedChange={() => handleSeleccionarFarmacia(client.Codigo)}
-                                            />
-                                            <div className="flex-1">
-                                                <div className="flex items-center gap-2 mb-1">
-                                                    <span className="font-medium">{client.NombreComercial}</span>
+                                    {loadingClientsByZone && clientsByZone.length === 0 ? (
+                                        Array.from({ length: 3 }).map((_, index) => (
+                                            <Skeleton key={index} className="h-32 w-full" />
+                                        ))
+                                    ) : clientesFiltrados.length > 0 ? (
+                                        clientesFiltrados.map((client) => {
+                                            const zona = zones.find(z => z.IdZona === client.zona) // Asumiendo que client tiene zona
+                                            return (
+                                                <div key={client.Codigo} className="flex items-start gap-3 p-4 hover:bg-gray-50">
+                                                    <Checkbox
+                                                        checked={farmaciasSeleccionadas.includes(client.Codigo)}
+                                                        onCheckedChange={() => handleSeleccionarFarmacia(client.Codigo)}
+                                                    />
+                                                    <div className="flex-1">
+                                                        <div className="flex items-center gap-2 mb-1">
+                                                            <span className="font-medium">{client.NombreComercial}</span>
+                                                            {zona && (
+                                                                <Badge variant="outline" className="text-xs">
+                                                                    {zona.NombreZona}
+                                                                </Badge>
+                                                            )}
+                                                        </div>
+                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-2 text-sm">
+                                                            <div>
+                                                                <strong>RUC:</strong> {client.Codigo}
+                                                            </div>
+                                                            <div>
+                                                                <strong>Representante:</strong> {client.Nombre}
+                                                            </div>
+                                                        </div>
+                                                        <p className="text-sm text-gray-600 mb-2">{client.direccion}</p>
+                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs text-gray-500">
+                                                            <div>
+                                                                <strong>Teléfono:</strong> {client.Telefono || '--- --- ---'}
+                                                            </div>
+                                                            <div className="col-span-2">
+                                                                <strong>Coordenadas:</strong> {client.latitud.toFixed(4)}, {client.longitud.toFixed(4)}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        onClick={() => verMapaUbicacion({
+                                                            id: client.Codigo,
+                                                            NombreComercial: client.NombreComercial,
+                                                            direccion: client.direccion,
+                                                            latitud: client.latitud,
+                                                            longitud: client.longitud
+                                                        })}
+                                                    >
+                                                        <MapPin className="h-4 w-4" />
+                                                    </Button>
                                                 </div>
-                                                <p className="text-sm text-gray-600">{client.direccion}</p>
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2 text-xs text-gray-500">
-                                                    <div>
-                                                        <strong>Teléfono:</strong> {client.Telefono || '--- --- ---'}
-                                                    </div>
-                                                    <div>
-                                                        <strong>Representante:</strong> {client.Nombre}
-                                                    </div>
-                                                    <div className="col-span-2">
-                                                        <strong>Coordenadas:</strong> {client.latitud.toFixed(4)}, {client.longitud.toFixed(4)}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={() => verMapaUbicacion({
-                                                    id: client.Codigo,
-                                                    NombreComercial: client.NombreComercial,
-                                                    direccion: client.direccion,
-                                                    latitud: client.latitud,
-                                                    longitud: client.longitud
-                                                })}
-                                            >
-                                                <MapPin className="h-4 w-4" />
-                                            </Button>
+                                            )
+                                        })
+                                    ) : (
+                                        <div className="text-center py-8">
+                                            <MapPin className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                                            <h3 className="text-lg font-medium text-gray-900 mb-2">
+                                                {searchCliente ? "No se encontraron farmacias" : "No hay farmacias cargadas"}
+                                            </h3>
+                                            <p className="text-gray-500">
+                                                {searchCliente
+                                                    ? "Intenta con otros términos de búsqueda"
+                                                    : "Agrega zonas para ver las farmacias disponibles"
+                                                }
+                                            </p>
                                         </div>
-                                    ))}
+                                    )}
                                 </div>
+
+                                {/* Contador de resultados */}
+                                {searchCliente && clientesFiltrados.length > 0 && (
+                                    <div className="text-sm text-gray-500 text-center">
+                                        Mostrando {clientesFiltrados.length} de {clientsByZone.length} farmacias
+                                    </div>
+                                )}
                             </div>
                         )}
                     </div>

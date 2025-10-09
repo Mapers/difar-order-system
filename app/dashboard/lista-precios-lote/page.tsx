@@ -396,7 +396,6 @@ export default function PricePage() {
                             </td>
                             <td className="p-4">
                               <div className="flex gap-2">
-                                {/* Botón Ver Lotes */}
                                 <Dialog>
                                   <DialogTrigger asChild>
                                     <Button
@@ -593,7 +592,6 @@ export default function PricePage() {
               </table>
             </div>
 
-            {/* Versión móvil */}
             <div className="lg:hidden overflow-auto">
               {loading || loadingLab || !isAuthenticated ? (
                   Array.from({length: 3}).map((_, index) => (
@@ -660,7 +658,6 @@ export default function PricePage() {
                             </div>
 
                             <div className="flex gap-2">
-                              {/* Botón Ver Lotes - Móvil */}
                               <Dialog>
                                 <DialogTrigger asChild>
                                   <Button
@@ -747,7 +744,6 @@ export default function PricePage() {
 
                                   {priceDetails && (
                                       <div className="space-y-6 py-4">
-                                        {/* Precios principales */}
                                         <div className="grid grid-cols-2 gap-4">
                                           <div className="space-y-2">
                                             <Label className="text-sm font-medium">Precio Contado</Label>
@@ -780,7 +776,6 @@ export default function PricePage() {
                                           </div>
                                         </div>
 
-                                        {/* Sección de Escalas - Solo si hay datos */}
                                         {escalas.length > 0 && (
                                             <div className="border-t pt-4">
                                               <h4 className="text-sm font-medium mb-3">Escalas de Precio</h4>
@@ -807,7 +802,6 @@ export default function PricePage() {
                                             </div>
                                         )}
 
-                                        {/* Sección de Bonificados - Solo si hay datos */}
                                         {bonificaciones.length > 0 && (
                                             <div className="border-t pt-4">
                                               <h4 className="text-sm font-medium mb-3">Productos Bonificados</h4>
