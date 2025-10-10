@@ -111,7 +111,7 @@ export const LaboratorioModal = ({
                 </div>
                 <p className="text-xs text-gray-500 truncate mb-1">Código: {productId}</p>
                 <Badge variant="outline" className="bg-gray-50 text-gray-700 text-xs">
-                  Stock: {product.Stock}
+                  Stock: {Number(product.Stock).toFixed(2)}
                 </Badge>
               </div>
             </div>
@@ -141,16 +141,16 @@ export const LaboratorioModal = ({
                     </div>
                     {porMayor > 0 && (
                         <div className="flex items-center space-x-1">
-                          <RadioGroupItem value="porMayor" id={`${productId}-porMayor`} className="h-3 w-3"/>
-                          <Label htmlFor={`${productId}-porMayor`} className="text-xs cursor-pointer">
+                          <RadioGroupItem value="porMayor" id={`${productId}-porMayor`} className="h-3 w-3 border-violet-500" />
+                          <Label htmlFor={`${productId}-porMayor`} className="text-xs cursor-pointer text-violet-700">
                             Bonif Cont: {formatPrice(porMayor)}
                           </Label>
                         </div>
                     )}
                     {porMenor > 0 && (
                         <div className="flex items-center space-x-1">
-                          <RadioGroupItem value="porMenor" id={`${productId}-porMenor`} className="h-3 w-3"/>
-                          <Label htmlFor={`${productId}-porMenor`} className="text-xs cursor-pointer">
+                          <RadioGroupItem value="porMenor" id={`${productId}-porMenor`} className="h-3 w-3 border-green-500" />
+                          <Label htmlFor={`${productId}-porMenor`} className="text-xs cursor-pointer text-green-700">
                             Bonif Créd: {formatPrice(porMenor)}
                           </Label>
                         </div>
@@ -237,7 +237,7 @@ export const LaboratorioModal = ({
                     <div className="text-sm">{product.NombreItem}</div>
                     <div className="text-sm text-gray-500">{productId}</div>
                   </TableCell>
-                  <TableCell>{product.Stock}</TableCell>
+                  <TableCell>{Number(product.Stock).toFixed(2)}</TableCell>
                   <TableCell>
                     <RadioGroup
                         value={currentPriceType}
@@ -259,20 +259,20 @@ export const LaboratorioModal = ({
                         </Label>
                       </div>
                       {porMayor > 0 && <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="porMayor" id={`${productId}-porMayor`}/>
-                        <Label htmlFor={`${productId}-porMayor`} className="text-sm cursor-pointer">
+                        <RadioGroupItem value="porMayor" id={`${productId}-porMayor`} className='border-violet-500' />
+                        <Label htmlFor={`${productId}-porMayor`} className="text-sm cursor-pointer text-violet-700">
                           Bonif Cont: {formatPrice(porMayor)}
                         </Label>
                       </div>}
                       {porMenor > 0 && <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="porMenor" id={`${productId}-porMenor`}/>
-                        <Label htmlFor={`${productId}-porMenor`} className="text-sm cursor-pointer">
+                        <RadioGroupItem value="porMenor" id={`${productId}-porMenor`} className='border-green-500' />
+                        <Label htmlFor={`${productId}-porMenor`} className="text-sm cursor-pointer text-green-700">
                           Bonif Créd: {formatPrice(porMenor)}
                         </Label>
                       </div>}
                       <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="custom" id={`${productId}-custom`}/>
-                        <Label htmlFor={`${productId}-custom`} className="text-sm cursor-pointer flex items-center gap-2">
+                        <RadioGroupItem value="custom" id={`${productId}-custom`} className='border-red-500' />
+                        <Label htmlFor={`${productId}-custom`} className="text-sm cursor-pointer flex items-center gap-2 text-red-700">
                           Custom:
                           <Input
                               type="number"
@@ -283,7 +283,7 @@ export const LaboratorioModal = ({
                                   productId,
                                   parseFloat(e.target.value) || 0
                               )}
-                              className="h-6 w-20 text-center text-xs"
+                              className="h-6 w-20 text-center text-xs bg-red-50"
                               onClick={(e) => e.stopPropagation()}
                           />
                         </Label>

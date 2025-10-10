@@ -175,6 +175,7 @@ export default function RutaSemanalPage() {
         nombre: "",
         dia: "",
         vendedorId: "",
+        vendedorCode: "",
         zonaSeleccionada: ""
     })
     const [farmaciasSeleccionadas, setFarmaciasSeleccionadas] = useState<string[]>([])
@@ -460,6 +461,23 @@ export default function RutaSemanalPage() {
         }
     }
 
+    const fetchSellerZones = async (seller: string) => {
+        setLoadingSave(true)
+        try {
+            setSelectedZones([])
+            const response = await apiClient.get(`/rutas/seller-zone?seller=${seller}`)
+            const data = response.data?.data || []
+
+            for (const item of data) {
+                await agregarZona(item.IdZona)
+            }
+        } catch (error) {
+            console.error("Error fetching zones:", error)
+        } finally {
+            setLoadingSave(false)
+        }
+    }
+
     const fetchHistoryRutas = async () => {
         setLoadingHistory(true)
         try {
@@ -562,7 +580,6 @@ export default function RutaSemanalPage() {
     const fetchClientsByZones = async (zonaId?: string) => {
         setLoadingClientsByZone(true)
         try {
-            // Si se pasa una zona específica, cargar solo esa zona
             if (zonaId) {
                 const response = await ClientService.getClientsByZone(zonaId)
                 const data = response.data || []
@@ -638,6 +655,12 @@ export default function RutaSemanalPage() {
             setNewRuta(prev => ({...prev, zonaSeleccionada: ""}))
         }
     }, [newRuta.zonaSeleccionada]);
+
+    useEffect(() => {
+        if (newRuta.vendedorCode != '') {
+            fetchSellerZones(newRuta.vendedorCode)
+        }
+    }, [newRuta.vendedorId]);
 
     useEffect(() => {
         fetchZones()
@@ -1456,7 +1479,7 @@ export default function RutaSemanalPage() {
                                         value={newRuta.vendedorId}
                                         onSearchChange={setSellerSearch}
                                         onSelect={(value) => {
-                                            setNewRuta({...newRuta, vendedorId: value?.idVendedor || ''})
+                                            setNewRuta({...newRuta, vendedorId: value?.idVendedor || '', vendedorCode: value?.codigo || ''})
                                             if (errors.vendedorId) setErrors(prev => ({...prev, vendedorId: ''}))
                                         }}
                                         getItemKey={(seller) => seller.idVendedor}
@@ -1517,10 +1540,10 @@ export default function RutaSemanalPage() {
                             </div>
                         )}
 
-                        {/* Selector de Zona */}
                         <div className="space-y-2">
                             <Label htmlFor="zona">Agregar Zona</Label>
                             <Select
+                                disabled={loadingSave}
                                 value={newRuta.zonaSeleccionada}
                                 onValueChange={(value) => {
                                     setNewRuta({...newRuta, zonaSeleccionada: value})

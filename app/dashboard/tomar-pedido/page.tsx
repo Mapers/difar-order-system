@@ -22,7 +22,7 @@ import {
   Coins,
   FileText,
   Trash, CheckSquare, Loader2,
-  Locate, Building, Info
+  Locate, Building, Info, Gift, TrendingUp
 } from "lucide-react"
 import { StepProgress } from "@/components/step-progress"
 import apiClient from "@/app/api/client"
@@ -59,6 +59,7 @@ import {PriceService} from "@/app/services/price/PriceService";
 import {format, parseISO} from "date-fns";
 import {Combobox} from "@/app/dashboard/mis-pedidos/page";
 import {useLaboratoriesData} from "@/app/dashboard/lista-precios-lote/hooks/useLaboratoriesData";
+import {Tabs, TabsContent, TabsList, TabsTrigger} from "@/components/ui/tabs";
 
 interface LoteProducto {
   value: string
@@ -121,6 +122,10 @@ export default function OrderPage() {
   const [tempSelectedProducts, setTempSelectedProducts] = useState<ISelectedProduct[]>([]);
   const { user } = useAuth();
   const [priceType, setPriceType] = useState<'contado' | 'credito' | 'porMayor' | 'porMenor' | 'custom'>('contado');
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false)
+  const [viewingProduct, setViewingProduct] = useState<IProduct | null>(null)
+  const [escalas, setEscalas] = useState<any[]>([])
+  const [bonificaciones, setBonificaciones] = useState<any[]>([])
 
   const [loading, setLoading] = useState({
     clients: false,
@@ -234,6 +239,38 @@ export default function OrderPage() {
       console.error("Error fetching clients:", error);
     } finally {
       setLoading(prev => ({ ...prev, clients: false }))
+    }
+  }
+
+  const fetchProductDetails = async (productId: string) => {
+    try {
+      const response = await apiClient.get(`/articulos/bonusScale/getByProd?code=${productId}`)
+      const data = response.data?.data || {}
+
+      if (data.scale.length > 0 || data.bonus.length > 0) {
+        setEscalas((data.scale || []).map((item, index) => ({
+          id: index,
+          desde: Number(item.minimo),
+          hasta: Number(item.maximo),
+          precio: Number(item.Precio),
+        })))
+        setBonificaciones((data.bonus || []).map((item, index) => ({
+          id: index,
+          compra: Number(item.Factor),
+          lleva: Number(item.Cantidad),
+          descripcion: item.Descripcion,
+          esMismoProducto: item.mismoProduct === 'S',
+          productoBonificado: item.mismoProduct === 'S' ? null : item.IdArticuloBonif,
+          descripcionProducto: item.mismoProduct === 'S' ? null : item.DescArticuloBonif
+        })))
+        setIsViewModalOpen(true)
+      } else {
+        setIsViewModalOpen(false)
+      }
+    } catch (error) {
+      console.error("Error fetching product details:", error)
+      setEscalas([])
+      setBonificaciones([])
     }
   }
 
@@ -650,6 +687,10 @@ export default function OrderPage() {
     setSelectedProduct(product)
     setOpen(false)
     setPriceEdit(Number(product.PUContado))
+
+    // Agregar esta parte para abrir el modal de ver promociones
+    setViewingProduct(product)
+    fetchProductDetails(product.Codigo_Art)
   }
 
   const handleConditionSelect = (condition: ICondicion) => {
@@ -686,7 +727,7 @@ export default function OrderPage() {
     switch (currentStep) {
       case 0: // Client step
         return !!client && currency && condition && ((user?.idRol && [2, 3].includes(user.idRol)) ? (!!seller) : true)
-      case 1: // Products step
+      case 1:
         return selectedProducts.length > 0
       default:
         return true
@@ -900,136 +941,133 @@ export default function OrderPage() {
                 <CardTitle className="text-xl font-semibold text-blue-700">Agregar Productos</CardTitle>
               </CardHeader>
               <CardContent className="space-y-6 pt-6">
-                <div className="flex-1 overflow-y-auto space-y-4 px-1 sm:px-0 py-2">
-                  <div className="space-y-3">
-                    <div className="space-y-2">
-                      <Label htmlFor="producto" className="text-sm font-medium">
-                        Producto
-                      </Label>
-                      <div className="relative">
-                        <Popover open={open} onOpenChange={setOpen}>
-                          <PopoverTrigger asChild>
-                            <Button
-                                variant="outline"
-                                role="combobox"
-                                aria-expanded={open}
-                                className="w-full justify-between h-12 px-3 text-left font-normal text-sm min-h-12 relative"
-                            >
-                              {selectedProduct ? (
-                                  <div className="flex flex-col items-start min-w-0 flex-1 overflow-hidden w-full pr-8">
-            <span className="font-medium text-sm truncate w-full block max-w-[calc(100%-3rem)]">
-              {selectedProduct.NombreItem}
-            </span>
-                                    <span className="text-xs text-gray-500 truncate w-full block max-w-[calc(100%-3rem)] mt-0.5">
-              {selectedProduct.Codigo_Art} | {selectedProduct.Descripcion}
-            </span>
-                                  </div>
-                              ) : (
-                                  <span className="text-gray-500 text-sm truncate block max-w-[calc(100%-3rem)]">Buscar producto...</span>
-                              )}
-                              <Search className="h-4 w-4 shrink-0 opacity-50 absolute right-3 top-1/2 transform -translate-y-1/2" />
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent
-                              className="z-[999] w-[calc(100vw-2rem)] sm:w-full p-0 max-w-[95vw]"
-                              align="start"
-                              side="bottom"
+                <div className="space-y-4 px-1 sm:px-0 py-2 grid-cols-2 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="producto" className="text-sm font-medium">
+                      Producto
+                    </Label>
+                    <div className="relative">
+                      <Popover open={open} onOpenChange={setOpen}>
+                        <PopoverTrigger asChild>
+                          <Button
+                              variant="outline"
+                              role="combobox"
+                              aria-expanded={open}
+                              className="w-full justify-between h-10 sm:h-12 px-3 text-left font-normal text-sm"
                           >
-                            <Command shouldFilter={false}>
-                              <CommandInput
-                                  placeholder="Buscar por código, nombre o laboratorio..."
-                                  value={searchQuery}
-                                  onValueChange={setSearchQuery}
-                                  className="text-sm h-11"
-                              />
-                              <CommandList className="max-h-[60vh]">
-                                <CommandEmpty className="py-6 text-center text-sm">
-                                  No se encontraron productos.
-                                </CommandEmpty>
-                                <CommandGroup heading="Resultados" className="overflow-y-auto">
-                                  {filteredProducts.map((product) => (
-                                      <CommandItem
-                                          key={product.Codigo_Art}
-                                          value={product.Codigo_Art}
-                                          onSelect={() => handleProductSelect(product)}
-                                          className="py-3"
-                                      >
-                                        <div className="flex items-start gap-2 w-full min-w-0">
-                                          <div className="bg-blue-100 p-2 rounded-md shrink-0">
-                                            <Package className="h-3 w-3 sm:h-4 sm:w-4 text-blue-600"/>
+                            {selectedProduct ? (
+                                <div className="flex flex-col items-start min-w-0 flex-1">
+                                  <span className="font-medium truncate w-full">
+                                    {selectedProduct.NombreItem}
+                                  </span>
+                                  <span className="text-xs text-gray-500 truncate w-full">
+                                    {selectedProduct.Codigo_Art} | {selectedProduct.Descripcion}
+                                  </span>
+                                </div>
+                            ) : (
+                                <span className="text-gray-500">Buscar producto...</span>
+                            )}
+                            <Search className="ml-2 h-4 w-4 shrink-0 opacity-50"/>
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent
+                            className="z-[999] w-[calc(100vw-2rem)] sm:w-full p-0"
+                            align="start"
+                            side="bottom"
+                        >
+                          <Command shouldFilter={false}>
+                            <CommandInput
+                                placeholder="Buscar por código, nombre o laboratorio..."
+                                value={searchQuery}
+                                onValueChange={setSearchQuery}
+                                className="text-sm"
+                            />
+                            <CommandList>
+                              <CommandEmpty>No se encontraron productos.</CommandEmpty>
+                              <CommandGroup heading="Resultados">
+                                {filteredProducts.map((product) => (
+                                    <CommandItem
+                                        key={product.Codigo_Art}
+                                        value={product.Codigo_Art}
+                                        onSelect={() => handleProductSelect(product)}
+                                        className="py-3"
+                                    >
+                                      <div className="flex items-start gap-2 w-full">
+                                        <div className="bg-blue-100 p-2 rounded-md shrink-0">
+                                          <Package className="h-3 w-3 sm:h-4 sm:w-4 text-blue-600"/>
+                                        </div>
+                                        <div className="flex flex-col flex-1 min-w-0">
+                                          <div className="flex justify-between items-start w-full gap-2">
+                                            <span className="font-medium text-sm truncate flex-1">
+                                              {product.NombreItem}
+                                            </span>
+                                            <div className="flex flex-wrap gap-1 shrink-0">
+                                              <Badge
+                                                  variant="outline"
+                                                  className="bg-green-50 text-green-700 text-xs"
+                                              >
+                                                Stock: {Number(product.Stock).toFixed(2)}
+                                              </Badge>
+                                              {product.tieneBonificado === 1 && (
+                                                  <Badge
+                                                      variant="outline"
+                                                      className="bg-yellow-50 text-yellow-700 text-xs"
+                                                  >
+                                                    Bonif.
+                                                  </Badge>
+                                              )}
+                                              {product.tieneEscala === 1 && (
+                                                  <Badge
+                                                      variant="outline"
+                                                      className="bg-purple-50 text-purple-700 text-xs"
+                                                  >
+                                                    Escalas
+                                                  </Badge>
+                                              )}
+                                            </div>
                                           </div>
-                                          <div className="flex flex-col flex-1 min-w-0">
-                                            <div className="flex justify-between items-start w-full gap-2">
-                      <span className="font-medium text-sm truncate flex-1 max-w-[200px]">
-                        {product.NombreItem}
-                      </span>
-                                              <div className="flex flex-wrap gap-1 shrink-0">
-                                                <Badge
-                                                    variant="outline"
-                                                    className="bg-green-50 text-green-700 text-xs"
-                                                >
-                                                  Stock: {product.Stock}
-                                                </Badge>
-                                                {product.tieneBonificado === 1 && (
-                                                    <Badge
-                                                        variant="outline"
-                                                        className="bg-yellow-50 text-yellow-700 text-xs"
-                                                    >
-                                                      Bonif.
-                                                    </Badge>
-                                                )}
-                                                {product.tieneEscala === 1 && (
-                                                    <Badge
-                                                        variant="outline"
-                                                        className="bg-purple-50 text-purple-700 text-xs"
-                                                    >
-                                                      Escalas
-                                                    </Badge>
-                                                )}
-                                              </div>
-                                            </div>
-                                            <div className="flex justify-between items-center w-full mt-1">
-                      <span className="text-xs text-gray-500 truncate max-w-[120px]">
-                        <span className="font-medium">Código:</span>{" "}
-                        {product.Codigo_Art}
-                        </span>
-                                              <span className="text-xs text-gray-500 truncate max-w-[120px]">
-                        <span className="font-medium">Lab:</span>{" "}
-                                                {product.Descripcion}
-                      </span>
-                                            </div>
-                                            <div className="flex justify-between mt-2 text-xs">
-                      <span className="text-green-600">
-                        Contado: {currency?.value === "PEN" ? "S/." : "$"}
-                        {Number(product.PUContado).toFixed(2)}
-                      </span>
-                                              <span className="text-blue-600">
-                        Crédito: {currency?.value === "PEN" ? "S/." : "$"}
-                                                {Number(product.PUCredito).toFixed(2)}
-                      </span>
-                                            </div>
+                                          <div className="flex justify-between items-center w-full mt-1">
+                                            <span className="text-xs text-gray-500 truncate">
+                                              <span className="font-medium">Código:</span>{" "}
+                                              {product.Codigo_Art}
+                                              </span>
+                                            <span className="text-xs text-gray-500 truncate">
+                                              <span className="font-medium">Lab:</span>{" "}
+                                              {product.Descripcion}
+                                            </span>
+                                          </div>
+                                          <div className="flex justify-between mt-2 text-xs">
+                                            <span className="text-green-600">
+                                              Contado: {currency?.value === "PEN" ? "S/." : "$"}
+                                              {Number(product.PUContado).toFixed(2)}
+                                            </span>
+                                            <span className="text-blue-600">
+                                              Crédito: {currency?.value === "PEN" ? "S/." : "$"}
+                                              {Number(product.PUCredito).toFixed(2)}
+                                            </span>
                                           </div>
                                         </div>
-                                      </CommandItem>
-                                  ))}
-                                </CommandGroup>
-                              </CommandList>
-                            </Command>
-                          </PopoverContent>
-                        </Popover>
-                      </div>
+                                      </div>
+                                    </CommandItem>
+                                ))}
+                              </CommandGroup>
+                            </CommandList>
+                          </Command>
+                        </PopoverContent>
+                      </Popover>
+                    </div>
 
-                      {selectedProduct && (
+                    {selectedProduct && (
                         <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 mt-2">
                           <div
-                            className={`border rounded-md p-2 cursor-pointer text-center ${
-                              priceType === 'contado'
-                                ? 'border-blue-500 bg-blue-50 text-blue-700'
-                                : 'border-gray-200 bg-gray-50 text-gray-700'
-                            }`}
-                            onClick={() => {
-                              setPriceType('contado')
-                            }}
+                              className={`border rounded-md p-2 cursor-pointer text-center ${
+                                  priceType === 'contado'
+                                      ? 'border-blue-500 bg-blue-50 text-blue-700'
+                                      : 'border-gray-200 bg-gray-50 text-gray-700'
+                              }`}
+                              onClick={() => {
+                                setPriceType('contado')
+                              }}
                           >
                             <div className="font-medium">Contado</div>
                             <div className="text-sm">
@@ -1038,14 +1076,14 @@ export default function OrderPage() {
                             </div>
                           </div>
                           <div
-                            className={`border rounded-md p-2 cursor-pointer text-center ${
-                              priceType === 'credito'
-                                ? 'border-blue-500 bg-blue-50 text-blue-700'
-                                : 'border-gray-200 bg-gray-50 text-gray-700'
-                            }`}
-                            onClick={() => {
-                              setPriceType('credito')
-                            }}
+                              className={`border rounded-md p-2 cursor-pointer text-center ${
+                                  priceType === 'credito'
+                                      ? 'border-blue-500 bg-blue-50 text-blue-700'
+                                      : 'border-gray-200 bg-gray-50 text-gray-700'
+                              }`}
+                              onClick={() => {
+                                setPriceType('credito')
+                              }}
                           >
                             <div className="font-medium">Crédito</div>
                             <div className="text-sm">
@@ -1056,8 +1094,8 @@ export default function OrderPage() {
                           {Number(selectedProduct.PUPorMayor) > 0 && <div
                               className={`border rounded-md p-2 cursor-pointer text-center ${
                                   priceType === 'porMayor'
-                                      ? 'border-blue-500 bg-blue-50 text-blue-700'
-                                      : 'border-gray-200 bg-gray-50 text-gray-700'
+                                      ? 'border-violet-500 bg-violet-50 text-violet-700'
+                                      : 'border-violet-200 bg-violet-50 text-violet-700'
                               }`}
                               onClick={() => {
                                 setPriceType('porMayor')
@@ -1072,8 +1110,8 @@ export default function OrderPage() {
                           {Number(selectedProduct.PUPorMenor) > 0 && <div
                               className={`border rounded-md p-2 cursor-pointer text-center ${
                                   priceType === 'porMenor'
-                                      ? 'border-blue-500 bg-blue-50 text-blue-700'
-                                      : 'border-gray-200 bg-gray-50 text-gray-700'
+                                      ? 'border-green-500 bg-green-50 text-green-700'
+                                      : 'border-green-200 bg-green-50 text-green-700'
                               }`}
                               onClick={() => {
                                 setPriceType('porMenor')
@@ -1086,55 +1124,54 @@ export default function OrderPage() {
                             </div>
                           </div>}
                           <div
-                            className={`border rounded-md p-2 cursor-pointer text-center ${
-                              priceType === 'custom'
-                                ? 'border-blue-500 bg-blue-50 text-blue-700'
-                                : 'border-gray-200 bg-gray-50 text-gray-700'
-                            }`}
-                            onClick={() => {
-                              setPriceType('custom')
-                            }}
+                              className={`border rounded-md p-2 cursor-pointer text-center ${
+                                  priceType === 'custom'
+                                      ? 'border-red-500 bg-red-50 text-red-700'
+                                      : 'border-red-200 bg-red-50 text-red-700'
+                              }`}
+                              onClick={() => {
+                                setPriceType('custom')
+                              }}
                           >
                             <div className="font-medium">Custom</div>
                             <div className="text-sm flex items-center justify-center">
                               {currency?.value === "PEN" ? "S/." : "$"}
                               <Input
-                                     type="number"
-                                     min="1"
-                                     step="1"
-                                     value={priceEdit}
-                                     onChange={(e) => setPriceEdit(Number.parseInt(e.target.value) || 1)}
-                                     className="bg-white h-[20px] ml-1 w-[80px] text-center"
+                                  type="number"
+                                  min="1"
+                                  step="1"
+                                  value={priceEdit}
+                                  onChange={(e) => setPriceEdit(Number.parseInt(e.target.value) || 1)}
+                                  className="bg-white h-[20px] ml-1 w-[80px] text-center"
                               />
                             </div>
                           </div>
                         </div>
-                      )}
-                    </div>
+                    )}
+                  </div>
 
-                    <div className="space-y-2 sm:w-48 transition-all duration-200">
-                      <Label htmlFor="laboratorio" className="text-sm font-medium">
-                        Filtrar por lab
-                      </Label>
-                      <Select
+                  <div className="space-y-2 sm:w-48 transition-all duration-200">
+                    <Label htmlFor="laboratorio" className="text-sm font-medium">
+                      Filtrar por lab
+                    </Label>
+                    <Select
                         value={selectedLaboratorio || ""}
                         onValueChange={(value) => {
                           setSelectedLaboratorio(value);
                           setShowLaboratorioModal(true);
                         }}
-                      >
-                        <SelectTrigger className="w-full sm:h-10 text-xs sm:text-sm bg-gray-50 border-gray-200">
-                          <SelectValue placeholder="Laboratorio"/>
-                        </SelectTrigger>
-                        <SelectContent>
-                          {laboratories.map((lab) => (
+                    >
+                      <SelectTrigger className="w-full sm:h-10 text-xs sm:text-sm bg-gray-50 border-gray-200">
+                        <SelectValue placeholder="Laboratorio"/>
+                      </SelectTrigger>
+                      <SelectContent>
+                        {laboratories.map((lab) => (
                             <SelectItem key={lab.IdLineaGe} value={lab.IdLineaGe} className="text-xs sm:text-sm">
                               {lab.Descripcion}
                             </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
 
@@ -2057,6 +2094,134 @@ export default function OrderPage() {
                 className="flex-1 bg-blue-600 hover:bg-blue-700"
             >
               {'Guardar Datos y Confirmar Pedido'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isViewModalOpen} onOpenChange={setIsViewModalOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Package className="h-5 w-5" />
+              Detalles de Promociones - {viewingProduct?.NombreItem}
+            </DialogTitle>
+            <DialogDescription>
+              Código: {viewingProduct?.Codigo_Art} | Precio Base: S/ {Number(viewingProduct?.PUContado).toFixed(2)}
+            </DialogDescription>
+          </DialogHeader>
+
+          <Tabs defaultValue="escalas" className="w-full">
+            <TabsList className="grid w-full grid-cols-2 mb-6">
+              <TabsTrigger value="escalas" className="flex items-center gap-2">
+                <TrendingUp className="h-4 w-4" />
+                Escalas de Precio ({escalas.length})
+              </TabsTrigger>
+              <TabsTrigger value="bonificaciones" className="flex items-center gap-2">
+                <Gift className="h-4 w-4" />
+                Bonificaciones ({bonificaciones.length})
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="escalas" className="space-y-4">
+              <Card>
+                <CardContent className="pt-4">
+                  {escalas.length > 0 ? (
+                      <div className="space-y-3">
+                        <div className="border rounded-lg divide-y">
+                          {escalas.map((escala, index) => (
+                              <div key={escala.id} className="flex items-center justify-between p-4 hover:bg-gray-50">
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-3">
+                                    <div className="bg-purple-100 p-2 rounded-md">
+                                      <TrendingUp className="h-4 w-4 text-purple-600" />
+                                    </div>
+                                    <div>
+                                      <div className="font-medium text-sm">
+                                        Escala {index + 1}: {escala.desde} - {escala.hasta} unidades
+                                      </div>
+                                      <div className="text-sm text-gray-600">
+                                        Precio especial: <span className="font-semibold text-green-600">S/ {escala.precio.toFixed(2)}</span> c/u
+                                      </div>
+                                      <div className="text-xs text-gray-500 mt-1">
+                                        Comparado con precio base: <span className="font-medium">S/ {Number(viewingProduct?.PUContado).toFixed(2)}</span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                                <Badge variant="outline" className="bg-green-50 text-green-700">
+                                  {(((Number(viewingProduct?.PUContado) - escala.precio) / Number(viewingProduct?.PUContado)) * 100).toFixed(1)}% desc.
+                                </Badge>
+                              </div>
+                          ))}
+                        </div>
+                      </div>
+                  ) : (
+                      <div className="text-center py-8 border-2 border-dashed border-gray-300 rounded-lg">
+                        <TrendingUp className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+                        <h4 className="font-medium text-gray-900 mb-1">No hay escalas configuradas</h4>
+                        <p className="text-sm text-gray-500">
+                          Este producto no tiene escalas de precio configuradas
+                        </p>
+                      </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="bonificaciones" className="space-y-4">
+              <Card>
+                <CardContent className="pt-4">
+                  {bonificaciones.length > 0 ? (
+                      <div className="space-y-3">
+                        <div className="border rounded-lg divide-y">
+                          {bonificaciones.map((bonificacion, index) => (
+                              <div key={bonificacion.id} className="flex items-center justify-between p-4 hover:bg-gray-50">
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-3">
+                                    <div className="bg-yellow-100 p-2 rounded-md">
+                                      <Gift className="h-4 w-4 text-yellow-600" />
+                                    </div>
+                                    <div>
+                                      <div className="font-medium text-sm">
+                                        Promoción {index + 1}: Compra {bonificacion.compra} lleva {bonificacion.lleva} gratis
+                                      </div>
+                                      <div className="text-sm text-gray-600">{bonificacion.descripcion}</div>
+                                      {!bonificacion.esMismoProducto && bonificacion.descripcionProducto && (
+                                          <div className="text-xs text-blue-600 mt-1">
+                                            Producto bonificado: {bonificacion.descripcionProducto}
+                                          </div>
+                                      )}
+                                      <div className="text-xs text-gray-500 mt-1">
+                                        Tipo: {bonificacion.esMismoProducto ? 'Mismo producto' : 'Producto diferente'}
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                                <Badge variant="outline" className="bg-blue-50 text-blue-700">
+                                  {(bonificacion.lleva / bonificacion.compra * 100).toFixed(0)}% bonif.
+                                </Badge>
+                              </div>
+                          ))}
+                        </div>
+                      </div>
+                  ) : (
+                      <div className="text-center py-8 border-2 border-dashed border-gray-300 rounded-lg">
+                        <Gift className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+                        <h4 className="font-medium text-gray-900 mb-1">No hay bonificaciones</h4>
+                        <p className="text-sm text-gray-500">
+                          Este producto no tiene bonificaciones configuradas
+                        </p>
+                      </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsViewModalOpen(false)}>
+              Cerrar
             </Button>
           </DialogFooter>
         </DialogContent>
