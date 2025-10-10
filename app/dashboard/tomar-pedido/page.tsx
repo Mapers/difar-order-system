@@ -941,8 +941,8 @@ export default function OrderPage() {
                 <CardTitle className="text-xl font-semibold text-blue-700">Agregar Productos</CardTitle>
               </CardHeader>
               <CardContent className="space-y-6 pt-6">
-                <div className="space-y-4 px-1 sm:px-0 py-2 grid-cols-2 sm:grid-cols-2">
-                  <div className="space-y-2">
+                <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 px-1 sm:px-0 py-2">
+                  <div className="space-y-2 col-span-3">
                     <Label htmlFor="producto" className="text-sm font-medium">
                       Producto
                     </Label>
@@ -957,12 +957,12 @@ export default function OrderPage() {
                           >
                             {selectedProduct ? (
                                 <div className="flex flex-col items-start min-w-0 flex-1">
-                                  <span className="font-medium truncate w-full">
-                                    {selectedProduct.NombreItem}
-                                  </span>
-                                  <span className="text-xs text-gray-500 truncate w-full">
-                                    {selectedProduct.Codigo_Art} | {selectedProduct.Descripcion}
-                                  </span>
+                    <span className="font-medium break-words w-full line-clamp-1">
+                      {selectedProduct.NombreItem}
+                    </span>
+                                  <span className="text-xs text-gray-500 break-words w-full line-clamp-1">
+                      {selectedProduct.Codigo_Art} | {selectedProduct.Descripcion}
+                    </span>
                                 </div>
                             ) : (
                                 <span className="text-gray-500">Buscar producto...</span>
@@ -998,9 +998,9 @@ export default function OrderPage() {
                                         </div>
                                         <div className="flex flex-col flex-1 min-w-0">
                                           <div className="flex justify-between items-start w-full gap-2">
-                                            <span className="font-medium text-sm truncate flex-1">
-                                              {product.NombreItem}
-                                            </span>
+                              <span className="font-medium text-sm truncate flex-1">
+                                {product.NombreItem}
+                              </span>
                                             <div className="flex flex-wrap gap-1 shrink-0">
                                               <Badge
                                                   variant="outline"
@@ -1027,24 +1027,24 @@ export default function OrderPage() {
                                             </div>
                                           </div>
                                           <div className="flex justify-between items-center w-full mt-1">
+                              <span className="text-xs text-gray-500 truncate">
+                                <span className="font-medium">Código:</span>{" "}
+                                {product.Codigo_Art}
+                              </span>
                                             <span className="text-xs text-gray-500 truncate">
-                                              <span className="font-medium">Código:</span>{" "}
-                                              {product.Codigo_Art}
-                                              </span>
-                                            <span className="text-xs text-gray-500 truncate">
-                                              <span className="font-medium">Lab:</span>{" "}
+                                <span className="font-medium">Lab:</span>{" "}
                                               {product.Descripcion}
-                                            </span>
+                              </span>
                                           </div>
                                           <div className="flex justify-between mt-2 text-xs">
-                                            <span className="text-green-600">
-                                              Contado: {currency?.value === "PEN" ? "S/." : "$"}
-                                              {Number(product.PUContado).toFixed(2)}
-                                            </span>
+                              <span className="text-green-600">
+                                Contado: {currency?.value === "PEN" ? "S/." : "$"}
+                                {Number(product.PUContado).toFixed(2)}
+                              </span>
                                             <span className="text-blue-600">
-                                              Crédito: {currency?.value === "PEN" ? "S/." : "$"}
+                                Crédito: {currency?.value === "PEN" ? "S/." : "$"}
                                               {Number(product.PUCredito).toFixed(2)}
-                                            </span>
+                              </span>
                                           </div>
                                         </div>
                                       </div>
@@ -1150,7 +1150,7 @@ export default function OrderPage() {
                     )}
                   </div>
 
-                  <div className="space-y-2 sm:w-48 transition-all duration-200">
+                  <div className="space-y-2">
                     <Label htmlFor="laboratorio" className="text-sm font-medium">
                       Filtrar por lab
                     </Label>
@@ -1161,7 +1161,7 @@ export default function OrderPage() {
                           setShowLaboratorioModal(true);
                         }}
                     >
-                      <SelectTrigger className="w-full sm:h-10 text-xs sm:text-sm bg-gray-50 border-gray-200">
+                      <SelectTrigger className="w-full h-10 sm:h-12 text-xs sm:text-sm bg-gray-50 border-gray-200">
                         <SelectValue placeholder="Laboratorio"/>
                       </SelectTrigger>
                       <SelectContent>
@@ -1180,20 +1180,20 @@ export default function OrderPage() {
                     Cantidad
                   </Label>
                   <Input
-                    id="quantity"
-                    type="number"
-                    min="1"
-                    step="1"
-                    value={quantity}
-                    onChange={(e) => setQuantity(Number.parseInt(e.target.value) || 1)}
-                    className="bg-white"
+                      id="quantity"
+                      type="number"
+                      min="1"
+                      step="1"
+                      value={quantity}
+                      onChange={(e) => setQuantity(Number.parseInt(e.target.value) || 1)}
+                      className="bg-white"
                   />
                 </div>
                 <Button
-                  type="button"
-                  disabled={!selectedProduct || loading.products || isCheckingBonification}
-                  onClick={handleAddProduct}
-                  className="w-full bg-indigo-600 hover:bg-indigo-700"
+                    type="button"
+                    disabled={!selectedProduct || loading.products || isCheckingBonification}
+                    onClick={handleAddProduct}
+                    className="w-full bg-indigo-600 hover:bg-indigo-700"
                 >
                   <ShoppingCart className="mr-2 h-4 w-4"/>
                   Agregar Producto
