@@ -658,9 +658,9 @@ export default function RutaSemanalPage() {
 
     useEffect(() => {
         if (newRuta.vendedorCode != '') {
-            fetchSellerZones(newRuta.vendedorCode)
+            fetchSellerZones(newRuta.vendedorCode || '')
         }
-    }, [newRuta.vendedorId]);
+    }, [newRuta.vendedorCode]);
 
     useEffect(() => {
         fetchZones()
