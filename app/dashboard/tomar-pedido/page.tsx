@@ -719,6 +719,17 @@ export default function OrderPage() {
     }
   }
 
+  const formatCurrency = (value) => {
+    if (value === 0 || value === '') return '';
+    const numberValue = typeof value === 'string' ?
+        parseFloat(value.replace(/[^\d.]/g, '')) : value;
+
+    return numberValue.toLocaleString('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+  };
+
   const goToStep = (step: number) => {
     setCurrentStep(step)
   }
@@ -1137,12 +1148,29 @@ export default function OrderPage() {
                             <div className="text-sm flex items-center justify-center">
                               {currency?.value === "PEN" ? "S/." : "$"}
                               <Input
-                                  type="number"
-                                  min="1"
-                                  step="1"
-                                  value={priceEdit}
-                                  onChange={(e) => setPriceEdit(Number.parseInt(e.target.value) || 1)}
+                                  type="text"
+                                  value={priceEdit === 0 ? '' : priceEdit}
+                                  onChange={(e) => {
+                                    let value = e.target.value;
+                                    value = value.replace(/[^\d.]/g, '');
+
+                                    const parts = value.split('.');
+                                    if (parts.length > 2) {
+                                      value = parts[0] + '.' + parts.slice(1).join('');
+                                    }
+                                    if (parts.length === 2 && parts[1].length > 2) {
+                                      value = parts[0] + '.' + parts[1].substring(0, 2);
+                                    }
+                                    setPriceEdit(value === '' ? 0 : value);
+                                  }}
+                                  onBlur={(e) => {
+                                    if (e.target.value && e.target.value !== '0') {
+                                      const numValue = parseFloat(e.target.value);
+                                      setPriceEdit(isNaN(numValue) ? 0 : numValue.toFixed(2));
+                                    }
+                                  }}
                                   className="bg-white h-[20px] ml-1 w-[80px] text-center"
+                                  placeholder="0.00"
                               />
                             </div>
                           </div>

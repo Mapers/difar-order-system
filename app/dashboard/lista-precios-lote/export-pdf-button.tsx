@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { FileText } from 'lucide-react'
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib'
 import {PriceService} from "@/app/services/price/PriceService";
+import moment from "moment";
 
 const ExportPdfButton = ({ payload }) => {
   const [loading, setLoading] = useState(false)
@@ -112,8 +113,8 @@ const ExportPdfButton = ({ payload }) => {
         })
 
         yPosition = pageHeight - margin - 50
-        const columnWidths = [60, 100, 174, 40, 50, 50, 50]
-        const columns = ['COD.', 'LAB.', 'DESCRIPCIÓN', 'UM', 'STOCK', 'P.CONTADO', 'P.CREDITO']
+        const columnWidths = [50, 120, 50, 50, 54, 45, 85, 95, 95]
+        const columns = ['COD.', 'DESCRIPCIÓN', 'LOTE', 'VCTO', 'UM', 'STOCK', 'P.CONTADO', 'P.CREDITO']
 
         let xPosition = margin
         columns.forEach((column, index) => {
@@ -178,31 +179,26 @@ const ExportPdfButton = ({ payload }) => {
           yPosition -= 15
         }
 
-        const columnValues = [
-          item.prod_codigo || '',
-          item.laboratorio_Descripcion || '',
-          item.prod_descripcion || '',
-          item.prod_medida || '',
-          item.kardex_saldoCant || '',
-          item.precio_contado || '',
-          item.precio_credito || '',
-        ]
-
-        const columnWidths = [60, 100, 180, 40, 50, 47, 47]
+        const columnWidths = [50, 120, 50, 50, 54, 45, 85, 95, 95]
         let xPosition = margin
 
         let maxLines = 1
-        columnValues.forEach((value, index) => {
-          if (index === 2) {
-            const lines = splitTextIntoLines(value, columnWidths[index] - 5, font, 7)
-            maxLines = Math.max(maxLines, lines.length)
-          }
-        })
 
-        columnValues.forEach((value, index) => {
-          if (index === 2) {
-            const lines = splitTextIntoLines(value, columnWidths[index] - 5, font, 7)
-            lines.forEach((line, lineIndex) => {
+        const descLines = splitTextIntoLines(item.prod_descripcion || '', columnWidths[1] - 5, font, 7)
+        maxLines = Math.max(maxLines, descLines.length)
+
+        const basicColumns = [
+          item.prod_codigo || '',
+          item.prod_descripcion || '',
+          item.kardex_lote || '',
+          moment(item.kardex_VctoItem, 'yyy-MM-DD').format('DD/MM/yyyy'),
+          item.prod_medida || '',
+          Number(item.kardex_saldoCant).toFixed(2) || '',
+        ]
+
+        basicColumns.forEach((value, index) => {
+          if (index === 1) {
+            descLines.forEach((line, lineIndex) => {
               currentPage.drawText(line, {
                 x: xPosition,
                 y: yPosition - (lineIndex * 7),
@@ -233,9 +229,62 @@ const ExportPdfButton = ({ payload }) => {
               color: rgb(0, 0, 0),
             })
           }
-
           xPosition += columnWidths[index]
         })
+
+        const precioContado = item.precio_contado || ''
+        const precioPorMayor = item.precio_por_mayor || ''
+
+        if (precioContado) {
+          currentPage.drawText(precioContado, {
+            x: xPosition,
+            y: yPosition,
+            size: 7,
+            font,
+            color: rgb(0, 0, 0),
+          })
+        }
+
+        if (precioPorMayor && parseFloat(precioPorMayor) > 0) {
+          const bonifText = `BONIF. ${precioPorMayor}`
+          const precioContadoWidth = font.widthOfTextAtSize(precioContado, 7)
+
+          currentPage.drawText(bonifText, {
+            x: xPosition + precioContadoWidth + 2,
+            y: yPosition,
+            size: 6,
+            font,
+            color: rgb(0, 0.5, 0),
+          })
+        }
+
+        xPosition += columnWidths[6]
+
+        const precioCredito = item.precio_credito || ''
+        const precioPorMenor = item.precio_por_menor || ''
+
+        if (precioCredito) {
+          currentPage.drawText(precioCredito, {
+            x: xPosition,
+            y: yPosition,
+            size: 7,
+            font,
+            color: rgb(0, 0, 0),
+          })
+        }
+
+        if (precioPorMenor && parseFloat(precioPorMenor) > 0) {
+          const bonifText = `BONIF. ${precioPorMenor}`
+          const precioCreditoWidth = font.widthOfTextAtSize(precioCredito, 7)
+
+          currentPage.drawText(bonifText, {
+            x: xPosition + precioCreditoWidth + 2,
+            y: yPosition,
+            size: 6,
+            font,
+            color: rgb(0, 0, 0.8),
+          })
+        }
 
         yPosition -= (maxLines * 7) + 5
         currentItem++
@@ -257,15 +306,15 @@ const ExportPdfButton = ({ payload }) => {
   }
 
   return (
-    <Button
-      onClick={generatePdf}
-      disabled={loading}
-      variant="outline"
-      className="flex items-center gap-2"
-    >
-      <FileText className="h-4 w-4" />
-      {loading ? 'Generando...' : 'Exportar PDF'}
-    </Button>
+      <Button
+          onClick={generatePdf}
+          disabled={loading}
+          variant="outline"
+          className="flex items-center gap-2"
+      >
+        <FileText className="h-4 w-4" />
+        {loading ? 'Generando...' : 'Exportar PDF'}
+      </Button>
   )
 }
 

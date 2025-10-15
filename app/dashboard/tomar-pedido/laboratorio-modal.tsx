@@ -275,14 +275,34 @@ export const LaboratorioModal = ({
                         <Label htmlFor={`${productId}-custom`} className="text-sm cursor-pointer flex items-center gap-2 text-red-700">
                           Custom:
                           <Input
-                              type="number"
-                              min="0"
-                              step="0.01"
-                              value={customPrice}
-                              onChange={(e) => handleCustomPriceChange(
-                                  productId,
-                                  parseFloat(e.target.value) || 0
-                              )}
+                              type="text"
+                              value={customPrice === 0 ? '' : customPrice}
+                              onChange={(e) => {
+                                let value = e.target.value;
+                                value = value.replace(/[^\d.]/g, '');
+
+                                const parts = value.split('.');
+                                if (parts.length > 2) {
+                                  value = parts[0] + '.' + parts.slice(1).join('');
+                                }
+                                if (parts.length === 2 && parts[1].length > 2) {
+                                  value = parts[0] + '.' + parts[1].substring(0, 2);
+                                }
+
+                                handleCustomPriceChange(
+                                    productId,
+                                    parseFloat(value === '' ? '0' : value) || 0
+                                )
+                              }}
+                              onBlur={(e) => {
+                                if (e.target.value && e.target.value !== '0') {
+                                  const numValue = parseFloat(e.target.value);
+                                  handleCustomPriceChange(
+                                      productId,
+                                      parseFloat(isNaN(numValue) ? '0' : numValue.toFixed(2)) || 0
+                                  )
+                                }
+                              }}
                               className="h-6 w-20 text-center text-xs bg-red-50"
                               onClick={(e) => e.stopPropagation()}
                           />

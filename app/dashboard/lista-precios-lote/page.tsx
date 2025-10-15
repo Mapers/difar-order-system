@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from "react"
-import {Search, Download, Eye, ChevronLeft, ChevronRight, DollarSign} from "lucide-react"
+import {Search, Download, Eye, ChevronLeft, ChevronRight, DollarSign, Edit} from "lucide-react"
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card"
 import { PriceService } from "@/app/services/price/PriceService"
 import { PriceMethodsService } from "./services/priceMethodsService"
@@ -54,6 +54,13 @@ export default function PricePage() {
   const [escalas, setEscalas] = useState<Escala[]>([])
   const [bonificaciones, setBonificaciones] = useState<Bonificacion[]>([])
   const [loadingDetails, setLoadingDetails] = useState(false)
+
+  const [isEditing, setIsEditing] = useState(false)
+  const [editPrecioContado, setEditPrecioContado] = useState("")
+  const [editPrecioCredito, setEditPrecioCredito] = useState("")
+  const [editPrecioBonifCont, setEditPrecioBonifCont] = useState("")
+  const [editPrecioBonifCred, setEditPrecioBonifCred] = useState("")
+  const [saving, setSaving] = useState(false)
 
   const debouncedFetchPricesLots = debounce(async () => {
     setLoading(true);
@@ -158,6 +165,12 @@ export default function PricePage() {
   const handleViewPrices = (product: PrecioLote) => {
     setPriceDetails(product);
     fetchProductDetails(product.prod_codigo);
+
+    setEditPrecioContado(product.precio_contado || "");
+    setEditPrecioCredito(product.precio_credito || "");
+    setEditPrecioBonifCont(product.precio_bonif_cont || "");
+    setEditPrecioBonifCred(product.precio_bonif_cred || "");
+    setIsEditing(false);
   }
 
   const { laboratories, loadingLab, errorLab } = useLaboratoriesData()
@@ -252,6 +265,40 @@ export default function PricePage() {
   }
 
   const paginatedData = getPaginatedData();
+
+  const handleSavePrices = async () => {
+    if (!priceDetails) return;
+
+    setSaving(true);
+    try {
+      const payload = {
+        code: priceDetails.prod_codigo,
+        contado: editPrecioContado,
+        credito: editPrecioCredito,
+        contadoBonif: editPrecioBonifCont,
+        creditoBonif: editPrecioBonifCred
+      };
+
+      const response = await apiClient.post('/price/list-prices/edit', payload);
+
+      if (response.data.success) {
+        setPriceDetails({
+          ...priceDetails,
+          precio_contado: editPrecioContado,
+          precio_credito: editPrecioCredito,
+          precio_bonif_cont: editPrecioBonifCont,
+          precio_bonif_cred: editPrecioBonifCred
+        });
+
+        setIsEditing(false);
+      }
+    } catch (error) {
+      console.error("Error al guardar precios:", error);
+      alert("Error al guardar los precios");
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
       <div className="grid gap-6">
@@ -482,37 +529,110 @@ export default function PricePage() {
 
                                     {priceDetails && (
                                         <div className="space-y-6 py-4">
+
                                           <div className="grid grid-cols-2 gap-4">
                                             <div className="space-y-2">
                                               <Label className="text-sm font-medium">Precio Contado</Label>
-                                              <div className="text-lg font-mono font-semibold text-green-600">
-                                                S/ {priceDetails.precio_contado}
-                                              </div>
+                                              {isEditing ? (
+                                                  <Input
+                                                      type="text"
+                                                      value={editPrecioContado}
+                                                      onChange={(e) => setEditPrecioContado(e.target.value)}
+                                                      className="font-mono"
+                                                      placeholder="0.00"
+                                                  />
+                                              ) : (
+                                                  <div className="text-lg font-mono font-semibold text-green-600">
+                                                    S/ {priceDetails.precio_contado}
+                                                  </div>
+                                              )}
                                             </div>
                                             <div className="space-y-2">
                                               <Label className="text-sm font-medium">Precio Crédito</Label>
-                                              <div className="text-lg font-mono font-semibold text-blue-600">
-                                                S/ {priceDetails.precio_credito}
-                                              </div>
+                                              {isEditing ? (
+                                                  <Input
+                                                      type="text"
+                                                      value={editPrecioCredito}
+                                                      onChange={(e) => setEditPrecioCredito(e.target.value)}
+                                                      className="font-mono"
+                                                      placeholder="0.00"
+                                                  />
+                                              ) : (
+                                                  <div className="text-lg font-mono font-semibold text-blue-600">
+                                                    S/ {priceDetails.precio_credito}
+                                                  </div>
+                                              )}
                                             </div>
                                           </div>
 
                                           <div className="border-t pt-4">
                                             <div className="grid grid-cols-2 gap-4">
-                                              {Number(priceDetails.precio_bonif_cont) > 0 && <div className="space-y-1">
+                                              {(Number(priceDetails.precio_bonif_cont) > 0 || isEditing) && <div className="space-y-1">
                                                 <Label className="text-xs text-gray-500">Bonificación Contado</Label>
-                                                <div className="text-sm font-mono">
-                                                  S/ {priceDetails.precio_bonif_cont}
-                                                </div>
+                                                {isEditing ? (
+                                                    <Input
+                                                        type="text"
+                                                        value={editPrecioBonifCont}
+                                                        onChange={(e) => setEditPrecioBonifCont(e.target.value)}
+                                                        className="font-mono text-sm"
+                                                        placeholder="0.00"
+                                                    />
+                                                ) : (
+                                                    <div className="text-sm font-mono">
+                                                      {Number(priceDetails.precio_bonif_cont) > 0 ? `S/ ${priceDetails.precio_bonif_cont}` : 'No asignado'}
+                                                    </div>
+                                                )}
                                               </div>}
-                                              {Number(priceDetails.precio_bonif_cred) > 0 && <div className="space-y-1">
+                                              {(Number(priceDetails.precio_bonif_cred) > 0 || isEditing) && <div className="space-y-1">
                                                 <Label className="text-xs text-gray-500">Bonificación Crédito</Label>
-                                                <div className="text-sm font-mono">
-                                                  S/ {priceDetails.precio_bonif_cred}
-                                                </div>
+                                                {isEditing ? (
+                                                    <Input
+                                                        type="text"
+                                                        value={editPrecioBonifCred}
+                                                        onChange={(e) => setEditPrecioBonifCred(e.target.value)}
+                                                        className="font-mono text-sm"
+                                                        placeholder="0.00"
+                                                    />
+                                                ) : (
+                                                    <div className="text-sm font-mono">
+                                                      {Number(priceDetails.precio_bonif_cred) > 0 ? `S/ ${priceDetails.precio_bonif_cred}` : 'No asignado'}
+                                                    </div>
+                                                )}
                                               </div>}
                                             </div>
                                           </div>
+
+                                          {user?.idRol && [2, 3].includes(user.idRol) && (
+                                              <div className="flex justify-end">
+                                                {!isEditing ? (
+                                                    <Button
+                                                        variant="outline"
+                                                        onClick={() => setIsEditing(true)}
+                                                        className="gap-1"
+                                                    >
+                                                      <Edit className="h-4 w-4" />
+                                                      Editar Precios
+                                                    </Button>
+                                                ) : (
+                                                    <div className="flex gap-2">
+                                                      <Button
+                                                          variant="outline"
+                                                          onClick={() => setIsEditing(false)}
+                                                          disabled={saving}
+                                                      >
+                                                        Cancelar
+                                                      </Button>
+                                                      <Button
+                                                          onClick={handleSavePrices}
+                                                          disabled={saving}
+                                                          className="gap-1"
+                                                      >
+                                                        {saving ? "Guardando..." : "Guardar Cambios"}
+                                                      </Button>
+                                                    </div>
+                                                )}
+                                              </div>
+                                          )}
 
                                           {escalas.length > 0 && (
                                               <div className="border-t pt-4">
