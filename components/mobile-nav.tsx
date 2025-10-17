@@ -14,7 +14,7 @@ import {
   Package,
   ShoppingCart,
   FileText,
-  GitBranch, Receipt, BarChart2, LineChart, UserCog, Notebook, Gift, Map
+  GitBranch, Receipt, BarChart2, LineChart, UserCog, Notebook, Gift, Map, Settings
 } from "lucide-react";
 import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
@@ -50,6 +50,7 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   "/dashboard/roles": Notebook,
   "/dashboard/escalas-bonificaciones": Gift,
   "/dashboard/ruta-semanal": Map,
+  "/dashboard/configuraciones": Settings,
 };
 
 export function MobileNav() {
