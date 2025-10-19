@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from "react"
+import React, { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -22,7 +22,7 @@ import {
   Coins,
   FileText,
   Trash, CheckSquare, Loader2,
-  Locate, Building, Info, Gift, TrendingUp
+  Locate, Building, Info, Gift, TrendingUp, ChevronDown
 } from "lucide-react"
 import { StepProgress } from "@/components/step-progress"
 import apiClient from "@/app/api/client"
@@ -60,6 +60,7 @@ import {format, parseISO} from "date-fns";
 import {Combobox} from "@/app/dashboard/mis-pedidos/page";
 import {useLaboratoriesData} from "@/app/dashboard/lista-precios-lote/hooks/useLaboratoriesData";
 import {Tabs, TabsContent, TabsList, TabsTrigger} from "@/components/ui/tabs";
+import OrderHistory from "@/app/components/take_orders/order-history";
 
 interface LoteProducto {
   value: string
@@ -931,6 +932,9 @@ export default function OrderPage() {
                   selectedCondition={condition}
                   selectedCurrency={currency}
                 />}
+              {selectedClient && (
+                  <OrderHistory client={selectedClient} />
+              )}
             </CardContent>
             <CardFooter className="flex justify-end border-t bg-gray-50 py-4">
               <Button

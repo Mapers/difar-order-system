@@ -45,7 +45,6 @@ const PaymentCondition: React.FC<ClientRowProps> = ({
 
       <CardContent className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Condición */}
           <div className="space-y-2">
             <Label htmlFor="condicion">Condición</Label>
             <Popover
@@ -96,7 +95,6 @@ const PaymentCondition: React.FC<ClientRowProps> = ({
             </Popover>
           </div>
 
-          {/* Moneda */}
           <div className="space-y-2">
             <Label htmlFor="moneda">Moneda</Label>
             <Popover
@@ -146,7 +144,6 @@ const PaymentCondition: React.FC<ClientRowProps> = ({
           </div>
         </div>
 
-        {/* Resumen */}
         {(selectedCondition || selectedCurrency) && (
           <div className="mt-4 p-4 bg-green-50 rounded-lg border border-green-200">
             <h4 className="font-medium text-green-800 mb-2">Resumen de Condiciones:</h4>
