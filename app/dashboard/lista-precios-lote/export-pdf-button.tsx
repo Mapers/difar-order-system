@@ -10,6 +10,7 @@ import moment from "moment";
 const ExportPdfButton = ({ payload }) => {
   const [loading, setLoading] = useState(false)
 
+  // Funciones auxiliares (splitTextIntoLines, processLotes, etc.) permanecen igual...
   const splitTextIntoLines = (text, maxWidth, font, fontSize) => {
     if (!text) return [''];
     const words = text.split(' ')
@@ -30,11 +31,9 @@ const ExportPdfButton = ({ payload }) => {
         currentLine = word
       }
     }
-
     if (currentLine) {
       lines.push(currentLine)
     }
-
     return lines.length > 0 ? lines : ['']
   }
 
@@ -80,7 +79,6 @@ const ExportPdfButton = ({ payload }) => {
     setLoading(true)
 
     try {
-
       const response = await PriceService.getPricesAll(payload);
       const data = response.data || [];
 
@@ -88,12 +86,36 @@ const ExportPdfButton = ({ payload }) => {
       const font = await pdfDoc.embedFont(StandardFonts.Helvetica)
       const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold)
 
+      // --- [IMPORTANTE LOGO] INICIO: Cargar e incrustar el logo ---
+      let logoImage = null;
+      try {
+        // 1. Define la ruta de tu logo.
+        // Si usas Next.js y el archivo está en /public/images/logo.png, la ruta es '/images/logo.png'
+        // Para este ejemplo uso un placeholder, REEMPLÁZALO con tu ruta local.
+        const logoUrl = '/difar-logo.png';
+
+        // 2. Obtener los bytes de la imagen
+        const logoBytes = await fetch(logoUrl).then((res) => {
+          if (!res.ok) throw new Error("No se pudo cargar la imagen");
+          return res.arrayBuffer();
+        });
+
+        // 3. Incrustar la imagen (usa embedJpg si tu logo es JPG)
+        logoImage = await pdfDoc.embedPng(logoBytes);
+
+      } catch (error) {
+        console.warn("No se pudo cargar el logotipo para el PDF:", error);
+        // El PDF se generará sin logo si falla la carga
+      }
+      // --- [IMPORTANTE LOGO] FIN ---
+
+
       const pageWidth = 841.89
       const pageHeight = 595.28
       const margin = 40
       const minYPosition = margin + 20
 
-      const empresaNombre = "DROGUERIA CORPORACION CENTRALFARMA E.I.R.L."
+      const empresaNombre = "DROGUERIA DIFAR"
       const empresaRuc = "2056138401"
 
       const addNewPage = () => {
@@ -102,20 +124,40 @@ const ExportPdfButton = ({ payload }) => {
 
       let currentPage = addNewPage()
       let yPosition = pageHeight - margin
-      let currentItem = 0
+      // let currentItem = 0 // No se usa actualmente
       let pageNumber = 1
       let currentLab = 0
 
-      const drawHeader = (page) => {
+      // Modificamos drawHeader para aceptar el logo opcionalmente
+      const drawHeader = (page, logoImg = null) => {
+        let titleXPos = margin; // Posición X inicial para el texto
+
+        // --- Dibujar LOGO si existe ---
+        if (logoImg) {
+          const logoWidth = 50; // Ajusta el tamaño deseado
+          const logoHeight = 30; // Ajusta el tamaño deseado
+          // Ajusta 'y' para alinearlo verticalmente con el texto.
+          // PDF-lib dibuja imágenes desde la esquina inferior izquierda.
+          page.drawImage(logoImg, {
+            x: margin,
+            y: pageHeight - margin - 15, // Ajuste vertical a ojo
+            width: logoWidth,
+            height: logoHeight,
+          });
+          // Movemos el texto a la derecha para que no se superponga con el logo
+          titleXPos = margin + logoWidth + 10; // 10px de espacio entre logo y texto
+        }
+        // -----------------------------
+
         page.drawText(empresaNombre, {
-          x: margin,
+          x: titleXPos, // Usamos la nueva posición X calculada
           y: pageHeight - margin,
           size: 10,
           font: boldFont,
           color: rgb(0, 0, 0),
         })
         page.drawText(empresaRuc, {
-          x: margin,
+          x: titleXPos, // Usamos la nueva posición X calculada
           y: pageHeight - margin - 12,
           size: 8,
           font,
@@ -185,7 +227,8 @@ const ExportPdfButton = ({ payload }) => {
         yPosition -= 15
       }
 
-      drawHeader(currentPage)
+      // Pasamos logoImage a la primera llamada
+      drawHeader(currentPage, logoImage)
 
       for (const item of data) {
         if (item.laboratorio_id !== currentLab) {
@@ -195,9 +238,10 @@ const ExportPdfButton = ({ payload }) => {
             currentPage = addNewPage()
             pageNumber++
             yPosition = pageHeight - margin
-            drawHeader(currentPage)
+            // Pasamos logoImage a las páginas subsiguientes
+            drawHeader(currentPage, logoImage)
           }
-
+          // ... resto de la lógica de laboratorio ...
           currentPage.drawLine({
             start: { x: margin, y: yPosition + 8 },
             end: { x: pageWidth - margin, y: yPosition + 8 },
@@ -216,6 +260,7 @@ const ExportPdfButton = ({ payload }) => {
           yPosition -= 15
         }
 
+        // ... Procesamiento de lotes, bonificaciones, escalas y cálculo de altura ...
         const lotes = processLotes(item.lotes_raw)
         const bonificaciones = processBonificaciones(item.bonificaciones_raw)
         const escalas = processEscalas(item.escalas_raw)
@@ -250,12 +295,15 @@ const ExportPdfButton = ({ payload }) => {
         )
 
         const neededHeight = maxHeight + 10
+        // ... Fin procesamiento altura ...
+
 
         if (yPosition - neededHeight < minYPosition) {
           currentPage = addNewPage()
           pageNumber++
           yPosition = pageHeight - margin
-          drawHeader(currentPage)
+          // Pasamos logoImage si se crea nueva página por falta de espacio
+          drawHeader(currentPage, logoImage)
 
           currentPage.drawText(item.laboratorio_Descripcion, {
             x: margin,
@@ -267,6 +315,8 @@ const ExportPdfButton = ({ payload }) => {
           yPosition -= 15
         }
 
+
+        // ... RESTO DEL DIBUJADO DE ITEMS (sin cambios) ...
         const columnWidths = [50, 120, 75, 50, 50, 60, 60, 60, 60, 90, 100]
         let xPosition = margin
 
@@ -420,7 +470,7 @@ const ExportPdfButton = ({ payload }) => {
         })
 
         yPosition -= maxHeight + 10
-        currentItem++
+        // currentItem++
       }
 
       const pdfBytes = await pdfDoc.save()

@@ -90,6 +90,7 @@ export default function OrderPage() {
   const router = useRouter()
   const [currentStep, setCurrentStep] = useState(0)
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingSave, setIsLoadingSave] = useState(false);
   const [modalLoader, setModalLoader] = useState<'BONIFICADO' | 'ESCALA' | 'EVALUACION' | null>(null);
 
   // Estados para cliente
@@ -575,7 +576,11 @@ export default function OrderPage() {
   }
 
   const handleSaveOrder = async () => {
+    if (isLoadingSave) {
+      return;
+    }
     try {
+      setIsLoadingSave(true);
       const lotesData = productosConLotes.map(producto => ({
         codigoProducto: producto.prod_codigo,
         lote: producto.loteSeleccionado?.split('|')[0],
@@ -618,6 +623,8 @@ export default function OrderPage() {
       }
     } catch (error) {
       console.error("Error creating order:", error)
+    } finally {
+      setIsLoadingSave(false);
     }
   }
 
@@ -1982,7 +1989,7 @@ export default function OrderPage() {
                 <ArrowLeft className="mr-2 h-4 w-4"/>
                 Anterior
               </Button>
-              <Button type="submit" className="bg-green-600 hover:bg-green-700">
+              <Button type="submit" className="bg-green-600 hover:bg-green-700" disabled={isLoadingSave}>
                 <Check className="mr-2 h-4 w-4"/>
                 Confirmar Pedido
               </Button>
