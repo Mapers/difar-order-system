@@ -76,7 +76,7 @@ interface GuiaRemision {
   enlace_xml: string
   pdf_zip_base64: string
   sunat_description?: string
-  sunat_responsecode?: string
+  sunat_responsecode: string
 }
 
 interface TipoComprobante {
@@ -1164,7 +1164,7 @@ export default function ComprobantesPage() {
                             </td>
                             <td className="p-4">
                               <div className="flex flex-col gap-1 items-start">
-                                {guia.sunat_responsecode !== null ? (
+                                {guia.sunat_responsecode !== '0' ? (
                                     <Button
                                         variant="ghost"
                                         size="sm"
