@@ -30,7 +30,7 @@ import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { format, parseISO } from "date-fns"
+import {addDays, format, parseISO} from "date-fns"
 import apiClient from "@/app/api/client"
 import {useAuth} from "@/context/authContext";
 import {Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription} from "@/components/ui/dialog"
@@ -56,6 +56,7 @@ interface Comprobante {
   enlace_pdf: string
   enlace_cdr: string
   enlace_xml: string
+  tieneGuia: number
 }
 
 interface GuiaRemision {
@@ -74,6 +75,8 @@ interface GuiaRemision {
   enlace_cdr: string
   enlace_xml: string
   pdf_zip_base64: string
+  sunat_description?: string
+  sunat_responsecode?: string
 }
 
 interface TipoComprobante {
@@ -133,17 +136,20 @@ export default function ComprobantesPage() {
   const [loadingComprobantes, setLoadingComprobantes] = useState(false)
   const [loadingPedidos, setLoadingPedidos] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
+  const today = new Date();
+  const tomorrow = addDays(today, 1);
   const [filters, setFilters] = useState({
     tipo: "-1",
     estado: 4,
-    fechaDesde: format(new Date(), 'yyyy-MM-dd'),
-    fechaHasta: format(new Date(), 'yyyy-MM-dd')
+    fechaDesde: format(today, 'yyyy-MM-dd'),
+    fechaHasta: format(tomorrow, 'yyyy-MM-dd')
   })
   const [guiasRemision, setGuiasRemision] = useState<GuiaRemision[]>([]);
   const [loadingGuias, setLoadingGuias] = useState(false);
+
   const [filtersGuias, setFiltersGuias] = useState({
-    fechaDesde: format(new Date(), 'yyyy-MM-dd'),
-    fechaHasta: format(new Date(), 'yyyy-MM-dd')
+    fechaDesde: format(today, 'yyyy-MM-dd'),
+    fechaHasta: format(tomorrow, 'yyyy-MM-dd')
   });
   const auth = useAuth();
   const [showGuiasModal, setShowGuiasModal] = useState(false)
@@ -163,6 +169,14 @@ export default function ComprobantesPage() {
 
   const [showPdfModal, setShowPdfModal] = useState(false)
   const [currentPdfUrl, setCurrentPdfUrl] = useState("")
+
+  const [showErrorModal, setShowErrorModal] = useState(false)
+  const [selectedGuiaError, setSelectedGuiaError] = useState<GuiaRemision | null>(null)
+
+  const handleOpenErrorModal = (guia: GuiaRemision) => {
+    setSelectedGuiaError(guia)
+    setShowErrorModal(true)
+  }
 
   const fetchComprobantes = async () => {
     try {
@@ -1149,7 +1163,21 @@ export default function ComprobantesPage() {
                               {guia.cliente_num_doc}
                             </td>
                             <td className="p-4">
-                              {getEstadoGuiaBadge(guia.tipo_comprobante)}
+                              <div className="flex flex-col gap-1 items-start">
+                                {guia.sunat_responsecode !== null ? (
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => handleOpenErrorModal(guia)}
+                                        className="h-auto p-0 hover:bg-transparent text-red-600 hover:text-red-700 font-normal text-xs flex items-center gap-1 mt-1"
+                                    >
+                                      <AlertTriangle className="h-3 w-3" />
+                                      <span className="underline decoration-dotted underline-offset-2">Ver Error SUNAT</span>
+                                    </Button>
+                                ) : (<>
+                                  {getEstadoGuiaBadge(guia.tipo_comprobante)}
+                                </>)}
+                              </div>
                             </td>
                             <td className="p-4">
                               <div className="flex gap-2">
@@ -1175,13 +1203,13 @@ export default function ComprobantesPage() {
                                       <Download className="mr-2 h-4 w-4" />
                                       Descargar PDF
                                     </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                      className="text-green-600"
-                                      onClick={() => window.open(guia.enlace_xml, '_blank')}
-                                    >
-                                      <Download className="mr-2 h-4 w-4" />
-                                      Descargar XML
-                                    </DropdownMenuItem>
+                                    {/*<DropdownMenuItem*/}
+                                    {/*  className="text-green-600"*/}
+                                    {/*  onClick={() => window.open(guia.enlace_xml, '_blank')}*/}
+                                    {/*>*/}
+                                    {/*  <Download className="mr-2 h-4 w-4" />*/}
+                                    {/*  Descargar XML*/}
+                                    {/*</DropdownMenuItem>*/}
                                   </DropdownMenuContent>
                                 </DropdownMenu>
                               </div>
@@ -1210,26 +1238,35 @@ export default function ComprobantesPage() {
                           <div className="flex justify-between items-start">
                             <div>
                               <div className="flex items-center gap-2 mb-1">
-                        <span className="font-semibold text-gray-900">
-                          {guia.serie}-{guia.numero}
-                        </span>
-                                <Badge variant={guia.estado === 'ACTIVO' ? 'success' : 'destructive'}>
-                                  {guia.estado}
-                                </Badge>
+                                <span className="font-semibold text-gray-900">
+                                  {guia.serie}-{guia.numero}
+                                </span>
+                                {getEstadoGuiaBadge(guia.tipo_comprobante)}
                               </div>
                               <p className="text-sm text-gray-600">
                                 {format(parseISO(guia.fecha_emision), "dd/MM/yyyy")}
                               </p>
                             </div>
-                            <div className="text-right">
-                              <p className="text-sm text-gray-500">{guia.motivo_traslado}</p>
-                            </div>
                           </div>
 
                           <div className="border-t pt-3">
                             <p className="font-medium text-gray-900 truncate">{guia.cliente_denominacion}</p>
-                            <p className="text-sm text-gray-600">{guia.cliente_numdoc}</p>
+                            <p className="text-sm text-gray-600">{guia.cliente_num_doc}</p>
                           </div>
+
+                          {guia.sunat_responsecode !== "0" && (
+                              <div className="bg-red-100 border border-red-200 rounded-md p-3 mt-2">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <AlertTriangle className="h-4 w-4 text-red-600" />
+                                  <h4 className="font-medium text-red-800 text-sm">Error SUNAT</h4>
+                                </div>
+                                <div className="text-xs text-red-700 space-y-1">
+                                  {guia.sunat_description && (
+                                      <p><strong>Descripción:</strong> {guia.sunat_description}</p>
+                                  )}
+                                </div>
+                              </div>
+                          )}
 
                           <div className="border-t pt-3">
                             <div className="grid grid-cols-2 gap-2">
@@ -1455,61 +1492,75 @@ export default function ComprobantesPage() {
           </DialogHeader>
 
           {comprobanteToCancel && (
-            <div className="space-y-4">
-              <div className="bg-red-50 p-4 rounded-lg">
-                <h4 className="font-medium text-gray-900 mb-2">Datos del Comprobante</h4>
-                <div className="text-sm space-y-1">
-                  <p>
-                    <strong>Tipo:</strong> {getTipoComprobante(comprobanteToCancel.tipo_comprobante)}
-                  </p>
-                  <p>
-                    <strong>Serie/Número:</strong> {comprobanteToCancel.serie}-{comprobanteToCancel.numero}
-                  </p>
-                  <p>
-                    <strong>Cliente:</strong> {comprobanteToCancel.cliente_denominacion}
-                  </p>
-                  <p>
-                    <strong>Total:</strong> {comprobanteToCancel.moneda === 1 ? 'S/ ' : '$ '}
-                    {Number(comprobanteToCancel.total).toFixed(2)}
+              <div className="space-y-4">
+                <div className="bg-red-50 p-4 rounded-lg">
+                  <h4 className="font-medium text-gray-900 mb-2">Datos del Comprobante</h4>
+                  <div className="text-sm space-y-1">
+                    <p>
+                      <strong>Tipo:</strong> {getTipoComprobante(comprobanteToCancel.tipo_comprobante)}
+                    </p>
+                    <p>
+                      <strong>Serie/Número:</strong> {comprobanteToCancel.serie}-{comprobanteToCancel.numero}
+                    </p>
+                    <p>
+                      <strong>Cliente:</strong> {comprobanteToCancel.cliente_denominacion}
+                    </p>
+                    <p>
+                      <strong>Total:</strong> {comprobanteToCancel.moneda === 1 ? 'S/ ' : '$ '}
+                      {Number(comprobanteToCancel.total).toFixed(2)}
+                    </p>
+                  </div>
+                </div>
+
+                {comprobanteToCancel.tieneGuia === 0 && (
+                    <div className="bg-orange-50 p-3 rounded-lg border border-orange-200 flex gap-3 items-start">
+                      <AlertTriangle className="h-5 w-5 text-orange-600 flex-shrink-0 mt-0.5" />
+                      <div className="space-y-1">
+                        <p className="text-sm font-semibold text-orange-800">
+                          Guía de Remisión Asociada
+                        </p>
+                        <p className="text-sm text-orange-700">
+                          Este comprobante tiene una Guía de Remisión vinculada. Tenga en cuenta que al anularlo, deberá revisar el estado de la guía.
+                        </p>
+                      </div>
+                    </div>
+                )}
+
+                <div className="bg-red-50 p-3 rounded-lg border border-red-200">
+                  <p className="text-sm text-red-800">
+                    <strong>¿Estás seguro de anular este comprobante?</strong>
+                    <br />
+                    Esta acción no se puede deshacer y generará una nota de crédito si es necesario.
                   </p>
                 </div>
               </div>
-
-              <div className="bg-red-50 p-3 rounded-lg border border-red-200">
-                <p className="text-sm text-red-800">
-                  <strong>¿Estás seguro de anular este comprobante?</strong>
-                  <br />
-                  Esta acción no se puede deshacer y generará una nota de crédito si es necesario.
-                </p>
-              </div>
-            </div>
           )}
 
           <DialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0">
             <Button
-              variant="outline"
-              onClick={() => setShowCancelModal(false)}
-              disabled={isCancelling}
-              className="w-full sm:w-auto"
+                variant="outline"
+                onClick={() => setShowCancelModal(false)}
+                disabled={isCancelling}
+                className="w-full sm:w-auto"
             >
               Cancelar
             </Button>
             <Button
-              onClick={confirmCancelInvoice}
-              disabled={isCancelling}
-              variant="destructive"
-              className="w-full sm:w-auto"
+                onClick={confirmCancelInvoice}
+                disabled={isCancelling}
+                variant="destructive"
+                className="w-full sm:w-auto"
             >
               {isCancelling ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Anulando...
-                </>
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Anulando...
+                  </>
               ) : (
-                <>
-                  <XCircle className="mr-2 h-4 w-4" />
-                  Confirmar Anulación
-                </>
+                  <>
+                    <XCircle className="mr-2 h-4 w-4" />
+                    Confirmar Anulación
+                  </>
               )}
             </Button>
           </DialogFooter>
@@ -1559,6 +1610,41 @@ export default function ComprobantesPage() {
             >
               <Download className="mr-2 h-4 w-4" />
               Descargar PDF
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showErrorModal} onOpenChange={setShowErrorModal}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-700">
+              <AlertTriangle className="h-5 w-5" />
+              Error en Envío a SUNAT
+            </DialogTitle>
+            <DialogDescription>
+              Detalles del error reportado por SUNAT para la guía {selectedGuiaError?.serie}-{selectedGuiaError?.numero}
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedGuiaError && (
+              <div className="space-y-4">
+                <div className="bg-red-50 border border-red-200 rounded-md p-4">
+                  <div className="space-y-3">
+                    {selectedGuiaError.sunat_description && (
+                        <div>
+                          <h4 className="text-sm font-semibold text-red-900 mb-1">Descripción:</h4>
+                          <p className="text-sm text-red-800">{selectedGuiaError.sunat_description}</p>
+                        </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowErrorModal(false)}>
+              Cerrar
             </Button>
           </DialogFooter>
         </DialogContent>

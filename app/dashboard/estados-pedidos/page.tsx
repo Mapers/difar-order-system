@@ -33,6 +33,7 @@ import Link from "next/link";
 import {generateOrderPdf} from "@/lib/pdf";
 import {TimelineModal} from "@/app/dashboard/estados-pedidos/timeline-modal";
 import {ORDER_STATES} from "@/app/dashboard/mis-pedidos/page";
+import {Alert} from "@/components/ui/alert";
 
 export interface Pedido {
   idPedidocab: number
@@ -54,6 +55,7 @@ export interface Pedido {
   codigoCliente: string
   por_autorizar: string
   is_autorizado: string
+  continue: number
 }
 
 export interface PedidoDet {
@@ -594,64 +596,74 @@ export default function OrderStatusManagementPage() {
                     {getStateInfo((selectedOrder?.estadodePedido || 0) + 1, selectedOrder?.por_autorizar, selectedOrder?.is_autorizado)?.name}
                   </Badge>
                   <span className="text-sm text-gray-600">
-              (Siguiente estado)
-            </span>
+                    (Siguiente estado)
+                  </span>
                 </div>
               </div>
               <p className="mt-2 text-sm text-gray-500">
                 {getStateInfo((selectedOrder?.estadodePedido || 0) + 1, selectedOrder?.por_autorizar, selectedOrder?.is_autorizado)?.description}
               </p>
             </div>
+
+            {selectedOrder?.continue === 0 && (
+                <div className="p-3 bg-amber-50 border border-amber-200 rounded-md flex gap-3 items-start">
+                  <OctagonAlert className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                  <div className="text-sm text-amber-800">
+                    <span className="font-semibold block mb-1">Acción requerida</span>
+                    El pedido no tiene su comprobante generado o enlazado. Por favor, genere el comprobante y <b>refresque la página</b> para habilitar el cambio de estado.
+                  </div>
+                </div>
+            )}
           </div>
 
           {selectedOrder && (
-            <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => setIsChangeStateModalOpen(false)}
-                disabled={loading}
-              >
-                Cancelar
-              </Button>
-              {(detalle.length > 0 && selectedOrder.estadodePedido ===  1) && (
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="text-red-600 hover:text-red-700 bg-transparent text-xs"
-                    >
-                      <FileText className="h-3 w-3 mr-1" />
-                      Ver PDF
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="min-w-[90vw] h-[95vh] p-0 overflow-hidden">
-                    <DialogHeader className="px-4 py-3 border-b w-[100%] absolute bg-white">
-                      <div className="flex items-center justify-between">
-                        <DialogTitle>PDF — {String(selectedOrder.nroPedido).padStart(10, '0')}</DialogTitle>
-                        <Button size="sm" onClick={handleDownload}>
-                          <Download className="w-4 h-4 mr-2" />
-                          Descargar
+              <DialogFooter>
+                <Button
+                    variant="outline"
+                    onClick={() => setIsChangeStateModalOpen(false)}
+                    disabled={loading}
+                >
+                  Cancelar
+                </Button>
+                {(detalle.length > 0 && selectedOrder.estadodePedido ===  1) && (
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button
+                            size="sm"
+                            variant="outline"
+                            className="text-red-600 hover:text-red-700 bg-transparent text-xs"
+                        >
+                          <FileText className="h-3 w-3 mr-1" />
+                          Ver PDF
                         </Button>
-                      </div>
-                    </DialogHeader>
-                    <div className="w-full h-full mt-16">
-                      {pdfUrl ? (
-                        <iframe title="Recibo PDF" src={pdfUrl} className="w-full h-full" />
-                      ) : (
-                        <div className="p-6">Generando PDF…</div>
-                      )}
-                    </div>
-                  </DialogContent>
-                </Dialog>
-              )}
-              <Button
-                onClick={confirmStateChange}
-                disabled={loading}
-              >
-                {loading ? 'Procesando...' : 'Confirmar Cambio'}
-              </Button>
-            </DialogFooter>
+                      </DialogTrigger>
+                      <DialogContent className="min-w-[90vw] h-[95vh] p-0 overflow-hidden">
+                        <DialogHeader className="px-4 py-3 border-b w-[100%] absolute bg-white">
+                          <div className="flex items-center justify-between">
+                            <DialogTitle>PDF — {String(selectedOrder.nroPedido).padStart(10, '0')}</DialogTitle>
+                            <Button size="sm" onClick={handleDownload}>
+                              <Download className="w-4 h-4 mr-2" />
+                              Descargar
+                            </Button>
+                          </div>
+                        </DialogHeader>
+                        <div className="w-full h-full mt-16">
+                          {pdfUrl ? (
+                              <iframe title="Recibo PDF" src={pdfUrl} className="w-full h-full" />
+                          ) : (
+                              <div className="p-6">Generando PDF…</div>
+                          )}
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                )}
+                <Button
+                    onClick={confirmStateChange}
+                    disabled={loading || selectedOrder.continue === 0}
+                >
+                  {loading ? 'Procesando...' : 'Confirmar Cambio'}
+                </Button>
+              </DialogFooter>
           )}
         </DialogContent>
       </Dialog>

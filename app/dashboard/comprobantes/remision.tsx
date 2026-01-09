@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { ChevronDown, ChevronUp, FileText, Plus, Search, Trash2, Truck, UserPlus } from "lucide-react";
+import {AlertCircle, ChevronDown, ChevronUp, FileText, Plus, Search, Trash2, Truck, UserPlus} from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import {toast, useToast} from "@/components/ui/use-toast";
 import { Pedido } from "@/app/dashboard/comprobantes/page";
 import apiClient from "@/app/api/client";
+import {Alert, AlertDescription, AlertTitle} from "@/components/ui/alert";
 
 interface PedidoDet {
   idPedidodet: number
@@ -44,9 +45,17 @@ interface ReasonTrasGuide {
   motivo_descr: string
 }
 
+interface Guide {
+  prefijo: string
+  id: number
+  tipo_documento: string
+}
+
 export const Remision = ({ pedido, detalles, onOpenChange }: RemisionModalProps) => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [series, setSeries] = useState<Guide[]>([]);
+  const [error, setError] = useState<string | null>(null);
   const [serie, setSerie] = useState('');
   const [datosGuia, setDatosGuia] = useState({
     cliente: pedido?.nombreCliente || "",
@@ -57,7 +66,7 @@ export const Remision = ({ pedido, detalles, onOpenChange }: RemisionModalProps)
     clienteEmail: "",
     fechaEmision: new Date().toISOString().split('T')[0],
     formatoPdf: "A4",
-    tipoTransporte: "01",
+    tipoTransporte: "02",
     motivoTraslado: "",
     observaciones: "",
   });
@@ -114,58 +123,82 @@ export const Remision = ({ pedido, detalles, onOpenChange }: RemisionModalProps)
     });
   };
 
+  const setValidationError = (message: string) => {
+    setError(message);
+    toast({
+      title: "Error de validación",
+      description: message,
+      variant: "destructive",
+    });
+  };
+
   const validarCampos = () => {
-    if (!datosTraslado.pesoBruto) {
-      showToast("Error", "El peso bruto total es obligatorio", "destructive");
+    try {
+      setError(null);
+
+      if (!datosTraslado.pesoBruto) {
+        setValidationError("El peso bruto total es obligatorio");
+        return false;
+      }
+
+      if (datosGuia.tipoTransporte === '01') {
+        if (!datosTransportista.numeroDocumento) {
+          setValidationError("El número de documento del transportista es obligatorio");
+          return false;
+        }
+        if (!datosTransportista.denominacion) {
+          setValidationError("La razón social/nombre del transportista es obligatoria");
+          return false;
+        }
+      }
+
+      if (!vehiculos[0].placa || vehiculos[0].placa.length !== 6) {
+        setValidationError("La placa del vehículo debe tener 6 caracteres alfanuméricos");
+        return false;
+      }
+
+      const licenciaRegex = /^([A-Z]\d{8}|\d{9})$/;
+
+      for (const [index, conductor] of conductores.entries()) {
+        if (!conductor.numeroDocumento) {
+          setValidationError(`El número de documento del conductor ${index + 1} es obligatorio`);
+          return false;
+        }
+        if (!conductor.nombre) {
+          setValidationError(`El nombre del conductor ${index + 1} es obligatorio`);
+          return false;
+        }
+        if (!conductor.apellidos) {
+          setValidationError(`Los apellidos del conductor ${index + 1} son obligatorios`);
+          return false;
+        }
+
+        if (!conductor.licencia) {
+          setValidationError(`La licencia del conductor ${index + 1} es obligatoria`);
+          return false;
+        }
+
+        if (!licenciaRegex.test(conductor.licencia)) {
+          setValidationError(`La licencia del conductor ${index + 1} es inválida. Debe ser una letra seguida de 8 dígitos (Ej: Q12345678) o 9 dígitos numéricos.`);
+          return false;
+        }
+      }
+
+      if (!puntosUbicacion.llegada.direccion) {
+        setValidationError("La dirección de llegada es obligatoria");
+        return false;
+      }
+
+      if (!datosGuia.observaciones) {
+        setValidationError("Las observaciones son obligatorias");
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.log(error);
       return false;
     }
-
-    if (datosGuia.tipoTransporte === '01') {
-      if (!datosTransportista.numeroDocumento) {
-        showToast("Error", "El número de documento del transportista es obligatorio", "destructive");
-        return false;
-      }
-      if (!datosTransportista.denominacion) {
-        showToast("Error", "La razón social/nombre del transportista es obligatoria", "destructive");
-        return false;
-      }
-    }
-
-    if (!vehiculos[0].placa || vehiculos[0].placa.length !== 6) {
-      showToast("Error", "La placa del vehículo debe tener 6 caracteres", "destructive");
-      return false;
-    }
-
-    for (const [index, conductor] of conductores.entries()) {
-      if (!conductor.numeroDocumento) {
-        showToast("Error", `El número de documento del conductor ${index + 1} es obligatorio`, "destructive");
-        return false;
-      }
-      if (!conductor.nombre) {
-        showToast("Error", `El nombre del conductor ${index + 1} es obligatorio`, "destructive");
-        return false;
-      }
-      if (!conductor.apellidos) {
-        showToast("Error", `Los apellidos del conductor ${index + 1} son obligatorios`, "destructive");
-        return false;
-      }
-      if (!conductor.licencia || conductor.licencia.length < 9 || conductor.licencia.length > 10) {
-        showToast("Error", `La licencia del conductor ${index + 1} debe tener entre 9 y 10 caracteres`, "destructive");
-        return false;
-      }
-    }
-
-    if (!puntosUbicacion.llegada.direccion) {
-      showToast("Error", "La dirección de llegada es obligatoria", "destructive");
-      return false;
-    }
-
-    if (!datosGuia.observaciones) {
-      showToast("Error", "Las observaciones son obligatorias", "destructive");
-      return false;
-    }
-
-    return true;
   };
 
   const handlePlacaChange = (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
@@ -176,13 +209,14 @@ export const Remision = ({ pedido, detalles, onOpenChange }: RemisionModalProps)
   };
 
   const handleLicenciaChange = (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
-    const value = e.target.value.replace(/\D/g, '').slice(0, 10);
+    const value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 9);
+
     const newConductores = [...conductores];
     newConductores[index].licencia = value;
     setConductores(newConductores);
+    setError(null);
   };
 
-  // Efecto para cargar datos iniciales
   useEffect(() => {
     if (pedido) {
       setDatosGuia(prev => ({
@@ -201,7 +235,8 @@ export const Remision = ({ pedido, detalles, onOpenChange }: RemisionModalProps)
       try {
         const [tiposResponse, guiaResponse] = await Promise.all([
           apiClient.get('/tomarPedido/motivosTrasGuia'),
-          apiClient.get('/tomarPedido/tipoDocsGuia'),
+          // apiClient.get('/tomarPedido/tipoDocsGuia'),
+          apiClient.get('/admin/listar/guias'),
         ]);
 
         setReasonTrasGuide(tiposResponse.data.data.data);
@@ -212,9 +247,9 @@ export const Remision = ({ pedido, detalles, onOpenChange }: RemisionModalProps)
             motivoTraslado: tiposResponse.data.data.data[0].codigo.toString(),
           }));
         }
-
-        if (guiaResponse.data.data.data && guiaResponse.data.data.data.length > 0) {
-          setSerie(guiaResponse.data.data.data.find(item => item.idTipoGuia === 1).prefijoSerie);
+        if (guiaResponse.data.data && guiaResponse.data.data.length > 0) {
+          setSeries(guiaResponse.data.data);
+          setSerie(guiaResponse.data.data[0].prefijo.toString());
         }
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -245,22 +280,12 @@ export const Remision = ({ pedido, detalles, onOpenChange }: RemisionModalProps)
     }
 
     try {
-      if (!datosTransportista.numeroDocumento || !vehiculos[0].placa ||
-        !conductores[0].numeroDocumento || !puntosUbicacion.partida.direccion) {
-        toast({
-          title: "Error",
-          description: "Complete los campos obligatorios",
-          variant: "destructive",
-        });
-        return;
-      }
-
       const guiaCabData = {
         p_nroPedido: pedido?.idPedidocab || null,
         p_operacion: "generar",
         p_tipo_comprobante: "7",
         p_serie: serie,
-        p_numero: "",
+        p_numero: 0,
         p_cliente_tipo_doc: datosGuia.clienteTipoDoc,
         p_cliente_num_doc: datosGuia.clienteNumDoc,
         p_cliente_denominacion: datosGuia.clienteDenominacion,
@@ -318,7 +343,6 @@ export const Remision = ({ pedido, detalles, onOpenChange }: RemisionModalProps)
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">
-      {/* Header */}
       <div className="text-center py-6">
         <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-2xl mb-4 shadow-lg">
           <FileText className="h-8 w-8 text-white" />
@@ -329,11 +353,8 @@ export const Remision = ({ pedido, detalles, onOpenChange }: RemisionModalProps)
         <p className="text-gray-600">Complete los datos requeridos para generar la guía</p>
       </div>
 
-      {/* Sección principal en 2 columnas */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Columna izquierda */}
         <div className="space-y-6">
-          {/* Información de la guía */}
           <Card className="shadow-sm">
             <CardHeader className="bg-blue-50 border-b">
               <CardTitle className="text-lg font-semibold flex items-center gap-2">
@@ -345,10 +366,20 @@ export const Remision = ({ pedido, detalles, onOpenChange }: RemisionModalProps)
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Serie</Label>
-                  <Input
-                    disabled
+                  <Select
                     value={serie}
-                  />
+                    onChange={(value: string) => setSerie(value)}
+                    className="border border-gray-300 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-20"
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccione prefijo de guia" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {series.map((item) => (
+                          <SelectItem key={item.id} value={item.prefijo}>{item.prefijo}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="space-y-2">
                   <Label>Fecha de emisión</Label>
@@ -386,31 +417,30 @@ export const Remision = ({ pedido, detalles, onOpenChange }: RemisionModalProps)
                 <Label>Tipo de transporte</Label>
                 <Select
                   value={datosGuia.tipoTransporte}
-                  onValueChange={(value) => {
-                    setDatosGuia({...datosGuia, tipoTransporte: value})
-                    if (value === '02') {
-                      setDatosTransportista({
-                        tipoDocumento: "6",
-                        numeroDocumento: "",
-                        denominacion: "",
-                        registroMtc: "",
-                      })
-                    }
-                  }}
+                  disabled
+                  // onValueChange={(value) => {
+                  //   setDatosGuia({...datosGuia, tipoTransporte: value})
+                  //   if (value === '02') {
+                  //     setDatosTransportista({
+                  //       tipoDocumento: "6",
+                  //       numeroDocumento: "",
+                  //       denominacion: "",
+                  //       registroMtc: "",
+                  //     })
+                  //   }
+                  // }}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Seleccione tipo" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="01">01 - Transporte público</SelectItem>
+                    {/*<SelectItem value="01">01 - Transporte público</SelectItem>*/}
                     <SelectItem value="02">02 - Transporte privado</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </CardContent>
           </Card>
-
-          {/* Datos del cliente */}
           <Card className="shadow-sm">
             <CardHeader className="bg-blue-50 border-b">
               <CardTitle className="text-lg font-semibold flex items-center gap-2">
@@ -476,7 +506,6 @@ export const Remision = ({ pedido, detalles, onOpenChange }: RemisionModalProps)
             </CardContent>
           </Card>
 
-          {/* Puntos de partida y llegada */}
           <Card className="shadow-sm">
             <CardHeader className="bg-blue-50 border-b">
               <CardTitle className="text-lg font-semibold flex items-center gap-2">
@@ -513,16 +542,17 @@ export const Remision = ({ pedido, detalles, onOpenChange }: RemisionModalProps)
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label>Código SUNAT</Label>
-                  <Input
-                    value={puntosUbicacion.partida.codigoSunat}
-                    onChange={(e) => setPuntosUbicacion({
-                      ...puntosUbicacion,
-                      partida: {...puntosUbicacion.partida, codigoSunat: e.target.value}
-                    })}
-                  />
-                </div>
+                {/*<div className="space-y-2">*/}
+                {/*  <Label>Código SUNAT</Label>*/}
+                {/*  <Input*/}
+                {/*      maxLength={4}*/}
+                {/*    value={puntosUbicacion.partida.codigoSunat}*/}
+                {/*    onChange={(e) => setPuntosUbicacion({*/}
+                {/*      ...puntosUbicacion,*/}
+                {/*      partida: {...puntosUbicacion.partida, codigoSunat: e.target.value}*/}
+                {/*    })}*/}
+                {/*  />*/}
+                {/*</div>*/}
               </div>
 
               <div className="space-y-4">
@@ -551,24 +581,23 @@ export const Remision = ({ pedido, detalles, onOpenChange }: RemisionModalProps)
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label>Código SUNAT</Label>
-                  <Input
-                    value={puntosUbicacion.llegada.codigoSunat}
-                    onChange={(e) => setPuntosUbicacion({
-                      ...puntosUbicacion,
-                      llegada: {...puntosUbicacion.llegada, codigoSunat: e.target.value}
-                    })}
-                  />
-                </div>
+                {/*<div className="space-y-2">*/}
+                {/*  <Label>Código SUNAT</Label>*/}
+                {/*  <Input*/}
+                {/*      maxLength={4}*/}
+                {/*    value={puntosUbicacion.llegada.codigoSunat}*/}
+                {/*    onChange={(e) => setPuntosUbicacion({*/}
+                {/*      ...puntosUbicacion,*/}
+                {/*      llegada: {...puntosUbicacion.llegada, codigoSunat: e.target.value}*/}
+                {/*    })}*/}
+                {/*  />*/}
+                {/*</div>*/}
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Columna derecha */}
         <div className="space-y-6">
-          {/* Datos del traslado */}
           <Card className="shadow-sm">
             <CardHeader className="bg-blue-50 border-b">
               <CardTitle className="text-lg font-semibold flex items-center gap-2">
@@ -606,7 +635,6 @@ export const Remision = ({ pedido, detalles, onOpenChange }: RemisionModalProps)
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="KGM">KGM - Kilogramo</SelectItem>
-                      {/*<SelectItem value="TNE">TNE - Tonelada</SelectItem>*/}
                     </SelectContent>
                   </Select>
                 </div>
@@ -623,7 +651,6 @@ export const Remision = ({ pedido, detalles, onOpenChange }: RemisionModalProps)
             </CardContent>
           </Card>
 
-          {/* Datos del transportista */}
           <Card className="shadow-sm">
             <CardHeader className="bg-blue-50 border-b">
               <CardTitle className="text-lg font-semibold flex items-center gap-2">
@@ -636,7 +663,6 @@ export const Remision = ({ pedido, detalles, onOpenChange }: RemisionModalProps)
                 <div className="space-y-2">
                   <Label>Tipo de documento</Label>
                   <Select
-                    disabled={datosGuia.tipoTransporte === '02'}
                     value={datosTransportista.tipoDocumento}
                     onValueChange={(value) => setDatosTransportista({...datosTransportista, tipoDocumento: value})}
                   >
@@ -653,7 +679,6 @@ export const Remision = ({ pedido, detalles, onOpenChange }: RemisionModalProps)
                   <Label>Número de documento</Label>
                   <div className="flex gap-2">
                     <Input
-                      disabled={datosGuia.tipoTransporte === '02'}
                       value={datosTransportista.numeroDocumento}
                       onChange={(e) => setDatosTransportista({...datosTransportista, numeroDocumento: e.target.value})}
                     />
@@ -664,7 +689,6 @@ export const Remision = ({ pedido, detalles, onOpenChange }: RemisionModalProps)
               <div className="space-y-2">
                 <Label>Razón social / Nombre</Label>
                 <Input
-                  disabled={datosGuia.tipoTransporte === '02'}
                   value={datosTransportista.denominacion}
                   onChange={(e) => setDatosTransportista({...datosTransportista, denominacion: e.target.value})}
                 />
@@ -673,7 +697,6 @@ export const Remision = ({ pedido, detalles, onOpenChange }: RemisionModalProps)
               <div className="space-y-2">
                 <Label>Registro MTC (opcional)</Label>
                 <Input
-                  disabled={datosGuia.tipoTransporte === '02'}
                   value={datosTransportista.registroMtc}
                   onChange={(e) => setDatosTransportista({...datosTransportista, registroMtc: e.target.value})}
                 />
@@ -789,12 +812,12 @@ export const Remision = ({ pedido, detalles, onOpenChange }: RemisionModalProps)
                   <div className="space-y-2">
                     <Label>Número de licencia</Label>
                     <Input
-                      value={conductores[0].licencia}
-                      onChange={(e) => handleLicenciaChange(e, 0)}
-                      placeholder="123456789"
-                      minLength={9}
-                      maxLength={10}
+                        value={conductores[0].licencia}
+                        onChange={(e) => handleLicenciaChange(e, 0)}
+                        placeholder="Q12345678 o 123456789"
+                        maxLength={9}
                     />
+                    <p className="text-xs text-muted-foreground">Formato: Letra+8 dígitos (Q12345678) o 9 dígitos.</p>
                   </div>
                 </div>
               ))}
@@ -847,11 +870,7 @@ export const Remision = ({ pedido, detalles, onOpenChange }: RemisionModalProps)
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {/*<SelectItem value="NIU">NIU - Unidad</SelectItem>*/}
                         <SelectItem value="KGM">KGM - Kilogramo</SelectItem>
-                        {/*<SelectItem value="LTR">LTR - Litro</SelectItem>*/}
-                        {/*<SelectItem value="MTR">MTR - Metro</SelectItem>*/}
-                        {/*<SelectItem value="TNE">TNE - Tonelada</SelectItem>*/}
                       </SelectContent>
                     </Select>
                   </td>
@@ -863,7 +882,6 @@ export const Remision = ({ pedido, detalles, onOpenChange }: RemisionModalProps)
         </CardContent>
       </Card>
 
-      {/* Observaciones */}
       <Card className="shadow-sm">
         <CardHeader className="bg-blue-50 border-b">
           <CardTitle className="text-lg font-semibold flex items-center gap-2">
@@ -881,7 +899,16 @@ export const Remision = ({ pedido, detalles, onOpenChange }: RemisionModalProps)
         </CardContent>
       </Card>
 
-      {/* Botones de acción */}
+      {error && (
+          <Alert variant="destructive" className="animate-in fade-in slide-in-from-top-2">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Error de Validación</AlertTitle>
+            <AlertDescription>
+              {error}
+            </AlertDescription>
+          </Alert>
+      )}
+
       <div className="flex justify-end gap-4 py-6">
         <Button
           onClick={emitirGuia}
