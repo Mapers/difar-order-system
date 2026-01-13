@@ -281,9 +281,6 @@ export default function ComprobantesPage() {
   const handleGenerarGuias = async () => {
     setIsProcessingGuias(true)
     try {
-      // Lógica para generar guías
-      // await apiClient.post(...)
-
       toast({
         title: "Éxito",
         description: "Guías generadas correctamente",
@@ -539,8 +536,8 @@ export default function ComprobantesPage() {
           </TabsTrigger>
           <TabsTrigger value="guias" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
             <Truck className="h-3 w-3 sm:h-4 sm:w-4" />
-            <span className="hidden sm:inline">Guías Emitidas</span>
-            <span className="sm:hidden">Guías Emitidas</span>
+            <span className="hidden sm:inline">Guías</span>
+            <span className="sm:hidden">Guías</span>
           </TabsTrigger>
         </TabsList>
 
@@ -1096,7 +1093,17 @@ export default function ComprobantesPage() {
                   </div>
                 </div>
 
-                <div className="flex justify-end">
+                <div className="flex justify-end gap-2">
+                  <Button
+                      onClick={() => {
+                        setSelectedOrder(null);
+                        setShowGuiasModal(true)
+                      }}
+                      variant="outline"
+                  >
+                    <Truck className="mr-2 h-4 w-4" />
+                    Generar Guías
+                  </Button>
                   <Button
                     onClick={fetchGuiasRemision}
                     disabled={loadingGuias}
@@ -1450,17 +1457,6 @@ export default function ComprobantesPage() {
             </Button>
             <div className="flex gap-2 w-full sm:w-auto">
               <Button
-                onClick={() => {
-                  // setShowInvoiceModal(false)
-                  setShowGuiasModal(true)
-                }}
-                variant="outline"
-                className="flex-1"
-              >
-                <Truck className="mr-2 h-4 w-4" />
-                Generar Guías
-              </Button>
-              <Button
                 onClick={handleConfirmarFacturacionConLotes}
                 disabled={isProcessingInvoice || !invoiceType || !sunatTransaction}
                 className="bg-green-600 hover:bg-green-700 flex-1"
@@ -1571,9 +1567,10 @@ export default function ComprobantesPage() {
         <GenerarGuiasModal
           open={showGuiasModal}
           onOpenChange={setShowGuiasModal}
-          pedido={selectedOrder}
           isProcessing={isProcessingGuias}
           onGenerarGuias={handleGenerarGuias}
+          pedidoPreseleccionado={selectedOrder}
+          pedidosDisponibles={pedidosPendientes}
         />
       )}
 
