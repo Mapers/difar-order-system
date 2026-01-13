@@ -281,7 +281,7 @@ export const Remision = ({ pedido, detalles, onOpenChange }: RemisionModalProps)
 
     try {
       const guiaCabData = {
-        p_nroPedido: pedido?.idPedidocab || null,
+        p_nroPedido: pedido?.nroPedido || null,
         p_operacion: "generar",
         p_tipo_comprobante: "7",
         p_serie: serie,
