@@ -39,12 +39,6 @@ export interface GuiaRemision {
     sunat_responsecode: string
 }
 
-export interface TipoComprobante {
-    idTipoComprobante: number;
-    descripcion: string;
-    prefijoSerie: string;
-}
-
 export interface SunatTransaccion {
     idTransaction: number;
     descripcion: string;

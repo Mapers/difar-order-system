@@ -1,5 +1,16 @@
-import { useState, useEffect } from "react";
-import {AlertCircle, ChevronDown, ChevronUp, FileText, Plus, Search, Trash2, Truck, UserPlus} from "lucide-react";
+import {useState, useEffect, useRef} from "react";
+import {
+  AlertCircle,
+  ChevronDown,
+  ChevronUp,
+  FileText,
+  Loader2,
+  Plus,
+  Search,
+  Trash2,
+  Truck,
+  UserPlus
+} from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -30,6 +41,11 @@ interface Conductor {
   licencia: string;
 }
 
+interface UbigeoResult {
+  id: string;
+  texto_mostrar: string;
+}
+
 interface Vehiculo {
   placa: string;
 }
@@ -50,6 +66,111 @@ interface Guide {
   id: number
   tipo_documento: string
 }
+
+const UbigeoSearchInput = ({
+                             value,
+                             onSelect,
+                             disabled = false
+                           }: {
+  value: string,
+  onSelect: (codigo: string, texto: string) => void,
+  disabled?: boolean
+}) => {
+  const [query, setQuery] = useState(value);
+  const [results, setResults] = useState<UbigeoResult[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [showResults, setShowResults] = useState(false);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setQuery(value);
+  }, [value]);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
+        setShowResults(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [wrapperRef]);
+
+  useEffect(() => {
+    const timeOutId = setTimeout(async () => {
+      if (query.length >= 3 && showResults) {
+        setLoading(true);
+        try {
+          const response = await apiClient.get(`/admin/ubigeo/search?q=${query}`);
+          if (response.data.success) {
+            setResults(response.data.data);
+          } else {
+            setResults([]);
+          }
+        } catch (error) {
+          console.error("Error buscando ubigeo", error);
+          setResults([]);
+        } finally {
+          setLoading(false);
+        }
+      } else if (query.length < 3) {
+        setResults([]);
+      }
+    }, 500);
+
+    return () => clearTimeout(timeOutId);
+  }, [query, showResults]);
+
+  const handleSelect = (item: UbigeoResult) => {
+    setQuery(item.id);
+    onSelect(item.id, item.texto_mostrar);
+    setShowResults(false);
+  };
+
+  return (
+      <div className="relative w-full" ref={wrapperRef}>
+        <div className="relative">
+          <Input
+              disabled={disabled}
+              value={query}
+              onChange={(e) => {
+                setQuery(e.target.value);
+                setShowResults(true);
+              }}
+              onFocus={() => setShowResults(true)}
+              placeholder="Buscar Dpto, Prov, Dist..."
+              className={results.length > 0 && showResults ? "rounded-b-none" : ""}
+          />
+          {loading && (
+              <div className="absolute right-3 top-2.5">
+                <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
+              </div>
+          )}
+        </div>
+
+        {showResults && results.length > 0 && (
+            <div className="absolute z-50 w-full bg-white border border-t-0 border-gray-200 rounded-b-md shadow-lg max-h-60 overflow-y-auto">
+              {results.map((item) => (
+                  <div
+                      key={item.id}
+                      className="px-4 py-2 hover:bg-blue-50 cursor-pointer text-sm border-b last:border-b-0 border-gray-100"
+                      onClick={() => handleSelect(item)}
+                  >
+                    <span className="font-bold text-blue-600 mr-2">{item.id}</span>
+                    <span className="text-gray-700">{item.texto_mostrar}</span>
+                  </div>
+              ))}
+            </div>
+        )}
+
+        {showResults && query.length >= 3 && !loading && results.length === 0 && (
+            <div className="absolute z-50 w-full bg-white border border-t-0 border-gray-200 rounded-b-md shadow-lg p-2 text-center text-sm text-gray-500">
+              No se encontraron resultados
+            </div>
+        )}
+      </div>
+  );
+};
 
 export const Remision = ({ pedido, detalles, onOpenChange }: RemisionModalProps) => {
   const { toast } = useToast();
@@ -74,7 +195,7 @@ export const Remision = ({ pedido, detalles, onOpenChange }: RemisionModalProps)
   const [datosTraslado, setDatosTraslado] = useState({
     fechaInicio: new Date().toISOString().split('T')[0],
     pesoBruto: "",
-    pesoUnidad: "KGM", // KGM = Kilogramo
+    pesoUnidad: "KGM",
     numeroBultos: "1",
   });
 
@@ -93,7 +214,7 @@ export const Remision = ({ pedido, detalles, onOpenChange }: RemisionModalProps)
   const [reasonTrasGuide, setReasonTrasGuide] = useState<ReasonTrasGuide[]>([])
   const [conductores, setConductores] = useState<Conductor[]>([
     {
-      tipoDocumento: "1", // 1 = DNI por defecto
+      tipoDocumento: "1",
       numeroDocumento: "",
       nombre: "",
       apellidos: "",
@@ -104,7 +225,7 @@ export const Remision = ({ pedido, detalles, onOpenChange }: RemisionModalProps)
   const [vehiculos, setVehiculos] = useState<Vehiculo[]>([{ placa: "" }]);
 
   const [datosTransportista, setDatosTransportista] = useState({
-    tipoDocumento: "6", // 6 = RUC por defecto
+    tipoDocumento: "6",
     numeroDocumento: "",
     denominacion: "",
     registroMtc: "",
@@ -265,12 +386,11 @@ export const Remision = ({ pedido, detalles, onOpenChange }: RemisionModalProps)
   }, []);
 
   const eliminarConductor = (index: number) => {
-    if (conductores.length > 1) { // No eliminar el último conductor
+    if (conductores.length > 1) {
       setConductores(conductores.filter((_, i) => i !== index));
     }
   };
 
-  // Función para enviar la guía
   const emitirGuia = async () => {
     setLoading(true);
 
@@ -560,12 +680,12 @@ export const Remision = ({ pedido, detalles, onOpenChange }: RemisionModalProps)
                 <div className="space-y-2">
                   <Label>Ubigeo</Label>
                   <div className="flex gap-2">
-                    <Input
-                      value={puntosUbicacion.llegada.ubigeo}
-                      onChange={(e) => setPuntosUbicacion({
-                        ...puntosUbicacion,
-                        llegada: {...puntosUbicacion.llegada, ubigeo: e.target.value}
-                      })}
+                    <UbigeoSearchInput
+                        value={puntosUbicacion.llegada.ubigeo}
+                        onSelect={(codigo, texto) => setPuntosUbicacion({
+                          ...puntosUbicacion,
+                          llegada: {...puntosUbicacion.llegada, ubigeo: codigo}
+                        })}
                     />
                   </div>
                 </div>

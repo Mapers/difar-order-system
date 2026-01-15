@@ -18,7 +18,6 @@ import {
   GuiaRemision,
   Pedido,
   SunatTransaccion,
-  TipoComprobante,
   TipoDocSunat
 } from "@/interface/order/order-interface";
 import {PendientesList} from "@/app/dashboard/comprobantes/PendientesList";
@@ -30,6 +29,7 @@ import {CancelModal} from "@/app/dashboard/comprobantes/modals/CancelModal";
 import {PdfViewerModal} from "@/app/dashboard/comprobantes/modals/PdfViewerModal";
 import {ErrorModal} from "@/app/dashboard/comprobantes/modals/ErrorModal";
 import {GenerarGuiasModal} from "@/app/dashboard/comprobantes/modals/generar-guias-modal";
+import {Sequential} from "@/app/dashboard/configuraciones/page";
 
 export default function ComprobantesPage() {
   const [comprobantes, setComprobantes] = useState<Comprobante[]>([])
@@ -59,7 +59,7 @@ export default function ComprobantesPage() {
 
   const [selectedOrder, setSelectedOrder] = useState<Pedido | null>(null)
   const [showInvoiceModal, setShowInvoiceModal] = useState(false)
-  const [invoiceType, setInvoiceType] = useState("01")
+  const [invoiceType, setInvoiceType] = useState("1")
   const [isProcessingInvoice, setIsProcessingInvoice] = useState(false)
 
   const [isCancelling, setIsCancelling] = useState(false)
@@ -72,7 +72,7 @@ export default function ComprobantesPage() {
   const [showErrorModal, setShowErrorModal] = useState(false)
   const [selectedGuiaError, setSelectedGuiaError] = useState<GuiaRemision | null>(null)
 
-  const [tiposComprobante, setTiposComprobante] = useState<TipoComprobante[]>([])
+  const [tiposComprobante, setTiposComprobante] = useState<Sequential[]>([])
   const [sunatTransacciones, setSunatTransacciones] = useState<SunatTransaccion[]>([])
   const [tipoDocsSunat, setTipoDocsSunat] = useState<TipoDocSunat[]>([])
   const [sunatTransaction, setSunatTransaction] = useState("")
@@ -146,17 +146,19 @@ export default function ComprobantesPage() {
     const fetchCatalogs = async () => {
       try {
         const [tiposResponse, transResponse, docsSunat] = await Promise.all([
-          apiClient.get('/pedidos/tiposCompr'),
+          // apiClient.get('/pedidos/tiposCompr'),
+          apiClient.get('/admin/listar/secuenciales'),
           apiClient.get('/pedidos/sunatTrans'),
           apiClient.get('/pedidos/tipoDocSunat'),
         ])
-        setTiposComprobante(tiposResponse.data.data.data)
+
+        setTiposComprobante(tiposResponse.data.data)
         setSunatTransacciones(transResponse.data.data.data)
         setTipoDocsSunat(docsSunat.data.data.data)
 
-        if (tiposResponse.data.data.data?.length > 0) setInvoiceType(tiposResponse.data.data.data[0].idTipoComprobante.toString())
+        if (tiposResponse.data.data?.length > 0) setInvoiceType(tiposResponse.data.data[0].tipo)
         if (transResponse.data.data.data?.length > 0) setSunatTransaction(transResponse.data.data.data[0].idTransaction.toString())
-        if (docsSunat.data.data.data?.length > 0) setTipoSunat("6")
+        if (docsSunat.data.data.data?.length > 0) handleInvoiceType(tiposResponse.data.data[0].tipo)
       } catch (error) {
         console.error("Error catalogs:", error)
         toast({ title: "Error", description: "Error cargando catálogos", variant: "destructive" })
@@ -180,10 +182,19 @@ export default function ComprobantesPage() {
     setShowInvoiceModal(true)
   }
 
+  const handleInvoiceType = (tipo: string) => {
+    setInvoiceType(tipo)
+    if (tipo === '1') {
+      setTipoSunat('6')
+    } else if (tipo === '2') {
+      setTipoSunat('1')
+    }
+  }
+
   const handleConfirmInvoice = async (guiasSeleccionadas: GuiaReferencia[] = []) => {
     setIsProcessingInvoice(true)
     try {
-      const tipoComprobante = tiposComprobante.find(t => t.idTipoComprobante.toString() === invoiceType)
+      const tipoComprobante = tiposComprobante.find(t => t.tipo === invoiceType)
       const transaccionSunat = sunatTransacciones.find(t => t.idTransaction.toString() === sunatTransaction)
       const tipoSunatT = tipoDocsSunat.find(t => t.codigo === tipoSunat)
 
@@ -196,7 +207,7 @@ export default function ComprobantesPage() {
       }))
 
       const response = await apiClient.post(
-          `/pedidos/generateCompr?nroPedido=${selectedOrder.nroPedido}&tipoCompr=${tipoComprobante?.idTipoComprobante}&sunatTrans=${transaccionSunat?.idTransaction}&tipoDocSunat=${tipoSunatT?.codigo}`,
+          `/pedidos/generateCompr?nroPedido=${selectedOrder.nroPedido}&tipoCompr=${tipoComprobante?.tipo}&sunatTrans=${transaccionSunat?.idTransaction}&tipoDocSunat=${tipoSunatT?.codigo}`,
           {
             docs_referenciado: documentosReferenciados
           }
@@ -333,7 +344,7 @@ export default function ComprobantesPage() {
                         <SelectTrigger className="text-xs sm:text-sm"><SelectValue placeholder="Todos los tipos" /></SelectTrigger>
                         <SelectContent>
                           <SelectItem value="-1">Todos los tipos</SelectItem>
-                          {tiposComprobante.map((tipo) => (<SelectItem key={tipo.idTipoComprobante} value={tipo.idTipoComprobante.toString()}>{tipo.prefijoSerie} - {tipo.descripcion}</SelectItem>))}
+                          {tiposComprobante.map((tipo) => (<SelectItem key={tipo.tipo} value={tipo.tipo}>{tipo.prefijo} - {tipo.descripcion}</SelectItem>))}
                         </SelectContent>
                       </Select>
                     </div>
@@ -409,7 +420,7 @@ export default function ComprobantesPage() {
         <InvoiceModal
             open={showInvoiceModal} onOpenChange={setShowInvoiceModal} selectedOrder={selectedOrder}
             tiposComprobante={tiposComprobante} sunatTransacciones={sunatTransacciones} tipoDocsSunat={tipoDocsSunat}
-            invoiceType={invoiceType} setInvoiceType={setInvoiceType} sunatTransaction={sunatTransaction} setSunatTransaction={setSunatTransaction}
+            invoiceType={invoiceType} setInvoiceType={handleInvoiceType} sunatTransaction={sunatTransaction} setSunatTransaction={setSunatTransaction}
             tipoSunat={tipoSunat} setTipoSunat={setTipoSunat} isProcessing={isProcessingInvoice} onConfirm={handleConfirmInvoice}
         />
         <CancelModal

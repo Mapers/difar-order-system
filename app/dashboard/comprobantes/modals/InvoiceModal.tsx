@@ -4,15 +4,16 @@ import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
 import { Receipt, Loader2, Truck, AlertTriangle, Check } from "lucide-react"
-import { Pedido, TipoComprobante, SunatTransaccion, TipoDocSunat, GuiaReferencia } from "@/interface/order/order-interface"
+import { Pedido, SunatTransaccion, TipoDocSunat, GuiaReferencia } from "@/interface/order/order-interface"
 import { GuidesSelectorModal } from "./GuidesSelectorModal"
 import { Badge } from "@/components/ui/badge"
+import {Sequential} from "@/app/dashboard/configuraciones/page";
 
 interface InvoiceModalProps {
     open: boolean
     onOpenChange: (open: boolean) => void
     selectedOrder: Pedido | null
-    tiposComprobante: TipoComprobante[]
+    tiposComprobante: Sequential[]
     sunatTransacciones: SunatTransaccion[]
     tipoDocsSunat: TipoDocSunat[]
     invoiceType: string
@@ -66,7 +67,7 @@ export function InvoiceModal({
                                         <SelectTrigger><SelectValue placeholder="Seleccionar tipo"/></SelectTrigger>
                                         <SelectContent>
                                             {tiposComprobante.map((tipo) => (
-                                                <SelectItem key={tipo.idTipoComprobante} value={tipo.idTipoComprobante.toString()}>{tipo.prefijoSerie} - {tipo.descripcion}</SelectItem>
+                                                <SelectItem key={tipo.tipo} value={tipo.tipo}>{tipo.prefijo} - {tipo.nombre}</SelectItem>
                                             ))}
                                         </SelectContent>
                                     </Select>
