@@ -207,7 +207,7 @@ export default function ComprobantesPage() {
       }))
 
       const response = await apiClient.post(
-          `/pedidos/generateCompr?nroPedido=${selectedOrder.nroPedido}&tipoCompr=${tipoComprobante?.tipo}&sunatTrans=${transaccionSunat?.idTransaction}&tipoDocSunat=${tipoSunatT?.codigo}`,
+          `/pedidos/generateCompr?nroPedido=${selectedOrder.nroPedido}&tipoCompr=${tipoComprobante?.tipo}&sunatTrans=${transaccionSunat?.idTransaction}&tipoDocSunat=${tipoSunatT?.codigo}&prefijo=${tipoComprobante?.prefijo}`,
           {
             docs_referenciado: documentosReferenciados
           }
