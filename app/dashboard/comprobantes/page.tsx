@@ -186,7 +186,7 @@ export default function ComprobantesPage() {
     setInvoiceType(tipo)
     if (tipo === '1') {
       setTipoSunat('6')
-    } else if (tipo === '2') {
+    } else if (tipo === '3') {
       setTipoSunat('1')
     }
   }
@@ -234,22 +234,26 @@ export default function ComprobantesPage() {
     setShowCancelModal(true)
   }
 
-  const confirmCancelInvoice = async () => {
+  const confirmCancelInvoice = async (motivo: string) => {
     if (!comprobanteToCancel) return
     setIsCancelling(true)
     try {
-      const response = await apiClient.post(`/pedidos/anularCompr?idCabecera=${comprobanteToCancel.idComprobanteCab}&tipoCompr=${comprobanteToCancel.tipo_comprobante}`)
+      const response = await apiClient.post(`/pedidos/anularCompr?idCabecera=${comprobanteToCancel.idComprobanteCab}&tipoCompr=${comprobanteToCancel.tipo_comprobante}&nroPedido=${comprobanteToCancel.nroPedido}`, {
+        motivo: motivo
+      })
+
       if (response.data.success) {
-        toast({ title: "Éxito", description: "Comprobante anulado", variant: "default" })
+        toast({ title: "Éxito", description: "Comprobante anulado correctamente", variant: "default" })
         fetchComprobantes()
+        setShowCancelModal(false)
       } else {
-        toast({ title: "Error", description: response.data.message, variant: "destructive" })
+        toast({ title: "Error", description: response.data.message || "No se pudo anular", variant: "destructive" })
       }
     } catch (error) {
-      toast({ title: "Error", description: "Error al anular", variant: "destructive" })
+      console.error(error)
+      toast({ title: "Error", description: "Error de servidor al anular", variant: "destructive" })
     } finally {
       setIsCancelling(false)
-      setShowCancelModal(false)
     }
   }
 
@@ -424,8 +428,12 @@ export default function ComprobantesPage() {
             tipoSunat={tipoSunat} setTipoSunat={setTipoSunat} isProcessing={isProcessingInvoice} onConfirm={handleConfirmInvoice}
         />
         <CancelModal
-            open={showCancelModal} onOpenChange={setShowCancelModal} comprobante={comprobanteToCancel}
-            tiposComprobante={tiposComprobante} isCancelling={isCancelling} onConfirm={confirmCancelInvoice}
+            open={showCancelModal}
+            onOpenChange={setShowCancelModal}
+            comprobante={comprobanteToCancel}
+            tiposComprobante={tiposComprobante}
+            isCancelling={isCancelling}
+            onConfirm={confirmCancelInvoice}
         />
         <PdfViewerModal open={showPdfModal} onOpenChange={setShowPdfModal} pdfUrl={currentPdfUrl} />
         <ErrorModal open={showErrorModal} onOpenChange={setShowErrorModal} guia={selectedGuiaError} />

@@ -22,8 +22,8 @@ export function ComprobantesTable({ comprobantes, loading, tiposComprobante, onV
     const [jsonTitle, setJsonTitle] = useState("")
 
     const getTipoComprobante = (tipo: number) => {
-        const tipoObj = tiposComprobante.find(t => t.idTipoComprobante === tipo)
-        return tipoObj ? tipoObj.descripcion : "Desconocido"
+        const tipoObj = tiposComprobante.find(t => t.tipo == tipo)
+        return tipoObj ? tipoObj.nombre : "Desconocido"
     }
 
     const getEstadoBadge = (comprobante: Comprobante) => {

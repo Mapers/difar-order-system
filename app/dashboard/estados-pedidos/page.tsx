@@ -126,7 +126,7 @@ export default function OrderStatusManagementPage() {
 
   const fetchPedidoDetalle = async (id: string) => {
     try {
-      const resDet = await apiClient.get(`/pedidosDetalles/${id}/detalles?vendedor=${auth.user?.codigo}`)
+      const resDet = await apiClient.get(`/pedidosDetalles/${id}/detalles?${auth.user?.idRol === 1 ? `vendedor=${(auth.user?.codigo || null)}` : ''}`)
       const detallesData = resDet.data.data
       setDetalle(detallesData)
     } catch (err) {
@@ -227,6 +227,7 @@ export default function OrderStatusManagementPage() {
     if (selectedOrder) {
       const build = async () => {
         const blob = await generateOrderPdf(selectedOrder, detalle)
+
         if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current)
         const url = URL.createObjectURL(blob)
         objectUrlRef.current = url
@@ -240,7 +241,7 @@ export default function OrderStatusManagementPage() {
         }
       }
     }
-  }, [selectedOrder])
+  }, [selectedOrder, detalle])
 
   return (
     <div className="grid gap-6">

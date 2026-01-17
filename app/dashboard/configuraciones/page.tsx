@@ -53,9 +53,9 @@ export interface Sequential {
 
 const DOCUMENT_TYPES = [
     { value: "1", label: "Factura" },
-    { value: "2", label: "Boleta" },
-    { value: "3", label: "Nota de Crédito" },
-    { value: "4", label: "Nota de Débito" },
+    { value: "3", label: "Boleta" },
+    { value: "7", label: "Nota de Crédito" },
+    { value: "8", label: "Nota de Débito" },
 ]
 
 export default function ConfiguracionesPage() {
