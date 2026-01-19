@@ -110,6 +110,7 @@ export default function OrderPage() {
   const [sellers, setSellers] = useState<Seller[]>([])
   const [sellersFiltered, setSellersFiltered] = useState<Seller[]>([])
   const [seller, setSeller] = useState<Seller>(null)
+  const [editingLotes, setEditingLotes] = useState<ProductoConLotes[]>([]);
   const [unidadTerritorio, setUnidadTerritorio] = useState<ITerritorio>({
     NombreDistrito: "",
     nombreProvincia: '',
@@ -311,40 +312,35 @@ export default function OrderPage() {
   const addProductToList = (isBonification: boolean, isEscale: boolean) => {
     setIsLoading(true)
     setTimeout(() => {
-      const appliedScale = '';
+      const appliedScale = null;
       const finalPrice = priceType === 'contado'
-        ? Number(selectedProduct?.PUContado)
-        : priceType === 'credito'
-          ? Number(selectedProduct?.PUCredito)
-          : priceType === 'porMenor'
+          ? Number(selectedProduct?.PUContado)
+          : priceType === 'credito'
+              ? Number(selectedProduct?.PUCredito)
+              : priceType === 'porMenor'
                   ? Number(selectedProduct?.PUPorMenor)
                   : priceType === 'porMayor'
                       ? Number(selectedProduct?.PUPorMayor)
                       : priceEdit;
+
+      const newItem = {
+        product: selectedProduct!,
+        quantity,
+        isBonification,
+        isEscale,
+        appliedScale,
+        finalPrice,
+        isEdit: priceType === 'custom',
+        isAuthorize: priceType === 'custom' && priceEdit < Number(selectedProduct?.PUContado),
+      };
+
       setSelectedProducts([
         ...selectedProducts,
-        {
-          product: selectedProduct!,
-          quantity,
-          isBonification,
-          isEscale,
-          appliedScale,
-          finalPrice,
-          isEdit: priceType === 'custom',
-          isAuthorize: priceType === 'custom' && priceEdit < Number(selectedProduct?.PUContado),
-        },
+        newItem,
       ])
-      handleListarLotes([
-        ...selectedProducts,
-        {
-          product: selectedProduct!,
-          quantity,
-          isBonification,
-          isEscale,
-          appliedScale,
-          finalPrice,
-        },
-      ])
+
+      handleListarLotes([newItem])
+
       setSelectedProduct(null)
       setQuantity(1)
       setIsLoading(false)
@@ -402,7 +398,7 @@ export default function OrderPage() {
   }, [search.product])
 
   const handleLoteChange = (productIndex: number, value: string) => {
-    setProductosConLotes(prev => {
+    setEditingLotes(prev => {
       const updated = [...prev];
       updated[productIndex].loteSeleccionado = value;
       return updated;
@@ -410,46 +406,63 @@ export default function OrderPage() {
   };
 
   const handleConfirmarLotes = async () => {
-    setShowLotesModal(false)
+    setProductosConLotes(prev => {
+      const newMap = [...prev];
+
+      editingLotes.forEach(editItem => {
+        const index = newMap.findIndex(x => x.prod_codigo === editItem.prod_codigo);
+        if (index >= 0) {
+          newMap[index] = editItem;
+        } else {
+          newMap.push(editItem);
+        }
+      });
+
+      return newMap;
+    });
+    setShowLotesModal(false);
+    setEditingLotes([]);
   }
 
-  const handleListarLotes = async (local?: ISelectedProduct[]) => {
+  const handleListarLotes = async (productsToList: ISelectedProduct[]) => {
     try {
       setShowLotesModal(true)
       setLoadingLotes(true)
 
-      const productsList = local || selectedProduct;
-      const productos: ProductoConLotes[] = []
+      setEditingLotes([]);
 
-      for (const producto of productsList) {
+      const productosTemp: ProductoConLotes[] = []
+
+      for (const producto of productsToList) {
         const response = await PriceService.getProductLots(producto.product.Codigo_Art)
         const lotes = response.data.map((lote: any) => ({
           value: lote.numeroLote + '|' + lote.fechaVencimiento +
-            '|' + (Number(lote.stock) >= 0 ?  Number(lote.stock).toFixed(2) : 0),
+              '|' + (Number(lote.stock) >= 0 ?  Number(lote.stock).toFixed(2) : 0),
           numeroLote: lote.numeroLote,
           fechaVencimiento: lote.fechaVencimiento,
           stock: Number(lote.stock).toFixed(2),
         }))
 
-        const lotesFiltered = lotes.filter(item => item.stock > 0);
+        const lotesFiltered = lotes.filter((item: any) => Number(item.stock) > 0);
 
-        if (lotesFiltered.some(item => item.numeroLote !== null && item.fechaVencimiento !== null)) {
-          productos.push({
+        if (lotesFiltered.some((item: any) => item.numeroLote !== null && item.fechaVencimiento !== null)) {
+          const existingSelection = productosConLotes.find(x => x.prod_codigo === producto.product.Codigo_Art);
+
+          productosTemp.push({
             prod_codigo: producto.product.Codigo_Art,
             prod_descripcion: producto.product.NombreItem,
             cantidadPedido: producto.quantity,
             lotes: lotesFiltered,
-            loteSeleccionado: lotesFiltered.length > 0 ? lotesFiltered[0].value : "",
+            loteSeleccionado: existingSelection?.loteSeleccionado || (lotesFiltered.length > 0 ? lotesFiltered[0].value : ""),
           })
         }
       }
 
-      setProductosConLotes(productos);
+      setEditingLotes(productosTemp);
       setLoadingLotes(false);
     } catch (e) {
       console.error("Error al obtener lotes:", e);
       setLoadingLotes(false);
-      // Mostrar mensaje de error
     }
   };
 
@@ -559,10 +572,11 @@ export default function OrderPage() {
 
   const handleConfirmSelection = () => {
     setSelectedProducts(prev => [...prev, ...tempSelectedProducts]);
+    handleListarLotes([...tempSelectedProducts])
+
     setTempSelectedProducts([]);
     setShowLaboratorioModal(false);
     setSelectedLaboratorio(null);
-    handleListarLotes([...selectedProducts, ...tempSelectedProducts])
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -1406,14 +1420,29 @@ export default function OrderPage() {
                                   </td>
 
                                   <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={() => handleRemoveItem(index)}
-                                        className="text-red-600 hover:text-red-800 hover:bg-red-50"
-                                    >
-                                      Eliminar
-                                    </Button>
+                                    <div className="flex justify-end gap-2">
+                                      <Button
+                                          type='button'
+                                          variant="ghost"
+                                          size="sm"
+                                          onClick={() => handleListarLotes([item])}
+                                          className="text-blue-600 hover:text-blue-800 hover:bg-blue-50"
+                                          title="Cambiar Lote"
+                                      >
+                                        <Package className="h-4 w-4" />
+                                      </Button>
+
+                                      <Button
+                                          type='button'
+                                          variant="ghost"
+                                          size="sm"
+                                          onClick={() => handleRemoveItem(index)}
+                                          className="text-red-600 hover:text-red-800 hover:bg-red-50"
+                                          title="Eliminar"
+                                      >
+                                        <Trash className="h-4 w-4" />
+                                      </Button>
+                                    </div>
                                   </td>
                                 </tr>
                             );
@@ -1466,14 +1495,26 @@ export default function OrderPage() {
 
                         return (
                             <Card key={index} className={`p-4 relative ${cardBgClass} ${borderClass}`}>
-                              <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="ml-auto absolute right-0 top-0 text-red-500"
-                                  onClick={() => handleRemoveItem(index)}
-                              >
-                                <Trash className="h-5 w-5"/>
-                              </Button>
+                              <div className="flex items-center flex-wrap gap-1 justify-end">
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="text-blue-500 hover:text-blue-700"
+                                    onClick={() => handleListarLotes([item])}
+                                    type='button'
+                                >
+                                  <Package className="h-5 w-5"/>
+                                </Button>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="text-red-500 hover:text-red-700"
+                                    onClick={() => handleRemoveItem(index)}
+                                    type='button'
+                                >
+                                  <Trash className="h-5 w-5"/>
+                                </Button>
+                              </div>
                               <div className="space-y-3">
                                 <div className="flex justify-between items-start">
                                   <div className="flex-1 min-w-0">
@@ -1576,10 +1617,10 @@ export default function OrderPage() {
                     </Button>
 
                     <div className='flex'>
-                      <Button className='mr-4' type="button" variant="outline" onClick={() => setShowLotesModal(true)}>
-                        <Package className="mr-2 h-4 w-4"/>
-                        Cambiar Lotes
-                      </Button>
+                      {/*<Button className='mr-4' type="button" variant="outline" onClick={() => setShowLotesModal(true)}>*/}
+                      {/*  <Package className="mr-2 h-4 w-4"/>*/}
+                      {/*  Cambiar Lotes*/}
+                      {/*</Button>*/}
                       <Button
                           type="button"
                           onClick={nextStep}
@@ -2023,67 +2064,60 @@ export default function OrderPage() {
           </DialogHeader>
 
           {loadingLotes ? (
-            <div className="flex justify-center items-center h-64">
-              <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-            </div>
+              <div className="flex justify-center items-center h-64">
+                <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+              </div>
           ) : (
-            <div className="space-y-6 grid grid-cols-1 gap-4">
-              {productosConLotes.map((producto, productIndex) => (
-                <Card key={productIndex}>
-                  <CardHeader className="bg-gray-50 py-3">
-                    <CardTitle className="text-sm font-medium">
-                      {producto.prod_codigo} - {producto.prod_descripcion}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-4">
-                    <div className="grid grid-cols-1 gap-4">
-                      <div>
-                        <Label htmlFor={`lote-${productIndex}`}>Seleccionar Lote</Label>
-                        <Select
-                          value={producto.loteSeleccionado}
-                          onValueChange={(value) => handleLoteChange(productIndex, value)}
-                        >
-                          <SelectTrigger id={`lote-${productIndex}`}>
-                            <SelectValue placeholder="Seleccione un lote" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {producto.lotes.map((lote, loteIndex) => {
-                              const split = lote.value.split('|');
-                              const cod = split[0];
-                              const fec = split[1];
-                              const stk = split[2];
-                              return (
-                                (
-                                  <SelectItem
-                                    key={loteIndex}
-                                    value={lote.value}
-                                  >
-                                    {cod} - Vence: {format(parseISO(fec), "dd/MM/yyyy")} - Stk: {stk}
-                                  </SelectItem>
-                                )
-                              )
-                            })}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+              <div className="space-y-6 grid grid-cols-1 gap-4">
+                {editingLotes.map((producto, productIndex) => (
+                    <Card key={productIndex}>
+                      <CardHeader className="bg-gray-50 py-3">
+                        <CardTitle className="text-sm font-medium">
+                          {producto.prod_codigo} - {producto.prod_descripcion}
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="p-4">
+                        <div className="grid grid-cols-1 gap-4">
+                          <div>
+                            <Label htmlFor={`lote-${productIndex}`}>Seleccionar Lote</Label>
+                            <Select
+                                value={producto.loteSeleccionado}
+                                onValueChange={(value) => handleLoteChange(productIndex, value)}
+                            >
+                              <SelectTrigger id={`lote-${productIndex}`}>
+                                <SelectValue placeholder="Seleccione un lote" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {producto.lotes.map((lote, loteIndex) => {
+                                  const split = lote.value.split('|');
+                                  const cod = split[0];
+                                  const fec = split[1];
+                                  const stk = split[2];
+                                  return (
+                                      (
+                                          <SelectItem
+                                              key={loteIndex}
+                                              value={lote.value}
+                                          >
+                                            {cod} - Vence: {format(parseISO(fec), "dd/MM/yyyy")} - Stk: {stk}
+                                          </SelectItem>
+                                      )
+                                  )
+                                })}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                ))}
+              </div>
           )}
 
           <DialogFooter>
             <Button
-              variant="outline"
-              onClick={() => setShowLotesModal(false)}
-              disabled={loadingLotes}
-            >
-              Cancelar
-            </Button>
-            <Button
-              onClick={handleConfirmarLotes}
-              disabled={loadingLotes || productosConLotes.length === 0}
+                onClick={handleConfirmarLotes}
+                disabled={loadingLotes || editingLotes.length === 0}
             >
               <CheckSquare className="mr-2 h-4 w-4" />
               Confirmar Lotes
