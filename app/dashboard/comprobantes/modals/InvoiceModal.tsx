@@ -3,11 +3,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
-import { Receipt, Loader2, Truck, AlertTriangle, Check } from "lucide-react"
+import { Receipt, Loader2, Truck, AlertTriangle, Check, FileText } from "lucide-react"
 import { Pedido, SunatTransaccion, TipoDocSunat, GuiaReferencia } from "@/interface/order/order-interface"
 import { GuidesSelectorModal } from "./GuidesSelectorModal"
 import { Badge } from "@/components/ui/badge"
-import {Sequential} from "@/app/dashboard/configuraciones/page";
+import { Sequential } from "@/app/dashboard/configuraciones/page";
 
 interface InvoiceModalProps {
     open: boolean
@@ -43,7 +43,7 @@ export function InvoiceModal({
     return (
         <>
             <Dialog open={open} onOpenChange={onOpenChange}>
-                <DialogContent className="sm:max-w-[600px]">
+                <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2"><Receipt className="h-5 w-5" /> Confirmar Facturación</DialogTitle>
                     </DialogHeader>
@@ -124,6 +124,17 @@ export function InvoiceModal({
                                     </div>
                                 )}
                             </div>
+
+                            {selectedOrder.observaciones && (
+                                <div className="space-y-2">
+                                    <Label className="text-sm font-medium flex items-center gap-2 text-gray-700">
+                                        <FileText className="h-4 w-4" /> Observaciones
+                                    </Label>
+                                    <div className="bg-gray-50 border border-gray-200 rounded-md p-3 text-sm text-gray-600 italic">
+                                        {selectedOrder.observaciones}
+                                    </div>
+                                </div>
+                            )}
 
                             <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-200">
                                 <p className="text-sm text-yellow-800">

@@ -2,16 +2,17 @@ import { useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Eye, Download, MoreHorizontal, XCircle, Loader2, FileJson, Code } from "lucide-react"
+import { Eye, MoreHorizontal, XCircle, Loader2, FileJson, Code, AlertCircle, Info } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
 import { format, parseISO } from "date-fns"
-import { Comprobante, TipoComprobante } from "@/interface/order/order-interface";
+import { Comprobante } from "@/interface/order/order-interface";
+import {Sequential} from "@/app/dashboard/configuraciones/page";
 
 interface ComprobantesTableProps {
     comprobantes: Comprobante[]
     loading: boolean
-    tiposComprobante: TipoComprobante[]
+    tiposComprobante: Sequential[]
     onViewPdf: (url: string) => void
     onCancel: (comprobante: Comprobante) => void
 }
@@ -21,13 +22,38 @@ export function ComprobantesTable({ comprobantes, loading, tiposComprobante, onV
     const [jsonContent, setJsonContent] = useState("")
     const [jsonTitle, setJsonTitle] = useState("")
 
+    const [showReasonModal, setShowReasonModal] = useState(false)
+    const [selectedReason, setSelectedReason] = useState("")
+
     const getTipoComprobante = (tipo: number) => {
-        const tipoObj = tiposComprobante.find(t => t.tipo == tipo)
+        const tipoObj = tiposComprobante.find(t => Number(t.tipo) == tipo)
         return tipoObj ? tipoObj.nombre : "Desconocido"
     }
 
+    const handleViewReason = (reason: string) => {
+        setSelectedReason(reason || "Sin motivo especificado.")
+        setShowReasonModal(true)
+    }
+
     const getEstadoBadge = (comprobante: Comprobante) => {
-        if (comprobante.anulado) return <Badge variant="destructive">Anulado</Badge>
+        if (comprobante.anulado) {
+            return (
+                <div className="flex items-center gap-1">
+                    <Badge variant="destructive">Anulado</Badge>
+                    {comprobante.motivo_anulado && (
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 text-red-500 hover:text-red-700 hover:bg-red-50"
+                            onClick={() => handleViewReason(comprobante.motivo_anulado!)}
+                            title="Ver motivo"
+                        >
+                            <AlertCircle className="h-4 w-4" />
+                        </Button>
+                    )}
+                </div>
+            )
+        }
         return <Badge variant="success">Activo</Badge>
     }
 
@@ -144,13 +170,18 @@ export function ComprobantesTable({ comprobantes, loading, tiposComprobante, onV
                                     </div>
                                     <div className="border-t pt-3 flex gap-2">
                                         <Button variant="outline" size="sm" className="text-xs bg-transparent" onClick={() => onViewPdf(comprobante.enlace)}>
-                                            <Eye className="h-3 w-3 mr-1" /> Ver
+                                            <Eye className="h-3 w-3 mr-1" /> Ver PDF
                                         </Button>
                                         <DropdownMenu>
                                             <DropdownMenuTrigger asChild>
-                                                <Button variant="outline" size="sm" className="text-xs bg-transparent"><MoreHorizontal className="h-3 w-3 mr-1" /> Más</Button>
+                                                <Button variant="outline" size="sm" className="text-xs bg-transparent"><MoreHorizontal className="h-3 w-3 mr-1" /> Opciones</Button>
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent align="end" className="w-56">
+                                                {comprobante.anulado && comprobante.motivo_anulado && (
+                                                    <DropdownMenuItem onClick={() => handleViewReason(comprobante.motivo_anulado!)}>
+                                                        <Info className="mr-2 h-4 w-4 text-red-500" /> Ver Motivo Anulación
+                                                    </DropdownMenuItem>
+                                                )}
                                                 <DropdownMenuItem onClick={() => handleViewJson('JSON Solicitud (Request)', comprobante.raw_request)}>
                                                     <Code className="mr-2 h-4 w-4 text-gray-500" /> JSON Solicitud
                                                 </DropdownMenuItem>
@@ -196,6 +227,27 @@ export function ComprobantesTable({ comprobantes, loading, tiposComprobante, onV
                     <div className="flex justify-end">
                         <Button variant="outline" onClick={() => setShowJsonModal(false)}>Cerrar</Button>
                     </div>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={showReasonModal} onOpenChange={setShowReasonModal}>
+                <DialogContent className="sm:max-w-[500px]">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2 text-red-600">
+                            <AlertCircle className="h-5 w-5" />
+                            Motivo de Anulación
+                        </DialogTitle>
+                    </DialogHeader>
+
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-4 mt-2">
+                        <p className="text-sm text-red-900 whitespace-pre-wrap leading-relaxed">
+                            {selectedReason}
+                        </p>
+                    </div>
+
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setShowReasonModal(false)}>Cerrar</Button>
+                    </DialogFooter>
                 </DialogContent>
             </Dialog>
         </>

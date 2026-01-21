@@ -17,6 +17,7 @@ export interface Comprobante {
     tieneGuia: number
     raw_request: string
     raw_response: string
+    motivo_anulado?: string
 }
 
 export interface GuiaRemision {
@@ -68,6 +69,7 @@ export interface Pedido {
     errorObservaciones?: string
     errorCodigo?: string
     errorFecha?: string
+    observaciones?: string
 }
 
 export interface GuiaReferencia {
