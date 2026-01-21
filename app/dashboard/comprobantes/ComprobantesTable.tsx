@@ -233,7 +233,7 @@ export function ComprobantesTable({ comprobantes, loading, tiposComprobante, onV
             <Dialog open={showReasonModal} onOpenChange={setShowReasonModal}>
                 <DialogContent className="sm:max-w-[500px]">
                     <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2 text-red-600">
+                        <DialogTitle className="flex items-center gap-2">
                             <AlertCircle className="h-5 w-5" />
                             Motivo de Anulación
                         </DialogTitle>
