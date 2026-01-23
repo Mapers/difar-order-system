@@ -31,6 +31,9 @@ interface PedidoDet {
   precioPedido: string
   productoNombre?: string
   productoUnidad?: string
+  fec_venc_lote?: string
+  cod_lote?: string
+  laboratorio?: string
 }
 
 interface Conductor {
@@ -440,6 +443,9 @@ export const Remision = ({ pedido, detalles, onOpenChange }: RemisionModalProps)
           p_codigo: producto.codigoitemPedido,
           p_descripcion: producto.productoNombre || "Producto sin descripción",
           p_cantidad: producto.cantPedido,
+          p_laboratorio: producto.laboratorio,
+          p_lote: producto.cod_lote,
+          p_vencimiento: producto.fec_venc_lote
         }))
       };
 

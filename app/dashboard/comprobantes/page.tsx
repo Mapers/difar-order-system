@@ -44,7 +44,7 @@ export default function ComprobantesPage() {
   const today = new Date()
   const tomorrow = addDays(today, 1)
   const [filters, setFilters] = useState({
-    tipo: "-1",
+    tipo: "|-1",
     estado: 4,
     fechaDesde: format(today, 'yyyy-MM-dd'),
     fechaHasta: format(tomorrow, 'yyyy-MM-dd')
@@ -86,7 +86,7 @@ export default function ComprobantesPage() {
       let url = `/pedidos/comprobantes?`
       const params = new URLSearchParams()
       if (auth.user?.idRol === 1) params.append('vendedor', auth.user?.codigo || '')
-      if (filters.tipo !== '-1') params.append('tipoDoc', filters.tipo)
+      if (filters.tipo !== '|-1') params.append('tipoDoc', filters.tipo.split('|')[1])
       if (filters.fechaDesde) params.append('fechaDesde', filters.fechaDesde)
       if (filters.fechaHasta) params.append('fechaHasta', filters.fechaHasta)
       if (searchQuery) params.append('busqueda', searchQuery)
@@ -156,9 +156,9 @@ export default function ComprobantesPage() {
         setSunatTransacciones(transResponse.data.data.data)
         setTipoDocsSunat(docsSunat.data.data.data)
 
-        if (tiposResponse.data.data?.length > 0) setInvoiceType(tiposResponse.data.data[0].tipo)
+        // if (tiposResponse.data.data?.length > 0) setInvoiceType(tiposResponse.data.data[0].tipo)
         if (transResponse.data.data.data?.length > 0) setSunatTransaction(transResponse.data.data.data[0].idTransaction.toString())
-        if (docsSunat.data.data.data?.length > 0) handleInvoiceType(tiposResponse.data.data[0].tipo)
+        if (docsSunat.data.data.data?.length > 0) handleInvoiceType(tiposResponse.data.data[0].prefijo + '|' + tiposResponse.data.data[0].tipo)
       } catch (error) {
         console.error("Error catalogs:", error)
         toast({ title: "Error", description: "Error cargando catálogos", variant: "destructive" })
@@ -184,9 +184,9 @@ export default function ComprobantesPage() {
 
   const handleInvoiceType = (tipo: string) => {
     setInvoiceType(tipo)
-    if (tipo === '1') {
+    if (tipo?.split('|')[1] === '1') {
       setTipoSunat('6')
-    } else if (tipo === '3') {
+    } else if (tipo?.split('|')[1] === '3') {
       setTipoSunat('1')
     }
   }
@@ -194,7 +194,7 @@ export default function ComprobantesPage() {
   const handleConfirmInvoice = async (guiasSeleccionadas: GuiaReferencia[] = []) => {
     setIsProcessingInvoice(true)
     try {
-      const tipoComprobante = tiposComprobante.find(t => t.tipo === invoiceType)
+      const tipoComprobante = tiposComprobante.find(t => t.prefijo === invoiceType.split('|')[0])
       const transaccionSunat = sunatTransacciones.find(t => t.idTransaction.toString() === sunatTransaction)
       const tipoSunatT = tipoDocsSunat.find(t => t.codigo === tipoSunat)
 
@@ -347,8 +347,8 @@ export default function ComprobantesPage() {
                       <Select value={filters.tipo} onValueChange={(value) => setFilters(prev => ({ ...prev, tipo: value }))}>
                         <SelectTrigger className="text-xs sm:text-sm"><SelectValue placeholder="Todos los tipos" /></SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="-1">Todos los tipos</SelectItem>
-                          {tiposComprobante.map((tipo) => (<SelectItem key={tipo.tipo} value={tipo.tipo}>{tipo.prefijo} - {tipo.descripcion}</SelectItem>))}
+                          <SelectItem value="|-1">Todos los tipos</SelectItem>
+                          {tiposComprobante.map((tipo) => (<SelectItem key={tipo.prefijo} value={tipo.prefijo + '|' + tipo.tipo}>{tipo.prefijo} - {tipo.descripcion}</SelectItem>))}
                         </SelectContent>
                       </Select>
                     </div>

@@ -2,12 +2,13 @@ import { useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Eye, MoreHorizontal, XCircle, Loader2, FileJson, Code, AlertCircle, Info } from "lucide-react"
+import { Eye, MoreHorizontal, XCircle, Loader2, FileJson, Code, AlertCircle, Info, Truck } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
 import { format, parseISO } from "date-fns"
 import { Comprobante } from "@/interface/order/order-interface";
-import {Sequential} from "@/app/dashboard/configuraciones/page";
+import { Sequential } from "@/app/dashboard/configuraciones/page";
+import {RelatedGuidesModal} from "@/app/dashboard/comprobantes/modals/RelatedGuidesModal";
 
 interface ComprobantesTableProps {
     comprobantes: Comprobante[]
@@ -25,6 +26,10 @@ export function ComprobantesTable({ comprobantes, loading, tiposComprobante, onV
     const [showReasonModal, setShowReasonModal] = useState(false)
     const [selectedReason, setSelectedReason] = useState("")
 
+    // Estado para el Modal de Guías
+    const [showGuidesModal, setShowGuidesModal] = useState(false)
+    const [selectedComprobanteForGuides, setSelectedComprobanteForGuides] = useState<Comprobante | null>(null)
+
     const getTipoComprobante = (tipo: number) => {
         const tipoObj = tiposComprobante.find(t => Number(t.tipo) == tipo)
         return tipoObj ? tipoObj.nombre : "Desconocido"
@@ -33,6 +38,12 @@ export function ComprobantesTable({ comprobantes, loading, tiposComprobante, onV
     const handleViewReason = (reason: string) => {
         setSelectedReason(reason || "Sin motivo especificado.")
         setShowReasonModal(true)
+    }
+
+    // Función para abrir el modal de guías
+    const handleViewGuides = (comprobante: Comprobante) => {
+        setSelectedComprobanteForGuides(comprobante)
+        setShowGuidesModal(true)
     }
 
     const getEstadoBadge = (comprobante: Comprobante) => {
@@ -107,9 +118,19 @@ export function ComprobantesTable({ comprobantes, loading, tiposComprobante, onV
                                         <td className="p-4">{getEstadoBadge(comprobante)}</td>
                                         <td className="p-4">
                                             <div className="flex gap-2">
-                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50" onClick={() => onViewPdf(comprobante.enlace)}>
+                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50" onClick={() => onViewPdf(comprobante.enlace)} title="Ver PDF">
                                                     <Eye className="h-4 w-4" />
                                                 </Button>
+                                                {comprobante.tieneGuia === 1 && <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-8 w-8 text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+                                                    onClick={() => handleViewGuides(comprobante)}
+                                                    title="Ver Guías de Remisión"
+                                                >
+                                                    <Truck className="h-4 w-4"/>
+                                                </Button>}
+
                                                 <DropdownMenu>
                                                     <DropdownMenuTrigger asChild>
                                                         <Button variant="ghost" size="icon" className="h-8 w-8"><MoreHorizontal className="h-4 w-4" /></Button>
@@ -172,6 +193,16 @@ export function ComprobantesTable({ comprobantes, loading, tiposComprobante, onV
                                         <Button variant="outline" size="sm" className="text-xs bg-transparent" onClick={() => onViewPdf(comprobante.enlace)}>
                                             <Eye className="h-3 w-3 mr-1" /> Ver PDF
                                         </Button>
+
+                                        {comprobante.tieneGuia === 1 && <Button
+                                            variant="outline"
+                                            size="sm"
+                                            className="text-xs bg-transparent text-orange-700"
+                                            onClick={() => handleViewGuides(comprobante)}
+                                        >
+                                            <Truck className="h-3 w-3 mr-1"/> Guías
+                                        </Button>}
+
                                         <DropdownMenu>
                                             <DropdownMenuTrigger asChild>
                                                 <Button variant="outline" size="sm" className="text-xs bg-transparent"><MoreHorizontal className="h-3 w-3 mr-1" /> Opciones</Button>
@@ -208,6 +239,7 @@ export function ComprobantesTable({ comprobantes, loading, tiposComprobante, onV
                 )}
             </div>
 
+            {/* Modales Existentes */}
             <Dialog open={showJsonModal} onOpenChange={setShowJsonModal}>
                 <DialogContent className="sm:max-w-[800px] h-[80vh] flex flex-col">
                     <DialogHeader>
@@ -250,6 +282,13 @@ export function ComprobantesTable({ comprobantes, loading, tiposComprobante, onV
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+
+            <RelatedGuidesModal
+                open={showGuidesModal}
+                onOpenChange={setShowGuidesModal}
+                comprobante={selectedComprobanteForGuides}
+                onViewPdf={onViewPdf}
+            />
         </>
     )
 }

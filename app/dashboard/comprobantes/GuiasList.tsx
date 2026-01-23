@@ -1,8 +1,10 @@
+import { useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Eye, Download, MoreHorizontal, AlertTriangle, Loader2 } from "lucide-react"
+import { Eye, MoreHorizontal, AlertTriangle, Loader2, FileJson, Code } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { format, parseISO } from "date-fns"
 import { GuiaRemision } from "@/interface/order/order-interface";
 
@@ -14,10 +16,24 @@ interface GuiasListProps {
 }
 
 export function GuiasList({ guias, loading, onViewPdf, onErrorView }: GuiasListProps) {
+    const [showJsonModal, setShowJsonModal] = useState(false)
+    const [jsonContent, setJsonContent] = useState("")
+    const [jsonTitle, setJsonTitle] = useState("")
 
     const getEstadoGuiaBadge = (guia: GuiaRemision) => {
         if (guia.anulado) return <Badge variant="destructive">Anulado</Badge>
         return <Badge variant="success">Activo</Badge>
+    }
+
+    const handleViewJson = (title: string, content: string) => {
+        setJsonTitle(title)
+        try {
+            const parsed = typeof content === 'string' ? JSON.parse(content) : content
+            setJsonContent(JSON.stringify(parsed, null, 2))
+        } catch (error) {
+            setJsonContent(content || "Sin contenido disponible")
+        }
+        setShowJsonModal(true)
     }
 
     if (loading) {
@@ -67,10 +83,15 @@ export function GuiasList({ guias, loading, onViewPdf, onErrorView }: GuiasListP
                                                     <Eye className="h-4 w-4" />
                                                 </Button>
                                                 <DropdownMenu>
-                                                    <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
-                                                    <DropdownMenuContent align="end" className="w-48">
-                                                        <DropdownMenuItem className="text-green-600" onClick={() => window.open(guia.enlace_pdf, '_blank')}>
-                                                            <Download className="mr-2 h-4 w-4" /> Descargar PDF
+                                                    <DropdownMenuTrigger asChild>
+                                                        <Button variant="ghost" size="icon" className="h-8 w-8"><MoreHorizontal className="h-4 w-4" /></Button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent align="end" className="w-56">
+                                                        <DropdownMenuItem onClick={() => handleViewJson('JSON Solicitud (Request)', guia.raw_request)}>
+                                                            <Code className="mr-2 h-4 w-4 text-gray-500" /> JSON Solicitud
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem onClick={() => handleViewJson('JSON Respuesta (Response)', guia.raw_response)}>
+                                                            <FileJson className="mr-2 h-4 w-4 text-gray-500" /> JSON Respuesta
                                                         </DropdownMenuItem>
                                                     </DropdownMenuContent>
                                                 </DropdownMenu>
@@ -79,7 +100,7 @@ export function GuiasList({ guias, loading, onViewPdf, onErrorView }: GuiasListP
                                     </tr>
                                 ))
                             ) : (
-                                <tr><td colSpan={7} className="text-center py-8 text-gray-500">No se encontraron guías de remisión</td></tr>
+                                <tr><td colSpan={6} className="text-center py-8 text-gray-500">No se encontraron guías de remisión</td></tr>
                             )}
                             </tbody>
                         </table>
@@ -120,9 +141,22 @@ export function GuiasList({ guias, loading, onViewPdf, onErrorView }: GuiasListP
                                         <Button variant="outline" size="sm" className="text-xs bg-transparent" onClick={() => onViewPdf(guia.pdf_zip_base64)}>
                                             <Eye className="h-3 w-3 mr-1" /> Ver PDF
                                         </Button>
-                                        <Button variant="outline" size="sm" className="text-xs bg-transparent" onClick={() => window.open(guia.enlace_pdf, '_blank')}>
-                                            <Download className="h-3 w-3 mr-1" /> Descargar
-                                        </Button>
+
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button variant="outline" size="sm" className="text-xs bg-transparent">
+                                                    <MoreHorizontal className="h-3 w-3 mr-1" /> Opciones
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end" className="w-56">
+                                                <DropdownMenuItem onClick={() => handleViewJson('JSON Solicitud (Request)', guia.raw_request)}>
+                                                    <Code className="mr-2 h-4 w-4 text-gray-500" /> JSON Solicitud
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem onClick={() => handleViewJson('JSON Respuesta (Response)', guia.raw_response)}>
+                                                    <FileJson className="mr-2 h-4 w-4 text-gray-500" /> JSON Respuesta
+                                                </DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
                                     </div>
                                 </div>
                             </CardContent>
@@ -132,6 +166,28 @@ export function GuiasList({ guias, loading, onViewPdf, onErrorView }: GuiasListP
                     <div className="text-center py-8 text-gray-500">No se encontraron guías de remisión</div>
                 )}
             </div>
+
+            <Dialog open={showJsonModal} onOpenChange={setShowJsonModal}>
+                <DialogContent className="sm:max-w-[800px] h-[80vh] flex flex-col">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <FileJson className="h-5 w-5 text-blue-600" />
+                            {jsonTitle}
+                        </DialogTitle>
+                        <DialogDescription>
+                            Visualización de datos crudos de la transacción.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="flex-1 w-full overflow-hidden rounded-md border bg-slate-950 p-4 text-white">
+                        <pre className="h-full w-full overflow-auto text-xs font-mono">
+                            {jsonContent}
+                        </pre>
+                    </div>
+                    <div className="flex justify-end">
+                        <Button variant="outline" onClick={() => setShowJsonModal(false)}>Cerrar</Button>
+                    </div>
+                </DialogContent>
+            </Dialog>
         </>
     )
 }

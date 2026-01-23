@@ -38,6 +38,8 @@ export interface GuiaRemision {
     pdf_zip_base64: string
     sunat_description?: string
     sunat_responsecode: string
+    raw_request: string
+    raw_response: string
 }
 
 export interface SunatTransaccion {
@@ -78,4 +80,5 @@ export interface GuiaReferencia {
     numero: string;
     fecha_emision: string;
     tipo_comprobante: string;
+    pdf_zip_base64: string;
 }

@@ -67,7 +67,7 @@ export function InvoiceModal({
                                         <SelectTrigger><SelectValue placeholder="Seleccionar tipo"/></SelectTrigger>
                                         <SelectContent>
                                             {tiposComprobante.map((tipo) => (
-                                                <SelectItem key={tipo.tipo} value={tipo.tipo}>{tipo.prefijo} - {tipo.nombre}</SelectItem>
+                                                <SelectItem key={tipo.prefijo} value={tipo.prefijo + '|' + tipo.tipo}>{tipo.prefijo} - {tipo.nombre}</SelectItem>
                                             ))}
                                         </SelectContent>
                                     </Select>
