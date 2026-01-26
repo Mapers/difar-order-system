@@ -1,27 +1,21 @@
 import {useState, useEffect, useRef} from "react";
 import {
   AlertCircle,
-  ChevronDown,
-  ChevronUp,
   FileText,
   Loader2,
-  Plus,
-  Search,
-  Trash2,
   Truck,
-  UserPlus
+  UserPlus,
+  Trash2, Search
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Textarea } from "@/components/ui/textarea";
-import {toast, useToast} from "@/components/ui/use-toast";
-import { Pedido } from "@/app/dashboard/comprobantes/page";
+import { toast, useToast } from "@/components/ui/use-toast";
 import apiClient from "@/app/api/client";
-import {Alert, AlertDescription, AlertTitle} from "@/components/ui/alert";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface PedidoDet {
   idPedidodet: number
@@ -47,6 +41,14 @@ interface Conductor {
 interface UbigeoResult {
   id: string;
   texto_mostrar: string;
+}
+
+interface EmpresaTransporte {
+  IdEmpTransporte: number;
+  nomempTransp: string;
+  emptranspRUC: string;
+  tipdocempTransp: string;
+  nroregMTC: string;
 }
 
 interface Vehiculo {
@@ -165,10 +167,117 @@ const UbigeoSearchInput = ({
               ))}
             </div>
         )}
+      </div>
+  );
+};
 
+const TransportistaSearchInput = ({
+                                    onSelect
+                                  }: {
+  onSelect: (empresa: EmpresaTransporte) => void
+}) => {
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState<EmpresaTransporte[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [showResults, setShowResults] = useState(false);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+
+  // 1. NUEVO: Cargar lista inicial apenas carga el componente (Initial State)
+  useEffect(() => {
+    const cargarInicial = async () => {
+      try {
+        // Llamada con query vacío
+        const response = await apiClient.get(`/admin/listar/empresas-transporte?q=`);
+        if (response.data.success) {
+          setResults(response.data.data);
+        }
+      } catch (error) {
+        console.error("Error cargando lista inicial", error);
+      }
+    };
+    cargarInicial();
+  }, []); // Array vacío = solo se ejecuta al montar
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
+        setShowResults(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [wrapperRef]);
+
+  // 2. MODIFICADO: Lógica de búsqueda
+  useEffect(() => {
+    const timeOutId = setTimeout(async () => {
+      // Si hay texto para buscar (>=3) O si está vacío (para traer todo de nuevo al borrar)
+      // Y si el usuario tiene intención de ver resultados (showResults)
+      if ((query.length >= 3 || query === '') && showResults) {
+        setLoading(true);
+        try {
+          const response = await apiClient.get(`/admin/listar/empresas-transporte?q=${query}`);
+          if (response.data.success) {
+            setResults(response.data.data);
+          } else {
+            setResults([]);
+          }
+        } catch (error) {
+          console.error("Error buscando empresa", error);
+          setResults([]);
+        } finally {
+          setLoading(false);
+        }
+      }
+      else if (query.length > 0 && query.length < 3) {
+        setResults([]);
+      }
+    }, 500);
+
+    return () => clearTimeout(timeOutId);
+  }, [query, showResults]);
+
+  const handleSelect = (item: EmpresaTransporte) => {
+    setQuery(`${item.emptranspRUC} - ${item.nomempTransp}`);
+    onSelect(item);
+    setShowResults(false);
+  };
+
+  return (
+      <div className="relative w-full" ref={wrapperRef}>
+        <div className="relative">
+          <Input
+              value={query}
+              onChange={(e) => {
+                setQuery(e.target.value);
+                setShowResults(true);
+              }}
+              onFocus={() => setShowResults(true)}
+              placeholder="Buscar por RUC o Nombre..."
+              className={results.length > 0 && showResults ? "rounded-b-none border-blue-500 ring-1 ring-blue-500" : ""}
+          />
+          <div className="absolute right-3 top-2.5 text-gray-400">
+            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+          </div>
+        </div>
+
+        {showResults && results.length > 0 && (
+            <div className="absolute z-50 w-full bg-white border border-t-0 border-gray-200 rounded-b-md shadow-lg max-h-60 overflow-y-auto">
+              {results.map((item) => (
+                  <div
+                      key={item.IdEmpTransporte}
+                      className="px-4 py-2 hover:bg-blue-50 cursor-pointer text-sm border-b last:border-b-0 border-gray-100 flex flex-col"
+                      onClick={() => handleSelect(item)}
+                  >
+                    <span className="font-bold text-gray-900">{item.nomempTransp}</span>
+                    <span className="text-gray-500 text-xs">RUC: {item.emptranspRUC}</span>
+                  </div>
+              ))}
+            </div>
+        )}
         {showResults && query.length >= 3 && !loading && results.length === 0 && (
             <div className="absolute z-50 w-full bg-white border border-t-0 border-gray-200 rounded-b-md shadow-lg p-2 text-center text-sm text-gray-500">
-              No se encontraron resultados
+              No se encontraron empresas
             </div>
         )}
       </div>
@@ -239,14 +348,6 @@ export const Remision = ({ pedido, detalles, onOpenChange }: RemisionModalProps)
     productoUnidad: item.productoUnidad || 'KGM'
   })));
 
-  const showToast = (title: string, description: string, variant: "default" | "destructive" = "default") => {
-    toast({
-      title,
-      description,
-      variant,
-    });
-  };
-
   const setValidationError = (message: string) => {
     setError(message);
     toast({
@@ -267,11 +368,7 @@ export const Remision = ({ pedido, detalles, onOpenChange }: RemisionModalProps)
 
       if (datosGuia.tipoTransporte === '01') {
         if (!datosTransportista.numeroDocumento) {
-          setValidationError("El número de documento del transportista es obligatorio");
-          return false;
-        }
-        if (!datosTransportista.denominacion) {
-          setValidationError("La razón social/nombre del transportista es obligatoria");
+          setValidationError("Debe seleccionar una empresa de transporte");
           return false;
         }
       }
@@ -341,6 +438,15 @@ export const Remision = ({ pedido, detalles, onOpenChange }: RemisionModalProps)
     setError(null);
   };
 
+  const handleTransportistaSelect = (empresa: EmpresaTransporte) => {
+    setDatosTransportista({
+      tipoDocumento: "6",
+      numeroDocumento: empresa.emptranspRUC,
+      denominacion: empresa.nomempTransp,
+      registroMtc: empresa.nroregMTC || "",
+    });
+  };
+
   useEffect(() => {
     if (pedido) {
       setDatosGuia(prev => ({
@@ -359,7 +465,6 @@ export const Remision = ({ pedido, detalles, onOpenChange }: RemisionModalProps)
       try {
         const [tiposResponse, guiaResponse] = await Promise.all([
           apiClient.get('/tomarPedido/motivosTrasGuia'),
-          // apiClient.get('/tomarPedido/tipoDocsGuia'),
           apiClient.get('/admin/listar/guias'),
         ]);
 
@@ -468,581 +573,554 @@ export const Remision = ({ pedido, detalles, onOpenChange }: RemisionModalProps)
   };
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6">
-      <div className="text-center py-6">
-        <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-2xl mb-4 shadow-lg">
-          <FileText className="h-8 w-8 text-white" />
+      <div className="max-w-7xl mx-auto space-y-6">
+        <div className="text-center py-6">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-2xl mb-4 shadow-lg">
+            <FileText className="h-8 w-8 text-white" />
+          </div>
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent mb-2">
+            Guía de Remisión Electrónica
+          </h1>
+          <p className="text-gray-600">Complete los datos requeridos para generar la guía</p>
         </div>
-        <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent mb-2">
-          Guía de Remisión Electrónica
-        </h1>
-        <p className="text-gray-600">Complete los datos requeridos para generar la guía</p>
-      </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="space-y-6">
-          <Card className="shadow-sm">
-            <CardHeader className="bg-blue-50 border-b">
-              <CardTitle className="text-lg font-semibold flex items-center gap-2">
-                <FileText className="h-5 w-5 text-blue-600" />
-                Información de la Guía
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-6 space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="space-y-6">
+            <Card className="shadow-sm">
+              <CardHeader className="bg-blue-50 border-b">
+                <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                  <FileText className="h-5 w-5 text-blue-600" />
+                  Información de la Guía
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-6 space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Serie</Label>
+                    <Select
+                        value={serie}
+                        onChange={(value: string) => setSerie(value)}
+                        className="border border-gray-300 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-20"
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Seleccione prefijo" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {series.map((item) => (
+                            <SelectItem key={item.id} value={item.prefijo}>{item.prefijo}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Fecha de emisión</Label>
+                    <Input
+                        type="date"
+                        value={datosGuia.fechaEmision}
+                        onChange={(e) => setDatosGuia({...datosGuia, fechaEmision: e.target.value})}
+                    />
+                  </div>
+                </div>
+
                 <div className="space-y-2">
-                  <Label>Serie</Label>
+                  <Label>Motivo de traslado</Label>
                   <Select
-                    value={serie}
-                    onChange={(value: string) => setSerie(value)}
-                    className="border border-gray-300 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-20"
+                      value={datosGuia.motivoTraslado}
+                      onValueChange={(value) => setDatosGuia({...datosGuia, motivoTraslado: value})}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Seleccione prefijo de guia" />
+                      <SelectValue placeholder="Seleccione motivo" />
                     </SelectTrigger>
                     <SelectContent>
-                      {series.map((item) => (
-                          <SelectItem key={item.id} value={item.prefijo}>{item.prefijo}</SelectItem>
+                      {reasonTrasGuide.map((trans) => (
+                          <SelectItem
+                              key={trans.codigo}
+                              value={trans.codigo}
+                          >
+                            {trans.motivo_descr}
+                          </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
+
                 <div className="space-y-2">
-                  <Label>Fecha de emisión</Label>
-                  <Input
-                    type="date"
-                    value={datosGuia.fechaEmision}
-                    onChange={(e) => setDatosGuia({...datosGuia, fechaEmision: e.target.value})}
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Motivo de traslado</Label>
-                <Select
-                  value={datosGuia.motivoTraslado}
-                  onValueChange={(value) => setDatosGuia({...datosGuia, motivoTraslado: value})}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleccione motivo" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {reasonTrasGuide.map((trans) => (
-                      <SelectItem
-                        key={trans.codigo}
-                        value={trans.codigo}
-                      >
-                        {trans.motivo_descr}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Tipo de transporte</Label>
-                <Select
-                  value={datosGuia.tipoTransporte}
-                  disabled
-                  // onValueChange={(value) => {
-                  //   setDatosGuia({...datosGuia, tipoTransporte: value})
-                  //   if (value === '02') {
-                  //     setDatosTransportista({
-                  //       tipoDocumento: "6",
-                  //       numeroDocumento: "",
-                  //       denominacion: "",
-                  //       registroMtc: "",
-                  //     })
-                  //   }
-                  // }}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleccione tipo" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {/*<SelectItem value="01">01 - Transporte público</SelectItem>*/}
-                    <SelectItem value="02">02 - Transporte privado</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="shadow-sm">
-            <CardHeader className="bg-blue-50 border-b">
-              <CardTitle className="text-lg font-semibold flex items-center gap-2">
-                <UserPlus className="h-5 w-5 text-blue-600" />
-                Datos del Cliente
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-6 space-y-4">
-              <div className="space-y-2">
-                <Label>Cliente</Label>
-                <Input
-                  disabled
-                  value={datosGuia.cliente}
-                  onChange={(e) => setDatosGuia({...datosGuia, cliente: e.target.value})}
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Tipo de documento</Label>
+                  <Label>Tipo de transporte</Label>
                   <Select
-                    disabled
-                    value={datosGuia.clienteTipoDoc}
-                    onValueChange={(value) => setDatosGuia({...datosGuia, clienteTipoDoc: value})}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="6">RUC</SelectItem>
-                      <SelectItem value="1">DNI</SelectItem>
-                      <SelectItem value="4">Carné de extranjería</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label>Número de documento</Label>
-                  <Input
-                    disabled
-                    value={datosGuia.clienteNumDoc}
-                    onChange={(e) => setDatosGuia({...datosGuia, clienteNumDoc: e.target.value})}
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Dirección</Label>
-                <Input
-                  disabled
-                  value={datosGuia.clienteDireccion}
-                  onChange={(e) => setDatosGuia({...datosGuia, clienteDireccion: e.target.value})}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label>Correo electrónico</Label>
-                <Input
-                  type="email"
-                  value={datosGuia.clienteEmail}
-                  onChange={(e) => setDatosGuia({...datosGuia, clienteEmail: e.target.value})}
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="shadow-sm">
-            <CardHeader className="bg-blue-50 border-b">
-              <CardTitle className="text-lg font-semibold flex items-center gap-2">
-                <Truck className="h-5 w-5 text-blue-600" />
-                Ubicaciones
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-6 space-y-6">
-              <div className="space-y-4">
-                <h3 className="font-medium">Punto de Partida</h3>
-                <div className="space-y-2">
-                  <Label>Ubigeo</Label>
-                  <div className="flex gap-2">
-                    <Input
+                      value={datosGuia.tipoTransporte}
                       disabled
-                      value={puntosUbicacion.partida.ubigeo}
-                      onChange={(e) => setPuntosUbicacion({
-                        ...puntosUbicacion,
-                        partida: {...puntosUbicacion.partida, ubigeo: e.target.value}
-                      })}
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Dirección</Label>
-                  <Input
-                    disabled
-                    value={puntosUbicacion.partida.direccion}
-                    onChange={(e) => setPuntosUbicacion({
-                      ...puntosUbicacion,
-                      partida: {...puntosUbicacion.partida, direccion: e.target.value}
-                    })}
-                  />
-                </div>
-
-                {/*<div className="space-y-2">*/}
-                {/*  <Label>Código SUNAT</Label>*/}
-                {/*  <Input*/}
-                {/*      maxLength={4}*/}
-                {/*    value={puntosUbicacion.partida.codigoSunat}*/}
-                {/*    onChange={(e) => setPuntosUbicacion({*/}
-                {/*      ...puntosUbicacion,*/}
-                {/*      partida: {...puntosUbicacion.partida, codigoSunat: e.target.value}*/}
-                {/*    })}*/}
-                {/*  />*/}
-                {/*</div>*/}
-              </div>
-
-              <div className="space-y-4">
-                <h3 className="font-medium">Punto de Llegada</h3>
-                <div className="space-y-2">
-                  <Label>Ubigeo</Label>
-                  <div className="flex gap-2">
-                    <UbigeoSearchInput
-                        value={puntosUbicacion.llegada.ubigeo}
-                        onSelect={(codigo, texto) => setPuntosUbicacion({
-                          ...puntosUbicacion,
-                          llegada: {...puntosUbicacion.llegada, ubigeo: codigo}
-                        })}
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Dirección</Label>
-                  <Input
-                    value={puntosUbicacion.llegada.direccion}
-                    onChange={(e) => setPuntosUbicacion({
-                      ...puntosUbicacion,
-                      llegada: {...puntosUbicacion.llegada, direccion: e.target.value}
-                    })}
-                  />
-                </div>
-
-                {/*<div className="space-y-2">*/}
-                {/*  <Label>Código SUNAT</Label>*/}
-                {/*  <Input*/}
-                {/*      maxLength={4}*/}
-                {/*    value={puntosUbicacion.llegada.codigoSunat}*/}
-                {/*    onChange={(e) => setPuntosUbicacion({*/}
-                {/*      ...puntosUbicacion,*/}
-                {/*      llegada: {...puntosUbicacion.llegada, codigoSunat: e.target.value}*/}
-                {/*    })}*/}
-                {/*  />*/}
-                {/*</div>*/}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="space-y-6">
-          <Card className="shadow-sm">
-            <CardHeader className="bg-blue-50 border-b">
-              <CardTitle className="text-lg font-semibold flex items-center gap-2">
-                <Truck className="h-5 w-5 text-blue-600" />
-                Datos del Traslado
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-6 space-y-4">
-              <div className="space-y-2">
-                <Label>Fecha de inicio de traslado</Label>
-                <Input
-                  type="date"
-                  value={datosTraslado.fechaInicio}
-                  onChange={(e) => setDatosTraslado({...datosTraslado, fechaInicio: e.target.value})}
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Peso bruto total</Label>
-                  <Input
-                    type="number"
-                    value={datosTraslado.pesoBruto}
-                    onChange={(e) => setDatosTraslado({...datosTraslado, pesoBruto: e.target.value})}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Unidad de medida</Label>
-                  <Select
-                    value={datosTraslado.pesoUnidad}
-                    onValueChange={(value) => setDatosTraslado({...datosTraslado, pesoUnidad: value})}
                   >
                     <SelectTrigger>
-                      <SelectValue />
+                      <SelectValue placeholder="Seleccione tipo" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="KGM">KGM - Kilogramo</SelectItem>
+                      <SelectItem value="02">02 - Transporte privado</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Número de bultos</Label>
-                <Input
-                  type="number"
-                  value={datosTraslado.numeroBultos}
-                  onChange={(e) => setDatosTraslado({...datosTraslado, numeroBultos: e.target.value})}
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="shadow-sm">
-            <CardHeader className="bg-blue-50 border-b">
-              <CardTitle className="text-lg font-semibold flex items-center gap-2">
-                <Truck className="h-5 w-5 text-blue-600" />
-                Datos del Transportista
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-6 space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Tipo de documento</Label>
-                  <Select
-                    value={datosTransportista.tipoDocumento}
-                    onValueChange={(value) => setDatosTransportista({...datosTransportista, tipoDocumento: value})}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="6">RUC</SelectItem>
-                      <SelectItem value="1">DNI</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label>Número de documento</Label>
-                  <div className="flex gap-2">
-                    <Input
-                      value={datosTransportista.numeroDocumento}
-                      onChange={(e) => setDatosTransportista({...datosTransportista, numeroDocumento: e.target.value})}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Razón social / Nombre</Label>
-                <Input
-                  value={datosTransportista.denominacion}
-                  onChange={(e) => setDatosTransportista({...datosTransportista, denominacion: e.target.value})}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label>Registro MTC (opcional)</Label>
-                <Input
-                  value={datosTransportista.registroMtc}
-                  onChange={(e) => setDatosTransportista({...datosTransportista, registroMtc: e.target.value})}
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="shadow-sm">
-            <CardHeader className="bg-blue-50 border-b">
-              <CardTitle className="text-lg font-semibold flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Truck className="h-5 w-5 text-blue-600" />
-                  Vehículos
-                </div>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-6 space-y-4">
-              <div className="space-y-2">
-                <Label>Vehículo principal (Placa)</Label>
-                <Input
-                  value={vehiculos[0].placa}
-                  onChange={(e) => handlePlacaChange(e, 0)}
-                  placeholder="ABC123"
-                  maxLength={6}
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="shadow-sm">
-            <CardHeader className="bg-blue-50 border-b">
-              <CardTitle className="text-lg font-semibold flex items-center justify-between">
-                <div className="flex items-center gap-2">
+              </CardContent>
+            </Card>
+            <Card className="shadow-sm">
+              <CardHeader className="bg-blue-50 border-b">
+                <CardTitle className="text-lg font-semibold flex items-center gap-2">
                   <UserPlus className="h-5 w-5 text-blue-600" />
-                  Conductores
+                  Datos del Cliente
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-6 space-y-4">
+                <div className="space-y-2">
+                  <Label>Cliente</Label>
+                  <Input
+                      disabled
+                      value={datosGuia.cliente}
+                      onChange={(e) => setDatosGuia({...datosGuia, cliente: e.target.value})}
+                  />
                 </div>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-6 space-y-4">
-              {conductores.map((conductor, index) => (
-                <div key={index} className="space-y-4 border-b pb-4 last:border-b-0 last:pb-0">
-                  {index > 0 && (
-                    <div className="flex justify-between items-center">
-                      <h4 className="font-medium">Conductor {index + 1}</h4>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => eliminarConductor(index)}
-                      >
-                        <Trash2 className="h-4 w-4 text-red-500" />
-                      </Button>
-                    </div>
-                  )}
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label>Tipo de documento</Label>
-                      <Select
-                        value={conductor.tipoDocumento}
-                        onValueChange={(value) => {
-                          const newConductores = [...conductores];
-                          newConductores[index].tipoDocumento = value;
-                          setConductores(newConductores);
-                        }}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="1">DNI</SelectItem>
-                          <SelectItem value="4">Carné de extranjería</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Número de documento</Label>
-                      <Input
-                        value={conductor.numeroDocumento}
-                        onChange={(e) => {
-                          const newConductores = [...conductores];
-                          newConductores[index].numeroDocumento = e.target.value;
-                          setConductores(newConductores);
-                        }}
-                      />
-                    </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Tipo de documento</Label>
+                    <Select
+                        disabled
+                        value={datosGuia.clienteTipoDoc}
+                        onValueChange={(value) => setDatosGuia({...datosGuia, clienteTipoDoc: value})}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="6">RUC</SelectItem>
+                        <SelectItem value="1">DNI</SelectItem>
+                        <SelectItem value="4">Carné de extranjería</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
+                  <div className="space-y-2">
+                    <Label>Número de documento</Label>
+                    <Input
+                        disabled
+                        value={datosGuia.clienteNumDoc}
+                        onChange={(e) => setDatosGuia({...datosGuia, clienteNumDoc: e.target.value})}
+                    />
+                  </div>
+                </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label>Nombres</Label>
+                <div className="space-y-2">
+                  <Label>Dirección</Label>
+                  <Input
+                      disabled
+                      value={datosGuia.clienteDireccion}
+                      onChange={(e) => setDatosGuia({...datosGuia, clienteDireccion: e.target.value})}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Correo electrónico</Label>
+                  <Input
+                      type="email"
+                      value={datosGuia.clienteEmail}
+                      onChange={(e) => setDatosGuia({...datosGuia, clienteEmail: e.target.value})}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="shadow-sm">
+              <CardHeader className="bg-blue-50 border-b">
+                <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                  <Truck className="h-5 w-5 text-blue-600" />
+                  Ubicaciones
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-6 space-y-6">
+                <div className="space-y-4">
+                  <h3 className="font-medium">Punto de Partida</h3>
+                  <div className="space-y-2">
+                    <Label>Ubigeo</Label>
+                    <div className="flex gap-2">
                       <Input
-                        value={conductor.nombre}
-                        onChange={(e) => {
-                          const newConductores = [...conductores];
-                          newConductores[index].nombre = e.target.value;
-                          setConductores(newConductores);
-                        }}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Apellidos</Label>
-                      <Input
-                        value={conductor.apellidos}
-                        onChange={(e) => {
-                          const newConductores = [...conductores];
-                          newConductores[index].apellidos = e.target.value;
-                          setConductores(newConductores);
-                        }}
+                          disabled
+                          value={puntosUbicacion.partida.ubigeo}
+                          onChange={(e) => setPuntosUbicacion({
+                            ...puntosUbicacion,
+                            partida: {...puntosUbicacion.partida, ubigeo: e.target.value}
+                          })}
                       />
                     </div>
                   </div>
 
                   <div className="space-y-2">
-                    <Label>Número de licencia</Label>
+                    <Label>Dirección</Label>
                     <Input
-                        value={conductores[0].licencia}
-                        onChange={(e) => handleLicenciaChange(e, 0)}
-                        placeholder="Q12345678 o 123456789"
-                        maxLength={9}
+                        disabled
+                        value={puntosUbicacion.partida.direccion}
+                        onChange={(e) => setPuntosUbicacion({
+                          ...puntosUbicacion,
+                          partida: {...puntosUbicacion.partida, direccion: e.target.value}
+                        })}
                     />
-                    <p className="text-xs text-muted-foreground">Formato: Letra+8 dígitos (Q12345678) o 9 dígitos.</p>
                   </div>
                 </div>
-              ))}
 
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+                <div className="space-y-4">
+                  <h3 className="font-medium">Punto de Llegada</h3>
+                  <div className="space-y-2">
+                    <Label>Ubigeo</Label>
+                    <div className="flex gap-2">
+                      <UbigeoSearchInput
+                          value={puntosUbicacion.llegada.ubigeo}
+                          onSelect={(codigo, texto) => setPuntosUbicacion({
+                            ...puntosUbicacion,
+                            llegada: {...puntosUbicacion.llegada, ubigeo: codigo}
+                          })}
+                      />
+                    </div>
+                  </div>
 
-      <Card className="shadow-sm">
-        <CardHeader className="bg-blue-50 border-b">
-          <CardTitle className="text-lg font-semibold flex items-center gap-2">
-            <FileText className="h-5 w-5 text-blue-600" />
-            Productos
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-6">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Código</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Descripción</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cantidad</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Unidad</th>
-              </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-              {productos.map((producto, index) => (
-                <tr key={index}>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {producto.codigoitemPedido}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {producto.productoNombre}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {producto.cantPedido}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <div className="space-y-2">
+                    <Label>Dirección</Label>
+                    <Input
+                        value={puntosUbicacion.llegada.direccion}
+                        onChange={(e) => setPuntosUbicacion({
+                          ...puntosUbicacion,
+                          llegada: {...puntosUbicacion.llegada, direccion: e.target.value}
+                        })}
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="space-y-6">
+            <Card className="shadow-sm">
+              <CardHeader className="bg-blue-50 border-b">
+                <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                  <Truck className="h-5 w-5 text-blue-600" />
+                  Datos del Traslado
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-6 space-y-4">
+                <div className="space-y-2">
+                  <Label>Fecha de inicio de traslado</Label>
+                  <Input
+                      type="date"
+                      value={datosTraslado.fechaInicio}
+                      onChange={(e) => setDatosTraslado({...datosTraslado, fechaInicio: e.target.value})}
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Peso bruto total</Label>
+                    <Input
+                        type="number"
+                        value={datosTraslado.pesoBruto}
+                        onChange={(e) => setDatosTraslado({...datosTraslado, pesoBruto: e.target.value})}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Unidad de medida</Label>
                     <Select
-                      value={producto.productoUnidad}
-                      onValueChange={(value) => {
-                        const newProductos = [...productos];
-                        newProductos[index].productoUnidad = value;
-                        setProductos(newProductos);
-                      }}
+                        value={datosTraslado.pesoUnidad}
+                        onValueChange={(value) => setDatosTraslado({...datosTraslado, pesoUnidad: value})}
                     >
-                      <SelectTrigger className="w-32">
+                      <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="KGM">KGM - Kilogramo</SelectItem>
                       </SelectContent>
                     </Select>
-                  </td>
-                </tr>
-              ))}
-              </tbody>
-            </table>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Número de bultos</Label>
+                  <Input
+                      type="number"
+                      value={datosTraslado.numeroBultos}
+                      onChange={(e) => setDatosTraslado({...datosTraslado, numeroBultos: e.target.value})}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="shadow-sm">
+              <CardHeader className="bg-blue-50 border-b">
+                <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                  <Truck className="h-5 w-5 text-blue-600" />
+                  Datos del Transportista
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-6 space-y-4">
+                <div className="space-y-2">
+                  <Label className="font-semibold">Buscar Empresa de Transporte</Label>
+                  <TransportistaSearchInput onSelect={handleTransportistaSelect} />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Tipo de documento</Label>
+                    <Select
+                        disabled
+                        value={datosTransportista.tipoDocumento}
+                        onValueChange={(value) => setDatosTransportista({...datosTransportista, tipoDocumento: value})}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="6">RUC</SelectItem>
+                        <SelectItem value="1">DNI</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Número de documento</Label>
+                    <div className="flex gap-2">
+                      <Input
+                          disabled
+                          value={datosTransportista.numeroDocumento}
+                          onChange={(e) => setDatosTransportista({...datosTransportista, numeroDocumento: e.target.value})}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Razón social / Nombre</Label>
+                  <Input
+                      disabled
+                      value={datosTransportista.denominacion}
+                      onChange={(e) => setDatosTransportista({...datosTransportista, denominacion: e.target.value})}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Registro MTC</Label>
+                  <Input
+                      disabled
+                      value={datosTransportista.registroMtc}
+                      onChange={(e) => setDatosTransportista({...datosTransportista, registroMtc: e.target.value})}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="shadow-sm">
+              <CardHeader className="bg-blue-50 border-b">
+                <CardTitle className="text-lg font-semibold flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Truck className="h-5 w-5 text-blue-600" />
+                    Vehículos
+                  </div>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-6 space-y-4">
+                <div className="space-y-2">
+                  <Label>Vehículo principal (Placa)</Label>
+                  <Input
+                      value={vehiculos[0].placa}
+                      onChange={(e) => handlePlacaChange(e, 0)}
+                      placeholder="ABC123"
+                      maxLength={6}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="shadow-sm">
+              <CardHeader className="bg-blue-50 border-b">
+                <CardTitle className="text-lg font-semibold flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <UserPlus className="h-5 w-5 text-blue-600" />
+                    Conductores
+                  </div>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-6 space-y-4">
+                {conductores.map((conductor, index) => (
+                    <div key={index} className="space-y-4 border-b pb-4 last:border-b-0 last:pb-0">
+                      {index > 0 && (
+                          <div className="flex justify-between items-center">
+                            <h4 className="font-medium">Conductor {index + 1}</h4>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => eliminarConductor(index)}
+                            >
+                              <Trash2 className="h-4 w-4 text-red-500" />
+                            </Button>
+                          </div>
+                      )}
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label>Tipo de documento</Label>
+                          <Select
+                              value={conductor.tipoDocumento}
+                              onValueChange={(value) => {
+                                const newConductores = [...conductores];
+                                newConductores[index].tipoDocumento = value;
+                                setConductores(newConductores);
+                              }}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="1">DNI</SelectItem>
+                              <SelectItem value="4">Carné de extranjería</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Número de documento</Label>
+                          <Input
+                              value={conductor.numeroDocumento}
+                              onChange={(e) => {
+                                const newConductores = [...conductores];
+                                newConductores[index].numeroDocumento = e.target.value;
+                                setConductores(newConductores);
+                              }}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label>Nombres</Label>
+                          <Input
+                              value={conductor.nombre}
+                              onChange={(e) => {
+                                const newConductores = [...conductores];
+                                newConductores[index].nombre = e.target.value;
+                                setConductores(newConductores);
+                              }}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Apellidos</Label>
+                          <Input
+                              value={conductor.apellidos}
+                              onChange={(e) => {
+                                const newConductores = [...conductores];
+                                newConductores[index].apellidos = e.target.value;
+                                setConductores(newConductores);
+                              }}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Número de licencia</Label>
+                        <Input
+                            value={conductores[0].licencia}
+                            onChange={(e) => handleLicenciaChange(e, 0)}
+                            placeholder="Q12345678 o 123456789"
+                            maxLength={9}
+                        />
+                        <p className="text-xs text-muted-foreground">Formato: Letra+8 dígitos (Q12345678) o 9 dígitos.</p>
+                      </div>
+                    </div>
+                ))}
+
+              </CardContent>
+            </Card>
           </div>
-        </CardContent>
-      </Card>
+        </div>
 
-      <Card className="shadow-sm">
-        <CardHeader className="bg-blue-50 border-b">
-          <CardTitle className="text-lg font-semibold flex items-center gap-2">
-            <FileText className="h-5 w-5 text-blue-600" />
-            Observaciones <span className='text-red-500'>*</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-6">
-          <Textarea
-            value={datosGuia.observaciones}
-            onChange={(e) => setDatosGuia({...datosGuia, observaciones: e.target.value})}
-            placeholder="Ingrese observaciones adicionales..."
-            rows={3}
-          />
-        </CardContent>
-      </Card>
+        <Card className="shadow-sm">
+          <CardHeader className="bg-blue-50 border-b">
+            <CardTitle className="text-lg font-semibold flex items-center gap-2">
+              <FileText className="h-5 w-5 text-blue-600" />
+              Productos
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6">
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Código</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Descripción</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cantidad</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Unidad</th>
+                </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                {productos.map((producto, index) => (
+                    <tr key={index}>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {producto.codigoitemPedido}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {producto.productoNombre}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {producto.cantPedido}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        <Select
+                            value={producto.productoUnidad}
+                            onValueChange={(value) => {
+                              const newProductos = [...productos];
+                              newProductos[index].productoUnidad = value;
+                              setProductos(newProductos);
+                            }}
+                        >
+                          <SelectTrigger className="w-32">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="KGM">KGM - Kilogramo</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </td>
+                    </tr>
+                ))}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
 
-      {error && (
-          <Alert variant="destructive" className="animate-in fade-in slide-in-from-top-2">
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Error de Validación</AlertTitle>
-            <AlertDescription>
-              {error}
-            </AlertDescription>
-          </Alert>
-      )}
+        <Card className="shadow-sm">
+          <CardHeader className="bg-blue-50 border-b">
+            <CardTitle className="text-lg font-semibold flex items-center gap-2">
+              <FileText className="h-5 w-5 text-blue-600" />
+              Observaciones <span className='text-red-500'>*</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6">
+            <Textarea
+                value={datosGuia.observaciones}
+                onChange={(e) => setDatosGuia({...datosGuia, observaciones: e.target.value})}
+                placeholder="Ingrese observaciones adicionales..."
+                rows={3}
+            />
+          </CardContent>
+        </Card>
 
-      <div className="flex justify-end gap-4 py-6">
-        <Button
-          onClick={emitirGuia}
-          disabled={loading}
-        >
-          {loading ? "Generando..." : "Emitir Guía de Remisión"}
-        </Button>
+        {error && (
+            <Alert variant="destructive" className="animate-in fade-in slide-in-from-top-2">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Error de Validación</AlertTitle>
+              <AlertDescription>
+                {error}
+              </AlertDescription>
+            </Alert>
+        )}
+
+        <div className="flex justify-end gap-4 py-6">
+          <Button
+              onClick={emitirGuia}
+              disabled={loading}
+          >
+            {loading ? "Generando..." : "Emitir Guía de Remisión"}
+          </Button>
+        </div>
       </div>
-    </div>
   );
 };

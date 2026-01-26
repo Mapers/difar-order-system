@@ -66,7 +66,7 @@ export function GenerarGuiasModal({
   const fetchPedidoDetalles = async () => {
     if (!selectedPedido) return
     try {
-      const resDet = await apiClient.get(`/pedidosDetalles/${selectedPedido.nroPedido || ''}/detalles?vendedor=${auth.user?.codigo}`)
+      const resDet = await apiClient.get(`/pedidosDetalles/${selectedPedido.nroPedido || ''}/detalles?${auth.user?.idRol === 1 ? `vendedor=${(auth.user?.codigo || null)}` : ''}`)
       const detallesData = resDet.data.data
       setDetalles(detallesData)
     } catch (err) {
