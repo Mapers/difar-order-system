@@ -2,7 +2,18 @@ import { useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Eye, MoreHorizontal, XCircle, Loader2, FileJson, Code, AlertCircle, Info, Truck } from "lucide-react"
+import {
+    Eye,
+    MoreHorizontal,
+    XCircle,
+    Loader2,
+    FileJson,
+    Code,
+    AlertCircle,
+    Info,
+    Truck,
+    MessageCircle, Mail, Activity
+} from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
 import { format, parseISO } from "date-fns"
@@ -16,9 +27,15 @@ interface ComprobantesTableProps {
     tiposComprobante: Sequential[]
     onViewPdf: (url: string) => void
     onCancel: (comprobante: Comprobante) => void
+    onSendEmail: (comprobante: Comprobante) => void
+    onSendWhatsApp: (comprobante: Comprobante) => void
+    onCheckStatus: (comprobante: Comprobante) => void
 }
 
-export function ComprobantesTable({ comprobantes, loading, tiposComprobante, onViewPdf, onCancel }: ComprobantesTableProps) {
+export function ComprobantesTable({
+                                      comprobantes, loading, tiposComprobante, onViewPdf, onCancel,
+                                      onSendEmail, onSendWhatsApp, onCheckStatus
+}: ComprobantesTableProps) {
     const [showJsonModal, setShowJsonModal] = useState(false)
     const [jsonContent, setJsonContent] = useState("")
     const [jsonTitle, setJsonTitle] = useState("")
@@ -143,6 +160,21 @@ export function ComprobantesTable({ comprobantes, loading, tiposComprobante, onV
                                                             <FileJson className="mr-2 h-4 w-4 text-gray-500" /> JSON Respuesta
                                                         </DropdownMenuItem>
 
+                                                        <DropdownMenuSeparator />
+
+                                                        <DropdownMenuItem onClick={() => onSendEmail(comprobante)}>
+                                                            <Mail className="mr-2 h-4 w-4 text-blue-500" /> Enviar por Correo
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem onClick={() => onSendWhatsApp(comprobante)}>
+                                                            <MessageCircle className="mr-2 h-4 w-4 text-green-500" /> Enviar por WhatsApp
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem onClick={() => onCheckStatus(comprobante)}>
+                                                            <Activity className="mr-2 h-4 w-4 text-orange-500" /> Ver Estado SUNAT
+                                                        </DropdownMenuItem>
+
+                                                        <DropdownMenuSeparator />
+
+
                                                         {!comprobante.anulado && (
                                                             <>
                                                                 <DropdownMenuSeparator />
@@ -208,7 +240,7 @@ export function ComprobantesTable({ comprobantes, loading, tiposComprobante, onV
                                                 <Button variant="outline" size="sm" className="text-xs bg-transparent"><MoreHorizontal className="h-3 w-3 mr-1" /> Opciones</Button>
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent align="end" className="w-56">
-                                                {comprobante.anulado && comprobante.motivo_anulado && (
+                                                {(comprobante.anulado && comprobante.motivo_anulado) && (
                                                     <DropdownMenuItem onClick={() => handleViewReason(comprobante.motivo_anulado!)}>
                                                         <Info className="mr-2 h-4 w-4 text-red-500" /> Ver Motivo Anulación
                                                     </DropdownMenuItem>
@@ -219,6 +251,21 @@ export function ComprobantesTable({ comprobantes, loading, tiposComprobante, onV
                                                 <DropdownMenuItem onClick={() => handleViewJson('JSON Respuesta (Response)', comprobante.raw_response)}>
                                                     <FileJson className="mr-2 h-4 w-4 text-gray-500" /> JSON Respuesta
                                                 </DropdownMenuItem>
+
+                                                <DropdownMenuSeparator />
+
+                                                <DropdownMenuItem onClick={() => onSendEmail(comprobante)}>
+                                                    <Mail className="mr-2 h-4 w-4 text-blue-500" /> Enviar por Correo
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem onClick={() => onSendWhatsApp(comprobante)}>
+                                                    <MessageCircle className="mr-2 h-4 w-4 text-green-500" /> Enviar por WhatsApp
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem onClick={() => onCheckStatus(comprobante)}>
+                                                    <Activity className="mr-2 h-4 w-4 text-orange-500" /> Ver Estado SUNAT
+                                                </DropdownMenuItem>
+
+                                                <DropdownMenuSeparator />
+
                                                 {!comprobante.anulado && (
                                                     <>
                                                         <DropdownMenuSeparator />

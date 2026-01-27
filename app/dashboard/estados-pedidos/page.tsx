@@ -6,19 +6,14 @@ import { Input } from "@/components/ui/input"
 import {
   Search,
   Eye,
-  Package,
-  Home,
-  XCircle,
-  Truck,
-  MapPin, CheckCircle, Clock, Edit, FileText, MoreHorizontal, Download, Printer, Receipt, OctagonAlert
+  Clock, Edit, FileText, MoreHorizontal, Download, Printer, Receipt, OctagonAlert, Layers
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {useEffect, useRef, useState} from "react"
 import { Skeleton } from "@/components/ui/skeleton"
 import apiClient from "@/app/api/client"
 import {format, parseISO} from "date-fns";
-import {fetchGetConditions, fetchGetStatus, fetchUpdateStatus, fetchUpdateStatusConfirm} from "@/app/api/takeOrders";
+import {fetchGetStatus, fetchUpdateStatus, fetchUpdateStatusConfirm} from "@/app/api/takeOrders";
 import {
   Dialog,
   DialogContent,
@@ -33,8 +28,8 @@ import Link from "next/link";
 import {generateOrderPdf} from "@/lib/pdf";
 import {TimelineModal} from "@/app/dashboard/estados-pedidos/timeline-modal";
 import {ORDER_STATES} from "@/app/dashboard/mis-pedidos/page";
-import {Alert} from "@/components/ui/alert";
 
+// ... (Interfaces mantenidas igual)
 export interface Pedido {
   idPedidocab: number
   nroPedido: string
@@ -86,15 +81,17 @@ export default function OrderStatusManagementPage() {
   const [detalle, setDetalle] = useState<PedidoDet[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
+
+  // CAMBIO 1: Estado inicial en 1 (Pendiente)
   const [filters, setFilters] = useState({
-    estado: -1,
+    estado: 1,
   })
+
   const auth = useAuth()
   const [currentPage, setCurrentPage] = useState(1)
-  const [totalPages, setTotalPages] = useState(1)
   const [states, setStates] = useState<Status[]>([])
   const [isDocumentsModalOpen, setIsDocumentsModalOpen] = useState(false)
-  const [selectedOrder, setSelectedOrder] = useState<Pedido>(null)
+  const [selectedOrder, setSelectedOrder] = useState<Pedido | null>(null)
   const [isChangeStateModalOpen, setIsChangeStateModalOpen] = useState(false)
   const [stateChangeNotes, setStateChangeNotes] = useState("")
   const [newState, setNewState] = useState<number>(1)
@@ -112,11 +109,9 @@ export default function OrderStatusManagementPage() {
       }
 
       const response = await apiClient.get(url)
-      const { data: { data, pagination } } = response.data
+      const { data: { data } } = response.data
 
       setOrders(data)
-      // setTotalPages(pagination.totalPages)
-      // setTotalItems(pagination.totalItems)
     } catch (error) {
       console.error("Error fetching orders:", error)
     } finally {
@@ -130,6 +125,7 @@ export default function OrderStatusManagementPage() {
       const detallesData = resDet.data.data
       setDetalle(detallesData)
     } catch (err) {
+      console.error(err)
     }
   }
 
@@ -147,13 +143,17 @@ export default function OrderStatusManagementPage() {
     fetchEstados()
   }, [currentPage, searchQuery, filters])
 
-  const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target
-    setFilters(prev => ({ ...prev, [name]: value }))
+  // Función para manejar el clic en las tarjetas de estado
+  const handleCardClick = (stateId: number) => {
+    setFilters(prev => ({ ...prev, estado: stateId }))
     setCurrentPage(1)
   }
 
   const getStateCount = (stateId: number) => {
+    // Nota: Esto cuenta sobre los pedidos cargados actualmente.
+    // Si la API filtra, esto solo mostrará el conteo correcto para el estado seleccionado.
+    // Para ver conteos reales de todos los estados, necesitarías un endpoint de dashboard/estadísticas.
+    // Por ahora, funciona visualmente para seleccionar.
     return orders.filter(order => order.estadodePedido === stateId).length
   }
 
@@ -162,11 +162,6 @@ export default function OrderStatusManagementPage() {
     setSelectedOrder(order)
     setNewState(order.estadodePedido + 1)
     setIsChangeStateModalOpen(true)
-  }
-
-  const handleViewDocuments = (order: any) => {
-    setSelectedOrder(order)
-    setIsDocumentsModalOpen(true)
   }
 
   const getStateInfo = (stateId: number, porAutorizar: string, isAutorizado: string) => {
@@ -219,7 +214,7 @@ export default function OrderStatusManagementPage() {
     if (!pdfUrl) return
     const a = document.createElement("a")
     a.href = pdfUrl
-    a.download = `boleta_${selectedOrder.nroPedido}.pdf`
+    a.download = `boleta_${selectedOrder?.nroPedido}.pdf`
     a.click()
   }
 
@@ -244,430 +239,441 @@ export default function OrderStatusManagementPage() {
   }, [selectedOrder, detalle])
 
   return (
-    <div className="grid gap-6">
-      <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold tracking-tight text-gray-900">Gestión de Estados de Pedidos</h1>
-        <p className="text-gray-500">Controla y gestiona el flujo de estados de todos los pedidos del sistema</p>
-      </div>
+      <div className="grid gap-6">
+        <div className="flex flex-col gap-2">
+          <h1 className="text-3xl font-bold tracking-tight text-gray-900">Gestión de Estados de Pedidos</h1>
+          <p className="text-gray-500">Controla y gestiona el flujo de estados de todos los pedidos del sistema</p>
+        </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2 sm:gap-4">
-        {ORDER_STATES.filter(item => item.id !== -1 && item.id !== -2).map((state) => {
-          const Icon = state.icon
-          const count = getStateCount(state.id)
+        {/* CAMBIO 2: Tarjetas interactivas como filtros */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-9 gap-2 sm:gap-4">
+          {/* Opción para VER TODOS (opcional, pero recomendada si quieres resetear filtro) */}
+          <Card
+              onClick={() => handleCardClick(-1)}
+              className={`cursor-pointer transition-all duration-200 border-2 ${filters.estado === -1 ? 'border-gray-800 ring-2 ring-gray-400 ring-offset-2 scale-105' : 'border-transparent hover:border-gray-300 hover:scale-105 opacity-80 hover:opacity-100'}`}
+          >
+            <CardContent className="p-2 sm:p-4 text-center">
+              <div className="inline-flex items-center justify-center w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-gray-800 text-white mb-1 sm:mb-2">
+                <Layers className="h-3 w-3 sm:h-4 sm:w-4"/>
+              </div>
+              {/* El conteo aquí no es preciso sin un endpoint de dashboard, se puede ocultar o mostrar solo texto */}
+              <div className="text-xs font-bold text-gray-600 mt-1">TODOS</div>
+            </CardContent>
+          </Card>
 
-          return (
-            <Card key={state.id} className={`${state.borderColor} border-2`}>
-              <CardContent className="p-2 sm:p-4 text-center">
-                <div
-                  className={`inline-flex items-center justify-center w-6 h-6 sm:w-8 sm:h-8 rounded-full ${state.color} mb-1 sm:mb-2`}
+          {ORDER_STATES.filter(item => item.id !== -1 && item.id !== -2).map((state) => {
+            const Icon = state.icon
+            // const count = getStateCount(state.id) // Opcional: mostrar conteo si la API lo permite globalmente
+            const isSelected = filters.estado === state.id
+
+            return (
+                <Card
+                    key={state.id}
+                    onClick={() => handleCardClick(state.id)}
+                    className={`${state.borderColor} border-2 cursor-pointer transition-all duration-200 ${isSelected ? 'ring-2 ring-offset-2 ring-blue-500 shadow-md scale-105 opacity-100' : 'hover:scale-105 opacity-70 hover:opacity-100'}`}
                 >
-                  <Icon className="h-3 w-3 sm:h-4 sm:w-4"/>
-                </div>
-                <div className="text-lg sm:text-2xl font-bold text-gray-900">{count}</div>
-                <div className="text-xs text-gray-600 truncate">{state.name}</div>
-              </CardContent>
-            </Card>
-          )
-        })}
-      </div>
-
-      <Card className="shadow-md">
-        <CardHeader className="flex flex-col sm:flex-row justify-between gap-4 sm:items-center border-b bg-gray-50">
-          <CardTitle className="text-xl font-semibold text-teal-700">Filtros y Búsqueda</CardTitle>
-        </CardHeader>
-        <CardContent className="p-0">
-          <div className="p-4 grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="relative">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500"/>
-              <Input
-                type="search"
-                placeholder="Buscar por Id, RUC, cliente, vendedor..."
-                className="pl-8 bg-white"
-                value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value)
-                  setCurrentPage(1)
-                }}
-              />
-            </div>
-            <div className="w-full sm:w-40">
-              <Select
-                value={filters.estado}
-                onValueChange={(value) => {
-                  setFilters(prev => ({...prev, estado: value}))
-                  setCurrentPage(1)
-                }}
-              >
-                <SelectTrigger className="bg-white">
-                  <SelectValue placeholder="Estado"/>
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={-1}>Todos</SelectItem>
-                  {states.map(item => (
-                    <SelectItem key={item.id_estado_pedido} value={item.id_estado_pedido}>{item.nombre_estado}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-lg">Lista de Pedidos ({orders.length})</CardTitle>
-          <CardDescription>Gestiona el estado de cada pedido y visualiza su progreso</CardDescription>
-        </CardHeader>
-        <CardContent className="p-0">
-          <div className="hidden lg:block overflow-x-auto">
-            <table className="w-full border-collapse">
-              <thead>
-              <tr className="border-b bg-gray-50">
-                <th className="text-left p-4 font-medium text-sm">ID Pedido</th>
-                <th className="text-left p-4 font-medium text-sm">Cliente</th>
-                <th className="text-left p-4 font-medium text-sm">Fecha</th>
-                <th className="text-left p-4 font-medium text-sm">Total</th>
-                <th className="text-left p-4 font-medium text-sm">Estado Actual</th>
-                <th className="text-left p-4 font-medium text-sm">Vendedor</th>
-                <th className="text-left p-4 font-medium text-sm">Acciones</th>
-              </tr>
-              </thead>
-              <tbody>
-              {loading ? (
-                Array.from({length: 5}).map((_, index) => (
-                  <tr key={index} className="border-b">
-                    <td className="p-4"><Skeleton className="h-4 w-[80px]" /></td>
-                    <td className="p-4"><Skeleton className="h-4 w-[120px]" /></td>
-                    <td className="p-4"><Skeleton className="h-4 w-[80px]" /></td>
-                    <td className="p-4"><Skeleton className="h-4 w-[80px]" /></td>
-                    <td className="p-4"><Skeleton className="h-4 w-[100px]" /></td>
-                    <td className="p-4"><Skeleton className="h-4 w-[100px]" /></td>
-                    <td className="p-4">
-                      <div className="flex gap-2">
-                        <Skeleton className="h-8 w-[80px]" />
-                        <Skeleton className="h-8 w-[80px]" />
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              ) : orders.length > 0 ? (
-                orders.map((order, index) => {
-                  const stateInfo = getStateInfo(order.estadodePedido, order.por_autorizar, order.is_autorizado)
-                  const StateIcon = stateInfo?.icon || Clock
-
-                  return (
-                    <tr key={index} className="border-b hover:bg-gray-50">
-                      <td className="p-4 font-medium text-sm">{order.nroPedido}</td>
-                      <td className="p-4">
-                        <div>
-                          <div className="font-medium text-sm">{order.nombreCliente}</div>
-                          <div className="text-xs text-gray-500">{order.codigoCliente || 'N/A'}</div>
-                        </div>
-                      </td>
-                      <td className="p-4 text-sm">{format(parseISO(order.fechaPedido), "dd/MM/yyyy")}</td>
-                      <td className="p-4 font-medium text-sm">
-                        {order.monedaPedido === "PEN" ? "S/ " : "$ "}
-                        {Number(order.totalPedido).toFixed(2)}
-                      </td>
-                      <td className="p-4">
-                        <Badge className={`${stateInfo?.color} flex items-center gap-1 text-xs`}>
-                          <StateIcon className="h-3 w-3" />
-                          {stateInfo?.name || 'Desconocido'}
-                        </Badge>
-                      </td>
-                      <td className="p-4 text-sm">{order.nombreVendedor || 'N/A'}</td>
-                      <td className="p-4">
-                        <div className="flex gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleStateChange(order)}
-                            disabled={order.estadodePedido >= 8 || (order.por_autorizar === 'S' && (order.is_autorizado === 'N' || order.is_autorizado === '')) }
-                            className="text-xs"
-                          >
-                            <Edit className="h-3 w-3 mr-1" />
-                            Cambiar
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="text-blue-600 hover:text-blue-700 bg-transparent text-xs"
-                          >
-                            <Link href={`/dashboard/estados-pedidos/${order.nroPedido}`} className='flex'>
-                              <Eye className="h-3 w-3 mr-1" />
-                              Ver detalle
-                            </Link>
-                          </Button>
-                          <TimelineModal pedido={order} />
-                        </div>
-                      </td>
-                    </tr>
-                  )
-                })
-              ) : (
-                <tr>
-                  <td colSpan={7} className="text-center py-8 text-gray-500">
-                    No se encontraron pedidos
-                  </td>
-                </tr>
-              )}
-              </tbody>
-            </table>
-          </div>
-
-          <div className="lg:hidden space-y-3 p-4">
-            {loading ? (
-              Array.from({length: 3}).map((_, index) => (
-                <Card key={index} className="border border-gray-200">
-                  <CardContent className="p-4">
-                    <div className="flex justify-between items-start mb-3">
-                      <div>
-                        <Skeleton className="h-5 w-24 mb-1" />
-                        <Skeleton className="h-4 w-16" />
-                      </div>
-                      <Skeleton className="h-5 w-20" />
+                  <CardContent className="p-2 sm:p-4 text-center">
+                    <div
+                        className={`inline-flex items-center justify-center w-6 h-6 sm:w-8 sm:h-8 rounded-full ${state.color} mb-1 sm:mb-2`}
+                    >
+                      <Icon className="h-3 w-3 sm:h-4 sm:w-4"/>
                     </div>
-
-                    <div className="space-y-2 mb-3">
-                      <Skeleton className="h-4 w-full" />
-                      <Skeleton className="h-4 w-3/4" />
-                      <Skeleton className="h-4 w-1/2" />
-                    </div>
-
-                    <div className="flex gap-2">
-                      <Skeleton className="h-8 w-full" />
-                      <Skeleton className="h-8 w-full" />
-                    </div>
+                    {/* <div className="text-lg sm:text-2xl font-bold text-gray-900">{count}</div> */}
+                    <div className={`text-xs font-bold truncate ${isSelected ? 'text-gray-900' : 'text-gray-500'}`}>{state.name}</div>
                   </CardContent>
                 </Card>
-              ))
-            ) : orders.length > 0 ? (
-              orders.map((order, index) => {
-                const stateInfo = getStateInfo(order.estadodePedido, order.por_autorizar, order.is_autorizado)
-                const StateIcon = stateInfo?.icon || Clock
+            )
+          })}
+        </div>
 
-                return (
-                  <Card key={index} className="border border-gray-200">
-                    <CardContent className="p-4">
-                      <div className="flex justify-between items-start mb-3">
-                        <div>
-                          <h3 className="font-bold text-blue-600 text-sm">{order.nroPedido}</h3>
-                          <p className="text-xs text-gray-500">
-                            {format(parseISO(order.fechaPedido), "dd/MM/yyyy")}
-                          </p>
-                        </div>
-                        {(order.por_autorizar === 'S' && order.is_autorizado === 'N')
-                            ? <Badge className={`bg-teal-100 text-teal-800 flex items-center gap-1 text-xs`}>
-                              <OctagonAlert className="h-3 w-3" />
-                              POR AUTORIZAR
-                            </Badge>
-                            : <Badge className={`${stateInfo?.color} flex items-center gap-1 text-xs`}>
-                              <StateIcon className="h-3 w-3" />
-                              {stateInfo?.name || 'Desconocido'}
-                            </Badge>
-                        }
-                      </div>
-
-                      <div className="space-y-2 mb-3">
-                        <div>
-                          <p className="font-medium text-sm truncate">{order.nombreCliente}</p>
-                          <p className="text-xs text-gray-500">{order.codigoCliente || 'N/A'}</p>
-                        </div>
-                        <div className="flex justify-between items-center">
-                          <span className="text-xs text-gray-500">Total:</span>
-                          <span className="font-bold text-sm">
-                            {order.monedaPedido === "PEN" ? "S/ " : "$ "}
-                            {Number(order.totalPedido).toFixed(2)}
-                          </span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                          <span className="text-xs text-gray-500">Vendedor:</span>
-                          <span className="text-xs">{order.nombreVendedor || 'N/A'}</span>
-                        </div>
-                      </div>
-
-                      <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleStateChange(order)}
-                          disabled={order.estadodePedido >= 8 || (order.por_autorizar === 'S' && order.is_autorizado === 'N')}
-                          className="flex-1 text-xs"
-                        >
-                          <Edit className="h-3 w-3 mr-1" />
-                          Cambiar Estado
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="text-blue-600 hover:text-blue-700 bg-transparent text-xs"
-                        >
-                          <Link href={`/dashboard/estados-pedidos/${order.nroPedido}`} className='flex'>
-                            <Eye className="h-3 w-3 mr-1" />
-                            Ver detalle
-                          </Link>
-                        </Button>
-                        <TimelineModal pedido={order} />
-                      </div>
-                    </CardContent>
-                  </Card>
-                )
-              })
-            ) : (
-              <div className="text-center py-8 text-gray-500">
-                No se encontraron pedidos
+        <Card className="shadow-md">
+          <CardHeader className="flex flex-col sm:flex-row justify-between gap-4 sm:items-center border-b bg-gray-50">
+            <CardTitle className="text-xl font-semibold text-teal-700">
+              {/* Título dinámico basado en filtro */}
+              {filters.estado === -1
+                  ? "Todos los Pedidos"
+                  : `Pedidos en estado: ${ORDER_STATES.find(s => s.id === filters.estado)?.name || 'Desconocido'}`
+              }
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="relative w-full">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500"/>
+                <Input
+                    type="search"
+                    placeholder="Buscar por Id, RUC, cliente, vendedor..."
+                    className="pl-8 bg-white w-full"
+                    value={searchQuery}
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value)
+                      setCurrentPage(1)
+                    }}
+                />
               </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
 
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base sm:text-lg">Leyenda: Estados y Documentos</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
-            {ORDER_STATES.filter(item => item.id !== -1 && item.id !== -2).map((state) => {
-              const Icon = state.icon
-              return (
-                <div key={state.id} className="flex items-start gap-2 p-2 rounded-lg bg-gray-50">
-                  <div
-                    className={`inline-flex items-center justify-center w-5 h-5 sm:w-6 sm:h-6 rounded-full ${state.color} flex-shrink-0`}
-                  >
-                    <Icon className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="font-medium text-xs sm:text-sm truncate">
-                      {state.id}. {state.name}
-                    </div>
-                    <div className="text-xs text-gray-600 line-clamp-2 hidden sm:block">{state.description}</div>
-                    <div className="text-xs font-medium text-blue-600 mt-1">📄 {state.documents}</div>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        </CardContent>
-      </Card>
+              {/* CAMBIO 3: Selector eliminado */}
 
-      <Dialog open={isDocumentsModalOpen} onOpenChange={setIsDocumentsModalOpen}>
-        <DialogContent className="sm:max-w-2xl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <FileText className="h-5 w-5" />
-              Documentos del Pedido {selectedOrder?.idPedidocab}
-            </DialogTitle>
-            <DialogDescription>
-              Cliente: {selectedOrder?.nombreCliente} - Estado: {getStateInfo(selectedOrder?.estadodePedido || 0, selectedOrder?.por_autorizar, selectedOrder?.is_autorizado)?.name}
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDocumentsModalOpen(false)}>
-              Cerrar
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            </div>
+          </CardContent>
+        </Card>
 
-      <Dialog open={isChangeStateModalOpen} onOpenChange={setIsChangeStateModalOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Cambiar Estado del Pedido</DialogTitle>
-            <DialogDescription>
-              Pedido: {selectedOrder?.nroPedido} - {selectedOrder?.nombreCliente}
-            </DialogDescription>
-          </DialogHeader>
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg">Lista de Pedidos ({orders.length})</CardTitle>
+            <CardDescription>Gestiona el estado de cada pedido y visualiza su progreso</CardDescription>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="hidden lg:block overflow-x-auto">
+              <table className="w-full border-collapse">
+                <thead>
+                <tr className="border-b bg-gray-50">
+                  <th className="text-left p-4 font-medium text-sm">ID Pedido</th>
+                  <th className="text-left p-4 font-medium text-sm">Cliente</th>
+                  <th className="text-left p-4 font-medium text-sm">Fecha</th>
+                  <th className="text-left p-4 font-medium text-sm">Total</th>
+                  <th className="text-left p-4 font-medium text-sm">Estado Actual</th>
+                  <th className="text-left p-4 font-medium text-sm">Vendedor</th>
+                  <th className="text-left p-4 font-medium text-sm">Acciones</th>
+                </tr>
+                </thead>
+                <tbody>
+                {loading ? (
+                    Array.from({length: 5}).map((_, index) => (
+                        <tr key={index} className="border-b">
+                          <td className="p-4"><Skeleton className="h-4 w-[80px]" /></td>
+                          <td className="p-4"><Skeleton className="h-4 w-[120px]" /></td>
+                          <td className="p-4"><Skeleton className="h-4 w-[80px]" /></td>
+                          <td className="p-4"><Skeleton className="h-4 w-[80px]" /></td>
+                          <td className="p-4"><Skeleton className="h-4 w-[100px]" /></td>
+                          <td className="p-4"><Skeleton className="h-4 w-[100px]" /></td>
+                          <td className="p-4">
+                            <div className="flex gap-2">
+                              <Skeleton className="h-8 w-[80px]" />
+                              <Skeleton className="h-8 w-[80px]" />
+                            </div>
+                          </td>
+                        </tr>
+                    ))
+                ) : orders.length > 0 ? (
+                    orders.map((order, index) => {
+                      const stateInfo = getStateInfo(order.estadodePedido, order.por_autorizar, order.is_autorizado)
+                      const StateIcon = stateInfo?.icon || Clock
 
-          <div className="space-y-4">
-            <div>
-              <Label>Estado Actual</Label>
-              <div className="mt-1">
-                <Badge className={getStateInfo(selectedOrder?.estadodePedido, selectedOrder?.por_autorizar, selectedOrder?.is_autorizado)?.color}>
-                  {getStateInfo(selectedOrder?.estadodePedido, selectedOrder?.por_autorizar, selectedOrder?.is_autorizado)?.name}
-                </Badge>
-              </div>
+                      return (
+                          <tr key={index} className="border-b hover:bg-gray-50">
+                            <td className="p-4 font-medium text-sm">{order.nroPedido}</td>
+                            <td className="p-4">
+                              <div>
+                                <div className="font-medium text-sm">{order.nombreCliente}</div>
+                                <div className="text-xs text-gray-500">{order.codigoCliente || 'N/A'}</div>
+                              </div>
+                            </td>
+                            <td className="p-4 text-sm">{format(parseISO(order.fechaPedido), "dd/MM/yyyy")}</td>
+                            <td className="p-4 font-medium text-sm">
+                              {order.monedaPedido === "PEN" ? "S/ " : "$ "}
+                              {Number(order.totalPedido).toFixed(2)}
+                            </td>
+                            <td className="p-4">
+                              <Badge className={`${stateInfo?.color} flex items-center gap-1 text-xs`}>
+                                <StateIcon className="h-3 w-3" />
+                                {stateInfo?.name || 'Desconocido'}
+                              </Badge>
+                            </td>
+                            <td className="p-4 text-sm">{order.nombreVendedor || 'N/A'}</td>
+                            <td className="p-4">
+                              <div className="flex gap-2">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleStateChange(order)}
+                                    disabled={order.estadodePedido >= 8 || (order.por_autorizar === 'S' && (order.is_autorizado === 'N' || order.is_autorizado === '')) }
+                                    className="text-xs"
+                                >
+                                  <Edit className="h-3 w-3 mr-1" />
+                                  Cambiar
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="text-blue-600 hover:text-blue-700 bg-transparent text-xs"
+                                >
+                                  <Link href={`/dashboard/estados-pedidos/${order.nroPedido}`} className='flex'>
+                                    <Eye className="h-3 w-3 mr-1" />
+                                    Ver detalle
+                                  </Link>
+                                </Button>
+                                <TimelineModal pedido={order} />
+                              </div>
+                            </td>
+                          </tr>
+                      )
+                    })
+                ) : (
+                    <tr>
+                      <td colSpan={7} className="text-center py-8 text-gray-500">
+                        No se encontraron pedidos en estado: <b>{ORDER_STATES.find(s => s.id === filters.estado)?.name || 'Seleccionado'}</b>
+                      </td>
+                    </tr>
+                )}
+                </tbody>
+              </table>
             </div>
 
-            <div>
-              <Label htmlFor="new-state">Nuevo Estado</Label>
-              <div className="mt-2 p-3 border rounded-md bg-gray-50">
-                <div className="flex items-center gap-2">
-                  <Badge className={getStateInfo((selectedOrder?.estadodePedido || 0) + 1, selectedOrder?.por_autorizar, selectedOrder?.is_autorizado)?.color}>
-                    {getStateInfo((selectedOrder?.estadodePedido || 0) + 1, selectedOrder?.por_autorizar, selectedOrder?.is_autorizado)?.name}
+            <div className="lg:hidden space-y-3 p-4">
+              {loading ? (
+                  Array.from({length: 3}).map((_, index) => (
+                      <Card key={index} className="border border-gray-200">
+                        <CardContent className="p-4">
+                          <div className="flex justify-between items-start mb-3">
+                            <div>
+                              <Skeleton className="h-5 w-24 mb-1" />
+                              <Skeleton className="h-4 w-16" />
+                            </div>
+                            <Skeleton className="h-5 w-20" />
+                          </div>
+
+                          <div className="space-y-2 mb-3">
+                            <Skeleton className="h-4 w-full" />
+                            <Skeleton className="h-4 w-3/4" />
+                            <Skeleton className="h-4 w-1/2" />
+                          </div>
+
+                          <div className="flex gap-2">
+                            <Skeleton className="h-8 w-full" />
+                            <Skeleton className="h-8 w-full" />
+                          </div>
+                        </CardContent>
+                      </Card>
+                  ))
+              ) : orders.length > 0 ? (
+                  orders.map((order, index) => {
+                    const stateInfo = getStateInfo(order.estadodePedido, order.por_autorizar, order.is_autorizado)
+                    const StateIcon = stateInfo?.icon || Clock
+
+                    return (
+                        <Card key={index} className="border border-gray-200">
+                          <CardContent className="p-4">
+                            <div className="flex justify-between items-start mb-3">
+                              <div>
+                                <h3 className="font-bold text-blue-600 text-sm">{order.nroPedido}</h3>
+                                <p className="text-xs text-gray-500">
+                                  {format(parseISO(order.fechaPedido), "dd/MM/yyyy")}
+                                </p>
+                              </div>
+                              {(order.por_autorizar === 'S' && order.is_autorizado === 'N')
+                                  ? <Badge className={`bg-teal-100 text-teal-800 flex items-center gap-1 text-xs`}>
+                                    <OctagonAlert className="h-3 w-3" />
+                                    POR AUTORIZAR
+                                  </Badge>
+                                  : <Badge className={`${stateInfo?.color} flex items-center gap-1 text-xs`}>
+                                    <StateIcon className="h-3 w-3" />
+                                    {stateInfo?.name || 'Desconocido'}
+                                  </Badge>
+                              }
+                            </div>
+
+                            <div className="space-y-2 mb-3">
+                              <div>
+                                <p className="font-medium text-sm truncate">{order.nombreCliente}</p>
+                                <p className="text-xs text-gray-500">{order.codigoCliente || 'N/A'}</p>
+                              </div>
+                              <div className="flex justify-between items-center">
+                                <span className="text-xs text-gray-500">Total:</span>
+                                <span className="font-bold text-sm">
+                            {order.monedaPedido === "PEN" ? "S/ " : "$ "}
+                                  {Number(order.totalPedido).toFixed(2)}
+                          </span>
+                              </div>
+                              <div className="flex justify-between items-center">
+                                <span className="text-xs text-gray-500">Vendedor:</span>
+                                <span className="text-xs">{order.nombreVendedor || 'N/A'}</span>
+                              </div>
+                            </div>
+
+                            <div className="flex gap-2">
+                              <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleStateChange(order)}
+                                  disabled={order.estadodePedido >= 8 || (order.por_autorizar === 'S' && order.is_autorizado === 'N')}
+                                  className="flex-1 text-xs"
+                              >
+                                <Edit className="h-3 w-3 mr-1" />
+                                Cambiar Estado
+                              </Button>
+                              <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="text-blue-600 hover:text-blue-700 bg-transparent text-xs"
+                              >
+                                <Link href={`/dashboard/estados-pedidos/${order.nroPedido}`} className='flex'>
+                                  <Eye className="h-3 w-3 mr-1" />
+                                  Ver detalle
+                                </Link>
+                              </Button>
+                              <TimelineModal pedido={order} />
+                            </div>
+                          </CardContent>
+                        </Card>
+                    )
+                  })
+              ) : (
+                  <div className="text-center py-8 text-gray-500">
+                    No se encontraron pedidos
+                  </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base sm:text-lg">Leyenda: Estados y Documentos</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
+              {ORDER_STATES.filter(item => item.id !== -1 && item.id !== -2).map((state) => {
+                const Icon = state.icon
+                return (
+                    <div key={state.id} className="flex items-start gap-2 p-2 rounded-lg bg-gray-50">
+                      <div
+                          className={`inline-flex items-center justify-center w-5 h-5 sm:w-6 sm:h-6 rounded-full ${state.color} flex-shrink-0`}
+                      >
+                        <Icon className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="font-medium text-xs sm:text-sm truncate">
+                          {state.id}. {state.name}
+                        </div>
+                        <div className="text-xs text-gray-600 line-clamp-2 hidden sm:block">{state.description}</div>
+                        <div className="text-xs font-medium text-blue-600 mt-1">📄 {state.documents}</div>
+                      </div>
+                    </div>
+                )
+              })}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Dialog open={isDocumentsModalOpen} onOpenChange={setIsDocumentsModalOpen}>
+          {/* ... (Contenido del modal de documentos igual) */}
+          <DialogContent className="sm:max-w-2xl">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                Documentos del Pedido {selectedOrder?.idPedidocab}
+              </DialogTitle>
+              <DialogDescription>
+                Cliente: {selectedOrder?.nombreCliente} - Estado: {getStateInfo(selectedOrder?.estadodePedido || 0, selectedOrder?.por_autorizar, selectedOrder?.is_autorizado)?.name}
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsDocumentsModalOpen(false)}>
+                Cerrar
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={isChangeStateModalOpen} onOpenChange={setIsChangeStateModalOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Cambiar Estado del Pedido</DialogTitle>
+              <DialogDescription>
+                Pedido: {selectedOrder?.nroPedido} - {selectedOrder?.nombreCliente}
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4">
+              <div>
+                <Label>Estado Actual</Label>
+                <div className="mt-1">
+                  <Badge className={getStateInfo(selectedOrder?.estadodePedido || 0, selectedOrder?.por_autorizar, selectedOrder?.is_autorizado)?.color}>
+                    {getStateInfo(selectedOrder?.estadodePedido || 0, selectedOrder?.por_autorizar, selectedOrder?.is_autorizado)?.name}
                   </Badge>
-                  <span className="text-sm text-gray-600">
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="new-state">Nuevo Estado</Label>
+                <div className="mt-2 p-3 border rounded-md bg-gray-50">
+                  <div className="flex items-center gap-2">
+                    <Badge className={getStateInfo((selectedOrder?.estadodePedido || 0) + 1, selectedOrder?.por_autorizar, selectedOrder?.is_autorizado)?.color}>
+                      {getStateInfo((selectedOrder?.estadodePedido || 0) + 1, selectedOrder?.por_autorizar, selectedOrder?.is_autorizado)?.name}
+                    </Badge>
+                    <span className="text-sm text-gray-600">
                     (Siguiente estado)
                   </span>
-                </div>
-              </div>
-              <p className="mt-2 text-sm text-gray-500">
-                {getStateInfo((selectedOrder?.estadodePedido || 0) + 1, selectedOrder?.por_autorizar, selectedOrder?.is_autorizado)?.description}
-              </p>
-            </div>
-
-            {selectedOrder?.continue === 0 && (
-                <div className="p-3 bg-amber-50 border border-amber-200 rounded-md flex gap-3 items-start">
-                  <OctagonAlert className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
-                  <div className="text-sm text-amber-800">
-                    <span className="font-semibold block mb-1">Acción requerida</span>
-                    El pedido no tiene su comprobante generado o enlazado. Por favor, genere el comprobante y <b>refresque la página</b> para habilitar el cambio de estado.
                   </div>
                 </div>
-            )}
-          </div>
+                <p className="mt-2 text-sm text-gray-500">
+                  {getStateInfo((selectedOrder?.estadodePedido || 0) + 1, selectedOrder?.por_autorizar, selectedOrder?.is_autorizado)?.description}
+                </p>
+              </div>
 
-          {selectedOrder && (
-              <DialogFooter>
-                <Button
-                    variant="outline"
-                    onClick={() => setIsChangeStateModalOpen(false)}
-                    disabled={loading}
-                >
-                  Cancelar
-                </Button>
-                {(detalle.length > 0 && selectedOrder.estadodePedido ===  1) && (
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button
-                            size="sm"
-                            variant="outline"
-                            className="text-red-600 hover:text-red-700 bg-transparent text-xs"
-                        >
-                          <FileText className="h-3 w-3 mr-1" />
-                          Ver PDF
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className="min-w-[90vw] h-[95vh] p-0 overflow-hidden">
-                        <DialogHeader className="px-4 py-3 border-b w-[100%] absolute bg-white">
-                          <div className="flex items-center justify-between">
-                            <DialogTitle>PDF — {String(selectedOrder.nroPedido).padStart(10, '0')}</DialogTitle>
-                            <Button size="sm" onClick={handleDownload}>
-                              <Download className="w-4 h-4 mr-2" />
-                              Descargar
-                            </Button>
+              {selectedOrder?.continue === 0 && (
+                  <div className="p-3 bg-amber-50 border border-amber-200 rounded-md flex gap-3 items-start">
+                    <OctagonAlert className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                    <div className="text-sm text-amber-800">
+                      <span className="font-semibold block mb-1">Acción requerida</span>
+                      El pedido no tiene su comprobante generado o enlazado. Por favor, genere el comprobante y <b>refresque la página</b> para habilitar el cambio de estado.
+                    </div>
+                  </div>
+              )}
+            </div>
+
+            {selectedOrder && (
+                <DialogFooter>
+                  <Button
+                      variant="outline"
+                      onClick={() => setIsChangeStateModalOpen(false)}
+                      disabled={loading}
+                  >
+                    Cancelar
+                  </Button>
+                  {(detalle.length > 0 && selectedOrder.estadodePedido ===  1) && (
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button
+                              size="sm"
+                              variant="outline"
+                              className="text-red-600 hover:text-red-700 bg-transparent text-xs"
+                          >
+                            <FileText className="h-3 w-3 mr-1" />
+                            Ver PDF
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="min-w-[90vw] h-[95vh] p-0 overflow-hidden">
+                          <DialogHeader className="px-4 py-3 border-b w-[100%] absolute bg-white">
+                            <div className="flex items-center justify-between">
+                              <DialogTitle>PDF — {String(selectedOrder.nroPedido).padStart(10, '0')}</DialogTitle>
+                              <Button size="sm" onClick={handleDownload}>
+                                <Download className="w-4 h-4 mr-2" />
+                                Descargar
+                              </Button>
+                            </div>
+                          </DialogHeader>
+                          <div className="w-full h-full mt-16">
+                            {pdfUrl ? (
+                                <iframe title="Recibo PDF" src={pdfUrl} className="w-full h-full" />
+                            ) : (
+                                <div className="p-6">Generando PDF…</div>
+                            )}
                           </div>
-                        </DialogHeader>
-                        <div className="w-full h-full mt-16">
-                          {pdfUrl ? (
-                              <iframe title="Recibo PDF" src={pdfUrl} className="w-full h-full" />
-                          ) : (
-                              <div className="p-6">Generando PDF…</div>
-                          )}
-                        </div>
-                      </DialogContent>
-                    </Dialog>
-                )}
-                <Button
-                    onClick={confirmStateChange}
-                    disabled={loading || selectedOrder.continue === 0}
-                >
-                  {loading ? 'Procesando...' : 'Confirmar Cambio'}
-                </Button>
-              </DialogFooter>
-          )}
-        </DialogContent>
-      </Dialog>
-    </div>
+                        </DialogContent>
+                      </Dialog>
+                  )}
+                  <Button
+                      onClick={confirmStateChange}
+                      disabled={loading || selectedOrder.continue === 0}
+                  >
+                    {loading ? 'Procesando...' : 'Confirmar Cambio'}
+                  </Button>
+                </DialogFooter>
+            )}
+          </DialogContent>
+        </Dialog>
+      </div>
   )
 }

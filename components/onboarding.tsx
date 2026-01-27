@@ -11,7 +11,7 @@ export function Onboarding() {
 
   const steps = [
     {
-      title: "Bienvenido a DIFAR CHIMBOTE",
+      title: "Bienvenido a DIFAR",
       description: "Sistema de gestión de pedidos diseñado para optimizar tu trabajo diario.",
       icon: ShoppingCart,
       color: "bg-blue-500",

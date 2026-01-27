@@ -81,7 +81,7 @@ export default function Dashboard() {
     <div className="grid gap-6">
       <div className="flex flex-col gap-2">
         <h1 className="text-3xl font-bold tracking-tight text-gray-900">Panel de Control</h1>
-        <p className="text-gray-500">Bienvenido al sistema de gestión de pedidos de DIFAR CHIMBOTE.</p>
+        <p className="text-gray-500">Bienvenido al sistema de gestión de pedidos de DIFAR.</p>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">

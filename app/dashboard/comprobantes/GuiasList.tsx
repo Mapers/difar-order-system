@@ -3,19 +3,32 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Eye, MoreHorizontal, AlertTriangle, Loader2, FileJson, Code } from "lucide-react"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { format, parseISO } from "date-fns"
 import { GuiaRemision } from "@/interface/order/order-interface";
+import { Mail, MessageCircle, Activity } from "lucide-react"
 
 interface GuiasListProps {
     guias: GuiaRemision[]
     loading: boolean
     onViewPdf: (base64: string) => void
     onErrorView: (guia: GuiaRemision) => void
+    onSendEmail: (guia: GuiaRemision) => void
+    onSendWhatsApp: (guia: GuiaRemision) => void
+    onCheckStatus: (guia: GuiaRemision) => void
 }
 
-export function GuiasList({ guias, loading, onViewPdf, onErrorView }: GuiasListProps) {
+export function GuiasList({
+                              guias, loading, onViewPdf, onErrorView,
+                              onSendEmail, onSendWhatsApp, onCheckStatus
+}: GuiasListProps) {
     const [showJsonModal, setShowJsonModal] = useState(false)
     const [jsonContent, setJsonContent] = useState("")
     const [jsonTitle, setJsonTitle] = useState("")
@@ -93,6 +106,18 @@ export function GuiasList({ guias, loading, onViewPdf, onErrorView }: GuiasListP
                                                         <DropdownMenuItem onClick={() => handleViewJson('JSON Respuesta (Response)', guia.raw_response)}>
                                                             <FileJson className="mr-2 h-4 w-4 text-gray-500" /> JSON Respuesta
                                                         </DropdownMenuItem>
+
+                                                        <DropdownMenuSeparator />
+
+                                                        <DropdownMenuItem onClick={() => onSendEmail(guia)}>
+                                                            <Mail className="mr-2 h-4 w-4 text-blue-500" /> Enviar por Correo
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem onClick={() => onSendWhatsApp(guia)}>
+                                                            <MessageCircle className="mr-2 h-4 w-4 text-green-500" /> Enviar por WhatsApp
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem onClick={() => onCheckStatus(guia)}>
+                                                            <Activity className="mr-2 h-4 w-4 text-orange-500" /> Ver Estado SUNAT
+                                                        </DropdownMenuItem>
                                                     </DropdownMenuContent>
                                                 </DropdownMenu>
                                             </div>
@@ -155,6 +180,19 @@ export function GuiasList({ guias, loading, onViewPdf, onErrorView }: GuiasListP
                                                 <DropdownMenuItem onClick={() => handleViewJson('JSON Respuesta (Response)', guia.raw_response)}>
                                                     <FileJson className="mr-2 h-4 w-4 text-gray-500" /> JSON Respuesta
                                                 </DropdownMenuItem>
+
+                                                <DropdownMenuSeparator />
+
+                                                <DropdownMenuItem onClick={() => onSendEmail(guia)}>
+                                                    <Mail className="mr-2 h-4 w-4 text-blue-500" /> Enviar por Correo
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem onClick={() => onSendWhatsApp(guia)}>
+                                                    <MessageCircle className="mr-2 h-4 w-4 text-green-500" /> Enviar por WhatsApp
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem onClick={() => onCheckStatus(guia)}>
+                                                    <Activity className="mr-2 h-4 w-4 text-orange-500" /> Ver Estado SUNAT
+                                                </DropdownMenuItem>
+
                                             </DropdownMenuContent>
                                         </DropdownMenu>
                                     </div>

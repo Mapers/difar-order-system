@@ -48,13 +48,13 @@ export function SplashScreen() {
         <div className="mb-8 flex h-36 w-36 items-center justify-center rounded-full bg-white p-5 shadow-lg">
           <Image
             src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-4PCl6Z3X7LC9rMlLj2kiXPe5RImE88.png"
-            alt="DIFAR CHIMBOTE"
+            alt="DIFAR"
             width={120}
             height={60}
             className="object-contain"
           />
         </div>
-        <h1 className="mb-2 text-3xl font-bold tracking-wider text-white">DIFAR CHIMBOTE</h1>
+        <h1 className="mb-2 text-3xl font-bold tracking-wider text-white">DIFAR</h1>
         <p className="text-white/70">Sistema de Gestión de Pedidos</p>
 
         <div className="mt-12">

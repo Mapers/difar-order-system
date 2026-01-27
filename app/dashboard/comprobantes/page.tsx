@@ -30,6 +30,8 @@ import {PdfViewerModal} from "@/app/dashboard/comprobantes/modals/PdfViewerModal
 import {ErrorModal} from "@/app/dashboard/comprobantes/modals/ErrorModal";
 import {GenerarGuiasModal} from "@/app/dashboard/comprobantes/modals/generar-guias-modal";
 import {Sequential} from "@/app/dashboard/configuraciones/page";
+import {EmailModal, WhatsAppModal} from "@/app/dashboard/comprobantes/modals/ActionModals";
+import {StatusModal} from "@/app/dashboard/comprobantes/modals/StatusModal";
 
 export default function ComprobantesPage() {
   const [comprobantes, setComprobantes] = useState<Comprobante[]>([])
@@ -77,6 +79,16 @@ export default function ComprobantesPage() {
   const [tipoDocsSunat, setTipoDocsSunat] = useState<TipoDocSunat[]>([])
   const [sunatTransaction, setSunatTransaction] = useState("")
   const [tipoSunat, setTipoSunat] = useState("")
+
+  const [showEmailModal, setShowEmailModal] = useState(false)
+  const [showWhatsappModal, setShowWhatsappModal] = useState(false)
+
+  const [selectedDocForAction, setSelectedDocForAction] = useState<{id: number | string, type: 'COMPROBANTE' | 'GUIA', email?: string, phone?: string} | null>(null)
+  const [actionLoading, setActionLoading] = useState(false)
+
+  const [showStatusModal, setShowStatusModal] = useState(false)
+  const [statusData, setStatusData] = useState(null)
+  const [loadingStatus, setLoadingStatus] = useState(false)
 
   const auth = useAuth()
 
@@ -284,6 +296,116 @@ export default function ComprobantesPage() {
     setShowErrorModal(true)
   }
 
+  // HANDLERS PARA COMPROBANTES
+  const handleEmailCompr = (comprobante: Comprobante) => {
+    // Asumimos que el comprobante puede tener un campo email, si no, vacío
+    // Nota: Ajusta 'cliente_email' según tu interfaz real si existe
+    setSelectedDocForAction({ id: comprobante.idComprobanteCab, type: 'COMPROBANTE', email: '' })
+    setShowEmailModal(true)
+  }
+
+  const handleWhatsappCompr = (comprobante: Comprobante) => {
+    setSelectedDocForAction({ id: comprobante.idComprobanteCab, type: 'COMPROBANTE', phone: '' })
+    setShowWhatsappModal(true)
+  }
+
+  const handleStatusCompr = async (comprobante: Comprobante) => {
+    setLoadingStatus(true)
+    setShowStatusModal(true)
+    setStatusData(null)
+
+    try {
+      const response = await apiClient.post('/admin/getStatusCompr', { id: comprobante.idComprobanteCab });
+
+      if(response.data.success) {
+        setStatusData(response.data.data)
+      } else {
+        toast({ title: "Atención", description: response.data.message, variant: "destructive" })
+        setShowStatusModal(false)
+      }
+    } catch (error) {
+      toast({ title: "Error", description: "No se pudo consultar el estado", variant: "destructive" })
+      setShowStatusModal(false)
+    } finally {
+      setLoadingStatus(false)
+    }
+  }
+
+  // HANDLERS PARA GUIAS
+  const handleEmailGuia = (guia: GuiaRemision) => {
+    setSelectedDocForAction({ id: guia.idGuiaRemCab, type: 'GUIA', email: '' })
+    setShowEmailModal(true)
+  }
+
+  const handleWhatsappGuia = (guia: GuiaRemision) => {
+    setSelectedDocForAction({ id: guia.idGuiaRemCab, type: 'GUIA', phone: '' })
+    setShowWhatsappModal(true)
+  }
+
+  const handleStatusGuia = async (guia: GuiaRemision) => {
+    setLoadingStatus(true)
+    setShowStatusModal(true)
+    setStatusData(null)
+
+    try {
+      const response = await apiClient.post('/admin/getStatusGuide', { id: guia.idGuiaRemCab });
+      if(response.data.success) {
+        setStatusData(response.data.data)
+      } else {
+        toast({ title: "Atención", description: response.data.message, variant: "destructive" })
+        setShowStatusModal(false)
+      }
+    } catch (error) {
+      toast({ title: "Error", description: "No se pudo consultar el estado", variant: "destructive" })
+      setShowStatusModal(false)
+    } finally {
+      setLoadingStatus(false)
+    }
+  }
+
+
+  const performSendEmail = async (email: string) => {
+    if (!selectedDocForAction) return
+    setActionLoading(true)
+    try {
+      const endpoint = selectedDocForAction.type === 'COMPROBANTE' ? '/admin/sendEmailCompr' : '/admin/sendEmailGuide'
+      const payload = { id: selectedDocForAction.id, email }
+
+      const response = await apiClient.post(endpoint, payload)
+      if(response.data.success) {
+        toast({ title: "Enviado", description: "Correo enviado correctamente" })
+        setShowEmailModal(false)
+      } else {
+        toast({ title: "Error", description: response.data.message, variant: "destructive" })
+      }
+    } catch (error) {
+      toast({ title: "Error", description: "Error al enviar correo", variant: "destructive" })
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
+  const performSendWhatsapp = async (phone: string) => {
+    if (!selectedDocForAction) return
+    setActionLoading(true)
+    try {
+      const endpoint = selectedDocForAction.type === 'COMPROBANTE' ? '/admin/sendWhatsappCompr' : '/admin/sendWhatsappGuide'
+      const payload = { id: selectedDocForAction.id, phone }
+
+      const response = await apiClient.post(endpoint, payload)
+      if(response.data.success) {
+        toast({ title: "Enviado", description: "Mensaje de WhatsApp enviado" })
+        setShowWhatsappModal(false)
+      } else {
+        toast({ title: "Error", description: response.data.message, variant: "destructive" })
+      }
+    } catch (error) {
+      toast({ title: "Error", description: "Error al enviar WhatsApp", variant: "destructive" })
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
   return (
       <div className="grid gap-6">
         <div className="flex flex-col gap-2">
@@ -375,6 +497,9 @@ export default function ComprobantesPage() {
                 tiposComprobante={tiposComprobante}
                 onViewPdf={handleViewPdf}
                 onCancel={handleCancelInvoice}
+                onSendEmail={handleEmailCompr}
+                onSendWhatsApp={handleWhatsappCompr}
+                onCheckStatus={handleStatusCompr}
             />
             <ComprobantesStats comprobantes={comprobantes} />
           </TabsContent>
@@ -417,6 +542,9 @@ export default function ComprobantesPage() {
                 loading={loadingGuias}
                 onViewPdf={handleViewPdfGuia}
                 onErrorView={handleOpenErrorModal}
+                onSendEmail={handleEmailGuia}
+                onSendWhatsApp={handleWhatsappGuia}
+                onCheckStatus={handleStatusGuia}
             />
           </TabsContent>
         </Tabs>
@@ -443,6 +571,29 @@ export default function ComprobantesPage() {
                 pedidoPreseleccionado={selectedOrder} pedidosDisponibles={pedidosPendientes}
             />
         )}
+
+        <EmailModal
+            open={showEmailModal}
+            onOpenChange={setShowEmailModal}
+            defaultEmail={selectedDocForAction?.email || ""}
+            onSend={performSendEmail}
+            loading={actionLoading}
+        />
+
+        <WhatsAppModal
+            open={showWhatsappModal}
+            onOpenChange={setShowWhatsappModal}
+            defaultPhone={selectedDocForAction?.phone || ""}
+            onSend={performSendWhatsapp}
+            loading={actionLoading}
+        />
+
+        <StatusModal
+            open={showStatusModal}
+            onOpenChange={setShowStatusModal}
+            data={statusData}
+            loading={loadingStatus}
+        />
       </div>
   )
 }
