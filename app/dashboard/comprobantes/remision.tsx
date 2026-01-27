@@ -16,6 +16,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast, useToast } from "@/components/ui/use-toast";
 import apiClient from "@/app/api/client";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import {Pedido} from "@/interface/order/order-interface";
 
 interface PedidoDet {
   idPedidodet: number
@@ -182,11 +183,9 @@ const TransportistaSearchInput = ({
   const [showResults, setShowResults] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
-  // 1. NUEVO: Cargar lista inicial apenas carga el componente (Initial State)
   useEffect(() => {
     const cargarInicial = async () => {
       try {
-        // Llamada con query vacío
         const response = await apiClient.get(`/admin/listar/empresas-transporte?q=`);
         if (response.data.success) {
           setResults(response.data.data);
@@ -196,7 +195,7 @@ const TransportistaSearchInput = ({
       }
     };
     cargarInicial();
-  }, []); // Array vacío = solo se ejecuta al montar
+  }, []);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -208,11 +207,8 @@ const TransportistaSearchInput = ({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [wrapperRef]);
 
-  // 2. MODIFICADO: Lógica de búsqueda
   useEffect(() => {
     const timeOutId = setTimeout(async () => {
-      // Si hay texto para buscar (>=3) O si está vacío (para traer todo de nuevo al borrar)
-      // Y si el usuario tiene intención de ver resultados (showResults)
       if ((query.length >= 3 || query === '') && showResults) {
         setLoading(true);
         try {
@@ -290,6 +286,15 @@ export const Remision = ({ pedido, detalles, onOpenChange }: RemisionModalProps)
   const [series, setSeries] = useState<Guide[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [serie, setSerie] = useState('');
+
+  const getFechaLocal = () => {
+    const date = new Date();
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   const [datosGuia, setDatosGuia] = useState({
     cliente: pedido?.nombreCliente || "",
     clienteTipoDoc: "6",
@@ -297,7 +302,7 @@ export const Remision = ({ pedido, detalles, onOpenChange }: RemisionModalProps)
     clienteDenominacion: pedido?.nombreCliente || "",
     clienteDireccion: pedido?.direccionCliente || "",
     clienteEmail: "",
-    fechaEmision: new Date().toISOString().split('T')[0],
+    fechaEmision: getFechaLocal(),
     formatoPdf: "A4",
     tipoTransporte: "02",
     motivoTraslado: "",
@@ -305,7 +310,7 @@ export const Remision = ({ pedido, detalles, onOpenChange }: RemisionModalProps)
   });
 
   const [datosTraslado, setDatosTraslado] = useState({
-    fechaInicio: new Date().toISOString().split('T')[0],
+    fechaInicio: getFechaLocal(),
     pesoBruto: "",
     pesoUnidad: "KGM",
     numeroBultos: "1",
@@ -513,7 +518,6 @@ export const Remision = ({ pedido, detalles, onOpenChange }: RemisionModalProps)
         p_operacion: "generar",
         p_tipo_comprobante: "7",
         p_serie: serie,
-        p_numero: 0,
         p_cliente_tipo_doc: datosGuia.clienteTipoDoc,
         p_cliente_num_doc: datosGuia.clienteNumDoc,
         p_cliente_denominacion: datosGuia.clienteDenominacion,
