@@ -18,7 +18,7 @@ import {
   MapPin,
   Home,
   XCircle,
-  UserSearch, OctagonAlert
+  UserSearch, OctagonAlert, Wallet
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Label } from "@/components/ui/label"
@@ -412,7 +412,7 @@ export default function MyOrdersPage() {
                           <span className="font-medium truncate">{pedido.nombreCliente}</span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <DollarSign className="h-4 w-4 text-gray-500"/>
+                          <Wallet className="h-4 w-4 text-gray-500"/>
                           <span className="text-gray-600">Total:</span>
                           <span className="font-bold text-green-600">
                           {pedido.monedaPedido === "PEN" ? "S/ " : "$ "}

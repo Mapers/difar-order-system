@@ -170,8 +170,12 @@ export default function OrderPage() {
     referencia: ''
   })
 
-  const steps = ["Cliente", "Productos", "Resumen"]
-  // obtiene una zona por id
+  const steps = [
+    { label: "Cliente", icon: User },
+    { label: "Productos", icon: Package },
+    { label: "Resumen", icon: FileText },
+  ]
+
   const getZona = async (idZona: string) => {
     try {
       const response = await fetchGetZona(idZona);
