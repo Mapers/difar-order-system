@@ -425,7 +425,7 @@ export default function ComprobantesPage() {
             )}
             <TabsTrigger value="comprobantes" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
               <FileText className="h-3 w-3 sm:h-4 sm:w-4" />
-              <span className="hidden sm:inline">Comprobantes Emitidos</span>
+              <span className="hidden sm:inline">Facturas y Boletas</span>
               <span className="sm:hidden">Comp. Emitidos</span>
             </TabsTrigger>
             <TabsTrigger value="guias" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">

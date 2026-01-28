@@ -85,7 +85,7 @@ export default function ConfiguracionesPage() {
         {
             id: "secuenciales",
             title: "Comprobantes",
-            description: "Secuenciales de Facturas y Boletas",
+            description: "Secuenciales de Facturas, Boletas, Notas de Crédito y Notas de Débito",
             icon: FileText,
             color: "blue"
         },
@@ -280,7 +280,7 @@ export default function ConfiguracionesPage() {
                                     {activeSection === "secuenciales" ? <FileText className="h-5 w-5 text-blue-600" /> : <Truck className="h-5 w-5 text-green-600" />}
                                     Gestión de {activeSection === "secuenciales" ? "Comprobantes" : "Guías"}
                                 </CardTitle>
-                                <CardDescription>Configura la numeración para {activeSection === "secuenciales" ? "facturas y boletas" : "guías de remisión"}</CardDescription>
+                                <CardDescription>Configura la numeración para {activeSection === "secuenciales" ? "facturas, boletas, notas de crédito y notas de débito" : "guías de remisión"}</CardDescription>
                             </div>
                             <Button onClick={abrirModalNuevoSequential} className="flex items-center gap-2 w-full sm:w-auto">
                                 <Plus className="h-4 w-4" /> Nuevo {getEntityName()}
