@@ -153,11 +153,6 @@ export default function OrderPage() {
   // Estados para modales
   const [isCheckingBonification, setIsCheckingBonification] = useState(false)
 
-  // Estados para escalas
-  const [currentScales, setCurrentScales] = useState<ICurrentScales | null>(null)
-
-  // order
-  const [orderItems, setOrderItems] = useState<OrderItem[]>([])
   const [products, setProducts] = useState<IProduct[]>([])
 
   const [showLotesModal, setShowLotesModal] = useState(false);
