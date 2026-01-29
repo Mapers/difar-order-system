@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from "react"
-import { Search, FileText, AlertTriangle, Truck, Loader2 } from "lucide-react"
+import {Search, FileText, AlertTriangle, Truck, Loader2, FileDiff} from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -32,6 +32,7 @@ import {GenerarGuiasModal} from "@/app/dashboard/comprobantes/modals/generar-gui
 import {Sequential} from "@/app/dashboard/configuraciones/page";
 import {EmailModal, WhatsAppModal} from "@/app/dashboard/comprobantes/modals/ActionModals";
 import {StatusModal} from "@/app/dashboard/comprobantes/modals/StatusModal";
+import {CreditNotesTable} from "@/app/dashboard/comprobantes/CreditNotesTable";
 
 export default function ComprobantesPage() {
   const [comprobantes, setComprobantes] = useState<Comprobante[]>([])
@@ -90,6 +91,15 @@ export default function ComprobantesPage() {
   const [statusData, setStatusData] = useState(null)
   const [loadingStatus, setLoadingStatus] = useState(false)
 
+  const [notasCredito, setNotasCredito] = useState<Comprobante[]>([])
+  const [loadingNotas, setLoadingNotas] = useState(false)
+
+  const [filtersNotas, setFiltersNotas] = useState({
+    fechaDesde: format(today, 'yyyy-MM-dd'),
+    fechaHasta: format(tomorrow, 'yyyy-MM-dd')
+  })
+
+
   const auth = useAuth()
 
   const fetchComprobantes = async () => {
@@ -99,6 +109,7 @@ export default function ComprobantesPage() {
       const params = new URLSearchParams()
       if (auth.user?.idRol === 1) params.append('vendedor', auth.user?.codigo || '')
       if (filters.tipo !== '|-1') params.append('tipoDoc', filters.tipo.split('|')[1])
+      if (filters.tipo !== '|-1') params.append('serie', filters.tipo.split('|')[0])
       if (filters.fechaDesde) params.append('fechaDesde', filters.fechaDesde)
       if (filters.fechaHasta) params.append('fechaHasta', filters.fechaHasta)
       if (searchQuery) params.append('busqueda', searchQuery)
@@ -111,6 +122,30 @@ export default function ComprobantesPage() {
       toast({ title: "Error", description: "No se pudieron cargar los comprobantes", variant: "destructive" })
     } finally {
       setLoadingComprobantes(false)
+    }
+  }
+
+  const fetchNotasCredito = async () => {
+    try {
+      setLoadingNotas(true)
+      let url = `/pedidos/comprobantes?`
+      const params = new URLSearchParams()
+      if (auth.user?.idRol === 1) params.append('vendedor', auth.user?.codigo || '')
+
+      params.append('tipoDoc', '7')
+
+      if (filtersNotas.fechaDesde) params.append('fechaDesde', filtersNotas.fechaDesde)
+      if (filtersNotas.fechaHasta) params.append('fechaHasta', filtersNotas.fechaHasta)
+      if (searchQuery) params.append('busqueda', searchQuery)
+      url += params.toString()
+
+      const response = await apiClient.get(url)
+      setNotasCredito(response.data.data.data)
+    } catch (error) {
+      console.error("Error fetching notas credito:", error)
+      toast({ title: "Error", description: "No se pudieron cargar las notas de crédito", variant: "destructive" })
+    } finally {
+      setLoadingNotas(false)
     }
   }
 
@@ -151,8 +186,14 @@ export default function ComprobantesPage() {
   useEffect(() => {
     fetchComprobantes()
     fetchPedidosPendientes()
+    fetchNotasCredito()
     if (filtersGuias.fechaDesde && filtersGuias.fechaHasta) fetchGuiasRemision()
-  }, [searchQuery, filters, filtersGuias])
+  }, [searchQuery, filters, filtersGuias, filtersNotas])
+
+  const handleFilterNotasChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target
+    setFiltersNotas(prev => ({ ...prev, [name]: value }))
+  }
 
   useEffect(() => {
     const fetchCatalogs = async () => {
@@ -414,7 +455,7 @@ export default function ComprobantesPage() {
         </div>
 
         <Tabs defaultValue={auth.user?.idRol !== 1 ? 'pendientes' : 'comprobantes'} className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             {auth.user?.idRol !== 1 && (
                 <TabsTrigger value="pendientes" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
                   <AlertTriangle className="h-3 w-3 sm:h-4 sm:w-4" />
@@ -428,6 +469,13 @@ export default function ComprobantesPage() {
               <span className="hidden sm:inline">Facturas y Boletas</span>
               <span className="sm:hidden">Comp. Emitidos</span>
             </TabsTrigger>
+
+            <TabsTrigger value="notas" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+              <FileDiff className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden sm:inline">Notas de Crédito</span>
+              <span className="sm:hidden">N. Crédito</span>
+            </TabsTrigger>
+
             <TabsTrigger value="guias" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
               <Truck className="h-3 w-3 sm:h-4 sm:w-4" />
               <span className="hidden sm:inline">Guías</span>
@@ -470,7 +518,13 @@ export default function ComprobantesPage() {
                         <SelectTrigger className="text-xs sm:text-sm"><SelectValue placeholder="Todos los tipos" /></SelectTrigger>
                         <SelectContent>
                           <SelectItem value="|-1">Todos los tipos</SelectItem>
-                          {tiposComprobante.map((tipo) => (<SelectItem key={tipo.prefijo} value={tipo.prefijo + '|' + tipo.tipo}>{tipo.prefijo} - {tipo.descripcion}</SelectItem>))}
+                          {tiposComprobante
+                              .filter(tipo => tipo.tipo === '1' || tipo.tipo === '3')
+                              .map((tipo) => (
+                                  <SelectItem key={tipo.prefijo} value={tipo.prefijo + '|' + tipo.tipo}>
+                                    {tipo.prefijo} - {tipo.descripcion}
+                                  </SelectItem>
+                              ))}
                         </SelectContent>
                       </Select>
                     </div>
@@ -502,6 +556,48 @@ export default function ComprobantesPage() {
                 onCheckStatus={handleStatusCompr}
             />
             <ComprobantesStats comprobantes={comprobantes} />
+          </TabsContent>
+
+          <TabsContent value="notas" className="space-y-4">
+            <Card className="bg-white shadow-sm">
+              <CardContent className="p-3 sm:p-4 lg:p-6">
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+                    <div className="space-y-1">
+                      <Label className="text-xs text-gray-500">Fecha desde</Label>
+                      <Input type="date" className="bg-white" name="fechaDesde" value={filtersNotas.fechaDesde} onChange={handleFilterNotasChange} />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs text-gray-500">Fecha hasta</Label>
+                      <Input type="date" className="bg-white" name="fechaHasta" value={filtersNotas.fechaHasta} onChange={handleFilterNotasChange} />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs text-gray-500">Buscar</Label>
+                      <div className="relative">
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-3 w-3 sm:h-4 sm:w-4" />
+                        <Input placeholder="Buscar..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-8 sm:pl-10 text-xs sm:text-sm" />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex justify-end">
+                    <Button onClick={fetchNotasCredito} disabled={loadingNotas} className="flex items-center gap-2">
+                      {loadingNotas ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />} Buscar
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <CreditNotesTable
+                notas={notasCredito}
+                loading={loadingNotas}
+                tiposComprobante={tiposComprobante}
+                onViewPdf={handleViewPdf}
+                onCancel={handleCancelInvoice}
+                onSendEmail={handleEmailCompr}
+                onSendWhatsApp={handleWhatsappCompr}
+                onCheckStatus={handleStatusCompr}
+            />
           </TabsContent>
 
           <TabsContent value="guias" className="space-y-4">
