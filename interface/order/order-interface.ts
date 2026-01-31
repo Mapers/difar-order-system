@@ -1,4 +1,5 @@
 export interface Comprobante {
+    idSunat: number
     idComprobanteCab: number
     nroPedido: number
     fecha_envio: string
@@ -72,6 +73,7 @@ export interface Pedido {
     errorCodigo?: string
     errorFecha?: string
     observaciones?: string
+    condicionCredito?: string
 }
 
 export interface GuiaReferencia {

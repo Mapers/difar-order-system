@@ -33,6 +33,8 @@ import {Sequential} from "@/app/dashboard/configuraciones/page";
 import {EmailModal, WhatsAppModal} from "@/app/dashboard/comprobantes/modals/ActionModals";
 import {StatusModal} from "@/app/dashboard/comprobantes/modals/StatusModal";
 import {CreditNotesTable} from "@/app/dashboard/comprobantes/CreditNotesTable";
+import {GenerarNotaCreditoModal} from "@/app/dashboard/comprobantes/modals/GenerarNotaCreditoModal";
+import {Cuota} from "@/app/dashboard/comprobantes/modals/InstallmentModal";
 
 export default function ComprobantesPage() {
   const [comprobantes, setComprobantes] = useState<Comprobante[]>([])
@@ -94,11 +96,17 @@ export default function ComprobantesPage() {
   const [notasCredito, setNotasCredito] = useState<Comprobante[]>([])
   const [loadingNotas, setLoadingNotas] = useState(false)
 
+  const [showNotaCreditoModal, setShowNotaCreditoModal] = useState(false)
+
   const [filtersNotas, setFiltersNotas] = useState({
     fechaDesde: format(today, 'yyyy-MM-dd'),
     fechaHasta: format(tomorrow, 'yyyy-MM-dd')
   })
 
+  const handleNotaCreditoGenerada = async () => {
+    await fetchNotasCredito()
+    await fetchComprobantes()
+  }
 
   const auth = useAuth()
 
@@ -128,12 +136,9 @@ export default function ComprobantesPage() {
   const fetchNotasCredito = async () => {
     try {
       setLoadingNotas(true)
-      let url = `/pedidos/comprobantes?`
+      let url = `/pedidos/ncEmitidos?`
       const params = new URLSearchParams()
       if (auth.user?.idRol === 1) params.append('vendedor', auth.user?.codigo || '')
-
-      params.append('tipoDoc', '7')
-
       if (filtersNotas.fechaDesde) params.append('fechaDesde', filtersNotas.fechaDesde)
       if (filtersNotas.fechaHasta) params.append('fechaHasta', filtersNotas.fechaHasta)
       if (searchQuery) params.append('busqueda', searchQuery)
@@ -244,7 +249,7 @@ export default function ComprobantesPage() {
     }
   }
 
-  const handleConfirmInvoice = async (guiasSeleccionadas: GuiaReferencia[] = []) => {
+  const handleConfirmInvoice = async (guiasSeleccionadas: GuiaReferencia[] = [], cuotas: Cuota[] = []) => {
     setIsProcessingInvoice(true)
     try {
       const tipoComprobante = tiposComprobante.find(t => t.prefijo === invoiceType.split('|')[0])
@@ -262,7 +267,8 @@ export default function ComprobantesPage() {
       const response = await apiClient.post(
           `/pedidos/generateCompr?nroPedido=${selectedOrder.nroPedido}&tipoCompr=${tipoComprobante?.tipo}&sunatTrans=${transaccionSunat?.idTransaction}&tipoDocSunat=${tipoSunatT?.codigo}&prefijo=${tipoComprobante?.prefijo}`,
           {
-            docs_referenciado: documentosReferenciados
+            docs_referenciado: documentosReferenciados,
+            cuotas: cuotas
           }
       )
 
@@ -337,16 +343,13 @@ export default function ComprobantesPage() {
     setShowErrorModal(true)
   }
 
-  // HANDLERS PARA COMPROBANTES
   const handleEmailCompr = (comprobante: Comprobante) => {
-    // Asumimos que el comprobante puede tener un campo email, si no, vacío
-    // Nota: Ajusta 'cliente_email' según tu interfaz real si existe
-    setSelectedDocForAction({ id: comprobante.idComprobanteCab, type: 'COMPROBANTE', email: '' })
+    setSelectedDocForAction({ id: comprobante.idSunat, type: 'COMPROBANTE', email: '' })
     setShowEmailModal(true)
   }
 
   const handleWhatsappCompr = (comprobante: Comprobante) => {
-    setSelectedDocForAction({ id: comprobante.idComprobanteCab, type: 'COMPROBANTE', phone: '' })
+    setSelectedDocForAction({ id: comprobante.idSunat, type: 'COMPROBANTE', phone: '' })
     setShowWhatsappModal(true)
   }
 
@@ -356,7 +359,7 @@ export default function ComprobantesPage() {
     setStatusData(null)
 
     try {
-      const response = await apiClient.post('/admin/getStatusCompr', { id: comprobante.idComprobanteCab });
+      const response = await apiClient.post('/admin/getStatusCompr', { id: comprobante.idSunat });
 
       if(response.data.success) {
         setStatusData(response.data.data)
@@ -579,7 +582,11 @@ export default function ComprobantesPage() {
                       </div>
                     </div>
                   </div>
-                  <div className="flex justify-end">
+                  <div className="flex justify-end gap-2">
+                    <Button onClick={() => setShowNotaCreditoModal(true)} variant="outline">
+                      <FileDiff className="mr-2 h-4 w-4" /> Generar Nota de Crédito
+                    </Button>
+
                     <Button onClick={fetchNotasCredito} disabled={loadingNotas} className="flex items-center gap-2">
                       {loadingNotas ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />} Buscar
                     </Button>
@@ -661,10 +668,19 @@ export default function ComprobantesPage() {
         />
         <PdfViewerModal open={showPdfModal} onOpenChange={setShowPdfModal} pdfUrl={currentPdfUrl} />
         <ErrorModal open={showErrorModal} onOpenChange={setShowErrorModal} guia={selectedGuiaError} />
+
         {showGuiasModal && (
             <GenerarGuiasModal
                 open={showGuiasModal} onOpenChange={setShowGuiasModal} isProcessing={isProcessingGuias} onGenerarGuias={handleGenerarGuias}
                 pedidoPreseleccionado={selectedOrder} pedidosDisponibles={pedidosPendientes}
+            />
+        )}
+
+        {showNotaCreditoModal && (
+            <GenerarNotaCreditoModal
+                open={showNotaCreditoModal}
+                onOpenChange={setShowNotaCreditoModal}
+                onGenerar={handleNotaCreditoGenerada}
             />
         )}
 

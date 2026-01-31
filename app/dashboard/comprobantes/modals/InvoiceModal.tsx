@@ -3,11 +3,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
-import { Receipt, Loader2, Truck, AlertTriangle, Check, FileText } from "lucide-react"
+import { Receipt, Loader2, Truck, AlertTriangle, Check, FileText, CreditCard, Calendar } from "lucide-react"
 import { Pedido, SunatTransaccion, TipoDocSunat, GuiaReferencia } from "@/interface/order/order-interface"
 import { GuidesSelectorModal } from "./GuidesSelectorModal"
 import { Badge } from "@/components/ui/badge"
-import { Sequential } from "@/app/dashboard/configuraciones/page";
+import { Sequential } from "@/app/dashboard/configuraciones/page"
+import { InstallmentModal, Cuota } from "./InstallmentModal"
 
 interface InvoiceModalProps {
     open: boolean
@@ -23,7 +24,7 @@ interface InvoiceModalProps {
     tipoSunat: string
     setTipoSunat: (v: string) => void
     isProcessing: boolean
-    onConfirm: (guiasSeleccionadas: GuiaReferencia[]) => void
+    onConfirm: (guiasSeleccionadas: GuiaReferencia[], cuotas?: Cuota[]) => void
 }
 
 export function InvoiceModal({
@@ -34,9 +35,20 @@ export function InvoiceModal({
     const [showGuidesModal, setShowGuidesModal] = useState(false)
     const [selectedGuides, setSelectedGuides] = useState<GuiaReferencia[]>([])
 
+    const [showInstallmentModal, setShowInstallmentModal] = useState(false)
+    const [cuotas, setCuotas] = useState<Cuota[]>([])
+
+    const isCredit = selectedOrder?.condicionCredito === '1'
+
     useEffect(() => {
         if (!open) {
             setSelectedGuides([])
+            setCuotas([])
+        } else if (selectedOrder && selectedOrder.condicionCredito === '1') {
+            setCuotas([{
+                fecha: new Date(new Date().setDate(new Date().getDate() + 30)).toISOString().split('T')[0],
+                monto: Number(selectedOrder.totalPedido)
+            }])
         }
     }, [open, selectedOrder])
 
@@ -55,25 +67,27 @@ export function InvoiceModal({
                                 <div className="text-sm space-y-1">
                                     <p><strong>Pedido:</strong> {selectedOrder.nroPedido}</p>
                                     <p><strong>Cliente:</strong> {selectedOrder.nombreCliente}</p>
-                                    <p><strong>Documento:</strong> {selectedOrder.codigoCliente}</p>
-                                    <p><strong>Total:</strong> {selectedOrder.monedaPedido === 'PEN' ? 'S/ ' : '$ '} {Number(selectedOrder.totalPedido).toFixed(2)}</p>
+                                    <div className="flex justify-between items-center">
+                                        <p><strong>Total:</strong> {selectedOrder.monedaPedido === 'PEN' ? 'S/ ' : '$ '} {Number(selectedOrder.totalPedido).toFixed(2)}</p>
+                                        {isCredit && <Badge variant="outline" className="bg-purple-100 text-purple-800 border-purple-300">Venta al Crédito</Badge>}
+                                    </div>
                                 </div>
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
-                                    <Label htmlFor="tipoComprobante" className="text-sm font-medium mb-2 block">Tipo de Comprobante</Label>
+                                    <Label className="text-sm font-medium mb-2 block">Tipo de Comprobante</Label>
                                     <Select value={invoiceType} onValueChange={setInvoiceType} disabled={isProcessing}>
                                         <SelectTrigger><SelectValue placeholder="Seleccionar tipo"/></SelectTrigger>
                                         <SelectContent>
-                                            {tiposComprobante.map((tipo) => (
+                                            {tiposComprobante.filter((s: Sequential) => s.tipo !== '8' && s.tipo !== '7').map((tipo) => (
                                                 <SelectItem key={tipo.prefijo} value={tipo.prefijo + '|' + tipo.tipo}>{tipo.prefijo} - {tipo.nombre}</SelectItem>
                                             ))}
                                         </SelectContent>
                                     </Select>
                                 </div>
                                 <div>
-                                    <Label htmlFor="sunatTransaccion" className="text-sm font-medium mb-2 block">Transacción SUNAT</Label>
+                                    <Label className="text-sm font-medium mb-2 block">Transacción SUNAT</Label>
                                     <Select value={sunatTransaction} onValueChange={setSunatTransaction} disabled={isProcessing}>
                                         <SelectTrigger><SelectValue placeholder="Seleccionar transacción"/></SelectTrigger>
                                         <SelectContent>
@@ -84,7 +98,7 @@ export function InvoiceModal({
                                     </Select>
                                 </div>
                                 <div>
-                                    <Label htmlFor="tipoDocSunat" className="text-sm font-medium mb-2 block">Tipo Doc.</Label>
+                                    <Label className="text-sm font-medium mb-2 block">Tipo Doc.</Label>
                                     <Select value={tipoSunat} onValueChange={setTipoSunat} disabled={isProcessing}>
                                         <SelectTrigger><SelectValue placeholder="Seleccionar tipo documento"/></SelectTrigger>
                                         <SelectContent>
@@ -95,6 +109,47 @@ export function InvoiceModal({
                                     </Select>
                                 </div>
                             </div>
+
+                            {isCredit && (
+                                <div className="border rounded-md p-3">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <Label className="text-sm font-medium flex items-center gap-2">
+                                            <CreditCard className="h-4 w-4" /> Cuotas de Crédito
+                                        </Label>
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
+                                            onClick={() => setShowInstallmentModal(true)}
+                                            className="h-7 text-xs border-purple-300"
+                                        >
+                                            Configurar
+                                        </Button>
+                                    </div>
+
+                                    {cuotas.length > 0 ? (
+                                        <div className="space-y-1">
+                                            <div className="flex items-center gap-2 text-sm">
+                                                <Badge className="">{cuotas.length} Cuota(s)</Badge>
+                                                <span className="text-xs text-gray-500">
+                                                    Último vencimiento: {cuotas[cuotas.length-1].fecha}
+                                                </span>
+                                            </div>
+                                            <div className="text-xs text-gray-500 mt-1 max-h-[60px] overflow-y-auto">
+                                                {cuotas.map((c, i) => (
+                                                    <div key={i} className="flex justify-between w-[90%]">
+                                                        <span>Cuota {i+1} ({c.fecha}):</span>
+                                                        <span className="font-medium">{c.monto.toFixed(2)}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="text-xs text-red-500 flex items-center gap-1">
+                                            <AlertTriangle className="h-3 w-3" /> Debe configurar las cuotas
+                                        </div>
+                                    )}
+                                </div>
+                            )}
 
                             <div>
                                 <Label className="text-sm font-medium mb-2 block">Referencias (Guías)</Label>
@@ -108,21 +163,12 @@ export function InvoiceModal({
                                         <Truck className="h-4 w-4" />
                                         {selectedGuides.length > 0 ? 'Modificar Guías' : 'Seleccionar Guías'}
                                     </Button>
-                                    {selectedGuides.length > 0 ? (
+                                    {selectedGuides.length > 0 && (
                                         <Badge variant="secondary" className="bg-green-100 text-green-800 hover:bg-green-100">
                                             <Check className="h-3 w-3 mr-1" /> {selectedGuides.length} Seleccionada(s)
                                         </Badge>
-                                    ) : (
-                                        <span className="text-xs text-amber-600 flex items-center">
-                           <AlertTriangle className="h-3 w-3 mr-1" /> No se han seleccionado guías (Opcional)
-                        </span>
                                     )}
                                 </div>
-                                {selectedGuides.length > 0 && (
-                                    <div className="mt-2 text-xs text-gray-500">
-                                        Series: {selectedGuides.map(g => `${g.serie}-${g.numero}`).join(', ')}
-                                    </div>
-                                )}
                             </div>
 
                             {selectedOrder.observaciones && (
@@ -149,8 +195,8 @@ export function InvoiceModal({
                         <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isProcessing} className="w-full sm:w-auto">Cancelar</Button>
                         <div className="flex gap-2 w-full sm:w-auto">
                             <Button
-                                onClick={() => onConfirm(selectedGuides)}
-                                disabled={isProcessing || !invoiceType || !sunatTransaction}
+                                onClick={() => onConfirm(selectedGuides, isCredit ? cuotas : [])}
+                                disabled={isProcessing || !invoiceType || !sunatTransaction || (isCredit && cuotas.length === 0)}
                                 className="bg-green-600 hover:bg-green-700 flex-1"
                             >
                                 {isProcessing ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Procesando...</> : <><Receipt className="mr-2 h-4 w-4" /> Confirmar Facturación</>}
@@ -161,13 +207,23 @@ export function InvoiceModal({
             </Dialog>
 
             {selectedOrder && (
-                <GuidesSelectorModal
-                    open={showGuidesModal}
-                    onOpenChange={setShowGuidesModal}
-                    nroPedido={selectedOrder.nroPedido}
-                    selectedGuides={selectedGuides}
-                    onConfirmSelection={setSelectedGuides}
-                />
+                <>
+                    <GuidesSelectorModal
+                        open={showGuidesModal}
+                        onOpenChange={setShowGuidesModal}
+                        nroPedido={selectedOrder.nroPedido}
+                        selectedGuides={selectedGuides}
+                        onConfirmSelection={setSelectedGuides}
+                    />
+
+                    <InstallmentModal
+                        open={showInstallmentModal}
+                        onOpenChange={setShowInstallmentModal}
+                        totalImporte={Number(selectedOrder.totalPedido)}
+                        initialCuotas={cuotas}
+                        onSave={setCuotas}
+                    />
+                </>
             )}
         </>
     )
