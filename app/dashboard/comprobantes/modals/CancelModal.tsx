@@ -1,14 +1,16 @@
-import { useState } from "react"
+import {useEffect, useState} from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { XCircle, AlertTriangle, Loader2 } from "lucide-react"
 import { Comprobante } from "@/interface/order/order-interface"
+import apiClient from "@/app/api/client";
+import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select";
 
 interface CancelModalProps {
     open: boolean
-    onOpenChange: (open: boolean) => void
+    onOpenChange: (open: boolean, opera: string) => void
     comprobante: Comprobante | null
     tiposComprobante: any[]
     isCancelling: boolean
@@ -17,16 +19,32 @@ interface CancelModalProps {
 
 export function CancelModal({ open, onOpenChange, comprobante, tiposComprobante, isCancelling, onConfirm }: CancelModalProps) {
     const [motivo, setMotivo] = useState("")
+    const [idOperacion, setIdOperacion] = useState<string>("")
+    const [operaciones, setOperaciones] = useState<any[]>([])
+    const [loadingOps, setLoadingOps] = useState(false)
 
     const handleOpenChange = (isOpen: boolean) => {
         if (!isOpen) setMotivo("")
-        onOpenChange(isOpen)
+        onOpenChange(isOpen, idOperacion)
     }
 
     const getTipoDesc = (tipo: number) => {
         const t = tiposComprobante.find((tc: any) => tc.tipo === String(tipo) || tc.idTipoComprobante === tipo)
         return t ? t.descripcion : "Desconocido"
     }
+
+    useEffect(() => {
+        if (open) {
+            const fetchOps = async () => {
+                setLoadingOps(true)
+                try {
+                    const res = await apiClient.get('/admin/listar/operaciones')
+                    setOperaciones(res.data.data || [])
+                } finally { setLoadingOps(false) }
+            }
+            fetchOps()
+        }
+    }, [open])
 
     return (
         <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -59,15 +77,32 @@ export function CancelModal({ open, onOpenChange, comprobante, tiposComprobante,
                             </div>
                         )}
 
-                        <div className="space-y-2">
-                            <Label htmlFor="motivo" className="text-red-700 font-semibold">Motivo de Anulación *</Label>
-                            <Input
-                                id="motivo"
-                                placeholder="Ingrese la razón de la anulación..."
-                                value={motivo}
-                                onChange={(e) => setMotivo(e.target.value)}
-                                className="border-red-200 focus:border-red-500 focus:ring-red-500"
-                            />
+                        <div className="space-y-4 py-2">
+                            <div className="space-y-2">
+                                <Label>Tipo de Operación *</Label>
+                                <Select value={idOperacion} onValueChange={setIdOperacion}>
+                                    <SelectTrigger className="border-red-200">
+                                        <SelectValue placeholder={loadingOps ? "Cargando..." : "Seleccione motivo SUNAT"} />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {operaciones.map((op) => (
+                                            <SelectItem key={op.Codigo_Op} value={op.Codigo_Op}>
+                                                {op.Codigo_Op} - {op.Operacion}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="motivo">Sustento / Observación *</Label>
+                                <Input
+                                    id="motivo"
+                                    value={motivo}
+                                    onChange={(e) => setMotivo(e.target.value)}
+                                    placeholder="Ej: Error en digitación de precio..."
+                                />
+                            </div>
                         </div>
 
                         <div className="bg-red-50 p-3 rounded-lg border border-red-200">

@@ -49,7 +49,6 @@ export default function PricePage() {
   const [kardexData, setKardexData] = useState<any[]>([])
   const [loadingKardex, setLoadingKardex] = useState(false)
 
-  // Estados para paginación
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(20)
   const [totalPages, setTotalPages] = useState(1)
@@ -115,7 +114,7 @@ export default function PricePage() {
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setSearchTerm(value)
-    setCurrentPage(1) // Resetear a primera página al buscar
+    setCurrentPage(1)
   }
 
   const fetchLotDetails = async (productCode: string) => {
@@ -191,25 +190,21 @@ export default function PricePage() {
 
   const { laboratories, loadingLab, errorLab } = useLaboratoriesData()
 
-  // Calcular datos paginados
   const getPaginatedData = () => {
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
     return filteredPricesLot.slice(startIndex, endIndex);
   }
 
-  // Calcular total de páginas
   useEffect(() => {
     const total = Math.ceil(filteredPricesLot.length / itemsPerPage);
     setTotalPages(total || 1);
 
-    // Si la página actual es mayor que el total de páginas, ir a la última página
     if (currentPage > total && total > 0) {
       setCurrentPage(total);
     }
   }, [filteredPricesLot, itemsPerPage, currentPage]);
 
-  // Resetear a página 1 cuando cambian los filtros
   useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm, selectedLabs, excludeNoStock]);
@@ -246,7 +241,6 @@ export default function PricePage() {
     setFilteredPricesLot(filtered);
   }, [searchTerm, listPricesLots, excludeNoStock]);
 
-  // Funciones de paginación
   const goToPage = (page: number) => {
     if (page >= 1 && page <= totalPages) {
       setCurrentPage(page);
@@ -745,6 +739,7 @@ export default function PricePage() {
                                             <TableHeader className="bg-gray-100 sticky top-0 z-10">
                                               <TableRow>
                                                 <TableHead className="w-[120px]">Fecha</TableHead>
+                                                <TableHead>Operacion</TableHead>
                                                 <TableHead>Doc</TableHead>
                                                 <TableHead>Serie-Nro</TableHead>
                                                 <TableHead className="text-right">Ingreso</TableHead>
@@ -757,7 +752,8 @@ export default function PricePage() {
                                               {kardexData.map((mov, idx) => (
                                                   <TableRow key={idx}>
                                                     <TableCell className="text-xs">{formatDateToDDMMYYYY(mov.fecha)}</TableCell>
-                                                    <TableCell><Badge variant="outline">{mov.codigo_doc}</Badge></TableCell>
+                                                    <TableCell><Badge variant="outline">{mov.nombre_operacion}</Badge></TableCell>
+                                                    <TableCell className="text-xs font-mono">{mov.tipo_documento}</TableCell>
                                                     <TableCell className="text-xs font-mono">{mov.serie_doc}-{mov.nro_doc}</TableCell>
                                                     <TableCell className="text-right text-green-600 font-medium">
                                                       {mov.cantidad_ingresada > 0 ? `+${Number(mov.cantidad_ingresada).toFixed(2)}` : '-'}
@@ -1078,6 +1074,7 @@ export default function PricePage() {
                                           <TableHeader className="bg-gray-100 sticky top-0 z-10">
                                             <TableRow>
                                               <TableHead className="w-[120px]">Fecha</TableHead>
+                                              <TableHead>Operacion</TableHead>
                                               <TableHead>Doc</TableHead>
                                               <TableHead>Serie-Nro</TableHead>
                                               <TableHead className="text-right">Ingreso</TableHead>
@@ -1090,7 +1087,8 @@ export default function PricePage() {
                                             {kardexData.map((mov, idx) => (
                                                 <TableRow key={idx}>
                                                   <TableCell className="text-xs">{formatDateToDDMMYYYY(mov.fecha)}</TableCell>
-                                                  <TableCell><Badge variant="outline">{mov.codigo_doc}</Badge></TableCell>
+                                                  <TableCell><Badge variant="outline">{mov.nombre_operacion}</Badge></TableCell>
+                                                  <TableCell className="text-xs font-mono">{mov.tipo_documento}</TableCell>
                                                   <TableCell className="text-xs font-mono">{mov.serie_doc}-{mov.nro_doc}</TableCell>
                                                   <TableCell className="text-right text-green-600 font-medium">
                                                     {mov.cantidad_ingresada > 0 ? `+${Number(mov.cantidad_ingresada).toFixed(2)}` : '-'}

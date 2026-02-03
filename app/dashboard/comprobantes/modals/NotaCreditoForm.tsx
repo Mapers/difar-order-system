@@ -25,6 +25,8 @@ export function NotaCreditoForm({ comprobante, onClose, onSuccess }: NotaCredito
 
     const [tiposComprobante, setTiposComprobante] = useState<Sequential[]>([])
     const [selectedSerie, setSelectedSerie] = useState("")
+    const [operaciones, setOperaciones] = useState<any[]>([])
+    const [idOperacion, setIdOperacion] = useState<string>("")
 
     const motivos = [
         { code: "01", label: "Anulación de la operación" },
@@ -47,6 +49,11 @@ export function NotaCreditoForm({ comprobante, onClose, onSuccess }: NotaCredito
                 if (seriesNC.length > 0) {
                     setSelectedSerie(`${seriesNC[0].prefijo}|${seriesNC[0].tipo}`)
                 }
+
+                const resOps = await apiClient.get('/admin/listar/operaciones')
+                setOperaciones(resOps.data.data || [])
+
+                if (resOps.data.data.length > 0) setIdOperacion(resOps.data.data[0].Codigo_Op)
             } catch (error) {
                 console.error("Error cargando series:", error)
                 toast({ title: "Error", description: "No se pudieron cargar las series", variant: "destructive" })
@@ -56,6 +63,16 @@ export function NotaCreditoForm({ comprobante, onClose, onSuccess }: NotaCredito
     }, [])
 
     const handleSubmit = async () => {
+        if (!motivo) {
+            toast({ title: "Requerido", description: "Seleccione el motivo de la Nota de Crédito", variant: "destructive" })
+            return
+        }
+
+        if (!idOperacion) {
+            toast({ title: "Requerido", description: "Seleccione el tipo de operación", variant: "destructive" })
+            return
+        }
+
         if (!selectedSerie) {
             toast({ title: "Requerido", description: "Seleccione una serie para la nota de crédito", variant: "destructive" })
             return
@@ -76,7 +93,8 @@ export function NotaCreditoForm({ comprobante, onClose, onSuccess }: NotaCredito
                 motivo: motivo,
                 observaciones: observaciones,
                 prefijo: prefijo,
-                tipoCompr: tipo
+                tipoCompr: tipo,
+                codOperacion: idOperacion
             })
 
             toast({ title: "Éxito", description: "Nota de crédito generada correctamente" })
@@ -163,6 +181,25 @@ export function NotaCreditoForm({ comprobante, onClose, onSuccess }: NotaCredito
                                         <SelectItem key={m.code} value={m.code}>
                                             <span className="font-mono text-gray-500 mr-2">{m.code}</span>
                                             {m.label}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="motivoSelect" className="text-xs font-semibold uppercase text-gray-500">
+                                Tipo operación
+                            </Label>
+                            <Select value={idOperacion} onValueChange={setIdOperacion}>
+                                <SelectTrigger id="motivoSelect" className="bg-white">
+                                    <SelectValue placeholder={"Seleccione el tipo de operación"} />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {operaciones.map(op => (
+                                        <SelectItem key={op.Codigo_Op} value={op.Codigo_Op}>
+                                            <span className="font-mono text-gray-500 mr-2">{op.Operacion}</span>
+                                            {op.descripcion}
                                         </SelectItem>
                                     ))}
                                 </SelectContent>

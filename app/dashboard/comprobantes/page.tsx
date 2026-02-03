@@ -293,12 +293,13 @@ export default function ComprobantesPage() {
     setShowCancelModal(true)
   }
 
-  const confirmCancelInvoice = async (motivo: string) => {
+  const confirmCancelInvoice = async (motivo: string, codOperacion: string) => {
     if (!comprobanteToCancel) return
     setIsCancelling(true)
     try {
       const response = await apiClient.post(`/pedidos/anularCompr?idCabecera=${comprobanteToCancel.idComprobanteCab}&tipoCompr=${comprobanteToCancel.tipo_comprobante}&nroPedido=${comprobanteToCancel.nroPedido}`, {
-        motivo: motivo
+        motivo: motivo,
+        codOperacion: codOperacion
       })
 
       if (response.data.success) {
