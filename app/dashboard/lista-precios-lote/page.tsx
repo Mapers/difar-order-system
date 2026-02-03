@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from "react"
-import {Search, Download, Eye, ChevronLeft, ChevronRight, DollarSign, Edit} from "lucide-react"
+import {Search, Download, Eye, ChevronLeft, ChevronRight, DollarSign, Edit, History} from "lucide-react"
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card"
 import { PriceService } from "@/app/services/price/PriceService"
 import { PriceMethodsService } from "./services/priceMethodsService"
@@ -45,6 +45,9 @@ export default function PricePage() {
   const [lotDetails, setLotDetails] = useState<LoteInfo[]>([])
   const [loadingLots, setLoadingLots] = useState(false)
   const [priceDetails, setPriceDetails] = useState<PrecioLote | null>(null)
+
+  const [kardexData, setKardexData] = useState<any[]>([])
+  const [loadingKardex, setLoadingKardex] = useState(false)
 
   // Estados para paginación
   const [currentPage, setCurrentPage] = useState(1)
@@ -125,6 +128,19 @@ export default function PricePage() {
       setLotDetails([]);
     } finally {
       setLoadingLots(false);
+    }
+  }
+
+  const fetchKardex = async (productCode: string) => {
+    setLoadingKardex(true);
+    try {
+      const response = await apiClient.get(`/price/kardex/${productCode}`);
+      setKardexData(response.data?.data || []);
+    } catch (error) {
+      console.error("Error al cargar kardex:", error);
+      setKardexData([]);
+    } finally {
+      setLoadingKardex(false);
     }
   }
 
@@ -696,6 +712,77 @@ export default function PricePage() {
                                     )}
                                   </DialogContent>
                                 </Dialog>
+
+                                <Dialog>
+                                  <DialogTrigger asChild>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="gap-1"
+                                        onClick={() => fetchKardex(item.prod_codigo)}
+                                    >
+                                      <History className="h-4 w-4"/>
+                                      Kardex
+                                    </Button>
+                                  </DialogTrigger>
+                                  <DialogContent className="max-w-5xl max-h-[85vh] overflow-hidden flex flex-col">
+                                    <DialogHeader>
+                                      <DialogTitle>Kardex de Inventario</DialogTitle>
+                                      <DialogDescription>
+                                        Movimientos detallados del producto: {item.prod_codigo} - {item.prod_descripcion}
+                                      </DialogDescription>
+                                    </DialogHeader>
+
+                                    <div className="flex-1 overflow-auto mt-4 border rounded-md">
+                                      {loadingKardex ? (
+                                          <div className="p-8 space-y-4">
+                                            <Skeleton className="h-8 w-full" />
+                                            <Skeleton className="h-8 w-full" />
+                                            <Skeleton className="h-8 w-full" />
+                                          </div>
+                                      ) : kardexData.length > 0 ? (
+                                          <Table>
+                                            <TableHeader className="bg-gray-100 sticky top-0 z-10">
+                                              <TableRow>
+                                                <TableHead className="w-[120px]">Fecha</TableHead>
+                                                <TableHead>Doc</TableHead>
+                                                <TableHead>Serie-Nro</TableHead>
+                                                <TableHead className="text-right">Ingreso</TableHead>
+                                                <TableHead className="text-right">Salida</TableHead>
+                                                <TableHead className="text-right">Vta Total</TableHead>
+                                                <TableHead>Cliente/Proveedor</TableHead>
+                                              </TableRow>
+                                            </TableHeader>
+                                            <TableBody>
+                                              {kardexData.map((mov, idx) => (
+                                                  <TableRow key={idx}>
+                                                    <TableCell className="text-xs">{formatDateToDDMMYYYY(mov.fecha)}</TableCell>
+                                                    <TableCell><Badge variant="outline">{mov.codigo_doc}</Badge></TableCell>
+                                                    <TableCell className="text-xs font-mono">{mov.serie_doc}-{mov.nro_doc}</TableCell>
+                                                    <TableCell className="text-right text-green-600 font-medium">
+                                                      {mov.cantidad_ingresada > 0 ? `+${Number(mov.cantidad_ingresada).toFixed(2)}` : '-'}
+                                                    </TableCell>
+                                                    <TableCell className="text-right text-red-600 font-medium">
+                                                      {mov.cantidad_saliente > 0 ? `-${Number(mov.cantidad_saliente).toFixed(2)}` : '-'}
+                                                    </TableCell>
+                                                    <TableCell className="text-right font-mono">
+                                                      S/ {Number(mov.vta_total).toFixed(2)}
+                                                    </TableCell>
+                                                    <TableCell className="text-xs max-w-[200px] truncate" title={mov.cliente}>
+                                                      {mov.cliente}
+                                                    </TableCell>
+                                                  </TableRow>
+                                              ))}
+                                            </TableBody>
+                                          </Table>
+                                      ) : (
+                                          <div className="text-center py-12 text-gray-500">
+                                            No se registran movimientos para este producto.
+                                          </div>
+                                      )}
+                                    </div>
+                                  </DialogContent>
+                                </Dialog>
                               </div>
                             </td>
                           </tr>
@@ -956,6 +1043,77 @@ export default function PricePage() {
                                         )}
                                       </div>
                                   )}
+                                </DialogContent>
+                              </Dialog>
+
+                              <Dialog>
+                                <DialogTrigger asChild>
+                                  <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="gap-1"
+                                      onClick={() => fetchKardex(item.prod_codigo)}
+                                  >
+                                    <History className="h-4 w-4"/>
+                                    Kardex
+                                  </Button>
+                                </DialogTrigger>
+                                <DialogContent className="max-w-5xl max-h-[85vh] overflow-hidden flex flex-col">
+                                  <DialogHeader>
+                                    <DialogTitle>Kardex de Inventario</DialogTitle>
+                                    <DialogDescription>
+                                      Movimientos detallados del producto: {item.prod_codigo} - {item.prod_descripcion}
+                                    </DialogDescription>
+                                  </DialogHeader>
+
+                                  <div className="flex-1 overflow-auto mt-4 border rounded-md">
+                                    {loadingKardex ? (
+                                        <div className="p-8 space-y-4">
+                                          <Skeleton className="h-8 w-full" />
+                                          <Skeleton className="h-8 w-full" />
+                                          <Skeleton className="h-8 w-full" />
+                                        </div>
+                                    ) : kardexData.length > 0 ? (
+                                        <Table>
+                                          <TableHeader className="bg-gray-100 sticky top-0 z-10">
+                                            <TableRow>
+                                              <TableHead className="w-[120px]">Fecha</TableHead>
+                                              <TableHead>Doc</TableHead>
+                                              <TableHead>Serie-Nro</TableHead>
+                                              <TableHead className="text-right">Ingreso</TableHead>
+                                              <TableHead className="text-right">Salida</TableHead>
+                                              <TableHead className="text-right">Vta Total</TableHead>
+                                              <TableHead>Cliente/Proveedor</TableHead>
+                                            </TableRow>
+                                          </TableHeader>
+                                          <TableBody>
+                                            {kardexData.map((mov, idx) => (
+                                                <TableRow key={idx}>
+                                                  <TableCell className="text-xs">{formatDateToDDMMYYYY(mov.fecha)}</TableCell>
+                                                  <TableCell><Badge variant="outline">{mov.codigo_doc}</Badge></TableCell>
+                                                  <TableCell className="text-xs font-mono">{mov.serie_doc}-{mov.nro_doc}</TableCell>
+                                                  <TableCell className="text-right text-green-600 font-medium">
+                                                    {mov.cantidad_ingresada > 0 ? `+${Number(mov.cantidad_ingresada).toFixed(2)}` : '-'}
+                                                  </TableCell>
+                                                  <TableCell className="text-right text-red-600 font-medium">
+                                                    {mov.cantidad_saliente > 0 ? `-${Number(mov.cantidad_saliente).toFixed(2)}` : '-'}
+                                                  </TableCell>
+                                                  <TableCell className="text-right font-mono">
+                                                    S/ {Number(mov.vta_total).toFixed(2)}
+                                                  </TableCell>
+                                                  <TableCell className="text-xs max-w-[200px] truncate" title={mov.cliente}>
+                                                    {mov.cliente}
+                                                  </TableCell>
+                                                </TableRow>
+                                            ))}
+                                          </TableBody>
+                                        </Table>
+                                    ) : (
+                                        <div className="text-center py-12 text-gray-500">
+                                          No se registran movimientos para este producto.
+                                        </div>
+                                    )}
+                                  </div>
                                 </DialogContent>
                               </Dialog>
                             </div>
