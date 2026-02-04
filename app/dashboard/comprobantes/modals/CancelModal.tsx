@@ -10,11 +10,11 @@ import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/c
 
 interface CancelModalProps {
     open: boolean
-    onOpenChange: (open: boolean, opera: string) => void
+    onOpenChange: (open: boolean) => void
     comprobante: Comprobante | null
     tiposComprobante: any[]
     isCancelling: boolean
-    onConfirm: (motivo: string) => void
+    onConfirm: (motivo: string, opera: string) => void
 }
 
 export function CancelModal({ open, onOpenChange, comprobante, tiposComprobante, isCancelling, onConfirm }: CancelModalProps) {
@@ -25,7 +25,7 @@ export function CancelModal({ open, onOpenChange, comprobante, tiposComprobante,
 
     const handleOpenChange = (isOpen: boolean) => {
         if (!isOpen) setMotivo("")
-        onOpenChange(isOpen, idOperacion)
+        onOpenChange(isOpen)
     }
 
     const getTipoDesc = (tipo: number) => {
@@ -118,7 +118,7 @@ export function CancelModal({ open, onOpenChange, comprobante, tiposComprobante,
                 <DialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0">
                     <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isCancelling} className="w-full sm:w-auto">Cancelar</Button>
                     <Button
-                        onClick={() => onConfirm(motivo)}
+                        onClick={() => onConfirm(motivo, idOperacion)}
                         disabled={isCancelling || !motivo.trim()}
                         variant="destructive"
                         className="w-full sm:w-auto"
