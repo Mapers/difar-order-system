@@ -350,7 +350,7 @@ export const Remision = ({ pedido, detalles, onOpenChange }: RemisionModalProps)
 
   const [productos, setProductos] = useState<PedidoDet[]>(detalles.map(item => ({
     ...item,
-    productoUnidad: item.productoUnidad || 'KGM'
+    productoUnidad: 'KGM', //item.productoUnidad || 'KGM'
   })));
 
   const setValidationError = (message: string) => {
@@ -548,7 +548,7 @@ export const Remision = ({ pedido, detalles, onOpenChange }: RemisionModalProps)
         p_punto_llegada_cod_estab_sunat: puntosUbicacion.llegada.codigoSunat,
         p_formato_de_pdf: datosGuia.formatoPdf,
         detalles: productos.map(producto => ({
-          p_unidad_de_medida: producto.productoUnidad || "KGM",
+          p_unidad_de_medida: producto.productoUnidad,
           p_codigo: producto.codigoitemPedido,
           p_descripcion: producto.productoNombre || "Producto sin descripción",
           p_cantidad: producto.cantPedido,
