@@ -380,31 +380,51 @@ export default function OrderDetailsPage({ params }: { params: { id: string } })
             </CardTitle>
           </CardHeader>
           <CardContent className="p-6">
-            <div className="grid grid-cols-1 gap-4">
-              <div>
-                <p className="text-sm font-medium text-gray-500">Cliente:</p>
-                <p className="text-gray-900 font-medium">
-                  {pedido.nombreCliente}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+              <div className="md:col-span-2">
+                <p className="text-sm font-medium text-gray-500">Razón Social:</p>
+                <p className="text-gray-900 font-medium text-lg">
+                  {pedido.nombreComercial || "No especificada"}
                 </p>
               </div>
+
               <div>
-                <p className="text-sm font-medium text-gray-500">Contacto:</p>
-                <p className="text-gray-900">{pedido.contactoPedido || "No especificado"}</p>
+                <p className="text-sm font-medium text-gray-500">Cliente / Contacto:</p>
+                <p className="text-gray-900">{pedido.nombreCliente}</p>
               </div>
+
+              <div>
+                <p className="text-sm font-medium text-gray-500">Correo Electrónico:</p>
+                <p className="text-gray-900">
+                  {pedido.correo || "No especificado"}
+                </p>
+              </div>
+
               <div>
                 <p className="text-sm font-medium text-gray-500">Teléfono:</p>
                 <p className="text-gray-900">{pedido.telefonoPedido || "No especificado"}</p>
               </div>
-              <div>
+
+              {pedido.contactoPedido && (
+                  <div>
+                    <p className="text-sm font-medium text-gray-500">Contacto Adicional:</p>
+                    <p className="text-gray-900">{pedido.contactoPedido}</p>
+                  </div>
+              )}
+
+              <div className="md:col-span-2 mt-2">
                 <p className="text-sm font-medium text-gray-500">Dirección de Entrega:</p>
                 <p className="text-gray-900">{pedido.direccionEntrega || "No especificada"}</p>
               </div>
+
               {pedido.referenciaDireccion && (
-                <div>
-                  <p className="text-sm font-medium text-gray-500">Referencia:</p>
-                  <p className="text-gray-900">{pedido.referenciaDireccion}</p>
-                </div>
+                  <div className="md:col-span-2">
+                    <p className="text-sm font-medium text-gray-500">Referencia:</p>
+                    <p className="text-gray-900">{pedido.referenciaDireccion}</p>
+                  </div>
               )}
+
             </div>
           </CardContent>
         </Card>

@@ -51,6 +51,7 @@ export interface Pedido {
   por_autorizar: string
   is_autorizado: string
   continue: number
+  correo?: string
 }
 
 export interface PedidoDet {
