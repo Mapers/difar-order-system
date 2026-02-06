@@ -74,6 +74,8 @@ export interface Pedido {
     errorFecha?: string
     observaciones?: string
     condicionCredito?: string
+    telefono?: string
+    email?: string
 }
 
 export interface GuiaReferencia {

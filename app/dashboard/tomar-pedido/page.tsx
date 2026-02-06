@@ -528,8 +528,7 @@ export default function OrderPage() {
     const hasChanges =
         selectedClient?.Dirección !== editedClientData.Dirección ||
         selectedClient?.telefono !== editedClientData.telefono ||
-        referenciaDireccion !== editedClientData.referencia
-
+        String(referenciaDireccion || '') !== String(editedClientData.referencia || '')
     return hasChanges && editedClientData.Dirección !== ''
   }
 

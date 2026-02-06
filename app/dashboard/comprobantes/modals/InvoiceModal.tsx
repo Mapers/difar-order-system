@@ -9,6 +9,7 @@ import { GuidesSelectorModal } from "./GuidesSelectorModal"
 import { Badge } from "@/components/ui/badge"
 import { Sequential } from "@/app/dashboard/configuraciones/page"
 import { InstallmentModal, Cuota } from "./InstallmentModal"
+import {ContactConfirmModal} from "@/app/dashboard/comprobantes/modals/ContactConfirmModal";
 
 interface InvoiceModalProps {
     open: boolean
@@ -24,7 +25,7 @@ interface InvoiceModalProps {
     tipoSunat: string
     setTipoSunat: (v: string) => void
     isProcessing: boolean
-    onConfirm: (guiasSeleccionadas: GuiaReferencia[], cuotas?: Cuota[]) => void
+    onConfirm: (guiasSeleccionadas: GuiaReferencia[], cuotas: Cuota[], email: string, phone: string) => void
 }
 
 export function InvoiceModal({
@@ -34,7 +35,7 @@ export function InvoiceModal({
                              }: InvoiceModalProps) {
     const [showGuidesModal, setShowGuidesModal] = useState(false)
     const [selectedGuides, setSelectedGuides] = useState<GuiaReferencia[]>([])
-
+    const [showContactModal, setShowContactModal] = useState(false)
     const [showInstallmentModal, setShowInstallmentModal] = useState(false)
     const [cuotas, setCuotas] = useState<Cuota[]>([])
 
@@ -51,6 +52,14 @@ export function InvoiceModal({
             }])
         }
     }, [open, selectedOrder])
+
+    const handleInitialConfirm = () => {
+        setShowContactModal(true)
+    }
+
+    const handleFinalConfirm = (email: string, phone: string) => {
+        onConfirm(selectedGuides, isCredit ? cuotas : [], email, phone)
+    }
 
     return (
         <>
@@ -195,7 +204,7 @@ export function InvoiceModal({
                         <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isProcessing} className="w-full sm:w-auto">Cancelar</Button>
                         <div className="flex gap-2 w-full sm:w-auto">
                             <Button
-                                onClick={() => onConfirm(selectedGuides, isCredit ? cuotas : [])}
+                                onClick={handleInitialConfirm}
                                 disabled={isProcessing || !invoiceType || !sunatTransaction || (isCredit && cuotas.length === 0)}
                                 className="bg-green-600 hover:bg-green-700 flex-1"
                             >
@@ -224,6 +233,17 @@ export function InvoiceModal({
                         onSave={setCuotas}
                     />
                 </>
+            )}
+
+            {selectedOrder && (
+                <ContactConfirmModal
+                    open={showContactModal}
+                    onOpenChange={setShowContactModal}
+                    initialEmail={selectedOrder.email || ""}
+                    initialPhone={selectedOrder.telefono || ""}
+                    onConfirm={handleFinalConfirm}
+                    isProcessing={isProcessing}
+                />
             )}
         </>
     )

@@ -249,7 +249,7 @@ export default function ComprobantesPage() {
     }
   }
 
-  const handleConfirmInvoice = async (guiasSeleccionadas: GuiaReferencia[] = [], cuotas: Cuota[] = []) => {
+  const handleConfirmInvoice = async (guiasSeleccionadas: GuiaReferencia[] = [], cuotas: Cuota[] = [], email: string, phone: string) => {
     setIsProcessingInvoice(true)
     try {
       const tipoComprobante = tiposComprobante.find(t => t.prefijo === invoiceType.split('|')[0])
@@ -261,14 +261,16 @@ export default function ComprobantesPage() {
       const documentosReferenciados = guiasSeleccionadas.map(guia => ({
         COD_TIP_DOC_REF: guia.tipo_comprobante,
         NUM_SERIE_CPE_REF: guia.serie,
-        NUM_CORRE_CPE_REF: guia.numero
+        NUM_CORRE_CPE_REF: guia.numero,
       }))
 
       const response = await apiClient.post(
           `/pedidos/generateCompr?nroPedido=${selectedOrder.nroPedido}&tipoCompr=${tipoComprobante?.tipo}&sunatTrans=${transaccionSunat?.idTransaction}&tipoDocSunat=${tipoSunatT?.codigo}&prefijo=${tipoComprobante?.prefijo}`,
           {
             docs_referenciado: documentosReferenciados,
-            cuotas: cuotas
+            cuotas: cuotas,
+            email,
+            phone,
           }
       )
 
