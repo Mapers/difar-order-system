@@ -655,12 +655,14 @@ export default function ComprobantesPage() {
           </TabsContent>
         </Tabs>
 
-        <InvoiceModal
+        {showInvoiceModal && <InvoiceModal
             open={showInvoiceModal} onOpenChange={setShowInvoiceModal} selectedOrder={selectedOrder}
             tiposComprobante={tiposComprobante} sunatTransacciones={sunatTransacciones} tipoDocsSunat={tipoDocsSunat}
-            invoiceType={invoiceType} setInvoiceType={handleInvoiceType} sunatTransaction={sunatTransaction} setSunatTransaction={setSunatTransaction}
-            tipoSunat={tipoSunat} setTipoSunat={setTipoSunat} isProcessing={isProcessingInvoice} onConfirm={handleConfirmInvoice}
-        />
+            invoiceType={invoiceType} setInvoiceType={handleInvoiceType} sunatTransaction={sunatTransaction}
+            setSunatTransaction={setSunatTransaction}
+            tipoSunat={tipoSunat} setTipoSunat={setTipoSunat} isProcessing={isProcessingInvoice}
+            onConfirm={handleConfirmInvoice}
+        />}
         <CancelModal
             open={showCancelModal}
             onOpenChange={setShowCancelModal}
