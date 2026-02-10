@@ -14,7 +14,7 @@ import {
   Package,
   ShoppingCart,
   FileText,
-  GitBranch, Receipt, BarChart2, LineChart, UserCog, Notebook, Gift, Map, Settings
+  GitBranch, Receipt, BarChart2, LineChart, UserCog, Notebook, Gift, Map, Settings, User
 } from "lucide-react";
 import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
@@ -139,16 +139,39 @@ export function MobileNav() {
               <RadixDialogTitle asChild>
                 <VisuallyHidden>Menú de navegación</VisuallyHidden>
               </RadixDialogTitle>
-              <div className="flex h-16 items-center border-b px-6 shrink-0">
-                <Link href="/dashboard" className="flex items-center gap-2" onClick={handleNav}>
+              <div className="flex flex-col items-center border-b px-4 pt-4 pb-2 gap-2">
+                <Link href="/dashboard" className="flex items-center gap-2">
                   <Image
                       src="/difar-logo.png"
                       alt="Logo difar"
-                      width={80}
-                      height={40}
+                      width={120}
+                      height={60}
                       className="object-contain"
                   />
                 </Link>
+                <div className="w-full rounded-xl bg-gradient-to-r from-blue-50 to-indigo-50 p-2 shadow-sm">
+                  <div className="flex items-start gap-3">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-blue-100 to-indigo-200 shadow-inner">
+                      <User className="h-6 w-6 text-blue-700" />
+                    </div>
+
+                    <div className="flex-1 min-w-0">
+                  <span style={{fontSize: '12px'}}>
+                    {user?.nombreCompleto || "Usuario"}
+                  </span>
+                      <div className="flex items-center gap-1.5 mb-1">
+                    <span className="text-xs font-medium text-blue-700 bg-blue-100 px-2 py-0.5 rounded-full">
+                    {user?.rolDescripcion || "Sin rol"}
+                  </span>
+                      </div>
+                      <div className="flex items-center gap-1.5 ml-1">
+                    <span className="text-xs text-gray-400 font-mono">
+                    {user?.codigo || "N/A"}
+                  </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               <ScrollArea className="flex-1">

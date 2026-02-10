@@ -5,6 +5,7 @@ import { Package, ShoppingCart, Users, TrendingUp, Calendar, FileText } from "lu
 import Link from "next/link"
 import {useEffect, useState} from "react";
 import apiClient from "@/app/api/client";
+import {useAuth} from "@/context/authContext";
 
 interface DashboardStats {
   totalClientes: number;
@@ -20,14 +21,19 @@ export default function Dashboard() {
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const {user} = useAuth();
 
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
         const [clientesRes, articulosRes, pedidosRes] = await Promise.all([
-          apiClient.get('/clientes/stats/count'),
+          apiClient.post('/clientes/stats/count', {
+            seller: (user?.idRol && [2, 3].includes(user.idRol)) ? user.codigo : null,
+          }),
           apiClient.get('/articulos/stats/count'),
-          apiClient.get('/pedidos/stats/count')
+          apiClient.post('/pedidos/stats/count', {
+            seller: (user?.idRol && [1].includes(user.idRol)) ? user.codigo : null,
+          })
         ])
 
         if (clientesRes.status !== 200 || articulosRes.status !== 200 || pedidosRes.status !== 200) {
@@ -67,7 +73,7 @@ export default function Dashboard() {
     }
 
     fetchDashboardData()
-  }, [])
+  }, [user])
 
   if (loading) {
     return <div className="flex justify-center items-center h-64">Cargando datos...</div>

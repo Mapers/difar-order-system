@@ -745,7 +745,7 @@ export default function PricePage() {
                                                 <TableHead className="text-right">Ingreso</TableHead>
                                                 <TableHead className="text-right">Salida</TableHead>
                                                 <TableHead className="text-right">Vta Total</TableHead>
-                                                <TableHead>Cliente/Proveedor</TableHead>
+                                                {user?.idRol && [2, 3].includes(user.idRol) && <TableHead>Cliente/Proveedor</TableHead>}
                                               </TableRow>
                                             </TableHeader>
                                             <TableBody>
@@ -764,9 +764,10 @@ export default function PricePage() {
                                                     <TableCell className="text-right font-mono">
                                                       S/ {Number(mov.vta_total).toFixed(2)}
                                                     </TableCell>
-                                                    <TableCell className="text-xs max-w-[200px] truncate" title={mov.cliente}>
+                                                    {user?.idRol && [2, 3].includes(user.idRol) && <TableCell className="text-xs max-w-[200px] truncate"
+                                                                title={mov.cliente}>
                                                       {mov.cliente}
-                                                    </TableCell>
+                                                    </TableCell>}
                                                   </TableRow>
                                               ))}
                                             </TableBody>

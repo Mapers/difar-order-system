@@ -478,18 +478,105 @@ export default function UsuariosPage() {
 
         {expandedRows[usuario.id_usuario] && (
           <div className="mt-3 pt-3 border-t">
-            <Button
-              className="w-full mb-2"
-              onClick={() => {
-                setSelectedUsuario(usuario)
-                setSelectedRol(usuario.id_rol.toString())
-                setActivo(usuario.activo)
-                setShowEditDialog(true)
-              }}
-            >
-              <Edit className="h-4 w-4 mr-2" />
-              Editar
-            </Button>
+            <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+              <DialogTrigger asChild>
+                <Button
+                    className="w-full mb-2"
+                    onClick={() => {
+                      setSelectedUsuario(usuario)
+                      setSelectedRol(usuario.id_rol.toString())
+                      setActivo(usuario.activo)
+                    }}
+                >
+                  <Edit className="h-4 w-4 mr-2" />
+                  Editar
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>Editar Usuario</DialogTitle>
+                </DialogHeader>
+
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Nombre</label>
+                    <Input
+                        value={selectedUsuario?.nombre_completo || ''}
+                        disabled
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-1">DNI</label>
+                    <Input
+                        value={selectedUsuario?.dni || ''}
+                        onChange={(e) => setSelectedUsuario({
+                          ...selectedUsuario!,
+                          dni: e.target.value
+                        })}
+                        disabled
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Celular</label>
+                    <Input
+                        placeholder="Ingrese Celular (9 dígitos)"
+                        className={telefonoError ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}
+                        value={selectedUsuario?.telefono || ''}
+                        onChange={(e) => {
+                          const value = e.target.value.replace(/\D/g, '').slice(0, 9)
+                          setSelectedUsuario({
+                            ...selectedUsuario!,
+                            telefono: value
+                          })
+                          if (value.length > 0 && value.length !== 9) {
+                            setTelefonoError('El Celular debe tener 9 dígitos')
+                          } else {
+                            setTelefonoError('')
+                          }
+                        }}
+                    />
+                    {telefonoError && <p className="text-red-500 text-xs mt-1">{telefonoError}</p>}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Rol</label>
+                    <Select value={selectedRol} onValueChange={setSelectedRol}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Seleccionar rol"/>
+                      </SelectTrigger>
+                      <SelectContent>
+                        {roles.map((rol) => (
+                            <SelectItem key={rol.id} value={rol.id.toString()}>
+                              {rol.nombre}
+                            </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <label className="text-sm font-medium">Activo</label>
+                    <input
+                        type="checkbox"
+                        checked={activo}
+                        onChange={(e) => setActivo(e.target.checked)}
+                        className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-2 mt-4">
+                  <Button variant="outline" onClick={() => setShowEditDialog(false)}>
+                    Cancelar
+                  </Button>
+                  <Button onClick={handleUpdateUsuario}>
+                    Guardar Cambios
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
           </div>
         )}
       </CardContent>
@@ -904,7 +991,7 @@ export default function UsuariosPage() {
               ) : isMobile ? (
                 <div className="p-2">
                   {usuarios.map((usuario) => (
-                    <MobileUsuarioCard key={usuario.id_usuario + '|' + usuario.id_rol} usuario={usuario} />
+                    <MobileUsuarioCard key={usuario.id + '|' + usuario.id_rol} usuario={usuario} />
                   ))}
                 </div>
               ) : (
