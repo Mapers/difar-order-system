@@ -24,3 +24,8 @@ export const fetchTypeDocuments = async (): Promise<any> => {
 export const fetchAvailableZones = async (): Promise<any> => {
     return apiClient.get('/reportes/zones')
 }
+
+export const searchClientsRequest = async (search: string, vendedor: string | null): Promise<any> => {
+    if (vendedor) return apiClient.get(`/reportes/searchclient?vendedor=${vendedor}&search=${search}`);
+    return apiClient.get(`/reportes/searchclient?search=${search}`);
+};
