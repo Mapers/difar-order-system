@@ -1,6 +1,6 @@
 'use client'
 
-import {useEffect, useMemo, useState} from "react"
+import {useCallback, useEffect, useMemo, useState} from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -61,13 +61,16 @@ export default function ClientsPage() {
     return config ? config.llave_config : '1';
   }, [globalConfigs]);
 
-  const getAllClients = async () => {
+  const getAllClients = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
       const codVendedor = user?.codigo;
 
-      const response = await ClientService.getAllClientsByCodVendedor(user?.idRol === 1 ? codVendedor : '', vistaTablaClientes);
+      const response = await ClientService.getAllClientsByCodVendedor(
+          user?.idRol === 1 ? codVendedor ?? '' : '',
+          vistaTablaClientes
+      );
       const rawClients = response?.data || [];
 
       const mappedClients: IClient[] = rawClients.map(mapClientFromApi)
@@ -80,7 +83,7 @@ export default function ClientsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, vistaTablaClientes]);
 
   const handleCreateNewEvaluation = () => {
     setShowCreateModal(true);
@@ -123,7 +126,7 @@ export default function ClientsPage() {
     if (isAuthenticated && user) {
       getAllClients();
     }
-  }, [isAuthenticated, user])
+  }, [isAuthenticated, user, getAllClients]);
 
   const goToPage = (page: number) => {
     if (page >= 1 && page <= totalPages) {
@@ -525,7 +528,6 @@ export default function ClientsPage() {
                 </div>
               </div>
 
-              {/* PAGINACIÓN */}
               {filteredClients.length > 0 && (
                   <div className="border-t bg-gray-50 px-4 py-3 mt-6">
                     <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">

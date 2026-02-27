@@ -1,15 +1,36 @@
 
 export interface IClient {
-  codigoInterno: string
-  razonSocial: string
-  nombreComercial: string
-  tipoDocumento: string
-  numeroDocumento: string
-  categoria: string
-  fechaEvaluacion: string
-  provincia: string
-  zona: string
-  estado: string
+  codigoInterno: string;
+  razonSocial: string;
+  nombreComercial: string;
+  tipoDocumento: string;
+  numeroDocumento: string;
+  categoria: string;
+  fechaEvaluacion: string;
+  provincia: string;
+  zona: string;
+  estado: string;
+  // Campos exclusivos de la Vista 2
+  direccion?: string;
+  telefono?: string;
+  lineaCredito?: number;
+  correoElectronico?: string;
+  referenciaDireccion?: string;
+  relacion?: string;
+  ctaContab?: string | number;
+  codigoVendedor?: string;
+  tipoCliente?: string;
+  estadoSunat?: string;
+  fechaInicio?: string;
+  nroRegistro?: string;
+  resultado?: string;
+  nomRepLegal?: string;
+  nroResAutSani?: string;
+  situacionFuncionamiento?: string;
+  certificaciones?: string;
+  itemLista?: string;
+  otros?: string;
+  idDistrito?: string | number;
 }
 
 

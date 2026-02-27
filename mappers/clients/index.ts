@@ -2,17 +2,37 @@ import { format, parseISO } from "date-fns"
 import { IClientEvaluation, IClient, IEvaluation, IEvaluacionCalif } from "@/interface/clients/client-interface";
 // cliente- para grilla
 export const mapClientFromApi = (data: any): IClient => ({
-  codigoInterno: data.codigo || "No registrado",
-  razonSocial: data.cliente_nombre || "No registrado",
-  nombreComercial: data.cliente_comercial || "No registrado",
-  tipoDocumento: data.documento_abrev || "No registrado",
-  numeroDocumento: data.documento_numero || "No registrado",
+  codigoInterno: data.codigoInterno || data.codigo || "No registrado",
+  razonSocial: data.razonSocial || data.cliente_nombre || "No registrado",
+  nombreComercial: data.nombreComercial || data.cliente_comercial || "No registrado",
+  tipoDocumento: data.tipoDocumento || data.documento_abrev || "No registrado",
+  numeroDocumento: data.numeroDocumento || data.documento_numero || "No registrado",
   categoria: data.categoria || "No registrado",
-  fechaEvaluacion: data.fecha_evaluacion ? data.fecha_evaluacion : "Sin fecha",
-  provincia: data.provincia || "--",
-  zona: data.zona || "--",
-  estado: data.estado || "No registrado",
-})
+  fechaEvaluacion: data.fecha_evaluacion || data.fechaRegistros || "Sin fecha",
+  provincia: data.provincia || data.provinciaId?.toString() || "--",
+  zona: data.zona || data.idZona || "--",
+  estado: data.estado || data.situacion || "No registrado",
+  direccion: data.direccion || "",
+  telefono: data.telefono || "",
+  lineaCredito: data.lineaCredito ? Number(data.lineaCredito) : 0,
+  correoElectronico: data.correoElectronico || "",
+  referenciaDireccion: data.referenciaDireccion || "",
+  relacion: data.relacion || "",
+  ctaContab: data.ctaContab || "",
+  codigoVendedor: data.codigoVendedor || "",
+  tipoCliente: data.tipoCliente || "",
+  estadoSunat: data.estadoSUNAT || data.estadoSunat || "",
+  fechaInicio: data.FECHA_INICIO || data.fechaInicio || "",
+  nroRegistro: data.nroRegistro || "",
+  resultado: data.resultado || "",
+  nomRepLegal: data.nomRepLegal || "",
+  nroResAutSani: data.nroResAutSani || "",
+  situacionFuncionamiento: data.situacionFuncionamiento || "",
+  certificaciones: data.certificaciones || "",
+  itemLista: data.itemLista || "",
+  otros: data.otros || "",
+  idDistrito: data.idDistrito || "",
+});
 
 // cliente en evaluacion
 export const mapClientEvaluationFromApi = (data: any): IClientEvaluation => ({
