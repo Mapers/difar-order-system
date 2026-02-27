@@ -1,3 +1,5 @@
+import {AppConfig} from "@/app/dashboard/configuraciones/page";
+
 export interface UserLoginDTO {
     dni: string;
 }
@@ -63,4 +65,6 @@ export interface AuthContextType {
     errors: string[];
     loading: boolean;
     refreshToken: () => void;
+    globalConfigs: AppConfig[];
+    fetchGlobalConfigs: () => Promise<void>;
 }

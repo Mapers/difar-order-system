@@ -68,8 +68,8 @@ const CollectClienteRow: React.FC<ClientRowProps> = ({ client, invoices }) => {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {invoices.map((invoice: Invoice) => (
-                                <InvoiceCollectClientRow key={invoice.Fecha_Emision} invoice={invoice} />
+                            {invoices.map((invoice: Invoice, index) => (
+                                <InvoiceCollectClientRow key={invoice.Fecha_Emision + index} invoice={invoice} />
                             ))}
                         </TableBody>
                     </Table>

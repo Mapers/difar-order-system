@@ -6,6 +6,8 @@ import { decodeToken, isTokenNearExpiry } from '@/app/utils/tokenUtils';
 import { AuthService } from '@/app/services/auth/AuthService';
 import { AuthContextType, SmsCheck, SmsSend, User, UserLoginDTO, UserRegisterDTO } from '@/app/services/auth/types';
 import { toast } from '@/hooks/use-toast';
+import {AppConfig} from "@/app/dashboard/configuraciones/page";
+import apiClient from "@/app/api/client";
 
 // Inicialización del contexto
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -27,6 +29,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const [errors, setErrors] = useState<string[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const router = useRouter();
+    const [globalConfigs, setGlobalConfigs] = useState<AppConfig[]>([]);
 
     // Función para limpiar el estado de autenticación
     const clearAuthState = useCallback(() => {
@@ -34,6 +37,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setIsAuthenticated(false);
         localStorage.removeItem('token');
         localStorage.removeItem('invoice');
+    }, []);
+
+    // Nueva función para obtener configuraciones
+    const fetchGlobalConfigs = useCallback(async () => {
+        try {
+            // Asumiendo que esta es tu ruta pública o autenticada para listar configs
+            const response = await apiClient.get('/admin/listar/configuraciones');
+            if (response.data && response.data.data) {
+                setGlobalConfigs(response.data.data);
+            }
+        } catch (error) {
+            console.error("Error al cargar configuraciones globales", error);
+        }
     }, []);
 
     // Función para manejar errores
@@ -162,6 +178,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             if (tokenResult.isValid && tokenResult.user) {
                 setUser(tokenResult.user);
                 setIsAuthenticated(true);
+                fetchGlobalConfigs();
 
                 // Verificar si está próximo a expirar
                 if (isTokenNearExpiry(token)) {
@@ -176,7 +193,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             setIsAuthenticated(false);
         }
         setLoading(false);
-    }, [clearAuthState]);
+    }, [clearAuthState, fetchGlobalConfigs]);
 
     // Verificar token al montar el componente
     useEffect(() => {
@@ -216,6 +233,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 errors,
                 loading,
                 refreshToken,
+                globalConfigs,
+                fetchGlobalConfigs
             }}
         >
             {children}
