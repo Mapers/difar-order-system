@@ -16,8 +16,9 @@ import ZoneClientReport from "@/components/reporte/zoneClientReport"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { z } from 'zod'
 import { ZoneReportSkeleton } from "@/components/skeleton/ZoneReportSkeleton"
-import {useAuth} from "@/context/authContext";
+import { useAuth } from "@/context/authContext";
 
+import ExportDocumentClientPdfButton from "@/components/reporte/exportDocumentClientPdfButton";
 
 export default function DocumentClientPage() {
   const [typesDocuments, setTypesDocuments] = useState<TypeDocument[]>([])
@@ -60,9 +61,10 @@ export default function DocumentClientPage() {
       if (response.status !== 200) throw new Error("Error al consultar documento de cliente")
       const data = response?.data?.data
       setDataZoneClient(data)
+      setActiveTab("0")
     } catch (error: any) {
       if (error instanceof z.ZodError) {
-        toast({ title: "Consultar Cliente", description: error.errors[0]?.message, variant: "error" })
+        toast({ title: "Consultar Cliente", description: error.errors[0]?.message, variant: "destructive" })
       } else {
         console.error("Error search document")
       }
@@ -88,89 +90,113 @@ export default function DocumentClientPage() {
     }
   }, [])
 
-
   return (
-    <div className="grid gap-6">
-      <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold tracking-tight text-gray-900">Consulta Documento Clientes</h1>
-        <p className="text-gray-500">Gestiona la información de tus clientes.</p>
-      </div>
+      <div className="grid gap-6">
+        <div className="flex flex-col gap-2">
+          <h1 className="text-3xl font-bold tracking-tight text-gray-900">Consulta Documento Clientes</h1>
+          <p className="text-gray-500">Gestiona la información de tus clientes.</p>
+        </div>
 
-      <Card className="shadow-md">
-        <CardHeader className="flex flex-col sm:flex-row justify-between gap-4 sm:items-center">
-          <div className="flex flex-col sm:flex-row gap-4 sm:items-center">
-            <Select value={selectedDocumentCode} onValueChange={handleDocumentSelect} required>
-              <SelectTrigger className="bg-white w-60">
-                <SelectValue placeholder="Seleccionar Documento" />
-              </SelectTrigger>
-              <SelectContent>
-                {loadingZone ? (
-                  <div className="p-4">
-                    <Skeleton className="h-4 w-full" />
-                  </div>
-                ) : typesDocuments.length > 0 ? (
-                  typesDocuments.map((c) => (
-                    <SelectItem key={c.Cod_Tipo} value={c.Cod_Tipo}>
-                      {c.Descripcion}
-                    </SelectItem>
-                  ))
-                ) : (
-                  <div className="p-4 text-sm text-gray-500">
-                    No se encontraron documentos
-                  </div>
-                )}
-              </SelectContent>
-            </Select>
-            <div className="relative border-red">
-              <Input
-                type="search"
-                placeholder="F000-0000"
-                className={`pl-8 bg-white ${isEmpty ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
-                value={documentCode}
-                onChange={(e) => {
-                  setDocumentCode(e.target.value)
-                }}
-                required
-              />
-            </div>
-
-            <Button className="bg-blue-600 hover:bg-blue-700"
-              onClick={handleSearchDocument}
-            >
-              <Search className="mr-2 h-4 w-4" />
-              Buscar
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="rounded-md border bg-white">
-            {loadingZone ? (
-              < ZoneReportSkeleton />
-            ) : dataZoneClient.length > 0 ? (
-              <Tabs value={activeTab} onValueChange={setActiveTab}>
-                <TabsList className="grid grid-cols-2 sm:grid-cols-4 w-full mb-4">
-                  {dataZoneClient.map((zone, index) => (
-                    <TabsTrigger key={index} value={index.toString()}>
-                      {zone.nomVend}
-                    </TabsTrigger>
-                  ))}
-                </TabsList>
-
-                {dataZoneClient.map((zone, index) => (
-                  <TabsContent key={index} value={index.toString()}>
-                    <ZoneClientReport zone={zone} clients={zone.document_dislab} />
-                  </TabsContent>
-                ))}
-              </Tabs>
-            ) : (
-              <div className="text-center text-sm text-gray-500 py-6">
-                No hay datos disponibles.
+        <Card className="shadow-md">
+          <CardHeader className="flex flex-col gap-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div>
+                <h2 className="text-xl font-semibold tracking-tight">Filtros de búsqueda</h2>
+                <p className="text-sm text-muted-foreground">
+                  Busca facturas o documentos específicos de un cliente
+                </p>
               </div>
-            )}
-          </div>
-        </CardContent>
 
-      </Card >
-    </div >
+              <div className="flex sm:w-auto w-full">
+                <ExportDocumentClientPdfButton
+                    data={dataZoneClient}
+                    disabled={loadingZone || dataZoneClient.length === 0}
+                />
+              </div>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-4 sm:items-center w-full">
+              <Select value={selectedDocumentCode} onValueChange={handleDocumentSelect} required>
+                <SelectTrigger className="bg-white w-full sm:w-60 h-10">
+                  <SelectValue placeholder="Seleccionar Documento" />
+                </SelectTrigger>
+                <SelectContent>
+                  {loading ? (
+                      <div className="p-4">
+                        <Skeleton className="h-4 w-full" />
+                      </div>
+                  ) : typesDocuments.length > 0 ? (
+                      typesDocuments.map((c) => (
+                          <SelectItem key={c.Cod_Tipo} value={c.Cod_Tipo}>
+                            {c.Descripcion}
+                          </SelectItem>
+                      ))
+                  ) : (
+                      <div className="p-4 text-sm text-gray-500">
+                        No se encontraron documentos
+                      </div>
+                  )}
+                </SelectContent>
+              </Select>
+
+              <div className="relative border-red w-full sm:w-auto flex-1">
+                <Input
+                    type="search"
+                    placeholder="Ej: F000-0000"
+                    className={`pl-4 bg-white h-10 ${isEmpty ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
+                    value={documentCode}
+                    onChange={(e) => {
+                      setDocumentCode(e.target.value)
+                    }}
+                    required
+                />
+              </div>
+
+              <Button
+                  className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto h-10"
+                  onClick={handleSearchDocument}
+                  disabled={loadingZone}
+              >
+                <Search className="mr-2 h-4 w-4" />
+                Buscar
+              </Button>
+            </div>
+          </CardHeader>
+
+          <CardContent>
+            <div className="rounded-md border bg-white p-4">
+              {loadingZone ? (
+                  <ZoneReportSkeleton />
+              ) : dataZoneClient.length > 0 ? (
+                  <Tabs value={activeTab} onValueChange={setActiveTab}>
+                    <TabsList className="grid grid-cols-2 sm:grid-cols-4 w-full h-auto gap-2 mb-6 p-1">
+                      {dataZoneClient.map((zone, index) => (
+                          <TabsTrigger
+                              key={index}
+                              value={index.toString()}
+                              className="whitespace-normal h-auto py-2 text-xs sm:text-sm"
+                          >
+                            {zone.nomVend.length > 15
+                                ? zone.nomVend.slice(0, 15) + '...'
+                                : zone.nomVend}
+                          </TabsTrigger>
+                      ))}
+                    </TabsList>
+
+                    {dataZoneClient.map((zone, index) => (
+                        <TabsContent key={index} value={index.toString()} className="mt-0">
+                          <ZoneClientReport zone={zone} clients={zone.document_dislab} />
+                        </TabsContent>
+                    ))}
+                  </Tabs>
+              ) : (
+                  <div className="text-center text-sm text-gray-500 py-6">
+                    No hay datos disponibles.
+                  </div>
+              )}
+            </div>
+          </CardContent>
+
+        </Card>
+      </div>
   )
 }

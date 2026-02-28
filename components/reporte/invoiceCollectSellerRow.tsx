@@ -8,10 +8,27 @@ interface InvoiceProps {
 
 const InvoiceCollectSellerRow: React.FC<InvoiceProps> = ({ invoice }) => {
 
+    const formatDateToDDMMYYYY = (dateString: string): string => {
+        if (!dateString) return '';
+
+        try {
+            const date = new Date(dateString);
+            if (isNaN(date.getTime())) return dateString;
+
+            const day = date.getUTCDate().toString().padStart(2, '0');
+            const month = (date.getMonth() + 1).toString().padStart(2, '0');
+            const year = date.getFullYear();
+
+            return `${day}/${month}/${year}`;
+        } catch (error) {
+            return dateString;
+        }
+    };
+
     return (
         <TableRow className="hover:bg-gray-50">
-            <TableCell className="font-medium">{invoice.Fecha_Emision}</TableCell>
-            <TableCell className="font-medium">{invoice.Fecha_Vcto}</TableCell>
+            <TableCell className="font-medium">{formatDateToDDMMYYYY(invoice.Fecha_Emision)}</TableCell>
+            <TableCell className="font-medium">{formatDateToDDMMYYYY(invoice.Fecha_Vcto)}</TableCell>
             <TableCell className="hidden md:table-cell">
                 {invoice.Abre_Doc || "-"}
             </TableCell>

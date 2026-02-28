@@ -18,6 +18,8 @@ import { Command, CommandInput, CommandList, CommandGroup, CommandItem, CommandE
 import { Label } from "@/components/ui/label"
 import { cn } from "@/lib/utils"
 
+import ExportCollectSellerPdfButton from "@/components/reporte/exportCollectSellerPdfButton";
+
 interface IAutocompleteClient {
   RUC: string;
   Nombre: string;
@@ -28,7 +30,6 @@ export default function CollectSellerPage() {
   const [dataClientSeller, setDataClientSeller] = useState<Zone[]>([])
   const [activeTab, setActiveTab] = useState<string>("0")
 
-  // Estados para el Autocomplete del Cliente
   const [fullName, setFullName] = useState<string>("")
   const [openClientAutocomplete, setOpenClientAutocomplete] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
@@ -37,9 +38,6 @@ export default function CollectSellerPage() {
 
   const auth = useAuth()
 
-  // ----------------------------------------------------------------
-  // EFECTO PARA BUSCAR CLIENTES (AUTOCOMPLETE) CON DEBOUNCE
-  // ----------------------------------------------------------------
   useEffect(() => {
     const timer = setTimeout(async () => {
       if (searchQuery.length > 2) {
@@ -68,26 +66,17 @@ export default function CollectSellerPage() {
   const searchSeller = async () => {
     setLoadingClient(true)
     try {
-      // Validación estricta: aquí sí es obligatorio el nombre/RUC
-      // if (!fullName.trim()) {
-      //   toast({ title: "Atención", description: "Debe seleccionar o ingresar un Cliente/RUC", variant: "destructive" })
-      //   return;
-      // }
-
-      // Generar fecha actual YYYY-MM-DD
       const today = new Date();
       const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
 
       const customer: Customer = {
         nombreApellido: fullName.trim().toLocaleUpperCase(),
-        fechaCorte: todayStr // Siempre usa la fecha actual
+        fechaCorte: todayStr
       }
 
       try {
         clientSchema.parse(customer)
-      } catch (zodErr) {
-        // Manejo silencioso de validaciones de zod adicionales si las hubiera
-      }
+      } catch (zodErr) { }
 
       const isSeller = auth.user?.idRol === 1;
       const vendedorCode = isSeller ? (auth.user?.codigo || null) : null;
@@ -97,7 +86,7 @@ export default function CollectSellerPage() {
 
       const data = response?.data?.data
       setDataClientSeller(data)
-      setActiveTab("0") // Reinicia la pestaña activa al hacer una nueva búsqueda
+      setActiveTab("0")
     } catch (error: any) {
       if (error instanceof z.ZodError) {
         toast({ title: "Cobrar Vendedor", description: error.errors[0]?.message, variant: "destructive" })
@@ -123,17 +112,25 @@ export default function CollectSellerPage() {
         </div>
 
         <Card className="shadow-md">
-          <CardHeader className="flex flex-col gap-4">
-            <div>
-              <h2 className="text-xl font-semibold tracking-tight">Filtros de búsqueda</h2>
-              <p className="text-sm text-muted-foreground">
-                Busca por cliente para visualizar su deuda agrupada por vendedor (Fecha actual).
-              </p>
+          <CardHeader className="flex flex-col gap-6">
+
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div>
+                <h2 className="text-xl font-semibold tracking-tight">Filtros de búsqueda</h2>
+                <p className="text-sm text-muted-foreground">
+                  Busca por cliente para visualizar su deuda agrupada por vendedor (Fecha actual).
+                </p>
+              </div>
+
+              <div className="flex sm:w-auto w-full">
+                <ExportCollectSellerPdfButton
+                    data={dataClientSeller}
+                    disabled={loadingClient || dataClientSeller.length === 0}
+                />
+              </div>
             </div>
 
             <div className="grid sm:grid-cols-12 gap-4 items-end">
-
-              {/* AUTOCOMPLETE DE CLIENTE Ocupando 8 o 9 columnas */}
               <div className="flex flex-col gap-1 sm:col-span-9 relative">
                 <div className="flex items-center gap-1.5 mb-1">
                   <User className="w-4 h-4 text-muted-foreground" />
@@ -155,7 +152,6 @@ export default function CollectSellerPage() {
                       </Button>
                     </PopoverTrigger>
 
-                    {/* Botón flotante para limpiar el input */}
                     {fullName && (
                         <div
                             className="absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer p-1 text-gray-500 hover:text-red-500 hover:bg-red-50 rounded-md z-10"
@@ -216,7 +212,6 @@ export default function CollectSellerPage() {
                 </Popover>
               </div>
 
-              {/* Botón Buscar Ocupando 3 columnas */}
               <div className="flex flex-col sm:col-span-3">
                 <Button
                     className="bg-blue-600 hover:bg-blue-700 w-full h-10"
@@ -230,14 +225,13 @@ export default function CollectSellerPage() {
 
             </div>
           </CardHeader>
+
           <CardContent>
-            {/* Igual aquí, agregamos p-4 */}
             <div className="rounded-md border bg-white p-4">
               {loadingClient ? (
                   <ZoneReportSkeleton />
               ) : dataClientSeller.length > 0 ? (
                   <Tabs value={activeTab} onValueChange={setActiveTab}>
-                    {/* h-auto, gap-2 y p-1 */}
                     <TabsList className="grid grid-cols-2 sm:grid-cols-4 w-full h-auto gap-2 mb-6 p-1">
                       {dataClientSeller.map((zoneseller, index) => (
                           <TabsTrigger

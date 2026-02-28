@@ -17,6 +17,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@radix-ui/react-popover
 import { Command, CommandInput, CommandList, CommandGroup, CommandItem, CommandEmpty } from "@/components/ui/command"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/context/authContext";
+import ExportCollectClientPdfButton from "@/components/reporte/exportCollectClientPdfButton";
 
 interface IAutocompleteClient {
   RUC: string;
@@ -143,15 +144,26 @@ export default function CollectClientPage() {
         </div>
 
         <Card className="shadow-md">
-          <CardHeader className="flex flex-col gap-4">
-            <div>
-              <h2 className="text-xl font-semibold tracking-tight">Filtros de búsqueda</h2>
-              <p className="text-sm text-muted-foreground">
-                Utiliza los filtros para encontrar clientes específicos
-              </p>
+          <CardHeader className="flex flex-col gap-6">
+
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div>
+                <h2 className="text-xl font-semibold tracking-tight">Filtros de búsqueda</h2>
+                <p className="text-sm text-muted-foreground">
+                  Utiliza los filtros para encontrar clientes específicos
+                </p>
+              </div>
+
+              <div className="flex sm:w-auto w-full">
+                <ExportCollectClientPdfButton
+                    data={dataClient}
+                    disabled={loadingClient || dataClient.length === 0}
+                />
+              </div>
             </div>
 
             <div className="grid sm:grid-cols-12 gap-4 items-end">
+
               <div className="flex flex-col gap-1 sm:col-span-5 relative">
                 <div className="flex items-center gap-1.5 mb-1">
                   <User className="w-4 h-4 text-muted-foreground" />
@@ -274,6 +286,7 @@ export default function CollectClientPage() {
                   </PopoverContent>
                 </Popover>
               </div>
+
               <div className="flex flex-col sm:col-span-2">
                 <Button
                     className="bg-blue-600 hover:bg-blue-700 w-full h-10"
@@ -286,20 +299,19 @@ export default function CollectClientPage() {
 
             </div>
           </CardHeader>
+
           <CardContent>
-            {/* Agregamos p-4 o p-6 para darle espacio interno y que no choque con los bordes */}
             <div className="rounded-md border bg-white p-4">
               {loadingClient ? (
                   <ZoneReportSkeleton />
               ) : dataClient.length > 0 ? (
                   <Tabs value={activeTab} onValueChange={setActiveTab}>
-                    {/* El secreto está aquí: h-auto y gap-2 para que las múltiples filas no se desborden */}
                     <TabsList className="grid grid-cols-2 sm:grid-cols-4 w-full h-auto gap-2 mb-6 p-1">
                       {dataClient.map((zoneseller, index) => (
                           <TabsTrigger
                               key={index}
                               value={index.toString()}
-                              className="whitespace-normal h-auto py-2 text-xs sm:text-sm" // Para que el texto largo se acomode bien
+                              className="whitespace-normal h-auto py-2 text-xs sm:text-sm"
                           >
                             {zoneseller.nomVend.length > 15
                                 ? zoneseller.nomVend.slice(0, 15) + '...'
