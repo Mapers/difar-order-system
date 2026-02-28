@@ -2,16 +2,21 @@
 
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { FileText } from 'lucide-react'
+import { FileText, ChevronDown } from 'lucide-react'
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib'
-import {PriceService} from "@/app/services/price/PriceService";
+import { PriceService } from "@/app/services/price/PriceService";
 import moment from "moment";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
-const ExportPdfButton = ({ payload }) => {
+const ExportPdfButton = ({ payload }: { payload: any }) => {
   const [loading, setLoading] = useState(false)
 
-  // Funciones auxiliares (splitTextIntoLines, processLotes, etc.) permanecen igual...
-  const splitTextIntoLines = (text, maxWidth, font, fontSize) => {
+  const splitTextIntoLines = (text: string, maxWidth: number, font: any, fontSize: number) => {
     if (!text) return [''];
     const words = text.split(' ')
     const lines = []
@@ -37,7 +42,7 @@ const ExportPdfButton = ({ payload }) => {
     return lines.length > 0 ? lines : ['']
   }
 
-  const processLotes = (lotesRaw) => {
+  const processLotes = (lotesRaw: string) => {
     if (!lotesRaw) return []
     return lotesRaw.split(';').map(loteStr => {
       const [lote, fecha] = loteStr.split('|')
@@ -48,7 +53,7 @@ const ExportPdfButton = ({ payload }) => {
     })
   }
 
-  const processBonificaciones = (bonificacionesRaw) => {
+  const processBonificaciones = (bonificacionesRaw: string) => {
     if (!bonificacionesRaw) return []
     return bonificacionesRaw.split(';').map(bonifStr => {
       const [factor, descripcion, cantidad, mismoProduct, descArticuloBonif] = bonifStr.split('|')
@@ -62,7 +67,7 @@ const ExportPdfButton = ({ payload }) => {
     })
   }
 
-  const processEscalas = (escalasRaw) => {
+  const processEscalas = (escalasRaw: string) => {
     if (!escalasRaw) return []
     return escalasRaw.split(';').map(escalaStr => {
       const [minimo, maximo, precio] = escalaStr.split('|')
@@ -74,7 +79,7 @@ const ExportPdfButton = ({ payload }) => {
     })
   }
 
-  const generatePdf = async () => {
+  const generatePdf = async (orientation: 'horizontal' | 'vertical') => {
     if (loading) return
     setLoading(true)
 
@@ -86,34 +91,38 @@ const ExportPdfButton = ({ payload }) => {
       const font = await pdfDoc.embedFont(StandardFonts.Helvetica)
       const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold)
 
-      // --- [IMPORTANTE LOGO] INICIO: Cargar e incrustar el logo ---
       let logoImage = null;
       try {
-        // 1. Define la ruta de tu logo.
-        // Si usas Next.js y el archivo está en /public/images/logo.png, la ruta es '/images/logo.png'
-        // Para este ejemplo uso un placeholder, REEMPLÁZALO con tu ruta local.
         const logoUrl = '/difar-logo.png';
-
-        // 2. Obtener los bytes de la imagen
         const logoBytes = await fetch(logoUrl).then((res) => {
           if (!res.ok) throw new Error("No se pudo cargar la imagen");
           return res.arrayBuffer();
         });
-
-        // 3. Incrustar la imagen (usa embedJpg si tu logo es JPG)
         logoImage = await pdfDoc.embedPng(logoBytes);
-
       } catch (error) {
         console.warn("No se pudo cargar el logotipo para el PDF:", error);
-        // El PDF se generará sin logo si falla la carga
       }
-      // --- [IMPORTANTE LOGO] FIN ---
 
+      // --- CONFIGURACIÓN DINÁMICA POR ORIENTACIÓN ---
+      const isLandscape = orientation === 'horizontal';
 
-      const pageWidth = 841.89
-      const pageHeight = 595.28
-      const margin = 40
-      const minYPosition = margin + 20
+      // Medidas estándar A4 en Puntos
+      const pageWidth = isLandscape ? 841.89 : 595.28;
+      const pageHeight = isLandscape ? 595.28 : 841.89;
+      const margin = isLandscape ? 40 : 20; // Menos margen en vertical para aprovechar espacio
+      const minYPosition = margin + 20;
+
+      // Tamaños de fuente reducidos en vertical
+      const baseFontSize = isLandscape ? 7 : 5;
+      const smallFontSize = isLandscape ? 6 : 4;
+      const tinyFontSize = isLandscape ? 5.5 : 4;
+
+      // Anchos de columna proporcionales al ancho disponible
+      // Total horizontal disponible: 841.89 - 80 = 761.89
+      // Total vertical disponible: 595.28 - 40 = 555.28
+      const columnWidths = isLandscape
+          ? [50, 120, 75, 45, 50, 60, 60, 60, 60, 90, 90] // Suma ~ 760
+          : [40, 85, 55, 30, 35, 45, 45, 45, 45, 65, 65];  // Suma ~ 555
 
       const empresaNombre = "DROGUERIA DIFAR"
       const empresaRuc = "2056138401"
@@ -124,42 +133,35 @@ const ExportPdfButton = ({ payload }) => {
 
       let currentPage = addNewPage()
       let yPosition = pageHeight - margin
-      // let currentItem = 0 // No se usa actualmente
       let pageNumber = 1
       let currentLab = 0
 
-      // Modificamos drawHeader para aceptar el logo opcionalmente
-      const drawHeader = (page, logoImg = null) => {
-        let titleXPos = margin; // Posición X inicial para el texto
+      const drawHeader = (page: any, logoImg = null) => {
+        let titleXPos = margin;
 
-        // --- Dibujar LOGO si existe ---
         if (logoImg) {
-          const logoWidth = 50; // Ajusta el tamaño deseado
-          const logoHeight = 30; // Ajusta el tamaño deseado
-          // Ajusta 'y' para alinearlo verticalmente con el texto.
-          // PDF-lib dibuja imágenes desde la esquina inferior izquierda.
+          const logoWidth = 50;
+          const logoHeight = 30;
           page.drawImage(logoImg, {
             x: margin,
-            y: pageHeight - margin - 15, // Ajuste vertical a ojo
+            y: pageHeight - margin - 15,
             width: logoWidth,
             height: logoHeight,
           });
-          // Movemos el texto a la derecha para que no se superponga con el logo
-          titleXPos = margin + logoWidth + 10; // 10px de espacio entre logo y texto
+          titleXPos = margin + logoWidth + 10;
         }
-        // -----------------------------
 
         page.drawText(empresaNombre, {
-          x: titleXPos, // Usamos la nueva posición X calculada
+          x: titleXPos,
           y: pageHeight - margin,
-          size: 10,
+          size: isLandscape ? 10 : 8,
           font: boldFont,
           color: rgb(0, 0, 0),
         })
         page.drawText(empresaRuc, {
-          x: titleXPos, // Usamos la nueva posición X calculada
+          x: titleXPos,
           y: pageHeight - margin - 12,
-          size: 8,
+          size: isLandscape ? 8 : 6,
           font,
           color: rgb(0, 0, 0),
         })
@@ -171,13 +173,13 @@ const ExportPdfButton = ({ payload }) => {
         const fechaText = `Fecha: ${fecha} ${hora}`
         const paginaText = `Página: ${pageNumber}`
 
-        const fechaWidth = font.widthOfTextAtSize(fechaText, 8)
-        const paginaWidth = font.widthOfTextAtSize(paginaText, 8)
+        const fechaWidth = font.widthOfTextAtSize(fechaText, isLandscape ? 8 : 6)
+        const paginaWidth = font.widthOfTextAtSize(paginaText, isLandscape ? 8 : 6)
 
         page.drawText(fechaText, {
           x: pageWidth - margin - fechaWidth,
           y: pageHeight - margin,
-          size: 8,
+          size: isLandscape ? 8 : 6,
           font,
           color: rgb(0, 0, 0),
         })
@@ -185,24 +187,23 @@ const ExportPdfButton = ({ payload }) => {
         page.drawText(paginaText, {
           x: pageWidth - margin - paginaWidth,
           y: pageHeight - margin - 12,
-          size: 8,
+          size: isLandscape ? 8 : 6,
           font,
           color: rgb(0, 0, 0),
         })
 
         const titleText = 'LISTA DE PRECIOS POR LOTE'
-        const titleWidth = boldFont.widthOfTextAtSize(titleText, 12)
+        const titleWidth = boldFont.widthOfTextAtSize(titleText, isLandscape ? 12 : 10)
         page.drawText(titleText, {
           x: (pageWidth - titleWidth) / 2,
           y: pageHeight - margin - 30,
-          size: 12,
+          size: isLandscape ? 12 : 10,
           font: boldFont,
           color: rgb(0, 0, 0),
         })
 
         yPosition = pageHeight - margin - 50
 
-        const columnWidths = [50, 120, 75, 50, 50, 60, 60, 60, 60, 90, 100]
         const columns = ['COD.', 'DESCRIPCIÓN', 'LOTES', 'UM', 'STOCK', 'P.CONTADO', 'P.CREDITO', 'B.CONTADO', 'B.CREDITO', 'BONIFICACIONES', 'ESCALAS']
 
         let xPosition = margin
@@ -210,7 +211,7 @@ const ExportPdfButton = ({ payload }) => {
           page.drawText(column, {
             x: xPosition,
             y: yPosition,
-            size: 7,
+            size: baseFontSize,
             font: boldFont,
             color: rgb(0, 0, 0),
           })
@@ -227,7 +228,6 @@ const ExportPdfButton = ({ payload }) => {
         yPosition -= 15
       }
 
-      // Pasamos logoImage a la primera llamada
       drawHeader(currentPage, logoImage)
 
       for (const item of data) {
@@ -238,10 +238,9 @@ const ExportPdfButton = ({ payload }) => {
             currentPage = addNewPage()
             pageNumber++
             yPosition = pageHeight - margin
-            // Pasamos logoImage a las páginas subsiguientes
             drawHeader(currentPage, logoImage)
           }
-          // ... resto de la lógica de laboratorio ...
+
           currentPage.drawLine({
             start: { x: margin, y: yPosition + 8 },
             end: { x: pageWidth - margin, y: yPosition + 8 },
@@ -252,7 +251,7 @@ const ExportPdfButton = ({ payload }) => {
           currentPage.drawText(item.laboratorio_Descripcion, {
             x: margin,
             y: yPosition,
-            size: 9,
+            size: isLandscape ? 9 : 7,
             font: boldFont,
             color: rgb(0, 0, 0),
           })
@@ -260,72 +259,67 @@ const ExportPdfButton = ({ payload }) => {
           yPosition -= 15
         }
 
-        // ... Procesamiento de lotes, bonificaciones, escalas y cálculo de altura ...
         const lotes = processLotes(item.lotes_raw)
         const bonificaciones = processBonificaciones(item.bonificaciones_raw)
         const escalas = processEscalas(item.escalas_raw)
 
-        const descLines = splitTextIntoLines(item.prod_descripcion || '', 120 - 5, font, 7)
+        const descLines = splitTextIntoLines(item.prod_descripcion || '', columnWidths[1] - 5, font, baseFontSize)
 
-        const bonifLines = []
+        const bonifLines: {text: string, type: string}[] = []
         bonificaciones.forEach((bonif, index) => {
           const bonifText = bonif.mismoProduct === 'S'
               ? `${index + 1}. compra ${bonif.factor} y lleva ${bonif.cantidad} de ${item.prod_descripcion}`.toUpperCase()
               : `${index + 1}. compra ${bonif.factor} y lleva ${bonif.cantidad} de ${bonif.descArticuloBonif}`.toUpperCase()
 
-          const lines = splitTextIntoLines(bonifText, 90 - 15, font, 5.5)
+          const lines = splitTextIntoLines(bonifText, columnWidths[9] - 5, font, tinyFontSize)
           bonifLines.push(...lines.map(line => ({ text: line, type: 'bonif' })))
         })
 
         const escalaLines = escalas.map((escala, index) =>
-            `${index + 1}. Desde ${escala.minimo} hasta ${escala.maximo} - S/ ${escala.precio.toFixed(2)}`.toUpperCase()
+            `${index + 1}. De ${escala.minimo} a ${escala.maximo} - S/${escala.precio.toFixed(2)}`.toUpperCase()
         )
 
-        const descHeight = descLines.length * 7
-        const lotesHeight = lotes.length * 7
-        const bonifHeight = bonifLines.length * 6
-        const escalaHeight = escalaLines.length * 6
+        const lineHeight = isLandscape ? 7 : 5;
+
+        const descHeight = descLines.length * lineHeight
+        const lotesHeight = lotes.length * lineHeight
+        const bonifHeight = bonifLines.length * (lineHeight - 1)
+        const escalaHeight = escalaLines.length * (lineHeight - 1)
 
         const maxHeight = Math.max(
             descHeight,
             lotesHeight,
             bonifHeight,
             escalaHeight,
-            7
+            lineHeight
         )
 
-        const neededHeight = maxHeight + 10
-        // ... Fin procesamiento altura ...
-
+        const neededHeight = maxHeight + (isLandscape ? 10 : 6)
 
         if (yPosition - neededHeight < minYPosition) {
           currentPage = addNewPage()
           pageNumber++
           yPosition = pageHeight - margin
-          // Pasamos logoImage si se crea nueva página por falta de espacio
           drawHeader(currentPage, logoImage)
 
           currentPage.drawText(item.laboratorio_Descripcion, {
             x: margin,
             y: yPosition,
-            size: 9,
+            size: isLandscape ? 9 : 7,
             font: boldFont,
             color: rgb(0, 0, 0),
           })
           yPosition -= 15
         }
 
-
-        // ... RESTO DEL DIBUJADO DE ITEMS (sin cambios) ...
-        const columnWidths = [50, 120, 75, 50, 50, 60, 60, 60, 60, 90, 100]
         let xPosition = margin
 
         // CODIGO
-        const codigoY = yPosition - (maxHeight / 2) + 3
+        const codigoY = yPosition - (maxHeight / 2) + 2
         currentPage.drawText(item.prod_codigo || '', {
           x: xPosition,
           y: codigoY,
-          size: 7,
+          size: baseFontSize,
           font,
           color: rgb(0, 0, 0),
         })
@@ -336,8 +330,8 @@ const ExportPdfButton = ({ payload }) => {
         descLines.forEach((line, lineIndex) => {
           currentPage.drawText(line, {
             x: xPosition,
-            y: descStartY - (lineIndex * 7),
-            size: 7,
+            y: descStartY - (lineIndex * lineHeight),
+            size: baseFontSize,
             font,
             color: rgb(0, 0, 0),
           })
@@ -350,8 +344,8 @@ const ExportPdfButton = ({ payload }) => {
           const loteText = `${lote.lote} - ${lote.fecha}`
           currentPage.drawText(loteText, {
             x: xPosition,
-            y: lotesStartY - (index * 7),
-            size: 6,
+            y: lotesStartY - (index * lineHeight),
+            size: smallFontSize,
             font,
             color: rgb(0, 0, 0),
           })
@@ -359,35 +353,32 @@ const ExportPdfButton = ({ payload }) => {
         xPosition += columnWidths[2]
 
         // UM
-        const umY = yPosition - (maxHeight / 2) + 3
         currentPage.drawText(item.prod_medida || '', {
           x: xPosition,
-          y: umY,
-          size: 7,
+          y: codigoY,
+          size: baseFontSize,
           font,
           color: rgb(0, 0, 0),
         })
         xPosition += columnWidths[3]
 
         // STOCK
-        const stockY = yPosition - (maxHeight / 2) + 3
         currentPage.drawText(Number(item.kardex_saldoCant).toFixed(2) || '', {
           x: xPosition,
-          y: stockY,
-          size: 7,
+          y: codigoY,
+          size: baseFontSize,
           font,
           color: rgb(0, 0, 0),
         })
         xPosition += columnWidths[4]
 
         // PRECIO CONTADO
-        const precioContadoY = yPosition - (maxHeight / 2) + 3
         const precioContado = `S/ ${item.precio_contado}`
-        if (precioContado) {
+        if (item.precio_contado) {
           currentPage.drawText(precioContado, {
             x: xPosition,
-            y: precioContadoY,
-            size: 7,
+            y: codigoY,
+            size: baseFontSize,
             font,
             color: rgb(0, 0, 0),
           })
@@ -395,13 +386,12 @@ const ExportPdfButton = ({ payload }) => {
         xPosition += columnWidths[5]
 
         // PRECIO CREDITO
-        const precioCreditoY = yPosition - (maxHeight / 2) + 3
         const precioCredito = `S/ ${item.precio_credito}`
-        if (precioCredito) {
+        if (item.precio_credito) {
           currentPage.drawText(precioCredito, {
             x: xPosition,
-            y: precioCreditoY,
-            size: 7,
+            y: codigoY,
+            size: baseFontSize,
             font,
             color: rgb(0, 0, 0),
           })
@@ -409,13 +399,12 @@ const ExportPdfButton = ({ payload }) => {
         xPosition += columnWidths[6]
 
         // PRECIO BONIF CONTADO
-        const precioBonifContadoY = yPosition - (maxHeight / 2) + 3
         const precioBonifContado = Number(item.precio_por_mayor) > 0 ? `S/ ${item.precio_por_mayor}` : ''
         if (precioBonifContado) {
           currentPage.drawText(precioBonifContado, {
             x: xPosition,
-            y: precioBonifContadoY,
-            size: 7,
+            y: codigoY,
+            size: baseFontSize,
             font,
             color: rgb(0, 0.5, 0),
           })
@@ -423,13 +412,12 @@ const ExportPdfButton = ({ payload }) => {
         xPosition += columnWidths[7]
 
         // PRECIO BONIF CREDITO
-        const precioBonifCreditoY = yPosition - (maxHeight / 2) + 3
         const precioBonifCredito = Number(item.precio_por_menor) > 0 ? `S/ ${item.precio_por_menor}` : ''
         if (precioBonifCredito) {
           currentPage.drawText(precioBonifCredito, {
             x: xPosition,
-            y: precioBonifCreditoY,
-            size: 7,
+            y: codigoY,
+            size: baseFontSize,
             font,
             color: rgb(0, 0, 0.8),
           })
@@ -441,8 +429,8 @@ const ExportPdfButton = ({ payload }) => {
         bonifLines.forEach((bonifLine, index) => {
           currentPage.drawText(bonifLine.text, {
             x: xPosition,
-            y: bonifStartY - (index * 6),
-            size: 5.5,
+            y: bonifStartY - (index * (lineHeight - 1)),
+            size: tinyFontSize,
             font,
             color: rgb(0, 0.5, 0),
           })
@@ -454,8 +442,8 @@ const ExportPdfButton = ({ payload }) => {
         escalaLines.forEach((escalaText, index) => {
           currentPage.drawText(escalaText, {
             x: xPosition,
-            y: escalaStartY - (index * 6),
-            size: 5.5,
+            y: escalaStartY - (index * (lineHeight - 1)),
+            size: tinyFontSize,
             font,
             color: rgb(0, 0, 0.8),
           })
@@ -469,15 +457,14 @@ const ExportPdfButton = ({ payload }) => {
           color: rgb(0.8, 0.8, 0.8),
         })
 
-        yPosition -= maxHeight + 10
-        // currentItem++
+        yPosition -= maxHeight + (isLandscape ? 10 : 6)
       }
 
       const pdfBytes = await pdfDoc.save()
       const blob = new Blob([pdfBytes], { type: 'application/pdf' })
       const link = document.createElement('a')
       link.href = window.URL.createObjectURL(blob)
-      link.download = `lista-precios-lote-${new Date().toISOString().split('T')[0]}.pdf`
+      link.download = `lista-precios-${orientation}-${new Date().toISOString().split('T')[0]}.pdf`
       link.click()
 
     } catch (error) {
@@ -489,15 +476,27 @@ const ExportPdfButton = ({ payload }) => {
   }
 
   return (
-      <Button
-          onClick={generatePdf}
-          disabled={loading}
-          variant="outline"
-          className="flex items-center gap-2"
-      >
-        <FileText className="h-4 w-4" />
-        {loading ? 'Generando...' : 'Exportar PDF'}
-      </Button>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+              disabled={loading}
+              variant="outline"
+              className="flex items-center gap-2"
+          >
+            <FileText className="h-4 w-4" />
+            {loading ? 'Generando...' : 'Exportar PDF'}
+            <ChevronDown className="h-4 w-4 opacity-50" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem onClick={() => generatePdf('horizontal')} className="cursor-pointer">
+            Formato Horizontal (Recomendado)
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => generatePdf('vertical')} className="cursor-pointer">
+            Formato Vertical (Letra pequeña)
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
   )
 }
 
