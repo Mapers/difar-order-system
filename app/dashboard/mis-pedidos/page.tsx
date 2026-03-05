@@ -151,6 +151,8 @@ interface Pedido {
   totalPedido: string
   is_autorizado: string
   por_autorizar: string
+  represPedido: number
+  nombreRepresentante: string
 }
 
 export default function MyOrdersPage() {
@@ -427,8 +429,8 @@ export default function MyOrdersPage() {
                         {auth.user?.idRol !== 1 && (
                           <div className="flex items-center gap-2">
                             <UserSearch className="h-4 w-4 text-gray-500"/>
-                            <span className="text-gray-600">Vendedor:</span>
-                            <span className="font-medium">{pedido.nombreVendedor}</span>
+                            <span className="text-gray-600">{!!pedido.represPedido ? 'Representante' : 'Vendedor'}:</span>
+                            <span className="font-medium uppercase">{!!pedido.represPedido ? pedido.nombreRepresentante : pedido.nombreVendedor}</span>
                           </div>
                         )}
                       </div>

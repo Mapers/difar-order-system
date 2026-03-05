@@ -610,6 +610,7 @@ export default function OrderPage() {
         fechaPedido: moment(new Date()).format('yyyy-MM-DD'),
         usuario: 1,
         vendedorPedido: (user?.idRol && [2, 3].includes(user.idRol)) ? seller.codigo : user?.codigo,
+        represPedido: user?.codRepres || null,
         detalles: selectedProducts.map(item => ({
           iditemPedido: item.product.IdArticulo,
           codigoitemPedido: item.product.Codigo_Art,

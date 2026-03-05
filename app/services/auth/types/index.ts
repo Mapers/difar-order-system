@@ -24,6 +24,8 @@ export interface JwtPayload {
             id: number,
             nombre: string
         };
+        codRepres: string;
+        idRepresentante: string;
     },
     menus: Menu[]
     iat: number;
@@ -45,7 +47,8 @@ export interface User {
     nombreCompleto: string,
     idRol: number;
     rolDescripcion: string;
-    menus: Menu[]
+    menus: Menu[];
+    codRepres: string;
 }
 
 export interface UserRegisterDTO {

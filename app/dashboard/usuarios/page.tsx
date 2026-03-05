@@ -7,48 +7,26 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from '@/components/ui/dialog'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Search, Plus, Edit, Trash2, User, Check, X, Users, UserCheck, Eye, ChevronDown, ChevronUp } from 'lucide-react'
+import {
+  Search,
+  Plus,
+  Edit,
+  Trash2,
+  User,
+  Check,
+  X,
+  Users,
+  UserCheck,
+  Eye,
+  ChevronDown,
+  ChevronUp,
+  Briefcase
+} from 'lucide-react'
 import { useToast } from '@/components/ui/use-toast'
 import apiClient from '@/app/api/client'
-
-interface Usuario {
-  id_usuario: number
-  idVendedor: number | null
-  id: number | null
-  codigo: string
-  nombre_completo: string
-  dni: string
-  telefono: string
-  activo: boolean
-  id_rol: number
-  nombre_rol: string
-}
-
-interface Vendedor {
-  idVendedor: number
-  codigo: string
-  nombres: string
-  apellidos: string
-  DNI: string
-  telefono: string
-  comisionVend: number
-  comisionCobranza: number
-  empRegistro: string
-  activo: number
-}
-
-interface UsuarioNoWeb {
-  IdUsuarios: number
-  NombreUsuarios: string
-  EmpRegistros: string
-  ObsUsuario: string
-  ClaveUsuarios: string
-}
-
-interface Rol {
-  id: number
-  nombre: string
-}
+import {Representante, Rol, Usuario, UsuarioNoWeb, Vendedor} from "@/app/types/user";
+import {RepresentanteModal} from "@/app/components/users/Modals";
+import {RepresentantesTab} from "@/app/components/users/Tabs";
 
 export default function UsuariosPage() {
   const [usuarios, setUsuarios] = useState<Usuario[]>([])
@@ -60,12 +38,14 @@ export default function UsuariosPage() {
   const [userType, setUserType] = useState('')
   const [busquedaVendedor, setBusquedaVendedor] = useState('')
   const [busquedaUsuarios, setBusquedaUsuarios] = useState('')
+  const [busquedaRepresentante, setBusquedaRepresentante] = useState('');
   const [loading, setLoading] = useState(true)
   const [showAddDialog, setShowAddDialog] = useState(false)
   const [showEditDialog, setShowEditDialog] = useState(false)
   const [selectedUsuario, setSelectedUsuario] = useState<Usuario | null>(null)
-  const [selectedVendedor, setSelectedVendedor] = useState(null)
+  const [selectedVendedor, setSelectedVendedor] = useState<Vendedor | null>(null)
   const [selectedUsuarioNoWeb, setSelectedUsuarioNoWeb] = useState<UsuarioNoWeb | null>(null)
+  const [selectedRepresentante, setSelectedRepresentante] = useState<Representante | null>(null);
   const [selectedRol, setSelectedRol] = useState('')
   const [dni, setDni] = useState('')
   const [telefono, setTelefono] = useState('')
@@ -77,6 +57,9 @@ export default function UsuariosPage() {
   const [showUsuarioDialog, setShowUsuarioDialog] = useState(false)
   const [editingVendedor, setEditingVendedor] = useState<Vendedor | null>(null)
   const [editingUsuario, setEditingUsuario] = useState<UsuarioNoWeb | null>(null)
+  const [representantes, setRepresentantes] = useState([]);
+  const [laboratorios, setLaboratorios] = useState([]);
+  const [createRepOpen, setCreateRepOpen] = useState(false);
   const [newVendedor, setNewVendedor] = useState({
     codigo: '',
     nombres: '',
@@ -101,6 +84,10 @@ export default function UsuariosPage() {
   const [isMobile, setIsMobile] = useState(false)
   const [expandedRows, setExpandedRows] = useState<Record<number, boolean>>({})
 
+  const representantesFiltrados = busquedaRepresentante
+      ? representantes.filter((r: Representante) => r.NombreRepres.toLowerCase().includes(busquedaRepresentante.toLowerCase()) || r.CodRepres.toLowerCase().includes(busquedaRepresentante.toLowerCase()))
+      : representantes;
+
   useEffect(() => {
     const checkIsMobile = () => setIsMobile(window.innerWidth < 768)
     checkIsMobile()
@@ -115,73 +102,25 @@ export default function UsuariosPage() {
     }))
   }
 
-  const fetchUsuarios = async () => {
-    try {
-      setLoading(true)
-      const response = await apiClient.get('/usuarios/listar')
-      setUsuarios(response.data.data.data)
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'No se pudieron cargar los usuarios',
-        variant: 'destructive'
-      })
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const fetchVendedores = async () => {
-    try {
-      const response = await apiClient.get('/usuarios/listar/vendedores')
-      const vendedoresTransformados = response.data.data.data.map((v: any) => ({
-        idVendedor: v.idVendedor,
-        codigo: v.Codigo_Vend,
-        nombres: v.Nombres,
-        apellidos: v.Apellidos,
-        DNI: v.DNI,
-        telefono: v.Telefonos,
-        comisionVend: v.ComisionVend,
-        comisionCobranza: v.ComisionCobranza,
-        empRegistro: v.EmpRegistro,
-        ciudad: v.Ciudad,
-        activo: v.Estado === 'A' ? 1 : 0
-      }));
-      setVendedores(vendedoresTransformados);
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'No se pudieron cargar los vendedores',
-        variant: 'destructive'
-      })
-    }
-  }
-
-  const fetchUsuariosNoWeb = async () => {
-    try {
-      const response = await apiClient.get('/usuarios/listar/usuarios-noweb')
-      setUsuariosNoWeb(response.data.data.data)
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'No se pudieron cargar los usuarios generales',
-        variant: 'destructive'
-      })
-    }
-  }
-
-  const fetchRoles = async () => {
-    try {
-      const response = await apiClient.get('/roles/listar')
-      setRoles(response.data.data.data)
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'No se pudieron cargar los roles',
-        variant: 'destructive'
-      })
-    }
-  }
+    const fetchAllData = async () => {
+        setLoading(true);
+        try {
+            const [resUsr, resVend, resNoWeb, resRoles, resReps, resLabs] = await Promise.all([
+                apiClient.get('/usuarios/listar'),
+                apiClient.get('/usuarios/listar/vendedores'),
+                apiClient.get('/usuarios/listar/usuarios-noweb'),
+                apiClient.get('/roles/listar'),
+                apiClient.get('/usuarios/representantes/listar'),
+                apiClient.get('/price/laboratories')
+            ]);
+            setUsuarios(resUsr.data.data.data);
+            setVendedores(resVend.data.data.data.map((v: any) => ({ ...v, idVendedor: v.idVendedor, codigo: v.Codigo_Vend, nombres: v.Nombres, apellidos: v.Apellidos, DNI: v.DNI, telefono: v.Telefonos, activo: v.Estado === 'A' ? 1 : 0 })));
+            setUsuariosNoWeb(resNoWeb.data.data.data);
+            setRoles(resRoles.data.data.data);
+            setRepresentantes(resReps.data.data || []);
+            setLaboratorios(resLabs.data.data || []);
+        } catch (e) { console.error(e); } finally { setLoading(false); }
+    };
 
   const handleAddUsuario = async () => {
     try {
@@ -213,6 +152,7 @@ export default function UsuariosPage() {
       const payload = {
         id_vendedor: selectedVendedor?.idVendedor || null,
         id_usuario: selectedUsuarioNoWeb?.IdUsuarios || null,
+        id_representante: selectedRepresentante?.idRepresentante || null,
         id_rol: parseInt(selectedRol),
         activo,
         dni,
@@ -239,7 +179,7 @@ export default function UsuariosPage() {
       setUserType('')
       setActivo(true)
 
-      fetchUsuarios()
+      fetchAllData()
     } catch (error: any) {
       toast({
         title: 'Error',
@@ -266,7 +206,7 @@ export default function UsuariosPage() {
       })
 
       setShowEditDialog(false)
-      fetchUsuarios()
+      fetchAllData()
     } catch (error: any) {
       toast({
         title: 'Error',
@@ -307,7 +247,7 @@ export default function UsuariosPage() {
         empRegistro: '20481321892',
         activo: 1
       });
-      fetchVendedores()
+      fetchAllData()
     } catch (error: any) {
       toast({
         title: 'Error',
@@ -340,7 +280,7 @@ export default function UsuariosPage() {
       })
       setShowVendedorDialog(false)
       setEditingVendedor(null)
-      fetchVendedores()
+      fetchAllData()
     } catch (error: any) {
       toast({
         title: 'Error',
@@ -371,7 +311,7 @@ export default function UsuariosPage() {
         ObsUsuario: '',
         ClaveUsuarios: '0000'
       })
-      fetchUsuariosNoWeb()
+      fetchAllData()
     } catch (error: any) {
       toast({
         title: 'Error',
@@ -398,7 +338,7 @@ export default function UsuariosPage() {
       })
       setShowUsuarioDialog(false)
       setEditingUsuario(null)
-      fetchUsuariosNoWeb()
+      fetchAllData()
     } catch (error: any) {
       toast({
         title: 'Error',
@@ -409,10 +349,7 @@ export default function UsuariosPage() {
   }
 
   useEffect(() => {
-    fetchUsuarios()
-    fetchVendedores()
-    fetchUsuariosNoWeb()
-    fetchRoles()
+    fetchAllData()
   }, [])
 
   useEffect(() => {
@@ -710,6 +647,8 @@ export default function UsuariosPage() {
           </Button>
         )}
 
+        {activeTab === 'representantes' && <Button onClick={() => setCreateRepOpen(true)}><Plus className="h-4 w-4 mr-2" />Nuevo Representante</Button>}
+
         {activeTab === 'usuarios-web' && (
             <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
               <DialogTrigger asChild>
@@ -743,6 +682,7 @@ export default function UsuariosPage() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="vendedor">Vendedor</SelectItem>
+                        <SelectItem value="representante">Representante</SelectItem>
                         <SelectItem value="usuario">Usuario General</SelectItem>
                       </SelectContent>
                     </Select>
@@ -822,6 +762,69 @@ export default function UsuariosPage() {
                           {telefonoError && <p className="text-red-500 text-xs mt-1">{telefonoError}</p>}
                         </div>
                       </>
+                  )}
+
+                  {userType === 'representante' && (
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Buscar Representante</label>
+                        <div className="relative mb-2">
+                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400"/>
+                          <Input placeholder="Buscar..." className="pl-10" value={busquedaRepresentante} onChange={(e) => setBusquedaRepresentante(e.target.value)} />
+                        </div>
+                        <div className="border rounded-lg max-h-40 overflow-y-auto">
+                          {representantesFiltrados.map((r: Representante) => (
+                              <div key={r.idRepresentante} className={`p-3 cursor-pointer ${selectedRepresentante?.idRepresentante === r.idRepresentante ? 'bg-blue-50' : 'hover:bg-gray-50'}`} onClick={() => {
+                                setSelectedRepresentante(r);
+                                setDni('');
+                                setTelefono('');
+                              }}>
+                                <p className="font-medium">{r.NombreRepres}</p>
+                                <p className="text-sm text-gray-600">Cod: {r.CodRepres}</p>
+                              </div>
+                          ))}
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium mb-1">DNI *</label>
+                          <Input
+                              value={dni}
+                              onChange={(e) => {
+                                const value = e.target.value.replace(/\D/g, '').slice(0, 8)
+                                setDni(value)
+                                if (value.length > 0 && value.length !== 8) {
+                                  setDniError('El DNI debe tener 8 dígitos')
+                                } else {
+                                  setDniError('')
+                                }
+                              }}
+                              placeholder="Ingrese DNI (8 dígitos)"
+                              className={dniError ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}
+                              required
+                          />
+                          {dniError && <p className="text-red-500 text-xs mt-1">{dniError}</p>}
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium mb-1">Teléfono *</label>
+                          <Input
+                              value={telefono}
+                              onChange={(e) => {
+                                const value = e.target.value.replace(/\D/g, '').slice(0, 9)
+                                setTelefono(value)
+                                if (value.length > 0 && value.length !== 9) {
+                                  setTelefonoError('El Celular debe tener 9 dígitos')
+                                } else {
+                                  setTelefonoError('')
+                                }
+                              }}
+                              placeholder="Ingrese Celular (9 dígitos)"
+                              className={telefonoError ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}
+                              required
+                          />
+                          {telefonoError && <p className="text-red-500 text-xs mt-1">{telefonoError}</p>}
+                        </div>
+
+                      </div>
                   )}
 
                   {userType === 'usuario' && (
@@ -963,7 +966,7 @@ export default function UsuariosPage() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid grid-cols-3 mb-4 w-full">
+        <TabsList className="grid grid-cols-4 mb-4 w-full">
           <TabsTrigger value="usuarios-web" className="flex items-center gap-2 text-xs sm:text-sm">
             <UserCheck className="h-4 w-4" />
             <span className="hidden sm:inline">Usuarios Web</span>
@@ -974,6 +977,7 @@ export default function UsuariosPage() {
             <span className="hidden sm:inline">Vendedores</span>
             <span className="sm:hidden">Vend</span>
           </TabsTrigger>
+          <TabsTrigger value="representantes" className="gap-2"><Briefcase className="h-4 w-4" /><span className="hidden sm:inline">Representantes</span></TabsTrigger>
           <TabsTrigger value="usuarios-generales" className="flex items-center gap-2 text-xs sm:text-sm">
             <User className="h-4 w-4" />
             <span className="hidden sm:inline">Usuarios</span>
@@ -1010,7 +1014,13 @@ export default function UsuariosPage() {
                     <tbody>
                     {usuarios.map((usuario, index) => (
                       <tr key={index}>
-                        <td className="p-4 text-sm">{usuario.nombre_completo}</td>
+                        <td className="p-4 text-sm">
+                          {usuario.nombre_completo}
+                          {usuario.tipo !== 'usuario' && <span
+                              className="mx-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 uppercase">
+                            {usuario.tipo}
+                          </span>}
+                        </td>
                         <td className="p-4 text-sm">{usuario.dni}</td>
                         <td className="p-4 text-sm">{usuario.telefono}</td>
                         <td className="p-4 text-sm">{usuario.nombre_rol}</td>
@@ -1200,6 +1210,10 @@ export default function UsuariosPage() {
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="representantes">
+          <RepresentantesTab representantes={representantes} vendedores={vendedores} laboratorios={laboratorios} isMobile={isMobile} onRefresh={fetchAllData} />
         </TabsContent>
 
         <TabsContent value="usuarios-generales">
@@ -1549,6 +1563,8 @@ export default function UsuariosPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <RepresentanteModal isOpen={createRepOpen} onClose={() => setCreateRepOpen(false)} initialData={null} vendedores={vendedores} laboratorios={laboratorios} onSuccess={fetchAllData} />
     </div>
   )
 }
