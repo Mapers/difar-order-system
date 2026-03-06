@@ -55,7 +55,7 @@ const ExportCollectClientPdfButton: React.FC<ExportPdfProps> = ({ data, disabled
             // Logo
             let logoImage = null;
             try {
-                const logoUrl = '/difar-logo.png'; // <- Cambia esto por la ruta real de tu logo
+                const logoUrl = '/difar-logo.png';
                 const logoBytes = await fetch(logoUrl).then((res) => {
                     if (!res.ok) throw new Error("No se pudo cargar la imagen");
                     return res.arrayBuffer();

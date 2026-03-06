@@ -29,3 +29,7 @@ export const searchClientsRequest = async (search: string, vendedor: string | nu
     if (vendedor) return apiClient.get(`/reportes/searchclient?vendedor=${vendedor}&search=${search}`);
     return apiClient.get(`/reportes/searchclient?search=${search}`);
 };
+
+export const getExpiredBalancesRequest = async () => {
+    return apiClient.get(`/reportes/saldos-vencidos`);
+};

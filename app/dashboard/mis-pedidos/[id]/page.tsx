@@ -40,7 +40,7 @@ import {getBonificadosRequest, getEscalasRequest, getProductsRequest} from "@/ap
 import {IPromocionRequest} from "@/interface/order/product-interface";
 import ModalLoader from "@/components/modal/modalLoader";
 import * as moment from "moment/moment";
-import {AuthorizationModal} from "@/app/components/modals/authorization-modal";
+import {AuthorizationModal} from "@/components/modal/authorization-modal";
 
 interface IProduct {
   IdArticulo: string

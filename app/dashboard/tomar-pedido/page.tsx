@@ -60,7 +60,7 @@ import {format, parseISO} from "date-fns";
 import {Combobox} from "@/app/dashboard/mis-pedidos/page";
 import {useLaboratoriesData} from "@/app/dashboard/lista-precios-lote/hooks/useLaboratoriesData";
 import {Tabs, TabsContent, TabsList, TabsTrigger} from "@/components/ui/tabs";
-import OrderHistory from "@/app/components/take_orders/order-history";
+import OrderHistory from "@/components/tomarPedido/order-history";
 
 interface LoteProducto {
   value: string

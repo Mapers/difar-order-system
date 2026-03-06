@@ -7,12 +7,12 @@ import { useLaboratoriesData } from "./hooks/useLaboratoriesData";
 import { usePriceList } from "./hooks/usePriceList";
 import { useProductModals } from "./hooks/useProductModals";
 import ExportPdfButton from "@/app/dashboard/lista-precios-lote/export-pdf-button";
-import {PriceFilters} from "@/app/components/lista-precios-lote/PriceFilters";
-import {PriceTable} from "@/app/components/lista-precios-lote/PriceTable";
-import {PriceModals} from "@/app/components/lista-precios-lote/PriceModals";
-import {PricePagination} from "@/app/components/lista-precios-lote/PricePagination";
-import {CreateProductModal} from "@/app/components/lista-precios-lote/CreateProductModal";
-import {BulkPriceUploadModal} from "@/app/components/lista-precios-lote/BulkPriceUploadModal";
+import {PriceFilters} from "@/components/lista-precios-lote/PriceFilters";
+import {PriceTable} from "@/components/lista-precios-lote/PriceTable";
+import {PriceModals} from "@/components/lista-precios-lote/PriceModals";
+import {PricePagination} from "@/components/lista-precios-lote/PricePagination";
+import {CreateProductModal} from "@/components/lista-precios-lote/CreateProductModal";
+import {BulkPriceUploadModal} from "@/components/lista-precios-lote/BulkPriceUploadModal";
 
 export default function PricePage() {
   const { user, isAuthenticated } = useAuth();

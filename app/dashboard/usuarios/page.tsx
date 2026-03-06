@@ -24,9 +24,9 @@ import {
 } from 'lucide-react'
 import { useToast } from '@/components/ui/use-toast'
 import apiClient from '@/app/api/client'
-import {Representante, Rol, Usuario, UsuarioNoWeb, Vendedor} from "@/app/types/user";
-import {RepresentanteModal} from "@/app/components/users/Modals";
-import {RepresentantesTab} from "@/app/components/users/Tabs";
+import {Representante, Rol, Usuario, UsuarioNoWeb, Vendedor} from "@/app/types/user-interface";
+import {RepresentanteModal} from "@/components/users/Modals";
+import {RepresentantesTab} from "@/components/users/Tabs";
 
 export default function UsuariosPage() {
   const [usuarios, setUsuarios] = useState<Usuario[]>([])

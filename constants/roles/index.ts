@@ -101,6 +101,16 @@ export const NAV_ITEMS: NavItem[] = [
                 href: "/dashboard/reportes/cobrar-vendedor",
                 icon: LineChart,
             },
+            {
+                title: "Saldo por Cobrar",
+                href: "/dashboard/reportes/saldos-vencidos",
+                icon: LineChart,
+            },
+            {
+                title: "Ventas por Vendedor",
+                href: "/dashboard/reportes/informe-laboratorio-vendedor",
+                icon: LineChart,
+            },
         ],
     },
 ];

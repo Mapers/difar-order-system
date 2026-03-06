@@ -3,8 +3,8 @@
 import { createContext, useContext, useState, ReactNode, useEffect } from "react";
 import { useAuth } from "@/context/authContext";
 import {useInactivity} from "@/app/hooks/useInactivity";
-import {InactivityWarningModal} from "@/app/components/inactivity-warning-modal";
-import {SessionExpiredModal} from "@/app/components/session-expired-modal";
+import {InactivityWarningModal} from "@/components/inactivity-warning-modal";
+import {SessionExpiredModal} from "@/components/session-expired-modal";
 
 interface InactivityContextType {
   resetInactivityTimer: () => void;

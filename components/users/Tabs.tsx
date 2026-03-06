@@ -4,7 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Edit, ChevronDown, ChevronUp, Check, X } from 'lucide-react';
 import {EditUsuarioWebModal, VendedorModal, UsuarioGeneralModal, RepresentanteModal} from './Modals';
-import {Laboratorio, Representante, Usuario, UsuarioNoWeb, Vendedor} from "@/app/types/user";
+import {Laboratorio, Representante, Usuario, UsuarioNoWeb, Vendedor} from "@/app/types/user-interface";
 
 export const UsuariosWebTab = ({ usuarios, roles, isMobile, onRefresh }: { usuarios: Usuario[], roles: Rol[], isMobile: boolean, onRefresh: () => void }) => {
     const [expanded, setExpanded] = useState<Record<number, boolean>>({});

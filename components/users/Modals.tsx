@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Search } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import apiClient from '@/app/api/client';
-import {Laboratorio, Rol, UsuarioNoWeb, Vendedor} from "@/app/types/user";
+import {Laboratorio, Rol, UsuarioNoWeb, Vendedor} from "@/app/types/user-interface";
 
 export const CreateUsuarioWebModal = ({ isOpen, onClose, vendedores, usuariosNoWeb, roles, onSuccess }: any) => {
     const { toast } = useToast();
