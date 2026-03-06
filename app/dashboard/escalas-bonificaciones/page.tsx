@@ -47,6 +47,8 @@ import {getProductsRequest} from "@/app/api/products";
 import {Tabs, TabsContent, TabsList, TabsTrigger} from "@/components/ui/tabs";
 import {useAuth} from "@/context/authContext";
 import {Bonificacion, Escala} from "@/app/dashboard/lista-precios-lote/types";
+import {BulkScaleUploadModal} from "@/components/escalas-bonificaciones/BulkScaleUploadModal";
+import {BulkBonusUploadModal} from "@/components/escalas-bonificaciones/BulkBonusUploadModal";
 
 interface Producto {
     IdArticulo: number;
@@ -276,9 +278,16 @@ export default function ScaleBonusManagementPage() {
 
     return (
         <div className="grid gap-6">
-            <div className="flex flex-col gap-2">
-                <h1 className="text-3xl font-bold tracking-tight text-gray-900">Gestión de Promociones</h1>
-                <p className="text-gray-500">Administra escalas de precios y bonificaciones por producto</p>
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div className="flex flex-col gap-2">
+                    <h1 className="text-3xl font-bold tracking-tight text-gray-900">Gestión de Promociones</h1>
+                    <p className="text-gray-500">Administra escalas de precios y bonificaciones por producto</p>
+                </div>
+
+                <div className="flex items-center gap-2 overflow-x-auto pb-2 sm:pb-0 w-full sm:w-auto">
+                    <BulkScaleUploadModal user={user} onUploadSuccess={fetchProductos} />
+                    <BulkBonusUploadModal user={user} onUploadSuccess={fetchProductos} />
+                </div>
             </div>
 
             <Card className="shadow-md">
@@ -311,7 +320,6 @@ export default function ScaleBonusManagementPage() {
                                 </DialogHeader>
 
                                 <div className="flex-1 overflow-y-auto space-y-4 px-1 sm:px-0 py-2">
-                                    {/* Búsqueda de Producto */}
                                     <div className="space-y-3">
                                         <div className="space-y-2">
                                             <Label htmlFor="product-search" className="text-sm font-medium">
