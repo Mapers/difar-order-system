@@ -102,12 +102,12 @@ export const NAV_ITEMS: NavItem[] = [
                 icon: LineChart,
             },
             {
-                title: "Saldo por Cobrar",
+                title: "Consulta Saldo por Cobrar",
                 href: "/dashboard/reportes/saldos-vencidos",
                 icon: LineChart,
             },
             {
-                title: "Ventas por Vendedor",
+                title: "Consulta Ventas por Vendedor",
                 href: "/dashboard/reportes/informe-laboratorio-vendedor",
                 icon: LineChart,
             },

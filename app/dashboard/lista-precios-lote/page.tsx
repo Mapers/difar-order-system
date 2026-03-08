@@ -37,7 +37,16 @@ export default function PricePage() {
               </div>
               <div className="flex items-center gap-2">
                   {user?.idRol && [2, 3].includes(user.idRol) && (
-                      <BulkPriceUploadModal onUploadSuccess={() => window.location.reload()} />
+                      <BulkPriceUploadModal
+                          onUploadSuccess={() => window.location.reload()}
+                          filteredData={listData.filteredPricesLot.map(item => ({
+                              codArticulo: item.prod_codigo,
+                              precio1: Number(item.precio_contado),
+                              precio2: Number(item.precio_credito),
+                              precio3: Number(item.precio_bonif_cont),
+                              precio4: Number(item.precio_bonif_cred)
+                          }))}
+                      />
                   )}
                   {user?.idRol && [2, 3].includes(user.idRol) && (
                       <CreateProductModal

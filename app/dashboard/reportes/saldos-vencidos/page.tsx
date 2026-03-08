@@ -24,75 +24,56 @@ interface FilterOptions {
 export default function ExpiredBalancesPage() {
     const [loading, setLoading] = useState(false)
     const [data, setData] = useState<VendedorVencido[]>([])
-    const [filteredData, setFilteredData] = useState<VendedorVencido[]>([])
-    const [activeTab, setActiveTab] = useState<string>("0")
-
-    // Filtros
+    const [activeTab, setActiveTab] = useState<string>("todos")
     const [selectedZona, setSelectedZona] = useState<string>("")
     const [openZona, setOpenZona] = useState(false)
     const [selectedCliente, setSelectedCliente] = useState<string>("")
     const [openCliente, setOpenCliente] = useState(false)
     const [searchClienteQuery, setSearchClienteQuery] = useState("")
 
-    // Opciones para los filtros (extraídas de la data)
     const [zonasOptions, setZonasOptions] = useState<FilterOptions[]>([])
     const [clientesOptions, setClientesOptions] = useState<FilterOptions[]>([])
 
-    // Extraer opciones únicas de la data
+    const tabFilteredData = useMemo(() => {
+        if (activeTab === "todos") return data;
+        return data.filter(v => v.Vendedor === activeTab);
+    }, [data, activeTab]);
+
     useEffect(() => {
-        if (data.length > 0) {
-            const zonasSet = new Set<string>()
-            const clientesSet = new Set<string>()
-            const zonasMap = new Map<string, string>() // id -> nombre
-            const clientesMap = new Map<string, string>() // id -> nombre
+        if (tabFilteredData.length === 0) return;
 
-            data.forEach(vendedor => {
-                vendedor.zonas.forEach(zona => {
-                    // Para zona, usamos el nombre como identificador
-                    if (!zonasSet.has(zona.NombreZona)) {
-                        zonasSet.add(zona.NombreZona)
-                        zonasMap.set(zona.NombreZona, zona.NombreZona)
-                    }
+        const zonasSet = new Set<string>()
+        const clientesSet = new Set<string>()
+        const zonasMap = new Map<string, string>()
+        const clientesMap = new Map<string, string>()
 
+        tabFilteredData.forEach(vendedor => {
+            vendedor.zonas.forEach(zona => {
+                if (!zonasSet.has(zona.NombreZona)) {
+                    zonasSet.add(zona.NombreZona)
+                    zonasMap.set(zona.NombreZona, zona.NombreZona)
+                }
+
+                if (!selectedZona || zona.NombreZona === selectedZona) {
                     zona.clientes.forEach(cliente => {
-                        // Para cliente, creamos un ID único combinando nombre y dirección
                         const clienteId = `${cliente.Cliente}-${cliente.Direccion}`
                         if (!clientesSet.has(clienteId)) {
                             clientesSet.add(clienteId)
                             clientesMap.set(clienteId, cliente.Cliente)
                         }
                     })
-                })
+                }
             })
+        })
 
-            setZonasOptions(
-                Array.from(zonasMap.entries()).map(([id, nombre]) => ({
-                    id,
-                    nombre,
-                    tipo: 'zona'
-                }))
-            )
+        setZonasOptions(Array.from(zonasMap.entries()).map(([id, nombre]) => ({ id, nombre, tipo: 'zona' })))
+        setClientesOptions(Array.from(clientesMap.entries()).map(([id, nombre]) => ({ id, nombre, tipo: 'cliente' })))
 
-            setClientesOptions(
-                Array.from(clientesMap.entries()).map(([id, nombre]) => ({
-                    id,
-                    nombre,
-                    tipo: 'cliente'
-                }))
-            )
-        }
-    }, [data])
+    }, [tabFilteredData, selectedZona]);
 
-    // Aplicar filtros locales
-    useEffect(() => {
-        if (data.length === 0) {
-            setFilteredData([])
-            return
-        }
+    const finalVisibleData = useMemo(() => {
+        let filtered = [...tabFilteredData];
 
-        let filtered = [...data]
-
-        // Filtrar por zona
         if (selectedZona) {
             filtered = filtered.map(vendedor => ({
                 ...vendedor,
@@ -100,26 +81,25 @@ export default function ExpiredBalancesPage() {
             })).filter(vendedor => vendedor.zonas.length > 0)
         }
 
-        // Filtrar por cliente
         if (selectedCliente) {
             filtered = filtered.map(vendedor => ({
                 ...vendedor,
                 zonas: vendedor.zonas.map(zona => ({
                     ...zona,
-                    clientes: zona.clientes.filter(cliente =>
-                        cliente.Cliente === selectedCliente
-                    )
+                    clientes: zona.clientes.filter(cliente => cliente.Cliente === selectedCliente)
                 })).filter(zona => zona.clientes.length > 0)
             })).filter(vendedor => vendedor.zonas.length > 0)
         }
 
-        setFilteredData(filtered)
+        return filtered;
+    }, [tabFilteredData, selectedZona, selectedCliente]);
 
-        // Resetear active tab si el tab actual ya no existe
-        if (filtered.length > 0 && parseInt(activeTab) >= filtered.length) {
-            setActiveTab("0")
-        }
-    }, [data, selectedZona, selectedCliente, activeTab])
+    const handleTabChange = (value: string) => {
+        setActiveTab(value);
+        setSelectedZona("");
+        setSelectedCliente("");
+        setSearchClienteQuery("");
+    };
 
     const fetchReport = async () => {
         setLoading(true)
@@ -128,11 +108,7 @@ export default function ExpiredBalancesPage() {
             if (response.status === 200) {
                 const reportData = response.data.data || [];
                 setData(reportData);
-                setFilteredData(reportData);
-                if (reportData.length > 0) {
-                    setActiveTab("0");
-                }
-                // Limpiar filtros
+                setActiveTab("todos");
                 setSelectedZona("")
                 setSelectedCliente("")
                 setSearchClienteQuery("")
@@ -145,23 +121,18 @@ export default function ExpiredBalancesPage() {
         }
     }
 
-    const handleClearFilters = () => {
-        setSelectedZona("")
-        setSelectedCliente("")
-        setSearchClienteQuery("")
-    }
-
     useEffect(() => {
         fetchReport();
     }, [])
 
-    // Clientes filtrados para el autocomplete
     const filteredClientOptions = useMemo(() => {
         if (!searchClienteQuery) return clientesOptions;
         return clientesOptions.filter(cliente =>
             cliente.nombre.toLowerCase().includes(searchClienteQuery.toLowerCase())
         );
     }, [clientesOptions, searchClienteQuery]);
+
+    const tabValues = ["todos", ...data.map(v => v.Vendedor)];
 
     return (
         <div className="grid gap-6 p-4 md:p-6">
@@ -182,12 +153,11 @@ export default function ExpiredBalancesPage() {
                                 <RefreshCcw className="mr-2 h-4 w-4" />
                                 Actualizar
                             </Button>
-                            <ExportExpiredBalancesPdf data={filteredData} disabled={loading || filteredData.length === 0} />
+                            <ExportExpiredBalancesPdf data={finalVisibleData} disabled={loading || finalVisibleData.length === 0} />
                         </div>
                     </div>
 
                     <div className="grid sm:grid-cols-12 gap-4 items-end">
-                        {/* Filtro de Zona */}
                         <div className="relative space-y-2 sm:col-span-5">
                             <div className="flex items-center gap-1.5">
                                 <MapPin className="w-4 h-4 text-muted-foreground" />
@@ -208,7 +178,7 @@ export default function ExpiredBalancesPage() {
                                     <Command>
                                         <CommandInput placeholder="Buscar zona..." />
                                         <CommandList>
-                                            <CommandEmpty>No se encontraron zonas.</CommandEmpty>
+                                            <CommandEmpty>No se encontraron zonas en esta vista.</CommandEmpty>
                                             <CommandGroup>
                                                 {zonasOptions.map((zona) => (
                                                     <CommandItem
@@ -216,6 +186,7 @@ export default function ExpiredBalancesPage() {
                                                         value={zona.nombre}
                                                         onSelect={() => {
                                                             setSelectedZona(selectedZona === zona.id ? "" : zona.id)
+                                                            setSelectedCliente("")
                                                             setOpenZona(false)
                                                         }}
                                                     >
@@ -235,7 +206,6 @@ export default function ExpiredBalancesPage() {
                             </Popover>
                         </div>
 
-                        {/* Filtro de Cliente */}
                         <div className="flex flex-col gap-1 sm:col-span-5 relative">
                             <div className="flex items-center gap-1.5 mb-1">
                                 <User className="w-4 h-4 text-muted-foreground" />
@@ -317,10 +287,9 @@ export default function ExpiredBalancesPage() {
                         </div>
                     </div>
 
-                    {/* Indicador de resultados filtrados */}
-                    {(selectedZona || selectedCliente) && (
+                    {(selectedZona || selectedCliente || activeTab !== "todos") && (
                         <div className="text-sm text-muted-foreground mt-2">
-                            Mostrando {filteredData.reduce((acc, v) => acc + v.zonas.reduce((acc2, z) => acc2 + z.clientes.length, 0), 0)} de {data.reduce((acc, v) => acc + v.zonas.reduce((acc2, z) => acc2 + z.clientes.length, 0), 0)} clientes
+                            Mostrando {finalVisibleData.reduce((acc, v) => acc + v.zonas.reduce((acc2, z) => acc2 + z.clientes.length, 0), 0)} de {data.reduce((acc, v) => acc + v.zonas.reduce((acc2, z) => acc2 + z.clientes.length, 0), 0)} clientes
                         </div>
                     )}
                 </CardHeader>
@@ -328,13 +297,19 @@ export default function ExpiredBalancesPage() {
                 <CardContent className="p-4 md:p-6">
                     {loading ? (
                         <div className="py-4"><ZoneReportSkeleton /></div>
-                    ) : filteredData.length > 0 ? (
-                        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                            <TabsList className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 w-full h-auto gap-2 mb-6 p-1 bg-slate-100/50">
-                                {filteredData.map((vendedor, index) => (
+                    ) : finalVisibleData.length > 0 || tabFilteredData.length > 0 ? (
+                        <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
+                            <TabsList className="flex flex-wrap h-auto w-full gap-2 mb-6 p-1 bg-slate-100/50 justify-start">
+                                <TabsTrigger
+                                    value="todos"
+                                    className="whitespace-normal h-auto py-2 text-xs font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-blue-700"
+                                >
+                                    Todos
+                                </TabsTrigger>
+                                {data.map((vendedor, index) => (
                                     <TabsTrigger
                                         key={index}
-                                        value={index.toString()}
+                                        value={vendedor.Vendedor}
                                         className="whitespace-normal h-auto py-2 text-xs font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-blue-700"
                                     >
                                         {vendedor.Vendedor.length > 18
@@ -343,58 +318,65 @@ export default function ExpiredBalancesPage() {
                                     </TabsTrigger>
                                 ))}
                             </TabsList>
-                            {filteredData.map((vendedor, vIdx) => (
-                                <TabsContent key={vIdx} value={vIdx.toString()} className="mt-0 focus-visible:outline-none focus-visible:ring-0">
-                                    <div className="border border-slate-200 rounded-lg overflow-hidden bg-white">
-                                        <div className="bg-indigo-600 text-white p-3 md:p-4 font-bold text-base md:text-lg flex items-center justify-between">
-                                            <span>{vendedor.Vendedor}</span>
-                                            <span className="text-xs bg-indigo-800/50 px-2 py-1 rounded-full font-medium">
-                                                {vendedor.zonas.length} {vendedor.zonas.length === 1 ? 'Zona' : 'Zonas'}
-                                            </span>
-                                        </div>
-                                        <div className="p-3 md:p-5 space-y-6 max-h-[600px] overflow-y-auto custom-scrollbar">
-                                            {vendedor.zonas.map((zona, zIdx) => (
-                                                <div key={zIdx} className="bg-slate-50/50 rounded-lg p-3 md:p-4 border border-slate-100">
-                                                    <h3 className="font-bold text-slate-800 border-b border-slate-200 pb-2 mb-4 text-sm md:text-base flex items-center gap-2">
-                                                        <span className="w-2 h-2 rounded-full bg-blue-500"></span>
-                                                        ZONA: {zona.NombreZona}
-                                                    </h3>
 
-                                                    <div className="space-y-4">
-                                                        {zona.clientes.map((cliente, cIdx) => (
-                                                            <div key={cIdx} className="bg-white p-3 md:p-4 rounded-md border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-                                                                <div className="mb-3">
-                                                                    <p className="font-bold text-sm text-slate-900">{cliente.Cliente}</p>
-                                                                    <p className="text-xs text-slate-500">{cliente.Direccion}</p>
-                                                                </div>
+                            {tabValues.map((tabValue) => (
+                                <TabsContent key={tabValue} value={tabValue} className="mt-0 focus-visible:outline-none focus-visible:ring-0">
+                                    {finalVisibleData.length > 0 ? (
+                                        <div className="space-y-6">
+                                            {finalVisibleData.map((vendedor, vIdx) => (
+                                                <div key={vIdx} className="border border-slate-200 rounded-lg overflow-hidden bg-white">
+                                                    <div className="bg-indigo-600 text-white p-3 md:p-4 font-bold text-base md:text-lg flex items-center justify-between">
+                                                        <span>{vendedor.Vendedor}</span>
+                                                        <span className="text-xs bg-indigo-800/50 px-2 py-1 rounded-full font-medium">
+                                                            {vendedor.zonas.length} {vendedor.zonas.length === 1 ? 'Zona' : 'Zonas'}
+                                                        </span>
+                                                    </div>
+                                                    <div className="p-3 md:p-5 space-y-6 max-h-[600px] overflow-y-auto custom-scrollbar">
+                                                        {vendedor.zonas.map((zona, zIdx) => (
+                                                            <div key={zIdx} className="bg-slate-50/50 rounded-lg p-3 md:p-4 border border-slate-100">
+                                                                <h3 className="font-bold text-slate-800 border-b border-slate-200 pb-2 mb-4 text-sm md:text-base flex items-center gap-2">
+                                                                    <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+                                                                    ZONA: {zona.NombreZona}
+                                                                </h3>
 
-                                                                <div className="overflow-x-auto">
-                                                                    <table className="w-full text-xs text-left">
-                                                                        <thead className="text-slate-500 border-b border-slate-200 bg-slate-50">
-                                                                        <tr>
-                                                                            <th className="font-semibold py-2 px-2 whitespace-nowrap">Emisión</th>
-                                                                            <th className="font-semibold py-2 px-2 whitespace-nowrap">Documento</th>
-                                                                            <th className="font-semibold py-2 px-2 whitespace-nowrap">Tipo</th>
-                                                                            <th className="font-semibold py-2 px-2 text-right whitespace-nowrap">Saldo (S/)</th>
-                                                                        </tr>
-                                                                        </thead>
-                                                                        <tbody className="divide-y divide-slate-100 font-mono">
-                                                                        {cliente.documentos.map((doc, dIdx) => (
-                                                                            <tr key={dIdx} className="hover:bg-slate-50/80">
-                                                                                <td className="py-2 px-2 whitespace-nowrap">{doc.Fecha_Emision}</td>
-                                                                                <td className="py-2 px-2 font-medium text-slate-700 whitespace-nowrap">{doc.Serie_Numero}</td>
-                                                                                <td className="py-2 px-2 whitespace-nowrap">
-                                                                                        <span className="bg-slate-100 px-1.5 py-0.5 rounded text-[10px] md:text-xs">
-                                                                                            {doc.Abreviatura}
-                                                                                        </span>
-                                                                                </td>
-                                                                                <td className="py-2 px-2 text-right font-bold text-red-600 whitespace-nowrap">
-                                                                                    {doc.Saldo_Soles.toLocaleString('es-PE', { minimumFractionDigits: 2 })}
-                                                                                </td>
-                                                                            </tr>
-                                                                        ))}
-                                                                        </tbody>
-                                                                    </table>
+                                                                <div className="space-y-4">
+                                                                    {zona.clientes.map((cliente, cIdx) => (
+                                                                        <div key={cIdx} className="bg-white p-3 md:p-4 rounded-md border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+                                                                            <div className="mb-3">
+                                                                                <p className="font-bold text-sm text-slate-900">{cliente.Cliente}</p>
+                                                                                <p className="text-xs text-slate-500">{cliente.Direccion}</p>
+                                                                            </div>
+
+                                                                            <div className="overflow-x-auto">
+                                                                                <table className="w-full text-xs text-left">
+                                                                                    <thead className="text-slate-500 border-b border-slate-200 bg-slate-50">
+                                                                                    <tr>
+                                                                                        <th className="font-semibold py-2 px-2 whitespace-nowrap">Emisión</th>
+                                                                                        <th className="font-semibold py-2 px-2 whitespace-nowrap">Documento</th>
+                                                                                        <th className="font-semibold py-2 px-2 whitespace-nowrap">Tipo</th>
+                                                                                        <th className="font-semibold py-2 px-2 text-right whitespace-nowrap">Saldo (S/)</th>
+                                                                                    </tr>
+                                                                                    </thead>
+                                                                                    <tbody className="divide-y divide-slate-100 font-mono">
+                                                                                    {cliente.documentos.map((doc, dIdx) => (
+                                                                                        <tr key={dIdx} className="hover:bg-slate-50/80">
+                                                                                            <td className="py-2 px-2 whitespace-nowrap">{doc.Fecha_Emision}</td>
+                                                                                            <td className="py-2 px-2 font-medium text-slate-700 whitespace-nowrap">{doc.Serie_Numero}</td>
+                                                                                            <td className="py-2 px-2 whitespace-nowrap">
+                                                                                                    <span className="bg-slate-100 px-1.5 py-0.5 rounded text-[10px] md:text-xs">
+                                                                                                        {doc.Abreviatura}
+                                                                                                    </span>
+                                                                                            </td>
+                                                                                            <td className="py-2 px-2 text-right font-bold text-red-600 whitespace-nowrap">
+                                                                                                {doc.Saldo_Soles.toLocaleString('es-PE', { minimumFractionDigits: 2 })}
+                                                                                            </td>
+                                                                                        </tr>
+                                                                                    ))}
+                                                                                    </tbody>
+                                                                                </table>
+                                                                            </div>
+                                                                        </div>
+                                                                    ))}
                                                                 </div>
                                                             </div>
                                                         ))}
@@ -402,7 +384,19 @@ export default function ExpiredBalancesPage() {
                                                 </div>
                                             ))}
                                         </div>
-                                    </div>
+                                    ) : (
+                                        <div className="text-center text-sm text-gray-500 py-16 flex flex-col items-center">
+                                            <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-4">
+                                                <Search className="h-8 w-8 text-slate-300" />
+                                            </div>
+                                            <p className="font-medium text-slate-600">
+                                                No hay resultados con los filtros actuales
+                                            </p>
+                                            <p className="text-xs mt-1">
+                                                Intenta ajustar los filtros de zona o cliente.
+                                            </p>
+                                        </div>
+                                    )}
                                 </TabsContent>
                             ))}
                         </Tabs>
@@ -412,14 +406,10 @@ export default function ExpiredBalancesPage() {
                                 <RefreshCcw className="h-8 w-8 text-slate-300" />
                             </div>
                             <p className="font-medium text-slate-600">
-                                {data.length > 0
-                                    ? "No hay resultados con los filtros seleccionados"
-                                    : "No hay documentos vencidos para mostrar"}
+                                No hay documentos vencidos para mostrar
                             </p>
                             <p className="text-xs mt-1">
-                                {data.length > 0
-                                    ? "Intenta ajustar los filtros de búsqueda"
-                                    : "Actualiza el reporte para cargar los datos"}
+                                Actualiza el reporte para cargar los datos
                             </p>
                         </div>
                     )}

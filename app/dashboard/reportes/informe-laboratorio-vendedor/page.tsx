@@ -3,12 +3,15 @@
 import React, { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
-import { Check, ChevronDown, FlaskConical, Search, Users, X } from "lucide-react"
+import { Check, ChevronDown, FlaskConical, Search, Users, X, Calendar as CalendarIcon } from "lucide-react"
 import { toast } from "@/hooks/use-toast"
 import { useAuth } from "@/context/authContext"
 import { Badge } from "@/components/ui/badge"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
+import { Calendar } from "@/components/ui/calendar"
+import { format } from "date-fns"
+import { es } from "date-fns/locale"
 import { cn } from "@/lib/utils"
 import apiClient from '@/app/api/client'
 
@@ -26,6 +29,8 @@ export default function LabSellerReportPage() {
 
     const [selectedLabs, setSelectedLabs] = useState<number[]>([]);
     const [selectedVends, setSelectedVends] = useState<string[]>([]);
+
+    const [selectedDate, setSelectedDate] = useState<Date>(new Date());
 
     const [openLab, setOpenLab] = useState(false);
     const [openVend, setOpenVend] = useState(false);
@@ -54,9 +59,14 @@ export default function LabSellerReportPage() {
     const handleSearch = async () => {
         setLoading(true);
         try {
+            const anioSeleccionado = selectedDate.getFullYear();
+            const mesSeleccionado = selectedDate.getMonth() + 1;
+
             const payload = {
                 laboratorios: selectedLabs.length > 0 ? selectedLabs : [],
-                vendedores: selectedVends.length > 0 ? selectedVends : []
+                vendedores: selectedVends.length > 0 ? selectedVends : [],
+                anio: anioSeleccionado,
+                mes: mesSeleccionado
             };
 
             const response = await apiClient.post('/reportes/informe-laboratorio-vendedor', payload);
@@ -84,14 +94,43 @@ export default function LabSellerReportPage() {
     return (
         <div className="grid gap-6 p-4 md:p-6">
             <div className="flex flex-col gap-2">
-                <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-gray-900">Informe por Laboratorio y Vendedor</h1>
-                <p className="text-sm md:text-base text-gray-500">Consulta las ventas agrupadas por laboratorio y vendedor del mes actual.</p>
+                <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-gray-900">Ventas por Vendedor</h1>
+                <p className="text-sm md:text-base text-gray-500">Consulta las ventas agrupadas por laboratorio y vendedor del mes seleccionado.</p>
             </div>
 
             <Card className="shadow-md">
                 <CardHeader className="bg-slate-50 border-b border-slate-200 p-4">
                     <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-start">
-                        <div className="md:col-span-4 flex flex-col gap-2">
+                        <div className={`flex flex-col gap-2 ${isManagerOrAdmin ? 'md:col-span-3' : 'md:col-span-4'}`}>
+                            <label className="text-sm font-semibold flex items-center gap-2 text-slate-700">
+                                <CalendarIcon className="w-4 h-4 "/> Periodo (Mes y Año)
+                            </label>
+                            <Popover>
+                                <PopoverTrigger asChild>
+                                    <Button
+                                        variant={"outline"}
+                                        className={cn(
+                                            "w-full justify-start text-left font-normal bg-white h-10",
+                                            !selectedDate && "text-muted-foreground"
+                                        )}
+                                    >
+                                        <CalendarIcon className="mr-2 h-4 w-4 opacity-50" />
+                                        {selectedDate ? format(selectedDate, "MMMM yyyy", { locale: es }).replace(/^\w/, (c) => c.toUpperCase()) : <span>Seleccionar mes</span>}
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0 z-50" align="start">
+                                    <Calendar
+                                        mode="single"
+                                        selected={selectedDate}
+                                        onSelect={(date) => date && setSelectedDate(date)}
+                                        initialFocus
+                                        locale={es}
+                                    />
+                                </PopoverContent>
+                            </Popover>
+                        </div>
+
+                        <div className={`flex flex-col gap-2 ${isManagerOrAdmin ? 'md:col-span-3' : 'md:col-span-4'}`}>
                             <label className="text-sm font-semibold flex items-center gap-2 text-slate-700">
                                 <FlaskConical className="w-4 h-4 "/> Laboratorios
                             </label>
@@ -101,13 +140,13 @@ export default function LabSellerReportPage() {
                                         <div className="flex flex-wrap gap-1 items-center">
                                             {selectedLabs.length > 0
                                                 ? <span className="text-sm font-semibold text-blue-700">{selectedLabs.length} seleccionado(s)</span>
-                                                : <span className="text-muted-foreground text-sm font-normal">Todos los laboratorios...</span>
+                                                : <span className="text-muted-foreground text-sm font-normal">Todos...</span>
                                             }
                                         </div>
                                         <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                     </Button>
                                 </PopoverTrigger>
-                                <PopoverContent className="w-[300px] p-0" align="start">
+                                <PopoverContent className="w-[300px] p-0 z-50" align="start">
                                     <Command>
                                         <CommandInput placeholder="Buscar laboratorio..." />
                                         <CommandList>
@@ -135,12 +174,12 @@ export default function LabSellerReportPage() {
                                             </Badge>
                                         ) : null;
                                     })}
-                                    <span className="text-xs text-slate-500 cursor-pointer hover:text-slate-800 hover:underline pt-1 ml-1 font-medium" onClick={() => setSelectedLabs([])}>Limpiar todo</span>
+                                    <span className="text-xs text-slate-500 cursor-pointer hover:text-slate-800 hover:underline pt-1 ml-1 font-medium" onClick={() => setSelectedLabs([])}>Limpiar</span>
                                 </div>
                             )}
                         </div>
                         {isManagerOrAdmin && (
-                            <div className="md:col-span-4 flex flex-col gap-2">
+                            <div className="md:col-span-3 flex flex-col gap-2">
                                 <label className="text-sm font-semibold flex items-center gap-2 text-slate-700">
                                     <Users className="w-4 h-4"/> Vendedores
                                 </label>
@@ -150,13 +189,13 @@ export default function LabSellerReportPage() {
                                             <div className="flex flex-wrap gap-1 items-center">
                                                 {selectedVends.length > 0
                                                     ? <span className="text-sm font-semibold text-orange-700">{selectedVends.length} seleccionado(s)</span>
-                                                    : <span className="text-muted-foreground text-sm font-normal">Todos los vendedores...</span>
+                                                    : <span className="text-muted-foreground text-sm font-normal">Todos...</span>
                                                 }
                                             </div>
                                             <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                         </Button>
                                     </PopoverTrigger>
-                                    <PopoverContent className="w-[300px] p-0" align="start">
+                                    <PopoverContent className="w-[300px] p-0 z-50" align="start">
                                         <Command>
                                             <CommandInput placeholder="Buscar vendedor..." />
                                             <CommandList>
@@ -184,13 +223,13 @@ export default function LabSellerReportPage() {
                                                 </Badge>
                                             ) : null;
                                         })}
-                                        <span className="text-xs text-slate-500 cursor-pointer hover:text-slate-800 hover:underline pt-1 ml-1 font-medium" onClick={() => setSelectedVends([])}>Limpiar todo</span>
+                                        <span className="text-xs text-slate-500 cursor-pointer hover:text-slate-800 hover:underline pt-1 ml-1 font-medium" onClick={() => setSelectedVends([])}>Limpiar</span>
                                     </div>
                                 )}
                             </div>
                         )}
-                        <div className={`flex flex-col sm:flex-row gap-3 pt-6 md:justify-end ${isManagerOrAdmin ? 'md:col-span-4' : 'md:col-span-8'}`}>
-                            <Button onClick={handleSearch} disabled={loading} className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto shadow-sm">
+                        <div className={`flex flex-col sm:flex-row gap-3 pt-6 md:justify-end ${isManagerOrAdmin ? 'md:col-span-3' : 'md:col-span-4'}`}>
+                            <Button onClick={handleSearch} disabled={loading} className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto shadow-sm h-10">
                                 <Search className="mr-2 h-4 w-4" /> Buscar
                             </Button>
                             <ExportLabSellerPdf data={data} disabled={loading || data.length === 0} />
