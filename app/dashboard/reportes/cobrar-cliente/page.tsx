@@ -137,7 +137,7 @@ export default function CollectClientPage() {
   }, [])
 
   return (
-      <div className="grid gap-6">
+      <div className="grid gap-6 p-4 md:p-6">
         <div className="flex flex-col gap-2">
           <h1 className="text-3xl font-bold tracking-tight text-gray-900">Consulta Cobrar Cliente</h1>
           <p className="text-gray-500">Gestiona la información de tus clientes.</p>
@@ -327,8 +327,10 @@ export default function CollectClientPage() {
                     ))}
                   </Tabs>
               ) : (
-                  <div className="text-center text-sm text-gray-500 py-6">
-                    No hay datos disponibles.
+                  <div className="flex flex-col items-center justify-center py-16 bg-white rounded-lg border-2 border-dashed border-slate-200">
+                    <p className="text-slate-500 font-medium text-center px-4">
+                      No hay datos de ventas para mostrar con los filtros seleccionados.
+                    </p>
                   </div>
               )}
             </div>
