@@ -4,11 +4,11 @@ import React, { useEffect, useState, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { getExpiredBalancesRequest } from "@/app/api/reports"
-import { Check, ChevronDown, MapPin, RefreshCcw, Search, User, X } from "lucide-react"
+import { Check, ChevronDown, MapPin, RefreshCcw, User, X } from "lucide-react"
 import { toast } from "@/hooks/use-toast"
 import { ExportExpiredBalancesPdf } from "@/components/reporte/exportExpiredBalancesPdf"
 import { ZoneReportSkeleton } from "@/components/skeleton/ZoneReportSkeleton"
-import { VendedorVencido, ZonaVencido, ClienteVencido } from "@/app/types/report-interface"
+import { VendedorVencido } from "@/app/types/report-interface"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Label } from "@radix-ui/react-label"
 import { Popover, PopoverContent, PopoverTrigger } from "@radix-ui/react-popover"
@@ -167,9 +167,7 @@ export default function ExpiredBalancesPage() {
                                 <PopoverTrigger asChild>
                                     <Button variant="outline" role="combobox" className="w-full justify-between h-10">
                                         <span className="truncate">
-                                            {selectedZona
-                                                ? zonasOptions.find(z => z.id === selectedZona)?.nombre
-                                                : 'Todas las zonas'}
+                                            {selectedZona ? zonasOptions.find(z => z.id === selectedZona)?.nombre : 'Todas las zonas'}
                                         </span>
                                         <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                     </Button>
@@ -190,12 +188,7 @@ export default function ExpiredBalancesPage() {
                                                             setOpenZona(false)
                                                         }}
                                                     >
-                                                        <Check
-                                                            className={cn(
-                                                                'mr-2 h-4 w-4 flex-shrink-0',
-                                                                selectedZona === zona.id ? 'opacity-100' : 'opacity-0',
-                                                            )}
-                                                        />
+                                                        <Check className={cn('mr-2 h-4 w-4 flex-shrink-0', selectedZona === zona.id ? 'opacity-100' : 'opacity-0')} />
                                                         <span className="truncate">{zona.nombre}</span>
                                                     </CommandItem>
                                                 ))}
@@ -221,9 +214,7 @@ export default function ExpiredBalancesPage() {
                                             className={cn("w-full justify-between h-10 font-normal overflow-hidden", selectedCliente && "pr-8")}
                                         >
                                             <span className="truncate">
-                                                {selectedCliente
-                                                    ? clientesOptions.find(c => c.id === selectedCliente)?.nombre
-                                                    : "Todos los clientes"}
+                                                {selectedCliente ? clientesOptions.find(c => c.id === selectedCliente)?.nombre : "Todos los clientes"}
                                             </span>
                                             {!selectedCliente && <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />}
                                         </Button>
@@ -232,13 +223,7 @@ export default function ExpiredBalancesPage() {
                                     {selectedCliente && (
                                         <div
                                             className="absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer p-1 text-gray-500 hover:text-red-500 hover:bg-red-50 rounded-md z-10"
-                                            onClick={(e) => {
-                                                e.preventDefault();
-                                                e.stopPropagation();
-                                                setSelectedCliente("");
-                                                setSearchClienteQuery("");
-                                            }}
-                                            title="Limpiar cliente"
+                                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); setSelectedCliente(""); setSearchClienteQuery(""); }}
                                         >
                                             <X className="h-4 w-4" />
                                         </div>
@@ -247,16 +232,11 @@ export default function ExpiredBalancesPage() {
 
                                 <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
                                     <Command shouldFilter={false}>
-                                        <CommandInput
-                                            placeholder="Buscar cliente..."
-                                            value={searchClienteQuery}
-                                            onValueChange={setSearchClienteQuery}
-                                        />
+                                        <CommandInput placeholder="Buscar cliente..." value={searchClienteQuery} onValueChange={setSearchClienteQuery} />
                                         <CommandList>
                                             {filteredClientOptions.length === 0 && searchClienteQuery && (
                                                 <CommandEmpty>No se encontraron clientes.</CommandEmpty>
                                             )}
-
                                             <CommandGroup>
                                                 {filteredClientOptions.map((cliente) => (
                                                     <CommandItem
@@ -268,15 +248,8 @@ export default function ExpiredBalancesPage() {
                                                             setSearchClienteQuery("")
                                                         }}
                                                     >
-                                                        <Check
-                                                            className={cn(
-                                                                "mr-2 h-4 w-4 flex-shrink-0",
-                                                                selectedCliente === cliente.id ? "opacity-100" : "opacity-0"
-                                                            )}
-                                                        />
-                                                        <span className="truncate">
-                                                            {cliente.nombre}
-                                                        </span>
+                                                        <Check className={cn("mr-2 h-4 w-4 flex-shrink-0", selectedCliente === cliente.id ? "opacity-100" : "opacity-0")} />
+                                                        <span className="truncate">{cliente.nombre}</span>
                                                     </CommandItem>
                                                 ))}
                                             </CommandGroup>
@@ -300,21 +273,12 @@ export default function ExpiredBalancesPage() {
                     ) : finalVisibleData.length > 0 || tabFilteredData.length > 0 ? (
                         <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
                             <TabsList className="flex flex-wrap h-auto w-full gap-2 mb-6 p-1 bg-slate-100/50 justify-start">
-                                <TabsTrigger
-                                    value="todos"
-                                    className="whitespace-normal h-auto py-2 text-xs font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-blue-700"
-                                >
+                                <TabsTrigger value="todos" className="whitespace-normal h-auto py-2 text-xs font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-blue-700">
                                     Todos
                                 </TabsTrigger>
                                 {data.map((vendedor, index) => (
-                                    <TabsTrigger
-                                        key={index}
-                                        value={vendedor.Vendedor}
-                                        className="whitespace-normal h-auto py-2 text-xs font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-blue-700"
-                                    >
-                                        {vendedor.Vendedor.length > 18
-                                            ? vendedor.Vendedor.slice(0, 18) + '...'
-                                            : vendedor.Vendedor}
+                                    <TabsTrigger key={index} value={vendedor.Vendedor} className="whitespace-normal h-auto py-2 text-xs font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-blue-700">
+                                        {vendedor.Vendedor.length > 18 ? vendedor.Vendedor.slice(0, 18) + '...' : vendedor.Vendedor}
                                     </TabsTrigger>
                                 ))}
                             </TabsList>
@@ -325,7 +289,7 @@ export default function ExpiredBalancesPage() {
                                         <div className="space-y-6">
                                             {finalVisibleData.map((vendedor, vIdx) => (
                                                 <div key={vIdx} className="border border-slate-200 rounded-lg overflow-hidden bg-white">
-                                                    <div className="bg-indigo-600 text-white p-3 md:p-4 font-bold text-base md:text-lg flex items-center justify-between">
+                                                    <div className="bg-indigo-600 text-white p-3 md:p-4 font-bold text-base md:text-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
                                                         <span>{vendedor.Vendedor}</span>
                                                         <span className="text-xs bg-indigo-800/50 px-2 py-1 rounded-full font-medium">
                                                             {vendedor.zonas.length} {vendedor.zonas.length === 1 ? 'Zona' : 'Zonas'}
@@ -341,13 +305,14 @@ export default function ExpiredBalancesPage() {
 
                                                                 <div className="space-y-4">
                                                                     {zona.clientes.map((cliente, cIdx) => (
-                                                                        <div key={cIdx} className="bg-white p-3 md:p-4 rounded-md border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+                                                                        <div key={cIdx} className="bg-white p-3 md:p-4 rounded-md border border-slate-200 shadow-sm">
                                                                             <div className="mb-3">
                                                                                 <p className="font-bold text-sm text-slate-900">{cliente.Cliente}</p>
                                                                                 <p className="text-xs text-slate-500">{cliente.Direccion}</p>
                                                                             </div>
 
-                                                                            <div className="overflow-x-auto">
+                                                                            {/* VERSIÓN ESCRITORIO (TABLA) */}
+                                                                            <div className="hidden md:block overflow-x-auto">
                                                                                 <table className="w-full text-xs text-left">
                                                                                     <thead className="text-slate-500 border-b border-slate-200 bg-slate-50">
                                                                                     <tr>
@@ -363,9 +328,9 @@ export default function ExpiredBalancesPage() {
                                                                                             <td className="py-2 px-2 whitespace-nowrap">{doc.Fecha_Emision}</td>
                                                                                             <td className="py-2 px-2 font-medium text-slate-700 whitespace-nowrap">{doc.Serie_Numero}</td>
                                                                                             <td className="py-2 px-2 whitespace-nowrap">
-                                                                                                    <span className="bg-slate-100 px-1.5 py-0.5 rounded text-[10px] md:text-xs">
-                                                                                                        {doc.Abreviatura}
-                                                                                                    </span>
+                                                                                                <span className="bg-slate-100 px-1.5 py-0.5 rounded text-[10px] md:text-xs">
+                                                                                                    {doc.Abreviatura}
+                                                                                                </span>
                                                                                             </td>
                                                                                             <td className="py-2 px-2 text-right font-bold text-red-600 whitespace-nowrap">
                                                                                                 {doc.Saldo_Soles.toLocaleString('es-PE', { minimumFractionDigits: 2 })}
@@ -375,6 +340,26 @@ export default function ExpiredBalancesPage() {
                                                                                     </tbody>
                                                                                 </table>
                                                                             </div>
+
+                                                                            {/* VERSIÓN MÓVIL (CARDS) */}
+                                                                            <div className="grid grid-cols-1 gap-2 md:hidden">
+                                                                                {cliente.documentos.map((doc, dIdx) => (
+                                                                                    <div key={dIdx} className="flex justify-between items-center border border-slate-100 bg-slate-50 rounded p-2">
+                                                                                        <div className="space-y-1">
+                                                                                            <div className="flex items-center gap-2">
+                                                                                                <span className="font-mono font-bold text-sm text-slate-800">{doc.Serie_Numero}</span>
+                                                                                                <span className="bg-slate-200 px-1.5 py-0.5 rounded text-[10px] text-slate-600 font-medium">{doc.Abreviatura}</span>
+                                                                                            </div>
+                                                                                            <p className="text-xs text-slate-500">Emisión: {doc.Fecha_Emision}</p>
+                                                                                        </div>
+                                                                                        <div className="text-right">
+                                                                                            <p className="text-[10px] uppercase text-slate-400 font-bold mb-0.5">Saldo</p>
+                                                                                            <p className="font-bold text-red-600 text-sm">S/ {doc.Saldo_Soles.toLocaleString('es-PE', { minimumFractionDigits: 2 })}</p>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                ))}
+                                                                            </div>
+
                                                                         </div>
                                                                     ))}
                                                                 </div>
@@ -389,12 +374,8 @@ export default function ExpiredBalancesPage() {
                                             <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-4">
                                                 <Search className="h-8 w-8 text-slate-300" />
                                             </div>
-                                            <p className="font-medium text-slate-600">
-                                                No hay resultados con los filtros actuales
-                                            </p>
-                                            <p className="text-xs mt-1">
-                                                Intenta ajustar los filtros de zona o cliente.
-                                            </p>
+                                            <p className="font-medium text-slate-600">No hay resultados con los filtros actuales</p>
+                                            <p className="text-xs mt-1">Intenta ajustar los filtros de zona o cliente.</p>
                                         </div>
                                     )}
                                 </TabsContent>
@@ -405,12 +386,8 @@ export default function ExpiredBalancesPage() {
                             <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-4">
                                 <RefreshCcw className="h-8 w-8 text-slate-300" />
                             </div>
-                            <p className="font-medium text-slate-600">
-                                No hay documentos vencidos para mostrar
-                            </p>
-                            <p className="text-xs mt-1">
-                                Actualiza el reporte para cargar los datos
-                            </p>
+                            <p className="font-medium text-slate-600">No hay documentos vencidos para mostrar</p>
+                            <p className="text-xs mt-1">Actualiza el reporte para cargar los datos</p>
                         </div>
                     )}
                 </CardContent>

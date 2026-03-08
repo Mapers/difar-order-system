@@ -107,25 +107,13 @@ export default function LabSellerReportPage() {
                             </label>
                             <Popover>
                                 <PopoverTrigger asChild>
-                                    <Button
-                                        variant={"outline"}
-                                        className={cn(
-                                            "w-full justify-start text-left font-normal bg-white h-10",
-                                            !selectedDate && "text-muted-foreground"
-                                        )}
-                                    >
+                                    <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal bg-white h-10", !selectedDate && "text-muted-foreground")}>
                                         <CalendarIcon className="mr-2 h-4 w-4 opacity-50" />
                                         {selectedDate ? format(selectedDate, "MMMM yyyy", { locale: es }).replace(/^\w/, (c) => c.toUpperCase()) : <span>Seleccionar mes</span>}
                                     </Button>
                                 </PopoverTrigger>
                                 <PopoverContent className="w-auto p-0 z-50" align="start">
-                                    <Calendar
-                                        mode="single"
-                                        selected={selectedDate}
-                                        onSelect={(date) => date && setSelectedDate(date)}
-                                        initialFocus
-                                        locale={es}
-                                    />
+                                    <Calendar mode="single" selected={selectedDate} onSelect={(date) => date && setSelectedDate(date)} initialFocus locale={es} />
                                 </PopoverContent>
                             </Popover>
                         </div>
@@ -138,10 +126,7 @@ export default function LabSellerReportPage() {
                                 <PopoverTrigger asChild>
                                     <Button variant="outline" role="combobox" className="justify-between w-full h-auto min-h-10 px-3 py-2 bg-white">
                                         <div className="flex flex-wrap gap-1 items-center">
-                                            {selectedLabs.length > 0
-                                                ? <span className="text-sm font-semibold text-blue-700">{selectedLabs.length} seleccionado(s)</span>
-                                                : <span className="text-muted-foreground text-sm font-normal">Todos...</span>
-                                            }
+                                            {selectedLabs.length > 0 ? <span className="text-sm font-semibold text-blue-700">{selectedLabs.length} seleccionado(s)</span> : <span className="text-muted-foreground text-sm font-normal">Todos...</span>}
                                         </div>
                                         <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                     </Button>
@@ -169,8 +154,7 @@ export default function LabSellerReportPage() {
                                         const found = catLaboratorios.find(l => l.IdLineaGe === id);
                                         return found ? (
                                             <Badge key={id} variant="secondary" className="text-[10px] md:text-xs px-2 py-0.5 font-medium bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200">
-                                                {found.Descripcion}
-                                                <X className="ml-1.5 h-3 w-3 cursor-pointer hover:text-red-500 hover:bg-red-100 rounded-full" onClick={() => toggleLab(id)} />
+                                                {found.Descripcion} <X className="ml-1.5 h-3 w-3 cursor-pointer hover:text-red-500 hover:bg-red-100 rounded-full" onClick={() => toggleLab(id)} />
                                             </Badge>
                                         ) : null;
                                     })}
@@ -178,6 +162,7 @@ export default function LabSellerReportPage() {
                                 </div>
                             )}
                         </div>
+
                         {isManagerOrAdmin && (
                             <div className="md:col-span-3 flex flex-col gap-2">
                                 <label className="text-sm font-semibold flex items-center gap-2 text-slate-700">
@@ -187,10 +172,7 @@ export default function LabSellerReportPage() {
                                     <PopoverTrigger asChild>
                                         <Button variant="outline" role="combobox" className="justify-between w-full h-auto min-h-10 px-3 py-2 bg-white">
                                             <div className="flex flex-wrap gap-1 items-center">
-                                                {selectedVends.length > 0
-                                                    ? <span className="text-sm font-semibold text-orange-700">{selectedVends.length} seleccionado(s)</span>
-                                                    : <span className="text-muted-foreground text-sm font-normal">Todos...</span>
-                                                }
+                                                {selectedVends.length > 0 ? <span className="text-sm font-semibold text-orange-700">{selectedVends.length} seleccionado(s)</span> : <span className="text-muted-foreground text-sm font-normal">Todos...</span>}
                                             </div>
                                             <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                         </Button>
@@ -218,8 +200,7 @@ export default function LabSellerReportPage() {
                                             const found = catVendedores.find(v => (v.Codigo_Vend || v.codigo) === cod);
                                             return found ? (
                                                 <Badge key={cod} variant="secondary" className="text-[10px] md:text-xs px-2 py-0.5 font-medium bg-orange-50 text-orange-700 hover:bg-orange-100 border border-orange-200">
-                                                    {found.Nombres || found.nombres}
-                                                    <X className="ml-1.5 h-3 w-3 cursor-pointer hover:text-red-500 hover:bg-red-100 rounded-full" onClick={() => toggleVend(cod)} />
+                                                    {found.Nombres || found.nombres} <X className="ml-1.5 h-3 w-3 cursor-pointer hover:text-red-500 hover:bg-red-100 rounded-full" onClick={() => toggleVend(cod)} />
                                                 </Badge>
                                             ) : null;
                                         })}
@@ -234,7 +215,6 @@ export default function LabSellerReportPage() {
                             </Button>
                             <ExportLabSellerPdf data={data} disabled={loading || data.length === 0} />
                         </div>
-
                     </div>
                 </CardHeader>
 
@@ -249,12 +229,14 @@ export default function LabSellerReportPage() {
                             {data.map((lab, idx) => (
                                 <div key={idx} className="border border-slate-200 rounded-lg overflow-hidden shadow-sm bg-white">
                                     <div className="bg-indigo-600 text-white p-3 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
-                                        <span className="text-lg font-bold">{lab.Laboratorio}</span>
-                                        <Badge className="text-[10px] sm:text-xs font-medium bg-indigo-800/60 hover:bg-indigo-800/60 text-indigo-50 border-none w-fit">
+                                        <span className="text-lg font-bold text-center sm:text-left">{lab.Laboratorio}</span>
+                                        <Badge className="text-[10px] sm:text-xs font-medium bg-indigo-800/60 hover:bg-indigo-800/60 text-indigo-50 border-none w-fit mx-auto sm:mx-0">
                                             Mes: {lab.Mes} | Año: {lab.Año}
                                         </Badge>
                                     </div>
-                                    <div className="overflow-x-auto">
+
+                                    {/* VERSIÓN ESCRITORIO (TABLA) */}
+                                    <div className="hidden md:block overflow-x-auto">
                                         <table className="w-full text-sm text-left text-gray-600">
                                             <thead className="text-xs text-slate-500 uppercase bg-slate-50 border-b border-slate-200">
                                             <tr>
@@ -288,6 +270,36 @@ export default function LabSellerReportPage() {
                                             </tr>
                                             </tfoot>
                                         </table>
+                                    </div>
+
+                                    {/* VERSIÓN MÓVIL (CARDS) */}
+                                    <div className="grid grid-cols-1 gap-3 p-4 md:hidden bg-slate-50">
+                                        {lab.vendedores.map((vend, vIdx) => {
+                                            const nombreLimpio = vend.Vendedor.substring(vend.Codigo_Vend.length).trim();
+                                            return (
+                                                <div key={vIdx} className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm flex flex-col gap-2">
+                                                    <div className="flex justify-between items-start">
+                                                        <span className="font-bold text-sm text-slate-800 pr-2">{nombreLimpio}</span>
+                                                        <span className="font-mono text-[10px] text-slate-500 bg-slate-100 px-2 py-1 rounded font-bold whitespace-nowrap">
+                                                            {vend.Codigo_Vend}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex justify-between items-center border-t border-slate-100 pt-2 mt-1">
+                                                        <span className="text-xs uppercase text-slate-400 font-bold">Ventas:</span>
+                                                        <span className="font-bold text-indigo-700 text-sm">
+                                                            S/ {vend.SumaDeVta_Tot.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            )
+                                        })}
+
+                                        <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 mt-2 flex flex-col items-center shadow-sm">
+                                            <span className="text-[10px] font-bold text-emerald-600 uppercase mb-1">Total Ventas Laboratorio</span>
+                                            <span className="font-black text-emerald-800 text-lg">
+                                                S/ {lab.totalVentasLaboratorio.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
                             ))}

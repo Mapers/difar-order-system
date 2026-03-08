@@ -111,6 +111,16 @@ export const NAV_ITEMS: NavItem[] = [
                 href: "/dashboard/reportes/informe-laboratorio-vendedor",
                 icon: LineChart,
             },
+            {
+                title: "Consulta Saldo por Cobrar Cliente",
+                href: "/dashboard/reportes/saldos-cliente",
+                icon: LineChart,
+            },
+            {
+                title: "Consulta Estado Cuenta Cliente",
+                href: "/dashboard/reportes/cuenta-cliente",
+                icon: LineChart,
+            },
         ],
     },
 ];

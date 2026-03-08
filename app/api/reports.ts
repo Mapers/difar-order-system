@@ -33,3 +33,11 @@ export const searchClientsRequest = async (search: string, vendedor: string | nu
 export const getExpiredBalancesRequest = async () => {
     return apiClient.get(`/reportes/saldos-vencidos`);
 };
+
+export const saldoPorCobrarClienteRequest = async (doc_cliente: string, fecha: string): Promise<any> => {
+    return apiClient.post(`/reportes/saldo-por-cobrar-cliente`, { doc_cliente, fecha });
+};
+
+export const estadoCuentaClienteRequest = async (doc_cliente: string, fecha: string): Promise<any> => {
+    return apiClient.post(`/reportes/estado-cuenta-cliente`, { doc_cliente, fecha });
+};
