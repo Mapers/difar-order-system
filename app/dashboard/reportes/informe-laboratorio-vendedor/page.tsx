@@ -3,19 +3,22 @@
 import React, { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
-import { Check, ChevronDown, FlaskConical, Search, Users, X, Calendar as CalendarIcon } from "lucide-react"
+import { Check, ChevronDown, FlaskConical, Search, Users, X, Calendar as CalendarIcon, Eye, Loader2 } from "lucide-react"
 import { toast } from "@/hooks/use-toast"
 import { useAuth } from "@/context/authContext"
 import { Badge } from "@/components/ui/badge"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
 import { Calendar } from "@/components/ui/calendar"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { cn } from "@/lib/utils"
 import apiClient from '@/app/api/client'
 
 import { ExportLabSellerPdf, LabSellerReportData } from "@/components/reporte/exportLabSellerPdf"
+import { ExportDetalleLabVendedorPdf } from "@/components/reporte/exportDetalleLabVendedorPdf"
+import {Laboratorio} from "@/app/types/user-interface";
 
 export default function LabSellerReportPage() {
     const auth = useAuth()
@@ -24,16 +27,19 @@ export default function LabSellerReportPage() {
     const [loading, setLoading] = useState(false);
     const [data, setData] = useState<LabSellerReportData[]>([]);
 
-    const [catLaboratorios, setCatLaboratorios] = useState<any[]>([]);
+    const [catLaboratorios, setCatLaboratorios] = useState<Laboratorio[]>([]);
     const [catVendedores, setCatVendedores] = useState<any[]>([]);
 
     const [selectedLabs, setSelectedLabs] = useState<number[]>([]);
     const [selectedVends, setSelectedVends] = useState<string[]>([]);
-
     const [selectedDate, setSelectedDate] = useState<Date>(new Date());
 
     const [openLab, setOpenLab] = useState(false);
     const [openVend, setOpenVend] = useState(false);
+
+    const [modalOpen, setModalOpen] = useState(false);
+    const [detailLoading, setDetailLoading] = useState(false);
+    const [detailData, setDetailData] = useState<any>(null);
 
     useEffect(() => {
         const fetchCatalogs = async () => {
@@ -83,13 +89,46 @@ export default function LabSellerReportPage() {
         }
     }
 
-    const toggleLab = (id: number) => {
-        setSelectedLabs(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
-    }
+    const openDetailModal = async (labName: string, vendCodigo: string) => {
+        const foundLab = catLaboratorios.find(l => `${l.Codigo_Linea} ${l.Descripcion}` === labName);
+        if (!foundLab) {
+            toast({ description: "Error al identificar el laboratorio.", variant: "destructive" });
+            return;
+        }
 
-    const toggleVend = (cod: string) => {
-        setSelectedVends(prev => prev.includes(cod) ? prev.filter(x => x !== cod) : [...prev, cod]);
-    }
+        setModalOpen(true);
+        setDetailLoading(true);
+        setDetailData(null);
+
+        try {
+            // Formateamos la fecha (Ej. para mandar al SP: "2026-02-01")
+            const anio = selectedDate.getFullYear();
+            const mes = String(selectedDate.getMonth() + 1).padStart(2, '0');
+            const fechaStr = `${anio}-${mes}-01`;
+
+            const res = await apiClient.post('/reportes/detalle-laboratorio-vendedor', {
+                fecha: fechaStr,
+                id_laboratorio: foundLab.IdLineaGe,
+                codigo_vendedor: vendCodigo
+            });
+
+            if (res.data?.data && res.data.data.length > 0) {
+                setDetailData(res.data.data);
+            } else {
+                toast({ description: "No hay detalle de ítems para mostrar." });
+            }
+        } catch (error) {
+            console.error(error);
+            toast({ title: "Error", description: "No se pudo cargar el detalle", variant: "destructive" });
+        } finally {
+            setDetailLoading(false);
+        }
+    };
+
+    const toggleLab = (id: number) => setSelectedLabs(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+    const toggleVend = (cod: string) => setSelectedVends(prev => prev.includes(cod) ? prev.filter(x => x !== cod) : [...prev, cod]);
+
+    const formatMoney = (amount: number) => amount.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
     return (
         <div className="grid gap-6 p-4 md:p-6">
@@ -235,7 +274,6 @@ export default function LabSellerReportPage() {
                                         </Badge>
                                     </div>
 
-                                    {/* VERSIÓN ESCRITORIO (TABLA) */}
                                     <div className="hidden md:block overflow-x-auto">
                                         <table className="w-full text-sm text-left text-gray-600">
                                             <thead className="text-xs text-slate-500 uppercase bg-slate-50 border-b border-slate-200">
@@ -243,6 +281,7 @@ export default function LabSellerReportPage() {
                                                 <th className="px-4 py-3 font-bold min-w-[120px]">Cód Vendedor</th>
                                                 <th className="px-4 py-3 font-bold min-w-[200px]">Nombre Vendedor</th>
                                                 <th className="px-4 py-3 font-bold text-right min-w-[150px]">Ventas (S/.)</th>
+                                                <th className="px-4 py-3 font-bold text-center w-[120px]">Acciones</th>
                                             </tr>
                                             </thead>
                                             <tbody>
@@ -253,7 +292,12 @@ export default function LabSellerReportPage() {
                                                         <td className="px-4 py-3 font-mono font-medium text-slate-900">{vend.Codigo_Vend}</td>
                                                         <td className="px-4 py-3 text-slate-700">{nombreLimpio}</td>
                                                         <td className="px-4 py-3 text-right font-semibold text-slate-800">
-                                                            S/ {vend.SumaDeVta_Tot.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                            S/ {formatMoney(vend.SumaDeVta_Tot)}
+                                                        </td>
+                                                        <td className="px-4 py-3 text-center">
+                                                            <Button size="sm" variant="ghost" className="text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50" onClick={() => openDetailModal(lab.Laboratorio, vend.Codigo_Vend)}>
+                                                                <Eye className="w-4 h-4 mr-1"/> Detalle
+                                                            </Button>
                                                         </td>
                                                     </tr>
                                                 )
@@ -265,14 +309,14 @@ export default function LabSellerReportPage() {
                                                     Total Ventas:
                                                 </td>
                                                 <td className="px-4 py-4 text-right text-emerald-700 text-base font-bold">
-                                                    S/ {lab.totalVentasLaboratorio.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                    S/ {formatMoney(lab.totalVentasLaboratorio)}
                                                 </td>
+                                                <td></td>
                                             </tr>
                                             </tfoot>
                                         </table>
                                     </div>
 
-                                    {/* VERSIÓN MÓVIL (CARDS) */}
                                     <div className="grid grid-cols-1 gap-3 p-4 md:hidden bg-slate-50">
                                         {lab.vendedores.map((vend, vIdx) => {
                                             const nombreLimpio = vend.Vendedor.substring(vend.Codigo_Vend.length).trim();
@@ -287,9 +331,12 @@ export default function LabSellerReportPage() {
                                                     <div className="flex justify-between items-center border-t border-slate-100 pt-2 mt-1">
                                                         <span className="text-xs uppercase text-slate-400 font-bold">Ventas:</span>
                                                         <span className="font-bold text-indigo-700 text-sm">
-                                                            S/ {vend.SumaDeVta_Tot.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                            S/ {formatMoney(vend.SumaDeVta_Tot)}
                                                         </span>
                                                     </div>
+                                                    <Button variant="outline" size="sm" className="w-full mt-2 text-indigo-600 border-indigo-200 bg-indigo-50/50" onClick={() => openDetailModal(lab.Laboratorio, vend.Codigo_Vend)}>
+                                                        <Eye className="w-4 h-4 mr-2"/> Ver Detalle
+                                                    </Button>
                                                 </div>
                                             )
                                         })}
@@ -297,7 +344,7 @@ export default function LabSellerReportPage() {
                                         <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 mt-2 flex flex-col items-center shadow-sm">
                                             <span className="text-[10px] font-bold text-emerald-600 uppercase mb-1">Total Ventas Laboratorio</span>
                                             <span className="font-black text-emerald-800 text-lg">
-                                                S/ {lab.totalVentasLaboratorio.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                S/ {formatMoney(lab.totalVentasLaboratorio)}
                                             </span>
                                         </div>
                                     </div>
@@ -313,6 +360,102 @@ export default function LabSellerReportPage() {
                     )}
                 </CardContent>
             </Card>
+
+            <Dialog open={modalOpen} onOpenChange={setModalOpen}>
+                <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden flex flex-col bg-slate-50 p-0">
+                    <DialogHeader className="p-4 md:p-6 bg-white border-b border-slate-200 flex-shrink-0">
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                            <div>
+                                <DialogTitle className="text-xl text-indigo-800">Detalle de Ventas por Laboratorio</DialogTitle>
+                                {detailData && detailData.length > 0 && (
+                                    <p className="text-sm text-slate-500 mt-1 font-medium">{detailData[0].Vendedor} | {detailData[0].Laboratorios[0].Laboratorio}</p>
+                                )}
+                            </div>
+                            <ExportDetalleLabVendedorPdf data={detailData} disabled={detailLoading || !detailData} />
+                        </div>
+                    </DialogHeader>
+
+                    <div className="overflow-y-auto p-4 md:p-6 flex-1 custom-scrollbar">
+                        {detailLoading ? (
+                            <div className="flex flex-col items-center justify-center py-12">
+                                <Loader2 className="h-8 w-8 animate-spin text-indigo-600 mb-4" />
+                                <p className="text-sm text-slate-500 font-medium">Cargando detalle...</p>
+                            </div>
+                        ) : detailData && detailData.length > 0 ? (
+                            <div className="space-y-6">
+                                {detailData[0].Laboratorios[0].Clientes.map((cli: any, cIdx: number) => (
+                                    <div key={cIdx} className="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
+                                        <div className="bg-slate-100 p-3 border-b border-slate-200">
+                                            <p className="text-sm font-bold text-slate-800">{cli.Codigo} | {cli.Nombre}</p>
+                                            {cli.NombreComercial && <p className="text-xs text-slate-500 mt-0.5">{cli.NombreComercial}</p>}
+                                        </div>
+                                        <div className="hidden md:block overflow-x-auto">
+                                            <table className="w-full text-xs text-left text-slate-600">
+                                                <thead className="bg-white border-b border-slate-100">
+                                                <tr>
+                                                    <th className="px-3 py-2 font-semibold">Cód. Art</th>
+                                                    <th className="px-3 py-2 font-semibold text-center">Cant</th>
+                                                    <th className="px-3 py-2 font-semibold text-center">U.M.</th>
+                                                    <th className="px-3 py-2 font-semibold">Descripción</th>
+                                                    <th className="px-3 py-2 font-semibold text-right">Total S/.</th>
+                                                </tr>
+                                                </thead>
+                                                <tbody className="divide-y divide-slate-50">
+                                                {cli.Items.map((item: any, iIdx: number) => (
+                                                    <tr key={iIdx} className="hover:bg-slate-50">
+                                                        <td className="px-3 py-2 font-mono text-slate-500">{item.Codigo_Art}</td>
+                                                        <td className="px-3 py-2 text-center font-medium">{item.Cantidad_Sal}</td>
+                                                        <td className="px-3 py-2 text-center text-[10px] uppercase">{item.AbrevUnidMed}</td>
+                                                        <td className="px-3 py-2">{item.NombreItem}</td>
+                                                        <td className="px-3 py-2 text-right font-semibold text-slate-800">{formatMoney(item.SumaDeVta_Tot)}</td>
+                                                    </tr>
+                                                ))}
+                                                </tbody>
+                                                <tfoot className="bg-indigo-50/50">
+                                                <tr>
+                                                    <td colSpan={4} className="px-3 py-2 text-right text-indigo-800 text-xs font-bold uppercase tracking-wider">Total Cliente:</td>
+                                                    <td className="px-3 py-2 text-right text-indigo-700 font-bold">{formatMoney(cli.TotalCliente)}</td>
+                                                </tr>
+                                                </tfoot>
+                                            </table>
+                                        </div>
+
+                                        <div className="md:hidden grid grid-cols-1 gap-2 p-3 bg-slate-50">
+                                            {cli.Items.map((item: any, iIdx: number) => (
+                                                <div key={iIdx} className="bg-white border border-slate-100 rounded p-2 flex flex-col gap-1">
+                                                    <span className="text-xs font-medium text-slate-700">{item.NombreItem}</span>
+                                                    <div className="flex justify-between items-center mt-1">
+                                                        <div className="flex gap-2">
+                                                            <Badge variant="outline" className="text-[10px] bg-slate-100">{item.Cantidad_Sal} {item.AbrevUnidMed}</Badge>
+                                                        </div>
+                                                        <span className="text-sm font-bold text-indigo-700">S/ {formatMoney(item.SumaDeVta_Tot)}</span>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                            <div className="flex justify-between items-center pt-2 mt-1 border-t border-indigo-100">
+                                                <span className="text-xs font-bold text-indigo-800 uppercase">Total Cliente</span>
+                                                <span className="text-sm font-black text-indigo-700">S/ {formatMoney(cli.TotalCliente)}</span>
+                                            </div>
+                                        </div>
+
+                                    </div>
+                                ))}
+
+                                <div className="flex flex-col sm:flex-row justify-end gap-4 border-t border-slate-200 pt-4 mt-4">
+                                    <div className="bg-indigo-50 p-3 rounded-lg border border-indigo-100 text-right">
+                                        <p className="text-[10px] font-bold text-indigo-500 uppercase">Total Vendedor</p>
+                                        <p className="text-lg font-black text-indigo-900">S/ {formatMoney(detailData[0].TotalVendedor)}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="flex flex-col items-center justify-center py-16">
+                                <p className="text-slate-500 font-medium">No se encontraron detalles para este vendedor.</p>
+                            </div>
+                        )}
+                    </div>
+                </DialogContent>
+            </Dialog>
         </div>
     )
 }

@@ -41,6 +41,7 @@ export interface Rol {
 export interface Laboratorio {
     IdLineaGe: number;
     Descripcion: string;
+    Codigo_Linea: string;
 }
 
 export interface Representante {
