@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Download, Loader2 } from "lucide-react";
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
 import { toast } from "@/hooks/use-toast";
-import { VendedorVencido } from "@/app/types/report-interface";
+import { VendedorVencido } from "@/app/types/report-types";
 
 interface ExportPdfProps {
     data: VendedorVencido[];

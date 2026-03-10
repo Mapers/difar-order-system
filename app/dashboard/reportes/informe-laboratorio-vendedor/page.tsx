@@ -18,7 +18,7 @@ import apiClient from '@/app/api/client'
 
 import { ExportLabSellerPdf, LabSellerReportData } from "@/components/reporte/exportLabSellerPdf"
 import { ExportDetalleLabVendedorPdf } from "@/components/reporte/exportDetalleLabVendedorPdf"
-import {Laboratorio} from "@/app/types/user-interface";
+import {Laboratorio} from "@/app/types/user-types";
 
 export default function LabSellerReportPage() {
     const auth = useAuth()

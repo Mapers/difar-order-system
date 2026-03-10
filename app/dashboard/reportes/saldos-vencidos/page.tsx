@@ -8,7 +8,7 @@ import {Check, ChevronDown, MapPin, RefreshCcw, Search, User, X} from "lucide-re
 import { toast } from "@/hooks/use-toast"
 import { ExportExpiredBalancesPdf } from "@/components/reporte/exportExpiredBalancesPdf"
 import { ZoneReportSkeleton } from "@/components/skeleton/ZoneReportSkeleton"
-import { VendedorVencido } from "@/app/types/report-interface"
+import { VendedorVencido } from "@/app/types/report-types"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Label } from "@radix-ui/react-label"
 import { Popover, PopoverContent, PopoverTrigger } from "@radix-ui/react-popover"

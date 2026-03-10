@@ -230,7 +230,9 @@ export default function OrderPage() {
   const debouncedFetchClients = async () => {
     setLoading(prev => ({ ...prev, clients: true }));
     try {
-      const response = await fetchGetAllClients(user?.codigo || '', user?.idRol && [2, 3].includes(user.idRol));
+      const isAdmin = [2, 3].includes(user?.idRol || 0);
+      const sellerCode = isAdmin ? "" : (user?.codigo || "");
+      const response = await fetchGetAllClients(sellerCode, isAdmin);
       if (response.data?.data?.data.length === 0) {
         setClients([])
       } else {
@@ -676,6 +678,11 @@ export default function OrderPage() {
     if (c.idDistrito) {
       getUnidadTerritorial(c.idDistrito)
     }
+
+    const selectedCondition = conditions.find((condition) => condition.CodigoCondicion === c.CondicionPago)
+    if (selectedCondition) {
+      setCondition(selectedCondition);
+    }
   }
 
   const handleSellerSelect = (seller1: Seller) => {
@@ -709,7 +716,6 @@ export default function OrderPage() {
     setOpen(false)
     setPriceEdit(Number(product.PUContado))
 
-    // Agregar esta parte para abrir el modal de ver promociones
     setViewingProduct(product)
     fetchProductDetails(product.Codigo_Art)
   }
@@ -718,7 +724,6 @@ export default function OrderPage() {
     const selectedCondition = conditions.find((c) => c.CodigoCondicion === condition.CodigoCondicion)
     if (selectedCondition) {
       setCondition(selectedCondition);
-      console.log("condicion:", selectedCondition)
     }
   }
 
