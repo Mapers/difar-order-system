@@ -105,11 +105,15 @@ export const ExportSaldoCobrarPdf: React.FC<ExportPdfProps> = ({ data, disabled 
                         borderWidth: 1
                     });
 
+                    const direccionCorta = data.Direccion && data.Direccion.length > 85
+                        ? data.Direccion.substring(0, 85) + "..."
+                        : data.Direccion;
+
                     page.drawText(`CLIENTE: ${data.Cliente}`, { x: margin + 10, y: yPosition - 15, size: 8, font: boldFont });
-                    page.drawText(`DIRECCIÓN: ${data.Direccion}`, { x: margin + 10, y: yPosition - 30, size: 8, font });
-                    page.drawText(`${formatDateString(data.FechaCorte)}`, { x: margin + 10, y: yPosition - 45, size: 8, font: boldFont, color: rgb(0.1, 0.1, 0.1) });
                     page.drawText(`DOCUMENTO: ${data.RUC}`, { x: margin + 350, y: yPosition - 15, size: 8, font: boldFont });
-                    page.drawText(`TELÉFONO: ${data.Telefono || '-'}`, { x: margin + 350, y: yPosition - 30, size: 8, font });
+                    page.drawText(`DIRECCIÓN: ${direccionCorta}`, { x: margin + 10, y: yPosition - 30, size: 8, font });
+                    page.drawText(`${formatDateString(data.FechaCorte)}`, { x: margin + 10, y: yPosition - 45, size: 8, font: boldFont, color: rgb(0.8, 0.1, 0.1) });
+                    page.drawText(`TELÉFONO: ${data.Telefono || '-'}`, { x: margin + 350, y: yPosition - 45, size: 8, font });
 
                     yPosition -= 70;
                 } else {
