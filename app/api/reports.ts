@@ -7,16 +7,6 @@ export const consultDocClientRequest = async (documento: Document, vendedor: str
     return apiClient.post(`/reportes/consultdocumentclient`, documento)
 }
 
-export const balanceDocClientSellerRequest = async (customer: Customer, vendedor: string | null): Promise<any> => {
-    if (vendedor) return apiClient.post(`/reportes/balancedocumentclientseller?vendedor=${vendedor}`, customer)
-    return apiClient.post(`/reportes/balancedocumentclientseller`, customer)
-}
-
-export const balanceDocClientRequest = async (customer: Customer, vendedor: string | null): Promise<any> => {
-    if (vendedor) return apiClient.post(`/reportes/balancedocumentclient?vendedor=${vendedor}`, customer);
-    return apiClient.post(`/reportes/balancedocumentclient`, customer);
-};
-
 export const fetchTypeDocuments = async (): Promise<any> => {
     return apiClient.get('/reportes/typedocuments')
 }

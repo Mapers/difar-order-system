@@ -92,17 +92,7 @@ export const NAV_ITEMS: NavItem[] = [
                 icon: LineChart,
             },
             {
-                title: "Consulta Cobrar Cliente",
-                href: "/dashboard/reportes/cobrar-cliente",
-                icon: LineChart,
-            },
-            {
-                title: "Consulta Cobrar Vendedor",
-                href: "/dashboard/reportes/cobrar-vendedor",
-                icon: LineChart,
-            },
-            {
-                title: "Consulta Saldo por Cobrar",
+                title: "Consulta Saldos Vencidos por Cobrar",
                 href: "/dashboard/reportes/saldos-vencidos",
                 icon: LineChart,
             },
