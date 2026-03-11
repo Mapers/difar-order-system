@@ -22,7 +22,7 @@ import {
   Coins,
   FileText,
   Trash, CheckSquare, Loader2,
-  Locate, Building, Info, Gift, TrendingUp, ChevronDown
+  Locate, Building, Info, Gift, TrendingUp, ChevronDown, Bot, RefreshCw
 } from "lucide-react"
 import { StepProgress } from "@/components/step-progress"
 import apiClient from "@/app/api/client"
@@ -61,6 +61,7 @@ import {Combobox} from "@/app/dashboard/mis-pedidos/page";
 import {useLaboratoriesData} from "@/app/dashboard/lista-precios-lote/hooks/useLaboratoriesData";
 import {Tabs, TabsContent, TabsList, TabsTrigger} from "@/components/ui/tabs";
 import OrderHistory from "@/components/tomarPedido/order-history";
+import { toast } from "@/hooks/use-toast"
 
 interface LoteProducto {
   value: string
@@ -164,6 +165,9 @@ export default function OrderPage() {
     telefono: '',
     referencia: ''
   })
+
+  const [isAutoCreateModalOpen, setIsAutoCreateModalOpen] = useState(false);
+  const [isAutoCreating, setIsAutoCreating] = useState(false);
 
   const steps = [
     { label: "Cliente", icon: User },
@@ -745,6 +749,37 @@ export default function OrderPage() {
     }
   }
 
+  const handleAutoCreateClient = async () => {
+    setIsAutoCreating(true);
+    try {
+      const sellerCode = (user?.idRol && [2, 3].includes(user.idRol)) ? (seller?.codigo || "") : (user?.codigo || "");
+
+      const res = await apiClient.post('/clientes/auto-create-mifact', {
+        numeroDocumento: search.client.trim(),
+        codigoVendedor: sellerCode
+      });
+
+      if (res.data?.success && res.data?.data) {
+        toast({ title: "Éxito", description: "Cliente creado y seleccionado correctamente." });
+        const newClient = res.data.data;
+
+        setClients(prev => [...prev, newClient]);
+        setClientsFiltered(prev => [newClient]);
+
+        handleClientSelect(newClient);
+        setIsAutoCreateModalOpen(false);
+      }
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Error de Consulta",
+        description: error?.response?.data?.message || "No se pudo consultar o crear el cliente."
+      });
+    } finally {
+      setIsAutoCreating(false);
+    }
+  };
+
   const formatCurrency = (value) => {
     if (value === 0 || value === '') return '';
     const numberValue = typeof value === 'string' ?
@@ -795,15 +830,30 @@ export default function OrderPage() {
                 <Label htmlFor="client" className="text-gray-700">
                   Cliente
                 </Label>
-                <div className="relative">
-                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-                  <Input
-                    type="search"
-                    placeholder="Buscar cliente..."
-                    value={search.client}
-                    onChange={handleSearchChange}
-                    className="pl-8 bg-white"
-                  />
+                <div className="flex gap-2 items-center">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+                    <Input
+                        type="search"
+                        placeholder="Buscar cliente por RUC, DNI o Nombre..."
+                        value={search.client}
+                        onChange={handleSearchChange}
+                        className="pl-8 bg-white"
+                    />
+                  </div>
+
+                  {/*{(search.client.length === 8 || search.client.length === 11) &&*/}
+                  {/*    /^\d+$/.test(search.client) &&*/}
+                  {/*    clientsFiltered.length === 0 &&*/}
+                  {/*    !loading.clients && (*/}
+                  {/*        <Button*/}
+                  {/*            type="button"*/}
+                  {/*            onClick={() => setIsAutoCreateModalOpen(true)}*/}
+                  {/*            className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm"*/}
+                  {/*        >*/}
+                  {/*          AUTO*/}
+                  {/*        </Button>*/}
+                  {/*    )}*/}
                 </div>
                 {loading.clients ? (
                   <div className="p-4 space-y-2">
@@ -2299,6 +2349,43 @@ export default function OrderPage() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsViewModalOpen(false)}>
               Cerrar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isAutoCreateModalOpen} onOpenChange={setIsAutoCreateModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-indigo-700">
+              <Bot className="h-5 w-5" /> Auto-Completar desde SUNAT/RENIEC
+            </DialogTitle>
+            <DialogDescription className="pt-2">
+              El documento <strong className="text-gray-900">{search.client}</strong> no está registrado en el sistema.
+              <br/><br/>
+              ¿Deseas buscarlo en línea y registrarlo automáticamente?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="mt-4 gap-2 sm:gap-0">
+            <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsAutoCreateModalOpen(false)}
+                disabled={isAutoCreating}
+            >
+              Cancelar
+            </Button>
+            <Button
+                type="button"
+                className="bg-indigo-600 hover:bg-indigo-700"
+                onClick={handleAutoCreateClient}
+                disabled={isAutoCreating}
+            >
+              {isAutoCreating ? (
+                  <><RefreshCw className="h-4 w-4 mr-2 animate-spin" /> Buscando...</>
+              ) : (
+                  <><Search className="h-4 w-4 mr-2" /> Buscar y Crear</>
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

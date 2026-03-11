@@ -12,7 +12,7 @@ import {PriceTable} from "@/components/lista-precios-lote/PriceTable";
 import {PriceModals} from "@/components/lista-precios-lote/PriceModals";
 import {PricePagination} from "@/components/lista-precios-lote/PricePagination";
 import {CreateProductModal} from "@/components/lista-precios-lote/CreateProductModal";
-import {BulkPriceUploadModal} from "@/components/lista-precios-lote/BulkPriceUploadModal";
+import {QuickPriceEditModal} from "@/components/lista-precios-lote/QuickPriceEditModal";
 
 export default function PricePage() {
   const { user, isAuthenticated } = useAuth();
@@ -37,14 +37,14 @@ export default function PricePage() {
               </div>
               <div className="flex items-center gap-2">
                   {user?.idRol && [2, 3].includes(user.idRol) && (
-                      <BulkPriceUploadModal
+                      <QuickPriceEditModal
                           onUploadSuccess={() => window.location.reload()}
                           filteredData={listData.filteredPricesLot.map(item => ({
                               codArticulo: item.prod_codigo,
-                              precio1: Number(item.precio_contado),
-                              precio2: Number(item.precio_credito),
-                              precio3: Number(item.precio_bonif_cont),
-                              precio4: Number(item.precio_bonif_cred)
+                              nombre: item.prod_descripcion || "Sin nombre",
+                              presentacion: item.AbrevUnidMed || "N/A",
+                              precioCredito: Number(item.precio_credito || 0),
+                              bonifCredito: Number(item.precio_bonif_cred || 0)
                           }))}
                       />
                   )}
