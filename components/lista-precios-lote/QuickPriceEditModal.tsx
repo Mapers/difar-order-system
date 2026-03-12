@@ -5,6 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Input } from "@/components/ui/input";
 import { Edit3, Save, CheckCircle2, Loader2, AlertCircle } from "lucide-react";
 import apiClient from "@/app/api/client";
+import {toast} from "@/hooks/use-toast";
 
 interface RowData {
     codArticulo: string;
@@ -18,7 +19,6 @@ interface RowData {
 }
 
 interface QuickPriceEditModalProps {
-    onUploadSuccess?: () => void;
     filteredData?: Array<{
         codArticulo: string;
         nombre: string;
@@ -28,7 +28,7 @@ interface QuickPriceEditModalProps {
     }>;
 }
 
-export const QuickPriceEditModal = ({ onUploadSuccess, filteredData = [] }: QuickPriceEditModalProps) => {
+export const QuickPriceEditModal = ({ filteredData = [] }: QuickPriceEditModalProps) => {
     const [open, setOpen] = useState(false);
     const [rows, setRows] = useState<RowData[]>([]);
 
@@ -86,7 +86,7 @@ export const QuickPriceEditModal = ({ onUploadSuccess, filteredData = [] }: Quic
                 });
             }, 2000);
 
-            if (onUploadSuccess) onUploadSuccess();
+            toast({title: 'Se actualizo los precios'})
 
         } catch (error) {
             console.error(`Error guardando artículo ${row.codArticulo}:`, error);

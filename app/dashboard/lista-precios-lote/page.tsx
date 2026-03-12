@@ -38,7 +38,6 @@ export default function PricePage() {
               <div className="flex items-center gap-2">
                   {user?.idRol && [2, 3].includes(user.idRol) && (
                       <QuickPriceEditModal
-                          onUploadSuccess={() => window.location.reload()}
                           filteredData={listData.filteredPricesLot.map(item => ({
                               codArticulo: item.prod_codigo,
                               nombre: item.prod_descripcion || "Sin nombre",
