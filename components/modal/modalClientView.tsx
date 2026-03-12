@@ -115,7 +115,7 @@ const ModalClientView: React.FC<ModalVerificationProps> = ({ open, onOpenChange,
                           </div>
                           <div>
                             <Label className="text-xs text-slate-500 uppercase tracking-wider">Vendedor Asignado</Label>
-                            <p className="font-medium text-slate-800 font-mono">{clientData.codigo_vendedor || '-'}</p>
+                            <p className="font-medium text-slate-800 font-mono">{clientData.nombre_vendedor || '-'}</p>
                           </div>
                           <div>
                             <Label className="text-xs text-slate-500 uppercase tracking-wider">Categoría</Label>
