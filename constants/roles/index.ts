@@ -111,6 +111,11 @@ export const NAV_ITEMS: NavItem[] = [
                 href: "/dashboard/reportes/cuenta-cliente",
                 icon: LineChart,
             },
+            {
+                title: "Reporte Kardex Item",
+                href: "/dashboard/reportes/item-kardex",
+                icon: LineChart,
+            },
         ],
     },
 ];
