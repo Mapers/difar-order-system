@@ -142,7 +142,6 @@ export default function SaldoCobrarClientePage() {
                 <CardHeader className="bg-slate-50 border-b border-slate-200 p-4">
                     <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
 
-                        {/* 1. Cliente */}
                         <div className="flex flex-col gap-1 md:col-span-4 relative">
                             <div className="flex items-center gap-1.5 mb-1">
                                 <User className="w-4 h-4 text-muted-foreground" />
@@ -195,7 +194,6 @@ export default function SaldoCobrarClientePage() {
                             </Popover>
                         </div>
 
-                        {/* 2. Zonas */}
                         <div className="flex flex-col gap-1 md:col-span-3">
                             <div className="flex items-center gap-1.5 mb-1">
                                 <MapPin className="w-4 h-4 text-muted-foreground" />
@@ -233,7 +231,6 @@ export default function SaldoCobrarClientePage() {
                             </Popover>
                         </div>
 
-                        {/* 3. Vendedores */}
                         {isManagerOrAdmin && (
                             <div className="flex flex-col gap-1 md:col-span-3">
                                 <div className="flex items-center gap-1.5 mb-1">
@@ -273,7 +270,6 @@ export default function SaldoCobrarClientePage() {
                             </div>
                         )}
 
-                        {/* 4. Fecha */}
                         <div className={`flex flex-col gap-1 ${isManagerOrAdmin ? 'md:col-span-2' : 'md:col-span-5'}`}>
                             <div className="flex items-center gap-1.5 mb-1">
                                 <CalendarIcon className="w-4 h-4 text-muted-foreground" />
@@ -292,7 +288,6 @@ export default function SaldoCobrarClientePage() {
                             </Popover>
                         </div>
 
-                        {/* Botones */}
                         <div className="flex flex-col sm:flex-row gap-3 md:col-span-12 md:justify-end mt-2">
                             <Button onClick={handleSearch} disabled={loading} className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto shadow-sm h-10">
                                 <Search className="mr-2 h-4 w-4" /> Buscar
@@ -311,7 +306,6 @@ export default function SaldoCobrarClientePage() {
                     ) : data ? (
                         <div className="space-y-8">
 
-                            {/* Bucle a través de los Clientes */}
                             {data.Clientes.map((cliente: any, cIdx: number) => (
                                 <div key={cIdx} className="space-y-4">
                                     <div className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -326,7 +320,6 @@ export default function SaldoCobrarClientePage() {
                                         </div>
                                     </div>
 
-                                    {/* Bucle a través de los vendedores del cliente */}
                                     {cliente.vendedores.map((vend: any, vIdx: number) => (
                                         <div key={vIdx} className="border border-slate-300 rounded-lg overflow-hidden shadow-sm bg-white ml-0 md:ml-4">
                                             <div className="bg-slate-800 text-white p-3 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">

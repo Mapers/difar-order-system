@@ -38,14 +38,12 @@ export default function ItemKardexReportPage() {
     const [startDate, setStartDate] = useState<Date>(new Date(new Date().getFullYear(), new Date().getMonth(), 1));
     const [endDate, setEndDate] = useState<Date>(new Date());
 
-    // Autocomplete States (Misma lógica de Promociones)
     const [allProducts, setAllProducts] = useState<Producto[]>([]);
     const [productsLoading, setProductsLoading] = useState(false);
     const [productSearchQuery, setProductSearchQuery] = useState("");
     const [selectedProduct, setSelectedProduct] = useState<Producto | null>(null);
     const [popoverOpen, setPopoverOpen] = useState(false);
 
-    // Cargar todos los productos al inicio
     const fetchAllProducts = async () => {
         try {
             setProductsLoading(true);
@@ -63,7 +61,6 @@ export default function ItemKardexReportPage() {
         fetchAllProducts();
     }, []);
 
-    // Filtrado en memoria (Exactamente igual a tu lógica)
     const filteredAllProducts = allProducts.filter(product =>
         product.NombreItem.toLowerCase().includes(productSearchQuery.toLowerCase()) ||
         product.Codigo_Art.toLowerCase().includes(productSearchQuery.toLowerCase()) ||
@@ -76,7 +73,6 @@ export default function ItemKardexReportPage() {
         setProductSearchQuery("");
     };
 
-    // Buscar Kardex
     const handleSearch = async () => {
         if (!selectedProduct) {
             toast({ title: "Atención", description: "Debes seleccionar un producto", variant: "warning" });
@@ -126,8 +122,6 @@ export default function ItemKardexReportPage() {
             <Card className="shadow-md">
                 <CardHeader className="bg-slate-50 border-b border-slate-200 p-4 md:p-6">
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-end">
-
-                        {/* FECHA INICIO */}
                         <div className="flex flex-col gap-2 lg:col-span-2">
                             <Label className="text-sm font-semibold flex items-center gap-2 text-slate-700">
                                 <CalendarIcon className="w-4 h-4 "/> Fecha Inicio
@@ -144,8 +138,6 @@ export default function ItemKardexReportPage() {
                                 </PopoverContent>
                             </Popover>
                         </div>
-
-                        {/* FECHA FIN */}
                         <div className="flex flex-col gap-2 lg:col-span-2">
                             <Label className="text-sm font-semibold flex items-center gap-2 text-slate-700">
                                 <CalendarIcon className="w-4 h-4 "/> Fecha Fin
@@ -163,7 +155,6 @@ export default function ItemKardexReportPage() {
                             </Popover>
                         </div>
 
-                        {/* TU AUTOCOMPLETADOR EXACTO */}
                         <div className="lg:col-span-5 space-y-3">
                             <div className="space-y-2">
                                 <Label htmlFor="product-search" className="text-sm font-semibold flex items-center gap-2 text-slate-700">
@@ -264,7 +255,6 @@ export default function ItemKardexReportPage() {
                             </div>
                         </div>
 
-                        {/* BOTONES ACCIÓN */}
                         <div className="lg:col-span-3 flex flex-col sm:flex-row gap-3 md:justify-end">
                             <Button onClick={handleSearch} disabled={loading || !selectedProduct} className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto h-12 shadow-sm">
                                 <Search className="mr-2 h-4 w-4" /> Buscar
@@ -287,7 +277,6 @@ export default function ItemKardexReportPage() {
                         </div>
                     ) : data.length > 0 ? (
                         <div className="w-full">
-                            {/* CABECERA INFO PRODUCTO EN EL REPORTE */}
                             <div className="bg-slate-800 text-slate-50 p-4 border-b flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                                 <div>
                                     <h3 className="font-bold text-lg">{data[0].NombreItem}</h3>
@@ -299,7 +288,6 @@ export default function ItemKardexReportPage() {
                                 </div>
                             </div>
 
-                            {/* VISTA ESCRITORIO (TABLA) */}
                             <div className="hidden md:block overflow-x-auto">
                                 <table className="w-full text-sm text-left text-slate-700">
                                     <thead className="text-xs text-slate-600 uppercase bg-slate-50 border-b border-slate-200">
@@ -355,7 +343,6 @@ export default function ItemKardexReportPage() {
                                 </table>
                             </div>
 
-                            {/* VISTA MÓVIL (CARDS) */}
                             <div className="md:hidden p-4 space-y-4">
                                 {data.map((row, idx) => (
                                     <div key={idx} className="bg-white border border-slate-200 rounded-lg shadow-sm p-4 flex flex-col gap-3">
