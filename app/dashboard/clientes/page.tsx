@@ -14,8 +14,7 @@ import { mapClientFromApi } from "@/mappers/clients"
 import { formatSafeDate } from "@/utils/date"
 import { ClientService } from "@/app/services/client/ClientService"
 import { ClientMethodsService } from "./services/clientMethodsService"
-import ModalCreateEditions from "@/components/modal/modalCreateEvaluation"
-import ModalClientEdit from "@/components/modal/modalClientEdit"
+import NuevoClienteForm from "@/components/modal/NuevoClienteForm"
 import ModalClientView from "@/components/modal/modalClientView"
 import { SkeletonCardClient, SkeletonClientRow } from "@/components/skeleton/ClientSkeleton"
 
@@ -31,20 +30,18 @@ export default function ClientsPage() {
   const [totalPages, setTotalPages] = useState(1)
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [showViewModal, setShowViewModal] = useState(false)
-  const [showEditModal, setShowEditModal] = useState(false)
   const [showFilters, setShowFilters] = useState(false)
   const [codClient, setCodClient] = useState<any>('')
 
-  const handleEdit = (codClient: string) => {
-    setCodClient(codClient)
-    setShowEditModal(true)
+  const handleEdit = (codigoCliente: string) => {
+    setCodClient(codigoCliente)
+    setShowCreateModal(true)
   }
 
-  const closeEditModal = () => {
+  const handleCreateNewEvaluation = () => {
     setCodClient('')
-    setShowViewModal(false)
-    setShowEditModal(false)
-  }
+    setShowCreateModal(true);
+  };
 
   const handleView = (codClient: string) => {
     setCodClient(codClient)
@@ -84,10 +81,6 @@ export default function ClientsPage() {
       setLoading(false);
     }
   }, [user, vistaTablaClientes]);
-
-  const handleCreateNewEvaluation = () => {
-    setShowCreateModal(true);
-  };
 
   useEffect(() => {
     if (!searchTerm) {
@@ -164,10 +157,10 @@ export default function ClientsPage() {
           <CardHeader className="flex flex-col space-y-4 sm:space-y-0 sm:flex-row sm:items-center sm:justify-between gap-4 border-b bg-gray-50">
             <div className="space-y-1.5">
               <CardTitle className="text-xl font-semibold text-teal-700">
-                Evaluación de Clientes
+                Listado de Clientes
               </CardTitle>
               <CardDescription>
-                Sistema de evaluación y gestión de clientes DIFAR
+                Gestión de clientes DIFAR
               </CardDescription>
             </div>
             <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
@@ -177,7 +170,7 @@ export default function ClientsPage() {
               </Button>
               <Button onClick={handleCreateNewEvaluation} className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto">
                 <Plus className="mr-2 h-4 w-4" />
-                Nueva Evaluación
+                Nuevo cliente
               </Button>
             </div>
           </CardHeader>
@@ -646,9 +639,16 @@ export default function ClientsPage() {
             </div>
           </CardContent>
 
-          <ModalCreateEditions
+          <NuevoClienteForm
               open={showCreateModal}
-              onOpenChange={setShowCreateModal}
+              onOpenChange={(open) => {
+                setShowCreateModal(open);
+                if (!open) {
+                  setCodClient('');
+                  getAllClients();
+                }
+              }}
+              codClient={codClient}
           />
 
           <ModalClientView
@@ -657,11 +657,6 @@ export default function ClientsPage() {
               codClient={codClient}
           />
 
-          <ModalClientEdit
-              open={showEditModal}
-              onOpenChange={(open) => { if (!open) closeEditModal(); }}
-              codClient={codClient}
-          />
         </Card>
       </div>
   )

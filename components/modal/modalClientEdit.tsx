@@ -114,7 +114,7 @@ const ModalClientEdit: React.FC<ModalVerificationProps> = ({ open, onOpenChange,
         observaciones: '',
         numRegistro: formData.numRegistro || ''
       };
-      const response = await ClientService.createUpdateClienteEvaluacion(dataPayload);
+      const response = await ClientService.createUpdateCliente(dataPayload);
       if (response.success) {
         toast({ title: "Evaluación", description: "Actualizada correctamente", variant: "success" })
       }
@@ -132,7 +132,6 @@ const ModalClientEdit: React.FC<ModalVerificationProps> = ({ open, onOpenChange,
 
   useEffect(() => {
     if (evaluation) {
-      console.log(evaluation)
       setFormData({
         codigo: codClient,
         codigoVed: user?.codigo || '',

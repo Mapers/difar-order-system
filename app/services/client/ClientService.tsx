@@ -137,8 +137,8 @@ export class ClientService {
    * @param dataPayload 
    * @returns 
    */
-  static async createUpdateClienteEvaluacion(dataPayload: any): Promise<any> {
-    const response = await apiClient.post(`/clientes/create-update-cliente-evaluacion`, dataPayload);
+  static async createUpdateCliente(dataPayload: any): Promise<any> {
+    const response = await apiClient.post(`/clientes/create-update`, dataPayload);
     return response.data
   };
 

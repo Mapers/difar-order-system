@@ -33,7 +33,7 @@ export function useClientCreatedData(open: boolean) {
                 ClientService.getProvincesCities().catch(() => null),
                 ClientService.getDistricts().catch(() => null),
                 ClientService.getZones().catch(() => null),
-                ClientService.getSunatStatus().catch(() => null),
+                // ClientService.getSunatStatus().catch(() => null),
                 ClientService.getNextCode().catch(() => null),
             ];
 
