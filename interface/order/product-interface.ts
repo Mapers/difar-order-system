@@ -74,6 +74,7 @@ export interface IProduct {
   PUPorMenor: string;
   isbonificado?: number;
   isescala?: number;
+  principioActivo?: string;
 }
 
 // Interfaz order item

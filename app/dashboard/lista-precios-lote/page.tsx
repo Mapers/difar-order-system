@@ -41,7 +41,7 @@ export default function PricePage() {
                           filteredData={listData.filteredPricesLot.map(item => ({
                               codArticulo: item.prod_codigo,
                               nombre: item.prod_descripcion || "Sin nombre",
-                              presentacion: item.AbrevUnidMed || "N/A",
+                              presentacion: item.prod_presentacion || "N/A",
                               precioCredito: Number(item.precio_credito || 0),
                               bonifCredito: Number(item.precio_bonif_cred || 0)
                           }))}
@@ -57,12 +57,15 @@ export default function PricePage() {
               </div>
           </div>
 
-        <PriceFilters
-            searchTerm={listData.searchTerm} setSearchTerm={listData.setSearchTerm}
-            selectedLabs={listData.selectedLabs} setSelectedLabs={listData.setSelectedLabs}
-            laboratories={laboratories}
-            excludeNoStock={listData.excludeNoStock} setExcludeNoStock={listData.setExcludeNoStock}
-        />
+          <PriceFilters
+              searchTerm={listData.searchTerm} setSearchTerm={listData.setSearchTerm}
+              selectedLabs={listData.selectedLabs} setSelectedLabs={listData.setSelectedLabs}
+              laboratories={laboratories}
+              excludeNoStock={listData.excludeNoStock} setExcludeNoStock={listData.setExcludeNoStock}
+              selectedPrinciple={listData.selectedPrinciple}
+              setSelectedPrinciple={listData.setSelectedPrinciple}
+              uniquePrinciples={listData.uniquePrinciples}
+          />
 
         <Card className="bg-white shadow-sm overflow-auto">
           <CardHeader className="border-b">

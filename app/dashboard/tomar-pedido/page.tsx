@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table"
+import { TableCell, TableRow, TableFooter } from "@/components/ui/table"
 import {
   ShoppingCart,
   ArrowRight,
@@ -31,12 +31,9 @@ import moment from 'moment'
 import ContactInfo from "@/components/cliente/contactInfo"
 import FinancialZone from "@/components/cliente/financialZone"
 import PaymentCondition from "@/components/cliente/paymentCondition"
-import debounce from 'lodash.debounce';
 import { Badge } from "@/components/ui/badge"
 import { Popover, PopoverContent, PopoverTrigger } from "@radix-ui/react-popover"
 import { CommandEmpty, CommandGroup, CommandInput, CommandList, Command, CommandItem } from "@/components/ui/command"
-import ModalBonification from "@/components/modal/modalBonification"
-import ModalEscale from "@/components/modal/modalEscale"
 import { monedas, PROMOCIONES } from "@/constants"
 import {
   fetchGetAllClients,
@@ -62,6 +59,7 @@ import {useLaboratoriesData} from "@/app/dashboard/lista-precios-lote/hooks/useL
 import {Tabs, TabsContent, TabsList, TabsTrigger} from "@/components/ui/tabs";
 import OrderHistory from "@/components/tomarPedido/order-history";
 import { toast } from "@/hooks/use-toast"
+import AlternativeProductsModal from "@/components/tomarPedido/AlternativeProductsModal";
 
 interface LoteProducto {
   value: string
@@ -119,7 +117,6 @@ export default function OrderPage() {
     ubigeo: ''
   })
   const [priceEdit, setPriceEdit] = useState(0);
-  // Agrega al inicio con los demás estados
   const { laboratories } = useLaboratoriesData()
   const [selectedLaboratorio, setSelectedLaboratorio] = useState<string | null>(null);
   const [showLaboratorioModal, setShowLaboratorioModal] = useState(false);
@@ -142,18 +139,15 @@ export default function OrderPage() {
     condition: ""
   })
 
-  // Estado para productos
   const [open, setOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
   const [quantity, setQuantity] = useState(1)
   const [selectedProduct, setSelectedProduct] = useState<IProduct | null>(null)
-
-  // Funciona como orderItems
   const [selectedProducts, setSelectedProducts] = useState<ISelectedProduct[]>([])
-
-  // Estados para modales
   const [isCheckingBonification, setIsCheckingBonification] = useState(false)
-
+  const [showAlternativesModal, setShowAlternativesModal] = useState(false)
+  const [outOfStockProduct, setOutOfStockProduct] = useState<IProduct | null>(null)
+  const [alternativeProducts, setAlternativeProducts] = useState<IProduct[]>([])
   const [products, setProducts] = useState<IProduct[]>([])
 
   const [showLotesModal, setShowLotesModal] = useState(false);
@@ -716,12 +710,27 @@ export default function OrderPage() {
   )
 
   const handleProductSelect = (product: IProduct) => {
-    setSelectedProduct(product)
-    setOpen(false)
-    setPriceEdit(Number(product.PUContado))
+    if (Number(product.Stock) <= 0) {
 
-    setViewingProduct(product)
-    fetchProductDetails(product.Codigo_Art)
+      let alts: IProduct[] = []
+
+      if (product.principioActivo) {
+        alts = products.filter(p =>
+            p.principioActivo &&
+            p.principioActivo.trim().toLowerCase() === product.principioActivo!.trim().toLowerCase() &&
+            p.Codigo_Art !== product.Codigo_Art &&
+            Number(p.Stock) > 0
+        )
+      }
+
+      setOutOfStockProduct(product)
+      setAlternativeProducts(alts)
+      setShowAlternativesModal(true)
+      setOpen(false)
+      return
+    }
+
+    proceedWithProductSelection(product)
   }
 
   const handleConditionSelect = (condition: ICondicion) => {
@@ -771,7 +780,6 @@ export default function OrderPage() {
       }
     } catch (error: any) {
       toast({
-        variant: "destructive",
         title: "Error de Consulta",
         description: error?.response?.data?.message || "No se pudo consultar o crear el cliente."
       });
@@ -804,6 +812,17 @@ export default function OrderPage() {
       default:
         return true
     }
+  }
+
+  const proceedWithProductSelection = (product: IProduct) => {
+    setSelectedProduct(product)
+    setOpen(false)
+    setPriceEdit(Number(product.PUContado))
+
+    setViewingProduct(product)
+    fetchProductDetails(product.Codigo_Art)
+
+    setShowAlternativesModal(false)
   }
 
   return (
@@ -2390,6 +2409,16 @@ export default function OrderPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlternativeProductsModal
+          open={showAlternativesModal}
+          onOpenChange={setShowAlternativesModal}
+          originalProduct={outOfStockProduct}
+          alternatives={alternativeProducts}
+          currency={currency}
+          onSelectAlternative={proceedWithProductSelection}
+          onProceedWithOriginal={proceedWithProductSelection}
+      />
     </div>
   )
 }

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import debounce from 'lodash.debounce';
 import { PriceService } from "@/app/services/price/PriceService";
 import { PrecioLote, PriceListParams } from "../types";
@@ -7,6 +7,8 @@ export function usePriceList(isAuthenticated: boolean) {
     const [searchTerm, setSearchTerm] = useState("");
     const [selectedLabs, setSelectedLabs] = useState<number[]>([]);
     const [excludeNoStock, setExcludeNoStock] = useState(false);
+    const [selectedPrinciple, setSelectedPrinciple] = useState<string>("");
+
     const [listPricesLots, setListPricesLots] = useState<PrecioLote[]>([]);
     const [filteredPricesLot, setFilteredPricesLot] = useState<PrecioLote[]>([]);
     const [loading, setLoading] = useState(false);
@@ -43,24 +45,37 @@ export function usePriceList(isAuthenticated: boolean) {
         }
     }, [isAuthenticated, searchTerm, selectedLabs, debouncedFetch]);
 
+    const uniquePrinciples = useMemo(() => {
+        const principles = listPricesLots
+            .map(item => item.prod_principio)
+            .filter(Boolean);
+
+        return Array.from(new Set(principles)).sort();
+    }, [listPricesLots]);
+
     useEffect(() => {
-        if (!searchTerm) {
-            const filtered = excludeNoStock
-                ? listPricesLots.filter(item => Number(item.kardex_saldoCant) > 0)
-                : listPricesLots;
-            setFilteredPricesLot(filtered);
-        } else {
-            const lowerSearch = searchTerm.toLowerCase();
-            const filtered = listPricesLots.filter(priceLot =>
-                (priceLot.prod_codigo?.toLowerCase().includes(lowerSearch) ||
-                    priceLot.prod_descripcion?.toLowerCase().includes(lowerSearch) ||
-                    priceLot.prod_principio?.toLowerCase().includes(lowerSearch)) &&
-                (!excludeNoStock || Number(priceLot.kardex_saldoCant) > 0)
-            );
-            setFilteredPricesLot(filtered);
+        let filtered = listPricesLots;
+
+        if (excludeNoStock) {
+            filtered = filtered.filter(item => Number(item.kardex_saldoCant) > 0);
         }
+
+        if (searchTerm) {
+            const lowerSearch = searchTerm.toLowerCase();
+            filtered = filtered.filter(priceLot =>
+                priceLot.prod_codigo?.toLowerCase().includes(lowerSearch) ||
+                priceLot.prod_descripcion?.toLowerCase().includes(lowerSearch) ||
+                priceLot.prod_principio?.toLowerCase().includes(lowerSearch)
+            );
+        }
+
+        if (selectedPrinciple) {
+            filtered = filtered.filter(item => item.prod_principio === selectedPrinciple);
+        }
+
+        setFilteredPricesLot(filtered);
         setCurrentPage(1);
-    }, [searchTerm, listPricesLots, excludeNoStock]);
+    }, [searchTerm, listPricesLots, excludeNoStock, selectedPrinciple]);
 
     const totalPages = Math.ceil(filteredPricesLot.length / itemsPerPage) || 1;
     const paginatedData = filteredPricesLot.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
@@ -76,6 +91,7 @@ export function usePriceList(isAuthenticated: boolean) {
         searchTerm, setSearchTerm,
         selectedLabs, setSelectedLabs,
         excludeNoStock, setExcludeNoStock,
+        selectedPrinciple, setSelectedPrinciple, uniquePrinciples,
         loading, filteredPricesLot, paginatedData,
         currentPage, setCurrentPage, totalPages,
         itemsPerPage, setItemsPerPage,
