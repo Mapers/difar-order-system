@@ -52,7 +52,7 @@ export default function RolesPage() {
       const response = await apiClient.get('/roles/listar')
       setRoles(response.data.data.data || response.data.data)
     } catch (error) {
-      toast({ title: 'Error', description: 'No se pudieron cargar los roles', variant: 'destructive' })
+      toast({ title: 'Error', description: 'No se pudieron cargar los roles' })
     } finally {
       setLoading(false)
     }
@@ -71,7 +71,7 @@ export default function RolesPage() {
 
   const handleSaveRole = async () => {
     if (!roleFormData.nombre.trim()) {
-      toast({ title: 'Atención', description: 'El nombre del rol es obligatorio', variant: 'destructive' })
+      toast({ title: 'Atención', description: 'El nombre del rol es obligatorio' })
       return
     }
 
@@ -90,7 +90,6 @@ export default function RolesPage() {
       toast({
         title: 'Error',
         description: error.response?.data?.message || 'No se pudo guardar el rol',
-        variant: 'destructive'
       })
     } finally {
       setIsSaving(false)
@@ -115,7 +114,6 @@ export default function RolesPage() {
       toast({
         title: 'Error',
         description: error.response?.data?.message || 'No se pudo eliminar el rol',
-        variant: 'destructive'
       })
     } finally {
       setIsDeleting(false)
@@ -130,7 +128,7 @@ export default function RolesPage() {
       setSelectedRol(roles.find(r => r.id === idRol) || null)
       setShowMenusDialog(true)
     } catch (error) {
-      toast({ title: 'Error', description: 'No se pudieron cargar los menús del rol', variant: 'destructive' })
+      toast({ title: 'Error', description: 'No se pudieron cargar los menús del rol' })
     }
   }
 
@@ -152,7 +150,7 @@ export default function RolesPage() {
       toast({ title: 'Éxito', description: 'Menús actualizados correctamente' });
       setShowMenusDialog(false);
     } catch (error) {
-      toast({ title: 'Error', description: 'No se pudieron actualizar los menús', variant: 'destructive' });
+      toast({ title: 'Error', description: 'No se pudieron actualizar los menús' });
     }
   };
 
