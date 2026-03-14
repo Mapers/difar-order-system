@@ -25,6 +25,11 @@ export class PriceService {
     return response.data;
   }
 
+  static async getLaboratoriesRepres(codRepres: string | null): Promise<any> {
+    const response = await apiClient.get('/price/laboratories-repres?codRepres=' + codRepres);
+    return response.data;
+  }
+
   static async getProductLots(code: string): Promise<any> {
     const response = await apiClient.get(`/price/list-prices-lote/${code}`);
     return response.data;

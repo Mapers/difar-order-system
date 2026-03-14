@@ -16,7 +16,7 @@ import {QuickPriceEditModal} from "@/components/lista-precios-lote/QuickPriceEdi
 
 export default function PricePage() {
   const { user, isAuthenticated } = useAuth();
-  const { laboratories, loadingLab } = useLaboratoriesData();
+  const { laboratoriesRepres, loadingLab } = useLaboratoriesData();
 
   const [currentDateTime, setCurrentDateTime] = useState({ date: "", time: "" });
 
@@ -49,7 +49,7 @@ export default function PricePage() {
                   )}
                   {user?.idRol && [2, 3].includes(user.idRol) && (
                       <CreateProductModal
-                          laboratories={laboratories}
+                          laboratories={laboratoriesRepres}
                           user={user}
                           onProductCreated={() => window.location.reload()}
                       />
@@ -60,7 +60,7 @@ export default function PricePage() {
           <PriceFilters
               searchTerm={listData.searchTerm} setSearchTerm={listData.setSearchTerm}
               selectedLabs={listData.selectedLabs} setSelectedLabs={listData.setSelectedLabs}
-              laboratories={laboratories}
+              laboratories={laboratoriesRepres}
               excludeNoStock={listData.excludeNoStock} setExcludeNoStock={listData.setExcludeNoStock}
               selectedPrinciple={listData.selectedPrinciple}
               setSelectedPrinciple={listData.setSelectedPrinciple}

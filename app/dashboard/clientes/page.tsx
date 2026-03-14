@@ -63,10 +63,12 @@ export default function ClientsPage() {
       setLoading(true);
       setError(null);
       const codVendedor = user?.codigo;
+      const codRepres = user?.codRepres;
 
       const response = await ClientService.getAllClientsByCodVendedor(
           user?.idRol === 1 ? codVendedor ?? '' : '',
-          vistaTablaClientes
+          vistaTablaClientes,
+          user?.idRol === 7 ? codRepres ?? '' : '',
       );
       const rawClients = response?.data || [];
 
@@ -164,10 +166,10 @@ export default function ClientsPage() {
               </CardDescription>
             </div>
             <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
-              <Button variant="outline" className="w-full sm:w-auto bg-transparent">
-                <Download className="mr-2 h-4 w-4" />
-                Exportar
-              </Button>
+              {/*<Button variant="outline" className="w-full sm:w-auto bg-transparent">*/}
+              {/*  <Download className="mr-2 h-4 w-4" />*/}
+              {/*  Exportar*/}
+              {/*</Button>*/}
               <Button onClick={handleCreateNewEvaluation} className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto">
                 <Plus className="mr-2 h-4 w-4" />
                 Nuevo cliente

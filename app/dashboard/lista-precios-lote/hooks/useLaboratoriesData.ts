@@ -1,10 +1,13 @@
-import { useState, useEffect } from 'react';
+import {useState, useEffect, use} from 'react';
 import { PriceService } from '@/app/services/price/PriceService';
+import {useAuth} from "@/context/authContext";
 
 export function useLaboratoriesData() {
     const [loadingLab, setLoadingLab] = useState(false);
     const [laboratories, setLaboratories] = useState<any[]>([]);
+    const [laboratoriesRepres, setLaboratoriesRepres] = useState<any[]>([]);
     const [errorLab, setErrorLab] = useState<string | null>(null);
+    const { user } = useAuth()
 
     useEffect(() => {
         async function fetchData() {
@@ -12,15 +15,22 @@ export function useLaboratoriesData() {
             setErrorLab(null);
             const promises = [
                 PriceService.getLaboratories().catch(() => null),
+                PriceService.getLaboratoriesRepres(user?.idRol === 7 ? user.codRepres : '').catch(() => null),
             ];
             try {
-                const [labRes] = await Promise.all(promises);
+                const [labRes, labRepres] = await Promise.all(promises);
+
                 if (labRes?.success) {
                     setLaboratories(labRes.data || []);
                 } else {
                     setLaboratories([]);
                 }
 
+                if (labRepres?.success) {
+                    setLaboratoriesRepres(labRepres.data || []);
+                } else {
+                    setLaboratoriesRepres([]);
+                }
             } catch (e) {
                 const message = 'No cargó correctamente, por favor intente nuevamente.'
                 setErrorLab(message);
@@ -33,5 +43,5 @@ export function useLaboratoriesData() {
         fetchData();
     }, []);
 
-    return { laboratories, loadingLab, errorLab };
+    return { laboratories, loadingLab, errorLab, laboratoriesRepres };
 }
