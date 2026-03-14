@@ -23,6 +23,8 @@ import {Laboratorio} from "@/app/types/user-types";
 export default function LabSellerReportPage() {
     const auth = useAuth()
     const isManagerOrAdmin = [2, 3].includes(auth.user?.idRol || 0);
+    const isRepresentative = auth.user?.idRol === 7;
+    const isVendor = auth.user?.idRol === 1;
 
     const [loading, setLoading] = useState(false);
     const [data, setData] = useState<LabSellerReportData[]>([]);
@@ -68,17 +70,52 @@ export default function LabSellerReportPage() {
             const anioSeleccionado = selectedDate.getFullYear();
             const mesSeleccionado = selectedDate.getMonth() + 1;
 
+            let vendorsToQuery: string[] = [];
+
+            if (selectedVends.length > 0) {
+                vendorsToQuery = selectedVends;
+            } else {
+                if (isManagerOrAdmin) {
+                    vendorsToQuery = [];
+                } else if (isRepresentative) {
+                    vendorsToQuery = auth.user?.vendedores?.map(v => v.codigo) || [];
+                    if (vendorsToQuery.length === 0) vendorsToQuery = ['SIN_VENDEDORES'];
+                } else if (isVendor) {
+                    vendorsToQuery = auth.user?.codigo ? [auth.user.codigo] : [];
+                }
+            }
+
             const payload = {
                 laboratorios: selectedLabs.length > 0 ? selectedLabs : [],
-                vendedores: selectedVends.length > 0 ? selectedVends : [],
+                vendedores: vendorsToQuery,
                 anio: anioSeleccionado,
                 mes: mesSeleccionado
             };
 
             const response = await apiClient.post('/reportes/informe-laboratorio-vendedor', payload);
-            setData(response.data?.data || []);
 
-            if(response.data?.data?.length === 0) {
+            let reportData = response.data?.data || [];
+            if (isRepresentative && vendorsToQuery.length > 0 && vendorsToQuery[0] !== 'SIN_VENDEDORES') {
+                reportData = reportData.map((lab: any) => ({
+                    ...lab,
+                    vendedores: lab.vendedores.filter((v: any) => vendorsToQuery.includes(v.Codigo_Vend))
+                })).map((lab: any) => ({
+                    ...lab,
+                    totalVentasLaboratorio: lab.vendedores.reduce((acc: number, v: any) => acc + v.SumaDeVta_Tot, 0)
+                })).filter((lab: any) => lab.vendedores.length > 0);
+            } else if (isVendor && auth.user?.codigo) {
+                reportData = reportData.map((lab: any) => ({
+                    ...lab,
+                    vendedores: lab.vendedores.filter((v: any) => v.Codigo_Vend === auth.user?.codigo)
+                })).map((lab: any) => ({
+                    ...lab,
+                    totalVentasLaboratorio: lab.vendedores.reduce((acc: number, v: any) => acc + v.SumaDeVta_Tot, 0)
+                })).filter((lab: any) => lab.vendedores.length > 0);
+            }
+
+            setData(reportData);
+
+            if(reportData.length === 0) {
                 toast({ description: "No se encontraron datos en este periodo" });
             }
         } catch (error) {
@@ -101,7 +138,6 @@ export default function LabSellerReportPage() {
         setDetailData(null);
 
         try {
-            // Formateamos la fecha (Ej. para mandar al SP: "2026-02-01")
             const anio = selectedDate.getFullYear();
             const mes = String(selectedDate.getMonth() + 1).padStart(2, '0');
             const fechaStr = `${anio}-${mes}-01`;

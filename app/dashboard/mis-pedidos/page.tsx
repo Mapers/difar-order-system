@@ -43,7 +43,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
-import {fetchGetAllClients, fetchGetClients} from "@/app/api/takeOrders";
+import {fetchGetAllClients} from "@/app/api/takeOrders";
 
 export const ORDER_STATES = [
   {

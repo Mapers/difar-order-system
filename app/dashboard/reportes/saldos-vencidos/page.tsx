@@ -14,6 +14,7 @@ import { Label } from "@radix-ui/react-label"
 import { Popover, PopoverContent, PopoverTrigger } from "@radix-ui/react-popover"
 import { Command, CommandInput, CommandList, CommandGroup, CommandItem, CommandEmpty } from "@/components/ui/command"
 import { cn } from "@/lib/utils"
+import {useAuth} from "@/context/authContext";
 
 interface FilterOptions {
     id: string;
@@ -22,6 +23,7 @@ interface FilterOptions {
 }
 
 export default function ExpiredBalancesPage() {
+    const auth = useAuth();
     const [loading, setLoading] = useState(false)
     const [data, setData] = useState<VendedorVencido[]>([])
     const [activeTab, setActiveTab] = useState<string>("todos")
@@ -106,7 +108,21 @@ export default function ExpiredBalancesPage() {
         try {
             const response = await getExpiredBalancesRequest();
             if (response.status === 200) {
-                const reportData = response.data.data || [];
+                let reportData = response.data.data || [];
+
+                const user = auth.user;
+                if (user) {
+                    if (user.idRol === 1) {
+                        reportData = reportData.filter((v: any) => v.codigoVendedor === user.codigo);
+                    } else if (user.idRol === 7 && user.codRepres) {
+                        const codigosPermitidos = user.vendedores?.map(vend => vend.codigo) || [];
+                        reportData = reportData.filter((v: any) => {
+                            const codigoVendedor = v.Vendedor.split(' ')[0];
+                            return codigosPermitidos.includes(codigoVendedor);
+                        });
+                    }
+                }
+
                 setData(reportData);
                 setActiveTab("todos");
                 setSelectedZona("")
@@ -122,8 +138,10 @@ export default function ExpiredBalancesPage() {
     }
 
     useEffect(() => {
-        fetchReport();
-    }, [])
+        if (auth.user !== undefined) {
+            fetchReport();
+        }
+    }, [auth.user])
 
     const filteredClientOptions = useMemo(() => {
         if (!searchClienteQuery) return clientesOptions;
@@ -311,7 +329,6 @@ export default function ExpiredBalancesPage() {
                                                                                 <p className="text-xs text-slate-500">{cliente.Direccion}</p>
                                                                             </div>
 
-                                                                            {/* VERSIÓN ESCRITORIO (TABLA) */}
                                                                             <div className="hidden md:block overflow-x-auto">
                                                                                 <table className="w-full text-xs text-left">
                                                                                     <thead className="text-slate-500 border-b border-slate-200 bg-slate-50">
@@ -341,7 +358,6 @@ export default function ExpiredBalancesPage() {
                                                                                 </table>
                                                                             </div>
 
-                                                                            {/* VERSIÓN MÓVIL (CARDS) */}
                                                                             <div className="grid grid-cols-1 gap-2 md:hidden">
                                                                                 {cliente.documentos.map((doc, dIdx) => (
                                                                                     <div key={dIdx} className="flex justify-between items-center border border-slate-100 bg-slate-50 rounded p-2">

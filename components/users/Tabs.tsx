@@ -107,38 +107,60 @@ export const UsuariosGeneralesTab = ({ usuarios, isMobile, onRefresh }: { usuari
     );
 };
 
-export const RepresentantesTab = ({ representantes, vendedores, laboratorios, isMobile, onRefresh }: { representantes: Representante[], vendedores: Vendedor[], laboratorios: Laboratorio[], isMobile: boolean, onRefresh: () => void }) => {
-    const [selected, setSelected] = useState<Representante | null>(null);
+export const RepresentantesTab = ({ representantes, vendedores, laboratorios, isMobile, onRefresh }: any) => {
+    const [selected, setSelected] = useState<any | null>(null);
 
     return (
-        <Card><CardContent className="p-0">
-            <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50"><tr>
-                        {['Código', 'Nombre', 'Vendedor', 'Laboratorios', 'Estado', 'Acciones'].map(h => <th key={h} className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">{h}</th>)}
-                    </tr></thead>
-                    <tbody>
-                    {representantes.map(r => (
-                        <tr key={r.idRepresentante}>
-                            <td className="p-4 text-sm font-mono font-medium">{r.CodRepres}</td>
-                            <td className="p-4 text-sm">{r.NombreRepres}</td>
-                            <td className="p-4 text-sm">{r.VendedorNombres ? `${r.VendedorNombres} ${r.VendedorApellidos}` : <span className="text-red-500 text-xs">Sin asignar</span>}</td>
-                            <td className="p-4 text-sm">
-                                <div className="flex flex-wrap gap-1">
-                                    {r.LaboratoriosAsociados?.map((lab, idx) => (
-                                        <span key={idx} className="bg-blue-100 text-blue-800 text-[10px] px-2 py-0.5 rounded-full whitespace-nowrap">{lab.nombre}</span>
-                                    ))}
-                                    {(!r.LaboratoriosAsociados || r.LaboratoriosAsociados.length === 0) && <span className="text-gray-400 text-xs">Ninguno</span>}
-                                </div>
-                            </td>
-                            <td className="p-4 text-sm">{r.Activo ? <span className="text-green-800 bg-green-100 px-2 rounded-full text-xs">Activo</span> : <span className="text-red-800 bg-red-100 px-2 rounded-full text-xs">Inactivo</span>}</td>
-                            <td className="p-4 text-sm"><Button variant="ghost" size="icon" onClick={() => setSelected(r)}><Edit className="h-4 w-4 text-blue-600"/></Button></td>
+        <Card>
+            <CardContent className="p-0">
+                <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-gray-50">
+                        <tr>
+                            {['Código', 'Nombre', 'Vendedores', 'Laboratorios', 'Estado', 'Acciones'].map(h =>
+                                <th key={h} className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">{h}</th>
+                            )}
                         </tr>
-                    ))}
-                    </tbody>
-                </table>
-            </div>
-            <RepresentanteModal isOpen={!!selected} onClose={() => setSelected(null)} initialData={selected} vendedores={vendedores} laboratorios={laboratorios} onSuccess={onRefresh} />
-        </CardContent></Card>
+                        </thead>
+                        <tbody>
+                        {representantes.map((r: any) => (
+                            <tr key={r.idRepresentante}>
+                                <td className="p-4 text-sm font-mono font-medium">{r.CodRepres}</td>
+                                <td className="p-4 text-sm">{r.NombreRepres}</td>
+                                <td className="p-4 text-sm">
+                                    <div className="flex flex-wrap gap-1">
+                                        {r.VendedoresAsociados?.map((vend: any, idx: number) => (
+                                            <span key={idx} className="bg-purple-100 text-purple-800 text-[10px] px-2 py-0.5 rounded-full whitespace-nowrap">{vend.nombre}</span>
+                                        ))}
+                                        {(!r.VendedoresAsociados || r.VendedoresAsociados.length === 0) && <span className="text-red-500 text-xs">Sin asignar</span>}
+                                    </div>
+                                </td>
+                                <td className="p-4 text-sm">
+                                    <div className="flex flex-wrap gap-1">
+                                        {r.LaboratoriosAsociados?.map((lab: any, idx: number) => (
+                                            <span key={idx} className="bg-blue-100 text-blue-800 text-[10px] px-2 py-0.5 rounded-full whitespace-nowrap">{lab.nombre}</span>
+                                        ))}
+                                        {(!r.LaboratoriosAsociados || r.LaboratoriosAsociados.length === 0) && <span className="text-gray-400 text-xs">Ninguno</span>}
+                                    </div>
+                                </td>
+                                <td className="p-4 text-sm">{r.Activo ? <span className="text-green-800 bg-green-100 px-2 rounded-full text-xs">Activo</span> : <span className="text-red-800 bg-red-100 px-2 rounded-full text-xs">Inactivo</span>}</td>
+                                <td className="p-4 text-sm"><Button variant="ghost" size="icon" onClick={() => setSelected(r)}><Edit className="h-4 w-4 text-blue-600"/></Button></td>
+                            </tr>
+                        ))}
+                        </tbody>
+                    </table>
+                </div>
+                {selected && (
+                    <RepresentanteModal
+                        isOpen={!!selected}
+                        onClose={() => setSelected(null)}
+                        initialData={selected}
+                        vendedores={vendedores}
+                        laboratorios={laboratorios}
+                        onSuccess={onRefresh}
+                    />
+                )}
+            </CardContent>
+        </Card>
     );
 };

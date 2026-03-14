@@ -25,6 +25,9 @@ interface IAutocompleteClient {
 
 export default function EstadoCuentaClientePage() {
     const auth = useAuth();
+    const isRepresentative = auth.user?.idRol === 7;
+    const isVendor = auth.user?.idRol === 1;
+
     const [loading, setLoading] = useState(false);
     const [data, setData] = useState<any>(null);
 
@@ -42,9 +45,9 @@ export default function EstadoCuentaClientePage() {
             if (searchQuery.length > 2) {
                 setLoadingOptions(true);
                 try {
-                    const isSeller = auth.user?.idRol === 1;
-                    const vendedorCode = isSeller ? (auth.user?.codigo || null) : null;
-                    const res = await searchClientsRequest(searchQuery, vendedorCode);
+                    const vendedorCode = isVendor ? (auth.user?.codigo || null) : null;
+                    const represCode = isRepresentative ? (auth.user?.codRepres || null) : null;
+                    const res = await searchClientsRequest(searchQuery, vendedorCode, represCode);
                     if (res.status === 200) {
                         setClientOptions(res.data.data || []);
                     }

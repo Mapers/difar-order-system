@@ -57,10 +57,35 @@ export default function DocumentClientPage() {
       const documento = `${selectedDocumentCode}-${normalizedDocumenCode}`
       documentoSchema.parse({ documento })
       const docClient: Document = { documento }
-      const response = await consultDocClientRequest(docClient, auth.user?.idRol === 1 ? (auth.user?.codigo || null) : null)
-      if (response.status !== 200) throw new Error("Error al consultar documento de cliente")
-      const data = response?.data?.data
-      setDataZoneClient(data)
+
+      let combinedData: Zone[] = [];
+
+      if (auth.user?.codRepres && auth.user?.vendedores && auth.user?.vendedores.length > 0) {
+        const promises = auth.user.vendedores.map(vendedor =>
+            consultDocClientRequest(docClient, vendedor.codigo)
+                .then(res => {
+                  if(res.status === 200 && res.data?.data) {
+                    return res.data.data;
+                  }
+                  return [];
+                })
+                .catch(err => {
+                  console.error(`Error consultando doc para el vendedor ${vendedor.codigo}:`, err);
+                  return [];
+                })
+        );
+
+        const results = await Promise.all(promises);
+
+        combinedData = results.flat();
+
+      } else {
+        const response = await consultDocClientRequest(docClient, auth.user?.idRol === 1 ? (auth.user?.codigo || null) : null)
+        if (response.status !== 200) throw new Error("Error al consultar documento de cliente")
+        combinedData = response?.data?.data || [];
+      }
+
+      setDataZoneClient(combinedData)
       setActiveTab("0")
     } catch (error: any) {
       if (error instanceof z.ZodError) {

@@ -279,9 +279,10 @@ export const UsuarioGeneralModal = ({ isOpen, onClose, initialData, onSuccess }:
 export const RepresentanteModal = ({ isOpen, onClose, initialData, vendedores, laboratorios, onSuccess }: any) => {
     const { toast } = useToast();
     const [form, setForm] = useState({
-        idRepresentante: 0, CodRepres: '', NombreRepres: '', IdVendedor: '', Activo: 1
+        idRepresentante: 0, CodRepres: '', NombreRepres: '', Activo: 1
     });
     const [selectedLabs, setSelectedLabs] = useState<number[]>([]);
+    const [selectedVends, setSelectedVends] = useState<number[]>([]); // Nuevo estado para vendedores
 
     useEffect(() => {
         if (initialData) {
@@ -289,18 +290,23 @@ export const RepresentanteModal = ({ isOpen, onClose, initialData, vendedores, l
                 idRepresentante: initialData.idRepresentante,
                 CodRepres: initialData.CodRepres,
                 NombreRepres: initialData.NombreRepres,
-                IdVendedor: initialData.IdVendedor ? initialData.IdVendedor.toString() : '',
                 Activo: initialData.Activo
             });
             setSelectedLabs(initialData.LaboratoriosAsociados?.map((l:any) => l.id) || []);
+            setSelectedVends(initialData.VendedoresAsociados?.map((v:any) => v.id) || []);
         } else {
-            setForm({ idRepresentante: 0, CodRepres: '', NombreRepres: '', IdVendedor: '', Activo: 1 });
+            setForm({ idRepresentante: 0, CodRepres: '', NombreRepres: '', Activo: 1 });
             setSelectedLabs([]);
+            setSelectedVends([]);
         }
     }, [initialData, isOpen]);
 
     const toggleLab = (id: number) => {
         setSelectedLabs(prev => prev.includes(id) ? prev.filter(l => l !== id) : [...prev, id]);
+    };
+
+    const toggleVend = (id: number) => {
+        setSelectedVends(prev => prev.includes(id) ? prev.filter(v => v !== id) : [...prev, id]);
     };
 
     const handleSave = async () => {
@@ -309,7 +315,7 @@ export const RepresentanteModal = ({ isOpen, onClose, initialData, vendedores, l
                 idRepresentante: form.idRepresentante,
                 CodRepres: form.CodRepres,
                 NombreRepres: form.NombreRepres,
-                IdVendedor: form.IdVendedor ? parseInt(form.IdVendedor) : null,
+                vendedoresIds: selectedVends,
                 laboratoriosIds: selectedLabs,
                 Activo: form.Activo
             };
@@ -324,8 +330,10 @@ export const RepresentanteModal = ({ isOpen, onClose, initialData, vendedores, l
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
-                <DialogHeader><DialogTitle>{initialData ? 'Editar Representante' : 'Nuevo Representante'}</DialogTitle></DialogHeader>
+            <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                    <DialogTitle>{initialData ? 'Editar Representante' : 'Nuevo Representante'}</DialogTitle>
+                </DialogHeader>
                 <div className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-1">
@@ -338,27 +346,41 @@ export const RepresentanteModal = ({ isOpen, onClose, initialData, vendedores, l
                         </div>
                     </div>
 
-                    <div className="space-y-1">
-                        <label className="text-sm font-medium">Vendedor Asociado *</label>
-                        <Select value={form.IdVendedor} onValueChange={(v) => setForm({...form, IdVendedor: v})}>
-                            <SelectTrigger><SelectValue placeholder="Seleccionar Vendedor..."/></SelectTrigger>
-                            <SelectContent>
-                                {vendedores.map((v: Vendedor) => (
-                                    <SelectItem key={v.idVendedor} value={v.idVendedor.toString()}>
-                                        {v.nombres} {v.apellidos}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                    <div className="space-y-1 border rounded-md p-3">
+                        <label className="text-sm font-medium block mb-2">Vendedores Asignados ({selectedVends.length})</label>
+                        <div className="max-h-32 overflow-y-auto grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            {vendedores.map((vend: any) => (
+                                <div key={vend.idVendedor} className="flex items-center space-x-2">
+                                    <input
+                                        type="checkbox"
+                                        id={`vend-${vend.idVendedor}`}
+                                        checked={selectedVends.includes(vend.idVendedor)}
+                                        onChange={() => toggleVend(vend.idVendedor)}
+                                        className="rounded border-gray-300"
+                                    />
+                                    <label htmlFor={`vend-${vend.idVendedor}`} className="text-xs truncate cursor-pointer" title={`${vend.nombres} ${vend.apellidos}`}>
+                                        {vend.nombres} {vend.apellidos}
+                                    </label>
+                                </div>
+                            ))}
+                        </div>
                     </div>
 
                     <div className="space-y-1 border rounded-md p-3">
                         <label className="text-sm font-medium block mb-2">Laboratorios Asignados ({selectedLabs.length})</label>
                         <div className="max-h-32 overflow-y-auto grid grid-cols-1 sm:grid-cols-2 gap-2">
-                            {laboratorios.map((lab: Laboratorio) => (
+                            {laboratorios.map((lab: any) => (
                                 <div key={lab.IdLineaGe} className="flex items-center space-x-2">
-                                    <input type="checkbox" id={`lab-${lab.IdLineaGe}`} checked={selectedLabs.includes(lab.IdLineaGe)} onChange={() => toggleLab(lab.IdLineaGe)} className="rounded border-gray-300"/>
-                                    <label htmlFor={`lab-${lab.IdLineaGe}`} className="text-xs truncate cursor-pointer" title={lab.Descripcion}>{lab.Descripcion}</label>
+                                    <input
+                                        type="checkbox"
+                                        id={`lab-${lab.IdLineaGe}`}
+                                        checked={selectedLabs.includes(lab.IdLineaGe)}
+                                        onChange={() => toggleLab(lab.IdLineaGe)}
+                                        className="rounded border-gray-300"
+                                    />
+                                    <label htmlFor={`lab-${lab.IdLineaGe}`} className="text-xs truncate cursor-pointer" title={lab.Descripcion}>
+                                        {lab.Descripcion}
+                                    </label>
                                 </div>
                             ))}
                         </div>
@@ -371,7 +393,7 @@ export const RepresentanteModal = ({ isOpen, onClose, initialData, vendedores, l
                 </div>
                 <DialogFooter>
                     <Button variant="outline" onClick={onClose}>Cancelar</Button>
-                    <Button onClick={handleSave} disabled={!form.CodRepres || !form.NombreRepres || !form.IdVendedor}>Guardar</Button>
+                    <Button onClick={handleSave} disabled={!form.CodRepres || !form.NombreRepres}>Guardar</Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>

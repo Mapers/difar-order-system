@@ -27,6 +27,8 @@ interface IAutocompleteClient {
 export default function SaldoCobrarClientePage() {
     const auth = useAuth();
     const isManagerOrAdmin = [2, 3].includes(auth.user?.idRol || 0);
+    const isRepresentative = auth.user?.idRol === 7;
+    const isVendor = auth.user?.idRol === 1;
 
     const [loading, setLoading] = useState(false);
     const [data, setData] = useState<any>(null);
@@ -61,7 +63,15 @@ export default function SaldoCobrarClientePage() {
                         apellidos: v.Apellidos
                     }));
                     setSellers(vendedoresTransformados);
-                } else {
+                } else if (isRepresentative) {
+                    const repVends = auth.user?.vendedores?.map(v => ({
+                        idVendedor: String(v.idVendedor),
+                        codigo: v.codigo,
+                        nombres: v.Nombres,
+                        apellidos: ''
+                    })) || [];
+                    setSellers(repVends);
+                } else if (isVendor) {
                     if (auth.user?.codigo) setSelectedSeller(auth.user.codigo);
                 }
             } catch (error) {
@@ -76,9 +86,9 @@ export default function SaldoCobrarClientePage() {
             if (searchQuery.length > 2) {
                 setLoadingOptions(true);
                 try {
-                    const isSeller = auth.user?.idRol === 1;
-                    const vendedorCode = isSeller ? (auth.user?.codigo || null) : null;
-                    const res = await searchClientsRequest(searchQuery, vendedorCode);
+                    const vendedorCode = isVendor ? (auth.user?.codigo || null) : null;
+                    const represCode = isRepresentative ? (auth.user?.codRepres || null) : null;
+                    const res = await searchClientsRequest(searchQuery, vendedorCode, represCode);
                     if (res.status === 200) {
                         setClientOptions(res.data.data || []);
                     }
@@ -107,8 +117,55 @@ export default function SaldoCobrarClientePage() {
                 codVendedor: selectedSeller || null
             });
 
-            if (response.data?.data && response.data.data.Clientes.length > 0) {
-                setData(response.data.data);
+            let reportData = response.data?.data;
+
+            if (reportData && reportData.Clientes) {
+                let allowedVendors: string[] = [];
+
+                if (isRepresentative && !selectedSeller) {
+                    allowedVendors = auth.user?.vendedores?.map(v => v.codigo) || [];
+                    if (allowedVendors.length === 0) allowedVendors = ['SIN_VENDEDORES'];
+                } else if (isVendor && !selectedSeller) {
+                    allowedVendors = auth.user?.codigo ? [auth.user.codigo] : [];
+                } else if (selectedSeller) {
+                    allowedVendors = [selectedSeller];
+                }
+
+                if (allowedVendors.length > 0) {
+                    let newTotalSoles = 0;
+                    let newTotalDolares = 0;
+
+                    const filteredClientes = reportData.Clientes.map((cli: any) => {
+                        const filteredVends = cli.vendedores.filter((v: any) => {
+                            const codigoVendedor = v.CodigoVend || v.Vendedor.split(' ')[0];
+                            return allowedVendors.includes(codigoVendedor);
+                        });
+                        return { ...cli, vendedores: filteredVends };
+                    }).filter((cli: any) => cli.vendedores.length > 0);
+
+                    filteredClientes.forEach((cli: any) => {
+                        cli.vendedores.forEach((v: any) => {
+                            v.documentos.forEach((doc: any) => {
+                                if (doc.Tipo_Moneda === 'NSO' || doc.Moneda === 'S/.') {
+                                    newTotalSoles += Number(doc.Saldo) || 0;
+                                } else {
+                                    newTotalDolares += Number(doc.Saldo) || 0;
+                                }
+                            });
+                        });
+                    });
+
+                    reportData = {
+                        ...reportData,
+                        Clientes: filteredClientes,
+                        TotalSoles: newTotalSoles,
+                        TotalDolares: newTotalDolares
+                    };
+                }
+            }
+
+            if (reportData && reportData.Clientes && reportData.Clientes.length > 0) {
+                setData(reportData);
             } else {
                 setData(null);
                 toast({ description: "No se encontraron saldos con los filtros indicados." });

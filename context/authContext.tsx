@@ -6,8 +6,8 @@ import { decodeToken, isTokenNearExpiry } from '@/app/utils/tokenUtils';
 import { AuthService } from '@/app/services/auth/AuthService';
 import { AuthContextType, SmsCheck, SmsSend, User, UserLoginDTO, UserRegisterDTO } from '@/app/services/auth/types';
 import { toast } from '@/hooks/use-toast';
-import {AppConfig} from "@/app/dashboard/configuraciones/page";
 import apiClient from "@/app/api/client";
+import {AppConfig} from "@/app/types/config-types";
 
 // Inicialización del contexto
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -30,7 +30,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const [loading, setLoading] = useState<boolean>(true);
     const router = useRouter();
     const [globalConfigs, setGlobalConfigs] = useState<AppConfig[]>([]);
-
+    console.log(user)
     // Función para limpiar el estado de autenticación
     const clearAuthState = useCallback(() => {
         setUser(null);

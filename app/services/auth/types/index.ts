@@ -26,6 +26,7 @@ export interface JwtPayload {
         };
         codRepres: string;
         idRepresentante: string;
+        vendedores: VendedorRelacionado[];
     },
     menus: Menu[]
     iat: number;
@@ -41,6 +42,12 @@ export interface Menu {
     orden: number
 }
 
+export interface VendedorRelacionado {
+    idVendedor: number,
+    codigo: string,
+    Nombres: string
+}
+
 export interface User {
     codigo: string,
     telefono: string,
@@ -49,6 +56,7 @@ export interface User {
     rolDescripcion: string;
     menus: Menu[];
     codRepres: string;
+    vendedores: VendedorRelacionado[];
 }
 
 export interface UserRegisterDTO {

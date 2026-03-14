@@ -37,7 +37,6 @@ import { CommandEmpty, CommandGroup, CommandInput, CommandList, Command, Command
 import { monedas, PROMOCIONES } from "@/constants"
 import {
   fetchGetAllClients,
-  fetchGetClients,
   fetchGetConditions,
   fetchGetZona,
   fetchUnidaTerritorial, fetchUpdateClientRef,
