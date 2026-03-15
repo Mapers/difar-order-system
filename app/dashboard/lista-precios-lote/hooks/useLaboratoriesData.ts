@@ -41,7 +41,7 @@ export function useLaboratoriesData() {
         }
 
         fetchData();
-    }, []);
+    }, [user]);
 
     return { laboratories, loadingLab, errorLab, laboratoriesRepres };
 }
