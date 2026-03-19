@@ -78,4 +78,8 @@ export interface AuthContextType {
     refreshToken: () => void;
     globalConfigs: AppConfig[];
     fetchGlobalConfigs: () => Promise<void>;
+    isAdmin: () => boolean;
+    isVendedor: () => boolean;
+    isRepresentante: () => boolean;
+    hasRole: (roleName: string | string[]) => boolean;
 }

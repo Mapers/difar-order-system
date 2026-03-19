@@ -1,7 +1,7 @@
 import React, {useEffect, useState} from 'react';
 import { FileText, Calendar, ChevronDown, Filter, Package, Search, Smartphone, Table as TableIcon } from 'lucide-react';
 import { Label } from '@radix-ui/react-label';
-import { IClient } from '@/interface/order/client-interface';
+import { IClient } from '@/app/types/order/client-interface';
 import apiClient from '@/app/api/client';
 import { format } from 'date-fns';
 import {Dialog, DialogTitle} from "@radix-ui/react-dialog";

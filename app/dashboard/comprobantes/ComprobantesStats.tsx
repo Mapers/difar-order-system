@@ -1,5 +1,5 @@
 import { Card, CardContent } from "@/components/ui/card"
-import {Comprobante} from "@/interface/order/order-interface";
+import {Comprobante} from "@/app/types/order/order-interface";
 
 export function ComprobantesStats({ comprobantes }: { comprobantes: Comprobante[] }) {
     const calculateTotals = () => {

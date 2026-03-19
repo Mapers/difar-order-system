@@ -1,7 +1,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { AlertTriangle } from "lucide-react"
-import {GuiaRemision} from "@/interface/order/order-interface";
+import {GuiaRemision} from "@/app/types/order/order-interface";
 
 interface ErrorModalProps {
     open: boolean

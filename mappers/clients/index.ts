@@ -1,5 +1,5 @@
 import { format, parseISO } from "date-fns"
-import { IClientEvaluation, IClient, IEvaluation, IEvaluacionCalif } from "@/interface/clients/client-interface";
+import { IClientEvaluation, IClient, IEvaluation, IEvaluacionCalif } from "@/app/types/clients/client-interface";
 // cliente- para grilla
 export const mapClientFromApi = (data: any): IClient => ({
   codigoInterno: data.codigoInterno || data.codigo || "No registrado",

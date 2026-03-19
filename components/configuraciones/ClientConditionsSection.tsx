@@ -15,7 +15,7 @@ import { cn } from "@/lib/utils"
 import apiClient from "@/app/api/client"
 import { useAuth } from "@/context/authContext"
 import { fetchGetAllClients, fetchGetConditions } from "@/app/api/takeOrders";
-import { IClient, ICondicion } from "@/interface/order/client-interface";
+import { IClient, ICondicion } from "@/app/types/order/client-interface";
 
 interface ClientConditionsSectionProps {
     onOpenModalChange: (fn: () => void) => void;

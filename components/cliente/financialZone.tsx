@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { MapPin, Navigation, CreditCard, Map, ChevronDown } from 'lucide-react';
 import { Label } from '@radix-ui/react-label';
-import { IClient, ITerritorio } from '@/interface/order/client-interface';
+import { IClient, ITerritorio } from '@/app/types/order/client-interface';
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../ui/dialog';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';

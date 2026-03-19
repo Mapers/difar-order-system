@@ -28,7 +28,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import apiClient from "@/app/api/client"
 import {format, parseISO} from "date-fns";
 import {useAuth} from "@/context/authContext";
-import {IClient} from "@/interface/order/client-interface";
+import {IClient} from "@/app/types/order/client-interface";
 import {cn} from "@/lib/utils";
 import {
   Command,

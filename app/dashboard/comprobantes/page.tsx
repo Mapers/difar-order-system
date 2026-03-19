@@ -19,7 +19,7 @@ import {
   Pedido,
   SunatTransaccion,
   TipoDocSunat
-} from "@/interface/order/order-interface";
+} from "@/app/types/order/order-interface";
 import {PendientesList} from "@/app/dashboard/comprobantes/PendientesList";
 import {ComprobantesTable} from "@/app/dashboard/comprobantes/ComprobantesTable";
 import {ComprobantesStats} from "@/app/dashboard/comprobantes/ComprobantesStats";

@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { format, parseISO } from "date-fns"
-import { GuiaRemision } from "@/interface/order/order-interface";
+import { GuiaRemision } from "@/app/types/order/order-interface";
 import { Mail, MessageCircle, Activity } from "lucide-react"
 
 interface GuiasListProps {

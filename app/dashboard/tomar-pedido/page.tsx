@@ -42,8 +42,8 @@ import {
   fetchUnidaTerritorial, fetchUpdateClientRef,
 } from "@/app/api/takeOrders"
 import { getBonificadosRequest, getEscalasRequest, getProductsRequest } from "@/app/api/products"
-import { ICurrentBonification, ICurrentScales, IEscala, IProduct, IPromocionRequest, ISelectedProduct, OrderItem } from "@/interface/order/product-interface"
-import { IClient, ICondicion, IDistrito, IMoneda, ITerritorio } from "@/interface/order/client-interface"
+import { ICurrentBonification, ICurrentScales, IEscala, IProduct, IPromocionRequest, ISelectedProduct, OrderItem } from "@/app/types/order/product-interface"
+import { IClient, ICondicion, IDistrito, IMoneda, ITerritorio } from "@/app/types/order/client-interface"
 import ModalLoader from "@/components/modal/modalLoader"
 import {useAuth} from "@/context/authContext";
 import {Textarea} from "@/components/ui/textarea";
@@ -57,7 +57,7 @@ import {Combobox} from "@/app/dashboard/mis-pedidos/page";
 import {useLaboratoriesData} from "@/app/dashboard/lista-precios-lote/hooks/useLaboratoriesData";
 import {Tabs, TabsContent, TabsList, TabsTrigger} from "@/components/ui/tabs";
 import OrderHistory from "@/components/tomarPedido/order-history";
-import { toast } from "@/hooks/use-toast"
+import { toast } from "@/app/hooks/use-toast"
 import AlternativeProductsModal from "@/components/tomarPedido/AlternativeProductsModal";
 
 interface LoteProducto {

@@ -1,7 +1,7 @@
 import React from 'react';
 
 import { TableCell, TableRow } from "@/components/ui/table"
-import { Invoice } from '@/interface/report/report-interface';
+import { Invoice } from '@/app/types/report/report-interface';
 
 interface InvoiceProps {
     invoice: Invoice

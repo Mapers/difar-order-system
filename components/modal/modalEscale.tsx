@@ -5,8 +5,8 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
-import { ICurrentScales, IProduct, ISelectedProduct } from '@/interface/order/product-interface'
-import { IMoneda } from '@/interface/order/client-interface'
+import { ICurrentScales, IProduct, ISelectedProduct } from '@/app/types/order/product-interface'
+import { IMoneda } from '@/app/types/order/client-interface'
 
 
 interface ModalVerificationProps {

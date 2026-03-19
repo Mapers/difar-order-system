@@ -11,7 +11,7 @@ import { CheckCircle, XCircle, AlertCircle } from "lucide-react";
  */
 
 
-import { Invoice } from "@/interface/report/report-interface";
+import { Invoice } from "@/app/types/report/report-interface";
 
 
 export function calcularTotal(invoices: Invoice[]): number {

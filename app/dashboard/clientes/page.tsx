@@ -9,9 +9,9 @@ import { Search, Eye, Edit, Download, Plus, Filter, ChevronDown, FileText, Phone
 import { Badge } from "@/components/ui/badge"
 import { Label } from "@/components/ui/label"
 import { useAuth } from '@/context/authContext';
-import { IClient } from "@/interface/clients/client-interface"
+import { IClient } from "@/app/types/clients/client-interface"
 import { mapClientFromApi } from "@/mappers/clients"
-import { formatSafeDate } from "@/utils/date"
+import { formatSafeDate } from "@/app/utils/date"
 import { ClientService } from "@/app/services/client/ClientService"
 import { ClientMethodsService } from "./services/clientMethodsService"
 import NuevoClienteForm from "@/components/modal/NuevoClienteForm"

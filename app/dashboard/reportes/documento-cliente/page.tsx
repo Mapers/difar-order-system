@@ -8,10 +8,10 @@ import React, { useEffect, useState } from "react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { consultDocClientRequest, fetchTypeDocuments } from "@/app/api/reports"
-import { TypeDocument, Document, Zone } from "@/interface/report/report-interface"
-import { normalizeDocumentCode } from "@/utils/normalizeDocumentCode"
+import { TypeDocument, Document, Zone } from "@/app/types/report/report-interface"
+import { normalizeDocumentCode } from "@/app/utils/normalizeDocumentCode"
 import { documentoSchema } from '@/schemas/reports/documentoSchema'
-import { toast } from "@/hooks/use-toast"
+import { toast } from "@/app/hooks/use-toast"
 import ZoneClientReport from "@/components/reporte/zoneClientReport"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { z } from 'zod'

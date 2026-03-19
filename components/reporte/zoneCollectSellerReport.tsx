@@ -1,6 +1,6 @@
 import React from 'react';
 import CollectSellerRow from './collectSellerRow';
-import { Client, Zone } from '@/interface/report/report-interface';
+import { Client, Zone } from '@/app/types/report/report-interface';
 
 interface ZoneSellerReportProps {
   zone: Zone;

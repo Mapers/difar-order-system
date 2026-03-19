@@ -5,14 +5,12 @@ import { useRouter } from 'next/navigation';
 import { decodeToken, isTokenNearExpiry } from '@/app/utils/tokenUtils';
 import { AuthService } from '@/app/services/auth/AuthService';
 import { AuthContextType, SmsCheck, SmsSend, User, UserLoginDTO, UserRegisterDTO } from '@/app/services/auth/types';
-import { toast } from '@/hooks/use-toast';
+import { toast } from '@/app/hooks/use-toast';
 import apiClient from "@/app/api/client";
 import {AppConfig} from "@/app/types/config-types";
 
-// Inicialización del contexto
 const AuthContext = createContext<AuthContextType | null>(null);
 
-// Hook para acceder al contexto
 export const useAuth = () => {
     const context = useContext(AuthContext);
     if (!context) {
@@ -21,7 +19,6 @@ export const useAuth = () => {
     return context;
 };
 
-// Provider
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const [user, setUser] = useState<User | null>(null);
     const [token, setToken] = useState<string>("");
@@ -30,8 +27,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const [loading, setLoading] = useState<boolean>(true);
     const router = useRouter();
     const [globalConfigs, setGlobalConfigs] = useState<AppConfig[]>([]);
-    console.log(user)
-    // Función para limpiar el estado de autenticación
+
     const clearAuthState = useCallback(() => {
         setUser(null);
         setIsAuthenticated(false);
@@ -39,10 +35,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         localStorage.removeItem('invoice');
     }, []);
 
-    // Nueva función para obtener configuraciones
     const fetchGlobalConfigs = useCallback(async () => {
         try {
-            // Asumiendo que esta es tu ruta pública o autenticada para listar configs
             const response = await apiClient.get('/admin/listar/configuraciones');
             if (response.data && response.data.data) {
                 setGlobalConfigs(response.data.data);
@@ -52,7 +46,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
     }, []);
 
-    // Función para manejar errores
     const handleError = useCallback((error: string) => {
         setErrors(prev => [...prev, error]);
     }, []);
@@ -103,12 +96,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             }
         } catch (error: any) {
             if (error.response) {
-                // return error.response.data
                 toast({ title: "Iniciar Sesión", description: error.response.data.message, variant: "warning" })
 
             }
             else {
-                // const message = typeof error === 'object' ? error.messaje : error
                 const message = "No cargó correctamente, por favor intente nuevamente."
                 handleError(message);
                 throw new Error(message)
@@ -137,7 +128,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 return error.response.data
             }
             else {
-                // const message = typeof error === 'object' ? error.messaje : error
                 const message = "Error en validación SMS"
                 handleError(message);
                 throw new Error(message)
@@ -147,14 +137,29 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
     };
 
-    // función logout
+    const ADMIN_ROLE_NAMES = ['admin', 'administrador', 'administrativo', 'gerente'];
+
+    const isAdmin = (): boolean =>
+        ADMIN_ROLE_NAMES.includes(user?.rolDescripcion?.toLowerCase() ?? '');
+
+    const isVendedor = (): boolean =>
+        user?.rolDescripcion?.toLowerCase() === 'vendedor';
+
+    const isRepresentante = (): boolean =>
+        user?.rolDescripcion?.toLowerCase() === 'representante';
+
+    const hasRole = (roleName: string | string[]): boolean => {
+        const desc = user?.rolDescripcion?.toLowerCase() ?? '';
+        if (Array.isArray(roleName)) return roleName.map(r => r.toLowerCase()).includes(desc);
+        return desc === roleName.toLowerCase();
+    };
+
     const logout = async () => {
         clearAuthState();
         router.push('/');
 
     };
 
-    // Función para refrescar el token (verificar estado actual)
     const refreshToken = useCallback(() => {
         const token = localStorage.getItem('token');
         if (token) {
@@ -169,7 +174,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
     }, []);
 
-    // Verificar token al cargar la aplicación
     const checkToken = useCallback(() => {
         const token = localStorage.getItem('token');
         if (token) {
@@ -180,10 +184,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 setIsAuthenticated(true);
                 fetchGlobalConfigs();
 
-                // Verificar si está próximo a expirar
                 if (isTokenNearExpiry(token)) {
                     console.warn('Token próximo a expirar');
-                    // Aquí podrías implementar lógica para renovar el token
                 }
             } else {
                 console.log('Token inválido o expirado:', tokenResult.error);
@@ -195,12 +197,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setLoading(false);
     }, [clearAuthState, fetchGlobalConfigs]);
 
-    // Verificar token al montar el componente
     useEffect(() => {
         checkToken();
     }, [checkToken]);
 
-    // Limpiar errores después de 5 segundos
     useEffect(() => {
         if (errors.length > 0) {
             const timer = setTimeout(() => {
@@ -210,12 +210,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
     }, [errors]);
 
-    // Verificar token periódicamente (cada 5 minutos)
     useEffect(() => {
         if (isAuthenticated) {
             const interval = setInterval(() => {
                 refreshToken();
-            }, 5 * 60 * 1000); // 5 minutos
+            }, 5 * 60 * 1000);
 
             return () => clearInterval(interval);
         }
@@ -234,7 +233,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 loading,
                 refreshToken,
                 globalConfigs,
-                fetchGlobalConfigs
+                fetchGlobalConfigs,
+                isAdmin,
+                isVendedor,
+                isRepresentante,
+                hasRole,
             }}
         >
             {children}

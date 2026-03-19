@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
-import { toast } from "@/hooks/use-toast";
-import { Zone } from '@/interface/report/report-interface';
-import { calcularTotal } from '@/utils/client';
+import { toast } from "@/app/hooks/use-toast";
+import { Zone } from '@/app/types/report/report-interface';
+import { calcularTotal } from '@/app/utils/client';
 
 interface ExportPdfProps {
     data: Zone[];

@@ -5,8 +5,8 @@ import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Button } from "@/components/ui/button"
-import { ICurrentBonification, IProduct, ISelectedProduct } from '@/interface/order/product-interface'
-import { IMoneda } from '@/interface/order/client-interface'
+import { ICurrentBonification, IProduct, ISelectedProduct } from '@/app/types/order/product-interface'
+import { IMoneda } from '@/app/types/order/client-interface'
 
 
 interface ModalBonificationProps {

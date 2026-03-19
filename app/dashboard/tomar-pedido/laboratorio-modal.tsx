@@ -1,7 +1,7 @@
 'use client'
 
-import {IProduct, ISelectedProduct} from "@/interface/order/product-interface";
-import {IMoneda} from "@/interface/order/client-interface";
+import {IProduct, ISelectedProduct} from "@/app/types/order/product-interface";
+import {IMoneda} from "@/app/types/order/client-interface";
 import {useEffect, useState} from "react";
 import {TableBody, TableCell, TableHeader, TableRow, Table, TableHead} from "@/components/ui/table";
 import {Input} from "@/components/ui/input";

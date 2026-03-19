@@ -23,6 +23,7 @@ export interface Vendedor {
     comisionCobranza: number;
     empRegistro: string;
     activo: number;
+    nombre_completo: string;
 }
 
 export interface UsuarioNoWeb {

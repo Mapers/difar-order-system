@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge"
 import { AlertTriangle, Receipt, RefreshCw, Eye, Calendar, User, Wallet, Package, Clock, CheckCircle, Loader2 } from "lucide-react"
 import Link from "next/link"
 import { format, parseISO } from "date-fns"
-import {Pedido} from "@/interface/order/order-interface";
+import {Pedido} from "@/app/types/order/order-interface";
 
 interface PendientesListProps {
     pedidos: Pedido[]

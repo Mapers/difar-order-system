@@ -8,7 +8,7 @@ import { Loader2, Truck, AlertCircle } from "lucide-react"
 import { format, parseISO } from "date-fns"
 import apiClient from "@/app/api/client"
 import { toast } from "@/components/ui/use-toast"
-import {GuiaReferencia} from "@/interface/order/order-interface";
+import {GuiaReferencia} from "@/app/types/order/order-interface";
 
 interface GuidesSelectorModalProps {
     open: boolean

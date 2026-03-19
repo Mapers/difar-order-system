@@ -5,7 +5,7 @@ import { Loader2, Truck, AlertCircle, FileText, Eye } from "lucide-react"
 import { format, parseISO } from "date-fns"
 import apiClient from "@/app/api/client"
 import { GuiaReferencia } from "./GuidesSelectorModal"
-import { Comprobante } from "@/interface/order/order-interface"
+import { Comprobante } from "@/app/types/order/order-interface"
 
 interface RelatedGuidesModalProps {
     open: boolean

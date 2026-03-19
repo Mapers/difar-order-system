@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { AlertCircle, Package, ArrowRight } from "lucide-react"
-import { IProduct } from "@/interface/order/product-interface"
+import { IProduct } from "@/app/types/order/product-interface"
 
 interface AlternativeProductsModalProps {
     open: boolean

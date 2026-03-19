@@ -1,5 +1,5 @@
 import { PROMOCIONES } from "@/constants";
-import { IProduct } from "@/interface/order/product-interface";
+import { IProduct } from "@/app/types/order/product-interface";
 
 
 /**

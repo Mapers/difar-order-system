@@ -1,5 +1,5 @@
 
-import { IDistrito } from "@/interface/order/client-interface";
+import { IDistrito } from "@/app/types/order/client-interface";
 import apiClient from "./client";
 
 export const fetchGetAllClients = async (seller: string, isGerente: boolean): Promise<any> => {

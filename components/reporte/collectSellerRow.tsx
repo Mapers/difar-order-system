@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import InvoiceCollectSellerRow from './invoiceCollectSellerRow';
-import { Client, Invoice } from '@/interface/report/report-interface';
-import { calcularTotal } from '@/utils/client';
+import { Client, Invoice } from '@/app/types/report/report-interface';
+import { calcularTotal } from '@/app/utils/client';
 
 
 interface ClientRowProps {

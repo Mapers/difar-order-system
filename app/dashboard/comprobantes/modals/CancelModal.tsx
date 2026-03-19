@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { XCircle, AlertTriangle, Loader2 } from "lucide-react"
-import { Comprobante } from "@/interface/order/order-interface"
+import { Comprobante } from "@/app/types/order/order-interface"
 import apiClient from "@/app/api/client";
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select";
 

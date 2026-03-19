@@ -16,7 +16,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast, useToast } from "@/components/ui/use-toast";
 import apiClient from "@/app/api/client";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import {Pedido} from "@/interface/order/order-interface";
+import {Pedido} from "@/app/types/order/order-interface";
 
 interface PedidoDet {
   idPedidodet: number

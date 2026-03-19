@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { CreditCard, ChevronDown, Check } from 'lucide-react';
 import { Label } from '@radix-ui/react-label';
-import { ICondicion, IMoneda } from '@/interface/order/client-interface';
+import { ICondicion, IMoneda } from '@/app/types/order/client-interface';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';

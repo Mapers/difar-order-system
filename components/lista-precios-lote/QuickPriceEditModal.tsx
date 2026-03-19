@@ -5,7 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Input } from "@/components/ui/input";
 import { Edit3, Save, CheckCircle2, Loader2, AlertCircle } from "lucide-react";
 import apiClient from "@/app/api/client";
-import {toast} from "@/hooks/use-toast";
+import {toast} from "@/app/hooks/use-toast";
 
 interface RowData {
     codArticulo: string;

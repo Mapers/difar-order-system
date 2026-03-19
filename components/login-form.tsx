@@ -12,7 +12,7 @@ import { useAuth } from "@/context/authContext"
 import { SmsCheck, SmsSend, UserLoginDTO } from "@/app/services/auth/types"
 import { AuthService } from "@/app/services/auth/AuthService"
 import Image from "next/image"
-import { toast } from "@/hooks/use-toast"
+import { toast } from "@/app/hooks/use-toast"
 
 export function LoginForm() {
   const { signin, sendDni, errors } = useAuth();

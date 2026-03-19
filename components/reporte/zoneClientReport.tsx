@@ -1,4 +1,4 @@
-import { Client, Zone } from '@/interface/report/report-interface';
+import { Client, Zone } from '@/app/types/report/report-interface';
 import React from 'react';
 import ClientRow from './clientRow';
 

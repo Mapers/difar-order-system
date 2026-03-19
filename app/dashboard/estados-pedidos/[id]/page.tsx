@@ -37,7 +37,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Search, Package } from "lucide-react"
 import {getBonificadosRequest, getEscalasRequest, getProductsRequest} from "@/app/api/products";
-import {IPromocionRequest} from "@/interface/order/product-interface";
+import {IPromocionRequest} from "@/app/types/order/product-interface";
 import ModalLoader from "@/components/modal/modalLoader";
 import * as moment from "moment/moment";
 import {ORDER_STATES} from "@/app/dashboard/mis-pedidos/page";

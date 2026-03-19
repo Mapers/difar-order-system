@@ -17,7 +17,7 @@ import {
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
 import { format, parseISO } from "date-fns"
-import { Comprobante } from "@/interface/order/order-interface";
+import { Comprobante } from "@/app/types/order/order-interface";
 import { Sequential } from "@/app/dashboard/configuraciones/page";
 import {RelatedGuidesModal} from "@/app/dashboard/comprobantes/modals/RelatedGuidesModal";
 

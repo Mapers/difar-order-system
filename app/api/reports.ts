@@ -1,6 +1,6 @@
 
 import apiClient from "./client";
-import { Customer, Document } from "@/interface/report/report-interface";
+import { Customer, Document } from "@/app/types/report/report-interface";
 
 export const consultDocClientRequest = async (documento: Document, vendedor: string | null): Promise<any> => {
     if (vendedor) return apiClient.post(`/reportes/consultdocumentclient?vendedor=${vendedor}`, documento)
