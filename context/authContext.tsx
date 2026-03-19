@@ -139,8 +139,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     const ADMIN_ROLE_NAMES = ['admin', 'administrador', 'administrativo', 'gerente'];
 
-    const isAdmin = (): boolean =>
-        ADMIN_ROLE_NAMES.includes(user?.rolDescripcion?.toLowerCase() ?? '');
+    const isAdmin = (): boolean => {
+        const userRole = user?.rolDescripcion?.toLowerCase() ?? '';
+        return ADMIN_ROLE_NAMES.some(adminRole => userRole.includes(adminRole));
+    };
 
     const isVendedor = (): boolean =>
         user?.rolDescripcion?.toLowerCase() === 'vendedor';
