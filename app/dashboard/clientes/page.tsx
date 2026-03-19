@@ -19,7 +19,7 @@ import ModalClientView from "@/components/modal/modalClientView"
 import { SkeletonCardClient, SkeletonClientRow } from "@/components/skeleton/ClientSkeleton"
 
 export default function ClientsPage() {
-  const { user, isAuthenticated, globalConfigs } = useAuth();
+  const { user, isAuthenticated, globalConfigs, isVendedor, isRepresentante } = useAuth();
   const [clients, setClients] = useState<IClient[]>([])
   const [filteredClients, setFilteredClients] = useState<IClient[]>([])
   const [loading, setLoading] = useState(false)
@@ -66,9 +66,9 @@ export default function ClientsPage() {
       const codRepres = user?.codRepres;
 
       const response = await ClientService.getAllClientsByCodVendedor(
-          user?.idRol === 1 ? codVendedor ?? '' : '',
+          isVendedor() ? codVendedor ?? '' : '',
           vistaTablaClientes,
-          user?.idRol === 7 ? codRepres ?? '' : '',
+          isRepresentante() ? codRepres ?? '' : '',
       );
       const rawClients = response?.data || [];
 

@@ -148,7 +148,7 @@ interface Seller {
 }
 
 export default function RutaSemanalPage() {
-    const { user, isAdmin } = useAuth()
+    const { user, isAdmin, isVendedor } = useAuth()
     const [activeTab, setActiveTab] = useState("configuracion")
     const [rutas, setRutas] = useState<Ruta[]>([])
     const [visitasBySeller, setVisitasBySeller] = useState<RutaSeller[]>([])
@@ -516,7 +516,7 @@ export default function RutaSemanalPage() {
             if (selectedSeller !== 'all') {
                 params.push(`vendedor_id=${selectedSeller}`)
             }
-            if (user?.idRol === 1) {
+            if (isVendedor()) {
                 params.push(`vendedor_code=${user.codigo}`)
             }
 
@@ -642,7 +642,7 @@ export default function RutaSemanalPage() {
     }, [sellers, sellerSearch]);
 
     useEffect(() => {
-        if (user?.idRol === 1) {
+        if (isVendedor()) {
             setActiveTab("plan-semanal")
         }
     }, [user])

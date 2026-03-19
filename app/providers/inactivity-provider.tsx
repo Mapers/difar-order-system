@@ -25,12 +25,12 @@ interface InactivityProviderProps {
 }
 
 export function InactivityProvider({ children }: InactivityProviderProps) {
-  const { logout, isAuthenticated, user } = useAuth();
+  const { logout, isAuthenticated, user, isVendedor } = useAuth();
   const [showExpiredModal, setShowExpiredModal] = useState(false);
   const [shouldCheckInactivity, setShouldCheckInactivity] = useState(false);
 
   useEffect(() => {
-    if (user?.idRol === 1) {
+    if (isVendedor()) {
       setShouldCheckInactivity(false);
     } else {
       setShouldCheckInactivity(isAuthenticated);

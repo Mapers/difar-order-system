@@ -80,7 +80,7 @@ export default function DocumentClientPage() {
         combinedData = results.flat();
 
       } else {
-        const response = await consultDocClientRequest(docClient, auth.user?.idRol === 1 ? (auth.user?.codigo || null) : null)
+        const response = await consultDocClientRequest(docClient, auth.isVendedor() ? (auth.user?.codigo || null) : null)
         if (response.status !== 200) throw new Error("Error al consultar documento de cliente")
         combinedData = response?.data?.data || [];
       }

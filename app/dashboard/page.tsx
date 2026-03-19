@@ -21,7 +21,7 @@ export default function Dashboard() {
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const {user, isAdmin} = useAuth();
+  const {user, isAdmin, isVendedor} = useAuth();
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -32,7 +32,7 @@ export default function Dashboard() {
           }),
           apiClient.get('/articulos/stats/count'),
           apiClient.post('/pedidos/stats/count', {
-            seller: (user?.idRol && [1].includes(user.idRol)) ? user.codigo : null,
+            seller: (user?.idRol && isVendedor()) ? user.codigo : null,
           })
         ])
 

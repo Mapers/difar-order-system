@@ -25,8 +25,8 @@ interface IAutocompleteClient {
 
 export default function EstadoCuentaClientePage() {
     const auth = useAuth();
-    const isRepresentative = auth.user?.idRol === 7;
-    const isVendor = auth.user?.idRol === 1;
+    const isRepresentative = auth.isRepresentante();
+    const isVendor = auth.isVendedor();
 
     const [loading, setLoading] = useState(false);
     const [data, setData] = useState<any>(null);
