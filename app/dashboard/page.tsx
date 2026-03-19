@@ -21,14 +21,14 @@ export default function Dashboard() {
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const {user} = useAuth();
+  const {user, isAdmin} = useAuth();
 
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
         const [clientesRes, articulosRes, pedidosRes] = await Promise.all([
           apiClient.post('/clientes/stats/count', {
-            seller: (user?.idRol && [2, 3].includes(user.idRol)) ? user.codigo : null,
+            seller: (user?.idRol && isAdmin()) ? user.codigo : null,
           }),
           apiClient.get('/articulos/stats/count'),
           apiClient.post('/pedidos/stats/count', {

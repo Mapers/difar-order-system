@@ -15,7 +15,7 @@ import {CreateProductModal} from "@/components/lista-precios-lote/CreateProductM
 import {QuickPriceEditModal} from "@/components/lista-precios-lote/QuickPriceEditModal";
 
 export default function PricePage() {
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, isAdmin } = useAuth();
   const { laboratoriesRepres, loadingLab } = useLaboratoriesData();
 
   const [currentDateTime, setCurrentDateTime] = useState({ date: "", time: "" });
@@ -36,7 +36,7 @@ export default function PricePage() {
                   <p className="text-gray-500">Gestión de inventario DIFAR</p>
               </div>
               <div className="flex items-center gap-2">
-                  {user?.idRol && [2, 3].includes(user.idRol) && (
+                  {isAdmin() && (
                       <QuickPriceEditModal
                           filteredData={listData.filteredPricesLot.map(item => ({
                               codArticulo: item.prod_codigo,
@@ -47,7 +47,7 @@ export default function PricePage() {
                           }))}
                       />
                   )}
-                  {user?.idRol && [2, 3].includes(user.idRol) && (
+                  {isAdmin() && (
                       <CreateProductModal
                           laboratories={laboratoriesRepres}
                           user={user}
@@ -111,7 +111,7 @@ export default function PricePage() {
           )}
         </Card>
 
-        <PriceModals modals={modals} user={user} />
+        <PriceModals modals={modals} user={user} isAdmin={isAdmin}  />
       </div>
   );
 }

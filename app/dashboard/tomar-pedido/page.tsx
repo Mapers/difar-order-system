@@ -120,7 +120,7 @@ export default function OrderPage() {
   const [selectedLaboratorio, setSelectedLaboratorio] = useState<string | null>(null);
   const [showLaboratorioModal, setShowLaboratorioModal] = useState(false);
   const [tempSelectedProducts, setTempSelectedProducts] = useState<ISelectedProduct[]>([]);
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const [priceType, setPriceType] = useState<'contado' | 'credito' | 'porMayor' | 'porMenor' | 'custom'>('contado');
   const [isViewModalOpen, setIsViewModalOpen] = useState(false)
   const [viewingProduct, setViewingProduct] = useState<IProduct | null>(null)
@@ -227,9 +227,8 @@ export default function OrderPage() {
   const debouncedFetchClients = async () => {
     setLoading(prev => ({ ...prev, clients: true }));
     try {
-      const isAdmin = [2, 3].includes(user?.idRol || 0);
-      const sellerCode = isAdmin ? "" : (user?.codigo || "");
-      const response = await fetchGetAllClients(sellerCode, isAdmin);
+      const sellerCode = isAdmin() ? "" : (user?.codigo || "");
+      const response = await fetchGetAllClients(sellerCode, isAdmin());
       if (response.data?.data?.data.length === 0) {
         setClients([])
       } else {
@@ -349,7 +348,7 @@ export default function OrderPage() {
   useEffect(() => {
     if (user) {
       debouncedFetchClients();
-      if (user?.idRol && [2, 3].includes(user.idRol)) {
+      if (isAdmin()) {
         fetchVendedores();
       }
     }
@@ -608,7 +607,7 @@ export default function OrderPage() {
         referenciaDireccion: referenciaDireccion,
         fechaPedido: moment(new Date()).format('yyyy-MM-DD'),
         usuario: 1,
-        vendedorPedido: (user?.idRol && [2, 3].includes(user.idRol)) ? seller.codigo : user?.codigo,
+        vendedorPedido: isAdmin() ? seller.codigo : user?.codigo,
         represPedido: user?.codRepres || null,
         detalles: selectedProducts.map(item => ({
           iditemPedido: item.product.IdArticulo,
@@ -760,7 +759,7 @@ export default function OrderPage() {
   const handleAutoCreateClient = async () => {
     setIsAutoCreating(true);
     try {
-      const sellerCode = (user?.idRol && [2, 3].includes(user.idRol)) ? (seller?.codigo || "") : (user?.codigo || "");
+      const sellerCode = isAdmin() ? (seller?.codigo || "") : (user?.codigo || "");
 
       const res = await apiClient.post('/clientes/auto-create-mifact', {
         numeroDocumento: search.client.trim(),
@@ -805,7 +804,7 @@ export default function OrderPage() {
   const isStepValid = () => {
     switch (currentStep) {
       case 0: // Client step
-        return !!client && currency && condition && ((user?.idRol && [2, 3].includes(user.idRol)) ? (!!seller) : true)
+        return !!client && currency && condition && (isAdmin() ? (!!seller) : true)
       case 1:
         return selectedProducts.length > 0
       default:
@@ -987,7 +986,7 @@ export default function OrderPage() {
                   </div>
                 ) : null}
               </div>
-              {(selectedClient && (user?.idRol && [2, 3].includes(user.idRol))) && (
+              {(selectedClient && isAdmin()) && (
                 <Combobox<Seller>
                   items={sellersFiltered}
                   value={seller?.codigo ?? null}

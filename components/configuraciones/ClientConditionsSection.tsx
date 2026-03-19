@@ -22,7 +22,7 @@ interface ClientConditionsSectionProps {
 }
 
 export default function ClientConditionsSection({ onOpenModalChange }: ClientConditionsSectionProps) {
-    const { user } = useAuth();
+    const { user, isAdmin } = useAuth();
     const [data, setData] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
     const [loadingSave, setLoadingSave] = useState(false)
@@ -57,9 +57,8 @@ export default function ClientConditionsSection({ onOpenModalChange }: ClientCon
     useEffect(() => {
         const loadInitialData = async () => {
             try {
-                const isAdmin = [2, 3].includes(user?.idRol || 0);
-                const sellerCode = isAdmin ? "" : (user?.codigo || "");
-                const resCli = await fetchGetAllClients(sellerCode, isAdmin);
+                const sellerCode = isAdmin() ? "" : (user?.codigo || "");
+                const resCli = await fetchGetAllClients(sellerCode, isAdmin());
                 const clientes = resCli.data?.data?.data || resCli.data?.data || [];
                 setClientOptions(clientes);
 

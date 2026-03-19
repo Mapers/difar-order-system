@@ -17,7 +17,7 @@ const formatDateToDDMMYYYY = (dateString: string) => {
     } catch (e) { return dateString; }
 };
 
-export const PriceModals = ({ modals, user }: any) => {
+export const PriceModals = ({ modals, user, isAdmin }: any) => {
     const { lots, prices, kardex, selectedProduct } = modals;
 
     return (
@@ -117,7 +117,7 @@ export const PriceModals = ({ modals, user }: any) => {
                         </div>
 
                         {/* Botones de Acción */}
-                        {user?.idRol && [2, 3].includes(user.idRol) && (
+                        {isAdmin() && (
                             <div className="flex justify-end">
                                 {!prices.isEditing ? (
                                     <Button variant="outline" onClick={() => prices.setIsEditing(true)} className="gap-1">
@@ -209,7 +209,7 @@ export const PriceModals = ({ modals, user }: any) => {
                                     <TableHead className="text-right">Ingreso</TableHead>
                                     <TableHead className="text-right">Salida</TableHead>
                                     <TableHead className="text-right">Vta Total</TableHead>
-                                    {user?.idRol && [2, 3].includes(user.idRol) && <TableHead>Cliente/Proveedor</TableHead>}
+                                    {isAdmin() && <TableHead>Cliente/Proveedor</TableHead>}
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -222,7 +222,7 @@ export const PriceModals = ({ modals, user }: any) => {
                                         <TableCell className="text-right text-green-600 font-medium">{mov.cantidad_ingresada > 0 ? `+${Number(mov.cantidad_ingresada).toFixed(2)}` : '-'}</TableCell>
                                         <TableCell className="text-right text-red-600 font-medium">{mov.cantidad_saliente > 0 ? `-${Number(mov.cantidad_saliente).toFixed(2)}` : '-'}</TableCell>
                                         <TableCell className="text-right font-mono">S/ {Number(mov.vta_total).toFixed(2)}</TableCell>
-                                        {user?.idRol && [2, 3].includes(user.idRol) && (
+                                        {isAdmin() && (
                                             <TableCell className="text-xs max-w-[200px] truncate" title={mov.cliente}>{mov.cliente}</TableCell>
                                         )}
                                     </TableRow>

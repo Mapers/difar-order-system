@@ -148,7 +148,7 @@ interface Seller {
 }
 
 export default function RutaSemanalPage() {
-    const { user } = useAuth()
+    const { user, isAdmin } = useAuth()
     const [activeTab, setActiveTab] = useState("configuracion")
     const [rutas, setRutas] = useState<Ruta[]>([])
     const [visitasBySeller, setVisitasBySeller] = useState<RutaSeller[]>([])
@@ -411,8 +411,8 @@ export default function RutaSemanalPage() {
         }
     }
 
-    const canAccessConfiguracion = user?.idRol && [2, 3].includes(user.idRol)
-    const canAccessHistorial = user?.idRol && [2, 3].includes(user.idRol)
+    const canAccessConfiguracion = isAdmin()
+    const canAccessHistorial = isAdmin()
 
     const fetchSellers = async () => {
         try {
@@ -1009,7 +1009,7 @@ export default function RutaSemanalPage() {
                 )}
 
                 <TabsContent value="plan-semanal" className="space-y-6">
-                    {user?.idRol && [2, 3].includes(user.idRol) ? (
+                    {isAdmin() ? (
                         <Card>
                             <CardContent className="pt-6">
                                 <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">

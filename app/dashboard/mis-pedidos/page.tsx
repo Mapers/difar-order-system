@@ -228,9 +228,8 @@ export default function MyOrdersPage() {
   const debouncedFetchClients = async () => {
     setLoadingClients(true);
     try {
-      const isAdmin = [2, 3].includes(auth.user?.idRol || 0);
-      const sellerCode = isAdmin ? "" : (auth.user?.codigo || "");
-      const response = await fetchGetAllClients(sellerCode, isAdmin);
+      const sellerCode = auth.isAdmin() ? "" : (auth.user?.codigo || "");
+      const response = await fetchGetAllClients(sellerCode, auth.isAdmin());
       if (response.data?.data?.data.length === 0) {
         setClients([])
       } else {

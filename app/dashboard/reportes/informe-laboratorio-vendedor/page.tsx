@@ -22,9 +22,9 @@ import {Laboratorio} from "@/app/types/user-types";
 
 export default function LabSellerReportPage() {
     const auth = useAuth()
-    const isManagerOrAdmin = [2, 3].includes(auth.user?.idRol || 0);
-    const isRepresentative = auth.user?.idRol === 7;
-    const isVendor = auth.user?.idRol === 1;
+    const isManagerOrAdmin = auth.isAdmin();
+    const isRepresentative = auth.isRepresentante();
+    const isVendor = auth.isVendedor();
 
     const [loading, setLoading] = useState(false);
     const [data, setData] = useState<LabSellerReportData[]>([]);
