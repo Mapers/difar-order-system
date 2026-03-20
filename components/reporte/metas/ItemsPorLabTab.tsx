@@ -7,11 +7,11 @@ import { Button } from "@/components/ui/button"
 import { ChevronDown, ChevronRight, Search } from "lucide-react"
 import { ILabDashboard, IItemDashboard, FilterStatus, ItemSortMode } from "@/app/types/metas-types"
 import { fmtMoney, getStatusColor, getLabColor, calcPct } from "@/app/utils/metas-helpers"
-import ProgressBar from "@/components/reporte/metas/ProgressBar";
-import StatusChip from "@/components/reporte/metas/StatusChip";
-import MiniDonut from "@/components/reporte/metas/MiniDonut";
-import MiniGauge from "@/components/reporte/metas/MiniGauge";
-import ItemDetailModal, { ItemWithComputed, ItemModalType } from "@/components/reporte/metas/ItemDetailModal";
+import ProgressBar from "@/components/reporte/metas/ProgressBar"
+import StatusChip from "@/components/reporte/metas/StatusChip"
+import MiniDonut from "@/components/reporte/metas/MiniDonut"
+import MiniGauge from "@/components/reporte/metas/MiniGauge"
+import ItemDetailModal, { ItemWithComputed, ItemModalType } from "@/components/reporte/metas/ItemDetailModal"
 
 interface ItemsPorLabTabProps {
     laboratorios: ILabDashboard[];
@@ -39,9 +39,7 @@ export default function ItemsPorLabTab({ laboratorios, items }: ItemsPorLabTabPr
     const labGroups = useMemo(() => {
         const groups = laboratorios.map(lab => {
             const labItems = items
-                .filter(i => {
-                    return i.id_meta_lab === lab.id_meta_lab;
-                })
+                .filter(i => i.id_meta_lab === lab.id_meta_lab)
                 .map(item => ({
                     ...item,
                     avPct: Number(item.pct_avance_monto || 0),
@@ -50,12 +48,7 @@ export default function ItemsPorLabTab({ laboratorios, items }: ItemsPorLabTabPr
                         ? Math.round(Number(item.venta_real) / Number(lab.venta_real) * 100)
                         : 0
                 }));
-
-            return {
-                ...lab,
-                pct: Number(lab.pct_avance_monto || 0),
-                labItems,
-            };
+            return { ...lab, pct: Number(lab.pct_avance_monto || 0), labItems };
         });
 
         let filtered = groups;
@@ -78,7 +71,7 @@ export default function ItemsPorLabTab({ laboratorios, items }: ItemsPorLabTabPr
     ];
 
     const sortBtns: { key: ItemSortMode; label: string }[] = [
-        { key: "contribucion", label: "% Contribución" },
+        { key: "contribucion", label: "% Contrib." },
         { key: "avance", label: "% Avance S/" },
         { key: "unidades", label: "Unidades" },
     ];
@@ -89,7 +82,12 @@ export default function ItemsPorLabTab({ laboratorios, items }: ItemsPorLabTabPr
                 <CardContent className="p-4 space-y-3">
                     <div className="relative">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                        <Input placeholder="Buscar laboratorio..." value={search} onChange={e => setSearch(e.target.value)} className="pl-10 bg-slate-50" />
+                        <Input
+                            placeholder="Buscar laboratorio..."
+                            value={search}
+                            onChange={e => setSearch(e.target.value)}
+                            className="pl-10 bg-slate-50"
+                        />
                     </div>
                     <div className="flex flex-wrap items-center justify-between gap-2">
                         <div className="flex items-center gap-1.5 flex-wrap">
@@ -120,7 +118,7 @@ export default function ItemsPorLabTab({ laboratorios, items }: ItemsPorLabTabPr
             <div className="space-y-3">
                 {labGroups.map((group, gIdx) => {
                     const isOpen = openLabs.has(group.id_meta_lab);
-                    const [c1, c2] = getStatusColor(group.pct);
+                    const [c1] = getStatusColor(group.pct);
                     const color = getLabColor(gIdx);
 
                     const sortedItems = [...group.labItems].sort((a, b) => {
@@ -137,8 +135,12 @@ export default function ItemsPorLabTab({ laboratorios, items }: ItemsPorLabTabPr
                                 onClick={() => toggleLab(group.id_meta_lab)}
                             >
                                 <div className="flex items-center gap-2">
-                                    {isOpen ? <ChevronDown className="h-4 w-4 text-slate-400" /> : <ChevronRight className="h-4 w-4 text-slate-400" />}
-                                    <span className="font-semibold text-sm" style={{ color }}>{group.nombre_lab || `Lab ${group.id_linea_ge}`}</span>
+                                    {isOpen
+                                        ? <ChevronDown className="h-4 w-4 text-slate-400" />
+                                        : <ChevronRight className="h-4 w-4 text-slate-400" />}
+                                    <span className="font-semibold text-sm" style={{ color }}>
+                                        {group.nombre_lab || `Lab ${group.id_linea_ge}`}
+                                    </span>
                                     <span className="text-[11px] text-slate-400">{sortedItems.length} ítems</span>
                                 </div>
                                 <div className="flex items-center gap-3">
@@ -155,67 +157,180 @@ export default function ItemsPorLabTab({ laboratorios, items }: ItemsPorLabTabPr
 
                             {isOpen && (
                                 <div>
-                                    <div className="grid grid-cols-[2fr_90px_90px_80px_70px_70px_70px] gap-2 px-4 py-2 border-t border-b border-slate-100 text-[10px] uppercase tracking-wider text-slate-400 font-semibold">
-                                        <span>Ítem / Producto</span>
-                                        <span className="text-right">Venta S/</span>
-                                        <span className="text-right">Cuota S/</span>
-                                        <span className="text-center">Unidades</span>
-                                        <span className="text-center">Contrib.</span>
-                                        <span className="text-center">Avance</span>
-                                        <span className="text-center">Estado</span>
-                                    </div>
-
-                                    {sortedItems.map((item, idx) => {
-                                        const [sc1] = getStatusColor(item.avPct);
-                                        const [uc1] = getStatusColor(item.uPct);
-                                        return (
-                                            <div key={item.id_meta_item}
-                                                 className="grid grid-cols-[2fr_90px_90px_80px_70px_70px_70px] gap-2 px-4 py-2.5 border-b border-slate-50 hover:bg-slate-50 items-center transition-colors"
-                                            >
-                                                <div className="flex items-center gap-2">
-                                                    <div className="w-5 h-5 rounded flex items-center justify-center text-[9px] font-bold shrink-0"
-                                                         style={{ background: `${color}15`, color }}>
-                                                        {idx + 1}
+                                    <div className="lg:hidden divide-y divide-slate-100 border-t border-slate-100">
+                                        {sortedItems.map((item, idx) => {
+                                            const [sc1] = getStatusColor(item.avPct);
+                                            const [uc1] = getStatusColor(item.uPct);
+                                            return (
+                                                <div key={item.id_meta_item} className="p-3 space-y-2 bg-white">
+                                                    <div className="flex items-start justify-between gap-2">
+                                                        <div className="flex items-center gap-2 min-w-0">
+                                                            <div
+                                                                className="w-5 h-5 rounded flex items-center justify-center text-[9px] font-bold shrink-0"
+                                                                style={{ background: `${color}15`, color }}
+                                                            >
+                                                                {idx + 1}
+                                                            </div>
+                                                            <span className="text-xs font-medium text-slate-800 line-clamp-2">
+                                                                {item.nombre_articulo || item.cod_articulo}
+                                                            </span>
+                                                        </div>
+                                                        <StatusChip pct={item.avPct} />
                                                     </div>
-                                                    <span className="text-xs font-medium truncate">{item.nombre_articulo || item.cod_articulo}</span>
+
+                                                    <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 pl-7">
+                                                        <div>
+                                                            <p className="text-[9px] text-slate-400 uppercase">Venta S/</p>
+                                                            <p className="text-xs font-semibold text-slate-800">{fmtMoney(Number(item.venta_real))}</p>
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-[9px] text-slate-400 uppercase">Cuota S/</p>
+                                                            <p className="text-xs text-slate-500">{fmtMoney(Number(item.meta_monto))}</p>
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-[9px] text-slate-400 uppercase">Contrib.</p>
+                                                            <p className="text-xs font-bold" style={{ color }}>{item.contrib}%</p>
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-[9px] text-slate-400 uppercase">Avance S/</p>
+                                                            <p className="text-xs font-bold" style={{ color: sc1 }}>{item.avPct}%</p>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="pl-7 flex items-center gap-3">
+                                                        <button
+                                                            className="flex items-center gap-1.5 text-[10px] text-sky-600 hover:text-sky-700"
+                                                            onClick={e => {
+                                                                e.stopPropagation();
+                                                                setModalItem(item);
+                                                                setModalType('unidades');
+                                                                setModalLabColor(color);
+                                                            }}
+                                                        >
+                                                            <MiniDonut pct={item.uPct} size={28} strokeWidth={3} />
+                                                            <span>{Number(item.u_vendidas).toLocaleString()}/{Number(item.meta_cantidad).toLocaleString()} uds</span>
+                                                        </button>
+                                                        <button
+                                                            className="text-[10px] text-sky-600 hover:text-sky-700"
+                                                            onClick={e => {
+                                                                e.stopPropagation();
+                                                                setModalItem(item);
+                                                                setModalType('avance');
+                                                                setModalLabColor(color);
+                                                            }}
+                                                        >
+                                                            Ver avance S/ →
+                                                        </button>
+                                                    </div>
+
+                                                    <div className="pl-7">
+                                                        <ProgressBar pct={item.avPct} height="h-1.5" />
+                                                    </div>
                                                 </div>
-                                                <div className="text-right">
-                                                    <p className="text-xs font-semibold">{fmtMoney(Number(item.venta_real))}</p>
-                                                    <ProgressBar pct={item.avPct} height="h-[3px]" className="mt-0.5" />
+                                            );
+                                        })}
+
+                                        <div className="p-3 bg-slate-50 border-t border-slate-200">
+                                            <div className="grid grid-cols-2 gap-2">
+                                                <div>
+                                                    <p className="text-[9px] text-slate-400 uppercase">Total venta</p>
+                                                    <p className="text-sm font-bold" style={{ color }}>{fmtMoney(Number(group.venta_real))}</p>
                                                 </div>
-                                                <div className="text-right text-xs text-slate-400">{fmtMoney(Number(item.meta_monto))}</div>
-                                                <div
-                                                    className="flex flex-col items-center gap-0.5 cursor-pointer hover:opacity-70 transition-opacity"
-                                                    onClick={e => { e.stopPropagation(); setModalItem(item); setModalType('unidades'); setModalLabColor(color); }}
-                                                >
-                                                    <MiniDonut pct={item.uPct} size={36} strokeWidth={4} />
-                                                    <p className="text-[9px] text-slate-400">{Number(item.u_vendidas).toLocaleString()} / {Number(item.meta_cantidad).toLocaleString()}</p>
+                                                <div>
+                                                    <p className="text-[9px] text-slate-400 uppercase">Cuota total</p>
+                                                    <p className="text-sm text-slate-500">{fmtMoney(Number(group.meta_monto))}</p>
                                                 </div>
-                                                <div className="text-center">
-                                                    <p className="text-sm font-bold" style={{ color }}>{item.contrib}%</p>
-                                                    <p className="text-[9px] text-slate-400">del lab</p>
-                                                </div>
-                                                <div
-                                                    className="flex justify-center cursor-pointer hover:opacity-70 transition-opacity"
-                                                    onClick={e => { e.stopPropagation(); setModalItem(item); setModalType('avance'); setModalLabColor(color); }}
-                                                >
-                                                    <MiniGauge pct={item.avPct} width={56} height={34} />
-                                                </div>
-                                                <div className="text-center">
-                                                    <StatusChip pct={item.avPct} />
+                                                <div className="col-span-2">
+                                                    <ProgressBar pct={group.pct} height="h-2" />
+                                                    <div className="flex justify-between mt-1">
+                                                        <span className="text-[10px] text-slate-400">{sortedItems.length} ítems · 100% contrib.</span>
+                                                        <span className="text-[10px] font-bold" style={{ color }}>{group.pct}% avance</span>
+                                                    </div>
                                                 </div>
                                             </div>
-                                        );
-                                    })}
+                                        </div>
+                                    </div>
 
-                                    <div className="grid grid-cols-[2fr_90px_90px_80px_70px_70px_70px] gap-2 px-4 py-2.5 bg-slate-50 border-t border-slate-200 items-center">
-                                        <span className="text-[11px] text-slate-500 font-semibold">TOTAL · {sortedItems.length} ítems</span>
-                                        <span className="text-right text-xs font-bold" style={{ color }}>{fmtMoney(Number(group.venta_real))}</span>
-                                        <span className="text-right text-xs text-slate-400">{fmtMoney(Number(group.meta_monto))}</span>
-                                        <span className="text-center text-[11px] text-slate-500 font-semibold">{group.pct}% cumpl.</span>
-                                        <span className="text-center text-xs font-bold text-slate-400">100%</span>
-                                        <span className="text-center text-xs font-bold" style={{ color }}>{group.pct}%</span>
-                                        <span className="text-center"><StatusChip pct={group.pct} /></span>
+                                    <div className="hidden lg:block">
+                                        <div className="grid grid-cols-[2fr_90px_90px_80px_70px_70px_70px] gap-2 px-4 py-2 border-t border-b border-slate-100 text-[10px] uppercase tracking-wider text-slate-400 font-semibold">
+                                            <span>Ítem / Producto</span>
+                                            <span className="text-right">Venta S/</span>
+                                            <span className="text-right">Cuota S/</span>
+                                            <span className="text-center">Unidades</span>
+                                            <span className="text-center">Contrib.</span>
+                                            <span className="text-center">Avance</span>
+                                            <span className="text-center">Estado</span>
+                                        </div>
+
+                                        {sortedItems.map((item, idx) => {
+                                            const [sc1] = getStatusColor(item.avPct);
+                                            const [uc1] = getStatusColor(item.uPct);
+                                            return (
+                                                <div
+                                                    key={item.id_meta_item}
+                                                    className="grid grid-cols-[2fr_90px_90px_80px_70px_70px_70px] gap-2 px-4 py-2.5 border-b border-slate-50 hover:bg-slate-50 items-center transition-colors"
+                                                >
+                                                    <div className="flex items-center gap-2">
+                                                        <div
+                                                            className="w-5 h-5 rounded flex items-center justify-center text-[9px] font-bold shrink-0"
+                                                            style={{ background: `${color}15`, color }}
+                                                        >
+                                                            {idx + 1}
+                                                        </div>
+                                                        <span className="text-xs font-medium truncate">
+                                                            {item.nombre_articulo || item.cod_articulo}
+                                                        </span>
+                                                    </div>
+                                                    <div className="text-right">
+                                                        <p className="text-xs font-semibold">{fmtMoney(Number(item.venta_real))}</p>
+                                                        <ProgressBar pct={item.avPct} height="h-[3px]" className="mt-0.5" />
+                                                    </div>
+                                                    <div className="text-right text-xs text-slate-400">{fmtMoney(Number(item.meta_monto))}</div>
+                                                    <div
+                                                        className="flex flex-col items-center gap-0.5 cursor-pointer hover:opacity-70 transition-opacity"
+                                                        onClick={e => {
+                                                            e.stopPropagation();
+                                                            setModalItem(item);
+                                                            setModalType('unidades');
+                                                            setModalLabColor(color);
+                                                        }}
+                                                    >
+                                                        <MiniDonut pct={item.uPct} size={36} strokeWidth={4} />
+                                                        <p className="text-[9px] text-slate-400">
+                                                            {Number(item.u_vendidas).toLocaleString()} / {Number(item.meta_cantidad).toLocaleString()}
+                                                        </p>
+                                                    </div>
+                                                    <div className="text-center">
+                                                        <p className="text-sm font-bold" style={{ color }}>{item.contrib}%</p>
+                                                        <p className="text-[9px] text-slate-400">del lab</p>
+                                                    </div>
+                                                    <div
+                                                        className="flex justify-center cursor-pointer hover:opacity-70 transition-opacity"
+                                                        onClick={e => {
+                                                            e.stopPropagation();
+                                                            setModalItem(item);
+                                                            setModalType('avance');
+                                                            setModalLabColor(color);
+                                                        }}
+                                                    >
+                                                        <MiniGauge pct={item.avPct} width={56} height={34} />
+                                                    </div>
+                                                    <div className="text-center">
+                                                        <StatusChip pct={item.avPct} />
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+
+                                        <div className="grid grid-cols-[2fr_90px_90px_80px_70px_70px_70px] gap-2 px-4 py-2.5 bg-slate-50 border-t border-slate-200 items-center">
+                                            <span className="text-[11px] text-slate-500 font-semibold">TOTAL · {sortedItems.length} ítems</span>
+                                            <span className="text-right text-xs font-bold" style={{ color }}>{fmtMoney(Number(group.venta_real))}</span>
+                                            <span className="text-right text-xs text-slate-400">{fmtMoney(Number(group.meta_monto))}</span>
+                                            <span className="text-center text-[11px] text-slate-500 font-semibold">{group.pct}% cumpl.</span>
+                                            <span className="text-center text-xs font-bold text-slate-400">100%</span>
+                                            <span className="text-center text-xs font-bold" style={{ color }}>{group.pct}%</span>
+                                            <span className="text-center"><StatusChip pct={group.pct} /></span>
+                                        </div>
                                     </div>
                                 </div>
                             )}

@@ -84,7 +84,12 @@ export default function LaboratoriosTab({ laboratorios }: LaboratoriosTabProps) 
                 <CardContent className="p-4 space-y-3">
                     <div className="relative">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                        <Input placeholder="Buscar laboratorio..." value={search} onChange={e => setSearch(e.target.value)} className="pl-10 bg-slate-50" />
+                        <Input
+                            placeholder="Buscar laboratorio..."
+                            value={search}
+                            onChange={e => setSearch(e.target.value)}
+                            className="pl-10 bg-slate-50"
+                        />
                     </div>
                     <div className="flex flex-wrap items-center justify-between gap-2">
                         <div className="flex items-center gap-1.5 flex-wrap">
@@ -112,12 +117,77 @@ export default function LaboratoriosTab({ laboratorios }: LaboratoriosTabProps) 
                 </CardContent>
             </Card>
 
-            <Card className="shadow-sm overflow-hidden">
+            <div className="lg:hidden space-y-3">
+                {filtered.length === 0 ? (
+                    <Card><CardContent className="py-8 text-center text-slate-400 text-sm">Sin resultados</CardContent></Card>
+                ) : filtered.map((l, i) => {
+                    const [c1] = getStatusColor(l.pct);
+                    const color = getLabColor(i);
+                    const pendiente = Number(l.monto_pendiente || 0);
+                    return (
+                        <Card
+                            key={l.id_meta_lab}
+                            className="shadow-sm overflow-hidden"
+                            style={{ borderLeft: `4px solid ${color}` }}
+                        >
+                            <CardContent className="p-4 space-y-3">
+                                <div className="flex items-center justify-between gap-2">
+                                    <div className="flex items-center gap-2 min-w-0">
+                                        <div
+                                            className="w-9 h-9 rounded-lg flex items-center justify-center text-xs font-bold shrink-0"
+                                            style={{ background: `${color}22`, color }}
+                                        >
+                                            {getInitials(l.nombre_lab || String(l.id_linea_ge))}
+                                        </div>
+                                        <p className="text-sm font-bold truncate" style={{ color }}>
+                                            {l.nombre_lab || `Lab ${l.id_linea_ge}`}
+                                        </p>
+                                    </div>
+                                    <StatusChip pct={l.pct} />
+                                </div>
+
+                                <div className="space-y-1">
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-[11px] text-slate-500">Avance</span>
+                                        <span className="text-sm font-bold" style={{ color: c1 }}>{l.pct}%</span>
+                                    </div>
+                                    <ProgressBar pct={l.pct} height="h-2" />
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-100">
+                                    <div>
+                                        <p className="text-[10px] text-slate-400 uppercase tracking-wide">Venta</p>
+                                        <p className="text-sm font-bold text-slate-800">{fmtMoney(Number(l.venta_real))}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-[10px] text-slate-400 uppercase tracking-wide">Cuota</p>
+                                        <p className="text-sm font-semibold text-slate-500">{fmtMoney(Number(l.meta_monto))}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-[10px] text-slate-400 uppercase tracking-wide">Clientes</p>
+                                        <p className="text-sm font-semibold text-slate-700">
+                                            {Number(l.clientes_atendidos)}/{Number(l.meta_clientes)}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <p className="text-[10px] text-slate-400 uppercase tracking-wide">Pendiente</p>
+                                        <p className="text-sm font-semibold" style={{ color: c1 }}>
+                                            {pendiente > 0 ? fmtMoney(pendiente) : "✓ Logrado"}
+                                        </p>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    );
+                })}
+            </div>
+
+            <Card className="shadow-sm overflow-hidden hidden lg:block">
                 <CardContent className="p-0">
                     <div className="overflow-x-auto">
                         <table className="w-full text-xs min-w-[560px]">
                             <thead>
-                            <tr className="border-b border-slate-200">
+                            <tr className="border-b border-slate-200 bg-slate-50">
                                 <th className="text-left px-3 py-2.5 text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Laboratorio</th>
                                 <th className="text-left px-3 py-2.5 text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Clientes</th>
                                 <th className="text-left px-3 py-2.5 text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Venta S/</th>
@@ -137,8 +207,10 @@ export default function LaboratoriosTab({ laboratorios }: LaboratoriosTabProps) 
                                     <tr key={l.id_meta_lab} className="border-b border-slate-50 hover:bg-slate-50 transition-colors">
                                         <td className="px-3 py-2.5">
                                             <div className="flex items-center gap-2">
-                                                <div className="w-6 h-6 rounded-md flex items-center justify-center text-[10px] font-bold shrink-0"
-                                                     style={{ background: `${color}22`, color }}>
+                                                <div
+                                                    className="w-6 h-6 rounded-md flex items-center justify-center text-[10px] font-bold shrink-0"
+                                                    style={{ background: `${color}22`, color }}
+                                                >
                                                     {getInitials(l.nombre_lab || String(l.id_linea_ge))}
                                                 </div>
                                                 <b style={{ color }}>{l.nombre_lab || `Lab ${l.id_linea_ge}`}</b>
