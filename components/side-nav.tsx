@@ -29,7 +29,7 @@ import {
   LogOut,
   ChevronDown,
   UserCog,
-  Notebook, Gift, Map, Settings, Shield, Hash, User
+  Notebook, Gift, Map, Settings, Shield, Hash, User, GoalIcon
 } from "lucide-react";
 
 const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -45,6 +45,7 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   "/dashboard/reportes/documento-cliente": LineChart,
   "/dashboard/reportes/cobrar-cliente": LineChart,
   "/dashboard/reportes/cobrar-vendedor": LineChart,
+  "/dashboard/reportes/metas": GoalIcon,
   "/dashboard/usuarios": UserCog,
   "/dashboard/roles": Notebook,
   "/dashboard/escalas-bonificaciones": Gift,

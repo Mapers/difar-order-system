@@ -14,7 +14,7 @@ import {
   Package,
   ShoppingCart,
   FileText,
-  GitBranch, Receipt, BarChart2, LineChart, UserCog, Notebook, Gift, Map, Settings, User
+  GitBranch, Receipt, BarChart2, LineChart, UserCog, Notebook, Gift, Map, Settings, User, GoalIcon
 } from "lucide-react";
 import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
@@ -28,7 +28,6 @@ import {
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/authContext";
-import { NavItem, NAV_ITEMS, Role } from "@/constants/roles";
 import { DialogTitle as RadixDialogTitle } from "@radix-ui/react-dialog";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden"
 import {ScrollArea} from "@/components/ui/scroll-area";
@@ -46,6 +45,7 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   "/dashboard/reportes/documento-cliente": LineChart,
   "/dashboard/reportes/cobrar-cliente": LineChart,
   "/dashboard/reportes/cobrar-vendedor": LineChart,
+  "/dashboard/reportes/metas": GoalIcon,
   "/dashboard/usuarios": UserCog,
   "/dashboard/roles": Notebook,
   "/dashboard/escalas-bonificaciones": Gift,
