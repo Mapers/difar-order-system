@@ -8,7 +8,7 @@ import {
     BarChart2,
     LineChart,
     GitBranch,
-    Receipt
+    Receipt, GoalIcon
 } from "lucide-react";
 
 export interface NavItem {
@@ -115,6 +115,11 @@ export const NAV_ITEMS: NavItem[] = [
                 title: "Reporte Kardex Item",
                 href: "/dashboard/reportes/item-kardex",
                 icon: LineChart,
+            },
+            {
+                title: "Metas por Vendedor",
+                href: "/dashboard/reportes/metas",
+                icon: GoalIcon,
             },
         ],
     },
