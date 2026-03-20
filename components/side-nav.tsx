@@ -31,27 +31,7 @@ import {
   UserCog,
   Notebook, Gift, Map, Settings, Shield, Hash, User, GoalIcon
 } from "lucide-react";
-
-const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
-  "/dashboard": Home,
-  "/dashboard/clientes": Users,
-  "/dashboard/lista-precios-lote": Tags,
-  "/dashboard/productos": Package,
-  "/dashboard/tomar-pedido": ShoppingCart,
-  "/dashboard/mis-pedidos": FileText,
-  "/dashboard/estados-pedidos": GitBranch,
-  "/dashboard/comprobantes": Receipt,
-  "/dashboard/reportes": BarChart2,
-  "/dashboard/reportes/documento-cliente": LineChart,
-  "/dashboard/reportes/cobrar-cliente": LineChart,
-  "/dashboard/reportes/cobrar-vendedor": LineChart,
-  "/dashboard/reportes/metas": GoalIcon,
-  "/dashboard/usuarios": UserCog,
-  "/dashboard/roles": Notebook,
-  "/dashboard/escalas-bonificaciones": Gift,
-  "/dashboard/ruta-semanal": Map,
-  "/dashboard/configuraciones": Settings,
-};
+import {ICON_MAP} from "@/constants/roles";
 
 export function SideNav() {
   const pathname = usePathname();

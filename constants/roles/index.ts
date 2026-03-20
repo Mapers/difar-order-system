@@ -8,7 +8,7 @@ import {
     BarChart2,
     LineChart,
     GitBranch,
-    Receipt, GoalIcon
+    Receipt, GoalIcon, UserCog, Notebook, Gift, Map, Settings
 } from "lucide-react";
 
 export interface NavItem {
@@ -30,97 +30,23 @@ export const NAME_ROLES = {
 
 export type Role = (typeof NAME_ROLES)[keyof typeof NAME_ROLES];
 
-
-export const NAV_ITEMS: NavItem[] = [
-    {
-        title: "Dashboard",
-        href: "/dashboard",
-        icon: Home,
-        roles: [NAME_ROLES.ADMIN],
-    },
-    {
-        title: "Clientes",
-        href: "/dashboard/clientes",
-        icon: Users,
-        roles: [NAME_ROLES.VENDEDOR],
-    },
-    {
-        title: "Lista de precios por lote",
-        href: "/dashboard/lista-precios-lote",
-        icon: Tags,
-        roles: [NAME_ROLES.VENDEDOR],
-    },
-    {
-        title: "Productos",
-        href: "/dashboard/productos",
-        icon: Package,
-        roles: [NAME_ROLES.ADMIN],
-    },
-    {
-        title: "Tomar Pedido",
-        href: "/dashboard/tomar-pedido",
-        icon: ShoppingCart,
-        roles: [NAME_ROLES.ADMIN],
-    },
-    {
-        title: "Mis Pedidos",
-        href: "/dashboard/mis-pedidos",
-        icon: FileText,
-        roles: [NAME_ROLES.ADMIN],
-    },
-    {
-        title: "Estados de Pedidos",
-        href: "/dashboard/estados-pedidos",
-        icon: GitBranch,
-        roles: [NAME_ROLES.ADMIN],
-    },
-    {
-        title: "Comprobantes",
-        href: "/dashboard/comprobantes",
-        icon: Receipt,
-        roles: [NAME_ROLES.ADMIN],
-    },
-    {
-        title: "Reportes",
-        href: "/dashboard/reportes",
-        icon: BarChart2,
-        roles: [NAME_ROLES.ADMIN],
-        children: [
-            {
-                title: "Consulta Documento Cliente",
-                href: "/dashboard/reportes/documento-cliente",
-                icon: LineChart,
-            },
-            {
-                title: "Consulta Saldos Vencidos por Cobrar",
-                href: "/dashboard/reportes/saldos-vencidos",
-                icon: LineChart,
-            },
-            {
-                title: "Consulta Ventas por Vendedor",
-                href: "/dashboard/reportes/informe-laboratorio-vendedor",
-                icon: LineChart,
-            },
-            {
-                title: "Consulta Saldo por Cobrar Cliente",
-                href: "/dashboard/reportes/saldos-cliente",
-                icon: LineChart,
-            },
-            {
-                title: "Consulta Estado Cuenta Cliente",
-                href: "/dashboard/reportes/cuenta-cliente",
-                icon: LineChart,
-            },
-            {
-                title: "Reporte Kardex Item",
-                href: "/dashboard/reportes/item-kardex",
-                icon: LineChart,
-            },
-            {
-                title: "Metas por Vendedor",
-                href: "/dashboard/reportes/metas",
-                icon: GoalIcon,
-            },
-        ],
-    },
-];
+export const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
+    "/dashboard": Home,
+    "/dashboard/clientes": Users,
+    "/dashboard/lista-precios-lote": Tags,
+    "/dashboard/productos": Package,
+    "/dashboard/tomar-pedido": ShoppingCart,
+    "/dashboard/mis-pedidos": FileText,
+    "/dashboard/estados-pedidos": GitBranch,
+    "/dashboard/comprobantes": Receipt,
+    "/dashboard/reportes": BarChart2,
+    "/dashboard/reportes/documento-cliente": LineChart,
+    "/dashboard/reportes/cobrar-cliente": LineChart,
+    "/dashboard/reportes/cobrar-vendedor": LineChart,
+    "/dashboard/reportes/metas": GoalIcon,
+    "/dashboard/usuarios": UserCog,
+    "/dashboard/roles": Notebook,
+    "/dashboard/escalas-bonificaciones": Gift,
+    "/dashboard/ruta-semanal": Map,
+    "/dashboard/configuraciones": Settings,
+};
