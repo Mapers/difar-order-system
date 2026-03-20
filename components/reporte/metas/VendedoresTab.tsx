@@ -139,7 +139,7 @@ export default function VendedoresTab({ vendedores, onVendedorClick }: Vendedore
                                                 </div>
                                             </div>
                                         </td>
-                                        <td className="px-3 py-2.5 text-slate-400">{v.id_meta_lab}</td>
+                                        <td className="px-3 py-2.5 text-slate-400">{v.nombre_lab}</td>
                                         <td className="px-3 py-2.5 font-semibold">{fmtMoney(Number(v.venta_real))}</td>
                                         <td className="px-3 py-2.5 text-slate-400">{fmtMoney(Number(v.meta_monto))}</td>
                                         <td className="px-3 py-2.5 font-bold" style={{ color: c1 }}>{v.pct}%</td>

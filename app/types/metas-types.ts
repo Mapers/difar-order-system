@@ -24,6 +24,7 @@ export interface ILabDashboard {
 export interface IVendedorDashboard {
     id_meta_lab_vend: number;
     id_meta_lab: number;
+    nombre_lab: string;
     cod_vendedor: string;
     nombre_vendedor?: string;
     meta_monto: number;
