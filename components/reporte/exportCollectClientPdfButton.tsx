@@ -162,7 +162,7 @@ const ExportCollectClientPdfButton: React.FC<ExportPdfProps> = ({ data, disabled
                 yPosition -= 30;
 
                 if (!zone.document_dislab || zone.document_dislab.length === 0) {
-                    currentPage.drawText("No hay clientes en esta zona", {
+                    currentPage.drawText("No hay cliente-cobranza en esta zona", {
                         x: margin + 10,
                         y: yPosition,
                         size: 9,
@@ -292,7 +292,7 @@ const ExportCollectClientPdfButton: React.FC<ExportPdfProps> = ({ data, disabled
                         }
                     }
 
-                    yPosition -= 10; // Espacio extra entre clientes
+                    yPosition -= 10; // Espacio extra entre cliente-cobranza
                 }
             }
 

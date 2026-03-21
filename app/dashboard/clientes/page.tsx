@@ -78,7 +78,7 @@ export default function ClientsPage() {
       setFilteredClients(mappedClients);
     } catch (error) {
       console.error("Error fetching clients:", error);
-      setError("Error al cargar los clientes");
+      setError("Error al cargar los cliente-cobranza");
     } finally {
       setLoading(false);
     }
@@ -367,7 +367,7 @@ export default function ClientsPage() {
                       <User className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                       <h3 className="text-lg font-medium text-gray-900 mb-2">No hay clientes</h3>
                       <p className="text-gray-500 mb-4 px-4 text-sm">
-                        {searchTerm ? "No se encontraron clientes que coincidan con tu búsqueda." : "Aún no hay clientes en el sistema."}
+                        {searchTerm ? "No se encontraron cliente-cobranza que coincidan con tu búsqueda." : "Aún no hay cliente-cobranza en el sistema."}
                       </p>
                       <Button onClick={handleCreateNewEvaluation}>
                         <Plus className="mr-2 h-4 w-4" /> Agregar Primer Cliente
@@ -514,7 +514,7 @@ export default function ClientsPage() {
                       ) : (
                           <TableRow>
                             <TableCell colSpan={vistaTablaClientes === '1' ? 7 : 30} className="text-center py-8 text-gray-500">
-                              {error ? 'Error al cargar los clientes' : 'No se encontraron clientes'}
+                              {error ? 'Error al cargar los cliente-cobranza' : 'No se encontraron cliente-cobranza'}
                             </TableCell>
                           </TableRow>
                       )}

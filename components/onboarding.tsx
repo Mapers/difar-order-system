@@ -24,7 +24,7 @@ export function Onboarding() {
     },
     {
       title: "Todo en un Solo Lugar",
-      description: "Accede a clientes, productos y pedidos desde cualquier dispositivo.",
+      description: "Accede a cliente-cobranza, productos y pedidos desde cualquier dispositivo.",
       icon: Devices,
       color: "bg-purple-500",
     },

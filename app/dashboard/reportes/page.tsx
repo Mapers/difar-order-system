@@ -48,7 +48,7 @@ export default function ReportsPage() {
         : `/clientes?page=${page}`
 
       const response = await apiClient(url)
-      if (response.status !== 200) throw new Error("Error al obtener clientes")
+      if (response.status !== 200) throw new Error("Error al obtener cliente-cobranza")
 
       const data = await response.data
       setClients(data.data.data || data)

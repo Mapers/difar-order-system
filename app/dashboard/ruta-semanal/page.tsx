@@ -934,7 +934,7 @@ export default function RutaSemanalPage() {
                                                             {/*<Button*/}
                                                             {/*    variant="outline"*/}
                                                             {/*    size="sm"*/}
-                                                            {/*    onClick={() => verMapaRuta(ruta.clientes, ruta.nombre)}*/}
+                                                            {/*    onClick={() => verMapaRuta(ruta.cliente-cobranza, ruta.nombre)}*/}
                                                             {/*    className="w-full sm:w-auto"*/}
                                                             {/*>*/}
                                                             {/*    <MapPin className="h-4 w-4 mr-1" />*/}

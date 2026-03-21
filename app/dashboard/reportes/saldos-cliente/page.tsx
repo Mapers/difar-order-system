@@ -93,7 +93,7 @@ export default function SaldoCobrarClientePage() {
                         setClientOptions(res.data.data || []);
                     }
                 } catch (error) {
-                    console.error("Error buscando clientes:", error);
+                    console.error("Error buscando cliente-cobranza:", error);
                 } finally {
                     setLoadingOptions(false);
                 }
@@ -209,7 +209,7 @@ export default function SaldoCobrarClientePage() {
                                     <PopoverTrigger asChild>
                                         <Button variant="outline" role="combobox" className={cn("w-full justify-between h-10 font-normal overflow-hidden", selectedClientName && "pr-8 bg-white")}>
                                             <span className="truncate">
-                                                {selectedClientName ? `${selectedClientRuc} - ${selectedClientName}` : "Todos los clientes..."}
+                                                {selectedClientName ? `${selectedClientRuc} - ${selectedClientName}` : "Todos los cliente-cobranza..."}
                                             </span>
                                             {!selectedClientName && <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />}
                                         </Button>

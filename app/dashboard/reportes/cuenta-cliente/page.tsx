@@ -52,7 +52,7 @@ export default function EstadoCuentaClientePage() {
                         setClientOptions(res.data.data || []);
                     }
                 } catch (error) {
-                    console.error("Error buscando clientes:", error);
+                    console.error("Error buscando cliente-cobranza:", error);
                 } finally {
                     setLoadingOptions(false);
                 }

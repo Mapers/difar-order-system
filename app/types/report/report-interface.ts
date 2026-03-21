@@ -47,7 +47,7 @@ export interface Client {
   boddy: Invoice[];
 }
 
-// Interfaz de vendedor con su lista de clientes
+// Interfaz de vendedor con su lista de cliente-cobranza
 export interface Zone {
   CodVend: string;
   nomVend: string;

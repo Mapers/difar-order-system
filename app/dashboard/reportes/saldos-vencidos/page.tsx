@@ -232,7 +232,7 @@ export default function ExpiredBalancesPage() {
                                             className={cn("w-full justify-between h-10 font-normal overflow-hidden", selectedCliente && "pr-8")}
                                         >
                                             <span className="truncate">
-                                                {selectedCliente ? clientesOptions.find(c => c.id === selectedCliente)?.nombre : "Todos los clientes"}
+                                                {selectedCliente ? clientesOptions.find(c => c.id === selectedCliente)?.nombre : "Todos los cliente-cobranza"}
                                             </span>
                                             {!selectedCliente && <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />}
                                         </Button>

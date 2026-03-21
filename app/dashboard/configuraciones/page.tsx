@@ -27,7 +27,7 @@ const sections = [
     {
         id: "condiciones_cliente",
         title: "Condiciones de Pago",
-        description: "Asignación de condiciones de crédito y pago a clientes",
+        description: "Asignación de condiciones de crédito y pago a cliente-cobranza",
         icon: CreditCard,
         color: "purple"
     },
@@ -138,7 +138,7 @@ export default function ConfiguracionesPage() {
                                         : activeSection === "metas"
                                             ? "Administra ciclos, metas por laboratorio, vendedor y producto."
                                             : activeSection === "condiciones_cliente"
-                                                ? "Asigna condiciones de pago a clientes específicos."
+                                                ? "Asigna condiciones de pago a cliente-cobranza específicos."
                                                 : `Configura la numeración para ${activeSection === "secuenciales" ? "facturas y boletas" : "guías de remisión"}`}
                                 </CardDescription>
                             </div>
