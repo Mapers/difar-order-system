@@ -44,7 +44,8 @@ export const decodeToken = (token: string | null | undefined): TokenDecodeResult
             rolDescripcion: decoded.usuario.rol.nombre,
             menus: decoded.menus,
             codRepres: decoded.usuario.codRepres,
-            vendedores: decoded.usuario.vendedores
+            vendedores: decoded.usuario.vendedores,
+            idVendedor: decoded.usuario.idVendedor
         }
         return {
             isValid: true,
