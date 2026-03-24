@@ -3,11 +3,12 @@
 import { useState, useCallback } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import {FileText, Plus, Truck, Settings, CreditCard, Target} from "lucide-react"
+import {FileText, Plus, Truck, Settings, CreditCard, Target, FlaskConical} from "lucide-react"
 import AppConfigSection from "@/components/configuraciones/AppConfigSection";
 import SequentialSection from "@/components/configuraciones/SequentialSection";
 import ClientConditionsSection from "@/components/configuraciones/ClientConditionsSection";
 import MetasConfigSection from "@/components/configuraciones/MetasConfigSection";
+import LaboratoriosSection from "@/components/configuraciones/Laboratoriossection";
 
 const sections = [
     {
@@ -39,6 +40,13 @@ const sections = [
         color: "sky"
     },
     {
+        id:          'laboratorios',
+        title:       'Laboratorios',
+        description: 'Líneas genéticas y laboratorios del sistema',
+        icon:        FlaskConical,
+        color:       'sky',
+    },
+    {
         id: "configuraciones",
         title: "Ajustes del Sistema",
         description: "Variables y llaves de configuración global",
@@ -53,6 +61,7 @@ const iconColorMap: Record<string, string> = {
     condiciones_cliente: "text-purple-600",
     metas: "text-sky-600",
     configuraciones: "text-orange-600",
+    laboratorios: 'text-sky-600',
 }
 
 const activeBgMap: Record<string, string> = {
@@ -61,6 +70,7 @@ const activeBgMap: Record<string, string> = {
     condiciones_cliente: "bg-purple-50 border-purple-500 text-purple-700",
     metas: "bg-sky-50 border-sky-500 text-sky-700",
     configuraciones: "bg-orange-50 border-orange-500 text-orange-700",
+    laboratorios: 'bg-sky-50 border-sky-500 text-sky-700',
 }
 
 const activeIconBg: Record<string, string> = {
@@ -69,6 +79,7 @@ const activeIconBg: Record<string, string> = {
     condiciones_cliente: "bg-purple-100 text-purple-600",
     metas: "bg-sky-100 text-sky-600",
     configuraciones: "bg-orange-100 text-orange-600",
+    laboratorios: 'bg-sky-100 text-sky-600',
 }
 
 export default function ConfiguracionesPage() {
@@ -157,6 +168,8 @@ export default function ConfiguracionesPage() {
                                 <ClientConditionsSection onOpenModalChange={handleSetOpenModalFn} />
                             ) : activeSection === "metas" ? (
                                 <MetasConfigSection onOpenModalChange={handleSetOpenModalFn} />
+                            ) : activeSection === 'laboratorios' ? (
+                            <LaboratoriosSection onOpenModalChange={handleSetOpenModalFn} />
                             ) : (
                                 <SequentialSection
                                     key={activeSection}
