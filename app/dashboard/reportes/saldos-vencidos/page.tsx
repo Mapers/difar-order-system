@@ -5,6 +5,16 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { getExpiredBalancesRequest } from "@/app/api/reports"
 import {Check, ChevronDown, MapPin, RefreshCcw, Search, User, X} from "lucide-react"
+
+const calcDiasVencidos = (fechaVcto: string): number => {
+    if (!fechaVcto) return 0
+    try {
+        const today = new Date()
+        const vcto  = new Date(fechaVcto)
+        if (isNaN(vcto.getTime())) return 0
+        return Math.max(0, Math.floor((today.getTime() - vcto.getTime()) / 86_400_000))
+    } catch { return 0 }
+}
 import { toast } from "@/app/hooks/use-toast"
 import { ExportExpiredBalancesPdf } from "@/components/reporte/exportExpiredBalancesPdf"
 import { ZoneReportSkeleton } from "@/components/skeleton/ZoneReportSkeleton"
@@ -15,6 +25,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@radix-ui/react-popover
 import { Command, CommandInput, CommandList, CommandGroup, CommandItem, CommandEmpty } from "@/components/ui/command"
 import { cn } from "@/lib/utils"
 import {useAuth} from "@/context/authContext";
+import {fmtFecha} from "@/lib/planilla.helper";
 
 interface FilterOptions {
     id: string;
@@ -334,46 +345,78 @@ export default function ExpiredBalancesPage() {
                                                                                     <thead className="text-slate-500 border-b border-slate-200 bg-slate-50">
                                                                                     <tr>
                                                                                         <th className="font-semibold py-2 px-2 whitespace-nowrap">Emisión</th>
+                                                                                        <th className="font-semibold py-2 px-2 whitespace-nowrap">F. Vcto.</th>
+                                                                                        <th className="font-semibold py-2 px-2 text-center whitespace-nowrap">Días Venc.</th>
                                                                                         <th className="font-semibold py-2 px-2 whitespace-nowrap">Documento</th>
                                                                                         <th className="font-semibold py-2 px-2 whitespace-nowrap">Tipo</th>
                                                                                         <th className="font-semibold py-2 px-2 text-right whitespace-nowrap">Saldo (S/)</th>
                                                                                     </tr>
                                                                                     </thead>
                                                                                     <tbody className="divide-y divide-slate-100 font-mono">
-                                                                                    {cliente.documentos.map((doc, dIdx) => (
-                                                                                        <tr key={dIdx} className="hover:bg-slate-50/80">
-                                                                                            <td className="py-2 px-2 whitespace-nowrap">{doc.Fecha_Emision}</td>
-                                                                                            <td className="py-2 px-2 font-medium text-slate-700 whitespace-nowrap">{doc.Serie_Numero}</td>
-                                                                                            <td className="py-2 px-2 whitespace-nowrap">
-                                                                                                <span className="bg-slate-100 px-1.5 py-0.5 rounded text-[10px] md:text-xs">
-                                                                                                    {doc.Abreviatura}
-                                                                                                </span>
+                                                                                    {cliente.documentos.map((doc, dIdx) => {
+                                                                                        const dias = calcDiasVencidos(doc.Fecha_Vcto)
+                                                                                        return (
+                                                                                            <tr key={dIdx} className="hover:bg-slate-50/80">
+                                                                                                <td className="py-2 px-2 whitespace-nowrap">{fmtFecha(doc.Fecha_Emision)}</td>
+                                                                                                <td className="py-2 px-2 whitespace-nowrap text-slate-600">{fmtFecha(doc.Fecha_Vcto)}</td>
+                                                                                                <td className="py-2 px-2 text-center whitespace-nowrap">
+                                                                                                    <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${dias > 90 ? 'bg-red-100 text-red-700' : dias > 30 ? 'bg-orange-100 text-orange-700' : 'bg-yellow-100 text-yellow-700'}`}>
+                                                                                                        {dias}d
+                                                                                                    </span>
+                                                                                                </td>
+                                                                                                <td className="py-2 px-2 font-medium text-slate-700 whitespace-nowrap">{doc.Serie_Numero}</td>
+                                                                                                <td className="py-2 px-2 whitespace-nowrap">
+                                                                                                    <span className="bg-slate-100 px-1.5 py-0.5 rounded text-[10px] md:text-xs">
+                                                                                                        {doc.Abreviatura}
+                                                                                                    </span>
+                                                                                                </td>
+                                                                                                <td className="py-2 px-2 text-right font-bold text-red-600 whitespace-nowrap">
+                                                                                                    {doc.Saldo_Soles.toLocaleString('es-PE', { minimumFractionDigits: 2 })}
+                                                                                                </td>
+                                                                                            </tr>
+                                                                                        )
+                                                                                    })}
+                                                                                    </tbody>
+                                                                                    <tfoot>
+                                                                                        <tr className="border-t-2 border-slate-200 bg-slate-50">
+                                                                                            <td colSpan={5} className="py-1.5 px-2 text-[11px] font-bold text-slate-500 text-right">
+                                                                                                Total cliente:
                                                                                             </td>
-                                                                                            <td className="py-2 px-2 text-right font-bold text-red-600 whitespace-nowrap">
-                                                                                                {doc.Saldo_Soles.toLocaleString('es-PE', { minimumFractionDigits: 2 })}
+                                                                                            <td className="py-1.5 px-2 text-right font-bold text-red-600 whitespace-nowrap text-xs">
+                                                                                                S/ {cliente.totalSolesCliente.toLocaleString('es-PE', { minimumFractionDigits: 2 })}
                                                                                             </td>
                                                                                         </tr>
-                                                                                    ))}
-                                                                                    </tbody>
+                                                                                    </tfoot>
                                                                                 </table>
                                                                             </div>
 
                                                                             <div className="grid grid-cols-1 gap-2 md:hidden">
-                                                                                {cliente.documentos.map((doc, dIdx) => (
-                                                                                    <div key={dIdx} className="flex justify-between items-center border border-slate-100 bg-slate-50 rounded p-2">
-                                                                                        <div className="space-y-1">
-                                                                                            <div className="flex items-center gap-2">
-                                                                                                <span className="font-mono font-bold text-sm text-slate-800">{doc.Serie_Numero}</span>
-                                                                                                <span className="bg-slate-200 px-1.5 py-0.5 rounded text-[10px] text-slate-600 font-medium">{doc.Abreviatura}</span>
+                                                                                {cliente.documentos.map((doc, dIdx) => {
+                                                                                    const dias = calcDiasVencidos(doc.Fecha_Vcto)
+                                                                                    return (
+                                                                                        <div key={dIdx} className="flex justify-between items-start border border-slate-100 bg-slate-50 rounded p-2 gap-2">
+                                                                                            <div className="space-y-1 flex-1">
+                                                                                                <div className="flex items-center gap-2 flex-wrap">
+                                                                                                    <span className="font-mono font-bold text-sm text-slate-800">{doc.Serie_Numero}</span>
+                                                                                                    <span className="bg-slate-200 px-1.5 py-0.5 rounded text-[10px] text-slate-600 font-medium">{doc.Abreviatura}</span>
+                                                                                                    <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${dias > 90 ? 'bg-red-100 text-red-700' : dias > 30 ? 'bg-orange-100 text-orange-700' : 'bg-yellow-100 text-yellow-700'}`}>
+                                                                                                        {dias}d venc.
+                                                                                                    </span>
+                                                                                                </div>
+                                                                                                <p className="text-xs text-slate-500">Emisión: {fmtFecha(doc.Fecha_Emision)}</p>
+                                                                                                <p className="text-xs text-slate-500">Vcto: {fmtFecha(doc.Fecha_Vcto)}</p>
                                                                                             </div>
-                                                                                            <p className="text-xs text-slate-500">Emisión: {doc.Fecha_Emision}</p>
+                                                                                            <div className="text-right shrink-0">
+                                                                                                <p className="text-[10px] uppercase text-slate-400 font-bold mb-0.5">Saldo</p>
+                                                                                                <p className="font-bold text-red-600 text-sm">S/ {doc.Saldo_Soles.toLocaleString('es-PE', { minimumFractionDigits: 2 })}</p>
+                                                                                            </div>
                                                                                         </div>
-                                                                                        <div className="text-right">
-                                                                                            <p className="text-[10px] uppercase text-slate-400 font-bold mb-0.5">Saldo</p>
-                                                                                            <p className="font-bold text-red-600 text-sm">S/ {doc.Saldo_Soles.toLocaleString('es-PE', { minimumFractionDigits: 2 })}</p>
-                                                                                        </div>
-                                                                                    </div>
-                                                                                ))}
+                                                                                    )
+                                                                                })}
+                                                                                <div className="flex justify-between items-center bg-slate-100 border border-slate-200 rounded px-3 py-1.5 mt-1">
+                                                                                    <span className="text-[11px] font-bold text-slate-500">Total cliente</span>
+                                                                                    <span className="font-bold text-red-600 text-xs">S/ {cliente.totalSolesCliente.toLocaleString('es-PE', { minimumFractionDigits: 2 })}</span>
+                                                                                </div>
                                                                             </div>
 
                                                                         </div>
@@ -381,6 +424,14 @@ export default function ExpiredBalancesPage() {
                                                                 </div>
                                                             </div>
                                                         ))}
+                                                    </div>
+
+                                                    {/* Total vendedor */}
+                                                    <div className="flex items-center justify-between bg-indigo-700 text-white px-4 py-2.5 rounded-b-lg">
+                                                        <span className="text-sm font-bold tracking-wide uppercase">Total vencido</span>
+                                                        <span className="font-mono font-bold text-base">
+                                                            S/ {vendedor.totalSolesVendedor.toLocaleString('es-PE', { minimumFractionDigits: 2 })}
+                                                        </span>
                                                     </div>
                                                 </div>
                                             ))}
