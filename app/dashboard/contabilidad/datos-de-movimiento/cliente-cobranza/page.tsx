@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Search, Save, Pencil, Trash2, Loader2, X } from "lucide-react"
+import { Search, Save, Loader2, X } from "lucide-react"
 import apiClient from "@/app/api/client"
 import { useAuth } from "@/context/authContext"
 import { toast } from "@/app/hooks/use-toast"
@@ -15,70 +15,25 @@ import { fetchGetAllClients } from "@/app/api/takeOrders"
 import { IClient } from "@/app/types/order/client-interface"
 import { Combobox } from "@/app/dashboard/mis-pedidos/page"
 
-interface Seller {
-    idVendedor: number
-    codigo: string
-    nombres: string
-    apellidos: string
-}
+import {
+    Seller,
+    TipoAmortizacion,
+    EntidadFinanciera,
+    TipoDocumento,
+    FormState,
+    FORM_INITIAL,
+    AmortizacionListItem,
+} from "@/app/types/amortizacion-types"
 
-interface TipoAmortizacion {
-    Cod_Tipo_Amort: string
-    Descripcion: string
-}
-
-interface EntidadFinanciera {
-    CodigoEntidadFinanciera: string
-    DescripcionEntidadFinanciera: string
-}
-
-interface TipoDocumento {
-    Cod_Tipo:    string
-    Descripcion: string
-    Abreviatura: string
-}
-
-interface FormState {
-    Id_Amort_Clie:    number | null
-    NroPlanilla:      string
-    Cod_Clie:         string
-    TipoDoc:          string
-    SerieDoc:         string
-    NumeroDoc:        string
-    Fecha_Mvto:       string
-    Importe_Amortiz:  string
-    Tipo_Amort:       string
-    NroDocAmortiza:   string
-    Entida_Financiera: string
-    Observaciones:    string
-    Cod_Vend:         string
-    Moneda:           string
-}
-
-const FORM_INITIAL: FormState = {
-    Id_Amort_Clie:     null,
-    NroPlanilla:       "",
-    Cod_Clie:          "",
-    TipoDoc:           "",
-    SerieDoc:          "",
-    NumeroDoc:         "",
-    Fecha_Mvto:        "",
-    Importe_Amortiz:   "",
-    Tipo_Amort:        "",
-    NroDocAmortiza:    "",
-    Entida_Financiera: "",
-    Observaciones:     "",
-    Cod_Vend:          "",
-    Moneda:            "NSO",
-}
+import ModalBuscarAmortizacion from "@/components/contabilidad/cliente-conbranza/Modalbuscaramortizacion";
+import ModalKardex from "@/components/contabilidad/cliente-conbranza/Modalkardex";
+import ModalMayor from "@/components/contabilidad/cliente-conbranza/Modalmayor";
 
 export default function PlanillaCobranzaPage() {
     const { user } = useAuth()
 
     const [form, setForm] = useState<FormState>(FORM_INITIAL)
     const [isSaving, setIsSaving] = useState(false)
-    const [isSearching, setIsSearching] = useState(false)
-    const [isDeleting, setIsDeleting] = useState(false)
 
     const [tiposAmort, setTiposAmort] = useState<TipoAmortizacion[]>([])
     const [entidades, setEntidades] = useState<EntidadFinanciera[]>([])
@@ -94,6 +49,11 @@ export default function PlanillaCobranzaPage() {
     const [sellersFiltered, setSellersFiltered] = useState<Seller[]>([])
     const [sellerSearch, setSellerSearch] = useState("")
     const [selectedSeller, setSelectedSeller] = useState<Seller | null>(null)
+
+    const [buscarOpen, setBuscarOpen] = useState(false)
+    const [kardexOpen, setKardexOpen] = useState(false)
+    const [mayorOpen, setMayorOpen] = useState(false)
+    const [selectedAmortForModal, setSelectedAmortForModal] = useState<AmortizacionListItem | null>(null)
 
     const isEditing = form.Id_Amort_Clie !== null
 
@@ -164,13 +124,13 @@ export default function PlanillaCobranzaPage() {
                 apiClient.get('/amortizacion/combos/entidad-financiera'),
                 apiClient.get('/amortizacion/combos/tipo-documento'),
             ])
-            setTiposAmort(resTipos.data?.data?.data    || [])
+            setTiposAmort(resTipos.data?.data?.data || [])
             setEntidades(resEntidades.data?.data?.data || [])
-            setTiposDoc(resDocs.data?.data?.data       || [])  // ← nuevo
+            setTiposDoc(resDocs.data?.data?.data || [])
         } catch {
             setTiposAmort([])
             setEntidades([])
-            setTiposDoc([])  // ← nuevo
+            setTiposDoc([])
         }
     }
 
@@ -196,8 +156,8 @@ export default function PlanillaCobranzaPage() {
         setSellerSearch("")
     }
 
-    const buildPayload = (withId: boolean) => ({
-        id_amort_clie:      withId ? form.Id_Amort_Clie : null,
+    const buildPayload = () => ({
+        id_amort_clie:      isEditing ? form.Id_Amort_Clie : null,
         nroPlanilla:        form.NroPlanilla,
         cod_clie:           form.Cod_Clie,
         tipo_doc:           form.TipoDoc,
@@ -214,56 +174,6 @@ export default function PlanillaCobranzaPage() {
         moneda:             form.Moneda,
     })
 
-    const handleBuscar = async () => {
-        if (!form.NroPlanilla && !form.Cod_Clie) {
-            toast({ title: "Buscar", description: "Ingrese Nro. Planilla o seleccione un cliente.", variant: "warning" })
-            return
-        }
-        setIsSearching(true)
-        try {
-            const params = new URLSearchParams()
-            if (form.NroPlanilla) params.append('nroPlanilla', form.NroPlanilla)
-            if (form.Cod_Clie) params.append('codClie', form.Cod_Clie)
-
-            const response = await apiClient.get(`/amortizacion/buscar?${params.toString()}`)
-            const results: any[] = response.data?.data?.data || []
-
-            if (results.length === 0) {
-                toast({ title: "Buscar", description: "No se encontraron registros.", variant: "warning" })
-                return
-            }
-
-            const record = results[0]
-            setForm({
-                Id_Amort_Clie:     record.Id_Amort_Clie,
-                NroPlanilla:       record.NroPlanilla       ?? "",
-                Cod_Clie:          record.Cod_Clie          ?? "",
-                TipoDoc:           record.TipoDoc           ?? "",
-                SerieDoc:          record.SerieDoc          ?? "",
-                NumeroDoc:         String(record.NumeroDoc  ?? ""),
-                Fecha_Mvto:        record.Fecha_Mvto
-                    ? record.Fecha_Mvto.toString().slice(0, 10)
-                    : "",
-                Importe_Amortiz:   record.Importe_Amortiz?.toString() ?? "",
-                Tipo_Amort:        record.Tipo_Amort        ?? "",
-                NroDocAmortiza:    record.NroDocAmortiza     ?? "",
-                Entida_Financiera: record.EntidaFinanciera   ?? "",
-                Observaciones:     record.Observaciones     ?? "",
-                Cod_Vend:          record.Cod_Vend          ?? "",
-                Moneda:            record.Moneda            ?? "NSO",
-            })
-
-            setSelectedClient(clients.find(c => c.codigo === record.Cod_Clie) ?? null)
-            setSelectedSeller(sellers.find(s => s.codigo === record.Cod_Vend) ?? null)
-
-            toast({ title: "Buscar", description: `Registro encontrado.` })
-        } catch {
-            toast({ title: "Error", description: "No se pudo realizar la búsqueda.", variant: "destructive" })
-        } finally {
-            setIsSearching(false)
-        }
-    }
-
     const handleGuardar = async () => {
         if (!form.Cod_Clie || !form.TipoDoc || !form.SerieDoc || !form.Fecha_Mvto || !form.Importe_Amortiz) {
             toast({ title: "Guardar", description: "Complete los campos obligatorios.", variant: "warning" })
@@ -271,49 +181,55 @@ export default function PlanillaCobranzaPage() {
         }
         setIsSaving(true)
         try {
-            await apiClient.post('/amortizacion', buildPayload(false))
-            toast({ title: "Guardar", description: "Registro guardado correctamente." })
+            await apiClient.post('/amortizacion', buildPayload())
+            toast({
+                title: isEditing ? "Modificar" : "Guardar",
+                description: isEditing ? "Registro modificado correctamente." : "Registro guardado correctamente."
+            })
             resetForm()
         } catch (error: any) {
-            toast({ title: "Error", description: error?.response?.data?.message || "No se pudo guardar.", variant: "destructive" })
+            toast({
+                title: "Error",
+                description: error?.response?.data?.message || "No se pudo guardar.",
+                variant: "destructive"
+            })
         } finally {
             setIsSaving(false)
         }
     }
 
-    const handleModificar = async () => {
-        if (!form.Id_Amort_Clie) {
-            toast({ title: "Modificar", description: "Primero busque un registro para modificar.", variant: "warning" })
-            return
-        }
-        setIsSaving(true)
-        try {
-            await apiClient.post('/amortizacion', buildPayload(true))
-            toast({ title: "Modificar", description: "Registro modificado correctamente." })
-            resetForm()
-        } catch (error: any) {
-            toast({ title: "Error", description: error?.response?.data?.message || "No se pudo modificar.", variant: "destructive" })
-        } finally {
-            setIsSaving(false)
-        }
+    const handleSelectEditar = (record: AmortizacionListItem) => {
+        setForm({
+            Id_Amort_Clie:     record.Id_Amort_Clie,
+            NroPlanilla:       record.NroPlanilla       ?? "",
+            Cod_Clie:          record.Cod_Clie          ?? "",
+            TipoDoc:           record.TipoDoc           ?? "",
+            SerieDoc:          record.SerieDoc           ?? "",
+            NumeroDoc:         String(record.NumeroDoc   ?? ""),
+            Fecha_Mvto:        record.Fecha_Mvto
+                    ? record.Fecha_Mvto.toString().slice(0, 10)
+                    : "",
+            Importe_Amortiz:   record.Importe_Amortiz?.toString() ?? "",
+            Tipo_Amort:        record.Tipo_Amort        ?? "",
+            NroDocAmortiza:    record.NroDocAmortiza     ?? "",
+            Entida_Financiera: record.Entidad_Financiera ?? "",
+            Observaciones:     record.Observaciones      ?? "",
+            Cod_Vend:          record.Cod_Vend           ?? "",
+            Moneda:            record.Moneda             ?? "NSO",
+        })
+
+        setSelectedClient(clients.find(c => c.codigo === record.Cod_Clie) ?? null)
+        setSelectedSeller(sellers.find(s => s.codigo === record.Cod_Vend) ?? null)
     }
 
-    const handleEliminar = async () => {
-        if (!form.Id_Amort_Clie) {
-            toast({ title: "Eliminar", description: "Primero busque un registro para eliminar.", variant: "warning" })
-            return
-        }
-        if (!confirm(`¿Desea eliminar la planilla "${form.NroPlanilla || `#${form.Id_Amort_Clie}`}"? Esta acción no se puede deshacer.`)) return
-        setIsDeleting(true)
-        try {
-            await apiClient.delete(`/amortizacion/${form.Id_Amort_Clie}`)
-            toast({ title: "Eliminar", description: "Registro eliminado correctamente." })
-            resetForm()
-        } catch (error: any) {
-            toast({ title: "Error", description: error?.response?.data?.message || "No se pudo eliminar.", variant: "destructive" })
-        } finally {
-            setIsDeleting(false)
-        }
+    const handleOpenKardex = (record: AmortizacionListItem) => {
+        setSelectedAmortForModal(record)
+        setKardexOpen(true)
+    }
+
+    const handleOpenMayor = (record: AmortizacionListItem) => {
+        setSelectedAmortForModal(record)
+        setMayorOpen(true)
     }
 
     return (
@@ -322,60 +238,24 @@ export default function PlanillaCobranzaPage() {
                 <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-gray-900">Planilla Cobranza</h1>
                 <p className="text-sm md:text-base text-gray-500">Registro de amortizaciones y pagos de clientes.</p>
             </div>
+
             <Card className="shadow-md">
                 <CardHeader className="bg-slate-50 border-b border-slate-200 p-4">
-                    <div className="flex flex-wrap items-center gap-2">
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            className="gap-1.5"
-                            onClick={handleBuscar}
-                            disabled={isSearching}
-                        >
-                            {isSearching ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
-                            Buscar
-                        </Button>
-                        <Button
-                            size="sm"
-                            className="gap-1.5 bg-emerald-600 hover:bg-emerald-700"
-                            onClick={handleGuardar}
-                            disabled={isSaving || isEditing}
-                        >
-                            {isSaving && !isEditing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                            Guardar
-                        </Button>
-                        <Button
-                            size="sm"
-                            className="gap-1.5 bg-amber-500 hover:bg-amber-600"
-                            onClick={handleModificar}
-                            disabled={isSaving || !isEditing}
-                        >
-                            {isSaving && isEditing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Pencil className="h-4 w-4" />}
-                            Modificar
-                        </Button>
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            className="gap-1.5 border-red-300 text-red-600 hover:bg-red-50"
-                            onClick={handleEliminar}
-                            disabled={isDeleting || !isEditing}
-                        >
-                            {isDeleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-                            Eliminar
-                        </Button>
-                        {isEditing && (
-                            <Button variant="ghost" size="sm" className="gap-1.5 text-slate-400 ml-auto" onClick={resetForm}>
-                                <X className="h-4 w-4" />
-                                Limpiar
-                            </Button>
-                        )}
+                    <div className="flex items-center gap-2">
+                        <span className="text-sm font-semibold text-slate-700">
+                            {isEditing ? 'Editar Amortización' : 'Nueva Amortización'}
+                        </span>
                         {isEditing && (
                             <span className="text-[11px] bg-amber-100 text-amber-700 border border-amber-200 px-2.5 py-1 rounded-full font-medium">
                                 Modo Edición
                             </span>
                         )}
+                        {isEditing && (
+                            <Button variant="ghost" size="sm" className="gap-1.5 text-slate-400 ml-auto" onClick={resetForm}>
+                                <X className="h-4 w-4" /> Limpiar
+                            </Button>
+                        )}
                     </div>
-
                 </CardHeader>
 
                 <CardContent className="p-4 md:p-6 space-y-5">
@@ -383,9 +263,11 @@ export default function PlanillaCobranzaPage() {
                         <div className="flex flex-col gap-1">
                             <Label className="text-sm">Nro. Planilla</Label>
                             <Input
-                                placeholder="Ej: PL-0001"
+                                placeholder="Se genera automáticamente"
                                 value={form.NroPlanilla}
-                                onChange={e => handleChange('NroPlanilla', e.target.value)}
+                                readOnly
+                                disabled
+                                className="bg-slate-50"
                             />
                         </div>
                         <div className="flex flex-col gap-1">
@@ -399,7 +281,7 @@ export default function PlanillaCobranzaPage() {
                                 onSelect={handleClientSelect}
                                 getItemKey={c => c.codigo}
                                 getItemLabel={c => `${c.Nombre} — ${c.RUC}`}
-                                placeholder={loadingClients ? "Cargando cliente-cobranza..." : "Buscar cliente..."}
+                                placeholder={loadingClients ? "Cargando clientes..." : "Buscar cliente..."}
                                 emptyText="No se encontraron clientes"
                                 searchText="Escribe para buscar..."
                             />
@@ -411,10 +293,7 @@ export default function PlanillaCobranzaPage() {
                             <Label className="text-sm">
                                 Tipo Documento <span className="text-red-500">*</span>
                             </Label>
-                            <Select
-                                value={form.TipoDoc}
-                                onValueChange={v => handleChange('TipoDoc', v)}
-                            >
+                            <Select value={form.TipoDoc} onValueChange={v => handleChange('TipoDoc', v)}>
                                 <SelectTrigger>
                                     <SelectValue placeholder="Seleccionar..." />
                                 </SelectTrigger>
@@ -550,9 +429,48 @@ export default function PlanillaCobranzaPage() {
                         <p className="text-xs text-gray-400 text-right">{form.Observaciones.length}/500</p>
                     </div>
 
+                    <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-200">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className="gap-1.5"
+                            onClick={() => setBuscarOpen(true)}
+                        >
+                            <Search className="h-4 w-4" />
+                            Buscar
+                        </Button>
+                        <Button
+                            size="sm"
+                            className="gap-1.5 bg-emerald-600 hover:bg-emerald-700"
+                            onClick={handleGuardar}
+                            disabled={isSaving}
+                        >
+                            {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                            {isEditing ? 'Actualizar' : 'Guardar'}
+                        </Button>
+                    </div>
                 </CardContent>
             </Card>
 
+            <ModalBuscarAmortizacion
+                open={buscarOpen}
+                onClose={() => setBuscarOpen(false)}
+                onSelectEditar={handleSelectEditar}
+                onOpenKardex={handleOpenKardex}
+                onOpenMayor={handleOpenMayor}
+            />
+
+            <ModalKardex
+                open={kardexOpen}
+                onClose={() => setKardexOpen(false)}
+                amortizacion={selectedAmortForModal}
+            />
+
+            <ModalMayor
+                open={mayorOpen}
+                onClose={() => setMayorOpen(false)}
+                amortizacion={selectedAmortForModal}
+            />
         </div>
     )
 }
