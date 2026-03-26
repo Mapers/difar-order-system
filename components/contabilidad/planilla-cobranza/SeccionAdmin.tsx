@@ -23,12 +23,13 @@ import {
     TipoComprobante,
 } from "@/app/types/planilla-types";
 import {fmtFecha, fmtMoney, fmtRel, getInitials} from "@/lib/planilla.helper";
-
-// ─── Props ────────────────────────────────────────────────────────────────────
+import {EmpresaOption, TipoAmortizacion} from "@/app/types/amortizacion-types";
 
 interface Props {
     tiposComprobante:     TipoComprobante[]
     bancos:               CatalogosBanco[]
+    tiposAmort:           TipoAmortizacion[]
+    empresas:             EmpresaOption[]
     planillasAdmin:       PlanillaCabecera[]
     resumenDia:           ResumenDia | null
     loadingAdmin:         boolean
@@ -39,14 +40,13 @@ interface Props {
     onValidar:            (id: number, admin: AdminInfo, accion: 'validado' | 'rechazado', obs?: string) => Promise<any>
 }
 
-// ─── Componente ───────────────────────────────────────────────────────────────
-
 export default function SeccionAdmin({
                                          tiposComprobante, bancos,
                                          planillasAdmin, resumenDia, loadingAdmin,
                                          adminInfo,
                                          onFetchAdmin, onFetchResumen, onFetchDetalle, onValidar,
-                                     }: Props) {
+                                         tiposAmort, empresas
+}: Props) {
 
     const [busqueda,     setBusqueda]     = useState('')
     const [filtroEstado, setFiltroEstado] = useState('all')
@@ -107,8 +107,6 @@ export default function SeccionAdmin({
 
     return (
         <div className="space-y-4">
-
-            {/* Stat cards */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                 {[
                     { label: 'Planillas hoy',   value: resumenDia?.total_planillas ?? '—', color: 'text-sky-700',     bg: 'bg-sky-50 border-sky-200' },
@@ -125,7 +123,6 @@ export default function SeccionAdmin({
                 ))}
             </div>
 
-            {/* Filtros */}
             <Card className="shadow-sm">
                 <CardContent className="p-4 space-y-3">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
@@ -170,7 +167,6 @@ export default function SeccionAdmin({
                 </CardContent>
             </Card>
 
-            {/* Lista de planillas */}
             {loadingAdmin ? (
                 Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-16 rounded-xl" />)
             ) : planillasAdmin.length === 0 ? (
@@ -187,7 +183,6 @@ export default function SeccionAdmin({
 
                 return (
                     <Card key={planilla.id_planilla} className={`shadow-sm overflow-hidden border-l-4 ${colorBorde(planilla.estado)}`}>
-                        {/* Cabecera */}
                         <div
                             className="flex items-center justify-between p-3.5 cursor-pointer hover:bg-slate-50 transition-colors"
                             onClick={() => toggleRow(planilla)}
@@ -227,7 +222,6 @@ export default function SeccionAdmin({
                             </div>
                         </div>
 
-                        {/* Detalle expandible */}
                         {isOpen && (
                             <DetalleAdmin
                                 planilla={planilla}
@@ -239,6 +233,8 @@ export default function SeccionAdmin({
                                 procesando={procesando === planilla.id_planilla}
                                 onValidar={handleValidar}
                                 onRechazar={handleRechazar}
+                                tiposAmort={tiposAmort}
+                                empresas={empresas}
                             />
                         )}
                     </Card>

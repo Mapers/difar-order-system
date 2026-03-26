@@ -3,11 +3,9 @@ export interface Catalogo {
     descripcion: string
 }
 
-// ─── Catálogos ────────────────────────────────────────────────────────────────
-
 export interface TipoComprobante {
-    codigo:      string   // ej. "01", "03", "07", "09"
-    descripcion: string   // ej. "Factura", "Nota de Crédito"
+    codigo:      string
+    descripcion: string
 }
 
 export interface CatalogosBanco {
@@ -20,19 +18,17 @@ export interface ZonaOption {
     NombreZona: string
 }
 
-// ─── Planilla ─────────────────────────────────────────────────────────────────
-
 export type EstadoPlanilla = 'borrador' | 'enviado' | 'validado' | 'rechazado'
 
 export interface PlanillaCabecera {
     id_planilla:      number
     correlativo:      number
-    numero_planilla:  string         // "N° 005538"
+    numero_planilla:  string
     id_vendedor:      number
     codigo_vendedor:  string
     nombre_vendedor:  string
     ciudad:           string
-    fecha_ruta:       string         // "2026-03-15"
+    fecha_ruta:       string
     zona:             string
     estado:           EstadoPlanilla
     observacion_admin?: string | null
@@ -65,8 +61,6 @@ export interface PlanillaDetalle {
     orden?:            number
 }
 
-// ─── Payload para agregar/reenviar registros ──────────────────────────────────
-
 export interface NuevoDetalle {
     codigo_cliente?:   string
     nombre_cliente:    string
@@ -83,16 +77,12 @@ export interface NuevoDetalle {
     numero_cheque?:    string
 }
 
-// ─── Resumen día (admin) ──────────────────────────────────────────────────────
-
 export interface ResumenDia {
     total_planillas: number
     total_cobrado:   number
     validadas:       number
     rechazadas:      number
 }
-
-// ─── Auth helpers ─────────────────────────────────────────────────────────────
 
 export interface VendedorInfo {
     id_vendedor:      number | string

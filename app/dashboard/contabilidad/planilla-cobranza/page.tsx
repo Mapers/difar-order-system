@@ -10,6 +10,8 @@ import { fetchAvailableZones } from '@/app/api/reports'
 import {AdminInfo, CatalogosBanco, TipoComprobante, VendedorInfo, ZonaOption} from "@/app/types/planilla-types";
 import SeccionAdmin from "@/components/contabilidad/planilla-cobranza/SeccionAdmin";
 import SeccionVendedor from "@/components/contabilidad/planilla-cobranza/SeccionVendedor";
+import apiClient from "@/app/api/client";
+import {EmpresaOption, TipoAmortizacion} from "@/app/types/amortizacion-types";
 
 function buildVendedorInfo(user: any): VendedorInfo {
     return {
@@ -41,6 +43,8 @@ export default function PlanillaCobranzaPage() {
 
     const [loading, setLoading] = useState(true)
     const [zones,   setZones]   = useState<ZonaOption[]>([])
+    const [tiposAmort,  setTiposAmort]  = useState<TipoAmortizacion[]>([])
+    const [empresas,    setEmpresas]    = useState<EmpresaOption[]>([])
 
     const tiposComprobante = useMemo(() => normTipos(hook.tiposComprobante ?? []), [hook.tiposComprobante])
     const bancos           = useMemo(() => normBancos(hook.bancos           ?? []), [hook.bancos])
@@ -55,6 +59,12 @@ export default function PlanillaCobranzaPage() {
             fetchAvailableZones()
                 .then(res => setZones(res.data?.data ?? []))
                 .catch(() => { /* silencioso: input libre sigue disponible */ }),
+            apiClient.get('/amortizacion/combos/tipo-amortizacion')
+                .then(res => setTiposAmort(res.data?.data?.data ?? []))
+                .catch(() => {}),
+            apiClient.get('/laboratorios/combos/laboratorios/empresas')
+                .then(res => setEmpresas(res.data?.data?.data ?? []))
+                .catch(() => {}),
         ]).finally(() => setLoading(false))
     }, [user])
 
@@ -127,6 +137,8 @@ export default function PlanillaCobranzaPage() {
                     onFetchResumen={hook.fetchResumenDia}
                     onFetchDetalle={hook.fetchDetalle}
                     onValidar={handleValidar}
+                    tiposAmort={tiposAmort}
+                    empresas={empresas}
                 />
             )}
 

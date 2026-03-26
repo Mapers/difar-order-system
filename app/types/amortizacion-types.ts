@@ -36,6 +36,7 @@ export interface FormState {
     Observaciones: string
     Cod_Vend: string
     Moneda: string
+    Empresa: string
 }
 
 export const FORM_INITIAL: FormState = {
@@ -53,6 +54,7 @@ export const FORM_INITIAL: FormState = {
     Observaciones: "",
     Cod_Vend: "",
     Moneda: "NSO",
+    Empresa: "",
 }
 
 export interface AmortizacionListItem {
@@ -125,4 +127,9 @@ export interface MayorItem {
     TipoRegistro: number
     IdCtaContable: number
     moneda: string
+}
+
+export interface EmpresaOption {
+    CodigoEmpresa:   string
+    NombreRazSocial: string
 }

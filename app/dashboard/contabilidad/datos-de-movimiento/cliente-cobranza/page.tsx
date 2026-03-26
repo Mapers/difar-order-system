@@ -22,14 +22,14 @@ import {
     TipoDocumento,
     FormState,
     FORM_INITIAL,
-    AmortizacionListItem,
+    AmortizacionListItem, EmpresaOption,
 } from "@/app/types/amortizacion-types"
 
 import ModalBuscarAmortizacion from "@/components/contabilidad/cliente-conbranza/Modalbuscaramortizacion";
 import ModalKardex from "@/components/contabilidad/cliente-conbranza/Modalkardex";
 import ModalMayor from "@/components/contabilidad/cliente-conbranza/Modalmayor";
 
-export default function PlanillaCobranzaPage() {
+export default function ClienteCobranzaPage() {
     const { user } = useAuth()
 
     const [form, setForm] = useState<FormState>(FORM_INITIAL)
@@ -38,6 +38,7 @@ export default function PlanillaCobranzaPage() {
     const [tiposAmort, setTiposAmort] = useState<TipoAmortizacion[]>([])
     const [entidades, setEntidades] = useState<EntidadFinanciera[]>([])
     const [tiposDoc, setTiposDoc] = useState<TipoDocumento[]>([])
+    const [empresas,   setEmpresas]   = useState<EmpresaOption[]>([])
 
     const [clients, setClients] = useState<IClient[]>([])
     const [clientsFiltered, setClientsFiltered] = useState<IClient[]>([])
@@ -119,18 +120,30 @@ export default function PlanillaCobranzaPage() {
 
     const fetchCombos = async () => {
         try {
-            const [resTipos, resEntidades, resDocs] = await Promise.all([
+            const [resTipos, resEntidades, resDocs, resEmpresas] = await Promise.all([
                 apiClient.get('/amortizacion/combos/tipo-amortizacion'),
                 apiClient.get('/amortizacion/combos/entidad-financiera'),
                 apiClient.get('/amortizacion/combos/tipo-documento'),
+                apiClient.get('/laboratorios/combos/laboratorios/empresas'),
             ])
             setTiposAmort(resTipos.data?.data?.data || [])
             setEntidades(resEntidades.data?.data?.data || [])
             setTiposDoc(resDocs.data?.data?.data || [])
+
+            const listaEmpresas: EmpresaOption[] = resEmpresas.data?.data?.data || []
+            setEmpresas(listaEmpresas)
+            if (listaEmpresas.length > 0) {
+                setForm(prev =>
+                    prev.Id_Amort_Clie === null
+                        ? { ...prev, Empresa: listaEmpresas[0].CodigoEmpresa }
+                        : prev
+                )
+            }
         } catch {
             setTiposAmort([])
             setEntidades([])
             setTiposDoc([])
+            setEmpresas([])
         }
     }
 
@@ -149,7 +162,8 @@ export default function PlanillaCobranzaPage() {
     }
 
     const resetForm = () => {
-        setForm(FORM_INITIAL)
+        const defaultEmpresa = empresas[0]?.CodigoEmpresa ?? ""
+        setForm({ ...FORM_INITIAL, Empresa: defaultEmpresa })
         setSelectedClient(null)
         setSelectedSeller(null)
         setClientSearch("")
@@ -170,7 +184,7 @@ export default function PlanillaCobranzaPage() {
         entida_financiera:  form.Entida_Financiera,
         observaciones:      form.Observaciones,
         cod_vend:           form.Cod_Vend,
-        empresa:            user?.codigo ?? "",
+        empresa:           form.Empresa,
         moneda:             form.Moneda,
     })
 
@@ -183,8 +197,8 @@ export default function PlanillaCobranzaPage() {
         try {
             await apiClient.post('/amortizacion', buildPayload())
             toast({
-                title: isEditing ? "Modificar" : "Guardar",
-                description: isEditing ? "Registro modificado correctamente." : "Registro guardado correctamente."
+                title: "Guardar",
+                description: "Registro agregado correctamente."
             })
             resetForm()
         } catch (error: any) {
@@ -216,6 +230,7 @@ export default function PlanillaCobranzaPage() {
             Observaciones:     record.Observaciones      ?? "",
             Cod_Vend:          record.Cod_Vend           ?? "",
             Moneda:            record.Moneda             ?? "NSO",
+            Empresa:           record.EMPRESA             ?? "",
         })
 
         setSelectedClient(clients.find(c => c.codigo === record.Cod_Clie) ?? null)
@@ -235,7 +250,7 @@ export default function PlanillaCobranzaPage() {
     return (
         <div className="grid gap-6 p-4 md:p-6">
             <div className="flex flex-col gap-2">
-                <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-gray-900">Planilla Cobranza</h1>
+                <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-gray-900">Cliente Cobranza</h1>
                 <p className="text-sm md:text-base text-gray-500">Registro de amortizaciones y pagos de clientes.</p>
             </div>
 
@@ -263,11 +278,9 @@ export default function PlanillaCobranzaPage() {
                         <div className="flex flex-col gap-1">
                             <Label className="text-sm">Nro. Planilla</Label>
                             <Input
-                                placeholder="Se genera automáticamente"
+                                placeholder="0000"
                                 value={form.NroPlanilla}
-                                readOnly
-                                disabled
-                                className="bg-slate-50"
+                                onChange={e => handleChange('NroPlanilla', e.target.value)}
                             />
                         </div>
                         <div className="flex flex-col gap-1">
@@ -286,6 +299,28 @@ export default function PlanillaCobranzaPage() {
                                 searchText="Escribe para buscar..."
                             />
                         </div>
+                    </div>
+
+                    <div className="flex flex-col gap-1">
+                        <Label className="text-sm">
+                            Empresa <span className="text-red-500">*</span>
+                        </Label>
+                        <Select
+                            value={form.Empresa}
+                            onValueChange={v => handleChange('Empresa', v)}
+                            disabled
+                        >
+                            <SelectTrigger>
+                                <SelectValue placeholder="Seleccionar empresa..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {empresas.map(e => (
+                                    <SelectItem key={e.CodigoEmpresa} value={e.CodigoEmpresa}>
+                                        {e.NombreRazSocial}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
