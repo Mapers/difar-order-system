@@ -262,6 +262,7 @@ export default function ComprobantesPage() {
         COD_TIP_DOC_REF: guia.tipo_comprobante,
         NUM_SERIE_CPE_REF: guia.serie,
         NUM_CORRE_CPE_REF: guia.numero,
+        ID: guia.idGuiaRemCab
       }))
 
       const response = await apiClient.post(
