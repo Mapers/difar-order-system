@@ -3,7 +3,7 @@
 import { useState, useCallback } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import {FileText, Plus, Truck, Settings, CreditCard, Target, FlaskConical} from "lucide-react"
+import { FileText, Plus, Truck, Settings, CreditCard, Target, FlaskConical, Hash } from "lucide-react"
 import AppConfigSection from "@/components/configuraciones/AppConfigSection";
 import SequentialSection from "@/components/configuraciones/SequentialSection";
 import ClientConditionsSection from "@/components/configuraciones/ClientConditionsSection";
@@ -26,6 +26,13 @@ const sections = [
         color: "green"
     },
     {
+        id: "otros_correlativos",
+        title: "Otros Correlativos",
+        description: "Secuenciales para otros documentos internos",
+        icon: Hash,
+        color: "teal"
+    },
+    {
         id: "condiciones_cliente",
         title: "Condiciones de Pago",
         description: "Asignación de condiciones de crédito y pago a cliente-cobranza",
@@ -40,11 +47,11 @@ const sections = [
         color: "sky"
     },
     {
-        id:          'laboratorios',
-        title:       'Laboratorios',
+        id: 'laboratorios',
+        title: 'Laboratorios',
         description: 'Líneas genéticas y laboratorios del sistema',
-        icon:        FlaskConical,
-        color:       'sky',
+        icon: FlaskConical,
+        color: 'sky',
     },
     {
         id: "configuraciones",
@@ -58,6 +65,7 @@ const sections = [
 const iconColorMap: Record<string, string> = {
     secuenciales: "text-blue-600",
     guias: "text-green-600",
+    otros_correlativos: "text-teal-600",
     condiciones_cliente: "text-purple-600",
     metas: "text-sky-600",
     configuraciones: "text-orange-600",
@@ -67,6 +75,7 @@ const iconColorMap: Record<string, string> = {
 const activeBgMap: Record<string, string> = {
     secuenciales: "bg-blue-50 border-blue-500 text-blue-700",
     guias: "bg-green-50 border-green-500 text-green-700",
+    otros_correlativos: "bg-teal-50 border-teal-500 text-teal-700",
     condiciones_cliente: "bg-purple-50 border-purple-500 text-purple-700",
     metas: "bg-sky-50 border-sky-500 text-sky-700",
     configuraciones: "bg-orange-50 border-orange-500 text-orange-700",
@@ -76,6 +85,7 @@ const activeBgMap: Record<string, string> = {
 const activeIconBg: Record<string, string> = {
     secuenciales: "bg-blue-100 text-blue-600",
     guias: "bg-green-100 text-green-600",
+    otros_correlativos: "bg-teal-100 text-teal-600",
     condiciones_cliente: "bg-purple-100 text-purple-600",
     metas: "bg-sky-100 text-sky-600",
     configuraciones: "bg-orange-100 text-orange-600",
@@ -150,7 +160,9 @@ export default function ConfiguracionesPage() {
                                             ? "Administra ciclos, metas por laboratorio, vendedor y producto."
                                             : activeSection === "condiciones_cliente"
                                                 ? "Asigna condiciones de pago a cliente-cobranza específicos."
-                                                : `Configura la numeración para ${activeSection === "secuenciales" ? "facturas y boletas" : "guías de remisión"}`}
+                                                : activeSection === "otros_correlativos"
+                                                    ? "Configura la numeración para otros documentos internos."
+                                                    : `Configura la numeración para ${activeSection === "secuenciales" ? "facturas y boletas" : "guías de remisión"}`}
                                 </CardDescription>
                             </div>
                             <Button
@@ -169,11 +181,11 @@ export default function ConfiguracionesPage() {
                             ) : activeSection === "metas" ? (
                                 <MetasConfigSection onOpenModalChange={handleSetOpenModalFn} />
                             ) : activeSection === 'laboratorios' ? (
-                            <LaboratoriosSection onOpenModalChange={handleSetOpenModalFn} />
+                                <LaboratoriosSection onOpenModalChange={handleSetOpenModalFn} />
                             ) : (
                                 <SequentialSection
                                     key={activeSection}
-                                    sectionType={activeSection as "secuenciales" | "guias"}
+                                    sectionType={activeSection as "secuenciales" | "guias" | "otros_correlativos"}
                                     onOpenModalChange={handleSetOpenModalFn}
                                 />
                             )}

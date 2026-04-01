@@ -275,7 +275,6 @@ export default function SeccionVendedor({
                 </DialogContent>
             </Dialog>
 
-            {/* Tabs */}
             <div className="flex bg-white border border-slate-200 rounded-lg overflow-hidden shadow-sm">
                 {[
                     { id: 'nueva', label: 'Nueva planilla' },
@@ -300,11 +299,8 @@ export default function SeccionVendedor({
                 ))}
             </div>
 
-            {/* ══════════════════ TAB: NUEVA PLANILLA ══════════════════ */}
             {tab === 'nueva' && (
                 <div className="space-y-4">
-
-                    {/* Paso 1: datos para generar correlativo */}
                     {!planillaActiva && (
                         <Card className="shadow-sm max-w-lg mx-auto overflow-hidden">
                             <div className="bg-slate-800 px-6 py-5">
@@ -355,10 +351,8 @@ export default function SeccionVendedor({
                         </Card>
                     )}
 
-                    {/* Planilla activa */}
                     {planillaActiva && (
                         <>
-                            {/* Info bar planilla */}
                             <div className="bg-white border border-sky-200 rounded-xl p-4 flex flex-wrap items-center justify-between gap-3 shadow-sm">
                                 <div className="flex items-center gap-3">
                                     <div className="w-11 h-11 rounded-xl bg-sky-600 flex items-center justify-center shrink-0">
@@ -385,7 +379,6 @@ export default function SeccionVendedor({
                                 </div>
                             </div>
 
-                            {/* Sección 1: Datos del documento */}
                             <div className="bg-white border border-slate-100 rounded-xl overflow-hidden shadow-sm">
                                 <div className="flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-blue-50 to-slate-50 border-b border-slate-100">
                                     <div className="w-7 h-7 rounded-lg bg-sky-100 flex items-center justify-center">
@@ -444,7 +437,6 @@ export default function SeccionVendedor({
                                 </div>
                             </div>
 
-                            {/* Sección 2: Liquidación */}
                             <div className="bg-white border border-slate-100 rounded-xl overflow-hidden shadow-sm">
                                 <div className="flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-emerald-50 to-slate-50 border-b border-slate-100">
                                     <div className="w-7 h-7 rounded-lg bg-emerald-100 flex items-center justify-center">
@@ -504,7 +496,6 @@ export default function SeccionVendedor({
                                 </div>
                             </div>
 
-                            {/* Tabla de registros actuales */}
                             <div className="bg-white border border-slate-100 rounded-xl overflow-hidden shadow-sm">
                                 <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 bg-slate-50">
                                     <span className="text-sm font-semibold text-slate-700">Registros ingresados</span>
@@ -557,7 +548,6 @@ export default function SeccionVendedor({
                 </div>
             )}
 
-            {/* ══════════════════ TAB: MIS PLANILLAS ══════════════════ */}
             {tab === 'mis' && (
                 <div className="space-y-3">
                     <div className="flex items-center justify-between">
@@ -601,7 +591,6 @@ export default function SeccionVendedor({
 
                         return (
                             <Card key={planilla.id_planilla} className={`shadow-sm overflow-hidden border-l-4 ${borderColor}`}>
-                                {/* Cabecera fila */}
                                 <div
                                     className="flex items-center justify-between p-3.5 cursor-pointer hover:bg-slate-50 transition-colors"
                                     onClick={() => toggleRow(planilla)}
@@ -648,7 +637,6 @@ export default function SeccionVendedor({
                                     </div>
                                 </div>
 
-                                {/* Detalle expandible */}
                                 {isOpen && (
                                     <DetalleVendedor
                                         planilla={planilla}

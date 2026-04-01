@@ -13,10 +13,10 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useAuth } from "@/context/authContext"
 import apiClient from "@/app/api/client"
-import {DOCUMENT_TYPES, Sequential} from "@/app/types/config-types";
+import { DOCUMENT_TYPES, Sequential } from "@/app/types/config-types"
 
 interface SequentialSectionProps {
-    sectionType: "secuenciales" | "guias";
+    sectionType: "secuenciales" | "guias" | "otros_correlativos";
     onOpenModalChange: (fn: () => void) => void;
 }
 
@@ -65,7 +65,7 @@ export default function SequentialSection({ sectionType, onOpenModalChange }: Se
     }, [])
 
     useEffect(() => {
-        onOpenModalChange(() => abrirModalNuevoSequential)
+        onOpenModalChange(abrirModalNuevoSequential)
     }, [abrirModalNuevoSequential, onOpenModalChange])
 
     const abrirModalEditarSequential = (sequential: Sequential) => {
@@ -206,7 +206,12 @@ export default function SequentialSection({ sectionType, onOpenModalChange }: Se
             <Dialog open={isSequentialModalOpen} onOpenChange={setIsSequentialModalOpen}>
                 <DialogContent className="max-w-2xl">
                     <DialogHeader>
-                        <DialogTitle>{sequentialEditando ? 'Editar' : 'Nuevo'} {sectionType === "secuenciales" ? "Comprobante" : "Guía"}</DialogTitle>
+                        <DialogTitle>
+                            {sequentialEditando ? 'Editar' : 'Nuevo'} {
+                            sectionType === "secuenciales" ? "Comprobante" :
+                                sectionType === "guias" ? "Guía" : "Correlativo"
+                        }
+                        </DialogTitle>
                         <DialogDescription>Configuración de numeración</DialogDescription>
                     </DialogHeader>
 
