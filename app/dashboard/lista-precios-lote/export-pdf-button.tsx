@@ -109,7 +109,7 @@ const ExportPdfButton = ({ payload }: { payload: any }) => {
       // Medidas estándar A4 en Puntos
       const pageWidth = isLandscape ? 841.89 : 595.28;
       const pageHeight = isLandscape ? 595.28 : 841.89;
-      const margin = isLandscape ? 40 : 20; // Menos margen en vertical para aprovechar espacio
+      const margin = isLandscape ? 40 : 20;
       const minYPosition = margin + 20;
 
       // Tamaños de fuente reducidos en vertical
@@ -117,12 +117,11 @@ const ExportPdfButton = ({ payload }: { payload: any }) => {
       const smallFontSize = isLandscape ? 6 : 4;
       const tinyFontSize = isLandscape ? 5.5 : 4;
 
-      // Anchos de columna proporcionales al ancho disponible
-      // Total horizontal disponible: 841.89 - 80 = 761.89
-      // Total vertical disponible: 595.28 - 40 = 555.28
+      // Anchos de columna ajustados (eliminada la columna COD.)
+      // Nueva distribución: DESCRIPCIÓN, LOTES, UM, STOCK, P.CONTADO, P.CREDITO, B.CONTADO, B.CREDITO, BONIFICACIONES, ESCALAS
       const columnWidths = isLandscape
-          ? [50, 120, 75, 45, 50, 60, 60, 60, 60, 90, 90] // Suma ~ 760
-          : [40, 85, 55, 30, 35, 45, 45, 45, 45, 65, 65];  // Suma ~ 555
+          ? [150, 75, 45, 50, 60, 60, 60, 90, 90] // Suma ~ 680 (sin COD.)
+          : [105, 55, 30, 35, 45, 45, 45, 65, 65];  // Suma ~ 490 (sin COD.)
 
       const empresaNombre = "DROGUERIA DIFAR"
       const empresaRuc = "2056138401"
@@ -204,7 +203,8 @@ const ExportPdfButton = ({ payload }: { payload: any }) => {
 
         yPosition = pageHeight - margin - 50
 
-        const columns = ['COD.', 'DESCRIPCIÓN', 'LOTES', 'UM', 'STOCK', 'P.CONTADO', 'P.CREDITO', 'B.CONTADO', 'B.CREDITO', 'BONIFICACIONES', 'ESCALAS']
+        // Columnas actualizadas sin COD.
+        const columns = ['DESCRIPCIÓN', 'LOTES', 'UM', 'STOCK', 'P.CONTADO', 'P.CREDITO', 'B.CONTADO', 'B.CREDITO', 'BONIFICACIONES', 'ESCALAS']
 
         let xPosition = margin
         columns.forEach((column, index) => {
@@ -263,7 +263,8 @@ const ExportPdfButton = ({ payload }: { payload: any }) => {
         const bonificaciones = processBonificaciones(item.bonificaciones_raw)
         const escalas = processEscalas(item.escalas_raw)
 
-        const descLines = splitTextIntoLines(item.prod_descripcion || '', columnWidths[1] - 5, font, baseFontSize)
+        // Ajuste: Ahora la descripción ocupa la primera columna (índice 0)
+        const descLines = splitTextIntoLines(item.prod_descripcion || '', columnWidths[0] - 5, font, baseFontSize)
 
         const bonifLines: {text: string, type: string}[] = []
         bonificaciones.forEach((bonif, index) => {
@@ -271,7 +272,7 @@ const ExportPdfButton = ({ payload }: { payload: any }) => {
               ? `${index + 1}. compra ${bonif.factor} y lleva ${bonif.cantidad} de ${item.prod_descripcion}`.toUpperCase()
               : `${index + 1}. compra ${bonif.factor} y lleva ${bonif.cantidad} de ${bonif.descArticuloBonif}`.toUpperCase()
 
-          const lines = splitTextIntoLines(bonifText, columnWidths[9] - 5, font, tinyFontSize)
+          const lines = splitTextIntoLines(bonifText, columnWidths[8] - 5, font, tinyFontSize)
           bonifLines.push(...lines.map(line => ({ text: line, type: 'bonif' })))
         })
 
@@ -313,19 +314,9 @@ const ExportPdfButton = ({ payload }: { payload: any }) => {
         }
 
         let xPosition = margin
-
-        // CODIGO
         const codigoY = yPosition - (maxHeight / 2) + 2
-        currentPage.drawText(item.prod_codigo || '', {
-          x: xPosition,
-          y: codigoY,
-          size: baseFontSize,
-          font,
-          color: rgb(0, 0, 0),
-        })
-        xPosition += columnWidths[0]
 
-        // DESCRIPCIÓN
+        // DESCRIPCIÓN (columna 0)
         const descStartY = yPosition - ((maxHeight - descHeight) / 2)
         descLines.forEach((line, lineIndex) => {
           currentPage.drawText(line, {
@@ -336,9 +327,9 @@ const ExportPdfButton = ({ payload }: { payload: any }) => {
             color: rgb(0, 0, 0),
           })
         })
-        xPosition += columnWidths[1]
+        xPosition += columnWidths[0]
 
-        // LOTES
+        // LOTES (columna 1)
         const lotesStartY = yPosition - ((maxHeight - lotesHeight) / 2)
         lotes.forEach((lote, index) => {
           const loteText = `${lote.lote} - ${lote.fecha}`
@@ -350,9 +341,9 @@ const ExportPdfButton = ({ payload }: { payload: any }) => {
             color: rgb(0, 0, 0),
           })
         })
-        xPosition += columnWidths[2]
+        xPosition += columnWidths[1]
 
-        // UM
+        // UM (columna 2)
         currentPage.drawText(item.prod_medida || '', {
           x: xPosition,
           y: codigoY,
@@ -360,19 +351,20 @@ const ExportPdfButton = ({ payload }: { payload: any }) => {
           font,
           color: rgb(0, 0, 0),
         })
-        xPosition += columnWidths[3]
+        xPosition += columnWidths[2]
 
-        // STOCK
-        currentPage.drawText(Number(item.kardex_saldoCant).toFixed(2) || '', {
+        // STOCK (columna 3) - EN COLOR AZUL
+        const stockValue = Number(item.kardex_saldoCant).toFixed(2) || '0.00'
+        currentPage.drawText(stockValue, {
           x: xPosition,
           y: codigoY,
           size: baseFontSize,
           font,
-          color: rgb(0, 0, 0),
+          color: rgb(0, 0, 1), // Color azul puro
         })
-        xPosition += columnWidths[4]
+        xPosition += columnWidths[3]
 
-        // PRECIO CONTADO
+        // PRECIO CONTADO (columna 4)
         const precioContado = `S/ ${item.precio_contado}`
         if (item.precio_contado) {
           currentPage.drawText(precioContado, {
@@ -383,9 +375,9 @@ const ExportPdfButton = ({ payload }: { payload: any }) => {
             color: rgb(0, 0, 0),
           })
         }
-        xPosition += columnWidths[5]
+        xPosition += columnWidths[4]
 
-        // PRECIO CREDITO
+        // PRECIO CREDITO (columna 5)
         const precioCredito = `S/ ${item.precio_credito}`
         if (item.precio_credito) {
           currentPage.drawText(precioCredito, {
@@ -396,9 +388,9 @@ const ExportPdfButton = ({ payload }: { payload: any }) => {
             color: rgb(0, 0, 0),
           })
         }
-        xPosition += columnWidths[6]
+        xPosition += columnWidths[5]
 
-        // PRECIO BONIF CONTADO
+        // PRECIO BONIF CONTADO (columna 6)
         const precioBonifContado = Number(item.precio_por_mayor) > 0 ? `S/ ${item.precio_por_mayor}` : ''
         if (precioBonifContado) {
           currentPage.drawText(precioBonifContado, {
@@ -409,9 +401,9 @@ const ExportPdfButton = ({ payload }: { payload: any }) => {
             color: rgb(0, 0.5, 0),
           })
         }
-        xPosition += columnWidths[7]
+        xPosition += columnWidths[6]
 
-        // PRECIO BONIF CREDITO
+        // PRECIO BONIF CREDITO (columna 7)
         const precioBonifCredito = Number(item.precio_por_menor) > 0 ? `S/ ${item.precio_por_menor}` : ''
         if (precioBonifCredito) {
           currentPage.drawText(precioBonifCredito, {
@@ -422,9 +414,9 @@ const ExportPdfButton = ({ payload }: { payload: any }) => {
             color: rgb(0, 0, 0.8),
           })
         }
-        xPosition += columnWidths[8]
+        xPosition += columnWidths[7]
 
-        // BONIFICACIONES
+        // BONIFICACIONES (columna 8)
         const bonifStartY = yPosition - ((maxHeight - bonifHeight) / 2)
         bonifLines.forEach((bonifLine, index) => {
           currentPage.drawText(bonifLine.text, {
@@ -435,9 +427,9 @@ const ExportPdfButton = ({ payload }: { payload: any }) => {
             color: rgb(0, 0.5, 0),
           })
         })
-        xPosition += columnWidths[9]
+        xPosition += columnWidths[8]
 
-        // ESCALAS
+        // ESCALAS (columna 9)
         const escalaStartY = yPosition - ((maxHeight - escalaHeight) / 2)
         escalaLines.forEach((escalaText, index) => {
           currentPage.drawText(escalaText, {

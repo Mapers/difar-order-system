@@ -21,14 +21,6 @@ import {
     X, Locate, Phone, Route, AlertCircle, Loader2, Info
 } from "lucide-react"
 import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-} from "@/components/ui/dialog"
-import {
     Tabs,
     TabsContent,
     TabsList,
@@ -47,18 +39,18 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
-import { Textarea } from "@/components/ui/textarea"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useAuth } from "@/context/authContext"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Checkbox } from "@/components/ui/checkbox"
 import apiClient from "@/app/api/client";
 import {ClientService} from "@/app/services/client/ClientService";
 import {Combobox} from "@/app/dashboard/mis-pedidos/page";
 import moment from "moment";
-import { Alert, AlertDescription } from "@/components/ui/alert"
 import ExcelJS from 'exceljs';
 import { Download } from "lucide-react";
+import {RutaModal} from "@/components/ruta-semanal/RutaModal";
+import {VisitaModal} from "@/components/ruta-semanal/VisitaModal";
+import {MapaModal} from "@/components/ruta-semanal/MapaModal";
+import {DeleteRutaModal} from "@/components/ruta-semanal/DeleteRutaModal";
 
 interface ClientZone {
     Codigo: string
@@ -625,12 +617,6 @@ export default function RutaSemanalPage() {
         setFarmaciasSeleccionadas([])
     }
 
-    const clientesFiltrados = clientsByZone.filter(client =>
-        client.NombreComercial?.toLowerCase().includes(searchCliente.toLowerCase()) ||
-        client.Codigo?.toLowerCase().includes(searchCliente.toLowerCase()) ||
-        client.Nombre?.toLowerCase().includes(searchCliente.toLowerCase())
-    )
-
     useEffect(() => {
         if (sellerSearch.length > 0) {
             setSellersFiltered(sellers.filter(item =>
@@ -905,26 +891,26 @@ export default function RutaSemanalPage() {
                                                         </div>
 
                                                         {ruta.estado === 'P' && <DropdownMenu>
-                                                            <DropdownMenuTrigger asChild>
-                                                                <Button variant="ghost" size="sm"
-                                                                        className="self-start">
-                                                                    <MoreHorizontal className="h-4 w-4"/>
-                                                                </Button>
-                                                            </DropdownMenuTrigger>
-                                                            <DropdownMenuContent align="end">
-                                                                <DropdownMenuItem
-                                                                    onClick={() => abrirModalEditarRuta(ruta)}>
-                                                                    <Edit className="h-4 w-4 mr-2"/>
-                                                                    Editar
-                                                                </DropdownMenuItem>
-                                                                <DropdownMenuItem
-                                                                    className="text-red-600"
-                                                                    onClick={() => abrirModalDeleteRuta(ruta)}
-                                                                >
-                                                                    <Trash2 className="h-4 w-4 mr-2"/>
-                                                                    Eliminar
-                                                                </DropdownMenuItem>
-                                                            </DropdownMenuContent>
+                                                          <DropdownMenuTrigger asChild>
+                                                            <Button variant="ghost" size="sm"
+                                                                    className="self-start">
+                                                              <MoreHorizontal className="h-4 w-4"/>
+                                                            </Button>
+                                                          </DropdownMenuTrigger>
+                                                          <DropdownMenuContent align="end">
+                                                            <DropdownMenuItem
+                                                              onClick={() => abrirModalEditarRuta(ruta)}>
+                                                              <Edit className="h-4 w-4 mr-2"/>
+                                                              Editar
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuItem
+                                                              className="text-red-600"
+                                                              onClick={() => abrirModalDeleteRuta(ruta)}
+                                                            >
+                                                              <Trash2 className="h-4 w-4 mr-2"/>
+                                                              Eliminar
+                                                            </DropdownMenuItem>
+                                                          </DropdownMenuContent>
                                                         </DropdownMenu>}
                                                     </div>
 
@@ -1253,13 +1239,13 @@ export default function RutaSemanalPage() {
                                                                     {historyItem.activa ? (
                                                                         <>
                                                                             {historyItem.estado_cliente === 'P' && <Badge variant="default"
-                                                                                    className="text-xs">
-                                                                                Pendiente
+                                                                                                                          className="text-xs">
+                                                                              Pendiente
                                                                             </Badge>}
                                                                             {historyItem.estado_cliente === 'C' && <Badge
-                                                                                className="bg-green-100 text-green-800 w-fit">
-                                                                                <CheckCircle className="h-3 w-3 mr-1"/>
-                                                                                Completada
+                                                                              className="bg-green-100 text-green-800 w-fit">
+                                                                              <CheckCircle className="h-3 w-3 mr-1"/>
+                                                                              Completada
                                                                             </Badge>}
                                                                         </>
                                                                     ) : (
@@ -1405,429 +1391,55 @@ export default function RutaSemanalPage() {
                 )}
             </Tabs>
 
-            <Dialog open={isRutaModalOpen} onOpenChange={setIsRutaModalOpen}>
-                <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-                    <DialogHeader>
-                        <DialogTitle>
-                            {rutaEditando ? 'Editar Ruta' : 'Nueva Ruta'}
-                        </DialogTitle>
-                        <DialogDescription>
-                            {rutaEditando
-                                ? 'Modifica los datos de la ruta existente'
-                                : 'Configura una nueva ruta semanal para tus vendedores'
-                            }
-                        </DialogDescription>
-                    </DialogHeader>
+            <RutaModal
+                isOpen={isRutaModalOpen}
+                onOpenChange={setIsRutaModalOpen}
+                rutaEditando={rutaEditando}
+                newRuta={newRuta}
+                setNewRuta={setNewRuta}
+                zones={zones}
+                selectedZones={selectedZones}
+                clientsByZone={clientsByZone}
+                loadingClientsByZone={loadingClientsByZone}
+                loadingSave={loadingSave}
+                searchCliente={searchCliente}
+                setSearchCliente={setSearchCliente}
+                farmaciasSeleccionadas={farmaciasSeleccionadas}
+                errors={errors}
+                setErrors={setErrors}
+                sellersFiltered={sellersFiltered}
+                sellerSearch={sellerSearch}
+                setSellerSearch={setSellerSearch}
+                onGuardarRuta={handleGuardarRuta}
+                onRemoverZona={removerZona}
+                onLimpiarTodasLasZonas={limpiarTodasLasZonas}
+                onSeleccionarFarmacia={handleSeleccionarFarmacia}
+                onVerMapaUbicacion={verMapaUbicacion}
+            />
 
-                    <div className="space-y-6">
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="nombre">Nombre de la Ruta *</Label>
-                                <Input
-                                    id="nombre"
-                                    placeholder="Ej: Ruta Norte"
-                                    value={newRuta.nombre}
-                                    onChange={(e) => {
-                                        setNewRuta({...newRuta, nombre: e.target.value})
-                                        if (errors.nombre) setErrors(prev => ({...prev, nombre: ''}))
-                                    }}
-                                    className={errors.nombre ? "border-red-500" : ""}
-                                />
-                                {errors.nombre && (
-                                    <p className="text-sm text-red-500 flex items-center gap-1">
-                                        <AlertCircle className="h-3 w-3" />
-                                        {errors.nombre}
-                                    </p>
-                                )}
-                            </div>
+            <VisitaModal
+                isOpen={isVisitaModalOpen}
+                onOpenChange={setIsVisitaModalOpen}
+                selectedVisita={selectedVisita}
+                comentarioVisita={comentarioVisita}
+                setComentarioVisita={setComentarioVisita}
+                onConfirmarVisita={handleConfirmarVisita}
+            />
 
-                            <div className="space-y-2">
-                                <Label htmlFor="dia">Día de la Semana *</Label>
-                                <Select
-                                    value={newRuta.dia}
-                                    onValueChange={(value) => {
-                                        setNewRuta({...newRuta, dia: value})
-                                        if (errors.dia) setErrors(prev => ({...prev, dia: ''}))
-                                    }}
-                                >
-                                    <SelectTrigger className={errors.dia ? "border-red-500" : ""}>
-                                        <SelectValue placeholder="Seleccionar día" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="Lunes">Lunes</SelectItem>
-                                        <SelectItem value="Martes">Martes</SelectItem>
-                                        <SelectItem value="Miércoles">Miércoles</SelectItem>
-                                        <SelectItem value="Jueves">Jueves</SelectItem>
-                                        <SelectItem value="Viernes">Viernes</SelectItem>
-                                        <SelectItem value="Sábado">Sábado</SelectItem>
-                                        <SelectItem value="Domingo">Domingo</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                                {errors.dia && (
-                                    <p className="text-sm text-red-500 flex items-center gap-1">
-                                        <AlertCircle className="h-3 w-3" />
-                                        {errors.dia}
-                                    </p>
-                                )}
-                            </div>
+            <MapaModal
+                isOpen={isMapaModalOpen}
+                onOpenChange={setIsMapaModalOpen}
+                mapaTitulo={mapaTitulo}
+                selectedMapaDirecciones={selectedMapaDirecciones}
+                generarMapaEstatico={generarMapaEstatico}
+            />
 
-                            <div className="space-y-2">
-                                <Label htmlFor="vendedor">Vendedor *</Label>
-                                <div className={errors.vendedorId ? "border border-red-500 rounded-md p-1" : ""}>
-                                    <Combobox<Seller>
-                                        items={sellersFiltered}
-                                        value={newRuta.vendedorId}
-                                        onSearchChange={setSellerSearch}
-                                        onSelect={(value) => {
-                                            setNewRuta({...newRuta, vendedorId: value?.idVendedor || '', vendedorCode: value?.codigo || ''})
-                                            if (errors.vendedorId) setErrors(prev => ({...prev, vendedorId: ''}))
-                                        }}
-                                        getItemKey={(seller) => seller.idVendedor}
-                                        getItemLabel={(seller) => (
-                                            <div>
-                                                <span>{`${seller.nombres} ${seller.apellidos}`}</span>
-                                                <span className='text-blue-400'> {seller.codigo}</span>
-                                            </div>
-                                        )}
-                                        placeholder="Buscar vendedor..."
-                                        emptyText="No se encontraron vendedores"
-                                        searchText="Escribe al menos 3 vendedores..."
-                                        loadingText="Buscando vendedores..."
-                                    />
-                                </div>
-                                {errors.vendedorId && (
-                                    <p className="text-sm text-red-500 flex items-center gap-1">
-                                        <AlertCircle className="h-3 w-3" />
-                                        {errors.vendedorId}
-                                    </p>
-                                )}
-                            </div>
-                        </div>
-
-                        {/* Sección de Zonas Seleccionadas */}
-                        {selectedZones.length > 0 && (
-                            <div className="space-y-3">
-                                <div className="flex justify-between items-center">
-                                    <Label>Zonas Seleccionadas ({selectedZones.length})</Label>
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={limpiarTodasLasZonas}
-                                        className="text-red-600 hover:text-red-700"
-                                    >
-                                        <X className="h-4 w-4 mr-1" />
-                                        Limpiar Todas
-                                    </Button>
-                                </div>
-                                <div className="flex flex-wrap gap-2">
-                                    {selectedZones.map(zonaId => {
-                                        const zona = zones.find(z => z.IdZona === zonaId)
-                                        return (
-                                            <Badge key={zonaId} variant="secondary" className="flex items-center gap-1">
-                                                {zona?.NombreZona || zonaId}
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    className="h-4 w-4 p-0 hover:bg-red-100"
-                                                    onClick={() => removerZona(zonaId)}
-                                                >
-                                                    <X className="h-3 w-3" />
-                                                </Button>
-                                            </Badge>
-                                        )
-                                    })}
-                                </div>
-                            </div>
-                        )}
-
-                        <div className="space-y-2">
-                            <Label htmlFor="zona">Agregar Zona</Label>
-                            <Select
-                                disabled={loadingSave}
-                                value={newRuta.zonaSeleccionada}
-                                onValueChange={(value) => {
-                                    setNewRuta({...newRuta, zonaSeleccionada: value})
-                                    if (errors.zonaSeleccionada) setErrors(prev => ({...prev, zonaSeleccionada: ''}))
-                                }}
-                            >
-                                <SelectTrigger id="zona" className={errors.zonaSeleccionada ? "border-red-500" : ""}>
-                                    <div className="flex items-center gap-2">
-                                        <MapPin className="h-4 w-4" />
-                                        <SelectValue placeholder="Seleccionar zona para agregar" />
-                                    </div>
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {zones
-                                        .filter(zona => !selectedZones.includes(zona.IdZona)) // Filtrar zonas ya seleccionadas
-                                        .map((zona) => (
-                                            <SelectItem key={zona.IdZona} value={zona.IdZona}>
-                                                <div className="flex items-center gap-2">
-                                                    {zona.NombreZona}
-                                                </div>
-                                            </SelectItem>
-                                        ))}
-                                </SelectContent>
-                            </Select>
-                            {errors.zonaSeleccionada && (
-                                <p className="text-sm text-red-500 flex items-center gap-1">
-                                    <AlertCircle className="h-3 w-3" />
-                                    {errors.zonaSeleccionada}
-                                </p>
-                            )}
-                        </div>
-
-                        {/* Sección de Búsqueda y Farmacias */}
-                        {selectedZones.length > 0 && (
-                            <div className="space-y-4">
-                                <div className="flex justify-between items-center">
-                                    <Label>Farmacias en Zonas Seleccionadas</Label>
-                                    <Badge variant="outline">
-                                        {farmaciasSeleccionadas.length} seleccionadas
-                                    </Badge>
-                                </div>
-
-                                {/* Buscador */}
-                                <div className="space-y-2">
-                                    <Label htmlFor="buscarFarmacia">Buscar Farmacia</Label>
-                                    <Input
-                                        id="buscarFarmacia"
-                                        placeholder="Buscar por nombre comercial, RUC o representante..."
-                                        value={searchCliente}
-                                        onChange={(e) => setSearchCliente(e.target.value)}
-                                    />
-                                </div>
-
-                                {errors.farmacias && (
-                                    <Alert variant="destructive">
-                                        <AlertCircle className="h-4 w-4" />
-                                        <AlertDescription>
-                                            {errors.farmacias}
-                                        </AlertDescription>
-                                    </Alert>
-                                )}
-
-                                <div className="border rounded-lg divide-y max-h-96 overflow-y-auto">
-                                    {loadingClientsByZone && clientsByZone.length === 0 ? (
-                                        Array.from({ length: 3 }).map((_, index) => (
-                                            <Skeleton key={index} className="h-32 w-full" />
-                                        ))
-                                    ) : clientesFiltrados.length > 0 ? (
-                                        clientesFiltrados.map((client) => {
-                                            const zona = zones.find(z => z.IdZona === client.zona) // Asumiendo que client tiene zona
-                                            return (
-                                                <div key={client.Codigo} className="flex items-start gap-3 p-4 hover:bg-gray-50">
-                                                    <Checkbox
-                                                        checked={farmaciasSeleccionadas.includes(client.Codigo)}
-                                                        onCheckedChange={() => handleSeleccionarFarmacia(client.Codigo)}
-                                                    />
-                                                    <div className="flex-1">
-                                                        <div className="flex items-center gap-2 mb-1">
-                                                            <span className="font-medium">{client.NombreComercial}</span>
-                                                            {zona && (
-                                                                <Badge variant="outline" className="text-xs">
-                                                                    {zona.NombreZona}
-                                                                </Badge>
-                                                            )}
-                                                        </div>
-                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-2 text-sm">
-                                                            <div>
-                                                                <strong>RUC:</strong> {client.Codigo}
-                                                            </div>
-                                                            <div>
-                                                                <strong>Representante:</strong> {client.Nombre}
-                                                            </div>
-                                                        </div>
-                                                        <p className="text-sm text-gray-600 mb-2">{client.direccion}</p>
-                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs text-gray-500">
-                                                            <div>
-                                                                <strong>Teléfono:</strong> {client.Telefono || '--- --- ---'}
-                                                            </div>
-                                                            <div className="col-span-2">
-                                                                <strong>Coordenadas:</strong> {client.latitud.toFixed(4)}, {client.longitud.toFixed(4)}
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    <Button
-                                                        variant="outline"
-                                                        size="sm"
-                                                        onClick={() => verMapaUbicacion({
-                                                            id: client.Codigo,
-                                                            NombreComercial: client.NombreComercial,
-                                                            direccion: client.direccion,
-                                                            latitud: client.latitud,
-                                                            longitud: client.longitud
-                                                        })}
-                                                    >
-                                                        <MapPin className="h-4 w-4" />
-                                                    </Button>
-                                                </div>
-                                            )
-                                        })
-                                    ) : (
-                                        <div className="text-center py-8">
-                                            <MapPin className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                                            <h3 className="text-lg font-medium text-gray-900 mb-2">
-                                                {searchCliente ? "No se encontraron farmacias" : "No hay farmacias cargadas"}
-                                            </h3>
-                                            <p className="text-gray-500">
-                                                {searchCliente
-                                                    ? "Intenta con otros términos de búsqueda"
-                                                    : "Agrega zonas para ver las farmacias disponibles"
-                                                }
-                                            </p>
-                                        </div>
-                                    )}
-                                </div>
-
-                                {/* Contador de resultados */}
-                                {searchCliente && clientesFiltrados.length > 0 && (
-                                    <div className="text-sm text-gray-500 text-center">
-                                        Mostrando {clientesFiltrados.length} de {clientsByZone.length} farmacias
-                                    </div>
-                                )}
-                            </div>
-                        )}
-                    </div>
-
-                    <DialogFooter>
-                        <Button variant="outline" onClick={() => setIsRutaModalOpen(false)} disabled={loadingSave}>
-                            Cancelar
-                        </Button>
-                        <Button onClick={handleGuardarRuta} disabled={loadingSave}>
-                            {loadingSave && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                            {rutaEditando ? 'Actualizar Ruta' : 'Crear Ruta'}
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
-
-            <Dialog open={isVisitaModalOpen} onOpenChange={setIsVisitaModalOpen}>
-                <DialogContent className="sm:max-w-md">
-                    <DialogHeader>
-                        <DialogTitle>Marcar Llegada</DialogTitle>
-                        <DialogDescription>
-                            Confirma tu llegada a {selectedVisita?.NombreComercial} y describe la visita
-                        </DialogDescription>
-                    </DialogHeader>
-
-                    <div className="space-y-4">
-                        <div className="p-3 bg-blue-50 rounded-lg">
-                            <h4 className="font-medium text-sm mb-1">{selectedVisita?.NombreComercial}</h4>
-                            <p className="text-sm text-gray-600 flex items-center"><Locate className="h-4 w-4 mr-2 text-blue-600" /> {selectedVisita?.direccion}</p>
-                            <p className="text-xs text-gray-500 flex items-center"><User className="h-4 w-4 mr-2 text-orange-600" /> {selectedVisita?.Nombre}</p>
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label htmlFor="comentario">Comentario de la visita *</Label>
-                            <Textarea
-                                id="comentario"
-                                placeholder="Describe los resultados obtenidos, observaciones, pedidos realizados, etc."
-                                value={comentarioVisita}
-                                onChange={(e) => setComentarioVisita(e.target.value)}
-                                rows={4}
-                            />
-                        </div>
-                    </div>
-
-                    <DialogFooter>
-                        <Button variant="outline" onClick={() => setIsVisitaModalOpen(false)}>
-                            Cancelar
-                        </Button>
-                        <Button
-                            onClick={handleConfirmarVisita}
-                            disabled={!comentarioVisita.trim()}
-                            className="flex items-center gap-2"
-                        >
-                            <CheckCircle className="h-4 w-4" />
-                            Confirmar Visita
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
-
-            <Dialog open={isMapaModalOpen} onOpenChange={setIsMapaModalOpen}>
-                <DialogContent className="max-w-4xl">
-                    <DialogHeader>
-                        <DialogTitle>{mapaTitulo}</DialogTitle>
-                        <DialogDescription>
-                            {selectedMapaDirecciones.length === 1
-                                ? `Ubicación de ${selectedMapaDirecciones[0]?.NombreComercial}`
-                                : `${selectedMapaDirecciones.length} ubicaciones en el mapa`
-                            }
-                        </DialogDescription>
-                    </DialogHeader>
-
-                    <div className="space-y-4">
-                        <div className="border rounded-lg overflow-hidden">
-                            <iframe
-                                src={generarMapaEstatico(selectedMapaDirecciones)}
-                                width="100%"
-                                height="400"
-                                style={{ border: 'none' }}
-                                loading="lazy"
-                                referrerPolicy="no-referrer-when-downgrade"
-                            ></iframe>
-                        </div>
-
-                        {selectedMapaDirecciones.length > 1 && (
-                            <div className="space-y-2">
-                                <h4 className="font-medium">Puntos de la ruta:</h4>
-                                <div className="space-y-2 max-h-64 overflow-y-auto">
-                                    {selectedMapaDirecciones.map((direccion, index) => (
-                                        <div key={direccion.id} className="flex items-center gap-3 p-2 bg-gray-50 rounded">
-                                            <Badge variant="outline">{index + 1}</Badge>
-                                            <div className="flex-1">
-                                                <div className="font-medium text-sm">{direccion.NombreComercial}</div>
-                                                <div className="text-xs text-gray-500">{direccion.direccion}</div>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-                    </div>
-
-                    <DialogFooter>
-                        <Button variant="outline" onClick={() => setIsMapaModalOpen(false)}>
-                            Cerrar
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
-
-            <Dialog open={showDeleteConfirmModal} onOpenChange={setShowDeleteConfirmModal}>
-                <DialogContent className="max-w-lg">
-                    <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2">
-                            <Info className="h-5 w-5 text-blue-600" />
-                            Está seguro que quiere eliminar?
-                        </DialogTitle>
-                        <DialogDescription>
-                            Se eliminará el registro, todas sus direcciones y progresos
-                        </DialogDescription>
-                    </DialogHeader>
-
-                    <DialogFooter className="gap-2 sm:gap-0">
-                        <Button
-                            variant="outline"
-                            onClick={() => {
-                                setShowDeleteConfirmModal(false)
-                            }}
-                            className="flex-1"
-                        >
-                            Cancelar
-                        </Button>
-                        <Button
-                            onClick={() => {
-                                handleEliminarRuta(rutaEditando?.id || 0)
-                            }}
-                            className="flex-1 bg-blue-600 hover:bg-blue-700"
-                        >
-                            Eliminar
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+            <DeleteRutaModal
+                isOpen={showDeleteConfirmModal}
+                onOpenChange={setShowDeleteConfirmModal}
+                rutaEditando={rutaEditando}
+                onEliminarRuta={handleEliminarRuta}
+            />
         </div>
     )
 }
