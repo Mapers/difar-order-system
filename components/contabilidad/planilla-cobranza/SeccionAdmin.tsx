@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/select'
 import {
     ChevronDown, ChevronRight,
-    RefreshCw, Search, Loader2, MapPin,
+    RefreshCw, Search, Loader2, MapPin, Paperclip,
 } from 'lucide-react'
 import DetalleAdmin from './DetalleAdmin'
 import EstadoPill from './EstadoPill'
@@ -22,8 +22,10 @@ import {
     PlanillaDetalle, ResumenDia,
     TipoComprobante,
 } from "@/app/types/planilla-types";
-import {fmtFecha, fmtMoney, fmtRel, getInitials} from "@/lib/planilla.helper";
+import {fmtMoney, fmtRel, getInitials} from "@/lib/planilla.helper";
 import {EmpresaOption, TipoAmortizacion} from "@/app/types/amortizacion-types";
+import { VouchersModal, Voucher } from './VouchersModal'
+import {publicApi} from "@/app/api/client";
 
 interface Props {
     tiposComprobante:     TipoComprobante[]
@@ -46,7 +48,7 @@ export default function SeccionAdmin({
                                          adminInfo,
                                          onFetchAdmin, onFetchResumen, onFetchDetalle, onValidar,
                                          tiposAmort, empresas
-}: Props) {
+                                     }: Props) {
 
     const [busqueda,     setBusqueda]     = useState('')
     const [filtroEstado, setFiltroEstado] = useState('all')
@@ -57,6 +59,8 @@ export default function SeccionAdmin({
     const [detalleCache, setDetalleCache] = useState<Record<number, PlanillaDetalle[]>>({})
     const [loadingDet,   setLoadingDet]   = useState<number | null>(null)
     const [procesando,   setProcesando]   = useState<number | null>(null)
+
+    const [vouchersModal, setVouchersModal] = useState<{ open: boolean; planilla: any }>({ open: false, planilla: null })
 
     useEffect(() => {
         onFetchAdmin()
@@ -107,6 +111,7 @@ export default function SeccionAdmin({
 
     return (
         <div className="space-y-4">
+
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                 {[
                     { label: 'Planillas hoy',   value: resumenDia?.total_planillas ?? '—', color: 'text-sky-700',     bg: 'bg-sky-50 border-sky-200' },
@@ -125,8 +130,8 @@ export default function SeccionAdmin({
 
             <Card className="shadow-sm">
                 <CardContent className="p-4 space-y-3">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-                        <div className="relative lg:col-span-1">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                        <div className="relative sm:col-span-2 lg:col-span-1">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                             <Input
                                 placeholder="Vendedor, zona, N° planilla..."
@@ -146,21 +151,44 @@ export default function SeccionAdmin({
                                 <SelectItem value="borrador">Borrador</SelectItem>
                             </SelectContent>
                         </Select>
-                        <Input type="date" value={fechaDesde} onChange={e => setFechaDesde(e.target.value)} className="bg-slate-50" />
-                        <Input type="date" value={fechaHasta} onChange={e => setFechaHasta(e.target.value)} className="bg-slate-50" />
+                        <Input
+                            type="date"
+                            value={fechaDesde}
+                            onChange={e => setFechaDesde(e.target.value)}
+                            className="bg-slate-50"
+                        />
+                        <Input
+                            type="date"
+                            value={fechaHasta}
+                            onChange={e => setFechaHasta(e.target.value)}
+                            className="bg-slate-50"
+                        />
                     </div>
 
-                    <div className="flex items-center justify-between gap-2">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                         <p className="text-[11px] text-slate-400">
                             {planillasAdmin.length} planilla{planillasAdmin.length !== 1 ? 's' : ''} encontrada{planillasAdmin.length !== 1 ? 's' : ''}
                         </p>
-                        <div className="flex gap-2">
-                            <Button size="sm" onClick={handleBuscar} disabled={loadingAdmin} className="bg-sky-600 hover:bg-sky-700 gap-1.5">
-                                {loadingAdmin ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Search className="h-3.5 w-3.5" />}
+                        <div className="flex gap-2 w-full sm:w-auto">
+                            <Button
+                                size="sm"
+                                onClick={handleBuscar}
+                                disabled={loadingAdmin}
+                                className="flex-1 sm:flex-none bg-sky-600 hover:bg-sky-700 gap-1.5"
+                            >
+                                {loadingAdmin
+                                    ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                    : <Search className="h-3.5 w-3.5" />}
                                 Buscar
                             </Button>
-                            <Button size="sm" variant="outline" onClick={() => { onFetchAdmin(); onFetchResumen() }} className="gap-1.5">
-                                <RefreshCw className="h-3.5 w-3.5" /> Actualizar
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => { onFetchAdmin(); onFetchResumen() }}
+                                className="flex-1 sm:flex-none gap-1.5"
+                            >
+                                <RefreshCw className="h-3.5 w-3.5" />
+                                Actualizar
                             </Button>
                         </div>
                     </div>
@@ -180,6 +208,7 @@ export default function SeccionAdmin({
                 const isOpen    = openRows.has(planilla.id_planilla)
                 const isLoading = loadingDet === planilla.id_planilla
                 const dets      = detalleCache[planilla.id_planilla] ?? []
+                const planillaVouchers: Voucher[] = (planilla as any).vouchers ?? []
 
                 return (
                     <Card key={planilla.id_planilla} className={`shadow-sm overflow-hidden border-l-4 ${colorBorde(planilla.estado)}`}>
@@ -198,28 +227,61 @@ export default function SeccionAdmin({
                                         </p>
                                         <EstadoPill estado={planilla.estado} />
                                     </div>
-                                    <p className="text-[11px] text-slate-400 truncate mt-0.5 flex items-center gap-1">
-                                        {planilla.nombre_vendedor} · <MapPin className="h-3 w-3" />{planilla.zona} · {fmtRel(planilla.fecha_envio)}
-                                    </p>
+                                    <div className="mt-0.5 space-y-0.5 sm:space-y-0">
+                                        <p className="text-[11px] text-slate-500 font-medium truncate">
+                                            {planilla.nombre_vendedor}
+                                        </p>
+                                        <p className="text-[11px] text-slate-400 truncate flex items-center gap-1">
+                                            <MapPin className="h-3 w-3 shrink-0" />
+                                            <span className="truncate">{planilla.zona}</span>
+                                            <span className="shrink-0">· {fmtRel(planilla.fecha_envio)}</span>
+                                        </p>
+                                    </div>
                                 </div>
                             </div>
 
-                            <div className="flex items-center gap-3 shrink-0">
-                                <div className="text-right">
-                                    <p className="font-mono font-semibold text-slate-800">
+                            <div className="flex items-center gap-2 sm:gap-3 shrink-0 ml-2">
+                                {planillaVouchers.length > 0 && (
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={(e) => {
+                                            e.stopPropagation()
+                                            setVouchersModal({ open: true, planilla })
+                                        }}
+                                        className="gap-1 text-sky-700 border-sky-200 hover:bg-sky-50 h-7 px-2"
+                                        title="Ver vouchers"
+                                    >
+                                        <Paperclip className="h-3 w-3" />
+                                        <span className="text-[10px] font-semibold">{planillaVouchers.length}</span>
+                                    </Button>
+                                )}
+
+                                <div className="text-right hidden xs:block">
+                                    <p className="font-mono font-semibold text-slate-800 text-sm">
                                         {fmtMoney(planilla.total_cobrado ?? dets.reduce((s, r) => s + Number(r.importe_cobrado), 0))}
                                     </p>
                                     <p className="text-[10px] text-slate-400">
                                         {planilla.total_registros ?? dets.length} reg.
                                     </p>
                                 </div>
+
                                 {isLoading
                                     ? <Loader2 className="h-4 w-4 text-slate-400 animate-spin shrink-0" />
                                     : isOpen
-                                        ? <ChevronDown className="h-4 w-4 text-slate-400 shrink-0" />
-                                        : <ChevronRight className="h-4 w-4 text-slate-400 shrink-0" />
+                                        ? <ChevronDown className="h-4 w-4 text-slate-400 shrink-0 transition-transform" />
+                                        : <ChevronRight className="h-4 w-4 text-slate-400 shrink-0 transition-transform" />
                                 }
                             </div>
+                        </div>
+
+                        <div className="px-3.5 pb-2 flex items-center justify-between xs:hidden border-t border-slate-50 bg-slate-50/50">
+                            <p className="text-[10px] text-slate-400">
+                                {planilla.total_registros ?? dets.length} registros
+                            </p>
+                            <p className="font-mono font-semibold text-slate-800 text-sm">
+                                {fmtMoney(planilla.total_cobrado ?? dets.reduce((s, r) => s + Number(r.importe_cobrado), 0))}
+                            </p>
                         </div>
 
                         {isOpen && (
@@ -240,6 +302,14 @@ export default function SeccionAdmin({
                     </Card>
                 )
             })}
+
+            <VouchersModal
+                open={vouchersModal.open}
+                onOpenChange={(v) => setVouchersModal(prev => ({ ...prev, open: v }))}
+                numeroPlanilla={vouchersModal.planilla?.numero_planilla ?? ''}
+                vouchers={(vouchersModal.planilla as any)?.vouchers ?? []}
+                baseUrl={publicApi ?? ''}
+            />
         </div>
     )
 }

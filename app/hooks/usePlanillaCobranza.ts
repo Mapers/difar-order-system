@@ -78,15 +78,49 @@ export function usePlanillaCobranza() {
         setDetalle(detalleRegs)
     }, [])
 
-    const agregarDetalle = useCallback(async (id_planilla: number, registro: NuevoDetalle) => {
+    /**
+     * Agrega un detalle a la planilla.
+     * Si se proveen vouchers (File[]) los envía como multipart/form-data,
+     * de lo contrario usa JSON normal.
+     */
+    const agregarDetalle = useCallback(async (
+        id_planilla: number,
+        registro: NuevoDetalle,
+        vouchers: File[] = []
+    ) => {
         setLoadingDetalle(true)
         try {
-            const res = await apiClient.post(`/planilla-cobranza/${id_planilla}/detalle`, registro)
+            let res: any
+
+            if (vouchers.length > 0) {
+                const form = new FormData()
+
+                Object.entries(registro).forEach(([key, value]) => {
+                    if (value !== undefined && value !== null) {
+                        form.append(key, String(value))
+                    }
+                })
+
+                vouchers.forEach(file => form.append('vouchers', file))
+
+                res = await apiClient.post(
+                    `/planilla-cobranza/${id_planilla}/detalle`,
+                    form,
+                    { headers: { 'Content-Type': 'multipart/form-data' } }
+                )
+            } else {
+                res = await apiClient.post(
+                    `/planilla-cobranza/${id_planilla}/detalle`,
+                    registro
+                )
+            }
+
             const nuevo = res.data?.data?.detalle
             setDetalle(prev => [...prev, nuevo])
             toast({
                 title: 'Registro agregado',
-                description: `${registro.nombre_cliente} — S/ ${Number(registro.importe).toFixed(2)}`
+                description: `${registro.nombre_cliente} — S/ ${Number(registro.importe).toFixed(2)}` +
+                    (vouchers.length > 0 ? ` · ${vouchers.length} voucher${vouchers.length > 1 ? 's' : ''}` : '')
             })
             return nuevo
         } catch (error: any) {

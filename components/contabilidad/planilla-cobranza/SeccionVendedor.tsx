@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -17,7 +17,7 @@ import {
     Send, Plus, ChevronDown, ChevronRight,
     CheckCircle2, AlertCircle,
     RefreshCw, FileText, Loader2, MapPin,
-    DollarSign,
+    DollarSign, Eye, X, Upload, Image as ImageIcon, Paperclip,
 } from 'lucide-react'
 import { toast } from '@/app/hooks/use-toast'
 import DetalleVendedor from './DetalleVendedor'
@@ -32,6 +32,16 @@ import {
 import {fmtFecha, fmtMoney, fmtRel} from "@/lib/planilla.helper";
 import ZonaCombobox from "@/components/contabilidad/planilla-cobranza/ZonaComboBox";
 import MiniTabla from "@/components/contabilidad/planilla-cobranza/Minitabla";
+import {useAuth} from "@/context/authContext";
+import { fetchGetAllClients } from "@/app/api/takeOrders"
+import { IClient } from "@/app/types/order/client-interface"
+import { Combobox } from "@/app/dashboard/mis-pedidos/page"
+import {
+    DocumentoCliente,
+    SeleccionarDocumentoModal
+} from "@/components/contabilidad/planilla-cobranza/SeleccionarDocumentoModal";
+import {publicApi} from "@/app/api/client";
+import {Voucher, VouchersModal} from "@/components/contabilidad/planilla-cobranza/VouchersModal";
 
 interface FormRegistro {
     codigo_cliente:   string
@@ -57,6 +67,9 @@ const FORM_INICIAL: FormRegistro = {
     numero_operacion: '', numero_cheque: '',
 }
 
+const MAX_VOUCHERS = 3
+const VOUCHER_ACCEPT = 'image/jpeg,image/png,image/webp,application/pdf'
+
 interface Props {
     tiposComprobante: TipoComprobante[]
     bancos:           CatalogosBanco[]
@@ -65,7 +78,7 @@ interface Props {
     detalle:          PlanillaDetalle[]
     onGenerarCorrelativo: (v: VendedorInfo, fecha: string, zona: string) => Promise<any>
     onLimpiar:            () => void
-    onAgregarDetalle:     (id: number, reg: NuevoDetalle) => Promise<any>
+    onAgregarDetalle:     (id: number, reg: NuevoDetalle, vouchers: File[]) => Promise<any>
     onEliminarDetalle:    (id_planilla: number, id_detalle: number) => void
     onEnviarPlanilla:     (id: number, v: VendedorInfo) => Promise<any>
     misPlanillas:         PlanillaCabecera[]
@@ -87,19 +100,31 @@ export default function SeccionVendedor({
                                             vendedorInfo,
                                         }: Props) {
 
-    const [tab,    setTab]    = useState<'nueva' | 'mis'>('nueva')
+    const [tab,     setTab]     = useState<'nueva' | 'mis'>('nueva')
     const [creando, setCreando] = useState(false)
     const [enviando, setEnviando] = useState(false)
     const [guardando, setGuardando] = useState(false)
     const [confirmOpen, setConfirmOpen] = useState(false)
-    const [fechaRuta,      setFechaRuta]      = useState(new Date().toISOString().slice(0, 10))
-    const [zonaCombo,      setZonaCombo]      = useState('')
-    const [zonaLibre,      setZonaLibre]      = useState('')
-    const [usaCombo,       setUsaCombo]       = useState(false)
+    const [fechaRuta,  setFechaRuta]  = useState(new Date().toISOString().slice(0, 10))
+    const [zonaCombo,  setZonaCombo]  = useState('')
+    const [zonaLibre,  setZonaLibre]  = useState('')
+    const [usaCombo,   setUsaCombo]   = useState(false)
     const zonaEfectiva = usaCombo ? zonaCombo : zonaLibre
+
+    const [clients,         setClients]         = useState<IClient[]>([])
+    const [clientsFiltered, setClientsFiltered] = useState<IClient[]>([])
+    const [clientSearch,    setClientSearch]    = useState("")
+    const [selectedClient,  setSelectedClient]  = useState<IClient | null>(null)
+    const [loadingClients,  setLoadingClients]  = useState(false)
+    const { user, isAdmin } = useAuth()
 
     const [formReg, setFormReg] = useState<FormRegistro>(FORM_INICIAL)
     const fc = (f: keyof FormRegistro, v: string) => setFormReg(p => ({ ...p, [f]: v }))
+
+    const [vouchers,    setVouchers]    = useState<File[]>([])
+    const voucherInputRef               = useRef<HTMLInputElement>(null)
+
+    const [docModalOpen, setDocModalOpen] = useState(false)
 
     const [openRows,     setOpenRows]     = useState<Set<number>>(new Set())
     const [detalleCache, setDetalleCache] = useState<Record<number, PlanillaDetalle[]>>({})
@@ -107,6 +132,8 @@ export default function SeccionVendedor({
     const [editId,       setEditId]       = useState<number | null>(null)
     const [editRegs,     setEditRegs]     = useState<PlanillaDetalle[]>([])
     const [reenviando,   setReen]         = useState(false)
+
+    const [vouchersModal, setVouchersModal] = useState<{ open: boolean; planilla: any }>({ open: false, planilla: null })
 
     const rechazadas = useMemo(
         () => misPlanillas.filter(p => p.estado === 'rechazado').length,
@@ -116,6 +143,81 @@ export default function SeccionVendedor({
     useEffect(() => {
         onFetchMisPlanillas({ id_vendedor: vendedorInfo.id_vendedor })
     }, [vendedorInfo.id_vendedor])
+
+    useEffect(() => {
+        if (user) fetchClients()
+    }, [user])
+
+    const fetchClients = async () => {
+        setLoadingClients(true)
+        try {
+            const sellerCode = isAdmin() ? "" : (user?.codigo || "")
+            const response = await fetchGetAllClients(sellerCode, false)
+            const data = response.data?.data?.data || []
+            setClients(data)
+            setClientsFiltered(data)
+        } catch {
+            setClients([])
+        } finally {
+            setLoadingClients(false)
+        }
+    }
+
+    useEffect(() => {
+        if (clientSearch) {
+            setClientsFiltered(clients.filter(c =>
+                c.RUC?.includes(clientSearch) ||
+                c.Nombre?.toUpperCase().includes(clientSearch.toUpperCase())
+            ))
+        } else {
+            setClientsFiltered(clients)
+        }
+    }, [clientSearch, clients])
+
+    const handleClientSelect = (client: IClient | null) => {
+        setSelectedClient(client)
+        setFormReg(prev => ({
+            ...prev,
+            codigo_cliente: client?.RUC ?? client?.codigo ?? "",
+            nombre_cliente: client?.Nombre ?? "",
+            tipo_documento: '',
+            serie: '',
+            numero_doc: '',
+            importe: '',
+        }))
+    }
+
+    const handleDocumentoSelect = (doc: DocumentoCliente) => {
+        fc('tipo_documento', doc.Tipo_Doc)
+        fc('serie',          doc.SerieDoc)
+        fc('numero_doc',     doc.NumeroDoc)
+        fc('importe',        doc.saldo_pendiente.toString())
+        toast({
+            title: 'Documento cargado',
+            description: `${doc.Abre_Doc} ${doc.SerieDoc}-${doc.NumeroDoc}`,
+        })
+    }
+
+    const handleVoucherChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = Array.from(e.target.files || [])
+        const disponibles = MAX_VOUCHERS - vouchers.length
+        if (disponibles <= 0) {
+            toast({ title: 'Límite alcanzado', description: `Máximo ${MAX_VOUCHERS} vouchers por registro.`, variant: 'warning' })
+            return
+        }
+        const nuevos = files.slice(0, disponibles)
+        setVouchers(prev => [...prev, ...nuevos])
+        if (voucherInputRef.current) voucherInputRef.current.value = ''
+    }
+
+    const removeVoucher = (idx: number) => {
+        setVouchers(prev => prev.filter((_, i) => i !== idx))
+    }
+
+    const voucherPreview = (file: File) => {
+        if (file.type === 'application/pdf') return null
+        return URL.createObjectURL(file)
+    }
 
     const handleCrear = async () => {
         if (!fechaRuta || !zonaEfectiva.trim()) {
@@ -137,13 +239,21 @@ export default function SeccionVendedor({
         }
         setGuardando(true)
         const banco = bancos.find(b => b.CodigoEntidadFinanciera === formReg.cod_banco)
-        const nuevo = await onAgregarDetalle(planillaActiva.id_planilla, {
-            ...formReg,
-            importe:         parseFloat(formReg.importe),
-            importe_cobrado: parseFloat(formReg.importe_cobrado || '0'),
-            desc_banco:      banco?.DescripcionEntidadFinanciera || formReg.desc_banco,
-        })
-        if (nuevo) setFormReg(FORM_INICIAL)
+        const nuevo = await onAgregarDetalle(
+            planillaActiva.id_planilla,
+            {
+                ...formReg,
+                importe:         parseFloat(formReg.importe),
+                importe_cobrado: parseFloat(formReg.importe_cobrado || '0'),
+                desc_banco:      banco?.DescripcionEntidadFinanciera || formReg.desc_banco,
+            },
+            vouchers
+        )
+        if (nuevo) {
+            setFormReg(FORM_INICIAL)
+            setVouchers([])
+            setSelectedClient(null)
+        }
         setGuardando(false)
     }
 
@@ -214,7 +324,6 @@ export default function SeccionVendedor({
         toast({ title: 'Planilla cargada', description: `Editando ${planilla.numero_planilla}` })
     }
 
-
     const handleReenviar = async () => {
         if (!editId) return
         setReen(true)
@@ -241,6 +350,7 @@ export default function SeccionVendedor({
 
     return (
         <div className="space-y-4">
+
             <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
                 <DialogContent className="max-w-md">
                     <DialogHeader>
@@ -275,6 +385,15 @@ export default function SeccionVendedor({
                 </DialogContent>
             </Dialog>
 
+            <SeleccionarDocumentoModal
+                open={docModalOpen}
+                onOpenChange={setDocModalOpen}
+                codCliente={formReg.codigo_cliente}
+                codVendedor={isAdmin() ? undefined : user?.codigo}
+                soloVigentes={false}
+                onSelect={handleDocumentoSelect}
+            />
+
             <div className="flex bg-white border border-slate-200 rounded-lg overflow-hidden shadow-sm">
                 {[
                     { id: 'nueva', label: 'Nueva planilla' },
@@ -284,16 +403,16 @@ export default function SeccionVendedor({
                         key={t.id}
                         onClick={() => setTab(t.id as any)}
                         className={`flex items-center gap-1.5 px-4 py-2.5 text-xs font-semibold
-              whitespace-nowrap transition-all border-b-2
-              ${tab === t.id
+                            whitespace-nowrap transition-all border-b-2
+                            ${tab === t.id
                             ? 'text-sky-700 border-sky-600 bg-sky-50/50'
                             : 'text-slate-500 border-transparent hover:text-sky-600'}`}
                     >
                         {t.label}
                         {t.badge ? (
                             <span className="bg-red-500 text-white text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
-                {t.badge}
-              </span>
+                                {t.badge}
+                            </span>
                         ) : null}
                     </button>
                 ))}
@@ -389,19 +508,21 @@ export default function SeccionVendedor({
                                 </div>
                                 <div className="p-5 space-y-4">
                                     <div className="grid grid-cols-1 md:grid-cols-6 gap-3">
-                                        <div className="flex flex-col gap-1.5 md:col-span-3">
+                                        <div className="flex flex-col gap-1.5 md:col-span-5">
                                             <label className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
-                                                Nombre / Razón Social <span className="text-red-500">*</span>
+                                                Buscar Cliente (Nombre o RUC/DNI) <span className="text-red-500">*</span>
                                             </label>
-                                            <Input placeholder="Nombre del cliente" value={formReg.nombre_cliente}
-                                                   onChange={e => fc('nombre_cliente', e.target.value)} />
-                                        </div>
-                                        <div className="flex flex-col gap-1.5 md:col-span-2">
-                                            <label className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
-                                                Código cliente (RUC / DNI)
-                                            </label>
-                                            <Input placeholder="10332617350" value={formReg.codigo_cliente}
-                                                   onChange={e => fc('codigo_cliente', e.target.value)} />
+                                            <Combobox<IClient>
+                                                items={clientsFiltered}
+                                                value={selectedClient?.codigo ?? ""}
+                                                onSearchChange={setClientSearch}
+                                                onSelect={handleClientSelect}
+                                                getItemKey={c => c.codigo}
+                                                getItemLabel={c => `${c.Nombre} — ${c.RUC ?? 'S/N'}`}
+                                                placeholder={loadingClients ? "Cargando clientes..." : "Escribe para buscar un cliente..."}
+                                                emptyText="No se encontraron clientes"
+                                                searchText="Buscar..."
+                                            />
                                         </div>
                                         <div className="flex flex-col gap-1.5 md:col-span-1">
                                             <label className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
@@ -417,21 +538,62 @@ export default function SeccionVendedor({
                                             </Select>
                                         </div>
                                     </div>
-                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+
+                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 items-end">
                                         <div className="flex flex-col gap-1.5">
                                             <label className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Serie</label>
-                                            <Input placeholder="02" value={formReg.serie} onChange={e => fc('serie', e.target.value)} maxLength={4} className="font-mono" />
+                                            <Input
+                                                placeholder="02"
+                                                value={formReg.serie}
+                                                onChange={e => fc('serie', e.target.value)}
+                                                maxLength={4}
+                                                className="font-mono"
+                                            />
                                         </div>
                                         <div className="flex flex-col gap-1.5">
                                             <label className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">N° Documento</label>
-                                            <Input placeholder="10737" value={formReg.numero_doc} onChange={e => fc('numero_doc', e.target.value)} className="font-mono" />
+                                            <Input
+                                                placeholder="10737"
+                                                value={formReg.numero_doc}
+                                                onChange={e => fc('numero_doc', e.target.value)}
+                                                className="font-mono"
+                                            />
                                         </div>
-                                        <div className="flex flex-col gap-1.5 col-span-2">
+                                        <div className="flex flex-col gap-1.5">
                                             <label className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
                                                 Importe S/. <span className="text-red-500">*</span>
                                             </label>
-                                            <Input type="number" step="0.01" min={0} placeholder="0.00"
-                                                   value={formReg.importe} onChange={e => fc('importe', e.target.value)} className="font-mono text-lg" />
+                                            <Input
+                                                type="number" step="0.01" min={0} placeholder="0.00"
+                                                value={formReg.importe}
+                                                onChange={e => fc('importe', e.target.value)}
+                                                className="font-mono text-lg"
+                                            />
+                                        </div>
+
+                                        <div className="flex flex-col gap-1.5">
+                                            <label className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 invisible">
+                                                Buscar doc.
+                                            </label>
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                onClick={() => {
+                                                    if (!formReg.codigo_cliente) {
+                                                        toast({
+                                                            title: 'Selecciona un cliente',
+                                                            description: 'Primero elige el cliente para poder buscar sus documentos.',
+                                                            variant: 'warning',
+                                                        })
+                                                        return
+                                                    }
+                                                    setDocModalOpen(true)
+                                                }}
+                                                className="w-full gap-2 border-sky-300 text-sky-700 hover:bg-sky-50"
+                                                title="Ver documentos del cliente (kardex)"
+                                            >
+                                                <Eye className="h-4 w-4" />
+                                            </Button>
                                         </div>
                                     </div>
                                 </div>
@@ -449,15 +611,24 @@ export default function SeccionVendedor({
                                     <div className="grid grid-cols-2 gap-3">
                                         <div className="flex flex-col gap-1.5">
                                             <label className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Recibo N°</label>
-                                            <Input placeholder="B/34752" value={formReg.numero_recibo}
-                                                   onChange={e => fc('numero_recibo', e.target.value)} maxLength={30} className="font-mono" />
+                                            <Input
+                                                placeholder="B/34752"
+                                                value={formReg.numero_recibo}
+                                                onChange={e => fc('numero_recibo', e.target.value)}
+                                                maxLength={30} className="font-mono"
+                                            />
                                         </div>
                                         <div className="flex flex-col gap-1.5">
                                             <label className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Importe cobrado S/.</label>
-                                            <Input type="number" step="0.01" min={0} placeholder="0.00"
-                                                   value={formReg.importe_cobrado} onChange={e => fc('importe_cobrado', e.target.value)} className="font-mono" />
+                                            <Input
+                                                type="number" step="0.01" min={0} placeholder="0.00"
+                                                value={formReg.importe_cobrado}
+                                                onChange={e => fc('importe_cobrado', e.target.value)}
+                                                className="font-mono"
+                                            />
                                         </div>
                                     </div>
+
                                     <div className="border-t border-dashed border-slate-200 pt-3">
                                         <p className="text-[10px] uppercase font-semibold text-slate-400 tracking-wider mb-3">Depósito bancario</p>
                                         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -467,7 +638,9 @@ export default function SeccionVendedor({
                                                     <SelectTrigger><SelectValue placeholder="— sin banco —" /></SelectTrigger>
                                                     <SelectContent>
                                                         {bancos.map(b => (
-                                                            <SelectItem key={b.CodigoEntidadFinanciera} value={b.CodigoEntidadFinanciera}>{b.DescripcionEntidadFinanciera}</SelectItem>
+                                                            <SelectItem key={b.CodigoEntidadFinanciera} value={b.CodigoEntidadFinanciera}>
+                                                                {b.DescripcionEntidadFinanciera}
+                                                            </SelectItem>
                                                         ))}
                                                     </SelectContent>
                                                 </Select>
@@ -478,18 +651,104 @@ export default function SeccionVendedor({
                                             </div>
                                             <div className="flex flex-col gap-1.5">
                                                 <label className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">N° Operación</label>
-                                                <Input placeholder="14009921" value={formReg.numero_operacion}
-                                                       onChange={e => fc('numero_operacion', e.target.value)} maxLength={50} className="font-mono" />
+                                                <Input
+                                                    placeholder="14009921"
+                                                    value={formReg.numero_operacion}
+                                                    onChange={e => fc('numero_operacion', e.target.value)}
+                                                    maxLength={50} className="font-mono"
+                                                />
                                             </div>
                                             <div className="flex flex-col gap-1.5">
                                                 <label className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">N° Cheque</label>
-                                                <Input placeholder="Opcional" value={formReg.numero_cheque}
-                                                       onChange={e => fc('numero_cheque', e.target.value)} maxLength={50} className="font-mono" />
+                                                <Input
+                                                    placeholder="Opcional"
+                                                    value={formReg.numero_cheque}
+                                                    onChange={e => fc('numero_cheque', e.target.value)}
+                                                    maxLength={50} className="font-mono"
+                                                />
                                             </div>
                                         </div>
                                     </div>
-                                    <Button onClick={handleAgregar} disabled={guardando}
-                                            className="w-full h-11 border-2 border-dashed border-sky-300 bg-sky-50 text-sky-700 hover:bg-sky-100 hover:border-sky-400">
+
+                                    <div className="border-t border-dashed border-slate-200 pt-3">
+                                        <div className="flex items-center justify-between mb-2">
+                                            <p className="text-[10px] uppercase font-semibold text-slate-400 tracking-wider flex items-center gap-1.5">
+                                                <Paperclip className="h-3 w-3" />
+                                                Vouchers / comprobantes de pago
+                                            </p>
+                                            <span className="text-[10px] text-slate-400">
+                                                {vouchers.length}/{MAX_VOUCHERS}
+                                            </span>
+                                        </div>
+
+                                        {vouchers.length > 0 && (
+                                            <div className="flex flex-wrap gap-2 mb-3">
+                                                {vouchers.map((file, idx) => {
+                                                    const preview = voucherPreview(file)
+                                                    return (
+                                                        <div
+                                                            key={idx}
+                                                            className="relative group w-20 h-20 rounded-lg border border-slate-200 overflow-hidden bg-slate-50 flex items-center justify-center"
+                                                        >
+                                                            {preview ? (
+                                                                <img
+                                                                    src={preview}
+                                                                    alt={file.name}
+                                                                    className="w-full h-full object-cover"
+                                                                    onLoad={() => URL.revokeObjectURL(preview)}
+                                                                />
+                                                            ) : (
+                                                                <div className="flex flex-col items-center gap-1 p-1">
+                                                                    <FileText className="h-6 w-6 text-slate-400" />
+                                                                    <span className="text-[9px] text-slate-400 truncate w-full text-center px-1">
+                                                                        {file.name}
+                                                                    </span>
+                                                                </div>
+                                                            )}
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => removeVoucher(idx)}
+                                                                className="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-red-500 text-white
+                                                                    flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                                            >
+                                                                <X className="h-3 w-3" />
+                                                            </button>
+                                                        </div>
+                                                    )
+                                                })}
+                                            </div>
+                                        )}
+
+                                        {vouchers.length < MAX_VOUCHERS && (
+                                            <>
+                                                <input
+                                                    ref={voucherInputRef}
+                                                    type="file"
+                                                    accept={VOUCHER_ACCEPT}
+                                                    multiple
+                                                    className="hidden"
+                                                    onChange={handleVoucherChange}
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => voucherInputRef.current?.click()}
+                                                    className="w-full h-14 border-2 border-dashed border-slate-300 rounded-lg
+                                                        flex items-center justify-center gap-2
+                                                        text-xs text-slate-400 hover:border-sky-400 hover:text-sky-600
+                                                        hover:bg-sky-50/50 transition-all"
+                                                >
+                                                    <Upload className="h-4 w-4" />
+                                                    Subir voucher (jpg, png, pdf) · máx. {MAX_VOUCHERS - vouchers.length} más
+                                                </button>
+                                            </>
+                                        )}
+                                    </div>
+
+                                    <Button
+                                        onClick={handleAgregar}
+                                        disabled={guardando}
+                                        className="w-full h-11 border-2 border-dashed border-sky-300 bg-sky-50 text-sky-700 hover:bg-sky-100 hover:border-sky-400"
+                                    >
                                         {guardando ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Plus className="h-4 w-4 mr-2" />}
                                         Agregar registro a la planilla
                                     </Button>
@@ -500,8 +759,8 @@ export default function SeccionVendedor({
                                 <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 bg-slate-50">
                                     <span className="text-sm font-semibold text-slate-700">Registros ingresados</span>
                                     <span className="text-xs text-slate-400 font-medium">
-                    {detalle.length} registro{detalle.length !== 1 ? 's' : ''}
-                  </span>
+                                        {detalle.length} registro{detalle.length !== 1 ? 's' : ''}
+                                    </span>
                                 </div>
                                 <div className="p-4">
                                     <MiniTabla
@@ -576,6 +835,7 @@ export default function SeccionVendedor({
                     ) : [...misPlanillas].reverse().map(planilla => {
                         const isOpen    = openRows.has(planilla.id_planilla)
                         const isLoading = loadingDet === planilla.id_planilla
+                        const planillaVouchers: Voucher[] = (planilla as any).vouchers ?? []
 
                         const borderColor = planilla.estado === 'validado'  ? 'border-l-emerald-500'
                             : planilla.estado === 'rechazado' ? 'border-l-red-500'
@@ -619,6 +879,21 @@ export default function SeccionVendedor({
                                     </div>
 
                                     <div className="flex items-center gap-3 shrink-0">
+                                        {planillaVouchers.length > 0 && (
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={(e) => {
+                                                    e.stopPropagation()
+                                                    setVouchersModal({ open: true, planilla })
+                                                }}
+                                                className="gap-1 text-sky-700 border-sky-200 hover:bg-sky-50 h-7 px-2"
+                                                title="Ver vouchers"
+                                            >
+                                                <Paperclip className="h-3 w-3" />
+                                                <span className="text-[10px] font-semibold">{planillaVouchers.length}</span>
+                                            </Button>
+                                        )}
                                         <div className="text-right">
                                             <p className="font-mono font-semibold text-slate-800">
                                                 {fmtMoney(planilla.total_cobrado ?? tCbza)}
@@ -661,6 +936,14 @@ export default function SeccionVendedor({
                     })}
                 </div>
             )}
+
+            <VouchersModal
+                open={vouchersModal.open}
+                onOpenChange={(v) => setVouchersModal(prev => ({ ...prev, open: v }))}
+                numeroPlanilla={vouchersModal.planilla?.numero_planilla ?? ''}
+                vouchers={(vouchersModal.planilla as any)?.vouchers ?? []}
+                baseUrl={publicApi ?? ''}
+            />
         </div>
     )
 }
