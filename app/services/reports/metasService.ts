@@ -13,8 +13,8 @@ export class MetasService {
         return response.data;
     }
 
-    static async getDashboard(idCiclo: number): Promise<any> {
-        const response = await apiClient.get(`/metas/dashboard?id_ciclo=${idCiclo}`);
+    static async getDashboard(idCiclo: number, codVendedor: string | undefined): Promise<any> {
+        const response = await apiClient.get(`/metas/dashboard?id_ciclo=${idCiclo}&codVendedor=${codVendedor || ''}`);
         return response.data;
     }
 

@@ -1,26 +1,30 @@
 'use client'
 
 import { useState } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { BarChart3, Users, Factory, Pill, RefreshCw } from "lucide-react"
+
 import ResumenTab from "@/components/reporte/metas/ResumenTab"
 import VendedoresTab from "@/components/reporte/metas/VendedoresTab"
 import LaboratoriosTab from "@/components/reporte/metas/LaboratoriosTab"
 import ItemsPorLabTab from "@/components/reporte/metas/ItemsPorLabTab"
-import { IVendedorDashboard } from "@/app/types/metas-types"
 import VendedorDetailModal from "@/components/reporte/metas/VendedorDetailModal"
-import {useMetasDashboard} from "@/app/hooks/useMetasDashboard";
-import {MONTH_NAMES} from "@/app/utils/metas-helpers";
 
-const tabs = [
-    { id: "resumen", label: "Resumen", icon: BarChart3 },
-    { id: "vendedores", label: "Vendedores", icon: Users },
-    { id: "laboratorios", label: "Laboratorios", icon: Factory },
-    { id: "productos", label: "Ítems por Lab", icon: Pill },
+import { IVendedorDashboard } from "@/app/types/metas-types"
+import { useMetasDashboard } from "@/app/hooks/useMetasDashboard"
+import { MONTH_NAMES } from "@/app/utils/metas-helpers"
+import VendedorDashboardView from "@/components/reporte/metas/VendedorDashboardView";
+
+// Tabs solo disponibles para admin/no-vendedor
+const adminTabs = [
+    { id: "resumen",      label: "Resumen",       icon: BarChart3 },
+    { id: "vendedores",   label: "Vendedores",     icon: Users },
+    { id: "laboratorios", label: "Laboratorios",   icon: Factory },
+    { id: "productos",    label: "Ítems por Lab",  icon: Pill },
 ]
 
 export default function MetasDashboardPage() {
@@ -37,6 +41,7 @@ export default function MetasDashboardPage() {
         loadingDashboard,
         refreshDashboard,
         kpis,
+        isVendedorView,
     } = useMetasDashboard()
 
     const handleVendedorClick = (vendedor: IVendedorDashboard) => {
@@ -48,6 +53,7 @@ export default function MetasDashboardPage() {
         ? `${MONTH_NAMES[selectedCiclo.mes]} ${selectedCiclo.anio}`
         : "Sin ciclo"
 
+    // ── Loading inicial (ciclos) ──────────────────────────────────────
     if (loading) {
         return (
             <div className="grid gap-6 p-4 md:p-6">
@@ -61,18 +67,19 @@ export default function MetasDashboardPage() {
 
     return (
         <div className="grid gap-4">
+            {/* ── Cabecera ── */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div>
                     <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-gray-900">
-                        Metas por Vendedor
+                        {isVendedorView ? "Mi Dashboard de Metas" : "Metas por Vendedor"}
                     </h1>
                 </div>
                 <div className="flex items-center gap-2 flex-wrap">
                     <Select
                         value={selectedCiclo ? String(selectedCiclo.id_ciclo) : ""}
                         onValueChange={(val) => {
-                            const ciclo = ciclos.find(c => String(c.id_ciclo) === val);
-                            if (ciclo) setSelectedCiclo(ciclo);
+                            const ciclo = ciclos.find(c => String(c.id_ciclo) === val)
+                            if (ciclo) setSelectedCiclo(ciclo)
                         }}
                     >
                         <SelectTrigger className="w-[200px] h-9 text-sm bg-white">
@@ -92,39 +99,51 @@ export default function MetasDashboardPage() {
                     </Badge>
 
                     {selectedCiclo && (
-                        <Badge variant={selectedCiclo.estado === 'ABIERTO' ? "default" : "secondary"} className="text-xs">
+                        <Badge
+                            variant={selectedCiclo.estado === 'ABIERTO' ? "default" : "secondary"}
+                            className="text-xs"
+                        >
                             {selectedCiclo.estado}
                         </Badge>
                     )}
 
-                    <Button variant="outline" size="sm" onClick={refreshDashboard} disabled={loadingDashboard}>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={refreshDashboard}
+                        disabled={loadingDashboard}
+                    >
                         <RefreshCw className={`h-3.5 w-3.5 mr-1 ${loadingDashboard ? "animate-spin" : ""}`} />
                         Actualizar
                     </Button>
                 </div>
             </div>
 
-            <div className="flex bg-white border border-slate-200 rounded-lg overflow-x-auto shadow-sm">
-                {tabs.map(tab => {
-                    const isActive = activeTab === tab.id;
-                    const Icon = tab.icon;
-                    return (
-                        <button
-                            key={tab.id}
-                            onClick={() => setActiveTab(tab.id)}
-                            className={`flex items-center gap-1.5 px-4 py-2.5 text-xs font-semibold whitespace-nowrap transition-all border-b-2 ${
-                                isActive
-                                    ? "text-sky-700 border-sky-600 bg-sky-50/50"
-                                    : "text-slate-500 border-transparent hover:text-sky-600"
-                            }`}
-                        >
-                            <Icon className="h-4 w-4" />
-                            <span className="hidden sm:inline">{tab.label}</span>
-                        </button>
-                    );
-                })}
-            </div>
+            {/* ── Tabs (solo admin) ── */}
+            {!isVendedorView && (
+                <div className="flex bg-white border border-slate-200 rounded-lg overflow-x-auto shadow-sm">
+                    {adminTabs.map(tab => {
+                        const isActive = activeTab === tab.id
+                        const Icon = tab.icon
+                        return (
+                            <button
+                                key={tab.id}
+                                onClick={() => setActiveTab(tab.id)}
+                                className={`flex items-center gap-1.5 px-4 py-2.5 text-xs font-semibold whitespace-nowrap transition-all border-b-2 ${
+                                    isActive
+                                        ? "text-sky-700 border-sky-600 bg-sky-50/50"
+                                        : "text-slate-500 border-transparent hover:text-sky-600"
+                                }`}
+                            >
+                                <Icon className="h-4 w-4" />
+                                <span className="hidden sm:inline">{tab.label}</span>
+                            </button>
+                        )
+                    })}
+                </div>
+            )}
 
+            {/* ── Contenido ── */}
             {loadingDashboard ? (
                 <div className="flex flex-col items-center justify-center py-16">
                     <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-sky-600 mb-4" />
@@ -138,6 +157,13 @@ export default function MetasDashboardPage() {
                         <p className="text-xs text-slate-400 mt-1">Selecciona un ciclo con metas configuradas</p>
                     </CardContent>
                 </Card>
+            ) : isVendedorView ? (
+                kpis && (
+                    <VendedorDashboardView
+                        data={dashboardData}
+                        kpis={kpis}
+                    />
+                )
             ) : (
                 <>
                     {activeTab === "resumen" && kpis && (
@@ -145,6 +171,7 @@ export default function MetasDashboardPage() {
                             data={dashboardData}
                             kpis={kpis}
                             onVendedorClick={handleVendedorClick}
+                            isVendedorView={false}
                         />
                     )}
 
@@ -170,12 +197,14 @@ export default function MetasDashboardPage() {
                 </>
             )}
 
-            <VendedorDetailModal
-                open={vendModalOpen}
-                onClose={() => setVendModalOpen(false)}
-                vendedor={selectedVendedor}
-                allItems={dashboardData?.items || []}
-            />
+            {!isVendedorView && (
+                <VendedorDetailModal
+                    open={vendModalOpen}
+                    onClose={() => setVendModalOpen(false)}
+                    vendedor={selectedVendedor}
+                    allItems={dashboardData?.items || []}
+                />
+            )}
         </div>
     )
 }

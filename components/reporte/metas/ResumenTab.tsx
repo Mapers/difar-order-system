@@ -4,19 +4,20 @@ import { Card, CardContent } from "@/components/ui/card"
 import KpiCard from "@/components/reporte/metas/KpiCard"
 import ProgressBar from "@/components/reporte/metas/ProgressBar"
 import StatusChip from "@/components/reporte/metas/StatusChip"
-import { IDashboardData, ILabDashboard, IVendedorDashboard } from "@/app/types/metas-types"
-import { fmtMoney, getStatusColor, getInitials, getLabColor, calcPct } from "@/app/utils/metas-helpers"
-import {MedalIcon} from "lucide-react";
+import { IDashboardData, IVendedorDashboard } from "@/app/types/metas-types"
+import { fmtMoney, getStatusColor, getInitials, getLabColor } from "@/app/utils/metas-helpers"
+import { MedalIcon } from "lucide-react"
 
 interface ResumenTabProps {
     data: IDashboardData;
     kpis: any;
     onVendedorClick?: (vendedor: IVendedorDashboard) => void;
+    isVendedorView?: boolean;
 }
 
-export default function ResumenTab({ data, kpis, onVendedorClick }: ResumenTabProps) {
-    const labs = data.laboratorios || [];
-    const vends = data.vendedores || [];
+export default function ResumenTab({ data, kpis, onVendedorClick, isVendedorView = false }: ResumenTabProps) {
+    const labs  = data.laboratorios || [];
+    const vends = data.vendedores   || [];
 
     const labsAlert = [...labs]
         .filter(l => Number(l.pct_avance_monto) < 80)
@@ -34,11 +35,12 @@ export default function ResumenTab({ data, kpis, onVendedorClick }: ResumenTabPr
     const medalBg = [
         "bg-gradient-to-br from-yellow-100 to-amber-100",
         "bg-gradient-to-br from-slate-100 to-slate-200",
-        "bg-gradient-to-br from-orange-50 to-orange-100"
+        "bg-gradient-to-br from-orange-50 to-orange-100",
     ];
 
     return (
         <div className="space-y-4">
+            {/* KPIs globales */}
             <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
                 <KpiCard
                     label="Avance Global S/"
@@ -73,14 +75,6 @@ export default function ResumenTab({ data, kpis, onVendedorClick }: ResumenTabPr
                     deltaType="success"
                 />
                 <KpiCard
-                    label="Vendedores en Meta"
-                    value={`${kpis.vendEnMeta} / ${kpis.totalVendedores}`}
-                    subtitle={`${kpis.totalVendedores - kpis.vendEnMeta} por debajo del 80%`}
-                    accentColor="#d97706"
-                    delta={(kpis.totalVendedores - kpis.vendEnMeta) > 0 ? "⚠ Requiere acción" : "✓ Todos en meta"}
-                    deltaType={(kpis.totalVendedores - kpis.vendEnMeta) > 0 ? "warning" : "success"}
-                />
-                <KpiCard
                     label="Labs en Alerta <50%"
                     value={kpis.labsBajo}
                     subtitle={`${kpis.labsRiesgo} en riesgo (50–79%)`}
@@ -88,8 +82,20 @@ export default function ResumenTab({ data, kpis, onVendedorClick }: ResumenTabPr
                     delta="⚠ Requieren atención"
                     deltaType="warning"
                 />
+                {/* Tarjeta de vendedores solo en vista admin */}
+                {!isVendedorView && (
+                    <KpiCard
+                        label="Vendedores en Meta"
+                        value={`${kpis.vendEnMeta} / ${kpis.totalVendedores}`}
+                        subtitle={`${kpis.totalVendedores - kpis.vendEnMeta} por debajo del 80%`}
+                        accentColor="#d97706"
+                        delta={(kpis.totalVendedores - kpis.vendEnMeta) > 0 ? "⚠ Requiere acción" : "✓ Todos en meta"}
+                        deltaType={(kpis.totalVendedores - kpis.vendEnMeta) > 0 ? "warning" : "success"}
+                    />
+                )}
             </div>
 
+            {/* Barra de progreso global */}
             <Card className="shadow-sm">
                 <CardContent className="p-4">
                     <div className="flex justify-between items-center mb-2">
@@ -102,7 +108,8 @@ export default function ResumenTab({ data, kpis, onVendedorClick }: ResumenTabPr
                 </CardContent>
             </Card>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div className={`grid gap-4 ${isVendedorView ? "grid-cols-1" : "grid-cols-1 lg:grid-cols-2"}`}>
+                {/* Labs que requieren atención */}
                 <Card className="shadow-sm">
                     <CardContent className="p-4">
                         <div className="flex items-center gap-2 mb-3">
@@ -144,87 +151,91 @@ export default function ResumenTab({ data, kpis, onVendedorClick }: ResumenTabPr
                     </CardContent>
                 </Card>
 
-                <div className="space-y-4">
-                    <Card className="shadow-sm">
-                        <CardContent className="p-4">
-                            <div className="flex items-center gap-2 mb-3">
-                                <div className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                                <h3 className="text-sm font-semibold text-slate-700">Top 3 Vendedores del Ciclo</h3>
-                            </div>
-                            <div className="space-y-2.5">
-                                {top3.map((v, i) => {
-                                    const av = Number(v.pct_avance_monto || 0);
-                                    const [c1] = getStatusColor(av);
-                                    return (
-                                        <div key={v.id_meta_lab_vend}
-                                             className={`flex items-center gap-3 p-2.5 rounded-lg cursor-pointer hover:opacity-90 transition-opacity ${medalBg[i]}`}
-                                             onClick={() => onVendedorClick?.(v)}
-                                        >
-                                            <span className="text-xl shrink-0"><MedalIcon className="h-4 w-4" /></span>
-                                            <div className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold shrink-0"
-                                                 style={{ background: `${getLabColor(i)}22`, color: getLabColor(i) }}>
-                                                {getInitials(v.nombre_vendedor || v.cod_vendedor)}
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                                <div className="flex justify-between items-center">
-                                                    <span className="text-xs font-bold text-slate-800 truncate">{v.nombre_vendedor || v.cod_vendedor}</span>
-                                                    <span className="text-sm font-bold shrink-0" style={{ color: c1 }}>{av}%</span>
-                                                </div>
-                                                <div className="flex justify-between mt-0.5">
-                                                    <span className="text-[10px] text-slate-400">{fmtMoney(Number(v.venta_real))}</span>
-                                                    <span className="text-[10px] text-slate-400">Meta {fmtMoney(Number(v.meta_monto))}</span>
-                                                </div>
-                                                <ProgressBar pct={av} height="h-1" className="mt-1" />
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    <Card className="shadow-sm">
-                        <CardContent className="p-4">
-                            <div className="flex items-center gap-2 mb-3">
-                                <div className="w-1.5 h-1.5 rounded-full bg-red-500" />
-                                <h3 className="text-sm font-semibold text-slate-700">Vendedores bajo meta</h3>
-                            </div>
-                            {vendBajos.length === 0 ? (
-                                <p className="text-center text-emerald-600 text-sm py-3">✓ Todos en meta</p>
-                            ) : (
-                                <div className="space-y-2">
-                                    {vendBajos.map((v, i) => {
+                {/* Secciones de vendedores: solo en vista admin */}
+                {!isVendedorView && (
+                    <div className="space-y-4">
+                        {/* Top 3 vendedores */}
+                        <Card className="shadow-sm">
+                            <CardContent className="p-4">
+                                <div className="flex items-center gap-2 mb-3">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                                    <h3 className="text-sm font-semibold text-slate-700">Top 3 Vendedores del Ciclo</h3>
+                                </div>
+                                <div className="space-y-2.5">
+                                    {top3.map((v, i) => {
                                         const av = Number(v.pct_avance_monto || 0);
                                         const [c1] = getStatusColor(av);
-                                        const falta = Number(v.monto_pendiente || 0);
                                         return (
                                             <div key={v.id_meta_lab_vend}
-                                                 className="flex items-center gap-2 p-2 bg-slate-50 rounded-lg cursor-pointer hover:bg-slate-100 transition-colors"
+                                                 className={`flex items-center gap-3 p-2.5 rounded-lg cursor-pointer hover:opacity-90 transition-opacity ${medalBg[i]}`}
                                                  onClick={() => onVendedorClick?.(v)}
                                             >
-                                                <div className="w-6 h-6 rounded-md flex items-center justify-center text-[10px] font-bold shrink-0"
-                                                     style={{ background: `${getLabColor(i)}18`, color: getLabColor(i) }}>
+                                                <span className="text-xl shrink-0"><MedalIcon className="h-4 w-4" /></span>
+                                                <div className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold shrink-0"
+                                                     style={{ background: `${getLabColor(i)}22`, color: getLabColor(i) }}>
                                                     {getInitials(v.nombre_vendedor || v.cod_vendedor)}
                                                 </div>
                                                 <div className="flex-1 min-w-0">
-                                                    <div className="flex justify-between">
-                                                        <span className="text-xs font-semibold truncate">{v.nombre_vendedor || v.cod_vendedor}</span>
-                                                        <span className="text-xs font-bold shrink-0" style={{ color: c1 }}>{av}%</span>
+                                                    <div className="flex justify-between items-center">
+                                                        <span className="text-xs font-bold text-slate-800 truncate">{v.nombre_vendedor || v.cod_vendedor}</span>
+                                                        <span className="text-sm font-bold shrink-0" style={{ color: c1 }}>{av}%</span>
+                                                    </div>
+                                                    <div className="flex justify-between mt-0.5">
+                                                        <span className="text-[10px] text-slate-400">{fmtMoney(Number(v.venta_real))}</span>
+                                                        <span className="text-[10px] text-slate-400">Meta {fmtMoney(Number(v.meta_monto))}</span>
                                                     </div>
                                                     <ProgressBar pct={av} height="h-1" className="mt-1" />
-                                                    <div className="flex justify-between mt-0.5">
-                                                        <span className="text-[10px] text-slate-400">Cod: {v.cod_vendedor}</span>
-                                                        <span className="text-[10px] font-medium" style={{ color: c1 }}>Falta {fmtMoney(falta)}</span>
-                                                    </div>
                                                 </div>
                                             </div>
                                         );
                                     })}
                                 </div>
-                            )}
-                        </CardContent>
-                    </Card>
-                </div>
+                            </CardContent>
+                        </Card>
+
+                        <Card className="shadow-sm">
+                            <CardContent className="p-4">
+                                <div className="flex items-center gap-2 mb-3">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-red-500" />
+                                    <h3 className="text-sm font-semibold text-slate-700">Vendedores bajo meta</h3>
+                                </div>
+                                {vendBajos.length === 0 ? (
+                                    <p className="text-center text-emerald-600 text-sm py-3">✓ Todos en meta</p>
+                                ) : (
+                                    <div className="space-y-2">
+                                        {vendBajos.map((v, i) => {
+                                            const av = Number(v.pct_avance_monto || 0);
+                                            const [c1] = getStatusColor(av);
+                                            const falta = Number(v.monto_pendiente || 0);
+                                            return (
+                                                <div key={v.id_meta_lab_vend}
+                                                     className="flex items-center gap-2 p-2 bg-slate-50 rounded-lg cursor-pointer hover:bg-slate-100 transition-colors"
+                                                     onClick={() => onVendedorClick?.(v)}
+                                                >
+                                                    <div className="w-6 h-6 rounded-md flex items-center justify-center text-[10px] font-bold shrink-0"
+                                                         style={{ background: `${getLabColor(i)}18`, color: getLabColor(i) }}>
+                                                        {getInitials(v.nombre_vendedor || v.cod_vendedor)}
+                                                    </div>
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className="flex justify-between">
+                                                            <span className="text-xs font-semibold truncate">{v.nombre_vendedor || v.cod_vendedor}</span>
+                                                            <span className="text-xs font-bold shrink-0" style={{ color: c1 }}>{av}%</span>
+                                                        </div>
+                                                        <ProgressBar pct={av} height="h-1" className="mt-1" />
+                                                        <div className="flex justify-between mt-0.5">
+                                                            <span className="text-[10px] text-slate-400">Cod: {v.cod_vendedor}</span>
+                                                            <span className="text-[10px] font-medium" style={{ color: c1 }}>Falta {fmtMoney(falta)}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
+                    </div>
+                )}
             </div>
         </div>
     );
