@@ -2,7 +2,7 @@ import { useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Eye, MoreHorizontal, AlertTriangle, Loader2, FileJson, Code } from "lucide-react"
+import {Eye, MoreHorizontal, AlertTriangle, Loader2, FileJson, Code, AlertCircle} from "lucide-react"
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -10,9 +10,9 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
+import {Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter} from "@/components/ui/dialog"
 import { format, parseISO } from "date-fns"
-import { GuiaRemision } from "@/app/types/order/order-interface";
+import {Comprobante, GuiaRemision} from "@/app/types/order/order-interface";
 import { Mail, MessageCircle, Activity } from "lucide-react"
 
 interface GuiasListProps {
@@ -32,10 +32,34 @@ export function GuiasList({
     const [showJsonModal, setShowJsonModal] = useState(false)
     const [jsonContent, setJsonContent] = useState("")
     const [jsonTitle, setJsonTitle] = useState("")
+    const [showReasonModal, setShowReasonModal] = useState(false)
+    const [selectedReason, setSelectedReason] = useState("")
 
-    const getEstadoGuiaBadge = (guia: GuiaRemision) => {
-        if (guia.anulado) return <Badge variant="destructive">Anulado</Badge>
+    const getEstadoBadge = (guia: GuiaRemision) => {
+        if (guia.anulado) {
+            return (
+                <div className="flex items-center gap-1">
+                    <Badge variant="destructive">Anulado</Badge>
+                    {guia.motivo_anulado && (
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 text-red-500 hover:text-red-700 hover:bg-red-50"
+                            onClick={() => handleViewReason(guia.motivo_anulado!)}
+                            title="Ver motivo"
+                        >
+                            <AlertCircle className="h-4 w-4" />
+                        </Button>
+                    )}
+                </div>
+            )
+        }
         return <Badge variant="success">Activo</Badge>
+    }
+
+    const handleViewReason = (reason: string) => {
+        setSelectedReason(reason || "Sin motivo especificado.")
+        setShowReasonModal(true)
     }
 
     const handleViewJson = (title: string, content: string) => {
@@ -87,7 +111,7 @@ export function GuiasList({
                                                     <Button variant="ghost" size="sm" onClick={() => onErrorView(guia)} className="h-auto p-0 hover:bg-transparent text-red-600 hover:text-red-700 font-normal text-xs flex items-center gap-1 mt-1">
                                                         <AlertTriangle className="h-3 w-3" /> <span className="underline decoration-dotted underline-offset-2">Ver Error SUNAT</span>
                                                     </Button>
-                                                ) : getEstadoGuiaBadge(guia)}
+                                                ) : getEstadoBadge(guia)}
                                             </div>
                                         </td>
                                         <td className="p-4">
@@ -143,7 +167,7 @@ export function GuiasList({
                                         <div>
                                             <div className="flex items-center gap-2 mb-1">
                                                 <span className="font-semibold text-gray-900">{guia.serie}-{guia.numero}</span>
-                                                {getEstadoGuiaBadge(guia)}
+                                                {getEstadoBadge(guia)}
                                             </div>
                                             <p className="text-sm text-gray-600">{format(parseISO(guia.fecha_emision), "dd/MM/yyyy")}</p>
                                         </div>
@@ -224,6 +248,27 @@ export function GuiasList({
                     <div className="flex justify-end">
                         <Button variant="outline" onClick={() => setShowJsonModal(false)}>Cerrar</Button>
                     </div>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={showReasonModal} onOpenChange={setShowReasonModal}>
+                <DialogContent className="sm:max-w-[500px]">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <AlertCircle className="h-5 w-5" />
+                            Motivo de Anulación
+                        </DialogTitle>
+                    </DialogHeader>
+
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-4 mt-2">
+                        <p className="text-sm text-red-900 whitespace-pre-wrap leading-relaxed">
+                            {selectedReason}
+                        </p>
+                    </div>
+
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setShowReasonModal(false)}>Cerrar</Button>
+                    </DialogFooter>
                 </DialogContent>
             </Dialog>
         </>

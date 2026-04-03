@@ -41,6 +41,7 @@ export interface GuiaRemision {
     sunat_responsecode: string
     raw_request: string
     raw_response: string
+    motivo_anulado?: string
 }
 
 export interface SunatTransaccion {
