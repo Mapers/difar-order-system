@@ -516,7 +516,7 @@ export const Remision = ({ pedido, detalles, onOpenChange }: RemisionModalProps)
       const guiaCabData = {
         p_nroPedido: pedido?.nroPedido || null,
         p_operacion: "generar",
-        p_tipo_comprobante: "7",
+        p_tipo_comprobante: "9",
         p_serie: serie,
         p_cliente_tipo_doc: datosGuia.clienteTipoDoc,
         p_cliente_num_doc: datosGuia.clienteNumDoc,
