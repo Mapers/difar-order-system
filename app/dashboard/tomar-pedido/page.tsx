@@ -1029,7 +1029,7 @@ export default function OrderPage() {
               <CardContent className="space-y-5 pt-5">
                 <div className="flex flex-col sm:flex-row gap-3 px-1 sm:px-0 py-2 items-end">
                   <div className="space-y-2 flex-1 min-w-0">
-                    <Label htmlFor="producto" className="text-sm font-medium">
+                    <Label htmlFor="producto" className="text-sm font-medium text-gray-700 dark:text-gray-300">
                       Producto
                     </Label>
                     <div className="relative">
@@ -1039,25 +1039,25 @@ export default function OrderPage() {
                               variant="outline"
                               role="combobox"
                               aria-expanded={open}
-                              className="w-full justify-start h-11 sm:h-12 px-3 text-left font-normal text-sm bg-gray-50 border-gray-200 hover:bg-white hover:border-blue-400 focus:border-blue-400 transition-all duration-200"
+                              className="w-full justify-start h-11 sm:h-12 px-3 text-left font-normal text-sm bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-white dark:hover:bg-gray-700 hover:border-blue-400 dark:hover:border-blue-500 focus:border-blue-400 transition-all duration-200 dark:text-gray-100"
                           >
                             <Search className="mr-2 h-4 w-4 shrink-0 text-gray-400"/>
                             {selectedProduct ? (
                                 <div className="flex flex-col items-start min-w-0 flex-1">
-                                  <span className="font-semibold text-gray-900 w-full line-clamp-1">
+                                  <span className="font-semibold text-gray-900 dark:text-gray-100 w-full line-clamp-1">
                                     {selectedProduct.NombreItem}
                                   </span>
-                                  <span className="text-xs text-gray-500 w-full line-clamp-1">
+                                  <span className="text-xs text-gray-500 dark:text-gray-400 w-full line-clamp-1">
                                     {selectedProduct.Codigo_Art} | {selectedProduct.Descripcion}
                                   </span>
                                 </div>
                             ) : (
-                                <span className="text-gray-400 font-normal">Buscar por código, nombre o laboratorio...</span>
+                                <span className="text-gray-400 dark:text-gray-500 font-normal">Buscar por código, nombre o laboratorio...</span>
                             )}
                           </Button>
                         </PopoverTrigger>
                         <PopoverContent
-                            className="z-[999] w-[calc(100vw-2rem)] sm:w-full p-0 shadow-lg border-gray-200"
+                            className="z-[999] w-[calc(100vw-2rem)] sm:w-full p-0 shadow-lg border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900"
                             align="start"
                             side="bottom"
                         >
@@ -1305,7 +1305,7 @@ export default function OrderPage() {
                           setShowLaboratorioModal(true);
                         }}
                     >
-                      <SelectTrigger className="w-full h-10 sm:h-12 text-xs sm:text-sm bg-gray-50 border-gray-200">
+                      <SelectTrigger className="w-full h-10 sm:h-12 text-xs sm:text-sm bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 dark:text-gray-100">
                         <SelectValue placeholder="Laboratorio"/>
                       </SelectTrigger>
                       <SelectContent>
@@ -1338,7 +1338,7 @@ export default function OrderPage() {
                       type="button"
                       disabled={!selectedProduct || loading.products || isCheckingBonification}
                       onClick={handleAddProduct}
-                      className="flex-1 h-11 bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-700 dark:hover:bg-indigo-600 text-base font-medium"
+                      className="flex-1 h-11 bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-600 dark:hover:bg-indigo-700 text-base font-medium"
                   >
                     <ShoppingCart className="mr-2 h-4 w-4"/>
                     Agregar al pedido
@@ -1393,44 +1393,44 @@ export default function OrderPage() {
                     </div>
                   </CardHeader>
                   <CardContent className="pt-4">
-                    <div className="hidden sm:block border rounded-md overflow-hidden">
+                    <div className="hidden sm:block border dark:border-gray-700 rounded-md overflow-hidden">
                       <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-200">
-                          <thead className="bg-gray-50">
+                        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                          <thead className="bg-gray-50 dark:bg-gray-800">
                           <tr>
                             <th
                                 scope="col"
-                                className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                                className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
                             >
                               Producto
                             </th>
                             <th
                                 scope="col"
-                                className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                                className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
                             >
                               Lote - Fec.Venc
                             </th>
                             <th
                                 scope="col"
-                                className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                                className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
                             >
                               Stock
                             </th>
                             <th
                                 scope="col"
-                                className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
+                                className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
                             >
                               Cantidad
                             </th>
                             <th
                                 scope="col"
-                                className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
+                                className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
                             >
                               Precio Unit.
                             </th>
                             <th
                                 scope="col"
-                                className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
+                                className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
                             >
                               Subtotal
                             </th>
@@ -1449,16 +1449,16 @@ export default function OrderPage() {
                             const fec = split[1];
                             const stk = split[2];
 
-                            let rowBgClass = index % 2 === 0 ? "bg-white" : "bg-gray-50";
+                            let rowBgClass = index % 2 === 0 ? "bg-white dark:bg-gray-900" : "bg-gray-50 dark:bg-gray-800/60";
                             if (item.isAuthorize) {
-                              rowBgClass = "bg-blue-50 border-l-4 border-l-blue-500";
+                              rowBgClass = "bg-blue-50 dark:bg-blue-950/30 border-l-4 border-l-blue-500";
                             } else if (item.isEdit) {
-                              rowBgClass = "bg-green-50 border-l-4 border-l-green-500";
+                              rowBgClass = "bg-green-50 dark:bg-green-950/30 border-l-4 border-l-green-500";
                             }
 
                             return (
                                 <tr key={index} className={rowBgClass}>
-                                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
+                                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">
                                     <div className="flex items-center flex-wrap gap-1">
                                       {item.isBonification && (
                                           <Badge variant="outline" className="bg-yellow-50 text-yellow-700">
@@ -1484,37 +1484,37 @@ export default function OrderPage() {
                                     </div>
                                   </td>
 
-                                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-left">
+                                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 text-left">
                                     {cod} - Vence: {fec.length > 0 && format(parseISO(fec), "dd/MM/yyyy")}
                                   </td>
 
-                                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-right">
+                                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 text-right">
                                     {stk}
                                   </td>
 
-                                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-right">
+                                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 text-right">
                                     {item.quantity}
                                   </td>
 
-                                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-right">
+                                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 text-right">
                                     <div className="flex flex-col items-end">
-                      <span className={item.appliedScale ? "line-through text-gray-400 text-xs" : ""}>
+                      <span className={item.appliedScale ? "line-through text-gray-400 dark:text-gray-500 text-xs" : ""}>
                         {currency?.value === "PEN" ? "S/." : "$"}
                         {Number(precioOriginal).toFixed(2)}
                       </span>
                                       {item.appliedScale && (
-                                          <span className="text-purple-600 font-medium text-sm">
+                                          <span className="text-purple-600 dark:text-purple-400 font-medium text-sm">
                           {currency?.value === "PEN" ? "S/." : "$"}
                                             {Number(precioEscala).toFixed(2)}
                         </span>
                                       )}
                                       {item.isBonification && (
-                                          <span className="text-green-600 text-sm">{currency?.value === "PEN" ? "S/." : "$"}0.00</span>
+                                          <span className="text-green-600 dark:text-green-400 text-sm">{currency?.value === "PEN" ? "S/." : "$"}0.00</span>
                                       )}
                                     </div>
                                   </td>
 
-                                  <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900 text-right">
+                                  <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100 text-right">
                                     {currency?.value === "PEN" ? "S/." : "$"}
                                     {subtotal.toFixed(2)}
                                   </td>
@@ -1526,7 +1526,7 @@ export default function OrderPage() {
                                           variant="ghost"
                                           size="sm"
                                           onClick={() => handleListarLotes([item])}
-                                          className="text-blue-600 hover:text-blue-800 hover:bg-blue-50"
+                                          className="text-blue-600 dark:text-blue-400 hover:text-blue-800 hover:bg-blue-50 dark:hover:bg-blue-900/30"
                                           title="Cambiar Lote"
                                       >
                                         <Package className="h-4 w-4" />
@@ -1537,7 +1537,7 @@ export default function OrderPage() {
                                           variant="ghost"
                                           size="sm"
                                           onClick={() => handleRemoveItem(index)}
-                                          className="text-red-600 hover:text-red-800 hover:bg-red-50"
+                                          className="text-red-600 dark:text-red-400 hover:text-red-800 hover:bg-red-50 dark:hover:bg-red-900/30"
                                           title="Eliminar"
                                       >
                                         <Trash className="h-4 w-4" />
@@ -1551,10 +1551,10 @@ export default function OrderPage() {
                           <TableFooter>
                             <TableRow>
                               <TableCell colSpan={4}></TableCell>
-                              <TableCell className="px-4 py-3 text-right text-sm font-medium text-gray-900">
+                              <TableCell className="px-4 py-3 text-right text-sm font-medium text-gray-900 dark:text-gray-100">
                                 Total:
                               </TableCell>
-                              <TableCell className="px-4 py-3 whitespace-nowrap text-sm font-bold text-gray-900 text-right">
+                              <TableCell className="px-4 py-3 whitespace-nowrap text-sm font-bold text-gray-900 dark:text-gray-100 text-right">
                                 {currency?.value === "PEN" ? "S/." : "$"}
                                 {selectedProducts
                                     .reduce((sum, item) => {
@@ -1705,7 +1705,7 @@ export default function OrderPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-3">
                       <div>
-                        <Label className="text-xs text-gray-500">Cliente</Label>
+                        <Label className="text-xs text-gray-500 dark:text-gray-400">Cliente</Label>
                         <p className="font-medium text-sm sm:text-base">{selectedClient?.Nombre}</p>
                         <p className="text-xs text-gray-500 dark:text-gray-400">Documento: doc nro</p>
                       </div>
@@ -1779,44 +1779,44 @@ export default function OrderPage() {
                   <Package className="w-4 h-4 text-orange-600 dark:text-orange-400"/>
                   <h3 className="font-semibold text-gray-900 dark:text-gray-100 text-sm">Productos del Pedido</h3>
                 </div>
-                <div className="hidden sm:block border rounded-md overflow-hidden">
+                <div className="hidden sm:block border dark:border-gray-700 rounded-md overflow-hidden">
                   <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200">
-                      <thead className="bg-gray-50">
+                    <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                      <thead className="bg-gray-50 dark:bg-gray-800">
                       <tr>
                         <th
                           scope="col"
-                          className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                          className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
                         >
                           Producto
                         </th>
                         <th
                           scope="col"
-                          className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                          className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
                         >
                           Lote - Fec.Venc
                         </th>
                         <th
                           scope="col"
-                          className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                          className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
                         >
                           Stock
                         </th>
                         <th
                           scope="col"
-                          className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                          className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
                         >
                           Cantidad
                         </th>
                         <th
                           scope="col"
-                          className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                          className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
                         >
                           Precio Unit.
                         </th>
                         <th
                           scope="col"
-                          className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                          className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
                         >
                           Subtotal
                         </th>
@@ -1835,16 +1835,16 @@ export default function OrderPage() {
                         const fec = split[1];
                         const stk = split[2];
 
-                        let rowBgClass = index % 2 === 0 ? "bg-white" : "bg-gray-50";
+                        let rowBgClass = index % 2 === 0 ? "bg-white dark:bg-gray-900" : "bg-gray-50 dark:bg-gray-800/60";
                         if (item.isAuthorize) {
-                          rowBgClass = "bg-blue-50 border-l-4 border-l-blue-500";
+                          rowBgClass = "bg-blue-50 dark:bg-blue-950/30 border-l-4 border-l-blue-500";
                         } else if (item.isEdit) {
-                          rowBgClass = "bg-green-50 border-l-4 border-l-green-500";
+                          rowBgClass = "bg-green-50 dark:bg-green-950/30 border-l-4 border-l-green-500";
                         }
 
                         return (
                           <tr key={index} className={rowBgClass}>
-                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
+                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">
                               <div className="flex items-center flex-wrap gap-1">
                                 {item.isBonification && (
                                   <Badge variant="outline" className="bg-yellow-50 text-yellow-700">
@@ -1870,35 +1870,35 @@ export default function OrderPage() {
                               </div>
                             </td>
 
-                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-left">
+                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 text-left">
                               {cod} - Vence: {fec.length > 0 && format(parseISO(fec), "dd/MM/yyyy")}
                             </td>
 
-                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-right">
+                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 text-right">
                               {stk}
                             </td>
 
-                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-right">
+                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 text-right">
                               <div className="flex flex-col items-end">
-                                <span className={item.appliedScale ? "line-through text-gray-400 text-xs" : ""}>
+                                <span className={item.appliedScale ? "line-through text-gray-400 dark:text-gray-500 text-xs" : ""}>
                                   {currency?.value === "PEN" ? "S/." : "$"}
                                   {Number(precioOriginal).toFixed(2)}
                                 </span>
                                 {item.appliedScale && (
-                                  <span className="text-purple-600 font-medium text-sm">
+                                  <span className="text-purple-600 dark:text-purple-400 font-medium text-sm">
                                     {currency?.value === "PEN" ? "S/." : "$"}
                                     {Number(precioEscala).toFixed(2)}
                                   </span>
                                 )}
                                 {item.isBonification && (
                                   <span
-                                    className="text-green-600 text-sm">{currency?.value === "PEN" ? "S/." : "$"}0.00</span>
+                                    className="text-green-600 dark:text-green-400 text-sm">{currency?.value === "PEN" ? "S/." : "$"}0.00</span>
                                 )}
                               </div>
                             </td>
 
                             <td
-                              className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900 text-right">
+                              className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100 text-right">
                               {currency?.value === "PEN" ? "S/." : "$"}
                               {subtotal.toFixed(2)}
                             </td>
@@ -1908,7 +1908,7 @@ export default function OrderPage() {
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => handleRemoveItem(index)}
-                                className="text-red-600 hover:text-red-800 hover:bg-red-50"
+                                className="text-red-600 dark:text-red-400 hover:text-red-800 hover:bg-red-50 dark:hover:bg-red-900/30"
                               >
                                 Eliminar
                               </Button>
@@ -1920,11 +1920,11 @@ export default function OrderPage() {
                       <TableFooter>
                         <TableRow>
                           <TableCell colSpan={4}></TableCell>
-                          <TableCell className="px-4 py-3 text-right text-sm font-medium text-gray-900">
+                          <TableCell className="px-4 py-3 text-right text-sm font-medium text-gray-900 dark:text-gray-100">
                             Total:
                           </TableCell>
                           <TableCell
-                            className="px-4 py-3 whitespace-nowrap text-sm font-bold text-gray-900 text-right">
+                            className="px-4 py-3 whitespace-nowrap text-sm font-bold text-gray-900 dark:text-gray-100 text-right">
                             {currency?.value === "PEN" ? "S/." : "$"}
                             {selectedProducts
                               .reduce((sum, item) => {
@@ -1941,7 +1941,7 @@ export default function OrderPage() {
                   </div>
                 </div>
 
-                <div className="block sm:hidden space-y-3">
+                <div className="block sm:hidden space-y-2.5">
                   {selectedProducts.map((item, index) => {
                     const precioOriginal = item.finalPrice;
                     const precioEscala = item.appliedScale?.precio_escala;
@@ -1953,92 +1953,66 @@ export default function OrderPage() {
                     const fec = split[1];
                     const stk = split[2];
 
-                    let cardBgClass = "bg-white";
-                    let borderClass = "";
-                    if (item.isAuthorize) {
-                      cardBgClass = "bg-blue-50";
-                      borderClass = "border-l-4 border-l-blue-500";
-                    } else if (item.isEdit) {
-                      cardBgClass = "bg-green-50";
-                      borderClass = "border-l-4 border-l-green-500";
-                    }
-
+                    const cardBorderClass = item.isAuthorize
+                      ? "border-l-4 border-l-blue-500 dark:border-l-blue-400"
+                      : item.isEdit
+                      ? "border-l-4 border-l-green-500 dark:border-l-green-400"
+                      : "";
+                    const cardBgClass = item.isAuthorize
+                      ? "bg-blue-50 dark:bg-blue-950/30"
+                      : item.isEdit
+                      ? "bg-green-50 dark:bg-green-950/30"
+                      : "bg-white dark:bg-gray-800";
                     return (
-                      <Card key={index} className={`p-4 relative ${cardBgClass} ${borderClass}`}>
-                        <div className="space-y-3">
-                          <div className="flex justify-between items-start">
-                            <div className="flex-1 min-w-0">
-                              <div className="flex flex-wrap gap-1 mb-2">
-                                {item.isEdit && (
-                                    <Badge variant="outline" className="bg-green-100 text-green-700 border-green-300">
-                                      Editado
-                                    </Badge>
-                                )}
-                                {item.isAuthorize && (
-                                    <Badge variant="outline" className="bg-blue-100 text-blue-700 border-blue-300">
-                                      Por Autorizar
-                                    </Badge>
-                                )}
-                                {item.isBonification && (
-                                  <Badge variant="outline" className="bg-yellow-50 text-yellow-700">
-                                    Bonificado
-                                  </Badge>
-                                )}
-                                {item.appliedScale && (
-                                  <Badge variant="outline" className="bg-purple-50 text-purple-700">
-                                    Escala {item.appliedScale.porcentaje_descuento}% desc.
-                                  </Badge>
-                                )}
-                              </div>
-                              <h4 className="font-medium text-sm truncate">{item.product.NombreItem}</h4>
-                              <p className="text-xs text-gray-500">Código: {item.product.IdArticulo}</p>
-                              <p className="text-xs text-gray-500">{item.product.Descripcion}</p>
+                      <div key={index} className={`rounded-xl border dark:border-gray-700 shadow-sm overflow-hidden ${cardBgClass} ${cardBorderClass}`}>
+                        {/* Header */}
+                        <div className="flex items-start gap-2 px-3.5 pt-3 pb-2">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex flex-wrap gap-1 mb-1.5">
+                              {item.isEdit && <Badge variant="outline" className="bg-green-100 text-green-700 border-green-300 text-[10px]">Editado</Badge>}
+                              {item.isAuthorize && <Badge variant="outline" className="bg-blue-100 text-blue-700 border-blue-300 text-[10px]">Por Autorizar</Badge>}
+                              {item.isBonification && <Badge variant="outline" className="bg-yellow-50 text-yellow-700 text-[10px]">Bonificado</Badge>}
+                              {item.appliedScale && <Badge variant="outline" className="bg-purple-50 text-purple-700 text-[10px]">Escala {item.appliedScale.porcentaje_descuento}%</Badge>}
                             </div>
+                            <h4 className="font-semibold text-sm text-gray-900 dark:text-gray-100 line-clamp-2 leading-tight">{item.product.NombreItem}</h4>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{item.product.Descripcion}</p>
                           </div>
+                        </div>
 
-                          <div className="grid grid-cols-3 gap-4 text-sm">
-                            <div>
-                              <Label className="text-xs text-gray-500">Lote - Fec.Venc</Label>
-                              <p className="font-medium">{cod} -
-                                Vence: {fec.length > 0 && format(parseISO(fec), "dd/MM/yyyy")}</p>
-                            </div>
-                            <div>
-                              <Label className="text-xs text-gray-500">Stock</Label>
-                              <p className="font-medium">{stk}</p>
-                            </div>
-                            <div>
-                              <Label className="text-xs text-gray-500">Cantidad</Label>
-                              <p className="font-medium">{item.quantity}</p>
-                            </div>
-                            <div>
-                              <Label className="text-xs text-gray-500">Precio Unit.</Label>
-                              <div className="flex flex-col">
-                                  <span className={item.appliedScale ? "line-through text-gray-400 text-xs" : ""}>
-                                  {currency?.value === "PEN" ? "S/." : "$"}
-                                    {Number(precioOriginal).toFixed(2)}
-                                </span>
-                                {item.appliedScale && (
-                                  <span className="text-purple-600 font-medium text-sm">
-                                    {currency?.value === "PEN" ? "S/." : "$"}
-                                    {Number(precioEscala).toFixed(2)}
-                                  </span>
-                                )}
-                                {item.isBonification && (
-                                  <span
-                                    className="text-green-600 text-sm">{currency?.value === "PEN" ? "S/." : "$"}0.00</span>
-                                )}
-                              </div>
-                            </div>
-                            <div>
-                              <Label className="text-xs text-gray-500">Subtotal</Label>
-                              <p className="font-bold text-sm">
-                                {currency?.value === "PEN" ? "S/." : "$"}
-                                {subtotal.toFixed(2)}
-                              </p>
+                        {/* Details grid */}
+                        <div className="grid grid-cols-2 gap-x-4 gap-y-2 px-3.5 py-2 border-t dark:border-gray-700 bg-gray-50/50 dark:bg-gray-700/20">
+                          <div>
+                            <p className="text-[10px] text-gray-400 dark:text-gray-500 uppercase font-medium">Lote / Vence</p>
+                            <p className="text-xs font-medium text-gray-700 dark:text-gray-300 truncate">{cod} {fec.length > 0 && `· ${format(parseISO(fec), "dd/MM/yy")}`}</p>
+                          </div>
+                          <div>
+                            <p className="text-[10px] text-gray-400 dark:text-gray-500 uppercase font-medium">Stock</p>
+                            <p className="text-xs font-medium text-gray-700 dark:text-gray-300">{stk}</p>
+                          </div>
+                          <div>
+                            <p className="text-[10px] text-gray-400 dark:text-gray-500 uppercase font-medium">Cantidad</p>
+                            <p className="text-xs font-bold text-gray-900 dark:text-gray-100">{item.quantity}</p>
+                          </div>
+                          <div>
+                            <p className="text-[10px] text-gray-400 dark:text-gray-500 uppercase font-medium">P. Unitario</p>
+                            <div className="flex flex-col">
+                              <span className={`text-xs ${item.appliedScale ? "line-through text-gray-400 dark:text-gray-500" : "font-medium text-gray-700 dark:text-gray-300"}`}>
+                                {currency?.value === "PEN" ? "S/." : "$"}{Number(precioOriginal).toFixed(2)}
+                              </span>
+                              {item.appliedScale && <span className="text-xs font-semibold text-purple-600 dark:text-purple-400">{currency?.value === "PEN" ? "S/." : "$"}{Number(precioEscala).toFixed(2)}</span>}
+                              {item.isBonification && <span className="text-xs font-semibold text-green-600 dark:text-green-400">{currency?.value === "PEN" ? "S/." : "$"}0.00</span>}
                             </div>
                           </div>
                         </div>
-                      </Card>
+
+                        {/* Subtotal footer */}
+                        <div className="flex items-center justify-between px-3.5 py-2 border-t dark:border-gray-700">
+                          <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">Subtotal</span>
+                          <span className="text-sm font-bold text-indigo-700 dark:text-indigo-300">
+                            {currency?.value === "PEN" ? "S/." : "$"}{subtotal.toFixed(2)}
+                          </span>
+                        </div>
+                      </div>
                     )
                   })}
                 </div>
