@@ -22,7 +22,7 @@ import {
   Coins,
   FileText,
   Trash, CheckSquare, Loader2,
-  Locate, Building, Info, Gift, TrendingUp, ChevronDown, Bot, RefreshCw
+  Locate, Building, Info, Gift, TrendingUp, ChevronDown, Bot, RefreshCw, Users
 } from "lucide-react"
 import { StepProgress } from "@/components/step-progress"
 import apiClient from "@/app/api/client"
@@ -832,32 +832,37 @@ export default function OrderPage() {
         <p className="text-gray-500">Crea un nuevo pedido siguiendo los pasos.</p>
       </div>
 
-      <Card className="mb-6 shadow-md bg-white">
-        <CardContent className="pt-6">
+      <Card className="mb-4 shadow-sm bg-white dark:bg-gray-900 dark:border-gray-800">
+        <CardContent className="pt-4 pb-4">
           <StepProgress steps={steps} currentStep={currentStep} onStepClick={goToStep} />
         </CardContent>
       </Card>
 
       <form onSubmit={handleSubmit}>
         {currentStep === 0 && (
-          <Card className="shadow-md bg-white">
-            <CardHeader className="border-b bg-gray-50">
-              <CardTitle className="text-xl font-semibold text-blue-700">Seleccionar Cliente</CardTitle>
+          <Card className="shadow-md bg-white dark:bg-gray-900 dark:border-gray-800">
+            <CardHeader className="border-b bg-gray-50 dark:bg-gray-800/50 dark:border-gray-800">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 bg-blue-100 dark:bg-blue-900/40 rounded-md">
+                  <User className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                </div>
+                <CardTitle className="text-lg font-semibold text-blue-700 dark:text-blue-400">Seleccionar Cliente</CardTitle>
+              </div>
             </CardHeader>
-            <CardContent className="space-y-6 pt-6">
+            <CardContent className="space-y-5 pt-5">
               <div className="space-y-2">
-                <Label htmlFor="client" className="text-gray-700">
-                  Cliente
+                <Label htmlFor="client" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Buscar cliente
                 </Label>
                 <div className="flex gap-2 items-center">
                   <div className="relative flex-1">
-                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+                    <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                     <Input
                         type="search"
-                        placeholder="Buscar cliente por RUC, DNI o Nombre..."
+                        placeholder="RUC, DNI o nombre del cliente..."
                         value={search.client}
                         onChange={handleSearchChange}
-                        className="pl-8 bg-white"
+                        className="pl-9 h-11 bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 dark:text-gray-100 dark:placeholder-gray-500"
                     />
                   </div>
 
@@ -882,49 +887,26 @@ export default function OrderPage() {
                   </div>
                 ) : clientsFiltered.length > 0 ? (
                   <>
-                  <div className="hidden sm:block border rounded-md overflow-x-auto h-[300px]">
-                    <table className="min-w-full divide-y divide-gray-200">
-                      <thead className="bg-gray-50">
+                  <div className="hidden sm:block border dark:border-gray-700 rounded-lg overflow-hidden max-h-[300px] overflow-y-auto">
+                    <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                      <thead className="bg-gray-50 dark:bg-gray-800 sticky top-0">
                       <tr>
-                        <th scope="col"
-                            className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nombre
-                        </th>
-                        <th scope="col"
-                            className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nombre Comercial
-                        </th>
-                        <th scope="col"
-                            className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Dirección
-                        </th>
-                        <th scope="col"
-                            className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">RUC
-                        </th>
-                        <th scope="col"
-                            className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Acción
-                        </th>
+                        <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Nombre</th>
+                        <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Nombre Comercial</th>
+                        <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Dirección</th>
+                        <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">RUC</th>
+                        <th scope="col" className="px-4 py-3"></th>
                       </tr>
                       </thead>
-                      <tbody>
+                      <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-100 dark:divide-gray-800">
                       {clientsFiltered.map((c) => (
-                        <tr key={c.codigo}>
-                          <td className="p-4 text-sm">
-                            <div className="font-medium">{c.Nombre}</div>
-                          </td>
-                          <td className="p-4 text-sm">
-                            {c.NombreComercial || "No especificado"}
-                          </td>
-                          <td className="p-4 text-sm">
-                            {c.Dirección || "No especificada"}
-                          </td>
-                          <td className="p-4 text-sm">
-                            {c.RUC || "No especificado"}
-                          </td>
-                          <td className="p-4 text-sm">
-                            <Button
-                              type="button"
-                              size="sm"
-                              onClick={() => handleClientSelect(c)}
-                              className="bg-blue-600 hover:bg-blue-700"
-                            >
+                        <tr key={c.codigo} className="hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors">
+                          <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">{c.Nombre}</td>
+                          <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{c.NombreComercial || "—"}</td>
+                          <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{c.Dirección || "—"}</td>
+                          <td className="px-4 py-3 text-sm font-mono text-gray-600 dark:text-gray-400">{c.RUC || "—"}</td>
+                          <td className="px-4 py-3">
+                            <Button type="button" size="sm" onClick={() => handleClientSelect(c)} className="bg-blue-600 hover:bg-blue-700 h-8 text-xs">
                               Seleccionar
                             </Button>
                           </td>
@@ -933,58 +915,48 @@ export default function OrderPage() {
                       </tbody>
                     </table>
                   </div>
-                  <div className="sm:hidden space-y-3 overflow-x-auto h-[300px]">
+                  <div className="sm:hidden space-y-2 max-h-[360px] overflow-y-auto pr-1">
                     {clientsFiltered.map((item, index) => (
-                      <Card key={index} className="p-4">
-                        <div className="space-y-4">
-                          <div className="flex justify-between items-start">
-                            <div className="flex-1 min-w-0 space-y-3">
-                              <div className="flex items-start gap-2">
-                                <User className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
-                                <h4 className="font-semibold text-gray-800">{item.Nombre}</h4>
+                      <div key={index} className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-3.5 shadow-sm">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex-1 min-w-0 space-y-1.5">
+                            <div className="flex items-center gap-2">
+                              <div className="h-7 w-7 rounded-full bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center shrink-0">
+                                <User className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
                               </div>
-                              <div className="flex items-center gap-2">
-                                <Building className="h-4 w-4 text-gray-500 flex-shrink-0" />
-                                <p className="text-sm text-gray-600">
-                                  {item.NombreComercial || "No especificado"}
-                                </p>
-                              </div>
-                              <div className="flex items-start gap-2">
-                                <MapPin className="h-4 w-4 text-gray-500 mt-0.5 flex-shrink-0" />
-                                <p className="text-sm text-gray-600">
-                                  {item.Dirección || "No especificada"}
-                                </p>
-                              </div>
-                              {item.RUC && (
-                                <div className="flex items-center gap-2">
-                                  <CreditCard className="h-4 w-4 text-gray-500 flex-shrink-0" />
-                                  <p className="text-xs font-mono text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                                    {item.RUC}
-                                  </p>
-                                </div>
-                              )}
+                              <h4 className="font-semibold text-sm text-gray-900 dark:text-gray-100 truncate">{item.Nombre}</h4>
                             </div>
+                            {item.NombreComercial && (
+                              <p className="text-xs text-gray-500 dark:text-gray-400 pl-9">{item.NombreComercial}</p>
+                            )}
+                            <div className="flex items-start gap-1.5 pl-9">
+                              <MapPin className="h-3 w-3 text-gray-400 mt-0.5 shrink-0" />
+                              <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-1">{item.Dirección || "Sin dirección"}</p>
+                            </div>
+                            {item.RUC && (
+                              <span className="inline-flex ml-9 items-center text-xs font-mono bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-2 py-0.5 rounded">
+                                {item.RUC}
+                              </span>
+                            )}
                           </div>
-
-                          <div className="flex justify-end pt-2">
-                            <Button
-                              type="button"
-                              size="sm"
-                              onClick={() => handleClientSelect(item)}
-                              className="bg-blue-600 hover:bg-blue-700 flex items-center gap-1.5"
-                            >
-                              <Check className="h-3.5 w-3.5" />
-                              Seleccionar
-                            </Button>
-                          </div>
+                          <Button
+                            type="button"
+                            size="sm"
+                            onClick={() => handleClientSelect(item)}
+                            className="bg-blue-600 hover:bg-blue-700 h-9 px-3 shrink-0"
+                          >
+                            <Check className="h-3.5 w-3.5" />
+                          </Button>
                         </div>
-                      </Card>
+                      </div>
                     ))}
                   </div>
                   </>
                 ) : !selectedClient ? (
-                  <div className="p-4 text-sm text-gray-500 text-center">
-                    No se encontraron clientes que coincidan con la búsqueda
+                  <div className="py-6 text-center">
+                    <Users className="h-8 w-8 text-gray-300 dark:text-gray-600 mx-auto mb-2" />
+                    <p className="text-sm text-gray-500 dark:text-gray-400">No se encontraron clientes</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Intente con otro RUC, DNI o nombre</p>
                   </div>
                 ) : null}
               </div>
@@ -1030,12 +1002,12 @@ export default function OrderPage() {
                   <OrderHistory client={selectedClient} />
               )}
             </CardContent>
-            <CardFooter className="flex justify-end border-t bg-gray-50 py-4">
+            <CardFooter className="flex justify-end border-t bg-gray-50 dark:bg-gray-800/50 dark:border-gray-800 py-4">
               <Button
                 type="button"
                 onClick={nextStep}
                 disabled={!isStepValid()}
-                className="bg-blue-600 hover:bg-blue-700"
+                className="bg-blue-600 hover:bg-blue-700 h-11 px-6"
               >
                 Siguiente
                 <ArrowRight className="ml-2 h-4 w-4"/>
@@ -1045,11 +1017,16 @@ export default function OrderPage() {
         )}
         {currentStep === 1 && (
           <div className="grid gap-6">
-            <Card className="shadow-md bg-white">
-              <CardHeader className="border-b bg-gray-50">
-                <CardTitle className="text-xl font-semibold text-blue-700">Agregar Productos</CardTitle>
+            <Card className="shadow-md bg-white dark:bg-gray-900 dark:border-gray-800">
+              <CardHeader className="border-b bg-gray-50 dark:bg-gray-800/50 dark:border-gray-800">
+                <div className="flex items-center gap-2">
+                  <div className="p-1.5 bg-blue-100 dark:bg-blue-900/40 rounded-md">
+                    <Package className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <CardTitle className="text-lg font-semibold text-blue-700 dark:text-blue-400">Agregar Productos</CardTitle>
+                </div>
               </CardHeader>
-              <CardContent className="space-y-6 pt-6">
+              <CardContent className="space-y-5 pt-5">
                 <div className="flex flex-col sm:flex-row gap-3 px-1 sm:px-0 py-2 items-end">
                   <div className="space-y-2 flex-1 min-w-0">
                     <Label htmlFor="producto" className="text-sm font-medium">
@@ -1203,98 +1180,102 @@ export default function OrderPage() {
                     </div>
 
                     {selectedProduct && (
-                        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 mt-2">
-                          <div
-                              className={`border rounded-md p-2 cursor-pointer text-center ${
+                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 mt-3">
+                          {/* Contado */}
+                          <button
+                              type="button"
+                              onClick={() => setPriceType('contado')}
+                              className={`relative rounded-xl p-3 text-center transition-all border-2 ${
                                   priceType === 'contado'
-                                      ? 'border-blue-500 bg-blue-50 text-blue-700'
-                                      : 'border-gray-200 bg-gray-50 text-gray-700'
+                                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 shadow-sm'
+                                      : 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 hover:border-blue-300 dark:hover:border-blue-700'
                               }`}
-                              onClick={() => {
-                                setPriceType('contado')
-                              }}
                           >
-                            <div className="font-medium">Contado</div>
-                            <div className="text-sm">
-                              {currency?.value === "PEN" ? "S/." : "$"}
-                              {Number(selectedProduct.PUContado).toFixed(2)}
+                            {priceType === 'contado' && <Check className="absolute top-1.5 right-1.5 h-3 w-3 text-blue-600 dark:text-blue-400" />}
+                            <div className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Contado</div>
+                            <div className="text-sm font-bold text-blue-700 dark:text-blue-300">
+                              {currency?.value === "PEN" ? "S/." : "$"}{Number(selectedProduct.PUContado).toFixed(2)}
                             </div>
-                          </div>
-                          <div
-                              className={`border rounded-md p-2 cursor-pointer text-center ${
+                          </button>
+
+                          {/* Crédito */}
+                          <button
+                              type="button"
+                              onClick={() => setPriceType('credito')}
+                              className={`relative rounded-xl p-3 text-center transition-all border-2 ${
                                   priceType === 'credito'
-                                      ? 'border-blue-500 bg-blue-50 text-blue-700'
-                                      : 'border-gray-200 bg-gray-50 text-gray-700'
+                                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 shadow-sm'
+                                      : 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 hover:border-blue-300 dark:hover:border-blue-700'
                               }`}
-                              onClick={() => {
-                                setPriceType('credito')
-                              }}
                           >
-                            <div className="font-medium">Crédito</div>
-                            <div className="text-sm">
-                              {currency?.value === "PEN" ? "S/." : "$"}
-                              {Number(selectedProduct.PUCredito).toFixed(2)}
+                            {priceType === 'credito' && <Check className="absolute top-1.5 right-1.5 h-3 w-3 text-blue-600 dark:text-blue-400" />}
+                            <div className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Crédito</div>
+                            <div className="text-sm font-bold text-blue-700 dark:text-blue-300">
+                              {currency?.value === "PEN" ? "S/." : "$"}{Number(selectedProduct.PUCredito).toFixed(2)}
                             </div>
-                          </div>
-                          {Number(selectedProduct.PUPorMayor) > 0 && <div
-                              className={`border rounded-md p-2 cursor-pointer text-center ${
-                                  priceType === 'porMayor'
-                                      ? 'border-violet-500 bg-violet-50 text-violet-700'
-                                      : 'border-violet-200 bg-violet-50 text-violet-700'
-                              }`}
-                              onClick={() => {
-                                setPriceType('porMayor')
-                              }}
-                          >
-                            <div className="font-medium">Bonif Contado</div>
-                            <div className="text-sm">
-                              {currency?.value === "PEN" ? "S/." : "$"}
-                              {Number(selectedProduct.PUPorMayor).toFixed(2)}
-                            </div>
-                          </div>}
-                          {Number(selectedProduct.PUPorMenor) > 0 && <div
-                              className={`border rounded-md p-2 cursor-pointer text-center ${
-                                  priceType === 'porMenor'
-                                      ? 'border-green-500 bg-green-50 text-green-700'
-                                      : 'border-green-200 bg-green-50 text-green-700'
-                              }`}
-                              onClick={() => {
-                                setPriceType('porMenor')
-                              }}
-                          >
-                            <div className="font-medium">Bonif Crédito</div>
-                            <div className="text-sm">
-                              {currency?.value === "PEN" ? "S/." : "$"}
-                              {Number(selectedProduct.PUPorMenor).toFixed(2)}
-                            </div>
-                          </div>}
-                          <div
-                              className={`border rounded-md p-2 cursor-pointer text-center ${
+                          </button>
+
+                          {/* Bonif Contado */}
+                          {Number(selectedProduct.PUPorMayor) > 0 && (
+                            <button
+                                type="button"
+                                onClick={() => setPriceType('porMayor')}
+                                className={`relative rounded-xl p-3 text-center transition-all border-2 ${
+                                    priceType === 'porMayor'
+                                        ? 'border-violet-500 bg-violet-50 dark:bg-violet-900/30 shadow-sm'
+                                        : 'border-violet-200 dark:border-violet-800 bg-violet-50/50 dark:bg-gray-800 hover:border-violet-400 dark:hover:border-violet-600'
+                                }`}
+                            >
+                              {priceType === 'porMayor' && <Check className="absolute top-1.5 right-1.5 h-3 w-3 text-violet-600 dark:text-violet-400" />}
+                              <div className="text-xs font-medium text-violet-600 dark:text-violet-400 mb-1">Bonif. Cont.</div>
+                              <div className="text-sm font-bold text-violet-700 dark:text-violet-300">
+                                {currency?.value === "PEN" ? "S/." : "$"}{Number(selectedProduct.PUPorMayor).toFixed(2)}
+                              </div>
+                            </button>
+                          )}
+
+                          {/* Bonif Crédito */}
+                          {Number(selectedProduct.PUPorMenor) > 0 && (
+                            <button
+                                type="button"
+                                onClick={() => setPriceType('porMenor')}
+                                className={`relative rounded-xl p-3 text-center transition-all border-2 ${
+                                    priceType === 'porMenor'
+                                        ? 'border-green-500 bg-green-50 dark:bg-green-900/30 shadow-sm'
+                                        : 'border-green-200 dark:border-green-800 bg-green-50/50 dark:bg-gray-800 hover:border-green-400 dark:hover:border-green-600'
+                                }`}
+                            >
+                              {priceType === 'porMenor' && <Check className="absolute top-1.5 right-1.5 h-3 w-3 text-green-600 dark:text-green-400" />}
+                              <div className="text-xs font-medium text-green-600 dark:text-green-400 mb-1">Bonif. Cred.</div>
+                              <div className="text-sm font-bold text-green-700 dark:text-green-300">
+                                {currency?.value === "PEN" ? "S/." : "$"}{Number(selectedProduct.PUPorMenor).toFixed(2)}
+                              </div>
+                            </button>
+                          )}
+
+                          {/* Custom */}
+                          <button
+                              type="button"
+                              onClick={() => setPriceType('custom')}
+                              className={`relative rounded-xl p-3 text-center transition-all border-2 ${
                                   priceType === 'custom'
-                                      ? 'border-red-500 bg-red-50 text-red-700'
-                                      : 'border-red-200 bg-red-50 text-red-700'
+                                      ? 'border-red-500 bg-red-50 dark:bg-red-900/30 shadow-sm'
+                                      : 'border-red-200 dark:border-red-800 bg-red-50/50 dark:bg-gray-800 hover:border-red-400 dark:hover:border-red-600'
                               }`}
-                              onClick={() => {
-                                setPriceType('custom')
-                              }}
                           >
-                            <div className="font-medium">Custom</div>
-                            <div className="text-sm flex items-center justify-center">
-                              {currency?.value === "PEN" ? "S/." : "$"}
+                            {priceType === 'custom' && <Check className="absolute top-1.5 right-1.5 h-3 w-3 text-red-600 dark:text-red-400" />}
+                            <div className="text-xs font-medium text-red-600 dark:text-red-400 mb-1">Personalizado</div>
+                            <div className="flex items-center justify-center gap-0.5">
+                              <span className="text-xs text-red-700 dark:text-red-300">{currency?.value === "PEN" ? "S/." : "$"}</span>
                               <Input
                                   type="text"
                                   value={priceEdit === 0 ? '' : priceEdit}
                                   onChange={(e) => {
                                     let value = e.target.value;
                                     value = value.replace(/[^\d.]/g, '');
-
                                     const parts = value.split('.');
-                                    if (parts.length > 2) {
-                                      value = parts[0] + '.' + parts.slice(1).join('');
-                                    }
-                                    if (parts.length === 2 && parts[1].length > 2) {
-                                      value = parts[0] + '.' + parts[1].substring(0, 2);
-                                    }
+                                    if (parts.length > 2) value = parts[0] + '.' + parts.slice(1).join('');
+                                    if (parts.length === 2 && parts[1].length > 2) value = parts[0] + '.' + parts[1].substring(0, 2);
                                     setPriceEdit(value === '' ? 0 : value);
                                   }}
                                   onBlur={(e) => {
@@ -1303,11 +1284,12 @@ export default function OrderPage() {
                                       setPriceEdit(isNaN(numValue) ? 0 : numValue.toFixed(2));
                                     }
                                   }}
-                                  className="bg-white h-[20px] ml-1 w-[80px] text-center"
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="h-7 w-16 text-center text-xs font-bold text-red-700 dark:text-red-300 bg-white dark:bg-gray-700 border-red-200 dark:border-red-700 p-1"
                                   placeholder="0.00"
                               />
                             </div>
-                          </div>
+                          </button>
                         </div>
                     )}
                   </div>
@@ -1337,29 +1319,31 @@ export default function OrderPage() {
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="quantity" className="text-gray-700">
-                    Cantidad
-                  </Label>
-                  <Input
-                      id="quantity"
-                      type="number"
-                      min="1"
-                      step="1"
-                      value={quantity}
-                      onChange={(e) => setQuantity(Number.parseInt(e.target.value) || 1)}
-                      className="bg-white"
-                  />
+                <div className="flex gap-3 items-end">
+                  <div className="space-y-1.5 w-28 shrink-0">
+                    <Label htmlFor="quantity" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Cantidad
+                    </Label>
+                    <Input
+                        id="quantity"
+                        type="number"
+                        min="1"
+                        step="1"
+                        value={quantity}
+                        onChange={(e) => setQuantity(Number.parseInt(e.target.value) || 1)}
+                        className="h-11 bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-center text-base font-medium"
+                    />
+                  </div>
+                  <Button
+                      type="button"
+                      disabled={!selectedProduct || loading.products || isCheckingBonification}
+                      onClick={handleAddProduct}
+                      className="flex-1 h-11 bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-700 dark:hover:bg-indigo-600 text-base font-medium"
+                  >
+                    <ShoppingCart className="mr-2 h-4 w-4"/>
+                    Agregar al pedido
+                  </Button>
                 </div>
-                <Button
-                    type="button"
-                    disabled={!selectedProduct || loading.products || isCheckingBonification}
-                    onClick={handleAddProduct}
-                    className="w-full bg-indigo-600 hover:bg-indigo-700"
-                >
-                  <ShoppingCart className="mr-2 h-4 w-4"/>
-                  Agregar Producto
-                </Button>
               </CardContent>
             </Card>
 
@@ -1397,11 +1381,18 @@ export default function OrderPage() {
             {/*  currency={currency}*/}
             {/*/>*/}
             {selectedProducts.length > 0 && (
-                <Card className="shadow-md bg-white">
-                  <CardHeader className="border-b bg-gray-50">
-                    <CardTitle className="text-xl font-semibold text-blue-700">Productos Seleccionados</CardTitle>
+                <Card className="shadow-md bg-white dark:bg-gray-900 dark:border-gray-800">
+                  <CardHeader className="border-b bg-gray-50 dark:bg-gray-800/50 dark:border-gray-800">
+                    <div className="flex items-center gap-2">
+                      <div className="p-1.5 bg-indigo-100 dark:bg-indigo-900/40 rounded-md">
+                        <ShoppingCart className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+                      </div>
+                      <CardTitle className="text-lg font-semibold text-blue-700 dark:text-blue-400">
+                        Productos Seleccionados
+                      </CardTitle>
+                    </div>
                   </CardHeader>
-                  <CardContent className="pt-6">
+                  <CardContent className="pt-4">
                     <div className="hidden sm:block border rounded-md overflow-hidden">
                       <div className="overflow-x-auto">
                         <table className="min-w-full divide-y divide-gray-200">
@@ -1580,7 +1571,7 @@ export default function OrderPage() {
                       </div>
                     </div>
 
-                    <div className="block sm:hidden space-y-3">
+                    <div className="block sm:hidden space-y-2.5">
                       {selectedProducts.map((item, index) => {
                         const precioOriginal = item.finalPrice;
                         const precioEscala = item.appliedScale?.precio_escala;
@@ -1592,154 +1583,101 @@ export default function OrderPage() {
                         const fec = split[1];
                         const stk = split[2];
 
-                        let cardBgClass = "bg-white";
-                        let borderClass = "";
-                        if (item.isAuthorize) {
-                          cardBgClass = "bg-blue-50";
-                          borderClass = "border-l-4 border-l-blue-500";
-                        } else if (item.isEdit) {
-                          cardBgClass = "bg-green-50";
-                          borderClass = "border-l-4 border-l-green-500";
-                        }
+                        const cardBorderClass = item.isAuthorize
+                          ? "border-l-4 border-l-blue-500 dark:border-l-blue-400"
+                          : item.isEdit
+                          ? "border-l-4 border-l-green-500 dark:border-l-green-400"
+                          : "";
+                        const cardBgClass = item.isAuthorize
+                          ? "bg-blue-50 dark:bg-blue-950/30"
+                          : item.isEdit
+                          ? "bg-green-50 dark:bg-green-950/30"
+                          : "bg-white dark:bg-gray-800";
 
                         return (
-                            <Card key={index} className={`p-4 relative ${cardBgClass} ${borderClass}`}>
-                              <div className="flex items-center flex-wrap gap-1 justify-end">
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="text-blue-500 hover:text-blue-700"
-                                    onClick={() => handleListarLotes([item])}
-                                    type='button'
-                                >
-                                  <Package className="h-5 w-5"/>
-                                </Button>
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="text-red-500 hover:text-red-700"
-                                    onClick={() => handleRemoveItem(index)}
-                                    type='button'
-                                >
-                                  <Trash className="h-5 w-5"/>
-                                </Button>
-                              </div>
-                              <div className="space-y-3">
-                                <div className="flex justify-between items-start">
-                                  <div className="flex-1 min-w-0">
-                                    <div className="flex flex-wrap gap-1 mb-2">
-                                      {item.isEdit && (
-                                          <Badge variant="outline" className="bg-green-100 text-green-700 border-green-300">
-                                            Editado
-                                          </Badge>
-                                      )}
-                                      {item.isAuthorize && (
-                                          <Badge variant="outline" className="bg-blue-100 text-blue-700 border-blue-300">
-                                            Por Autorizar
-                                          </Badge>
-                                      )}
-                                      {item.isBonification && (
-                                          <Badge variant="outline" className="bg-yellow-50 text-yellow-700">
-                                            Bonificado
-                                          </Badge>
-                                      )}
-                                      {item.appliedScale && (
-                                          <Badge variant="outline" className="bg-purple-50 text-purple-700">
-                                            Escala {item.appliedScale.porcentaje_descuento}% desc.
-                                          </Badge>
-                                      )}
-                                    </div>
-                                    <h4 className="font-medium text-sm truncate">{item.product.NombreItem}</h4>
-                                    <p className="text-xs text-gray-500">Código: {item.product.IdArticulo}</p>
-                                    <p className="text-xs text-gray-500">{item.product.Descripcion}</p>
+                            <div key={index} className={`rounded-xl border dark:border-gray-700 shadow-sm overflow-hidden ${cardBgClass} ${cardBorderClass}`}>
+                              {/* Header */}
+                              <div className="flex items-start justify-between gap-2 px-3.5 pt-3 pb-2">
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex flex-wrap gap-1 mb-1.5">
+                                    {item.isEdit && <Badge variant="outline" className="bg-green-100 text-green-700 border-green-300 text-[10px]">Editado</Badge>}
+                                    {item.isAuthorize && <Badge variant="outline" className="bg-blue-100 text-blue-700 border-blue-300 text-[10px]">Por Autorizar</Badge>}
+                                    {item.isBonification && <Badge variant="outline" className="bg-yellow-50 text-yellow-700 text-[10px]">Bonificado</Badge>}
+                                    {item.appliedScale && <Badge variant="outline" className="bg-purple-50 text-purple-700 text-[10px]">Escala {item.appliedScale.porcentaje_descuento}%</Badge>}
                                   </div>
+                                  <h4 className="font-semibold text-sm text-gray-900 dark:text-gray-100 line-clamp-2 leading-tight">{item.product.NombreItem}</h4>
+                                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{item.product.Descripcion}</p>
                                 </div>
+                                <div className="flex gap-1 shrink-0">
+                                  <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-500 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/30" onClick={() => handleListarLotes([item])} type='button'>
+                                    <Package className="h-4 w-4"/>
+                                  </Button>
+                                  <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/30" onClick={() => handleRemoveItem(index)} type='button'>
+                                    <Trash className="h-4 w-4"/>
+                                  </Button>
+                                </div>
+                              </div>
 
-                                <div className="grid grid-cols-3 gap-4 text-sm">
-                                  <div>
-                                    <Label className="text-xs text-gray-500">Lote - Fec.Venc</Label>
-                                    <p className="font-medium">{cod} - Vence: {fec.length > 0 && format(parseISO(fec), "dd/MM/yyyy")}</p>
-                                  </div>
-                                  <div>
-                                    <Label className="text-xs text-gray-500">Stock</Label>
-                                    <p className="font-medium">{stk}</p>
-                                  </div>
-                                  <div>
-                                    <Label className="text-xs text-gray-500">Cantidad</Label>
-                                    <p className="font-medium">{item.quantity}</p>
-                                  </div>
-                                  <div>
-                                    <Label className="text-xs text-gray-500">Precio Unit.</Label>
-                                    <div className="flex flex-col">
-                      <span className={item.appliedScale ? "line-through text-gray-400 text-xs" : ""}>
-                        {currency?.value === "PEN" ? "S/." : "$"}
-                        {Number(precioOriginal).toFixed(2)}
-                      </span>
-                                      {item.appliedScale && (
-                                          <span className="text-purple-600 font-medium text-sm">
-                          {currency?.value === "PEN" ? "S/." : "$"}
-                                            {Number(precioEscala).toFixed(2)}
-                        </span>
-                                      )}
-                                      {item.isBonification && (
-                                          <span className="text-green-600 text-sm">{currency?.value === "PEN" ? "S/." : "$"}0.00</span>
-                                      )}
-                                    </div>
-                                  </div>
-                                  <div>
-                                    <Label className="text-xs text-gray-500">Subtotal</Label>
-                                    <p className="font-bold text-sm">
-                                      {currency?.value === "PEN" ? "S/." : "$"}
-                                      {subtotal.toFixed(2)}
-                                    </p>
+                              {/* Details grid */}
+                              <div className="grid grid-cols-2 gap-x-4 gap-y-2 px-3.5 py-2 border-t dark:border-gray-700 bg-gray-50/50 dark:bg-gray-700/20">
+                                <div>
+                                  <p className="text-[10px] text-gray-400 dark:text-gray-500 uppercase font-medium">Lote / Vence</p>
+                                  <p className="text-xs font-medium text-gray-700 dark:text-gray-300 truncate">{cod} {fec.length > 0 && `· ${format(parseISO(fec), "dd/MM/yy")}`}</p>
+                                </div>
+                                <div>
+                                  <p className="text-[10px] text-gray-400 dark:text-gray-500 uppercase font-medium">Stock</p>
+                                  <p className="text-xs font-medium text-gray-700 dark:text-gray-300">{stk}</p>
+                                </div>
+                                <div>
+                                  <p className="text-[10px] text-gray-400 dark:text-gray-500 uppercase font-medium">Cantidad</p>
+                                  <p className="text-xs font-bold text-gray-900 dark:text-gray-100">{item.quantity}</p>
+                                </div>
+                                <div>
+                                  <p className="text-[10px] text-gray-400 dark:text-gray-500 uppercase font-medium">P. Unitario</p>
+                                  <div className="flex flex-col">
+                                    <span className={`text-xs ${item.appliedScale ? "line-through text-gray-400" : "font-medium text-gray-700 dark:text-gray-300"}`}>
+                                      {currency?.value === "PEN" ? "S/." : "$"}{Number(precioOriginal).toFixed(2)}
+                                    </span>
+                                    {item.appliedScale && <span className="text-xs font-semibold text-purple-600 dark:text-purple-400">{currency?.value === "PEN" ? "S/." : "$"}{Number(precioEscala).toFixed(2)}</span>}
+                                    {item.isBonification && <span className="text-xs font-semibold text-green-600 dark:text-green-400">{currency?.value === "PEN" ? "S/." : "$"}0.00</span>}
                                   </div>
                                 </div>
                               </div>
-                            </Card>
+
+                              {/* Subtotal footer */}
+                              <div className="flex items-center justify-between px-3.5 py-2 border-t dark:border-gray-700">
+                                <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">Subtotal</span>
+                                <span className="text-sm font-bold text-indigo-700 dark:text-indigo-300">
+                                  {currency?.value === "PEN" ? "S/." : "$"}{subtotal.toFixed(2)}
+                                </span>
+                              </div>
+                            </div>
                         )
                       })}
 
-                      <div className="bg-gray-50 rounded-lg border border-gray-200 p-4">
-                        <div className="space-y-2">
-                          <div className="flex justify-between items-center">
-                            <span className="font-medium text-gray-900">Total:</span>
-                            <span className="font-bold text-lg text-blue-700">
-                {currency?.value === "PEN" ? "S/." : "$"}
-                              {selectedProducts
-                                  .reduce((sum, item) => {
-                                    const precioUnitario = item.isBonification
-                                        ? 0
-                                        : item.appliedScale?.precio_escala ?? item.finalPrice
-                                    return sum + precioUnitario * item.quantity
-                                  }, 0)
-                                  .toFixed(2)}
-              </span>
-                          </div>
+                      <div className="rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 p-4 shadow-sm">
+                        <div className="flex justify-between items-center">
+                          <span className="font-medium text-blue-100 text-sm">Total del pedido</span>
+                          <span className="font-bold text-xl text-white">
+                            {currency?.value === "PEN" ? "S/." : "$"}
+                            {selectedProducts.reduce((sum, item) => {
+                              const pu = item.isBonification ? 0 : item.appliedScale?.precio_escala ?? item.finalPrice
+                              return sum + pu * item.quantity
+                            }, 0).toFixed(2)}
+                          </span>
                         </div>
                       </div>
                     </div>
                   </CardContent>
-                  <CardFooter className="flex justify-between border-t bg-gray-50 py-4">
-                    <Button type="button" variant="outline" onClick={prevStep}>
+                  <CardFooter className="flex justify-between border-t bg-gray-50 dark:bg-gray-800/50 dark:border-gray-800 py-4">
+                    <Button type="button" variant="outline" onClick={prevStep} className="h-11 dark:border-gray-700 dark:text-gray-300">
                       <ArrowLeft className="mr-2 h-4 w-4"/>
                       Anterior
                     </Button>
-
-                    <div className='flex'>
-                      {/*<Button className='mr-4' type="button" variant="outline" onClick={() => setShowLotesModal(true)}>*/}
-                      {/*  <Package className="mr-2 h-4 w-4"/>*/}
-                      {/*  Cambiar Lotes*/}
-                      {/*</Button>*/}
-                      <Button
-                          type="button"
-                          onClick={nextStep}
-                          disabled={!isStepValid()}
-                          className="bg-blue-600 hover:bg-blue-700"
-                      >
-                        Siguiente
-                        <ArrowRight className="ml-2 h-4 w-4"/>
-                      </Button>
-                    </div>
+                    <Button type="button" onClick={nextStep} disabled={!isStepValid()} className="h-11 bg-blue-600 hover:bg-blue-700 px-6">
+                      Siguiente
+                      <ArrowRight className="ml-2 h-4 w-4"/>
+                    </Button>
                   </CardFooter>
                 </Card>
             )}
@@ -1747,102 +1685,99 @@ export default function OrderPage() {
         )}
 
         {currentStep === 2 && (
-          <Card className="shadow-md bg-white">
-            <CardHeader className="border-b bg-gray-50">
-              <CardTitle className="text-xl font-semibold text-blue-700">Resumen del Pedido</CardTitle>
+          <Card className="shadow-md bg-white dark:bg-gray-900 dark:border-gray-800">
+            <CardHeader className="border-b bg-gray-50 dark:bg-gray-800/50 dark:border-gray-800">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 bg-green-100 dark:bg-green-900/40 rounded-md">
+                  <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
+                </div>
+                <CardTitle className="text-lg font-semibold text-blue-700 dark:text-blue-400">Resumen del Pedido</CardTitle>
+              </div>
             </CardHeader>
-            <CardContent className="space-y-6 pt-6">
-              <div className="space-y-4">
+            <CardContent className="space-y-5 pt-5">
+              <div className="space-y-3">
                 <div className="flex items-center gap-2">
-                  <User className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600"/>
-                  <h3 className="font-semibold text-gray-900 text-sm sm:text-base">Información del Cliente</h3>
+                  <User className="w-4 h-4 text-blue-600 dark:text-blue-400"/>
+                  <h3 className="font-semibold text-gray-900 dark:text-gray-100 text-sm">Información del Cliente</h3>
                 </div>
 
-                <div className="bg-blue-50 rounded-lg p-4 border border-blue-100">
+                <div className="bg-blue-50 dark:bg-blue-950/30 rounded-xl p-4 border border-blue-100 dark:border-blue-900/50">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-3">
                       <div>
                         <Label className="text-xs text-gray-500">Cliente</Label>
                         <p className="font-medium text-sm sm:text-base">{selectedClient?.Nombre}</p>
-                        <p className="text-xs text-gray-500">Documento: doc nro</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">Documento: doc nro</p>
                       </div>
 
                       <div className="flex items-start gap-2">
-                        <Phone className="w-4 h-4 text-blue-600 mt-0.5"/>
+                        <Phone className="w-4 h-4 text-blue-600 dark:text-blue-400 mt-0.5"/>
                         <div>
-                          <Label className="text-xs text-gray-500">Teléfono</Label>
-                          <p className="text-sm">{selectedClient?.telefono ?? '+52 ---------'}</p>
+                          <Label className="text-xs text-gray-500 dark:text-gray-400">Teléfono</Label>
+                          <p className="text-sm text-gray-800 dark:text-gray-200">{selectedClient?.telefono ?? '—'}</p>
                         </div>
                       </div>
                       <div className="flex items-start gap-2">
-                        <User className="w-4 h-4 text-blue-600 mt-0.5"/>
+                        <User className="w-4 h-4 text-blue-600 dark:text-blue-400 mt-0.5"/>
                         <div>
-                          <Label className="text-xs text-gray-500">Contacto para el Pedido</Label>
-                          <p className="text-sm">{contactoPedido ?? '-----'}</p>
+                          <Label className="text-xs text-gray-500 dark:text-gray-400">Contacto</Label>
+                          <p className="text-sm text-gray-800 dark:text-gray-200">{contactoPedido ?? '—'}</p>
                         </div>
                       </div>
                     </div>
 
                     <div className="space-y-3">
                       <div className="flex items-start gap-2">
-                        <MapPin className="w-4 h-4 text-green-600 mt-0.5"/>
+                        <MapPin className="w-4 h-4 text-green-600 dark:text-green-400 mt-0.5"/>
                         <div>
-                          <Label className="text-xs text-gray-500">Dirección de Entrega</Label>
-                          <p className="text-sm">{selectedClient?.Dirección ?? 'Direccion entrega ----'}</p>
+                          <Label className="text-xs text-gray-500 dark:text-gray-400">Dirección de Entrega</Label>
+                          <p className="text-sm text-gray-800 dark:text-gray-200">{selectedClient?.Dirección ?? '—'}</p>
                           {selectedClient?.referenciaDireccion && (
-                            <p className="text-xs text-gray-600 mt-1">Ref: {selectedClient.referenciaDireccion}</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Ref: {selectedClient.referenciaDireccion}</p>
                           )}
                         </div>
                       </div>
-
                       <div className="flex items-start gap-2">
-                        <MapPin className="w-4 h-4 text-purple-600 mt-0.5"/>
+                        <MapPin className="w-4 h-4 text-purple-600 dark:text-purple-400 mt-0.5"/>
                         <div>
-                          <Label className="text-xs text-gray-500">Zona</Label>
-                          <p className="text-sm">
-                            {nameZone}
-                          </p>
+                          <Label className="text-xs text-gray-500 dark:text-gray-400">Zona</Label>
+                          <p className="text-sm text-gray-800 dark:text-gray-200">{nameZone}</p>
                         </div>
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
-              <div className="space-y-4">
+
+              <div className="space-y-3">
                 <div className="flex items-center gap-2">
-                  <CreditCard className="w-4 h-4 sm:w-5 sm:h-5 text-green-600"/>
-                  <h3 className="font-semibold text-gray-900 text-sm sm:text-base">Condiciones de Pago</h3>
+                  <CreditCard className="w-4 h-4 text-green-600 dark:text-green-400"/>
+                  <h3 className="font-semibold text-gray-900 dark:text-gray-100 text-sm">Condiciones de Pago</h3>
                 </div>
-
-                <div className="bg-green-50 rounded-lg p-4 border border-green-100">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="bg-green-50 dark:bg-green-950/30 rounded-xl p-4 border border-green-100 dark:border-green-900/50">
+                  <div className="grid grid-cols-2 gap-4">
                     <div className="flex items-start gap-2">
-                      <Calendar className="w-4 h-4 text-green-600 mt-0.5"/>
+                      <Calendar className="w-4 h-4 text-green-600 dark:text-green-400 mt-0.5"/>
                       <div>
-                        <Label className="text-xs text-gray-500">Condición</Label>
-                        <p className="font-medium text-sm"> {condition?.Descripcion}</p>
+                        <Label className="text-xs text-gray-500 dark:text-gray-400">Condición</Label>
+                        <p className="font-semibold text-sm text-gray-800 dark:text-gray-200">{condition?.Descripcion}</p>
                       </div>
                     </div>
                     <div className="flex items-start gap-2">
-                      {currency?.value === "PEN" ? (
-                        <Coins className="w-4 h-4 text-green-600 mt-0.5"/>
-                      ) : (
-                        <DollarSign className="w-4 h-4 text-green-600 mt-0.5"/>
-                      )}
+                      {currency?.value === "PEN" ? <Coins className="w-4 h-4 text-green-600 dark:text-green-400 mt-0.5"/> : <DollarSign className="w-4 h-4 text-green-600 dark:text-green-400 mt-0.5"/>}
                       <div>
-                        <Label className="text-xs text-gray-500">Moneda</Label>
-                        <p className="font-medium text-sm">{currency?.label}</p>
+                        <Label className="text-xs text-gray-500 dark:text-gray-400">Moneda</Label>
+                        <p className="font-semibold text-sm text-gray-800 dark:text-gray-200">{currency?.label}</p>
                       </div>
                     </div>
-
                   </div>
                 </div>
               </div>
 
-              <div className="space-y-4">
+              <div className="space-y-3">
                 <div className="flex items-center gap-2">
-                  <Package className="w-4 h-4 sm:w-5 sm:h-5 text-orange-600"/>
-                  <h3 className="font-semibold text-gray-900 text-sm sm:text-base">Productos Seleccionados</h3>
+                  <Package className="w-4 h-4 text-orange-600 dark:text-orange-400"/>
+                  <h3 className="font-semibold text-gray-900 dark:text-gray-100 text-sm">Productos del Pedido</h3>
                 </div>
                 <div className="hidden sm:block border rounded-md overflow-hidden">
                   <div className="overflow-x-auto">
@@ -2108,38 +2043,37 @@ export default function OrderPage() {
                   })}
                 </div>
               </div>
-              <div className="rounded-lg bg-blue-50 p-4 flex justify-between items-center">
-                <div className="text-lg font-medium text-blue-900">Total del Pedido:</div>
-                <div className="text-xl font-bold text-blue-900">
+              <div className="rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 p-4 flex justify-between items-center shadow-sm">
+                <div className="text-sm font-medium text-blue-100">Total del Pedido</div>
+                <div className="text-2xl font-bold text-white">
                   {currency?.value === "PEN" ? "S/." : "$"} {calcularTotal(selectedProducts).toFixed(2)}
                 </div>
               </div>
 
-              <div className="space-y-4">
+              <div className="space-y-3">
                 <div className="flex items-center gap-2">
-                  <FileText className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600"/>
-                  <h3 className="font-semibold text-gray-900 text-sm sm:text-base">Nota de Pedido</h3>
+                  <FileText className="w-4 h-4 text-gray-500 dark:text-gray-400"/>
+                  <h3 className="font-semibold text-gray-900 dark:text-gray-100 text-sm">Observaciones</h3>
                 </div>
-
-                <div className="bg-white rounded-lg border border-gray-200">
+                <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 overflow-hidden">
                   <Textarea
                     placeholder="Escribe aquí cualquier observación adicional para el pedido..."
-                    className="min-h-[100px] resize-none border-0 focus-visible:ring-0"
+                    className="min-h-[90px] resize-none border-0 focus-visible:ring-0 bg-transparent dark:text-gray-100 dark:placeholder-gray-500 text-sm"
                     value={note}
                     onChange={(e) => setNote(e.target.value)}
                   />
-                  <div className="border-t px-3 py-2 bg-gray-50 text-xs text-gray-500">
+                  <div className="border-t dark:border-gray-700 px-3 py-2 bg-gray-50 dark:bg-gray-700/50 text-xs text-gray-400 dark:text-gray-500">
                     Esta información será incluida en el pedido.
                   </div>
                 </div>
               </div>
             </CardContent>
-            <CardFooter className="flex justify-between border-t bg-gray-50 py-4">
-              <Button type="button" variant="outline" onClick={prevStep}>
+            <CardFooter className="flex justify-between border-t bg-gray-50 dark:bg-gray-800/50 dark:border-gray-800 py-4">
+              <Button type="button" variant="outline" onClick={prevStep} className="h-11 dark:border-gray-700 dark:text-gray-300">
                 <ArrowLeft className="mr-2 h-4 w-4"/>
                 Anterior
               </Button>
-              <Button type="submit" className="bg-green-600 hover:bg-green-700" disabled={isLoadingSave}>
+              <Button type="submit" className="h-11 px-6 bg-green-600 hover:bg-green-700" disabled={isLoadingSave}>
                 <Check className="mr-2 h-4 w-4"/>
                 Confirmar Pedido
               </Button>
