@@ -22,7 +22,8 @@ import {
   Coins,
   FileText,
   Trash, CheckSquare, Loader2,
-  Locate, Building, Info, Gift, TrendingUp, ChevronDown, Bot, RefreshCw, Users, X
+  Locate, Building, Info, Gift, TrendingUp, ChevronDown, Bot, RefreshCw, Users, X,
+  Minus, Plus
 } from "lucide-react"
 import { StepProgress } from "@/components/step-progress"
 import apiClient from "@/app/api/client"
@@ -1425,19 +1426,45 @@ export default function OrderPage() {
                     </Select>
                   </div>
 
-                  <div className="w-20 sm:w-28 shrink-0 space-y-1.5">
-                    <Label htmlFor="quantity" className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <div className="shrink-0 space-y-1.5">
+                    <Label className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">
                       Cant.
                     </Label>
-                    <Input
-                        id="quantity"
+                    <div className="flex items-center h-11 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 overflow-hidden">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (quantity <= 1) {
+                            setSelectedProduct(null)
+                            setQuantity(1)
+                          } else {
+                            setQuantity(quantity - 1)
+                          }
+                        }}
+                        className={`h-full px-2.5 flex items-center justify-center transition-colors ${
+                          quantity <= 1
+                            ? 'text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20'
+                            : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700'
+                        }`}
+                      >
+                        {quantity <= 1 ? <Trash className="h-3.5 w-3.5" /> : <Minus className="h-3.5 w-3.5" />}
+                      </button>
+                      <input
                         type="number"
                         min="1"
                         step="1"
                         value={quantity}
-                        onChange={(e) => setQuantity(Number.parseInt(e.target.value) || 1)}
-                        className="h-11 bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-center text-base font-medium"
-                    />
+                        onChange={(e) => setQuantity(Math.max(1, Number.parseInt(e.target.value) || 1))}
+                        className="w-10 sm:w-12 bg-transparent outline-none text-center text-base font-semibold text-gray-900 dark:text-gray-100 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setQuantity(quantity + 1)}
+                        className="h-full px-2.5 flex items-center justify-center text-gray-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+                      >
+                        <Plus className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
                   </div>
 
                   <Button
