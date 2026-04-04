@@ -59,7 +59,7 @@ const ContactInfo: React.FC<ClientRowProps> = ({
         : editedAddress?.slice(0, 20) + '...';
 
     return (
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 min-w-0 overflow-hidden">
           {isEditingAddress ? (
               <textarea
                   value={editedAddress}

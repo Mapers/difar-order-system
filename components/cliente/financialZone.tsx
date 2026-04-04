@@ -76,7 +76,7 @@ const FinancialZone: React.FC<ClientRowProps> = ({ client, nameZone, unidadTerri
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
             </div>
           ) : creditData.length > 0 ? (
-            <div className="border dark:border-gray-700 rounded-md">
+            <div className="border dark:border-gray-700 rounded-md overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow className="dark:border-gray-700">

@@ -866,7 +866,7 @@ export default function OrderPage() {
                     type="button"
                     size="sm"
                     variant="ghost"
-                    onClick={() => setSearch((prev) => ({ ...prev, client: '' }))}
+                    onClick={() => { setSelectedClient(null); setSearch((prev) => ({ ...prev, client: '' })) }}
                     className="shrink-0 h-8 px-3 text-xs text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40"
                   >
                     Cambiar

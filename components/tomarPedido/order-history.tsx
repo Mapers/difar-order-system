@@ -95,7 +95,7 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ client }) => {
 
     // Vista de tabla para desktop
     const TableView = () => (
-        <div className="border dark:border-gray-700 rounded-md">
+        <div className="border dark:border-gray-700 rounded-md overflow-x-auto">
             <Table>
                 <TableHeader>
                     <TableRow>
@@ -216,8 +216,8 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ client }) => {
                     onClick={handleHistoryClick}
                 >
                     <FileText className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-                    <div className="flex-1">
-                        <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Historial de Pedidos de {client.Nombre}</Label>
+                    <div className="flex-1 min-w-0 overflow-hidden">
+                        <Label className="text-sm font-medium text-gray-700 dark:text-gray-300 truncate block">Historial de Pedidos de {client.Nombre}</Label>
                         <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">Click para ver historial</p>
                     </div>
                     <ChevronDown className="w-4 h-4 text-blue-600 dark:text-blue-400 rotate-[-90deg]" />
