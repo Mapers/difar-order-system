@@ -1429,8 +1429,17 @@ export default function OrderPage() {
                   <div className="shrink-0 space-y-1.5">
                     <Label className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">
                       Cant.
+                      {selectedProduct && (
+                        <span className={`ml-1.5 text-[10px] font-normal ${quantity >= Number(selectedProduct.Stock) ? 'text-red-500 dark:text-red-400' : 'text-gray-400 dark:text-gray-500'}`}>
+                          (Stock: {Number(selectedProduct.Stock).toFixed(0)})
+                        </span>
+                      )}
                     </Label>
-                    <div className="flex items-center h-11 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 overflow-hidden">
+                    <div className={`flex items-center h-11 rounded-lg border bg-gray-50 dark:bg-gray-800 overflow-hidden transition-colors ${
+                      selectedProduct && quantity >= Number(selectedProduct.Stock)
+                        ? 'border-red-300 dark:border-red-700'
+                        : 'border-gray-200 dark:border-gray-700'
+                    }`}>
                       <button
                         type="button"
                         onClick={() => {
@@ -1454,13 +1463,25 @@ export default function OrderPage() {
                         min="1"
                         step="1"
                         value={quantity}
-                        onChange={(e) => setQuantity(Math.max(1, Number.parseInt(e.target.value) || 1))}
+                        onChange={(e) => {
+                          const val = Math.max(1, Number.parseInt(e.target.value) || 1)
+                          const stock = selectedProduct ? Number(selectedProduct.Stock) : Infinity
+                          setQuantity(Math.min(val, stock))
+                        }}
                         className="w-10 sm:w-12 bg-transparent outline-none text-center text-base font-semibold text-gray-900 dark:text-gray-100 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                       />
                       <button
                         type="button"
-                        onClick={() => setQuantity(quantity + 1)}
-                        className="h-full px-2.5 flex items-center justify-center text-gray-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+                        disabled={!!selectedProduct && quantity >= Number(selectedProduct.Stock)}
+                        onClick={() => {
+                          const stock = selectedProduct ? Number(selectedProduct.Stock) : Infinity
+                          setQuantity(Math.min(quantity + 1, stock))
+                        }}
+                        className={`h-full px-2.5 flex items-center justify-center transition-colors ${
+                          selectedProduct && quantity >= Number(selectedProduct.Stock)
+                            ? 'text-gray-300 dark:text-gray-600 cursor-not-allowed'
+                            : 'text-gray-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20'
+                        }`}
                       >
                         <Plus className="h-3.5 w-3.5" />
                       </button>
