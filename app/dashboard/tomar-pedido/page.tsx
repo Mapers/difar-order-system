@@ -1722,11 +1722,19 @@ export default function OrderPage() {
                   <div className="shrink-0 space-y-1.5">
                     <Label className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">
                       Cant.
-                      {selectedProduct && (
-                        <span className={`ml-1.5 text-[10px] font-normal ${quantity >= Number(selectedProduct.Stock) ? 'text-red-500 dark:text-red-400' : 'text-gray-400 dark:text-gray-500'}`}>
-                          (Stock: {Number(selectedProduct.Stock).toFixed(0)})
-                        </span>
-                      )}
+                      {selectedProduct && (() => {
+                        const stockTotal = Number(selectedProduct.Stock);
+                        const remaining = stockTotal - quantity;
+                        return (
+                          <span className="ml-1.5 text-[10px] font-normal text-gray-400 dark:text-gray-500">
+                            Stock: {stockTotal.toFixed(0)} · <span className={
+                              remaining <= 0 ? 'text-red-500 dark:text-red-400 font-semibold'
+                              : remaining <= 3 ? 'text-amber-500 dark:text-amber-400'
+                              : 'text-green-600 dark:text-green-400'
+                            }>Restante: {Math.max(0, remaining)}</span>
+                          </span>
+                        );
+                      })()}
                     </Label>
                     <div className={`flex items-center h-11 rounded-lg border overflow-hidden transition-colors ${
                       !selectedProduct
@@ -1785,6 +1793,19 @@ export default function OrderPage() {
                         <Plus className="h-3.5 w-3.5" />
                       </button>
                     </div>
+                    {selectedProduct && (() => {
+                      const unitPrice = priceType === 'contado' ? Number(selectedProduct.PUContado)
+                        : priceType === 'credito' ? Number(selectedProduct.PUCredito)
+                        : priceType === 'porMenor' ? Number(selectedProduct.PUPorMenor)
+                        : priceType === 'porMayor' ? Number(selectedProduct.PUPorMayor)
+                        : Number(priceEdit);
+                      const sym = currency?.value === "PEN" ? "S/." : "$";
+                      return (
+                        <p className="text-[11px] text-center text-gray-500 dark:text-gray-400 mt-1 whitespace-nowrap">
+                          {sym}{unitPrice.toFixed(2)} × {quantity} = <span className="font-semibold text-gray-800 dark:text-gray-200">{sym}{(unitPrice * quantity).toFixed(2)}</span>
+                        </p>
+                      );
+                    })()}
                   </div>
 
                   <Button
