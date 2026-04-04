@@ -23,7 +23,7 @@ import {
   FileText,
   Trash, CheckSquare, Loader2,
   Locate, Building, Info, Gift, TrendingUp, ChevronDown, Bot, RefreshCw, Users, X,
-  Minus, Plus, Pencil
+  Minus, Plus, Pencil, BookmarkPlus, BookOpen
 } from "lucide-react"
 import { StepProgress } from "@/components/step-progress"
 import apiClient from "@/app/api/client"
@@ -62,6 +62,22 @@ import AlternativeProductsModal from "@/components/tomarPedido/AlternativeProduc
 
 interface LoteProducto {
   value: string
+}
+
+interface DraftOrder {
+  id: string
+  savedAt: string
+  currentStep: number
+  selectedClient: IClient | null
+  selectedProducts: ISelectedProduct[]
+  productosConLotes: ProductoConLotes[]
+  seller: Seller | null
+  condition: ICondicion | null
+  currency: IMoneda | null
+  contactoPedido: string
+  referenciaDireccion: string
+  note: string
+  priceType: 'contado' | 'credito' | 'porMayor' | 'porMenor' | 'custom'
 }
 
 interface ProductoConLotes {
@@ -156,6 +172,10 @@ export default function OrderPage() {
   const [editingIndex, setEditingIndex] = useState<number | null>(null)
   const [editQuantity, setEditQuantity] = useState(1)
   const confirmedLeaveRef = useRef(false)
+
+  // Draft orders
+  const [showDraftsDialog, setShowDraftsDialog] = useState(false)
+  const [savedDrafts, setSavedDrafts] = useState<DraftOrder[]>([])
   const [selectedProducts, setSelectedProducts] = useState<ISelectedProduct[]>([])
   const [isCheckingBonification, setIsCheckingBonification] = useState(false)
   const [showAlternativesModal, setShowAlternativesModal] = useState(false)
@@ -363,6 +383,10 @@ export default function OrderPage() {
     }, 600)
   }
 
+
+  useEffect(() => {
+    setSavedDrafts(loadDraftsFromStorage())
+  }, [])
 
   useEffect(() => {
     if (user) {
@@ -748,6 +772,67 @@ export default function OrderPage() {
     setSeller(seller1)
   }
 
+  // ── Draft order helpers ──────────────────────────────────────────────────
+  const loadDraftsFromStorage = (): DraftOrder[] => {
+    try {
+      const raw = localStorage.getItem('difar_pedidos_borrador')
+      return raw ? JSON.parse(raw) : []
+    } catch { return [] }
+  }
+
+  const saveDraft = () => {
+    const draft: DraftOrder = {
+      id: Date.now().toString(),
+      savedAt: new Date().toISOString(),
+      currentStep,
+      selectedClient,
+      selectedProducts,
+      productosConLotes,
+      seller,
+      condition,
+      currency,
+      contactoPedido,
+      referenciaDireccion,
+      note,
+      priceType,
+    }
+    const existing = loadDraftsFromStorage()
+    const updated = [draft, ...existing].slice(0, 20)
+    localStorage.setItem('difar_pedidos_borrador', JSON.stringify(updated))
+    setSavedDrafts(updated)
+    toast({
+      title: "Borrador guardado",
+      description: selectedClient ? `Pedido de ${selectedClient.Nombre}` : "Pedido sin cliente",
+    })
+  }
+
+  const deleteDraft = (id: string) => {
+    const updated = savedDrafts.filter(d => d.id !== id)
+    localStorage.setItem('difar_pedidos_borrador', JSON.stringify(updated))
+    setSavedDrafts(updated)
+  }
+
+  const applyDraft = (draft: DraftOrder) => {
+    setSelectedClient(draft.selectedClient)
+    setSelectedProducts(draft.selectedProducts)
+    setProductosConLotes(draft.productosConLotes)
+    setSeller(draft.seller)
+    setCondition(draft.condition)
+    setCurrency(draft.currency)
+    setContactoPedido(draft.contactoPedido)
+    setReferenciaDireccion(draft.referenciaDireccion)
+    setNote(draft.note)
+    setPriceType(draft.priceType)
+    setCurrentStep(draft.currentStep)
+    if (draft.selectedClient) {
+      setClient(draft.selectedClient.codigo)
+      setClientName(draft.selectedClient.Nombre)
+    }
+    setShowDraftsDialog(false)
+    toast({ title: "Borrador cargado", description: "Puedes continuar el pedido desde donde lo dejaste." })
+  }
+  // ────────────────────────────────────────────────────────────────────────
+
   const handleChangeContactoPedido = (e: React.ChangeEvent<HTMLInputElement>) => {
     setContactoPedido(e.target.value);
   };
@@ -902,6 +987,69 @@ export default function OrderPage() {
 
   return (
     <>
+    {/* Drafts dialog */}
+    <Dialog open={showDraftsDialog} onOpenChange={setShowDraftsDialog}>
+      <DialogContent className="p-0 gap-0 flex flex-col [&>button]:hidden overflow-hidden
+        fixed bottom-0 left-0 right-0 top-auto translate-x-0 translate-y-0 rounded-t-2xl rounded-b-none h-[80vh] w-full
+        sm:left-1/2 sm:right-auto sm:bottom-auto sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-xl sm:w-[520px] sm:h-auto sm:max-h-[70vh] sm:max-w-[95vw]">
+        <DialogTitle className="sr-only">Pedidos pendientes</DialogTitle>
+
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 py-3 border-b dark:border-gray-700 shrink-0 bg-white dark:bg-gray-900">
+          <div className="flex items-center gap-2">
+            <BookOpen className="h-4 w-4 text-amber-500" />
+            <span className="font-semibold text-gray-900 dark:text-gray-100">Borradores guardados</span>
+            <span className="text-xs text-gray-400 dark:text-gray-500">({savedDrafts.length})</span>
+          </div>
+          <button onClick={() => setShowDraftsDialog(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors">
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        {/* Draft list */}
+        <div className="flex-1 overflow-y-auto divide-y dark:divide-gray-800 bg-white dark:bg-gray-900">
+          {savedDrafts.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 text-gray-400 dark:text-gray-500">
+              <BookOpen className="h-10 w-10 mb-3 opacity-30" />
+              <p className="text-sm">No hay borradores guardados</p>
+            </div>
+          ) : savedDrafts.map(draft => {
+            const savedDate = new Date(draft.savedAt)
+            return (
+              <div key={draft.id} className="flex items-center gap-3 px-4 py-3.5 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-sm text-gray-900 dark:text-gray-100 truncate">
+                    {draft.selectedClient?.Nombre ?? <span className="text-gray-400 italic">Sin cliente</span>}
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                    {draft.selectedProducts.length} producto(s) · Paso {draft.currentStep + 1} · {format(savedDate, "dd/MM/yy HH:mm")}
+                  </p>
+                </div>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <Button
+                    size="sm"
+                    onClick={() => applyDraft(draft)}
+                    className="h-8 text-xs bg-amber-500 hover:bg-amber-600 text-white px-3"
+                  >
+                    Continuar
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => deleteDraft(draft.id)}
+                    className="h-8 w-8 p-0 text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+                    title="Eliminar borrador"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </DialogContent>
+    </Dialog>
+
     {/* Leave confirmation dialog */}
     <Dialog open={showClearAllDialog} onOpenChange={setShowClearAllDialog}>
       <DialogContent className="sm:max-w-sm mx-4">
@@ -1041,6 +1189,35 @@ export default function OrderPage() {
         <div className="flex flex-col gap-0.5 min-w-0">
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100">Tomar Pedido</h1>
           <p className="text-sm text-gray-500 dark:text-gray-400">Crea un nuevo pedido siguiendo los pasos.</p>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          {savedDrafts.length > 0 && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setShowDraftsDialog(true)}
+              className="h-9 gap-1.5 text-amber-600 border-amber-200 hover:bg-amber-50 dark:text-amber-400 dark:border-amber-800 dark:hover:bg-amber-900/20"
+            >
+              <BookOpen className="h-4 w-4" />
+              <span className="hidden sm:inline text-xs">Borradores</span>
+              <span className="inline-flex items-center justify-center h-4 min-w-4 px-1 bg-amber-500 text-white text-[10px] font-bold rounded-full">
+                {savedDrafts.length}
+              </span>
+            </Button>
+          )}
+          {(selectedClient || selectedProducts.length > 0) && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={saveDraft}
+              className="h-9 gap-1.5 text-gray-600 dark:text-gray-400 dark:border-gray-700"
+            >
+              <BookmarkPlus className="h-4 w-4" />
+              <span className="hidden sm:inline text-xs">Guardar borrador</span>
+            </Button>
+          )}
         </div>
       </div>
 
