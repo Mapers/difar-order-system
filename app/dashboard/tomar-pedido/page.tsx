@@ -139,6 +139,7 @@ export default function OrderPage() {
 
   const [open, setOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
+  const [clientModalOpen, setClientModalOpen] = useState(false)
   const [isSearching, setIsSearching] = useState(false)
   const searchTimerRef = useRef<NodeJS.Timeout | null>(null)
   const [quantity, setQuantity] = useState(1)
@@ -871,114 +872,119 @@ export default function OrderPage() {
               )}
 
               {!selectedClient && (
-              <div className="space-y-2">
-                <Label htmlFor="client" className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Buscar cliente
-                </Label>
-                <div className="relative">
-                  <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400 pointer-events-none" />
-                  <Input
-                      id="client"
-                      type="text"
-                      placeholder="RUC, DNI o nombre del cliente..."
-                      value={search.client}
-                      onChange={handleSearchChange}
-                      className="pl-9 pr-9 h-11 bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 dark:text-gray-100 dark:placeholder-gray-500"
-                  />
-                  {search.client.length > 0 && (
-                    <button
-                      type="button"
-                      onClick={() => setSearch((prev) => ({ ...prev, client: '' }))}
-                      className="absolute right-3 top-3 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
-                    >
-                      <X className="h-4 w-4" />
-                    </button>
-                  )}
-                </div>
-                {loading.clients ? (
-                  <div className="p-4 space-y-2">
-                    <Skeleton className="h-10 w-full" />
-                    <Skeleton className="h-10 w-full" />
-                    <Skeleton className="h-10 w-full" />
-                  </div>
-                ) : clientsFiltered.length > 0 ? (
-                  <>
-                  <div className="hidden sm:block border dark:border-gray-700 rounded-lg overflow-hidden max-h-[280px] overflow-y-auto">
-                    <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                      <thead className="bg-gray-50 dark:bg-gray-800 sticky top-0">
-                      <tr>
-                        <th scope="col" className="px-3 py-2.5 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Nombre / Comercial</th>
-                        <th scope="col" className="px-3 py-2.5 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Dirección</th>
-                        <th scope="col" className="px-3 py-2.5 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">RUC</th>
-                        <th scope="col" className="px-3 py-2.5"></th>
-                      </tr>
-                      </thead>
-                      <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-100 dark:divide-gray-800">
-                      {clientsFiltered.map((c) => (
-                        <tr key={c.codigo} className="hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors">
-                          <td className="px-3 py-2.5">
-                            <p className="text-xs font-semibold text-gray-900 dark:text-gray-100 truncate max-w-[200px]">{c.Nombre}</p>
-                            {c.NombreComercial && <p className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[200px]">{c.NombreComercial}</p>}
-                          </td>
-                          <td className="px-3 py-2.5 text-xs text-gray-600 dark:text-gray-400 max-w-[180px] truncate">{c.Dirección || "—"}</td>
-                          <td className="px-3 py-2.5 text-xs font-mono text-gray-600 dark:text-gray-400">{c.RUC || "—"}</td>
-                          <td className="px-3 py-2.5">
-                            <Button type="button" size="sm" onClick={() => handleClientSelect(c)} className="bg-blue-600 hover:bg-blue-700 h-7 text-xs px-2.5">
-                              Seleccionar
-                            </Button>
-                          </td>
-                        </tr>
-                      ))}
-                      </tbody>
-                    </table>
-                  </div>
-                  <div className="sm:hidden space-y-2.5 max-h-[420px] overflow-y-auto overflow-x-hidden">
-                    {clientsFiltered.map((item, index) => (
-                      <div key={index} className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 overflow-hidden shadow-sm">
-                        <div className="p-3 space-y-1.5">
-                          <div className="flex items-center gap-2">
-                            <div className="h-8 w-8 rounded-full bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center shrink-0">
-                              <User className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <h4 className="font-semibold text-sm text-gray-900 dark:text-gray-100 leading-tight">{item.Nombre}</h4>
-                              {item.NombreComercial && (
-                                <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{item.NombreComercial}</p>
-                              )}
-                            </div>
-                            {item.RUC && (
-                              <span className="text-xs font-mono bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-2 py-0.5 rounded shrink-0">
-                                {item.RUC}
-                              </span>
-                            )}
-                          </div>
-                          {item.Dirección && (
-                            <div className="flex items-start gap-1.5 pl-10">
-                              <MapPin className="h-3 w-3 text-gray-400 mt-0.5 shrink-0" />
-                              <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-1">{item.Dirección}</p>
-                            </div>
-                          )}
-                        </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Buscar cliente
+                  </Label>
+
+                  {/* Trigger button — opens modal */}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setClientModalOpen(true)}
+                    className="w-full justify-start h-11 px-3 text-left font-normal text-sm bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-white dark:hover:bg-gray-700 hover:border-blue-400 dark:hover:border-blue-500 transition-all duration-200 dark:text-gray-100"
+                  >
+                    <Search className="mr-2 h-4 w-4 shrink-0 text-gray-400" />
+                    <span className="text-gray-400 dark:text-gray-500 font-normal">Buscar por RUC, DNI o nombre...</span>
+                  </Button>
+
+                  {/* Client search modal — bottom sheet on mobile, centered dialog on desktop */}
+                  <Dialog open={clientModalOpen} onOpenChange={(v) => {
+                    setClientModalOpen(v)
+                    if (!v) setSearch((prev) => ({ ...prev, client: '' }))
+                  }}>
+                    <DialogContent className="p-0 gap-0 flex flex-col [&>button]:hidden overflow-hidden
+                      fixed bottom-0 left-0 right-0 top-auto translate-x-0 translate-y-0 rounded-t-2xl rounded-b-none max-h-[88vh] w-full
+                      sm:left-1/2 sm:right-auto sm:bottom-auto sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-xl sm:w-[620px] sm:max-h-[75vh] sm:max-w-[95vw]">
+                      <DialogTitle className="sr-only">Buscar cliente</DialogTitle>
+
+                      {/* Search bar */}
+                      <div className="flex items-center gap-2 border-b border-gray-200 dark:border-gray-700 px-3 py-2.5 bg-white dark:bg-gray-900">
+                        <Search className="h-4 w-4 text-gray-400 shrink-0" />
+                        <input
+                          type="text"
+                          autoFocus
+                          placeholder="RUC, DNI o nombre del cliente..."
+                          value={search.client}
+                          onChange={(e) => setSearch((prev) => ({ ...prev, client: e.target.value }))}
+                          className="flex-1 bg-transparent outline-none text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 h-9"
+                        />
+                        {search.client && (
+                          <button type="button" onClick={() => setSearch((prev) => ({ ...prev, client: '' }))} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+                            <X className="h-4 w-4" />
+                          </button>
+                        )}
                         <button
                           type="button"
-                          onClick={() => handleClientSelect(item)}
-                          className="w-full bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-sm font-medium py-2.5 flex items-center justify-center gap-2 transition-colors"
+                          onClick={() => { setClientModalOpen(false); setSearch((prev) => ({ ...prev, client: '' })) }}
+                          className="text-sm text-blue-600 dark:text-blue-400 font-medium pl-2 shrink-0"
                         >
-                          <Check className="h-4 w-4" />
-                          Seleccionar
+                          Cancelar
                         </button>
                       </div>
-                    ))}
-                  </div>
-                  </>
-                ) : !selectedClient ? (
-                  <div className="py-6 text-center">
-                    <Users className="h-8 w-8 text-gray-300 dark:text-gray-600 mx-auto mb-2" />
-                    <p className="text-sm text-gray-500 dark:text-gray-400">No se encontraron clientes</p>
-                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Intente con otro RUC, DNI o nombre</p>
-                  </div>
-                ) : null}
-              </div>
+
+                      {/* Results */}
+                      <div className="flex-1 overflow-y-auto bg-white dark:bg-gray-900">
+                        {loading.clients ? (
+                          <div className="p-3 space-y-2">
+                            {[1, 2, 3].map((i) => (
+                              <div key={i} className="flex gap-3 px-3 py-2.5 rounded-lg border border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50">
+                                <Skeleton className="h-8 w-8 rounded-full shrink-0" />
+                                <div className="flex-1 space-y-1.5">
+                                  <Skeleton className="h-4 w-3/5 rounded" />
+                                  <Skeleton className="h-3 w-2/5 rounded" />
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : clientsFiltered.length === 0 ? (
+                          <div className="py-12 text-center">
+                            <Users className="h-10 w-10 text-gray-200 dark:text-gray-700 mx-auto mb-3" />
+                            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                              {search.client ? 'No se encontraron clientes' : 'Escribe para buscar clientes'}
+                            </p>
+                            {search.client && <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Intente con otro RUC, DNI o nombre</p>}
+                          </div>
+                        ) : (
+                          <div className="divide-y divide-gray-100 dark:divide-gray-800">
+                            {clientsFiltered.map((c) => (
+                              <button
+                                key={c.codigo}
+                                type="button"
+                                onClick={() => { handleClientSelect(c); setClientModalOpen(false) }}
+                                className="w-full flex items-start gap-3 px-4 py-3 hover:bg-blue-50 dark:hover:bg-blue-950/20 active:bg-blue-100 dark:active:bg-blue-950/40 transition-colors text-left"
+                              >
+                                <div className="bg-blue-100 dark:bg-blue-900/40 p-2 rounded-full shrink-0 mt-0.5">
+                                  <User className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                                </div>
+                                <div className="flex flex-col flex-1 min-w-0 gap-0.5">
+                                  <span className="font-semibold text-sm text-gray-900 dark:text-gray-100 line-clamp-1 leading-tight">
+                                    {c.Nombre}
+                                  </span>
+                                  {c.NombreComercial && (
+                                    <span className="text-xs text-gray-500 dark:text-gray-400 line-clamp-1">{c.NombreComercial}</span>
+                                  )}
+                                  <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-0.5">
+                                    {c.RUC && (
+                                      <span className="text-xs text-gray-500 dark:text-gray-400">
+                                        <span className="font-medium text-gray-600 dark:text-gray-300">RUC:</span> {c.RUC}
+                                      </span>
+                                    )}
+                                    {c.Dirección && (
+                                      <span className="text-xs text-gray-400 dark:text-gray-500 line-clamp-1 flex items-center gap-1">
+                                        <MapPin className="h-3 w-3 shrink-0" />{c.Dirección}
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                </div>
               )}
 
               {(selectedClient && isAdmin()) && (
