@@ -1567,7 +1567,7 @@ export default function OrderPage() {
 
                             return (
                                 <tr key={index} className={rowBgClass}>
-                                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">
+                                  <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300 max-w-[220px]">
                                     <div className="flex items-center flex-wrap gap-1">
                                       {item.isBonification && (
                                           <Badge variant="outline" className="bg-yellow-50 text-yellow-700">
@@ -1579,7 +1579,7 @@ export default function OrderPage() {
                                             Escala {item.appliedScale.porcentaje_descuento}% desc.
                                           </Badge>
                                       )}
-                                      <span>{item.product.NombreItem}</span>
+                                      <span className="block truncate" title={item.product.NombreItem}>{item.product.NombreItem}</span>
                                       {item.isEdit && (
                                           <Badge variant="outline" className="bg-green-100 text-green-700 border-green-300">
                                             Editado
@@ -1946,7 +1946,7 @@ export default function OrderPage() {
 
                         return (
                           <tr key={index} className={rowBgClass}>
-                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">
+                            <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300 max-w-[220px]">
                               <div className="flex items-center flex-wrap gap-1">
                                 {item.isBonification && (
                                   <Badge variant="outline" className="bg-yellow-50 text-yellow-700">
@@ -1958,7 +1958,7 @@ export default function OrderPage() {
                                     Escala {item.appliedScale.porcentaje_descuento}% desc.
                                   </Badge>
                                 )}
-                                <span>{item.product.NombreItem}</span>
+                                <span className="block truncate" title={item.product.NombreItem}>{item.product.NombreItem}</span>
                                 {item.isEdit && (
                                     <Badge variant="outline" className="bg-green-100 text-green-700 border-green-300">
                                       Editado
