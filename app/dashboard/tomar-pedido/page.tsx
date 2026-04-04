@@ -933,39 +933,41 @@ export default function OrderPage() {
                       </tbody>
                     </table>
                   </div>
-                  <div className="sm:hidden space-y-2 max-h-[360px] overflow-y-auto pr-1">
+                  <div className="sm:hidden space-y-2.5 max-h-[420px] overflow-y-auto pr-1">
                     {clientsFiltered.map((item, index) => (
-                      <div key={index} className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-3.5 shadow-sm">
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="flex-1 min-w-0 space-y-1.5">
-                            <div className="flex items-center gap-2">
-                              <div className="h-7 w-7 rounded-full bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center shrink-0">
-                                <User className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
-                              </div>
-                              <h4 className="font-semibold text-sm text-gray-900 dark:text-gray-100 truncate">{item.Nombre}</h4>
+                      <div key={index} className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 overflow-hidden shadow-sm">
+                        <div className="p-3 space-y-1.5">
+                          <div className="flex items-center gap-2">
+                            <div className="h-8 w-8 rounded-full bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center shrink-0">
+                              <User className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                             </div>
-                            {item.NombreComercial && (
-                              <p className="text-xs text-gray-500 dark:text-gray-400 pl-9">{item.NombreComercial}</p>
-                            )}
-                            <div className="flex items-start gap-1.5 pl-9">
-                              <MapPin className="h-3 w-3 text-gray-400 mt-0.5 shrink-0" />
-                              <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-1">{item.Dirección || "Sin dirección"}</p>
+                            <div className="flex-1 min-w-0">
+                              <h4 className="font-semibold text-sm text-gray-900 dark:text-gray-100 leading-tight">{item.Nombre}</h4>
+                              {item.NombreComercial && (
+                                <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{item.NombreComercial}</p>
+                              )}
                             </div>
                             {item.RUC && (
-                              <span className="inline-flex ml-9 items-center text-xs font-mono bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-2 py-0.5 rounded">
+                              <span className="text-xs font-mono bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-2 py-0.5 rounded shrink-0">
                                 {item.RUC}
                               </span>
                             )}
                           </div>
-                          <Button
-                            type="button"
-                            size="sm"
-                            onClick={() => handleClientSelect(item)}
-                            className="bg-blue-600 hover:bg-blue-700 h-9 px-3 shrink-0"
-                          >
-                            <Check className="h-3.5 w-3.5" />
-                          </Button>
+                          {item.Dirección && (
+                            <div className="flex items-start gap-1.5 pl-10">
+                              <MapPin className="h-3 w-3 text-gray-400 mt-0.5 shrink-0" />
+                              <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-1">{item.Dirección}</p>
+                            </div>
+                          )}
                         </div>
+                        <button
+                          type="button"
+                          onClick={() => handleClientSelect(item)}
+                          className="w-full bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-sm font-medium py-2.5 flex items-center justify-center gap-2 transition-colors"
+                        >
+                          <Check className="h-4 w-4" />
+                          Seleccionar
+                        </button>
                       </div>
                     ))}
                   </div>
@@ -1052,9 +1054,9 @@ export default function OrderPage() {
                   <CardTitle className="text-lg font-semibold text-blue-700 dark:text-blue-400">Agregar Productos</CardTitle>
                 </div>
               </CardHeader>
-              <CardContent className="space-y-5 pt-5">
-                <div className="flex flex-col sm:flex-row gap-3 px-1 sm:px-0 py-2 items-end">
-                  <div className="space-y-2 flex-1 min-w-0">
+              <CardContent className="space-y-4 pt-5">
+                {/* Fila 1: Buscador de producto (siempre full-width) */}
+                <div className="space-y-2">
                     <Label htmlFor="producto" className="text-sm font-medium text-gray-700 dark:text-gray-300">
                       Producto
                     </Label>
@@ -1318,11 +1320,13 @@ export default function OrderPage() {
                           </button>
                         </div>
                     )}
-                  </div>
+                </div>
 
-                  <div className="space-y-2 sm:w-40 shrink-0">
-                    <Label htmlFor="laboratorio" className="text-sm font-medium whitespace-nowrap text-gray-700 dark:text-gray-300">
-                      Filtrar por lab
+                {/* Fila 2: Lab + Cantidad + Agregar en una sola fila */}
+                <div className="flex gap-2 sm:gap-3 items-end">
+                  <div className="flex-1 space-y-1.5">
+                    <Label htmlFor="laboratorio" className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Lab
                     </Label>
                     <Select
                         value={selectedLaboratorio || ""}
@@ -1331,7 +1335,7 @@ export default function OrderPage() {
                           setShowLaboratorioModal(true);
                         }}
                     >
-                      <SelectTrigger className="w-full h-11 sm:h-12 text-xs sm:text-sm bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 dark:text-gray-100">
+                      <SelectTrigger className="w-full h-11 text-xs sm:text-sm bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 dark:text-gray-100">
                         <SelectValue placeholder="Laboratorio"/>
                       </SelectTrigger>
                       <SelectContent>
@@ -1344,9 +1348,9 @@ export default function OrderPage() {
                     </Select>
                   </div>
 
-                  <div className="space-y-2 w-24 shrink-0">
-                    <Label htmlFor="quantity" className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                      Cantidad
+                  <div className="w-20 sm:w-28 shrink-0 space-y-1.5">
+                    <Label htmlFor="quantity" className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Cant.
                     </Label>
                     <Input
                         id="quantity"
@@ -1355,23 +1359,19 @@ export default function OrderPage() {
                         step="1"
                         value={quantity}
                         onChange={(e) => setQuantity(Number.parseInt(e.target.value) || 1)}
-                        className="h-11 sm:h-12 bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-center text-base font-medium"
+                        className="h-11 bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-center text-base font-medium"
                     />
                   </div>
 
-                  <div className="space-y-2 flex-1 sm:flex-none sm:w-auto">
-                    <Label className="text-sm font-medium text-transparent select-none">Agregar</Label>
-                    <Button
-                        type="button"
-                        disabled={!selectedProduct || loading.products || isCheckingBonification}
-                        onClick={handleAddProduct}
-                        className="w-full sm:w-auto h-11 sm:h-12 bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-600 dark:hover:bg-indigo-700 font-medium px-4 sm:px-6"
-                    >
-                      <ShoppingCart className="mr-2 h-4 w-4"/>
-                      <span className="hidden sm:inline">Agregar al pedido</span>
-                      <span className="sm:hidden">Agregar</span>
-                    </Button>
-                  </div>
+                  <Button
+                      type="button"
+                      disabled={!selectedProduct || loading.products || isCheckingBonification}
+                      onClick={handleAddProduct}
+                      className="h-11 shrink-0 bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-600 dark:hover:bg-indigo-700 font-medium px-3 sm:px-5"
+                  >
+                    <ShoppingCart className="h-4 w-4 sm:mr-2"/>
+                    <span className="hidden sm:inline">Agregar al pedido</span>
+                  </Button>
                 </div>
               </CardContent>
             </Card>
