@@ -140,22 +140,18 @@ export const LaboratorioModal = ({
                         Crédito: {formatPrice(creditoPrice)}
                       </Label>
                     </div>
-                    {porMayor > 0 && (
-                        <div className="flex items-center space-x-1">
-                          <RadioGroupItem value="porMayor" id={`${productId}-porMayor`} className="h-3 w-3 border-violet-500" />
-                          <Label htmlFor={`${productId}-porMayor`} className="text-xs cursor-pointer text-violet-700">
-                            Bonif Cont: {formatPrice(porMayor)}
-                          </Label>
-                        </div>
-                    )}
-                    {porMenor > 0 && (
-                        <div className="flex items-center space-x-1">
-                          <RadioGroupItem value="porMenor" id={`${productId}-porMenor`} className="h-3 w-3 border-green-500" />
-                          <Label htmlFor={`${productId}-porMenor`} className="text-xs cursor-pointer text-green-700">
-                            Bonif Créd: {formatPrice(porMenor)}
-                          </Label>
-                        </div>
-                    )}
+                    <div className="flex items-center space-x-1">
+                      <RadioGroupItem value="porMayor" id={`${productId}-porMayor`} className="h-3 w-3 border-violet-500" />
+                      <Label htmlFor={`${productId}-porMayor`} className="text-xs cursor-pointer text-violet-700">
+                        Bonif. Cont: {formatPrice(porMayor)}
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-1">
+                      <RadioGroupItem value="porMenor" id={`${productId}-porMenor`} className="h-3 w-3 border-green-500" />
+                      <Label htmlFor={`${productId}-porMenor`} className="text-xs cursor-pointer text-green-700">
+                        Bonif. Créd: {formatPrice(porMenor)}
+                      </Label>
+                    </div>
                   </div>
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="custom" id={`${productId}-custom`} className="h-3 w-3"/>
@@ -282,18 +278,18 @@ export const LaboratorioModal = ({
                           Crédito: {formatPrice(creditoPrice)}
                         </Label>
                       </div>
-                      {porMayor > 0 && <div className="flex items-center space-x-2">
+                      <div className="flex items-center space-x-2">
                         <RadioGroupItem value="porMayor" id={`${productId}-porMayor`} className='border-violet-500' />
                         <Label htmlFor={`${productId}-porMayor`} className="text-sm cursor-pointer text-violet-700">
-                          Bonif Cont: {formatPrice(porMayor)}
+                          Bonif. Cont: {formatPrice(porMayor)}
                         </Label>
-                      </div>}
-                      {porMenor > 0 && <div className="flex items-center space-x-2">
+                      </div>
+                      <div className="flex items-center space-x-2">
                         <RadioGroupItem value="porMenor" id={`${productId}-porMenor`} className='border-green-500' />
                         <Label htmlFor={`${productId}-porMenor`} className="text-sm cursor-pointer text-green-700">
-                          Bonif Créd: {formatPrice(porMenor)}
+                          Bonif. Créd: {formatPrice(porMenor)}
                         </Label>
-                      </div>}
+                      </div>
                       <div className="flex items-center space-x-2">
                         <RadioGroupItem value="custom" id={`${productId}-custom`} className='border-red-500' />
                         <Label htmlFor={`${productId}-custom`} className="text-sm cursor-pointer flex items-center gap-2 text-red-700">
