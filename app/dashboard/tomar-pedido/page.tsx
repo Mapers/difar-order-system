@@ -22,7 +22,7 @@ import {
   Coins,
   FileText,
   Trash, CheckSquare, Loader2,
-  Locate, Building, Info, Gift, TrendingUp, ChevronDown, Bot, RefreshCw, Users
+  Locate, Building, Info, Gift, TrendingUp, ChevronDown, Bot, RefreshCw, Users, X
 } from "lucide-react"
 import { StepProgress } from "@/components/step-progress"
 import apiClient from "@/app/api/client"
@@ -848,35 +848,53 @@ export default function OrderPage() {
                 <CardTitle className="text-lg font-semibold text-blue-700 dark:text-blue-400">Seleccionar Cliente</CardTitle>
               </div>
             </CardHeader>
-            <CardContent className="space-y-5 pt-5">
+            <CardContent className="space-y-4 pt-5">
+              {/* Selected client chip */}
+              {selectedClient && (
+                <div className="flex items-center gap-2.5 p-3 bg-blue-50 dark:bg-blue-950/30 rounded-xl border border-blue-200 dark:border-blue-900/50">
+                  <div className="h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center shrink-0">
+                    <User className="h-4 w-4 text-white" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-blue-900 dark:text-blue-100 truncate">{selectedClient.Nombre}</p>
+                    <p className="text-xs text-blue-600 dark:text-blue-400">{selectedClient.RUC ? `RUC: ${selectedClient.RUC}` : selectedClient.codigo}</p>
+                  </div>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setSearch((prev) => ({ ...prev, client: '' }))}
+                    className="shrink-0 h-8 px-3 text-xs text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40"
+                  >
+                    Cambiar
+                  </Button>
+                </div>
+              )}
+
+              {!selectedClient && (
               <div className="space-y-2">
                 <Label htmlFor="client" className="text-sm font-medium text-gray-700 dark:text-gray-300">
                   Buscar cliente
                 </Label>
-                <div className="flex gap-2 items-center">
-                  <div className="relative flex-1">
-                    <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                    <Input
-                        type="search"
-                        placeholder="RUC, DNI o nombre del cliente..."
-                        value={search.client}
-                        onChange={handleSearchChange}
-                        className="pl-9 h-11 bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 dark:text-gray-100 dark:placeholder-gray-500"
-                    />
-                  </div>
-
-                  {/*{(search.client.length === 8 || search.client.length === 11) &&*/}
-                  {/*    /^\d+$/.test(search.client) &&*/}
-                  {/*    clientsFiltered.length === 0 &&*/}
-                  {/*    !loading.clients && (*/}
-                  {/*        <Button*/}
-                  {/*            type="button"*/}
-                  {/*            onClick={() => setIsAutoCreateModalOpen(true)}*/}
-                  {/*            className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm"*/}
-                  {/*        >*/}
-                  {/*          AUTO*/}
-                  {/*        </Button>*/}
-                  {/*    )}*/}
+                <div className="relative">
+                  <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400 pointer-events-none" />
+                  <Input
+                      id="client"
+                      type="text"
+                      placeholder="RUC, DNI o nombre del cliente..."
+                      value={search.client}
+                      onChange={handleSearchChange}
+                      className="pl-9 pr-9 h-11 bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 dark:text-gray-100 dark:placeholder-gray-500"
+                  />
+                  {search.client.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setSearch((prev) => ({ ...prev, client: '' }))}
+                      className="absolute right-3 top-3 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  )}
                 </div>
                 {loading.clients ? (
                   <div className="p-4 space-y-2">
@@ -886,26 +904,27 @@ export default function OrderPage() {
                   </div>
                 ) : clientsFiltered.length > 0 ? (
                   <>
-                  <div className="hidden sm:block border dark:border-gray-700 rounded-lg overflow-hidden max-h-[300px] overflow-y-auto">
+                  <div className="hidden sm:block border dark:border-gray-700 rounded-lg overflow-hidden max-h-[280px] overflow-y-auto">
                     <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                       <thead className="bg-gray-50 dark:bg-gray-800 sticky top-0">
                       <tr>
-                        <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Nombre</th>
-                        <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Nombre Comercial</th>
-                        <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Dirección</th>
-                        <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">RUC</th>
-                        <th scope="col" className="px-4 py-3"></th>
+                        <th scope="col" className="px-3 py-2.5 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Nombre / Comercial</th>
+                        <th scope="col" className="px-3 py-2.5 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Dirección</th>
+                        <th scope="col" className="px-3 py-2.5 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">RUC</th>
+                        <th scope="col" className="px-3 py-2.5"></th>
                       </tr>
                       </thead>
                       <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-100 dark:divide-gray-800">
                       {clientsFiltered.map((c) => (
                         <tr key={c.codigo} className="hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors">
-                          <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">{c.Nombre}</td>
-                          <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{c.NombreComercial || "—"}</td>
-                          <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{c.Dirección || "—"}</td>
-                          <td className="px-4 py-3 text-sm font-mono text-gray-600 dark:text-gray-400">{c.RUC || "—"}</td>
-                          <td className="px-4 py-3">
-                            <Button type="button" size="sm" onClick={() => handleClientSelect(c)} className="bg-blue-600 hover:bg-blue-700 h-8 text-xs">
+                          <td className="px-3 py-2.5">
+                            <p className="text-xs font-semibold text-gray-900 dark:text-gray-100 truncate max-w-[200px]">{c.Nombre}</p>
+                            {c.NombreComercial && <p className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[200px]">{c.NombreComercial}</p>}
+                          </td>
+                          <td className="px-3 py-2.5 text-xs text-gray-600 dark:text-gray-400 max-w-[180px] truncate">{c.Dirección || "—"}</td>
+                          <td className="px-3 py-2.5 text-xs font-mono text-gray-600 dark:text-gray-400">{c.RUC || "—"}</td>
+                          <td className="px-3 py-2.5">
+                            <Button type="button" size="sm" onClick={() => handleClientSelect(c)} className="bg-blue-600 hover:bg-blue-700 h-7 text-xs px-2.5">
                               Seleccionar
                             </Button>
                           </td>
@@ -959,6 +978,8 @@ export default function OrderPage() {
                   </div>
                 ) : null}
               </div>
+              )}
+
               {(selectedClient && isAdmin()) && (
                 <Combobox<Seller>
                   items={sellersFiltered}
@@ -1185,20 +1206,20 @@ export default function OrderPage() {
                     </div>
 
                     {selectedProduct && (
-                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 mt-3">
+                        <div className="flex gap-2 mt-3 overflow-x-auto pb-1 sm:grid sm:grid-cols-3 lg:grid-cols-5 sm:overflow-visible sm:pb-0">
                           {/* Contado */}
                           <button
                               type="button"
                               onClick={() => setPriceType('contado')}
-                              className={`relative rounded-xl p-3 text-center transition-all border-2 ${
+                              className={`relative min-w-[90px] sm:min-w-0 rounded-xl p-2 sm:p-3 text-center transition-all border-2 shrink-0 sm:shrink ${
                                   priceType === 'contado'
                                       ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 shadow-sm'
                                       : 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 hover:border-blue-300 dark:hover:border-blue-700'
                               }`}
                           >
-                            {priceType === 'contado' && <Check className="absolute top-1.5 right-1.5 h-3 w-3 text-blue-600 dark:text-blue-400" />}
-                            <div className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Contado</div>
-                            <div className="text-sm font-bold text-blue-700 dark:text-blue-300">
+                            {priceType === 'contado' && <Check className="absolute top-1 right-1 h-2.5 w-2.5 sm:h-3 sm:w-3 text-blue-600 dark:text-blue-400" />}
+                            <div className="text-[10px] sm:text-xs font-medium text-gray-500 dark:text-gray-400 mb-0.5 sm:mb-1">Contado</div>
+                            <div className="text-xs sm:text-sm font-bold text-blue-700 dark:text-blue-300">
                               {currency?.value === "PEN" ? "S/." : "$"}{Number(selectedProduct.PUContado).toFixed(2)}
                             </div>
                           </button>
@@ -1207,15 +1228,15 @@ export default function OrderPage() {
                           <button
                               type="button"
                               onClick={() => setPriceType('credito')}
-                              className={`relative rounded-xl p-3 text-center transition-all border-2 ${
+                              className={`relative min-w-[90px] sm:min-w-0 rounded-xl p-2 sm:p-3 text-center transition-all border-2 shrink-0 sm:shrink ${
                                   priceType === 'credito'
                                       ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 shadow-sm'
                                       : 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 hover:border-blue-300 dark:hover:border-blue-700'
                               }`}
                           >
-                            {priceType === 'credito' && <Check className="absolute top-1.5 right-1.5 h-3 w-3 text-blue-600 dark:text-blue-400" />}
-                            <div className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Crédito</div>
-                            <div className="text-sm font-bold text-blue-700 dark:text-blue-300">
+                            {priceType === 'credito' && <Check className="absolute top-1 right-1 h-2.5 w-2.5 sm:h-3 sm:w-3 text-blue-600 dark:text-blue-400" />}
+                            <div className="text-[10px] sm:text-xs font-medium text-gray-500 dark:text-gray-400 mb-0.5 sm:mb-1">Crédito</div>
+                            <div className="text-xs sm:text-sm font-bold text-blue-700 dark:text-blue-300">
                               {currency?.value === "PEN" ? "S/." : "$"}{Number(selectedProduct.PUCredito).toFixed(2)}
                             </div>
                           </button>
@@ -1225,15 +1246,15 @@ export default function OrderPage() {
                             <button
                                 type="button"
                                 onClick={() => setPriceType('porMayor')}
-                                className={`relative rounded-xl p-3 text-center transition-all border-2 ${
+                                className={`relative min-w-[90px] sm:min-w-0 rounded-xl p-2 sm:p-3 text-center transition-all border-2 shrink-0 sm:shrink ${
                                     priceType === 'porMayor'
                                         ? 'border-violet-500 bg-violet-50 dark:bg-violet-900/30 shadow-sm'
                                         : 'border-violet-200 dark:border-violet-800 bg-violet-50/50 dark:bg-gray-800 hover:border-violet-400 dark:hover:border-violet-600'
                                 }`}
                             >
-                              {priceType === 'porMayor' && <Check className="absolute top-1.5 right-1.5 h-3 w-3 text-violet-600 dark:text-violet-400" />}
-                              <div className="text-xs font-medium text-violet-600 dark:text-violet-400 mb-1">Bonif. Cont.</div>
-                              <div className="text-sm font-bold text-violet-700 dark:text-violet-300">
+                              {priceType === 'porMayor' && <Check className="absolute top-1 right-1 h-2.5 w-2.5 sm:h-3 sm:w-3 text-violet-600 dark:text-violet-400" />}
+                              <div className="text-[10px] sm:text-xs font-medium text-violet-600 dark:text-violet-400 mb-0.5 sm:mb-1">Bonif. Cont.</div>
+                              <div className="text-xs sm:text-sm font-bold text-violet-700 dark:text-violet-300">
                                 {currency?.value === "PEN" ? "S/." : "$"}{Number(selectedProduct.PUPorMayor).toFixed(2)}
                               </div>
                             </button>
@@ -1244,15 +1265,15 @@ export default function OrderPage() {
                             <button
                                 type="button"
                                 onClick={() => setPriceType('porMenor')}
-                                className={`relative rounded-xl p-3 text-center transition-all border-2 ${
+                                className={`relative min-w-[90px] sm:min-w-0 rounded-xl p-2 sm:p-3 text-center transition-all border-2 shrink-0 sm:shrink ${
                                     priceType === 'porMenor'
                                         ? 'border-green-500 bg-green-50 dark:bg-green-900/30 shadow-sm'
                                         : 'border-green-200 dark:border-green-800 bg-green-50/50 dark:bg-gray-800 hover:border-green-400 dark:hover:border-green-600'
                                 }`}
                             >
-                              {priceType === 'porMenor' && <Check className="absolute top-1.5 right-1.5 h-3 w-3 text-green-600 dark:text-green-400" />}
-                              <div className="text-xs font-medium text-green-600 dark:text-green-400 mb-1">Bonif. Cred.</div>
-                              <div className="text-sm font-bold text-green-700 dark:text-green-300">
+                              {priceType === 'porMenor' && <Check className="absolute top-1 right-1 h-2.5 w-2.5 sm:h-3 sm:w-3 text-green-600 dark:text-green-400" />}
+                              <div className="text-[10px] sm:text-xs font-medium text-green-600 dark:text-green-400 mb-0.5 sm:mb-1">Bonif. Cred.</div>
+                              <div className="text-xs sm:text-sm font-bold text-green-700 dark:text-green-300">
                                 {currency?.value === "PEN" ? "S/." : "$"}{Number(selectedProduct.PUPorMenor).toFixed(2)}
                               </div>
                             </button>
@@ -1262,16 +1283,16 @@ export default function OrderPage() {
                           <button
                               type="button"
                               onClick={() => setPriceType('custom')}
-                              className={`relative rounded-xl p-3 text-center transition-all border-2 ${
+                              className={`relative min-w-[90px] sm:min-w-0 rounded-xl p-2 sm:p-3 text-center transition-all border-2 shrink-0 sm:shrink ${
                                   priceType === 'custom'
                                       ? 'border-red-500 bg-red-50 dark:bg-red-900/30 shadow-sm'
                                       : 'border-red-200 dark:border-red-800 bg-red-50/50 dark:bg-gray-800 hover:border-red-400 dark:hover:border-red-600'
                               }`}
                           >
-                            {priceType === 'custom' && <Check className="absolute top-1.5 right-1.5 h-3 w-3 text-red-600 dark:text-red-400" />}
-                            <div className="text-xs font-medium text-red-600 dark:text-red-400 mb-1">Personalizado</div>
+                            {priceType === 'custom' && <Check className="absolute top-1 right-1 h-2.5 w-2.5 sm:h-3 sm:w-3 text-red-600 dark:text-red-400" />}
+                            <div className="text-[10px] sm:text-xs font-medium text-red-600 dark:text-red-400 mb-0.5 sm:mb-1">Personalizado</div>
                             <div className="flex items-center justify-center gap-0.5">
-                              <span className="text-xs text-red-700 dark:text-red-300">{currency?.value === "PEN" ? "S/." : "$"}</span>
+                              <span className="text-[10px] sm:text-xs text-red-700 dark:text-red-300">{currency?.value === "PEN" ? "S/." : "$"}</span>
                               <Input
                                   type="text"
                                   value={priceEdit === 0 ? '' : priceEdit}
@@ -1290,7 +1311,7 @@ export default function OrderPage() {
                                     }
                                   }}
                                   onClick={(e) => e.stopPropagation()}
-                                  className="h-7 w-16 text-center text-xs font-bold text-red-700 dark:text-red-300 bg-white dark:bg-gray-700 border-red-200 dark:border-red-700 p-1"
+                                  className="h-6 sm:h-7 w-14 sm:w-16 text-center text-xs font-bold text-red-700 dark:text-red-300 bg-white dark:bg-gray-700 border-red-200 dark:border-red-700 p-1"
                                   placeholder="0.00"
                               />
                             </div>
@@ -1398,6 +1419,9 @@ export default function OrderPage() {
                       <CardTitle className="text-lg font-semibold text-blue-700 dark:text-blue-400">
                         Productos Seleccionados
                       </CardTitle>
+                      <span className="inline-flex items-center justify-center h-6 min-w-6 px-1.5 bg-indigo-600 text-white text-xs font-bold rounded-full">
+                        {selectedProducts.length}
+                      </span>
                     </div>
                   </CardHeader>
                   <CardContent className="pt-4">
