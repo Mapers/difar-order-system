@@ -142,6 +142,8 @@ export default function OrderPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [clientModalOpen, setClientModalOpen] = useState(false)
   const [sellerModalOpen, setSellerModalOpen] = useState(false)
+  const [labModalSearchOpen, setLabModalSearchOpen] = useState(false)
+  const [labSearch, setLabSearch] = useState("")
   const [isSearching, setIsSearching] = useState(false)
   const searchTimerRef = useRef<NodeJS.Timeout | null>(null)
   const [quantity, setQuantity] = useState(1)
@@ -1402,28 +1404,113 @@ export default function OrderPage() {
 
                 {/* Fila 2: Lab + Cantidad + Agregar en una sola fila */}
                 <div className="flex gap-2 sm:gap-3 items-end">
-                  <div className="flex-1 space-y-1.5">
-                    <Label htmlFor="laboratorio" className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <div className="flex-1 space-y-1.5 min-w-0">
+                    <Label className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">
                       Lab
                     </Label>
-                    <Select
-                        value={selectedLaboratorio || ""}
-                        onValueChange={(value) => {
-                          setSelectedLaboratorio(value);
-                          setShowLaboratorioModal(true);
-                        }}
+                    {/* Trigger */}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setLabModalSearchOpen(true)}
+                      className="w-full justify-start h-11 px-3 text-left font-normal text-xs sm:text-sm bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-white dark:hover:bg-gray-700 hover:border-purple-400 dark:hover:border-purple-500 transition-all duration-200 dark:text-gray-100 overflow-hidden"
                     >
-                      <SelectTrigger className="w-full h-11 text-xs sm:text-sm bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 dark:text-gray-100">
-                        <SelectValue placeholder="Laboratorio"/>
-                      </SelectTrigger>
-                      <SelectContent>
-                        {laboratories.map((lab) => (
-                            <SelectItem key={lab.IdLineaGe} value={lab.IdLineaGe} className="text-xs sm:text-sm">
-                              {lab.Descripcion}
-                            </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                      <Building className="mr-2 h-4 w-4 shrink-0 text-gray-400" />
+                      {selectedLaboratorio ? (
+                        <span className="truncate text-gray-900 dark:text-gray-100">
+                          {laboratories.find(l => l.IdLineaGe === selectedLaboratorio)?.Descripcion ?? selectedLaboratorio}
+                        </span>
+                      ) : (
+                        <span className="truncate text-gray-400 dark:text-gray-500">Seleccionar laboratorio...</span>
+                      )}
+                    </Button>
+
+                    {/* Lab search modal */}
+                    <Dialog open={labModalSearchOpen} onOpenChange={(v) => {
+                      setLabModalSearchOpen(v)
+                      if (!v) setLabSearch("")
+                    }}>
+                      <DialogContent className="p-0 gap-0 flex flex-col [&>button]:hidden overflow-hidden
+                        fixed bottom-0 left-0 right-0 top-auto translate-x-0 translate-y-0 rounded-t-2xl rounded-b-none h-[88vh] w-full
+                        sm:left-1/2 sm:right-auto sm:bottom-auto sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-xl sm:w-[520px] sm:h-[65vh] sm:max-w-[95vw]">
+                        <DialogTitle className="sr-only">Seleccionar laboratorio</DialogTitle>
+
+                        {/* Search bar */}
+                        <div className="flex items-center gap-2 border-b border-gray-200 dark:border-gray-700 px-3 py-2.5 bg-white dark:bg-gray-900 shrink-0">
+                          <Search className="h-4 w-4 text-gray-400 shrink-0" />
+                          <input
+                            type="text"
+                            autoFocus
+                            placeholder="Buscar laboratorio..."
+                            value={labSearch}
+                            onChange={(e) => setLabSearch(e.target.value)}
+                            className="flex-1 bg-transparent outline-none text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 h-9"
+                          />
+                          {labSearch && (
+                            <button type="button" onClick={() => setLabSearch("")} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+                              <X className="h-4 w-4" />
+                            </button>
+                          )}
+                          <button type="button"
+                            onClick={() => { setLabModalSearchOpen(false); setLabSearch("") }}
+                            className="text-sm text-blue-600 dark:text-blue-400 font-medium pl-2 shrink-0">
+                            Cancelar
+                          </button>
+                        </div>
+
+                        {/* Header */}
+                        <div className="px-4 py-2.5 bg-purple-50 dark:bg-purple-950/20 border-b border-purple-100 dark:border-purple-900/30 shrink-0">
+                          <p className="text-xs font-semibold text-purple-700 dark:text-purple-400 uppercase tracking-wide">
+                            {labSearch
+                              ? `${laboratories.filter(l => l.Descripcion.toLowerCase().includes(labSearch.toLowerCase())).length} resultado(s)`
+                              : `${laboratories.length} laboratorios`}
+                          </p>
+                        </div>
+
+                        {/* List */}
+                        <div className="flex-1 overflow-y-auto bg-white dark:bg-gray-900">
+                          {(() => {
+                            const filtered = laboratories.filter(l =>
+                              l.Descripcion.toLowerCase().includes(labSearch.toLowerCase())
+                            )
+                            if (filtered.length === 0) return (
+                              <div className="py-12 text-center">
+                                <Building className="h-10 w-10 text-gray-200 dark:text-gray-700 mx-auto mb-3" />
+                                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                                  {labSearch ? 'No se encontraron laboratorios' : 'Sin laboratorios disponibles'}
+                                </p>
+                              </div>
+                            )
+                            return (
+                              <div className="divide-y divide-gray-100 dark:divide-gray-800">
+                                {filtered.map((lab) => (
+                                  <button key={lab.IdLineaGe} type="button"
+                                    onClick={() => {
+                                      setSelectedLaboratorio(lab.IdLineaGe)
+                                      setShowLaboratorioModal(true)
+                                      setLabModalSearchOpen(false)
+                                      setLabSearch("")
+                                    }}
+                                    className={`w-full flex items-center gap-3 px-4 py-3 hover:bg-purple-50 dark:hover:bg-purple-950/20 active:bg-purple-100 transition-colors text-left ${
+                                      selectedLaboratorio === lab.IdLineaGe ? 'bg-purple-50 dark:bg-purple-950/20' : ''
+                                    }`}>
+                                    <div className="bg-purple-100 dark:bg-purple-900/40 p-2 rounded-full shrink-0">
+                                      <Building className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                      <p className="font-medium text-sm text-gray-900 dark:text-gray-100 truncate">{lab.Descripcion}</p>
+                                    </div>
+                                    {selectedLaboratorio === lab.IdLineaGe && (
+                                      <Check className="h-4 w-4 text-purple-600 dark:text-purple-400 shrink-0" />
+                                    )}
+                                  </button>
+                                ))}
+                              </div>
+                            )
+                          })()}
+                        </div>
+                      </DialogContent>
+                    </Dialog>
                   </div>
 
                   <div className="shrink-0 space-y-1.5">
