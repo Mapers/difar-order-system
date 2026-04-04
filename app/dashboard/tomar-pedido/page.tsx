@@ -1088,6 +1088,8 @@ export default function OrderPage() {
                             className="z-[999] w-[calc(100vw-2rem)] sm:w-full p-0 shadow-lg border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900"
                             align="start"
                             side="bottom"
+                            avoidCollisions={false}
+                            sideOffset={4}
                         >
                           <Command shouldFilter={false}>
                             <CommandInput
@@ -1101,7 +1103,7 @@ export default function OrderPage() {
                                 }}
                                 className="text-sm sm:text-base h-11"
                             />
-                            <CommandList className="max-h-[55vh] sm:max-h-[420px]">
+                            <CommandList className="max-h-[38vh] sm:max-h-[400px]">
                               {isSearching ? (
                                 <div className="p-2 space-y-2">
                                   <div className="px-2 py-1.5 text-xs font-medium text-gray-500 dark:text-gray-400 flex items-center gap-2">
