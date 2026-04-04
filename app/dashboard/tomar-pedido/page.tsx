@@ -894,8 +894,8 @@ export default function OrderPage() {
                     if (!v) setSearch((prev) => ({ ...prev, client: '' }))
                   }}>
                     <DialogContent className="p-0 gap-0 flex flex-col [&>button]:hidden overflow-hidden
-                      fixed bottom-0 left-0 right-0 top-auto translate-x-0 translate-y-0 rounded-t-2xl rounded-b-none max-h-[88vh] w-full
-                      sm:left-1/2 sm:right-auto sm:bottom-auto sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-xl sm:w-[620px] sm:max-h-[75vh] sm:max-w-[95vw]">
+                      fixed bottom-0 left-0 right-0 top-auto translate-x-0 translate-y-0 rounded-t-2xl rounded-b-none h-[88vh] w-full
+                      sm:left-1/2 sm:right-auto sm:bottom-auto sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-xl sm:w-[620px] sm:h-[75vh] sm:max-w-[95vw]">
                       <DialogTitle className="sr-only">Buscar cliente</DialogTitle>
 
                       {/* Search bar */}
@@ -1091,8 +1091,8 @@ export default function OrderPage() {
                       {/* Product search modal — bottom sheet on mobile, centered dialog on desktop */}
                       <Dialog open={open} onOpenChange={setOpen}>
                         <DialogContent className="p-0 gap-0 flex flex-col [&>button]:hidden overflow-hidden
-                          fixed bottom-0 left-0 right-0 top-auto translate-x-0 translate-y-0 rounded-t-2xl rounded-b-none max-h-[88vh] w-full
-                          sm:left-1/2 sm:right-auto sm:bottom-auto sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-xl sm:w-[620px] sm:max-h-[75vh] sm:max-w-[95vw]">
+                          fixed bottom-0 left-0 right-0 top-auto translate-x-0 translate-y-0 rounded-t-2xl rounded-b-none h-[88vh] w-full
+                          sm:left-1/2 sm:right-auto sm:bottom-auto sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-xl sm:w-[620px] sm:h-[75vh] sm:max-w-[95vw]">
                           <DialogTitle className="sr-only">Buscar producto</DialogTitle>
 
                           {/* Search input — always at top, visible above keyboard */}
