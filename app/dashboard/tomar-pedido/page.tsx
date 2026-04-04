@@ -1624,7 +1624,7 @@ export default function OrderPage() {
                       <Building className="mr-2 h-4 w-4 shrink-0 text-gray-400" />
                       {selectedLaboratorio ? (
                         <span className="truncate text-gray-900 dark:text-gray-100">
-                          {laboratories.find(l => l.IdLineaGe === selectedLaboratorio)?.Descripcion ?? selectedLaboratorio}
+                          {laboratories.find(l => String(l.IdLineaGe) === selectedLaboratorio)?.Descripcion ?? selectedLaboratorio}
                         </span>
                       ) : (
                         <span className="truncate text-gray-400 dark:text-gray-500">Seleccionar laboratorio...</span>
@@ -1728,13 +1728,16 @@ export default function OrderPage() {
                         </span>
                       )}
                     </Label>
-                    <div className={`flex items-center h-11 rounded-lg border bg-gray-50 dark:bg-gray-800 overflow-hidden transition-colors ${
-                      selectedProduct && quantity >= Number(selectedProduct.Stock)
-                        ? 'border-red-300 dark:border-red-700'
-                        : 'border-gray-200 dark:border-gray-700'
+                    <div className={`flex items-center h-11 rounded-lg border overflow-hidden transition-colors ${
+                      !selectedProduct
+                        ? 'bg-gray-100 dark:bg-gray-800/50 border-gray-100 dark:border-gray-700 opacity-50 cursor-not-allowed'
+                        : selectedProduct && quantity >= Number(selectedProduct.Stock)
+                          ? 'bg-gray-50 dark:bg-gray-800 border-red-300 dark:border-red-700'
+                          : 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700'
                     }`}>
                       <button
                         type="button"
+                        disabled={!selectedProduct}
                         aria-label={quantity <= 1 ? "Quitar producto" : "Disminuir cantidad"}
                         onClick={() => {
                           if (quantity <= 1) {
@@ -1744,7 +1747,7 @@ export default function OrderPage() {
                             setQuantity(quantity - 1)
                           }
                         }}
-                        className={`h-full px-2.5 flex items-center justify-center transition-colors ${
+                        className={`h-full px-2.5 flex items-center justify-center transition-colors disabled:cursor-not-allowed ${
                           quantity <= 1
                             ? 'text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20'
                             : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700'
@@ -1756,25 +1759,26 @@ export default function OrderPage() {
                         type="number"
                         min="1"
                         step="1"
+                        disabled={!selectedProduct}
                         value={quantity}
                         onChange={(e) => {
                           const val = Math.max(1, Number.parseInt(e.target.value) || 1)
                           const stock = selectedProduct ? Number(selectedProduct.Stock) : Infinity
                           setQuantity(Math.min(val, stock))
                         }}
-                        className="w-10 sm:w-12 bg-transparent outline-none text-center text-base font-semibold text-gray-900 dark:text-gray-100 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        className="w-10 sm:w-12 bg-transparent outline-none text-center text-base font-semibold text-gray-900 dark:text-gray-100 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none disabled:cursor-not-allowed"
                       />
                       <button
                         type="button"
                         aria-label="Aumentar cantidad"
-                        disabled={!!selectedProduct && quantity >= Number(selectedProduct.Stock)}
+                        disabled={!selectedProduct || (!!selectedProduct && quantity >= Number(selectedProduct.Stock))}
                         onClick={() => {
                           const stock = selectedProduct ? Number(selectedProduct.Stock) : Infinity
                           setQuantity(Math.min(quantity + 1, stock))
                         }}
-                        className={`h-full px-2.5 flex items-center justify-center transition-colors ${
+                        className={`h-full px-2.5 flex items-center justify-center transition-colors disabled:cursor-not-allowed ${
                           selectedProduct && quantity >= Number(selectedProduct.Stock)
-                            ? 'text-gray-300 dark:text-gray-600 cursor-not-allowed'
+                            ? 'text-gray-300 dark:text-gray-600'
                             : 'text-gray-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20'
                         }`}
                       >
