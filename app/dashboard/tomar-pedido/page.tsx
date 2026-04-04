@@ -1486,13 +1486,13 @@ export default function OrderPage() {
                                 {filtered.map((lab) => (
                                   <button key={lab.IdLineaGe} type="button"
                                     onClick={() => {
-                                      setSelectedLaboratorio(lab.IdLineaGe)
+                                      setSelectedLaboratorio(String(lab.IdLineaGe))
                                       setShowLaboratorioModal(true)
                                       setLabModalSearchOpen(false)
                                       setLabSearch("")
                                     }}
                                     className={`w-full flex items-center gap-3 px-4 py-3 hover:bg-purple-50 dark:hover:bg-purple-950/20 active:bg-purple-100 transition-colors text-left ${
-                                      selectedLaboratorio === lab.IdLineaGe ? 'bg-purple-50 dark:bg-purple-950/20' : ''
+                                      selectedLaboratorio === String(lab.IdLineaGe) ? 'bg-purple-50 dark:bg-purple-950/20' : ''
                                     }`}>
                                     <div className="bg-purple-100 dark:bg-purple-900/40 p-2 rounded-full shrink-0">
                                       <Building className="h-4 w-4 text-purple-600 dark:text-purple-400" />
@@ -1500,7 +1500,7 @@ export default function OrderPage() {
                                     <div className="flex-1 min-w-0">
                                       <p className="font-medium text-sm text-gray-900 dark:text-gray-100 truncate">{lab.Descripcion}</p>
                                     </div>
-                                    {selectedLaboratorio === lab.IdLineaGe && (
+                                    {selectedLaboratorio === String(lab.IdLineaGe) && (
                                       <Check className="h-4 w-4 text-purple-600 dark:text-purple-400 shrink-0" />
                                     )}
                                   </button>
