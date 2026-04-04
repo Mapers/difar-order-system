@@ -64,18 +64,18 @@ const ContactInfo: React.FC<ClientRowProps> = ({
               <textarea
                   value={editedAddress}
                   onChange={(e) => setEditedAddress(e.target.value)}
-                  className="w-full p-2 text-sm border border-green-300 rounded focus:outline-none focus:ring-1 focus:ring-green-500 resize-none"
+                  className="w-full p-2 text-sm border border-green-300 dark:border-green-700 rounded focus:outline-none focus:ring-1 focus:ring-green-500 resize-none bg-white dark:bg-gray-800 dark:text-gray-100"
                   placeholder="Ingrese la dirección"
                   rows={3}
                   autoFocus
               />
           ) : (
               <>
-                <p className="text-sm text-gray-900">{text}</p>
+                <p className="text-sm text-gray-900 dark:text-gray-100">{text}</p>
                 {isLong && (
                     <button
                         onClick={() => setShowFullDireccion(!showFullDireccion)}
-                        className="ml-1 text-gray-600 hover:text-black"
+                        className="ml-1 text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-gray-100"
                         type="button"
                     >
                       <ChevronDown
@@ -96,12 +96,12 @@ const ContactInfo: React.FC<ClientRowProps> = ({
       : client.Dirección?.slice(0, 20) + '...';
 
     return (
-      <p className="text-sm text-gray-900 flex items-center gap-1">
+      <p className="text-sm text-gray-900 dark:text-gray-100 flex items-center gap-1">
         {text}
         {isLong && (
           <button
             onClick={() => setShowFullDireccion(!showFullDireccion)}
-            className="ml-1 text-gray-600 hover:text-black"
+            className="ml-1 text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-gray-100"
             type="button"
           >
             <ChevronDown
@@ -117,41 +117,41 @@ const ContactInfo: React.FC<ClientRowProps> = ({
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       {/* Contact Information */}
       <div className="space-y-4">
-        <h3 className="font-semibold text-gray-900 flex items-center gap-2">
-          <Phone className="w-4 h-4 text-blue-600" />
+        <h3 className="font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+          <Phone className="w-4 h-4 text-blue-600 dark:text-blue-400" />
           Información de Contacto
         </h3>
 
         <div className="space-y-3">
-          <div className="p-3 bg-blue-50 rounded-lg">
+          <div className="p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg">
             <div className="flex items-center justify-between mb-2">
-              <Label className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                <Phone className="w-5 h-5 text-blue-600" />
+              <Label className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                <Phone className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                 Teléfono
               </Label>
               {!isEditingPhone ? (
                   <button
                       onClick={() => setIsEditingPhone(true)}
-                      className="p-1 hover:bg-blue-200 rounded transition-colors"
+                      className="p-1 hover:bg-blue-200 dark:hover:bg-blue-900/40 rounded transition-colors"
                       type="button"
                   >
-                    <Edit className="w-3 h-3 text-blue-600"/>
+                    <Edit className="w-3 h-3 text-blue-600 dark:text-blue-400"/>
                   </button>
               ) : (
                   <div className="flex gap-1">
                     <button
                         onClick={handleSavePhone}
-                        className="p-1 hover:bg-green-200 rounded transition-colors"
+                        className="p-1 hover:bg-green-200 dark:hover:bg-green-900/40 rounded transition-colors"
                         type="button"
                     >
-                      <Save className="w-3 h-3 text-green-600"/>
+                      <Save className="w-3 h-3 text-green-600 dark:text-green-400"/>
                     </button>
                     <button
                         onClick={() => handleCancelEdit('phone')}
-                        className="p-1 hover:bg-red-200 rounded transition-colors"
+                        className="p-1 hover:bg-red-200 dark:hover:bg-red-900/40 rounded transition-colors"
                         type="button"
                     >
-                      <X className="w-3 h-3 text-red-600"/>
+                      <X className="w-3 h-3 text-red-600 dark:text-red-400"/>
                     </button>
                   </div>
               )}
@@ -162,18 +162,18 @@ const ContactInfo: React.FC<ClientRowProps> = ({
                     type="tel"
                     value={editedPhone}
                     onChange={(e) => setEditedPhone(e.target.value)}
-                    className="w-full p-2 text-sm border border-blue-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    className="w-full p-2 text-sm border border-blue-300 dark:border-blue-700 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white dark:bg-gray-800 dark:text-gray-100"
                     placeholder="Ingrese el teléfono"
                     autoFocus
                 />
             ) : (
-                <p className="text-sm text-gray-900">{client.telefono ?? '+51 ---------'}</p>
+                <p className="text-sm text-gray-900 dark:text-gray-100">{client.telefono ?? '+51 ---------'}</p>
             )}
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="contactoPedido" className="flex items-center gap-2">
-              <User className="w-4 h-4 text-blue-600" />
+            <Label htmlFor="contactoPedido" className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
+              <User className="w-4 h-4 text-blue-600 dark:text-blue-400" />
               Persona de Contacto
             </Label>
             <Input
@@ -181,6 +181,7 @@ const ContactInfo: React.FC<ClientRowProps> = ({
               value={contactoPedido}
               onChange={onChangeContactoPedido}
               placeholder="Nombre de la persona de contacto (opcional)"
+              className="dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100 dark:placeholder-gray-500"
             />
           </div>
         </div>
@@ -188,41 +189,41 @@ const ContactInfo: React.FC<ClientRowProps> = ({
 
       {/* Delivery Information */}
       <div className="space-y-4">
-        <h3 className="font-semibold text-gray-900 flex items-center gap-2">
-          <MapPin className="w-4 h-4 text-green-600" />
+        <h3 className="font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+          <MapPin className="w-4 h-4 text-green-600 dark:text-green-400" />
           Información de Entrega
         </h3>
 
         <div className="space-y-3">
-          <div className="p-3 bg-green-50 rounded-lg">
+          <div className="p-3 bg-green-50 dark:bg-green-950/30 rounded-lg">
             <div className="flex items-start justify-between mb-2">
-              <Label className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                <MapPin className="w-4 h-4 text-green-600" />
+              <Label className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                <MapPin className="w-4 h-4 text-green-600 dark:text-green-400" />
                 Dirección
               </Label>
               {!isEditingAddress ? (
                   <button
                       onClick={() => setIsEditingAddress(true)}
-                      className="p-1 hover:bg-green-200 rounded transition-colors flex-shrink-0"
+                      className="p-1 hover:bg-green-200 dark:hover:bg-green-900/40 rounded transition-colors flex-shrink-0"
                       type="button"
                   >
-                    <Edit className="w-3 h-3 text-green-600"/>
+                    <Edit className="w-3 h-3 text-green-600 dark:text-green-400"/>
                   </button>
               ) : (
                   <div className="flex gap-1 flex-shrink-0">
                     <button
                         onClick={handleSaveAddress}
-                        className="p-1 hover:bg-green-200 rounded transition-colors"
+                        className="p-1 hover:bg-green-200 dark:hover:bg-green-900/40 rounded transition-colors"
                         type="button"
                     >
-                      <Save className="w-3 h-3 text-green-600"/>
+                      <Save className="w-3 h-3 text-green-600 dark:text-green-400"/>
                     </button>
                     <button
                         onClick={() => handleCancelEdit('address')}
-                        className="p-1 hover:bg-red-200 rounded transition-colors"
+                        className="p-1 hover:bg-red-200 dark:hover:bg-red-900/40 rounded transition-colors"
                         type="button"
                     >
-                      <X className="w-3 h-3 text-red-600"/>
+                      <X className="w-3 h-3 text-red-600 dark:text-red-400"/>
                     </button>
                   </div>
               )}
@@ -236,8 +237,8 @@ const ContactInfo: React.FC<ClientRowProps> = ({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="referenciaDireccion" className="flex items-center gap-2">
-              <Navigation className="w-4 h-4 text-green-600" />
+            <Label htmlFor="referenciaDireccion" className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
+              <Navigation className="w-4 h-4 text-green-600 dark:text-green-400" />
               Referencia de Ubicación
             </Label>
             <Input
@@ -245,6 +246,7 @@ const ContactInfo: React.FC<ClientRowProps> = ({
               value={referenciaDireccion}
               onChange={onChangeReferenciaDireccion}
               placeholder="Ej: Frente al parque, casa azul..."
+              className="dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100 dark:placeholder-gray-500"
             />
           </div>
         </div>

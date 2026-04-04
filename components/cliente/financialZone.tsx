@@ -48,26 +48,25 @@ const FinancialZone: React.FC<ClientRowProps> = ({ client, nameZone, unidadTerri
       <Dialog open={showCreditModal} onOpenChange={setShowCreditModal}>
         <DialogTrigger asChild>
           <div
-            className="flex items-center gap-3 p-4 bg-yellow-50 rounded-lg border border-yellow-200 cursor-pointer hover:bg-yellow-100 transition-colors"
+            className="flex items-center gap-3 p-4 bg-yellow-50 dark:bg-yellow-950/20 rounded-lg border border-yellow-200 dark:border-yellow-900/50 cursor-pointer hover:bg-yellow-100 dark:hover:bg-yellow-950/40 transition-colors"
             onClick={handleCreditClick}
           >
-            <CreditCard className="w-6 h-6 text-yellow-600" />
+            <CreditCard className="w-6 h-6 text-yellow-600 dark:text-yellow-500" />
             <div className="flex-1">
-              <Label className="text-sm font-medium text-gray-700">Línea de Crédito</Label>
-              {/*<p className="text-lg font-semibold text-gray-900">{client.LineaCredito || "0.00"}</p>*/}
-              <p className="text-xs text-yellow-600 mt-1">Click para ver detalles</p>
+              <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Línea de Crédito</Label>
+              <p className="text-xs text-yellow-600 dark:text-yellow-500 mt-1">Click para ver detalles</p>
             </div>
-            <ChevronDown className="w-4 h-4 text-yellow-600 rotate-[-90deg]" />
+            <ChevronDown className="w-4 h-4 text-yellow-600 dark:text-yellow-500 rotate-[-90deg]" />
           </div>
         </DialogTrigger>
 
-        <DialogContent className="max-w-2xl max-h-[70vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[70vh] overflow-y-auto dark:bg-gray-900 dark:border-gray-800">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+            <DialogTitle className="flex items-center gap-2 dark:text-gray-100">
               <CreditCard className="w-5 h-5" />
               Línea de Crédito - {client.Nombre}
             </DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="dark:text-gray-400">
               Detalles del balance crediticio del cliente
             </DialogDescription>
           </DialogHeader>
@@ -77,25 +76,25 @@ const FinancialZone: React.FC<ClientRowProps> = ({ client, nameZone, unidadTerri
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
             </div>
           ) : creditData.length > 0 ? (
-            <div className="border rounded-md">
+            <div className="border dark:border-gray-700 rounded-md">
               <Table>
                 <TableHeader>
-                  <TableRow>
-                    <TableHead>Saldo Documento</TableHead>
-                    <TableHead>Fecha Emisión</TableHead>
-                    <TableHead>Fecha Vencimiento</TableHead>
+                  <TableRow className="dark:border-gray-700">
+                    <TableHead className="dark:text-gray-400">Saldo Documento</TableHead>
+                    <TableHead className="dark:text-gray-400">Fecha Emisión</TableHead>
+                    <TableHead className="dark:text-gray-400">Fecha Vencimiento</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {creditData.map((item, index) => (
-                    <TableRow key={index}>
-                      <TableCell className="font-medium">
+                    <TableRow key={index} className="dark:border-gray-700">
+                      <TableCell className="font-medium dark:text-gray-300">
                         {item.Simb_Moneda} {Number(item.saldoDoc)?.toFixed(2)}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="dark:text-gray-400">
                         {item.Fecha_Emision ? new Date(item.Fecha_Emision).toLocaleDateString() : 'N/A'}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="dark:text-gray-400">
                         {item.Fecha_Vcto ? new Date(item.Fecha_Vcto).toLocaleDateString() : 'N/A'}
                       </TableCell>
                     </TableRow>
@@ -104,13 +103,13 @@ const FinancialZone: React.FC<ClientRowProps> = ({ client, nameZone, unidadTerri
               </Table>
             </div>
           ) : (
-            <div className="text-center py-8 text-gray-500">
+            <div className="text-center py-8 text-gray-500 dark:text-gray-400">
               No se encontraron datos de crédito para este cliente.
             </div>
           )}
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowCreditModal(false)}>
+            <Button variant="outline" onClick={() => setShowCreditModal(false)} className="dark:border-gray-700 dark:text-gray-300">
               Cerrar
             </Button>
           </DialogFooter>
@@ -120,19 +119,19 @@ const FinancialZone: React.FC<ClientRowProps> = ({ client, nameZone, unidadTerri
       {/* Zona - Card existente */}
       <Dialog>
         <DialogTrigger asChild>
-          <div className="flex items-center gap-3 p-4 bg-purple-50 rounded-lg border border-purple-200 cursor-pointer hover:bg-purple-100 transition-colors">
-            <Map className="w-6 h-6 text-purple-600" />
+          <div className="flex items-center gap-3 p-4 bg-purple-50 dark:bg-purple-950/20 rounded-lg border border-purple-200 dark:border-purple-900/50 cursor-pointer hover:bg-purple-100 dark:hover:bg-purple-950/40 transition-colors">
+            <Map className="w-6 h-6 text-purple-600 dark:text-purple-400" />
             <div className="flex-1">
-              <Label className="text-sm font-medium text-gray-700">Zona</Label>
-              <p className="text-lg font-semibold text-gray-900">Zona: {nameZone || "No Definido"} </p>
-              <p className="text-xs text-purple-600 mt-1">Click para ver detalles</p>
+              <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Zona</Label>
+              <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">Zona: {nameZone || "No Definido"} </p>
+              <p className="text-xs text-purple-600 dark:text-purple-400 mt-1">Click para ver detalles</p>
             </div>
-            <ChevronDown className="w-4 h-4 text-purple-600 rotate-[-90deg]" />
+            <ChevronDown className="w-4 h-4 text-purple-600 dark:text-purple-400 rotate-[-90deg]" />
           </div>
         </DialogTrigger>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md dark:bg-gray-900 dark:border-gray-800">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-purple-700">
+            <DialogTitle className="flex items-center gap-2 text-purple-700 dark:text-purple-400">
               <Map className="w-5 h-5" />
               Información de Zona
             </DialogTitle>
@@ -140,37 +139,37 @@ const FinancialZone: React.FC<ClientRowProps> = ({ client, nameZone, unidadTerri
           <div className="space-y-4 py-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-3">
-                <div className="flex items-center gap-2 p-3 bg-purple-50 rounded-lg">
-                  <Map className="w-4 h-4 text-purple-600" />
+                <div className="flex items-center gap-2 p-3 bg-purple-50 dark:bg-purple-950/20 rounded-lg">
+                  <Map className="w-4 h-4 text-purple-600 dark:text-purple-400" />
                   <div>
-                    <Label className="text-xs font-medium text-gray-600">ZONA</Label>
-                    <p className="text-sm font-semibold text-gray-900">{nameZone || 'No Definido'}</p>
+                    <Label className="text-xs font-medium text-gray-600 dark:text-gray-400">ZONA</Label>
+                    <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{nameZone || 'No Definido'}</p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 p-3 bg-blue-50 rounded-lg">
-                  <MapPin className="w-4 h-4 text-blue-600" />
+                <div className="flex items-center gap-2 p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg">
+                  <MapPin className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                   <div>
-                    <Label className="text-xs font-medium text-gray-600">PROVINCIA</Label>
-                    <p className="text-sm font-semibold text-gray-900">{unidadTerritorio?.nombreProvincia}</p>
+                    <Label className="text-xs font-medium text-gray-600 dark:text-gray-400">PROVINCIA</Label>
+                    <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{unidadTerritorio?.nombreProvincia}</p>
                   </div>
                 </div>
               </div>
 
               <div className="space-y-3">
-                <div className="flex items-center gap-2 p-3 bg-green-50 rounded-lg">
-                  <Navigation className="w-4 h-4 text-green-600" />
+                <div className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-950/20 rounded-lg">
+                  <Navigation className="w-4 h-4 text-green-600 dark:text-green-400" />
                   <div>
-                    <Label className="text-xs font-medium text-gray-600">ID DISTRITO</Label>
-                    <p className="text-sm font-semibold text-gray-900">{unidadTerritorio?.NombreDistrito}</p>
+                    <Label className="text-xs font-medium text-gray-600 dark:text-gray-400">ID DISTRITO</Label>
+                    <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{unidadTerritorio?.NombreDistrito}</p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 p-3 bg-orange-50 rounded-lg">
-                  <CreditCard className="w-4 h-4 text-orange-600" />
+                <div className="flex items-center gap-2 p-3 bg-orange-50 dark:bg-orange-950/20 rounded-lg">
+                  <CreditCard className="w-4 h-4 text-orange-600 dark:text-orange-400" />
                   <div>
-                    <Label className="text-xs font-medium text-gray-600">DEPARTAMENTO</Label>
-                    <p className="text-sm font-semibold text-gray-900">
+                    <Label className="text-xs font-medium text-gray-600 dark:text-gray-400">DEPARTAMENTO</Label>
+                    <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
                       {unidadTerritorio?.nombreDepartamento}
                     </p>
                   </div>
@@ -178,9 +177,9 @@ const FinancialZone: React.FC<ClientRowProps> = ({ client, nameZone, unidadTerri
               </div>
             </div>
 
-            <div className="pt-2 border-t">
+            <div className="pt-2 border-t dark:border-gray-700">
               <div className="flex items-center justify-center gap-2">
-                <Badge variant="outline" className="text-purple-700 border-purple-200">
+                <Badge variant="outline" className="text-purple-700 dark:text-purple-400 border-purple-200 dark:border-purple-800">
                   Información desde API
                 </Badge>
               </div>
