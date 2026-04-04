@@ -1814,7 +1814,7 @@ export default function OrderPage() {
                   <div className="bg-blue-50 dark:bg-blue-950/30 rounded-xl p-4 border border-blue-100 dark:border-blue-900/50 space-y-3">
                     <div>
                       <Label className="text-xs text-gray-500 dark:text-gray-400">Cliente</Label>
-                      <p className="font-medium text-sm">{selectedClient?.Nombre}</p>
+                      <p className="font-medium text-sm truncate">{selectedClient?.Nombre}</p>
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                       <div className="flex items-start gap-2">

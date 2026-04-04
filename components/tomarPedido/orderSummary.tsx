@@ -110,7 +110,7 @@ const OrderSummary: React.FC<ModalVerificationProps> = ({ selectedClient, contac
           <h3 className="font-semibold text-gray-900 text-sm sm:text-base">Productos Seleccionados</h3>
         </div>
         {/* <h3 className="text-lg font-medium text-gray-900">Productos</h3> */}
-        <div className="rounded-md border">
+        <div className="rounded-md border overflow-x-auto">
           <Table>
             <TableHeader className="bg-gray-50">
               <TableRow>
@@ -128,8 +128,8 @@ const OrderSummary: React.FC<ModalVerificationProps> = ({ selectedClient, contac
                 const subtotal = precioUnitario * item.quantity;
                 return (
                   <TableRow key={index} className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}>
-                    <TableCell className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
-                      <div className="flex items-center flex-wrap gap-1">
+                    <TableCell className="px-4 py-3 text-sm text-gray-700 max-w-[220px]">
+                      <div className="flex items-center flex-wrap gap-1 min-w-0">
                         {item.isBonification && (
                           <Badge variant="outline" className="bg-yellow-50 text-yellow-700">
                             Bonificado
@@ -140,7 +140,7 @@ const OrderSummary: React.FC<ModalVerificationProps> = ({ selectedClient, contac
                             Escala {item.appliedScale.porcentaje_descuento}% desc.
                           </Badge>
                         )}
-                        <span>{item.product.NombreItem}</span>
+                        <span className="block truncate" title={item.product.NombreItem}>{item.product.NombreItem}</span>
                       </div>
                     </TableCell>
                     <TableCell className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-right">

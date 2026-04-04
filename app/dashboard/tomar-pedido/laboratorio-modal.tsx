@@ -103,8 +103,8 @@ export const LaboratorioModal = ({
           <CardContent className="p-4">
             <div className="flex justify-between items-start mb-3">
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="bg-blue-100 p-1.5 rounded-md">
+                <div className="flex items-center gap-2 mb-2 min-w-0">
+                  <div className="bg-blue-100 p-1.5 rounded-md shrink-0">
                     <Package className="h-3 w-3 text-blue-600" />
                   </div>
                   <h3 className="font-bold text-blue-600 text-sm truncate">{product.NombreItem}</h3>
@@ -233,9 +233,9 @@ export const LaboratorioModal = ({
 
             return (
                 <TableRow key={productId}>
-                  <TableCell>
-                    <div className="text-sm">{product.NombreItem}</div>
-                    <div className="text-sm text-gray-500">{productId}</div>
+                  <TableCell className="max-w-[200px]">
+                    <div className="text-sm truncate" title={product.NombreItem}>{product.NombreItem}</div>
+                    <div className="text-sm text-gray-500 truncate">{productId}</div>
                   </TableCell>
                   <TableCell>{Number(product.Stock).toFixed(2)}</TableCell>
                   <TableCell>
@@ -377,7 +377,7 @@ export const LaboratorioModal = ({
                         </div>
 
                         {/* Vista Desktop - Table */}
-                        <div className="hidden lg:block">
+                        <div className="hidden lg:block overflow-x-auto">
                           {renderDesktopTable()}
                         </div>
                       </>
