@@ -166,12 +166,9 @@ export default function OrderPage() {
   const [selectedProduct, setSelectedProduct] = useState<IProduct | null>(null)
 
   // Navigation guard
-  const [showLeaveDialog, setShowLeaveDialog] = useState(false)
-  const [pendingNavUrl, setPendingNavUrl] = useState<string | null>(null)
   const [showClearAllDialog, setShowClearAllDialog] = useState(false)
   const [editingIndex, setEditingIndex] = useState<number | null>(null)
   const [editQuantity, setEditQuantity] = useState(1)
-  const confirmedLeaveRef = useRef(false)
 
   // Draft orders
   const [showDraftsDialog, setShowDraftsDialog] = useState(false)
@@ -422,49 +419,6 @@ export default function OrderPage() {
   }, [search.condition]);
 
   // Navigation guard — warn when there are unsaved changes
-  useEffect(() => {
-    const hasChanges = !!(selectedClient || selectedProducts.length > 0)
-    if (!hasChanges) return
-
-    // Browser refresh / tab close
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      e.preventDefault()
-      e.returnValue = ''
-    }
-    window.addEventListener('beforeunload', handleBeforeUnload)
-
-    // Intercept Next.js Link / router.push navigation
-    const originalPushState = window.history.pushState.bind(window.history)
-    window.history.pushState = function (state: any, title: string, url?: string | URL | null) {
-      if (confirmedLeaveRef.current) {
-        confirmedLeaveRef.current = false
-        return originalPushState(state, title, url)
-      }
-      const target = url ? url.toString() : ''
-      if (target && target !== window.location.pathname) {
-        setPendingNavUrl(target)
-        setShowLeaveDialog(true)
-        return
-      }
-      return originalPushState(state, title, url)
-    }
-
-    // Back / forward button
-    const handlePopState = () => {
-      if (!confirmedLeaveRef.current) {
-        window.history.pushState(null, '', window.location.pathname)
-        setPendingNavUrl(null)
-        setShowLeaveDialog(true)
-      }
-    }
-    window.addEventListener('popstate', handlePopState)
-
-    return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload)
-      window.removeEventListener('popstate', handlePopState)
-      window.history.pushState = originalPushState
-    }
-  }, [selectedClient, selectedProducts.length])
 
   // Fetch products
   useEffect(() => {
@@ -970,21 +924,6 @@ export default function OrderPage() {
     setShowAlternativesModal(false)
   }
 
-  const handleConfirmLeave = () => {
-    confirmedLeaveRef.current = true
-    setShowLeaveDialog(false)
-    if (pendingNavUrl) {
-      router.push(pendingNavUrl)
-    } else {
-      router.back()
-    }
-  }
-
-  const handleCancelLeave = () => {
-    setShowLeaveDialog(false)
-    setPendingNavUrl(null)
-  }
-
   return (
     <>
     {/* Drafts dialog */}
@@ -1227,31 +1166,6 @@ export default function OrderPage() {
       </Dialog>
     )}
 
-    <Dialog open={showLeaveDialog} onOpenChange={(v) => { if (!v) handleCancelLeave() }}>
-      <DialogContent className="sm:max-w-sm mx-4">
-        <DialogHeader>
-          <div className="flex items-center gap-3 mb-1">
-            <div className="p-2 bg-amber-100 dark:bg-amber-900/40 rounded-full shrink-0">
-              <ShoppingCart className="h-5 w-5 text-amber-600 dark:text-amber-400" />
-            </div>
-            <DialogTitle className="text-base font-semibold text-gray-900 dark:text-gray-100">
-              ¿Salir del pedido?
-            </DialogTitle>
-          </div>
-          <p className="text-sm text-gray-500 dark:text-gray-400 ml-11">
-            Estás tomando un pedido. Si sales ahora perderás todo el progreso y los productos agregados.
-          </p>
-        </DialogHeader>
-        <div className="flex gap-3 mt-4">
-          <Button variant="outline" className="flex-1" onClick={handleCancelLeave}>
-            Quedarme
-          </Button>
-          <Button variant="destructive" className="flex-1" onClick={handleConfirmLeave}>
-            Salir igualmente
-          </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
     <div className="grid gap-4 sm:gap-6 overflow-x-hidden w-full">
       <div className="flex items-center justify-between gap-3">
         <div className="flex flex-col gap-0.5 min-w-0">
