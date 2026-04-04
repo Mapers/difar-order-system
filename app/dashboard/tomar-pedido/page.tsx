@@ -828,8 +828,8 @@ export default function OrderPage() {
   return (
     <div className="grid gap-6">
       <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold tracking-tight text-gray-900">Tomar Pedido</h1>
-        <p className="text-gray-500">Crea un nuevo pedido siguiendo los pasos.</p>
+        <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100">Tomar Pedido</h1>
+        <p className="text-gray-500 dark:text-gray-400">Crea un nuevo pedido siguiendo los pasos.</p>
       </div>
 
       <Card className="mb-4 shadow-sm bg-white dark:bg-gray-900 dark:border-gray-800">
@@ -1076,12 +1076,12 @@ export default function OrderPage() {
                             <CommandList className="max-h-[55vh] sm:max-h-[420px]">
                               {isSearching ? (
                                 <div className="p-2 space-y-2">
-                                  <div className="px-2 py-1.5 text-xs font-medium text-gray-500 flex items-center gap-2">
+                                  <div className="px-2 py-1.5 text-xs font-medium text-gray-500 dark:text-gray-400 flex items-center gap-2">
                                     <Loader2 className="h-3 w-3 animate-spin text-blue-500"/>
                                     Buscando productos...
                                   </div>
                                   {[1, 2, 3].map((i) => (
-                                    <div key={i} className="flex gap-3 px-3 py-2.5 rounded-lg border border-gray-100 bg-gray-50/50">
+                                    <div key={i} className="flex gap-3 px-3 py-2.5 rounded-lg border border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50">
                                       <Skeleton className="h-8 w-8 rounded-lg shrink-0"/>
                                       <div className="flex-1 space-y-1.5">
                                         <div className="flex justify-between gap-2">
@@ -1100,10 +1100,10 @@ export default function OrderPage() {
                               ) : (
                                 <>
                                   <CommandEmpty className="py-8 text-center">
-                                    <div className="flex flex-col items-center gap-2 text-gray-500">
-                                      <Search className="h-8 w-8 text-gray-300"/>
+                                    <div className="flex flex-col items-center gap-2 text-gray-500 dark:text-gray-400">
+                                      <Search className="h-8 w-8 text-gray-300 dark:text-gray-600"/>
                                       <p className="text-sm font-medium">No se encontraron productos</p>
-                                      <p className="text-xs text-gray-400">Intente con otro código, nombre o laboratorio</p>
+                                      <p className="text-xs text-gray-400 dark:text-gray-500">Intente con otro código, nombre o laboratorio</p>
                                     </div>
                                   </CommandEmpty>
                                   <CommandGroup heading="Resultados">
@@ -1123,12 +1123,12 @@ export default function OrderPage() {
                                           className="py-2 px-3 cursor-pointer rounded-lg my-0.5"
                                         >
                                           <div className="flex gap-3 w-full">
-                                            <div className="bg-blue-100 p-2 rounded-lg shrink-0 h-fit mt-0.5">
-                                              <Package className="h-4 w-4 text-blue-600"/>
+                                            <div className="bg-blue-100 dark:bg-blue-900/40 p-2 rounded-lg shrink-0 h-fit mt-0.5">
+                                              <Package className="h-4 w-4 text-blue-600 dark:text-blue-400"/>
                                             </div>
                                             <div className="flex flex-col flex-1 min-w-0 gap-1">
                                               <div className="flex items-start justify-between gap-2">
-                                                <span className="font-semibold text-sm text-gray-900 line-clamp-2 flex-1 leading-tight">
+                                                <span className="font-semibold text-sm text-gray-900 dark:text-gray-100 line-clamp-2 flex-1 leading-tight">
                                                   {product.NombreItem}
                                                 </span>
                                                 <Badge variant="outline" className={`text-xs shrink-0 font-medium ${stockBadgeClass}`}>
@@ -1136,11 +1136,11 @@ export default function OrderPage() {
                                                 </Badge>
                                               </div>
                                               <div className="flex flex-wrap gap-x-3 gap-y-0.5">
-                                                <span className="text-xs text-gray-500">
-                                                  <span className="font-medium text-gray-600">Cód:</span> {product.Codigo_Art}
+                                                <span className="text-xs text-gray-500 dark:text-gray-400">
+                                                  <span className="font-medium text-gray-600 dark:text-gray-300">Cód:</span> {product.Codigo_Art}
                                                 </span>
-                                                <span className="text-xs text-gray-500 truncate">
-                                                  <span className="font-medium text-gray-600">Lab:</span> {product.Descripcion}
+                                                <span className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                                                  <span className="font-medium text-gray-600 dark:text-gray-300">Lab:</span> {product.Descripcion}
                                                 </span>
                                               </div>
                                               <div className="flex items-center justify-between flex-wrap gap-1 mt-0.5">
@@ -1295,7 +1295,7 @@ export default function OrderPage() {
                   </div>
 
                   <div className="space-y-2 sm:w-48 shrink-0">
-                    <Label htmlFor="laboratorio" className="text-sm font-medium whitespace-nowrap">
+                    <Label htmlFor="laboratorio" className="text-sm font-medium whitespace-nowrap text-gray-700 dark:text-gray-300">
                       Filtrar por lab
                     </Label>
                     <Select

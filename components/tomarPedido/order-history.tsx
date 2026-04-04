@@ -95,7 +95,7 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ client }) => {
 
     // Vista de tabla para desktop
     const TableView = () => (
-        <div className="border rounded-md">
+        <div className="border dark:border-gray-700 rounded-md">
             <Table>
                 <TableHeader>
                     <TableRow>
@@ -151,7 +151,7 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ client }) => {
     const CardView = () => (
         <div className="space-y-4">
             {filteredHistory.map((order, index) => (
-                <Card key={index} className="border-l-4 border-l-blue-500">
+                <Card key={index} className="border-l-4 border-l-blue-500 dark:bg-gray-800 dark:border-gray-700">
                     <CardHeader className="pb-3">
                         <div className="flex justify-between items-start">
                             <CardTitle className="text-sm font-medium flex items-center gap-2">
@@ -166,39 +166,39 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ client }) => {
                     <CardContent className="space-y-3 pt-0">
                         <div className="grid grid-cols-2 gap-2 text-sm">
                             <div>
-                                <Label className="text-xs text-gray-500">Fecha</Label>
-                                <p className="font-medium">{formatDate(order.fecha_mvto)}</p>
+                                <Label className="text-xs text-gray-500 dark:text-gray-400">Fecha</Label>
+                                <p className="font-medium dark:text-gray-200">{formatDate(order.fecha_mvto)}</p>
                             </div>
                             <div>
-                                <Label className="text-xs text-gray-500">Lote</Label>
-                                <p className="font-medium">{order.lote || 'N/A'}</p>
+                                <Label className="text-xs text-gray-500 dark:text-gray-400">Lote</Label>
+                                <p className="font-medium dark:text-gray-200">{order.lote || 'N/A'}</p>
                             </div>
                         </div>
 
                         <div className="grid grid-cols-2 gap-2 text-sm">
                             <div>
-                                <Label className="text-xs text-gray-500">Vence</Label>
-                                <p className="font-medium">{formatDate(order.vctoitem)}</p>
+                                <Label className="text-xs text-gray-500 dark:text-gray-400">Vence</Label>
+                                <p className="font-medium dark:text-gray-200">{formatDate(order.vctoitem)}</p>
                             </div>
                             <div>
-                                <Label className="text-xs text-gray-500">Presentación</Label>
-                                <p className="font-medium">{order.presentacion}</p>
+                                <Label className="text-xs text-gray-500 dark:text-gray-400">Presentación</Label>
+                                <p className="font-medium dark:text-gray-200">{order.presentacion}</p>
                             </div>
                         </div>
 
                         <div className="text-sm">
-                            <Label className="text-xs text-gray-500">Descripción</Label>
-                            <p className="font-medium line-clamp-2" title={order.nombreitem}>
+                            <Label className="text-xs text-gray-500 dark:text-gray-400">Descripción</Label>
+                            <p className="font-medium dark:text-gray-200 line-clamp-2" title={order.nombreitem}>
                                 {order.nombreitem}
                             </p>
                         </div>
 
-                        <div className="flex items-center justify-between pt-2 border-t">
-                            <div className="flex items-center gap-1 text-sm text-gray-600">
+                        <div className="flex items-center justify-between pt-2 border-t dark:border-gray-700">
+                            <div className="flex items-center gap-1 text-sm text-gray-600 dark:text-gray-400">
                                 <Package className="w-4 h-4 text-green-600" />
                                 <span>Cantidad:</span>
                             </div>
-                            <span className="font-bold text-green-700">
+                            <span className="font-bold text-green-700 dark:text-green-400">
                                 {Number(order.cantidad).toFixed(2)}
                             </span>
                         </div>
@@ -212,19 +212,19 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ client }) => {
         <Dialog open={showHistoryModal} onOpenChange={setShowHistoryModal}>
             <DialogTrigger asChild>
                 <div
-                    className="flex items-center gap-3 p-4 bg-blue-50 rounded-lg border border-blue-200 cursor-pointer hover:bg-blue-100 transition-colors"
+                    className="flex items-center gap-3 p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-900/50 cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-950/40 transition-colors"
                     onClick={handleHistoryClick}
                 >
-                    <FileText className="w-6 h-6 text-blue-600" />
+                    <FileText className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                     <div className="flex-1">
-                        <Label className="text-sm font-medium text-gray-700">Historial de Pedidos de {client.Nombre}</Label>
-                        <p className="text-xs text-blue-600 mt-1">Click para ver historial</p>
+                        <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Historial de Pedidos de {client.Nombre}</Label>
+                        <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">Click para ver historial</p>
                     </div>
-                    <ChevronDown className="w-4 h-4 text-blue-600 rotate-[-90deg]" />
+                    <ChevronDown className="w-4 h-4 text-blue-600 dark:text-blue-400 rotate-[-90deg]" />
                 </div>
             </DialogTrigger>
 
-            <DialogContent className="max-w-6xl max-h-[80vh] overflow-y-auto">
+            <DialogContent className="max-w-6xl max-h-[80vh] overflow-y-auto dark:bg-gray-900 dark:border-gray-800">
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
                         <FileText className="w-5 h-5" />
@@ -236,9 +236,9 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ client }) => {
                 </DialogHeader>
 
                 {/* Filtros */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 bg-gray-50 rounded-lg">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
                     <div className="space-y-2">
-                        <Label htmlFor="fechaInicio" className="text-sm font-medium">
+                        <Label htmlFor="fechaInicio" className="text-sm font-medium text-gray-700 dark:text-gray-300">
                             Fecha Inicio
                         </Label>
                         <Input
@@ -246,11 +246,11 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ client }) => {
                             id="fechaInicio"
                             value={fechaInicio}
                             onChange={(e) => setFechaInicio(e.target.value)}
-                            className="bg-white"
+                            className="bg-white dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100"
                         />
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor="fechaFin" className="text-sm font-medium">
+                        <Label htmlFor="fechaFin" className="text-sm font-medium text-gray-700 dark:text-gray-300">
                             Fecha Fin
                         </Label>
                         <Input
@@ -258,11 +258,11 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ client }) => {
                             id="fechaFin"
                             value={fechaFin}
                             onChange={(e) => setFechaFin(e.target.value)}
-                            className="bg-white"
+                            className="bg-white dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100"
                         />
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor="searchDescripcion" className="text-sm font-medium">
+                        <Label htmlFor="searchDescripcion" className="text-sm font-medium text-gray-700 dark:text-gray-300">
                             Buscar por Descripción
                         </Label>
                         <div className="relative">
@@ -273,7 +273,7 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ client }) => {
                                 placeholder="Buscar producto..."
                                 value={searchDescripcion}
                                 onChange={(e) => setSearchDescripcion(e.target.value)}
-                                className="bg-white pl-8"
+                                className="bg-white dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100 dark:placeholder-gray-500 pl-8"
                             />
                             {searchDescripcion && (
                                 <Button
@@ -301,13 +301,13 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ client }) => {
 
                 {/* Información de resultados y selector de vista */}
                 {orderHistory.length > 0 && (
-                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 px-2 py-1 bg-blue-50 rounded text-sm">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 px-2 py-1 bg-blue-50 dark:bg-blue-950/20 rounded text-sm">
                         <div className="flex items-center gap-2">
-                            <span className="text-blue-700">
+                            <span className="text-blue-700 dark:text-blue-300">
                                 Mostrando {filteredHistory.length} de {orderHistory.length} registros
                             </span>
                             {searchDescripcion && (
-                                <span className="text-blue-600 hidden sm:inline">
+                                <span className="text-blue-600 dark:text-blue-400 hidden sm:inline">
                                     Filtrado por: "{searchDescripcion}"
                                 </span>
                             )}
@@ -315,9 +315,9 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ client }) => {
 
                         {/* Selector de vista - solo visible en móvil */}
                         <div className="sm:hidden flex items-center gap-2 text-xs">
-                            <span className="text-gray-600">Vista:</span>
-                            <div className="flex bg-white border rounded-md p-1">
-                                <div className="flex items-center gap-1 px-2 py-1 rounded bg-blue-100 text-blue-700">
+                            <span className="text-gray-600 dark:text-gray-400">Vista:</span>
+                            <div className="flex bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-md p-1">
+                                <div className="flex items-center gap-1 px-2 py-1 rounded bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300">
                                     <Smartphone className="w-3 h-3" />
                                     <span>Tarjetas</span>
                                 </div>
@@ -342,9 +342,9 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ client }) => {
                         </div>
                     </>
                 ) : (
-                    <div className="text-center py-8 text-gray-500">
-                        <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                        <h3 className="font-medium text-gray-900 mb-2">
+                    <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                        <FileText className="w-12 h-12 text-gray-400 dark:text-gray-600 mx-auto mb-4" />
+                        <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-2">
                             {searchDescripcion ? 'No se encontraron resultados' : 'No se encontraron pedidos'}
                         </h3>
                         <p className="text-sm">
@@ -366,7 +366,7 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ client }) => {
                 )}
 
                 <DialogFooter>
-                    <Button variant="outline" onClick={() => setShowHistoryModal(false)}>
+                    <Button variant="outline" onClick={() => setShowHistoryModal(false)} className="dark:border-gray-700 dark:text-gray-300">
                         Cerrar
                     </Button>
                 </DialogFooter>
