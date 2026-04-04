@@ -13,7 +13,7 @@ import {useLaboratoriesData} from "@/app/dashboard/lista-precios-lote/hooks/useL
 import {getProductsLabRequest, getProductsRequest} from "@/app/api/products";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Package } from "lucide-react";
+import { Package, Minus, Plus } from "lucide-react";
 
 export const LaboratorioModal = ({
                                    open,
@@ -42,10 +42,11 @@ export const LaboratorioModal = ({
   const [products, setProducts] = useState<IProduct[]>([])
   const [loading, setLoading] = useState(false)
 
-  const handleQuantityChange = (productId: string, value: number) => {
+  const handleQuantityChange = (productId: string, value: number, stock?: number) => {
+    const max = stock && stock > 0 ? stock : Infinity
     setQuantities(prev => ({
       ...prev,
-      [productId]: value > 0 ? value : 1
+      [productId]: Math.min(Math.max(value, 1), max)
     }));
   };
 
@@ -177,19 +178,42 @@ export const LaboratorioModal = ({
                 </RadioGroup>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor={`quantity-${productId}`} className="text-xs font-medium">Cantidad</Label>
-                <Input
-                    id={`quantity-${productId}`}
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium">
+                  Cantidad
+                  <span className={`ml-1.5 text-[10px] font-normal ${
+                    (quantities[productId] || 1) >= Number(product.Stock)
+                      ? 'text-red-500' : 'text-gray-400'
+                  }`}>(Stock: {Number(product.Stock).toFixed(0)})</span>
+                </Label>
+                <div className={`flex items-center h-9 rounded-lg border overflow-hidden transition-colors ${
+                  (quantities[productId] || 1) >= Number(product.Stock)
+                    ? 'border-red-300' : 'border-gray-200'
+                }`}>
+                  <button
+                    type="button"
+                    onClick={() => handleQuantityChange(productId, (quantities[productId] || 1) - 1, Number(product.Stock))}
+                    disabled={(quantities[productId] || 1) <= 1}
+                    className="h-full px-2.5 flex items-center justify-center text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                  >
+                    <Minus className="h-3 w-3" />
+                  </button>
+                  <input
                     type="number"
                     min="1"
                     value={quantities[productId] || 1}
-                    onChange={(e) => handleQuantityChange(
-                        productId,
-                        parseInt(e.target.value) || 1
-                    )}
-                    className="h-8 text-sm"
-                />
+                    onChange={(e) => handleQuantityChange(productId, parseInt(e.target.value) || 1, Number(product.Stock))}
+                    className="flex-1 bg-transparent outline-none text-center text-sm font-semibold text-gray-900 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleQuantityChange(productId, (quantities[productId] || 1) + 1, Number(product.Stock))}
+                    disabled={(quantities[productId] || 1) >= Number(product.Stock)}
+                    className="h-full px-2.5 flex items-center justify-center text-gray-500 hover:text-blue-600 hover:bg-blue-50 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                  >
+                    <Plus className="h-3 w-3" />
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -311,15 +335,27 @@ export const LaboratorioModal = ({
                     </RadioGroup>
                   </TableCell>
                   <TableCell>
-                    <Input
-                        type="number"
-                        min="1"
+                    <div className={`flex items-center h-9 rounded-lg border overflow-hidden transition-colors w-28 ${
+                      (quantities[productId] || 1) >= Number(product.Stock) ? 'border-red-300' : 'border-gray-200'
+                    }`}>
+                      <button type="button"
+                        onClick={() => handleQuantityChange(productId, (quantities[productId] || 1) - 1, Number(product.Stock))}
+                        disabled={(quantities[productId] || 1) <= 1}
+                        className="h-full px-2 flex items-center justify-center text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors disabled:opacity-30 disabled:cursor-not-allowed">
+                        <Minus className="h-3 w-3" />
+                      </button>
+                      <input type="number" min="1"
                         value={quantities[productId] || 1}
-                        onChange={(e) => handleQuantityChange(
-                            productId,
-                            parseInt(e.target.value) || 1
-                        )}
-                    />
+                        onChange={(e) => handleQuantityChange(productId, parseInt(e.target.value) || 1, Number(product.Stock))}
+                        className="flex-1 bg-transparent outline-none text-center text-sm font-semibold text-gray-900 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      />
+                      <button type="button"
+                        onClick={() => handleQuantityChange(productId, (quantities[productId] || 1) + 1, Number(product.Stock))}
+                        disabled={(quantities[productId] || 1) >= Number(product.Stock)}
+                        className="h-full px-2 flex items-center justify-center text-gray-500 hover:text-blue-600 hover:bg-blue-50 transition-colors disabled:opacity-30 disabled:cursor-not-allowed">
+                        <Plus className="h-3 w-3" />
+                      </button>
+                    </div>
                   </TableCell>
                   <TableCell>
                     <Button
