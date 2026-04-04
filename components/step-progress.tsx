@@ -27,7 +27,7 @@ export function StepProgress({ steps, currentStep, onStepClick }: StepProgressPr
         <div className="w-full">
             <div
                 className="relative grid w-full"
-                style={{ gridTemplateColumns: `repeat(${n}, 1fr)` }}
+                style={{ gridTemplateColumns: `repeat(${n}, minmax(0, 1fr))` }}
             >
                 {/* Background track — from first circle center to last circle center */}
                 <div

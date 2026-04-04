@@ -836,7 +836,7 @@ export default function OrderPage() {
       </div>
 
       {/* Step progress — own full-width row so it can never be squeezed */}
-      <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl shadow-sm px-4 pt-4 pb-3">
+      <div className="w-full overflow-hidden bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl shadow-sm px-4 pt-4 pb-3">
         <StepProgress steps={steps} currentStep={currentStep} onStepClick={goToStep} />
       </div>
 
@@ -1285,7 +1285,7 @@ export default function OrderPage() {
                     </div>
 
                     {selectedProduct && (
-                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 mt-3">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 mt-3 [&>*]:min-w-0">
                           {/* Contado */}
                           <button
                               type="button"
