@@ -885,10 +885,10 @@ export default function OrderPage() {
                     type="button"
                     variant="outline"
                     onClick={() => setClientModalOpen(true)}
-                    className="w-full justify-start h-11 px-3 text-left font-normal text-sm bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-white dark:hover:bg-gray-700 hover:border-blue-400 dark:hover:border-blue-500 transition-all duration-200 dark:text-gray-100"
+                    className="w-full justify-start h-11 px-3 text-left font-normal text-sm bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-white dark:hover:bg-gray-700 hover:border-blue-400 dark:hover:border-blue-500 transition-all duration-200 dark:text-gray-100 overflow-hidden"
                   >
                     <Search className="mr-2 h-4 w-4 shrink-0 text-gray-400" />
-                    <span className="text-gray-400 dark:text-gray-500 font-normal">Buscar por RUC, DNI o nombre...</span>
+                    <span className="truncate text-gray-400 dark:text-gray-500 font-normal">Buscar por RUC, DNI o nombre...</span>
                   </Button>
 
                   {/* Client search modal — bottom sheet on mobile, centered dialog on desktop */}
@@ -1012,9 +1012,9 @@ export default function OrderPage() {
                   ) : (
                     <Button type="button" variant="outline"
                       onClick={() => setSellerModalOpen(true)}
-                      className="w-full justify-start h-11 px-3 text-left font-normal text-sm bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-white dark:hover:bg-gray-700 hover:border-indigo-400 dark:hover:border-indigo-500 transition-all duration-200 dark:text-gray-100">
+                      className="w-full justify-start h-11 px-3 text-left font-normal text-sm bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-white dark:hover:bg-gray-700 hover:border-indigo-400 dark:hover:border-indigo-500 transition-all duration-200 dark:text-gray-100 overflow-hidden">
                       <Search className="mr-2 h-4 w-4 shrink-0 text-gray-400" />
-                      <span className="text-gray-400 dark:text-gray-500 font-normal">Buscar vendedor...</span>
+                      <span className="truncate text-gray-400 dark:text-gray-500 font-normal">Buscar vendedor...</span>
                     </Button>
                   )}
 
@@ -1145,20 +1145,20 @@ export default function OrderPage() {
                           type="button"
                           variant="outline"
                           onClick={() => setOpen(true)}
-                          className="w-full justify-start h-11 sm:h-12 px-3 text-left font-normal text-sm bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-white dark:hover:bg-gray-700 hover:border-blue-400 dark:hover:border-blue-500 transition-all duration-200 dark:text-gray-100"
+                          className="w-full justify-start h-11 sm:h-12 px-3 text-left font-normal text-sm bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-white dark:hover:bg-gray-700 hover:border-blue-400 dark:hover:border-blue-500 transition-all duration-200 dark:text-gray-100 overflow-hidden"
                       >
                         <Search className="mr-2 h-4 w-4 shrink-0 text-gray-400"/>
                         {selectedProduct ? (
-                            <div className="flex flex-col items-start min-w-0 flex-1">
-                              <span className="font-semibold text-gray-900 dark:text-gray-100 w-full line-clamp-1">
+                            <div className="flex flex-col items-start min-w-0 flex-1 overflow-hidden">
+                              <span className="font-semibold text-gray-900 dark:text-gray-100 w-full truncate">
                                 {selectedProduct.NombreItem}
                               </span>
-                              <span className="text-xs text-gray-500 dark:text-gray-400 w-full line-clamp-1">
+                              <span className="text-xs text-gray-500 dark:text-gray-400 w-full truncate">
                                 {selectedProduct.Codigo_Art} | {selectedProduct.Descripcion}
                               </span>
                             </div>
                         ) : (
-                            <span className="text-gray-400 dark:text-gray-500 font-normal">Buscar por código, nombre o laboratorio...</span>
+                            <span className="truncate text-gray-400 dark:text-gray-500 font-normal">Buscar por código, nombre o laboratorio...</span>
                         )}
                       </Button>
 
