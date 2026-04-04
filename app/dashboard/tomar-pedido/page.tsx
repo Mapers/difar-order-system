@@ -855,20 +855,20 @@ export default function OrderPage() {
             <CardContent className="space-y-4 pt-5">
               {/* Selected client chip */}
               {selectedClient && (
-                <div className="flex items-center gap-2.5 p-3 bg-blue-50 dark:bg-blue-950/30 rounded-xl border border-blue-200 dark:border-blue-900/50">
+                <div className="flex items-center gap-2 p-3 bg-blue-50 dark:bg-blue-950/30 rounded-xl border border-blue-200 dark:border-blue-900/50 overflow-hidden">
                   <div className="h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center shrink-0">
                     <User className="h-4 w-4 text-white" />
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-blue-900 dark:text-blue-100 truncate">{selectedClient.Nombre}</p>
-                    <p className="text-xs text-blue-600 dark:text-blue-400">{selectedClient.RUC ? `RUC: ${selectedClient.RUC}` : selectedClient.codigo}</p>
+                  <div className="flex-1 min-w-0 overflow-hidden">
+                    <p className="text-sm font-semibold text-blue-900 dark:text-blue-100 truncate leading-tight">{selectedClient.Nombre}</p>
+                    <p className="text-xs text-blue-600 dark:text-blue-400 truncate">{selectedClient.RUC ? `RUC: ${selectedClient.RUC}` : selectedClient.codigo}</p>
                   </div>
                   <Button
                     type="button"
                     size="sm"
-                    variant="ghost"
+                    variant="outline"
                     onClick={() => { setSelectedClient(null); setSearch((prev) => ({ ...prev, client: '' })) }}
-                    className="shrink-0 h-8 px-3 text-xs text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40"
+                    className="shrink-0 h-7 px-2.5 text-xs text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-700 hover:bg-blue-100 dark:hover:bg-blue-900/40 bg-white dark:bg-transparent"
                   >
                     Cambiar
                   </Button>
@@ -996,17 +996,17 @@ export default function OrderPage() {
                   <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Vendedor</Label>
 
                   {seller ? (
-                    <div className="flex items-center gap-2.5 p-3 bg-indigo-50 dark:bg-indigo-950/30 rounded-xl border border-indigo-200 dark:border-indigo-900/50">
+                    <div className="flex items-center gap-2 p-3 bg-indigo-50 dark:bg-indigo-950/30 rounded-xl border border-indigo-200 dark:border-indigo-900/50 overflow-hidden">
                       <div className="h-8 w-8 rounded-full bg-indigo-600 flex items-center justify-center shrink-0">
                         <User className="h-4 w-4 text-white" />
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-indigo-900 dark:text-indigo-100 truncate">{seller.nombres} {seller.apellidos}</p>
-                        <p className="text-xs text-indigo-600 dark:text-indigo-400 font-mono">{seller.codigo}</p>
+                      <div className="flex-1 min-w-0 overflow-hidden">
+                        <p className="text-sm font-semibold text-indigo-900 dark:text-indigo-100 truncate leading-tight">{seller.nombres} {seller.apellidos}</p>
+                        <p className="text-xs text-indigo-600 dark:text-indigo-400 font-mono truncate">{seller.codigo}</p>
                       </div>
-                      <Button type="button" size="sm" variant="ghost"
+                      <Button type="button" size="sm" variant="outline"
                         onClick={() => { setSeller(null as any); setSellerSearch("") }}
-                        className="shrink-0 h-8 px-3 text-xs text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/40">
+                        className="shrink-0 h-7 px-2.5 text-xs text-indigo-600 dark:text-indigo-400 border-indigo-200 dark:border-indigo-700 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 bg-white dark:bg-transparent">
                         Cambiar
                       </Button>
                     </div>
