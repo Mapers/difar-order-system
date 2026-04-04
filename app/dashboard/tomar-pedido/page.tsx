@@ -23,7 +23,7 @@ import {
   FileText,
   Trash, CheckSquare, Loader2,
   Locate, Building, Info, Gift, TrendingUp, ChevronDown, Bot, RefreshCw, Users, X,
-  Minus, Plus
+  Minus, Plus, Pencil
 } from "lucide-react"
 import { StepProgress } from "@/components/step-progress"
 import apiClient from "@/app/api/client"
@@ -152,6 +152,9 @@ export default function OrderPage() {
   // Navigation guard
   const [showLeaveDialog, setShowLeaveDialog] = useState(false)
   const [pendingNavUrl, setPendingNavUrl] = useState<string | null>(null)
+  const [showClearAllDialog, setShowClearAllDialog] = useState(false)
+  const [editingIndex, setEditingIndex] = useState<number | null>(null)
+  const [editQuantity, setEditQuantity] = useState(1)
   const confirmedLeaveRef = useRef(false)
   const [selectedProducts, setSelectedProducts] = useState<ISelectedProduct[]>([])
   const [isCheckingBonification, setIsCheckingBonification] = useState(false)
@@ -348,6 +351,11 @@ export default function OrderPage() {
       ])
 
       handleListarLotes([newItem])
+
+      toast({
+        title: "Producto agregado",
+        description: `${newItem.product.NombreItem} × ${quantity}`,
+      })
 
       setSelectedProduct(null)
       setQuantity(1)
@@ -705,7 +713,6 @@ export default function OrderPage() {
           selectedClient?.telefono,
           referenciaDireccion
       )
-      console.log('Datos del cliente actualizados exitosamente')
     } catch (error) {
       console.error('Error al actualizar datos del cliente:', error)
       throw error
@@ -738,7 +745,6 @@ export default function OrderPage() {
   }
 
   const handleSellerSelect = (seller1: Seller) => {
-    console.log(seller1)
     setSeller(seller1)
   }
 
@@ -897,6 +903,114 @@ export default function OrderPage() {
   return (
     <>
     {/* Leave confirmation dialog */}
+    <Dialog open={showClearAllDialog} onOpenChange={setShowClearAllDialog}>
+      <DialogContent className="sm:max-w-sm mx-4">
+        <DialogHeader>
+          <div className="flex items-center gap-3 mb-1">
+            <div className="p-2 bg-red-100 dark:bg-red-900/40 rounded-full shrink-0">
+              <Trash className="h-5 w-5 text-red-600 dark:text-red-400" />
+            </div>
+            <DialogTitle className="text-base font-semibold text-gray-900 dark:text-gray-100">
+              ¿Limpiar todos los productos?
+            </DialogTitle>
+          </div>
+          <p className="text-sm text-gray-500 dark:text-gray-400 ml-11">
+            Se eliminarán los {selectedProducts.length} productos del pedido. Esta acción no se puede deshacer.
+          </p>
+        </DialogHeader>
+        <div className="flex gap-3 mt-4">
+          <Button variant="outline" className="flex-1" onClick={() => setShowClearAllDialog(false)}>
+            Cancelar
+          </Button>
+          <Button variant="destructive" className="flex-1" onClick={() => { setSelectedProducts([]); setProductosConLotes([]); setShowClearAllDialog(false) }}>
+            Limpiar todo
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+
+    {editingIndex !== null && selectedProducts[editingIndex] && (
+      <Dialog open={editingIndex !== null} onOpenChange={(v) => { if (!v) setEditingIndex(null) }}>
+        <DialogContent className="sm:max-w-sm mx-4">
+          <DialogHeader>
+            <div className="flex items-center gap-3 mb-1">
+              <div className="p-2 bg-blue-100 dark:bg-blue-900/40 rounded-full shrink-0">
+                <Pencil className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+              </div>
+              <DialogTitle className="text-base font-semibold text-gray-900 dark:text-gray-100">
+                Editar producto
+              </DialogTitle>
+            </div>
+            <p className="text-sm text-gray-500 dark:text-gray-400 ml-11 truncate" title={selectedProducts[editingIndex].product.NombreItem}>
+              {selectedProducts[editingIndex].product.NombreItem}
+            </p>
+          </DialogHeader>
+
+          <div className="space-y-4 pt-2">
+            <div className="space-y-1.5">
+              <Label>
+                Cantidad
+                <span className={`ml-1.5 text-[10px] font-normal ${
+                  editQuantity >= Number(selectedProducts[editingIndex].product.Stock) ? 'text-red-500' : 'text-gray-400'
+                }`}>
+                  (Stock: {Number(selectedProducts[editingIndex].product.Stock).toFixed(0)})
+                </span>
+              </Label>
+              <div className={`flex items-center h-11 rounded-lg border overflow-hidden ${
+                editQuantity >= Number(selectedProducts[editingIndex].product.Stock) ? 'border-red-300' : 'border-gray-200'
+              }`}>
+                <button
+                  type="button"
+                  aria-label="Disminuir cantidad"
+                  disabled={editQuantity <= 1}
+                  onClick={() => setEditQuantity(q => Math.max(1, q - 1))}
+                  className="h-full px-3 flex items-center justify-center text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                >
+                  <Minus className="h-4 w-4" />
+                </button>
+                <input
+                  type="number"
+                  min="1"
+                  value={editQuantity}
+                  onChange={(e) => {
+                    const v = Math.max(1, Math.min(parseInt(e.target.value) || 1, Number(selectedProducts[editingIndex!].product.Stock)))
+                    setEditQuantity(v)
+                  }}
+                  className="flex-1 bg-transparent outline-none text-center text-sm font-semibold text-gray-900 dark:text-gray-100 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                />
+                <button
+                  type="button"
+                  aria-label="Aumentar cantidad"
+                  disabled={editQuantity >= Number(selectedProducts[editingIndex].product.Stock)}
+                  onClick={() => setEditQuantity(q => Math.min(q + 1, Number(selectedProducts[editingIndex!].product.Stock)))}
+                  className="h-full px-3 flex items-center justify-center text-gray-500 hover:text-blue-600 hover:bg-blue-50 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                >
+                  <Plus className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex gap-3 mt-2">
+            <Button variant="outline" className="flex-1" onClick={() => setEditingIndex(null)}>
+              Cancelar
+            </Button>
+            <Button
+              className="flex-1 bg-blue-600 hover:bg-blue-700"
+              onClick={() => {
+                setSelectedProducts(prev => prev.map((item, i) =>
+                  i === editingIndex ? { ...item, quantity: editQuantity } : item
+                ))
+                setEditingIndex(null)
+              }}
+            >
+              Guardar cambios
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    )}
+
     <Dialog open={showLeaveDialog} onOpenChange={(v) => { if (!v) handleCancelLeave() }}>
       <DialogContent className="sm:max-w-sm mx-4">
         <DialogHeader>
@@ -1621,6 +1735,7 @@ export default function OrderPage() {
                     }`}>
                       <button
                         type="button"
+                        aria-label={quantity <= 1 ? "Quitar producto" : "Disminuir cantidad"}
                         onClick={() => {
                           if (quantity <= 1) {
                             setSelectedProduct(null)
@@ -1651,6 +1766,7 @@ export default function OrderPage() {
                       />
                       <button
                         type="button"
+                        aria-label="Aumentar cantidad"
                         disabled={!!selectedProduct && quantity >= Number(selectedProduct.Stock)}
                         onClick={() => {
                           const stock = selectedProduct ? Number(selectedProduct.Stock) : Infinity
@@ -1692,27 +1808,6 @@ export default function OrderPage() {
               caseKey={modalLoader ?? undefined}
             />
 
-            {/* Modal de bonificaciones */}
-            {/*<ModalBonification*/}
-            {/*  open={showBonificationModal}*/}
-            {/*  onOpenChange={setShowBonificationModal}*/}
-            {/*  currentBonification={currentBonification}*/}
-            {/*  products={products}*/}
-            {/*  setSelectedProducts={setSelectedProducts}*/}
-            {/*  addProductToList={addProductToList}*/}
-            {/*  currency={currency}*/}
-            {/*/>*/}
-
-            {/* Modald de escalas  */}
-            {/*<ModalEscale*/}
-            {/*  open={showScalesModal}*/}
-            {/*  onOpenChange={setShowScalesModal}*/}
-            {/*  currentScales={currentScales}*/}
-            {/*  products={products}*/}
-            {/*  setSelectedProducts={setSelectedProducts}*/}
-            {/*  addProductToList={addProductToList}*/}
-            {/*  currency={currency}*/}
-            {/*/>*/}
             {selectedProducts.length > 0 && (
                 <Card className="shadow-md bg-white dark:bg-gray-900 dark:border-gray-800">
                   <CardHeader className="border-b bg-gray-50 dark:bg-gray-800/50 dark:border-gray-800">
@@ -1726,6 +1821,18 @@ export default function OrderPage() {
                       <span className="inline-flex items-center justify-center h-6 min-w-6 px-1.5 bg-indigo-600 text-white text-xs font-bold rounded-full">
                         {selectedProducts.length}
                       </span>
+                      <div className="ml-auto">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setShowClearAllDialog(true)}
+                          className="text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/30 text-xs h-8"
+                        >
+                          <Trash className="h-3.5 w-3.5 mr-1" />
+                          Limpiar todo
+                        </Button>
+                      </div>
                     </div>
                   </CardHeader>
                   <CardContent className="pt-4">
@@ -1861,6 +1968,17 @@ export default function OrderPage() {
                                           type='button'
                                           variant="ghost"
                                           size="sm"
+                                          onClick={() => { setEditingIndex(index); setEditQuantity(item.quantity) }}
+                                          className="text-gray-500 dark:text-gray-400 hover:text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700"
+                                          title="Editar"
+                                      >
+                                        <Pencil className="h-4 w-4" />
+                                      </Button>
+
+                                      <Button
+                                          type='button'
+                                          variant="ghost"
+                                          size="sm"
                                           onClick={() => handleListarLotes([item])}
                                           className="text-blue-600 dark:text-blue-400 hover:text-blue-800 hover:bg-blue-50 dark:hover:bg-blue-900/30"
                                           title="Cambiar Lote"
@@ -1945,6 +2063,9 @@ export default function OrderPage() {
                                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{item.product.Descripcion}</p>
                                 </div>
                                 <div className="flex gap-1 shrink-0">
+                                  <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700" onClick={() => { setEditingIndex(index); setEditQuantity(item.quantity) }} type='button' title="Editar">
+                                    <Pencil className="h-4 w-4"/>
+                                  </Button>
                                   <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-500 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/30" onClick={() => handleListarLotes([item])} type='button'>
                                     <Package className="h-4 w-4"/>
                                   </Button>

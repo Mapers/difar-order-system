@@ -192,6 +192,7 @@ export const LaboratorioModal = ({
                 }`}>
                   <button
                     type="button"
+                    aria-label="Disminuir cantidad"
                     onClick={() => handleQuantityChange(productId, (quantities[productId] || 1) - 1, Number(product.Stock))}
                     disabled={(quantities[productId] || 1) <= 1}
                     className="h-full px-2.5 flex items-center justify-center text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
@@ -207,6 +208,7 @@ export const LaboratorioModal = ({
                   />
                   <button
                     type="button"
+                    aria-label="Aumentar cantidad"
                     onClick={() => handleQuantityChange(productId, (quantities[productId] || 1) + 1, Number(product.Stock))}
                     disabled={(quantities[productId] || 1) >= Number(product.Stock)}
                     className="h-full px-2.5 flex items-center justify-center text-gray-500 hover:text-blue-600 hover:bg-blue-50 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
@@ -229,6 +231,24 @@ export const LaboratorioModal = ({
             >
               Agregar al Pedido
             </Button>
+            {(() => {
+              const qty = quantities[productId] || 1;
+              const unitPrice = currentPriceType === 'contado' ? contadoPrice
+                : currentPriceType === 'credito' ? creditoPrice
+                : currentPriceType === 'porMayor' ? porMayor
+                : currentPriceType === 'porMenor' ? porMenor
+                : customPrice;
+              const priceLabel = currentPriceType === 'contado' ? 'Contado'
+                : currentPriceType === 'credito' ? 'Crédito'
+                : currentPriceType === 'porMayor' ? 'Bonif. Cont.'
+                : currentPriceType === 'porMenor' ? 'Bonif. Créd.'
+                : 'Custom';
+              return (
+                <p className="text-[11px] text-center text-gray-500 mt-1.5">
+                  {priceLabel} · S/.{unitPrice.toFixed(2)} × {qty} = <span className="font-semibold text-gray-700">S/.{(unitPrice * qty).toFixed(2)}</span>
+                </p>
+              );
+            })()}
           </CardContent>
         </Card>
     );
@@ -343,6 +363,7 @@ export const LaboratorioModal = ({
                       (quantities[productId] || 1) >= Number(product.Stock) ? 'border-red-300' : 'border-gray-200'
                     }`}>
                       <button type="button"
+                        aria-label="Disminuir cantidad"
                         onClick={() => handleQuantityChange(productId, (quantities[productId] || 1) - 1, Number(product.Stock))}
                         disabled={(quantities[productId] || 1) <= 1}
                         className="h-full px-2 flex items-center justify-center text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors disabled:opacity-30 disabled:cursor-not-allowed">
@@ -354,6 +375,7 @@ export const LaboratorioModal = ({
                         className="flex-1 bg-transparent outline-none text-center text-sm font-semibold text-gray-900 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                       />
                       <button type="button"
+                        aria-label="Aumentar cantidad"
                         onClick={() => handleQuantityChange(productId, (quantities[productId] || 1) + 1, Number(product.Stock))}
                         disabled={(quantities[productId] || 1) >= Number(product.Stock)}
                         className="h-full px-2 flex items-center justify-center text-gray-500 hover:text-blue-600 hover:bg-blue-50 transition-colors disabled:opacity-30 disabled:cursor-not-allowed">
@@ -362,17 +384,32 @@ export const LaboratorioModal = ({
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Button
-                        size="sm"
-                        onClick={() => onAddTempProduct(
-                            product,
-                            quantities[productId] || 1,
-                            currentPriceType,
-                            currentPriceType === 'custom' ? customPrice : undefined
-                        )}
-                    >
-                      Agrega
-                    </Button>
+                    <div className="flex flex-col items-start gap-1 min-w-[90px]">
+                      <Button
+                          size="sm"
+                          onClick={() => onAddTempProduct(
+                              product,
+                              quantities[productId] || 1,
+                              currentPriceType,
+                              currentPriceType === 'custom' ? customPrice : undefined
+                          )}
+                      >
+                        Agrega
+                      </Button>
+                      {(() => {
+                        const qty = quantities[productId] || 1;
+                        const unitPrice = currentPriceType === 'contado' ? contadoPrice
+                          : currentPriceType === 'credito' ? creditoPrice
+                          : currentPriceType === 'porMayor' ? porMayor
+                          : currentPriceType === 'porMenor' ? porMenor
+                          : customPrice;
+                        return (
+                          <span className="text-[10px] text-gray-500 leading-tight">
+                            S/.{unitPrice.toFixed(2)} × {qty} = <span className="font-semibold text-gray-700">S/.{(unitPrice * qty).toFixed(2)}</span>
+                          </span>
+                        );
+                      })()}
+                    </div>
                   </TableCell>
                 </TableRow>
             );
