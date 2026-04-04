@@ -140,6 +140,7 @@ export default function OrderPage() {
   const [open, setOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
   const [clientModalOpen, setClientModalOpen] = useState(false)
+  const [sellerModalOpen, setSellerModalOpen] = useState(false)
   const [isSearching, setIsSearching] = useState(false)
   const searchTimerRef = useRef<NodeJS.Timeout | null>(null)
   const [quantity, setQuantity] = useState(1)
@@ -827,14 +828,16 @@ export default function OrderPage() {
 
   return (
     <div className="grid gap-4 sm:gap-6 overflow-x-hidden w-full">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div className="flex flex-col gap-0.5">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex flex-col gap-0.5 min-w-0">
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100">Tomar Pedido</h1>
           <p className="text-sm text-gray-500 dark:text-gray-400">Crea un nuevo pedido siguiendo los pasos.</p>
         </div>
-        <div className="w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl shadow-sm p-3 sm:p-4 sm:w-auto sm:min-w-[360px]">
-          <StepProgress steps={steps} currentStep={currentStep} onStepClick={goToStep} />
-        </div>
+      </div>
+
+      {/* Step progress — own full-width row so it can never be squeezed */}
+      <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl shadow-sm px-4 pt-4 pb-3">
+        <StepProgress steps={steps} currentStep={currentStep} onStepClick={goToStep} />
       </div>
 
       <form onSubmit={handleSubmit}>
@@ -988,23 +991,94 @@ export default function OrderPage() {
               )}
 
               {(selectedClient && isAdmin()) && (
-                <Combobox<Seller>
-                  items={sellersFiltered}
-                  value={seller?.codigo ?? null}
-                  onSearchChange={setSellerSearch}
-                  onSelect={handleSellerSelect}
-                  getItemKey={(client) => client.codigo}
-                  getItemLabel={(client) => (
-                    <div>
-                      <span>{`${client.nombres} ${client.apellidos}`}</span>
-                      <span className='text-blue-400'> {client.codigo}</span>
+                <div className="space-y-1.5">
+                  <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Vendedor</Label>
+
+                  {seller ? (
+                    <div className="flex items-center gap-2.5 p-3 bg-indigo-50 dark:bg-indigo-950/30 rounded-xl border border-indigo-200 dark:border-indigo-900/50">
+                      <div className="h-8 w-8 rounded-full bg-indigo-600 flex items-center justify-center shrink-0">
+                        <User className="h-4 w-4 text-white" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-indigo-900 dark:text-indigo-100 truncate">{seller.nombres} {seller.apellidos}</p>
+                        <p className="text-xs text-indigo-600 dark:text-indigo-400 font-mono">{seller.codigo}</p>
+                      </div>
+                      <Button type="button" size="sm" variant="ghost"
+                        onClick={() => { setSeller(null as any); setSellerSearch("") }}
+                        className="shrink-0 h-8 px-3 text-xs text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/40">
+                        Cambiar
+                      </Button>
                     </div>
+                  ) : (
+                    <Button type="button" variant="outline"
+                      onClick={() => setSellerModalOpen(true)}
+                      className="w-full justify-start h-11 px-3 text-left font-normal text-sm bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-white dark:hover:bg-gray-700 hover:border-indigo-400 dark:hover:border-indigo-500 transition-all duration-200 dark:text-gray-100">
+                      <Search className="mr-2 h-4 w-4 shrink-0 text-gray-400" />
+                      <span className="text-gray-400 dark:text-gray-500 font-normal">Buscar vendedor...</span>
+                    </Button>
                   )}
-                  placeholder="Buscar vendedor..."
-                  emptyText="No se encontraron vendedores"
-                  searchText="Escribe al menos 3 vendedores..."
-                  loadingText="Buscando vendedores..."
-                />
+
+                  {/* Seller search modal */}
+                  <Dialog open={sellerModalOpen} onOpenChange={(v) => {
+                    setSellerModalOpen(v)
+                    if (!v) setSellerSearch("")
+                  }}>
+                    <DialogContent className="p-0 gap-0 flex flex-col [&>button]:hidden overflow-hidden
+                      fixed bottom-0 left-0 right-0 top-auto translate-x-0 translate-y-0 rounded-t-2xl rounded-b-none h-[88vh] w-full
+                      sm:left-1/2 sm:right-auto sm:bottom-auto sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-xl sm:w-[520px] sm:h-[65vh] sm:max-w-[95vw]">
+                      <DialogTitle className="sr-only">Buscar vendedor</DialogTitle>
+
+                      <div className="flex items-center gap-2 border-b border-gray-200 dark:border-gray-700 px-3 py-2.5 bg-white dark:bg-gray-900">
+                        <Search className="h-4 w-4 text-gray-400 shrink-0" />
+                        <input
+                          type="text"
+                          autoFocus
+                          placeholder="Nombre o código del vendedor..."
+                          value={sellerSearch}
+                          onChange={(e) => setSellerSearch(e.target.value)}
+                          className="flex-1 bg-transparent outline-none text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 h-9"
+                        />
+                        {sellerSearch && (
+                          <button type="button" onClick={() => setSellerSearch("")} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+                            <X className="h-4 w-4" />
+                          </button>
+                        )}
+                        <button type="button"
+                          onClick={() => { setSellerModalOpen(false); setSellerSearch("") }}
+                          className="text-sm text-blue-600 dark:text-blue-400 font-medium pl-2 shrink-0">
+                          Cancelar
+                        </button>
+                      </div>
+
+                      <div className="flex-1 overflow-y-auto bg-white dark:bg-gray-900">
+                        {sellersFiltered.length === 0 ? (
+                          <div className="py-12 text-center">
+                            <Users className="h-10 w-10 text-gray-200 dark:text-gray-700 mx-auto mb-3" />
+                            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                              {sellerSearch ? 'No se encontraron vendedores' : 'Escribe para buscar vendedores'}
+                            </p>
+                          </div>
+                        ) : (
+                          <div className="divide-y divide-gray-100 dark:divide-gray-800">
+                            {sellersFiltered.map((s) => (
+                              <button key={s.codigo} type="button"
+                                onClick={() => { handleSellerSelect(s); setSellerModalOpen(false); setSellerSearch("") }}
+                                className="w-full flex items-center gap-3 px-4 py-3 hover:bg-indigo-50 dark:hover:bg-indigo-950/20 active:bg-indigo-100 transition-colors text-left">
+                                <div className="bg-indigo-100 dark:bg-indigo-900/40 p-2 rounded-full shrink-0">
+                                  <User className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="font-semibold text-sm text-gray-900 dark:text-gray-100 truncate">{s.nombres} {s.apellidos}</p>
+                                  <p className="text-xs text-indigo-600 dark:text-indigo-400 font-mono">{s.codigo}</p>
+                                </div>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                </div>
               )}
               {selectedClient && (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
@@ -1211,12 +1285,12 @@ export default function OrderPage() {
                     </div>
 
                     {selectedProduct && (
-                        <div className="flex gap-2 mt-3 overflow-x-auto pb-1 sm:grid sm:grid-cols-3 lg:grid-cols-5 sm:overflow-visible sm:pb-0">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 mt-3">
                           {/* Contado */}
                           <button
                               type="button"
                               onClick={() => setPriceType('contado')}
-                              className={`relative min-w-[90px] sm:min-w-0 rounded-xl p-2 sm:p-3 text-center transition-all border-2 shrink-0 sm:shrink ${
+                              className={`relative rounded-xl p-2 sm:p-3 text-center transition-all border-2 ${
                                   priceType === 'contado'
                                       ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 shadow-sm'
                                       : 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 hover:border-blue-300 dark:hover:border-blue-700'
@@ -1233,7 +1307,7 @@ export default function OrderPage() {
                           <button
                               type="button"
                               onClick={() => setPriceType('credito')}
-                              className={`relative min-w-[90px] sm:min-w-0 rounded-xl p-2 sm:p-3 text-center transition-all border-2 shrink-0 sm:shrink ${
+                              className={`relative rounded-xl p-2 sm:p-3 text-center transition-all border-2 ${
                                   priceType === 'credito'
                                       ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 shadow-sm'
                                       : 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 hover:border-blue-300 dark:hover:border-blue-700'
@@ -1251,7 +1325,7 @@ export default function OrderPage() {
                             <button
                                 type="button"
                                 onClick={() => setPriceType('porMayor')}
-                                className={`relative min-w-[90px] sm:min-w-0 rounded-xl p-2 sm:p-3 text-center transition-all border-2 shrink-0 sm:shrink ${
+                                className={`relative rounded-xl p-2 sm:p-3 text-center transition-all border-2 ${
                                     priceType === 'porMayor'
                                         ? 'border-violet-500 bg-violet-50 dark:bg-violet-900/30 shadow-sm'
                                         : 'border-violet-200 dark:border-violet-800 bg-violet-50/50 dark:bg-gray-800 hover:border-violet-400 dark:hover:border-violet-600'
@@ -1270,7 +1344,7 @@ export default function OrderPage() {
                             <button
                                 type="button"
                                 onClick={() => setPriceType('porMenor')}
-                                className={`relative min-w-[90px] sm:min-w-0 rounded-xl p-2 sm:p-3 text-center transition-all border-2 shrink-0 sm:shrink ${
+                                className={`relative rounded-xl p-2 sm:p-3 text-center transition-all border-2 ${
                                     priceType === 'porMenor'
                                         ? 'border-green-500 bg-green-50 dark:bg-green-900/30 shadow-sm'
                                         : 'border-green-200 dark:border-green-800 bg-green-50/50 dark:bg-gray-800 hover:border-green-400 dark:hover:border-green-600'
@@ -1288,7 +1362,7 @@ export default function OrderPage() {
                           <button
                               type="button"
                               onClick={() => setPriceType('custom')}
-                              className={`relative min-w-[90px] sm:min-w-0 rounded-xl p-2 sm:p-3 text-center transition-all border-2 shrink-0 sm:shrink ${
+                              className={`relative rounded-xl p-2 sm:p-3 text-center transition-all border-2 ${
                                   priceType === 'custom'
                                       ? 'border-red-500 bg-red-50 dark:bg-red-900/30 shadow-sm'
                                       : 'border-red-200 dark:border-red-800 bg-red-50/50 dark:bg-gray-800 hover:border-red-400 dark:hover:border-red-600'
