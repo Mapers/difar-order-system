@@ -831,7 +831,7 @@ export default function OrderPage() {
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100">Tomar Pedido</h1>
           <p className="text-sm text-gray-500 dark:text-gray-400">Crea un nuevo pedido siguiendo los pasos.</p>
         </div>
-        <div className="w-full overflow-hidden sm:w-auto sm:min-w-[420px] bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl shadow-sm px-4 pt-4 pb-2">
+        <div className="w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl shadow-sm p-3 sm:p-4 sm:w-auto sm:min-w-[360px]">
           <StepProgress steps={steps} currentStep={currentStep} onStepClick={goToStep} />
         </div>
       </div>
