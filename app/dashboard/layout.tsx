@@ -80,7 +80,7 @@ export default function DashboardLayout({
         <div className="flex min-h-screen bg-gradient-to-br dark:bg-gray-950">
             <SideNav />
             <MobileNav />
-            <div className="flex-1 p-4 pt-20 md:p-8 md:pl-72 md:pt-8">{children}</div>
+            <div className="flex-1 min-w-0 overflow-x-hidden p-4 pt-20 md:p-8 md:pl-72 md:pt-8">{children}</div>
 
             <Dialog open={visibleModalNewOrder} onOpenChange={setVisibleModalNewOrder}>
                 <DialogContent className="sm:max-w-md md:max-w-lg">
