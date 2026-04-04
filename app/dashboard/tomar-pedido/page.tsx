@@ -1,5 +1,5 @@
 'use client'
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -140,6 +140,8 @@ export default function OrderPage() {
 
   const [open, setOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
+  const [isSearching, setIsSearching] = useState(false)
+  const searchTimerRef = useRef<NodeJS.Timeout | null>(null)
   const [quantity, setQuantity] = useState(1)
   const [selectedProduct, setSelectedProduct] = useState<IProduct | null>(null)
   const [selectedProducts, setSelectedProducts] = useState<ISelectedProduct[]>([])
@@ -1048,8 +1050,8 @@ export default function OrderPage() {
                 <CardTitle className="text-xl font-semibold text-blue-700">Agregar Productos</CardTitle>
               </CardHeader>
               <CardContent className="space-y-6 pt-6">
-                <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 px-1 sm:px-0 py-2">
-                  <div className="space-y-2 col-span-3">
+                <div className="flex flex-col sm:flex-row gap-3 px-1 sm:px-0 py-2 items-end">
+                  <div className="space-y-2 flex-1 min-w-0">
                     <Label htmlFor="producto" className="text-sm font-medium">
                       Producto
                     </Label>
@@ -1060,25 +1062,25 @@ export default function OrderPage() {
                               variant="outline"
                               role="combobox"
                               aria-expanded={open}
-                              className="w-full justify-between h-10 sm:h-12 px-3 text-left font-normal text-sm"
+                              className="w-full justify-start h-11 sm:h-12 px-3 text-left font-normal text-sm bg-gray-50 border-gray-200 hover:bg-white hover:border-blue-400 focus:border-blue-400 transition-all duration-200"
                           >
+                            <Search className="mr-2 h-4 w-4 shrink-0 text-gray-400"/>
                             {selectedProduct ? (
                                 <div className="flex flex-col items-start min-w-0 flex-1">
-                    <span className="font-medium break-words w-full line-clamp-1">
-                      {selectedProduct.NombreItem}
-                    </span>
-                                  <span className="text-xs text-gray-500 break-words w-full line-clamp-1">
-                      {selectedProduct.Codigo_Art} | {selectedProduct.Descripcion}
-                    </span>
+                                  <span className="font-semibold text-gray-900 w-full line-clamp-1">
+                                    {selectedProduct.NombreItem}
+                                  </span>
+                                  <span className="text-xs text-gray-500 w-full line-clamp-1">
+                                    {selectedProduct.Codigo_Art} | {selectedProduct.Descripcion}
+                                  </span>
                                 </div>
                             ) : (
-                                <span className="text-gray-500">Buscar producto...</span>
+                                <span className="text-gray-400 font-normal">Buscar por código, nombre o laboratorio...</span>
                             )}
-                            <Search className="ml-2 h-4 w-4 shrink-0 opacity-50"/>
                           </Button>
                         </PopoverTrigger>
                         <PopoverContent
-                            className="z-[999] w-[calc(100vw-2rem)] sm:w-full p-0"
+                            className="z-[999] w-[calc(100vw-2rem)] sm:w-full p-0 shadow-lg border-gray-200"
                             align="start"
                             side="bottom"
                         >
@@ -1086,78 +1088,114 @@ export default function OrderPage() {
                             <CommandInput
                                 placeholder="Buscar por código, nombre o laboratorio..."
                                 value={searchQuery}
-                                onValueChange={setSearchQuery}
-                                className="text-sm"
+                                onValueChange={(value) => {
+                                  setIsSearching(true)
+                                  setSearchQuery(value)
+                                  if (searchTimerRef.current) clearTimeout(searchTimerRef.current)
+                                  searchTimerRef.current = setTimeout(() => setIsSearching(false), 350)
+                                }}
+                                className="text-sm sm:text-base h-11"
                             />
-                            <CommandList>
-                              <CommandEmpty>No se encontraron productos.</CommandEmpty>
-                              <CommandGroup heading="Resultados">
-                                {filteredProducts.map((product) => (
-                                    <CommandItem
-                                        key={product.Codigo_Art}
-                                        value={product.Codigo_Art}
-                                        onSelect={() => handleProductSelect(product)}
-                                        className="py-3"
-                                    >
-                                      <div className="flex items-start gap-2 w-full">
-                                        <div className="bg-blue-100 p-2 rounded-md shrink-0">
-                                          <Package className="h-3 w-3 sm:h-4 sm:w-4 text-blue-600"/>
+                            <CommandList className="max-h-[55vh] sm:max-h-[420px]">
+                              {isSearching ? (
+                                <div className="p-2 space-y-2">
+                                  <div className="px-2 py-1.5 text-xs font-medium text-gray-500 flex items-center gap-2">
+                                    <Loader2 className="h-3 w-3 animate-spin text-blue-500"/>
+                                    Buscando productos...
+                                  </div>
+                                  {[1, 2, 3].map((i) => (
+                                    <div key={i} className="flex gap-3 px-3 py-2.5 rounded-lg border border-gray-100 bg-gray-50/50">
+                                      <Skeleton className="h-8 w-8 rounded-lg shrink-0"/>
+                                      <div className="flex-1 space-y-1.5">
+                                        <div className="flex justify-between gap-2">
+                                          <Skeleton className="h-4 w-3/5 rounded"/>
+                                          <Skeleton className="h-5 w-16 rounded-full"/>
                                         </div>
-                                        <div className="flex flex-col flex-1 min-w-0">
-                                          <div className="flex justify-between items-start w-full gap-2">
-                              <span className="font-medium text-sm truncate flex-1">
-                                {product.NombreItem}
-                              </span>
-                                            <div className="flex flex-wrap gap-1 shrink-0">
-                                              <Badge
-                                                  variant="outline"
-                                                  className="bg-green-50 text-green-700 text-xs"
-                                              >
-                                                Stock: {Number(product.Stock).toFixed(2)}
-                                              </Badge>
-                                              {product.tieneBonificado === 1 && (
-                                                  <Badge
-                                                      variant="outline"
-                                                      className="bg-yellow-50 text-yellow-700 text-xs"
-                                                  >
-                                                    Bonif.
-                                                  </Badge>
-                                              )}
-                                              {product.tieneEscala === 1 && (
-                                                  <Badge
-                                                      variant="outline"
-                                                      className="bg-purple-50 text-purple-700 text-xs"
-                                                  >
-                                                    Escalas
-                                                  </Badge>
-                                              )}
-                                            </div>
-                                          </div>
-                                          <div className="flex justify-between items-center w-full mt-1">
-                              <span className="text-xs text-gray-500 truncate">
-                                <span className="font-medium">Código:</span>{" "}
-                                {product.Codigo_Art}
-                              </span>
-                                            <span className="text-xs text-gray-500 truncate">
-                                <span className="font-medium">Lab:</span>{" "}
-                                              {product.Descripcion}
-                              </span>
-                                          </div>
-                                          <div className="flex justify-between mt-2 text-xs">
-                              <span className="text-green-600">
-                                Contado: {currency?.value === "PEN" ? "S/." : "$"}
-                                {Number(product.PUContado).toFixed(2)}
-                              </span>
-                                            <span className="text-blue-600">
-                                Crédito: {currency?.value === "PEN" ? "S/." : "$"}
-                                              {Number(product.PUCredito).toFixed(2)}
-                              </span>
-                                          </div>
+                                        <Skeleton className="h-3 w-2/5 rounded"/>
+                                        <div className="flex gap-4">
+                                          <Skeleton className="h-3 w-20 rounded"/>
+                                          <Skeleton className="h-3 w-20 rounded"/>
                                         </div>
                                       </div>
-                                    </CommandItem>
-                                ))}
-                              </CommandGroup>
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : (
+                                <>
+                                  <CommandEmpty className="py-8 text-center">
+                                    <div className="flex flex-col items-center gap-2 text-gray-500">
+                                      <Search className="h-8 w-8 text-gray-300"/>
+                                      <p className="text-sm font-medium">No se encontraron productos</p>
+                                      <p className="text-xs text-gray-400">Intente con otro código, nombre o laboratorio</p>
+                                    </div>
+                                  </CommandEmpty>
+                                  <CommandGroup heading="Resultados">
+                                    {filteredProducts.map((product) => {
+                                      const stockNum = Number(product.Stock)
+                                      const stockBadgeClass = stockNum === 0
+                                        ? "bg-red-50 text-red-700 border-red-200"
+                                        : stockNum <= 10
+                                        ? "bg-yellow-50 text-yellow-700 border-yellow-200"
+                                        : "bg-green-50 text-green-700 border-green-200"
+
+                                      return (
+                                        <CommandItem
+                                          key={product.Codigo_Art}
+                                          value={product.Codigo_Art}
+                                          onSelect={() => handleProductSelect(product)}
+                                          className="py-2 px-3 cursor-pointer rounded-lg my-0.5"
+                                        >
+                                          <div className="flex gap-3 w-full">
+                                            <div className="bg-blue-100 p-2 rounded-lg shrink-0 h-fit mt-0.5">
+                                              <Package className="h-4 w-4 text-blue-600"/>
+                                            </div>
+                                            <div className="flex flex-col flex-1 min-w-0 gap-1">
+                                              <div className="flex items-start justify-between gap-2">
+                                                <span className="font-semibold text-sm text-gray-900 line-clamp-2 flex-1 leading-tight">
+                                                  {product.NombreItem}
+                                                </span>
+                                                <Badge variant="outline" className={`text-xs shrink-0 font-medium ${stockBadgeClass}`}>
+                                                  Stock: {stockNum.toFixed(0)}
+                                                </Badge>
+                                              </div>
+                                              <div className="flex flex-wrap gap-x-3 gap-y-0.5">
+                                                <span className="text-xs text-gray-500">
+                                                  <span className="font-medium text-gray-600">Cód:</span> {product.Codigo_Art}
+                                                </span>
+                                                <span className="text-xs text-gray-500 truncate">
+                                                  <span className="font-medium text-gray-600">Lab:</span> {product.Descripcion}
+                                                </span>
+                                              </div>
+                                              <div className="flex items-center justify-between flex-wrap gap-1 mt-0.5">
+                                                <div className="flex gap-3">
+                                                  <span className="text-xs font-semibold text-green-700">
+                                                    Contado: {currency?.value === "PEN" ? "S/." : "$"}{Number(product.PUContado).toFixed(2)}
+                                                  </span>
+                                                  <span className="text-xs font-semibold text-blue-700">
+                                                    Crédito: {currency?.value === "PEN" ? "S/." : "$"}{Number(product.PUCredito).toFixed(2)}
+                                                  </span>
+                                                </div>
+                                                <div className="flex gap-1">
+                                                  {product.tieneBonificado === 1 && (
+                                                    <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200 text-xs">
+                                                      Bonif.
+                                                    </Badge>
+                                                  )}
+                                                  {product.tieneEscala === 1 && (
+                                                    <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200 text-xs">
+                                                      Escalas
+                                                    </Badge>
+                                                  )}
+                                                </div>
+                                              </div>
+                                            </div>
+                                          </div>
+                                        </CommandItem>
+                                      )
+                                    })}
+                                  </CommandGroup>
+                                </>
+                              )}
                             </CommandList>
                           </Command>
                         </PopoverContent>
@@ -1274,8 +1312,8 @@ export default function OrderPage() {
                     )}
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="laboratorio" className="text-sm font-medium">
+                  <div className="space-y-2 sm:w-48 shrink-0">
+                    <Label htmlFor="laboratorio" className="text-sm font-medium whitespace-nowrap">
                       Filtrar por lab
                     </Label>
                     <Select
