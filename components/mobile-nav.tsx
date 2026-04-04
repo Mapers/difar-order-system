@@ -32,6 +32,7 @@ import { DialogTitle as RadixDialogTitle } from "@radix-ui/react-dialog";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden"
 import {ScrollArea} from "@/components/ui/scroll-area";
 import {ICON_MAP} from "@/constants/roles";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 
 
@@ -98,18 +99,20 @@ export function MobileNav() {
 
   return (
       <>
-        <header className="fixed inset-x-0 top-0 z-20 flex h-16 items-center justify-between border-b bg-white px-4 md:hidden">
+        <header className="fixed inset-x-0 top-0 z-20 flex h-16 items-center justify-between border-b bg-white dark:bg-gray-900 dark:border-gray-800 px-4 md:hidden">
           <Link href="/dashboard" className="flex items-center gap-2">
             <Image
                 src="/difar-logo.png"
                 alt="Logo difar"
                 width={80}
                 height={40}
-                className="object-contain"
+                className="object-contain dark:brightness-90"
             />
           </Link>
 
-          <Sheet open={open} onOpenChange={setOpen}>
+          <div className="flex items-center gap-1">
+            <ThemeToggle />
+            <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon">
                 <Menu className="h-6 w-6" />
@@ -117,37 +120,37 @@ export function MobileNav() {
               </Button>
             </SheetTrigger>
 
-            <SheetContent side="left" className="w-64 p-0 flex flex-col">
+            <SheetContent side="left" className="w-64 p-0 flex flex-col bg-white dark:bg-gray-900 dark:border-gray-800">
               <RadixDialogTitle asChild>
                 <VisuallyHidden>Menú de navegación</VisuallyHidden>
               </RadixDialogTitle>
-              <div className="flex flex-col items-center border-b px-4 pt-4 pb-2 gap-2">
+              <div className="flex flex-col items-center border-b dark:border-gray-800 px-4 pt-4 pb-2 gap-2">
                 <Link href="/dashboard" className="flex items-center gap-2">
                   <Image
                       src="/difar-logo.png"
                       alt="Logo difar"
                       width={120}
                       height={60}
-                      className="object-contain"
+                      className="object-contain dark:brightness-90"
                   />
                 </Link>
-                <div className="w-full rounded-xl bg-gradient-to-r from-blue-50 to-indigo-50 p-2 shadow-sm">
+                <div className="w-full rounded-xl bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 p-2 shadow-sm">
                   <div className="flex items-start gap-3">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-blue-100 to-indigo-200 shadow-inner">
-                      <User className="h-6 w-6 text-blue-700" />
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-blue-100 to-indigo-200 dark:from-blue-800 dark:to-indigo-700 shadow-inner">
+                      <User className="h-6 w-6 text-blue-700 dark:text-blue-300" />
                     </div>
 
                     <div className="flex-1 min-w-0">
-                  <span style={{fontSize: '12px'}}>
+                  <span style={{fontSize: '12px'}} className="text-gray-800 dark:text-gray-200">
                     {user?.nombreCompleto || "Usuario"}
                   </span>
                       <div className="flex items-center gap-1.5 mb-1">
-                    <span className="text-xs font-medium text-blue-700 bg-blue-100 px-2 py-0.5 rounded-full">
+                    <span className="text-xs font-medium text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-900/40 px-2 py-0.5 rounded-full">
                     {!!user?.codRepres ? 'Representante' : user?.rolDescripcion || "Sin rol"}
                   </span>
                       </div>
                       <div className="flex items-center gap-1.5 ml-1">
-                    <span className="text-xs text-gray-400 font-mono">
+                    <span className="text-xs text-gray-400 dark:text-gray-500 font-mono">
                     {!!user?.codRepres ? user?.codRepres : user?.codigo || "N/A"}
                   </span>
                       </div>
@@ -165,10 +168,10 @@ export function MobileNav() {
                                 type="button"
                                 onClick={() => toggleItem(item.title)}
                                 className={cn(
-                                    "group flex w-full items-center justify-between rounded-lg px-3 py-3.5 text-sm font-medium transition-all hover:bg-blue-100",
+                                    "group flex w-full items-center justify-between rounded-lg px-3 py-3.5 text-sm font-medium transition-all hover:bg-blue-100 dark:hover:bg-blue-900/30",
                                     pathname.startsWith(item.href)
                                         ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md"
-                                        : "text-gray-700 hover:text-blue-700",
+                                        : "text-gray-700 dark:text-gray-300 hover:text-blue-700 dark:hover:text-blue-400",
                                 )}
                             >
                               <div className="flex items-center gap-3">
@@ -177,7 +180,7 @@ export function MobileNav() {
                                         "h-5 w-5",
                                         pathname.startsWith(item.href)
                                             ? "text-white"
-                                            : "text-gray-500 group-hover:text-blue-600",
+                                            : "text-gray-500 dark:text-gray-400 group-hover:text-blue-600 dark:group-hover:text-blue-400",
                                     )}
                                 />
                                 {item.title}
@@ -193,10 +196,10 @@ export function MobileNav() {
                             <Link
                                 href={item.href}
                                 className={cn(
-                                    "group flex items-center gap-3 rounded-lg px-3 py-3.5 text-sm font-medium transition-all hover:bg-blue-100",
+                                    "group flex items-center gap-3 rounded-lg px-3 py-3.5 text-sm font-medium transition-all hover:bg-blue-100 dark:hover:bg-blue-900/30",
                                     pathname === item.href
                                         ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md"
-                                        : "text-gray-700 hover:text-blue-700",
+                                        : "text-gray-700 dark:text-gray-300 hover:text-blue-700 dark:hover:text-blue-400",
                                 )}
                                 onClick={handleNav}
                             >
@@ -205,7 +208,7 @@ export function MobileNav() {
                                       "h-5 w-5",
                                       pathname === item.href
                                           ? "text-white"
-                                          : "text-gray-500 group-hover:text-blue-600",
+                                          : "text-gray-500 dark:text-gray-400 group-hover:text-blue-600 dark:group-hover:text-blue-400",
                                   )}
                               />
                               {item.title}
@@ -219,10 +222,10 @@ export function MobileNav() {
                                       key={sub.id}
                                       href={sub.href}
                                       className={cn(
-                                          "group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all hover:bg-blue-50",
+                                          "group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all hover:bg-blue-50 dark:hover:bg-blue-900/20",
                                           pathname === sub.href
-                                              ? "bg-blue-100 text-blue-700"
-                                              : "text-gray-600 hover:text-blue-700",
+                                              ? "bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300"
+                                              : "text-gray-600 dark:text-gray-400 hover:text-blue-700 dark:hover:text-blue-400",
                                       )}
                                       onClick={handleNav}
                                   >
@@ -230,8 +233,8 @@ export function MobileNav() {
                                         className={cn(
                                             "h-4 w-4",
                                             pathname === sub.href
-                                                ? "text-blue-700"
-                                                : "text-gray-400 group-hover:text-blue-600",
+                                                ? "text-blue-700 dark:text-blue-300"
+                                                : "text-gray-400 dark:text-gray-500 group-hover:text-blue-600 dark:group-hover:text-blue-400",
                                         )}
                                     />
                                     {sub.title}
@@ -244,10 +247,10 @@ export function MobileNav() {
                 </nav>
               </ScrollArea>
 
-              <div className="border-t p-4 shrink-0">
+              <div className="border-t dark:border-gray-800 p-4 shrink-0">
                 <Button
                     variant="outline"
-                    className="w-full justify-start gap-2 text-red-600 hover:bg-red-50 hover:text-red-700"
+                    className="w-full justify-start gap-2 text-red-600 hover:bg-red-50 hover:text-red-700 dark:border-gray-700 dark:hover:bg-red-950/30"
                     onClick={handleLogoutClick}
                 >
                   <LogOut className="h-4 w-4"/>
@@ -256,6 +259,7 @@ export function MobileNav() {
               </div>
             </SheetContent>
           </Sheet>
+          </div>
         </header>
 
         <Dialog open={showLogoutConfirm} onOpenChange={setShowLogoutConfirm}>
