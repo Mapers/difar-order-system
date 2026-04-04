@@ -27,7 +27,7 @@ export function StepProgress({ steps, currentStep, onStepClick }: StepProgressPr
                         <div key={index} className="flex flex-col items-center flex-1">
                             <div
                                 className={cn(
-                                    "flex h-10 w-10 items-center justify-center rounded-full border-2 transition-all duration-200 bg-white dark:bg-gray-800",
+                                    "flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full border-2 transition-all duration-200 bg-white dark:bg-gray-800",
                                     isCompleted
                                         ? "border-blue-600 bg-blue-600 text-white" // Completado
                                         : isCurrent
@@ -42,14 +42,14 @@ export function StepProgress({ steps, currentStep, onStepClick }: StepProgressPr
                                 style={{ cursor: onStepClick && isCompleted ? "pointer" : "default" }}
                             >
                                 {isCompleted ? (
-                                    <Check className="h-5 w-5" />
+                                    <Check className="h-4 w-4 sm:h-5 sm:w-5" />
                                 ) : (
-                                    <Icon className="h-5 w-5" />
+                                    <Icon className="h-4 w-4 sm:h-5 sm:w-5" />
                                 )}
                             </div>
                             <span
                                 className={cn(
-                                    "mt-2 text-xs font-medium transition-colors duration-200",
+                                    "mt-1.5 text-[10px] sm:text-xs font-medium transition-colors duration-200 text-center",
                                     isCurrent ? "text-blue-600 dark:text-blue-400" : "text-gray-500 dark:text-gray-400",
                                 )}
                             >
@@ -60,7 +60,7 @@ export function StepProgress({ steps, currentStep, onStepClick }: StepProgressPr
                 })}
             </div>
 
-            <div className="relative -top-9 mx-auto w-[85%]">
+            <div className="relative -top-8 sm:-top-9 mx-auto w-[85%]">
                 <div className="absolute top-1/2 left-0 h-1 w-full -translate-y-1/2 bg-gray-200 dark:bg-gray-700" />
                 <div
                     className="absolute top-1/2 left-0 h-1 -translate-y-1/2 bg-blue-600 transition-all duration-300 ease-in-out"

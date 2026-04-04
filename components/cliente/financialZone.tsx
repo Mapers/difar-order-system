@@ -43,7 +43,7 @@ const FinancialZone: React.FC<ClientRowProps> = ({ client, nameZone, unidadTerri
   };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
       {/* Línea de Crédito - Card clickeable */}
       <Dialog open={showCreditModal} onOpenChange={setShowCreditModal}>
         <DialogTrigger asChild>

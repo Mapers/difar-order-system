@@ -114,7 +114,7 @@ const ContactInfo: React.FC<ClientRowProps> = ({
   };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
       {/* Contact Information */}
       <div className="space-y-4">
         <h3 className="font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">

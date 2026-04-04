@@ -826,17 +826,16 @@ export default function OrderPage() {
   }
 
   return (
-    <div className="grid gap-6">
-      <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100">Tomar Pedido</h1>
-        <p className="text-gray-500 dark:text-gray-400">Crea un nuevo pedido siguiendo los pasos.</p>
-      </div>
-
-      <Card className="mb-4 shadow-sm bg-white dark:bg-gray-900 dark:border-gray-800">
-        <CardContent className="pt-4 pb-4">
+    <div className="grid gap-4 sm:gap-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div className="flex flex-col gap-0.5">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100">Tomar Pedido</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400">Crea un nuevo pedido siguiendo los pasos.</p>
+        </div>
+        <div className="w-full sm:w-auto sm:min-w-[420px] bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl shadow-sm px-4 pt-4 pb-2">
           <StepProgress steps={steps} currentStep={currentStep} onStepClick={goToStep} />
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       <form onSubmit={handleSubmit}>
         {currentStep === 0 && (
@@ -979,27 +978,33 @@ export default function OrderPage() {
                   loadingText="Buscando vendedores..."
                 />
               )}
-              {selectedClient && <ContactInfo
-                client={selectedClient}
-                referenciaDireccion={referenciaDireccion}
-                contactoPedido={contactoPedido}
-                onChangeReferenciaDireccion={handleChangeReferenciaDireccion}
-                onChangeContactoPedido={handleChangeContactoPedido}
-                onUpdateClient={handleUpdateClient}
-              />}
-              {selectedClient &&
-                <FinancialZone client={selectedClient} nameZone={nameZone} unidadTerritorio={unidadTerritorio}/>}
-              {selectedClient &&
-                <PaymentCondition
-                  conditions={conditions}
-                  monedas={monedas}
-                  onConditionChange={handleConditionSelect}
-                  onCurrencyChange={handleCurrencySelect}
-                  selectedCondition={condition}
-                  selectedCurrency={currency}
-                />}
               {selectedClient && (
-                  <OrderHistory client={selectedClient} />
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
+                  {/* Left column: Contact Info */}
+                  <div className="space-y-4">
+                    <ContactInfo
+                      client={selectedClient}
+                      referenciaDireccion={referenciaDireccion}
+                      contactoPedido={contactoPedido}
+                      onChangeReferenciaDireccion={handleChangeReferenciaDireccion}
+                      onChangeContactoPedido={handleChangeContactoPedido}
+                      onUpdateClient={handleUpdateClient}
+                    />
+                  </div>
+                  {/* Right column: Financial + Payment + History */}
+                  <div className="space-y-4">
+                    <FinancialZone client={selectedClient} nameZone={nameZone} unidadTerritorio={unidadTerritorio}/>
+                    <PaymentCondition
+                      conditions={conditions}
+                      monedas={monedas}
+                      onConditionChange={handleConditionSelect}
+                      onCurrencyChange={handleCurrencySelect}
+                      selectedCondition={condition}
+                      selectedCurrency={currency}
+                    />
+                    <OrderHistory client={selectedClient} />
+                  </div>
+                </div>
               )}
             </CardContent>
             <CardFooter className="flex justify-end border-t bg-gray-50 dark:bg-gray-800/50 dark:border-gray-800 py-4">
@@ -1294,7 +1299,7 @@ export default function OrderPage() {
                     )}
                   </div>
 
-                  <div className="space-y-2 sm:w-48 shrink-0">
+                  <div className="space-y-2 sm:w-40 shrink-0">
                     <Label htmlFor="laboratorio" className="text-sm font-medium whitespace-nowrap text-gray-700 dark:text-gray-300">
                       Filtrar por lab
                     </Label>
@@ -1305,7 +1310,7 @@ export default function OrderPage() {
                           setShowLaboratorioModal(true);
                         }}
                     >
-                      <SelectTrigger className="w-full h-10 sm:h-12 text-xs sm:text-sm bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 dark:text-gray-100">
+                      <SelectTrigger className="w-full h-11 sm:h-12 text-xs sm:text-sm bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 dark:text-gray-100">
                         <SelectValue placeholder="Laboratorio"/>
                       </SelectTrigger>
                       <SelectContent>
@@ -1317,10 +1322,8 @@ export default function OrderPage() {
                       </SelectContent>
                     </Select>
                   </div>
-                </div>
 
-                <div className="flex gap-3 items-end">
-                  <div className="space-y-1.5 w-28 shrink-0">
+                  <div className="space-y-2 w-24 shrink-0">
                     <Label htmlFor="quantity" className="text-sm font-medium text-gray-700 dark:text-gray-300">
                       Cantidad
                     </Label>
@@ -1331,18 +1334,23 @@ export default function OrderPage() {
                         step="1"
                         value={quantity}
                         onChange={(e) => setQuantity(Number.parseInt(e.target.value) || 1)}
-                        className="h-11 bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-center text-base font-medium"
+                        className="h-11 sm:h-12 bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-center text-base font-medium"
                     />
                   </div>
-                  <Button
-                      type="button"
-                      disabled={!selectedProduct || loading.products || isCheckingBonification}
-                      onClick={handleAddProduct}
-                      className="flex-1 h-11 bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-600 dark:hover:bg-indigo-700 text-base font-medium"
-                  >
-                    <ShoppingCart className="mr-2 h-4 w-4"/>
-                    Agregar al pedido
-                  </Button>
+
+                  <div className="space-y-2 flex-1 sm:flex-none sm:w-auto">
+                    <Label className="text-sm font-medium text-transparent select-none">Agregar</Label>
+                    <Button
+                        type="button"
+                        disabled={!selectedProduct || loading.products || isCheckingBonification}
+                        onClick={handleAddProduct}
+                        className="w-full sm:w-auto h-11 sm:h-12 bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-600 dark:hover:bg-indigo-700 font-medium px-4 sm:px-6"
+                    >
+                      <ShoppingCart className="mr-2 h-4 w-4"/>
+                      <span className="hidden sm:inline">Agregar al pedido</span>
+                      <span className="sm:hidden">Agregar</span>
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -1695,79 +1703,72 @@ export default function OrderPage() {
               </div>
             </CardHeader>
             <CardContent className="space-y-5 pt-5">
-              <div className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <User className="w-4 h-4 text-blue-600 dark:text-blue-400"/>
-                  <h3 className="font-semibold text-gray-900 dark:text-gray-100 text-sm">Información del Cliente</h3>
-                </div>
-
-                <div className="bg-blue-50 dark:bg-blue-950/30 rounded-xl p-4 border border-blue-100 dark:border-blue-900/50">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-3">
-                      <div>
-                        <Label className="text-xs text-gray-500 dark:text-gray-400">Cliente</Label>
-                        <p className="font-medium text-sm sm:text-base">{selectedClient?.Nombre}</p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">Documento: doc nro</p>
-                      </div>
-
-                      <div className="flex items-start gap-2">
-                        <Phone className="w-4 h-4 text-blue-600 dark:text-blue-400 mt-0.5"/>
-                        <div>
-                          <Label className="text-xs text-gray-500 dark:text-gray-400">Teléfono</Label>
-                          <p className="text-sm text-gray-800 dark:text-gray-200">{selectedClient?.telefono ?? '—'}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-start gap-2">
-                        <User className="w-4 h-4 text-blue-600 dark:text-blue-400 mt-0.5"/>
-                        <div>
-                          <Label className="text-xs text-gray-500 dark:text-gray-400">Contacto</Label>
-                          <p className="text-sm text-gray-800 dark:text-gray-200">{contactoPedido ?? '—'}</p>
-                        </div>
-                      </div>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                {/* Client Info */}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <User className="w-4 h-4 text-blue-600 dark:text-blue-400"/>
+                    <h3 className="font-semibold text-gray-900 dark:text-gray-100 text-sm">Información del Cliente</h3>
+                  </div>
+                  <div className="bg-blue-50 dark:bg-blue-950/30 rounded-xl p-4 border border-blue-100 dark:border-blue-900/50 space-y-3">
+                    <div>
+                      <Label className="text-xs text-gray-500 dark:text-gray-400">Cliente</Label>
+                      <p className="font-medium text-sm">{selectedClient?.Nombre}</p>
                     </div>
-
-                    <div className="space-y-3">
+                    <div className="grid grid-cols-2 gap-3">
                       <div className="flex items-start gap-2">
-                        <MapPin className="w-4 h-4 text-green-600 dark:text-green-400 mt-0.5"/>
-                        <div>
-                          <Label className="text-xs text-gray-500 dark:text-gray-400">Dirección de Entrega</Label>
-                          <p className="text-sm text-gray-800 dark:text-gray-200">{selectedClient?.Dirección ?? '—'}</p>
-                          {selectedClient?.referenciaDireccion && (
-                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Ref: {selectedClient.referenciaDireccion}</p>
-                          )}
+                        <Phone className="w-4 h-4 text-blue-600 dark:text-blue-400 mt-0.5 shrink-0"/>
+                        <div className="min-w-0">
+                          <Label className="text-xs text-gray-500 dark:text-gray-400">Teléfono</Label>
+                          <p className="text-sm text-gray-800 dark:text-gray-200 truncate">{selectedClient?.telefono ?? '—'}</p>
                         </div>
                       </div>
                       <div className="flex items-start gap-2">
-                        <MapPin className="w-4 h-4 text-purple-600 dark:text-purple-400 mt-0.5"/>
-                        <div>
+                        <User className="w-4 h-4 text-blue-600 dark:text-blue-400 mt-0.5 shrink-0"/>
+                        <div className="min-w-0">
+                          <Label className="text-xs text-gray-500 dark:text-gray-400">Contacto</Label>
+                          <p className="text-sm text-gray-800 dark:text-gray-200 truncate">{contactoPedido ?? '—'}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <MapPin className="w-4 h-4 text-green-600 dark:text-green-400 mt-0.5 shrink-0"/>
+                        <div className="min-w-0">
+                          <Label className="text-xs text-gray-500 dark:text-gray-400">Dirección</Label>
+                          <p className="text-sm text-gray-800 dark:text-gray-200 line-clamp-2">{selectedClient?.Dirección ?? '—'}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <MapPin className="w-4 h-4 text-purple-600 dark:text-purple-400 mt-0.5 shrink-0"/>
+                        <div className="min-w-0">
                           <Label className="text-xs text-gray-500 dark:text-gray-400">Zona</Label>
-                          <p className="text-sm text-gray-800 dark:text-gray-200">{nameZone}</p>
+                          <p className="text-sm text-gray-800 dark:text-gray-200 truncate">{nameZone}</p>
                         </div>
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
 
-              <div className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <CreditCard className="w-4 h-4 text-green-600 dark:text-green-400"/>
-                  <h3 className="font-semibold text-gray-900 dark:text-gray-100 text-sm">Condiciones de Pago</h3>
-                </div>
-                <div className="bg-green-50 dark:bg-green-950/30 rounded-xl p-4 border border-green-100 dark:border-green-900/50">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="flex items-start gap-2">
-                      <Calendar className="w-4 h-4 text-green-600 dark:text-green-400 mt-0.5"/>
-                      <div>
-                        <Label className="text-xs text-gray-500 dark:text-gray-400">Condición</Label>
-                        <p className="font-semibold text-sm text-gray-800 dark:text-gray-200">{condition?.Descripcion}</p>
+                {/* Payment Conditions */}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <CreditCard className="w-4 h-4 text-green-600 dark:text-green-400"/>
+                    <h3 className="font-semibold text-gray-900 dark:text-gray-100 text-sm">Condiciones de Pago</h3>
+                  </div>
+                  <div className="bg-green-50 dark:bg-green-950/30 rounded-xl p-4 border border-green-100 dark:border-green-900/50">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="flex items-start gap-2">
+                        <Calendar className="w-4 h-4 text-green-600 dark:text-green-400 mt-0.5 shrink-0"/>
+                        <div className="min-w-0">
+                          <Label className="text-xs text-gray-500 dark:text-gray-400">Condición</Label>
+                          <p className="font-semibold text-sm text-gray-800 dark:text-gray-200 truncate">{condition?.Descripcion}</p>
+                        </div>
                       </div>
-                    </div>
-                    <div className="flex items-start gap-2">
-                      {currency?.value === "PEN" ? <Coins className="w-4 h-4 text-green-600 dark:text-green-400 mt-0.5"/> : <DollarSign className="w-4 h-4 text-green-600 dark:text-green-400 mt-0.5"/>}
-                      <div>
-                        <Label className="text-xs text-gray-500 dark:text-gray-400">Moneda</Label>
-                        <p className="font-semibold text-sm text-gray-800 dark:text-gray-200">{currency?.label}</p>
+                      <div className="flex items-start gap-2">
+                        {currency?.value === "PEN" ? <Coins className="w-4 h-4 text-green-600 dark:text-green-400 mt-0.5 shrink-0"/> : <DollarSign className="w-4 h-4 text-green-600 dark:text-green-400 mt-0.5 shrink-0"/>}
+                        <div className="min-w-0">
+                          <Label className="text-xs text-gray-500 dark:text-gray-400">Moneda</Label>
+                          <p className="font-semibold text-sm text-gray-800 dark:text-gray-200 truncate">{currency?.label}</p>
+                        </div>
                       </div>
                     </div>
                   </div>
