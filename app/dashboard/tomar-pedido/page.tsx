@@ -1467,8 +1467,9 @@ export default function OrderPage() {
               <Button
                 type="button"
                 onClick={saveDraft}
+                disabled={!selectedClient && selectedProducts.length === 0}
                 variant="outline"
-                className="h-11 gap-2 border-amber-300 text-amber-600 hover:bg-amber-50 hover:border-amber-400 dark:border-amber-700 dark:text-amber-400 dark:hover:bg-amber-900/20 shadow-sm shadow-amber-100 dark:shadow-amber-900/20"
+                className="h-11 gap-2 border-amber-300 text-amber-600 hover:bg-amber-50 hover:border-amber-400 dark:border-amber-700 dark:text-amber-400 dark:hover:bg-amber-900/20 shadow-sm shadow-amber-100 dark:shadow-amber-900/20 disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none"
               >
                 <BookmarkPlus className="h-4 w-4" />
                 Guardar borrador
@@ -2688,8 +2689,9 @@ export default function OrderPage() {
               <Button
                 type="button"
                 onClick={saveDraft}
+                disabled={!selectedClient && selectedProducts.length === 0}
                 variant="outline"
-                className="h-11 gap-2 border-amber-300 text-amber-600 hover:bg-amber-50 hover:border-amber-400 dark:border-amber-700 dark:text-amber-400 dark:hover:bg-amber-900/20 shadow-sm shadow-amber-100 dark:shadow-amber-900/20"
+                className="h-11 gap-2 border-amber-300 text-amber-600 hover:bg-amber-50 hover:border-amber-400 dark:border-amber-700 dark:text-amber-400 dark:hover:bg-amber-900/20 shadow-sm shadow-amber-100 dark:shadow-amber-900/20 disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none"
               >
                 <BookmarkPlus className="h-4 w-4" />
                 Guardar borrador
