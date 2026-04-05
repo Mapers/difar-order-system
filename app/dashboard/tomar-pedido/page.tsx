@@ -1952,19 +1952,6 @@ export default function OrderPage() {
                         <Plus className="h-3.5 w-3.5" />
                       </button>
                     </div>
-                    {selectedProduct && (() => {
-                      const unitPrice = priceType === 'contado' ? Number(selectedProduct.PUContado)
-                        : priceType === 'credito' ? Number(selectedProduct.PUCredito)
-                        : priceType === 'porMenor' ? Number(selectedProduct.PUPorMenor)
-                        : priceType === 'porMayor' ? Number(selectedProduct.PUPorMayor)
-                        : Number(priceEdit);
-                      const sym = currency?.value === "PEN" ? "S/." : "$";
-                      return (
-                        <p className="text-[11px] text-center text-gray-500 dark:text-gray-400 mt-1 whitespace-nowrap">
-                          {sym}{unitPrice.toFixed(2)} × {quantity} = <span className="font-semibold text-gray-800 dark:text-gray-200">{sym}{(unitPrice * quantity).toFixed(2)}</span>
-                        </p>
-                      );
-                    })()}
                   </div>
 
                   <Button
@@ -1977,6 +1964,19 @@ export default function OrderPage() {
                     <span className="hidden sm:inline">Agregar al pedido</span>
                   </Button>
                 </div>
+                {selectedProduct && (() => {
+                  const unitPrice = priceType === 'contado' ? Number(selectedProduct.PUContado)
+                    : priceType === 'credito' ? Number(selectedProduct.PUCredito)
+                    : priceType === 'porMenor' ? Number(selectedProduct.PUPorMenor)
+                    : priceType === 'porMayor' ? Number(selectedProduct.PUPorMayor)
+                    : Number(priceEdit);
+                  const sym = currency?.value === "PEN" ? "S/." : "$";
+                  return (
+                    <p className="text-[11px] text-right text-gray-500 dark:text-gray-400 mt-1.5">
+                      {sym}{unitPrice.toFixed(2)} × {quantity} = <span className="font-semibold text-gray-800 dark:text-gray-200">{sym}{(unitPrice * quantity).toFixed(2)}</span>
+                    </p>
+                  );
+                })()}
               </CardContent>
             </Card>
 
