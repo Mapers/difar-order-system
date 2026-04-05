@@ -385,6 +385,31 @@ export default function OrderPage() {
     setSavedDrafts(loadDraftsFromStorage())
   }, [])
 
+  // Notify immediately on mount if there are pending drafts
+  useEffect(() => {
+    const drafts = loadDraftsFromStorage()
+    if (drafts.length === 0) return
+    toast({
+      title: "Tienes pedidos sin completar",
+      description: `${drafts.length} borrador${drafts.length !== 1 ? 'es' : ''} guardado${drafts.length !== 1 ? 's' : ''}. Ábrelos desde "Borradores".`,
+      variant: "warning",
+    })
+  }, [])
+
+  // Hourly reminder for pending drafts
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const drafts = loadDraftsFromStorage()
+      if (drafts.length === 0) return
+      toast({
+        title: "Recordatorio: pedidos pendientes",
+        description: `Tienes ${drafts.length} pedido${drafts.length !== 1 ? 's' : ''} sin completar. Puedes continuarlos desde "Borradores".`,
+        variant: "warning",
+      })
+    }, 60 * 60 * 1000) // 1 hour
+    return () => clearInterval(interval)
+  }, [])
+
   useEffect(() => {
     if (user) {
       debouncedFetchClients();
