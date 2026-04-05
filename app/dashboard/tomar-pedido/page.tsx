@@ -1172,35 +1172,21 @@ export default function OrderPage() {
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100">Tomar Pedido</h1>
           <p className="text-sm text-gray-500 dark:text-gray-400">Crea un nuevo pedido siguiendo los pasos.</p>
         </div>
-        <div className="flex items-center gap-2 shrink-0">
-          {savedDrafts.length > 0 && (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => setShowDraftsDialog(true)}
-              className="h-9 gap-1.5 text-amber-600 border-amber-200 hover:bg-amber-50 dark:text-amber-400 dark:border-amber-800 dark:hover:bg-amber-900/20"
-            >
-              <BookOpen className="h-4 w-4" />
-              <span className="hidden sm:inline text-xs">Borradores</span>
-              <span className="inline-flex items-center justify-center h-4 min-w-4 px-1 bg-amber-500 text-white text-[10px] font-bold rounded-full">
-                {savedDrafts.length}
-              </span>
-            </Button>
-          )}
-          {(selectedClient || selectedProducts.length > 0) && (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={saveDraft}
-              className="h-9 gap-1.5 text-gray-600 dark:text-gray-400 dark:border-gray-700"
-            >
-              <BookmarkPlus className="h-4 w-4" />
-              <span className="hidden sm:inline text-xs">Guardar borrador</span>
-            </Button>
-          )}
-        </div>
+        {savedDrafts.length > 0 && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setShowDraftsDialog(true)}
+            className="h-9 gap-1.5 shrink-0 text-amber-600 border-amber-300 hover:bg-amber-50 hover:border-amber-400 dark:text-amber-400 dark:border-amber-700 dark:hover:bg-amber-900/20"
+          >
+            <BookOpen className="h-4 w-4" />
+            <span className="text-xs">Borradores</span>
+            <span className="inline-flex items-center justify-center h-4 min-w-4 px-1 bg-amber-500 text-white text-[10px] font-bold rounded-full">
+              {savedDrafts.length}
+            </span>
+          </Button>
+        )}
       </div>
 
       {/* Step progress — own full-width row so it can never be squeezed */}
@@ -1477,7 +1463,16 @@ export default function OrderPage() {
                 </div>
               )}
             </CardContent>
-            <CardFooter className="flex justify-end border-t bg-gray-50 dark:bg-gray-800/50 dark:border-gray-800 py-4">
+            <CardFooter className="flex justify-between border-t bg-gray-50 dark:bg-gray-800/50 dark:border-gray-800 py-4">
+              <Button
+                type="button"
+                onClick={saveDraft}
+                variant="outline"
+                className="h-11 gap-2 border-amber-300 text-amber-600 hover:bg-amber-50 hover:border-amber-400 dark:border-amber-700 dark:text-amber-400 dark:hover:bg-amber-900/20 shadow-sm shadow-amber-100 dark:shadow-amber-900/20"
+              >
+                <BookmarkPlus className="h-4 w-4" />
+                Guardar borrador
+              </Button>
               <Button
                 type="button"
                 onClick={nextStep}
@@ -2315,6 +2310,15 @@ export default function OrderPage() {
                       <ArrowLeft className="mr-2 h-4 w-4"/>
                       Anterior
                     </Button>
+                    <Button
+                      type="button"
+                      onClick={saveDraft}
+                      variant="outline"
+                      className="h-11 gap-2 border-amber-300 text-amber-600 hover:bg-amber-50 hover:border-amber-400 dark:border-amber-700 dark:text-amber-400 dark:hover:bg-amber-900/20 shadow-sm shadow-amber-100 dark:shadow-amber-900/20"
+                    >
+                      <BookmarkPlus className="h-4 w-4" />
+                      Guardar borrador
+                    </Button>
                     <Button type="button" onClick={nextStep} disabled={!isStepValid()} className="h-11 bg-blue-600 hover:bg-blue-700 px-6">
                       Siguiente
                       <ArrowRight className="ml-2 h-4 w-4"/>
@@ -2680,6 +2684,15 @@ export default function OrderPage() {
               <Button type="button" variant="outline" onClick={prevStep} className="h-11 dark:border-gray-700 dark:text-gray-300">
                 <ArrowLeft className="mr-2 h-4 w-4"/>
                 Anterior
+              </Button>
+              <Button
+                type="button"
+                onClick={saveDraft}
+                variant="outline"
+                className="h-11 gap-2 border-amber-300 text-amber-600 hover:bg-amber-50 hover:border-amber-400 dark:border-amber-700 dark:text-amber-400 dark:hover:bg-amber-900/20 shadow-sm shadow-amber-100 dark:shadow-amber-900/20"
+              >
+                <BookmarkPlus className="h-4 w-4" />
+                Guardar borrador
               </Button>
               <Button type="submit" className="h-11 px-6 bg-green-600 hover:bg-green-700" disabled={isLoadingSave}>
                 <Check className="mr-2 h-4 w-4"/>
