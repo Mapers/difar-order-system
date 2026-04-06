@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input"
 import {
   Search,
   Eye,
-  Clock, Edit, FileText, MoreHorizontal, Download, Printer, Receipt, OctagonAlert, Layers
+  Clock, Edit, FileText, MoreHorizontal, Download, Printer, Receipt, OctagonAlert, Layers, Trash2
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import {useEffect, useRef, useState} from "react"
@@ -29,7 +29,6 @@ import {generateOrderPdf} from "@/lib/pdf";
 import {TimelineModal} from "@/app/dashboard/estados-pedidos/timeline-modal";
 import {ORDER_STATES} from "@/app/dashboard/mis-pedidos/page";
 
-// ... (Interfaces mantenidas igual)
 export interface Pedido {
   idPedidocab: number
   nroPedido: string
@@ -83,7 +82,6 @@ export default function OrderStatusManagementPage() {
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
 
-  // CAMBIO 1: Estado inicial en 1 (Pendiente)
   const [filters, setFilters] = useState({
     estado: 1,
   })
@@ -99,6 +97,8 @@ export default function OrderStatusManagementPage() {
   const [showDocumentAlert, setShowDocumentAlert] = useState(false)
   const [pdfUrl, setPdfUrl] = useState<string>("")
   const objectUrlRef = useRef<string | null>(null)
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
+  const [orderToDelete, setOrderToDelete] = useState<Pedido | null>(null)
 
   const fetchOrders = async () => {
     try {
@@ -144,17 +144,12 @@ export default function OrderStatusManagementPage() {
     fetchEstados()
   }, [currentPage, searchQuery, filters])
 
-  // Función para manejar el clic en las tarjetas de estado
   const handleCardClick = (stateId: number) => {
     setFilters(prev => ({ ...prev, estado: stateId }))
     setCurrentPage(1)
   }
 
   const getStateCount = (stateId: number) => {
-    // Nota: Esto cuenta sobre los pedidos cargados actualmente.
-    // Si la API filtra, esto solo mostrará el conteo correcto para el estado seleccionado.
-    // Para ver conteos reales de todos los estados, necesitarías un endpoint de dashboard/estadísticas.
-    // Por ahora, funciona visualmente para seleccionar.
     return orders.filter(order => order.estadodePedido === stateId).length
   }
 
@@ -239,6 +234,28 @@ export default function OrderStatusManagementPage() {
     }
   }, [selectedOrder, detalle])
 
+  const handleDeleteOrder = async () => {
+    if (!orderToDelete) return
+    try {
+      setLoading(true)
+      await apiClient.delete(`/pedidos/soft/${orderToDelete.nroPedido}`, {
+        data: { nroPedido: orderToDelete.nroPedido, usuario: auth.user?.nombreCompleto || 'Usuario desconocido' }
+      })
+      setIsDeleteModalOpen(false)
+      setOrderToDelete(null)
+      await fetchOrders()
+    } catch (error: any) {
+      alert(error?.response?.data?.message || 'Error al eliminar el pedido')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const openDeleteModal = (order: Pedido) => {
+    setOrderToDelete(order)
+    setIsDeleteModalOpen(true)
+  }
+
   return (
       <div className="grid gap-6">
         <div className="flex flex-col gap-2">
@@ -246,9 +263,7 @@ export default function OrderStatusManagementPage() {
           <p className="text-gray-500">Controla y gestiona el flujo de estados de todos los pedidos del sistema</p>
         </div>
 
-        {/* CAMBIO 2: Tarjetas interactivas como filtros */}
         <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-9 gap-2 sm:gap-4">
-          {/* Opción para VER TODOS (opcional, pero recomendada si quieres resetear filtro) */}
           <Card
               onClick={() => handleCardClick(-1)}
               className={`cursor-pointer transition-all duration-200 border-2 ${filters.estado === -1 ? 'border-gray-800 ring-2 ring-gray-400 ring-offset-2 scale-105' : 'border-transparent hover:border-gray-300 hover:scale-105 opacity-80 hover:opacity-100'}`}
@@ -257,14 +272,12 @@ export default function OrderStatusManagementPage() {
               <div className="inline-flex items-center justify-center w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-gray-800 text-white mb-1 sm:mb-2">
                 <Layers className="h-3 w-3 sm:h-4 sm:w-4"/>
               </div>
-              {/* El conteo aquí no es preciso sin un endpoint de dashboard, se puede ocultar o mostrar solo texto */}
               <div className="text-xs font-bold text-gray-600 mt-1">TODOS</div>
             </CardContent>
           </Card>
 
           {ORDER_STATES.filter(item => item.id !== -1 && item.id !== -2).map((state) => {
             const Icon = state.icon
-            // const count = getStateCount(state.id) // Opcional: mostrar conteo si la API lo permite globalmente
             const isSelected = filters.estado === state.id
 
             return (
@@ -279,7 +292,6 @@ export default function OrderStatusManagementPage() {
                     >
                       <Icon className="h-3 w-3 sm:h-4 sm:w-4"/>
                     </div>
-                    {/* <div className="text-lg sm:text-2xl font-bold text-gray-900">{count}</div> */}
                     <div className={`text-xs font-bold truncate ${isSelected ? 'text-gray-900' : 'text-gray-500'}`}>{state.name}</div>
                   </CardContent>
                 </Card>
@@ -290,7 +302,6 @@ export default function OrderStatusManagementPage() {
         <Card className="shadow-md">
           <CardHeader className="flex flex-col sm:flex-row justify-between gap-4 sm:items-center border-b bg-gray-50">
             <CardTitle className="text-xl font-semibold text-teal-700">
-              {/* Título dinámico basado en filtro */}
               {filters.estado === -1
                   ? "Todos los Pedidos"
                   : `Pedidos en estado: ${ORDER_STATES.find(s => s.id === filters.estado)?.name || 'Desconocido'}`
@@ -312,9 +323,6 @@ export default function OrderStatusManagementPage() {
                     }}
                 />
               </div>
-
-              {/* CAMBIO 3: Selector eliminado */}
-
             </div>
           </CardContent>
         </Card>
@@ -405,6 +413,18 @@ export default function OrderStatusManagementPage() {
                                   </Link>
                                 </Button>
                                 <TimelineModal pedido={order} />
+
+                                {order.estadodePedido === 1 && (
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => openDeleteModal(order)}
+                                        className="text-red-600 hover:text-red-700 hover:bg-red-50 text-xs"
+                                    >
+                                      <Trash2 className="h-3 w-3 mr-1" />
+                                      Eliminar
+                                    </Button>
+                                )}
                               </div>
                             </td>
                           </tr>
@@ -514,6 +534,17 @@ export default function OrderStatusManagementPage() {
                                 </Link>
                               </Button>
                               <TimelineModal pedido={order} />
+                              {order.estadodePedido === 1 && (
+                                  <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => openDeleteModal(order)}
+                                      className="text-red-600 hover:text-red-700 hover:bg-red-50 text-xs"
+                                  >
+                                    <Trash2 className="h-3 w-3 mr-1" />
+                                    Eliminar
+                                  </Button>
+                              )}
                             </div>
                           </CardContent>
                         </Card>
@@ -558,7 +589,6 @@ export default function OrderStatusManagementPage() {
         </Card>
 
         <Dialog open={isDocumentsModalOpen} onOpenChange={setIsDocumentsModalOpen}>
-          {/* ... (Contenido del modal de documentos igual) */}
           <DialogContent className="sm:max-w-2xl">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
@@ -673,6 +703,44 @@ export default function OrderStatusManagementPage() {
                   </Button>
                 </DialogFooter>
             )}
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-red-600">
+                <Trash2 className="h-5 w-5" />
+                Eliminar Pedido
+              </DialogTitle>
+              <DialogDescription>
+                Esta acción no se puede deshacer.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="py-2 space-y-2">
+              <p className="text-sm text-gray-700">
+                ¿Estás seguro que deseas eliminar el pedido{" "}
+                <span className="font-semibold">{orderToDelete?.nroPedido}</span>?
+              </p>
+            </div>
+
+            <DialogFooter>
+              <Button
+                  variant="outline"
+                  onClick={() => setIsDeleteModalOpen(false)}
+                  disabled={loading}
+              >
+                Cancelar
+              </Button>
+              <Button
+                  variant="destructive"
+                  onClick={handleDeleteOrder}
+                  disabled={loading}
+              >
+                {loading ? "Eliminando..." : "Sí, eliminar"}
+              </Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>
