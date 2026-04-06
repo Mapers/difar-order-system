@@ -30,15 +30,11 @@ export default function SequentialSection({ sectionType, onOpenModalChange }: Se
     const [sequentialEditando, setSequentialEditando] = useState<Sequential | null>(null)
     const [itemToDelete, setItemToDelete] = useState<Sequential | null>(null)
     const [errors, setErrors] = useState<{[key: string]: string}>({})
+    const [almacenes, setAlmacenes] = useState<any[]>([])
 
     const [nuevoSequential, setNuevoSequential] = useState({
-        nombre: "", tipo: "", descripcion: "", prefijo: "", valorActual: 1, activo: true
+        nombre: "", tipo: "", descripcion: "", prefijo: "", valorActual: 1, activo: true, id_almacen: ""
     })
-
-    const getTypeName = (code: string) => {
-        const doc = DOCUMENT_TYPES.find(d => d.value === code)
-        return doc ? doc.label : code
-    }
 
     const fetchSequentials = useCallback(async () => {
         setLoading(true)
@@ -53,13 +49,25 @@ export default function SequentialSection({ sectionType, onOpenModalChange }: Se
         }
     }, [sectionType])
 
+    const fetchAlmacenes = useCallback(async () => {
+        try {
+            const response = await apiClient.get(`/admin/listar/almacenes`)
+            setAlmacenes(response.data?.data || [])
+        } catch (error) {
+            console.error("Error fetching almacenes:", error)
+        }
+    }, [])
+
     useEffect(() => {
         fetchSequentials()
-    }, [fetchSequentials])
+        fetchAlmacenes()
+    }, [fetchSequentials, fetchAlmacenes])
 
     const abrirModalNuevoSequential = useCallback(() => {
         setSequentialEditando(null)
-        setNuevoSequential({ nombre: "", tipo: "", descripcion: "", prefijo: "", valorActual: 1, activo: true })
+        setNuevoSequential({
+            nombre: "", tipo: "", descripcion: "", prefijo: "", valorActual: 1, activo: true, id_almacen: ""
+        })
         setErrors({})
         setIsSequentialModalOpen(true)
     }, [])
@@ -76,7 +84,8 @@ export default function SequentialSection({ sectionType, onOpenModalChange }: Se
             descripcion: sequential.descripcion || "",
             prefijo: sequential.prefijo,
             valorActual: sequential.valorActual,
-            activo: sequential.activo
+            activo: sequential.activo,
+            id_almacen: sequential.id_almacen ? String(sequential.id_almacen) : ""
         })
         setErrors({})
         setIsSequentialModalOpen(true)
@@ -86,6 +95,7 @@ export default function SequentialSection({ sectionType, onOpenModalChange }: Se
         const newErrors: {[key: string]: string} = {}
         if (!nuevoSequential.nombre.trim()) newErrors.nombre = "Obligatorio"
         if (sectionType === "secuenciales" && !nuevoSequential.tipo) newErrors.tipo = "Obligatorio"
+        if (sectionType === "secuenciales" && !nuevoSequential.id_almacen) newErrors.id_almacen = "Obligatorio"
         if (!nuevoSequential.prefijo.trim()) newErrors.prefijo = "Obligatorio"
         if (nuevoSequential.valorActual < 0) newErrors.valorActual = "Debe ser >= 0"
         setErrors(newErrors)
@@ -137,6 +147,17 @@ export default function SequentialSection({ sectionType, onOpenModalChange }: Se
         }
     }
 
+    const getTypeName = (code: string) => {
+        const doc = DOCUMENT_TYPES.find(d => d.value === code)
+        return doc ? doc.label : code
+    }
+
+    const getAlmacenName = (id: number | string | null | undefined) => {
+        if (!id) return "No asignado"
+        const alm = almacenes.find(a => String(a.IdAlmacen) === String(id))
+        return alm ? `${alm.Codigo_Alm} - ${alm.Descripcion}` : "Desconocido"
+    }
+
     if (loading) {
         return (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -171,17 +192,27 @@ export default function SequentialSection({ sectionType, onOpenModalChange }: Se
                                     </div>
                                 </div>
 
-                                <div className="space-y-3 mb-4">
-                                    <div className="grid grid-cols-2 gap-3 text-sm">
-                                        <div>
-                                            <span className="font-medium text-gray-500">Prefijo:</span>
-                                            <div className="font-semibold text-blue-600">{sequential.prefijo}</div>
-                                        </div>
-                                        <div>
-                                            <span className="font-medium text-gray-500">Secuencial:</span>
-                                            <div className="font-semibold text-green-600">{sequential.valorActual}</div>
-                                        </div>
+                                <div className={`grid ${sectionType === "secuenciales" ? "grid-cols-3" : "grid-cols-2"} gap-3 text-sm`}>
+                                    <div>
+                                        <span className="font-medium text-gray-500">Prefijo:</span>
+                                        <div className="font-semibold text-blue-600">{sequential.prefijo}</div>
                                     </div>
+                                    <div>
+                                        <span className="font-medium text-gray-500">Secuencial:</span>
+                                        <div className="font-semibold text-green-600">{sequential.valorActual}</div>
+                                    </div>
+
+                                    {sectionType === "secuenciales" && (
+                                        <div className="min-w-0">
+                                            <span className="font-medium text-gray-500">Almacén:</span>
+                                            <div
+                                                className="font-semibold text-purple-600 truncate"
+                                                title={getAlmacenName(sequential.id_almacen)}
+                                            >
+                                                {getAlmacenName(sequential.id_almacen)}
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
 
                                 <div className="flex gap-2">
@@ -238,6 +269,24 @@ export default function SequentialSection({ sectionType, onOpenModalChange }: Se
                                 </div>
                             )}
                         </div>
+
+                        {sectionType === "secuenciales" && (
+                            <div className="space-y-2">
+                                <Label>Almacén Afectado *</Label>
+                                <Select value={nuevoSequential.id_almacen} onValueChange={(val) => setNuevoSequential({...nuevoSequential, id_almacen: val})}>
+                                    <SelectTrigger className={errors.id_almacen ? "border-red-500" : ""}>
+                                        <SelectValue placeholder="Seleccionar almacén" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {almacenes.map((alm) => (
+                                            <SelectItem key={alm.IdAlmacen} value={String(alm.IdAlmacen)}>
+                                                {alm.Codigo_Alm} - {alm.Descripcion}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        )}
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="space-y-2">

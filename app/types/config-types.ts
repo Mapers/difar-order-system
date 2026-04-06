@@ -8,6 +8,7 @@ export interface Sequential {
     fechaMod: string
     usuMod: string
     activo: boolean
+    id_almacen?: number | null
 }
 
 export interface AppConfig {
