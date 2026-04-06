@@ -7,9 +7,9 @@ import { Receipt, Loader2, Truck, AlertTriangle, Check, FileText, CreditCard, Ca
 import { Pedido, SunatTransaccion, TipoDocSunat, GuiaReferencia } from "@/app/types/order/order-interface"
 import { GuidesSelectorModal } from "./GuidesSelectorModal"
 import { Badge } from "@/components/ui/badge"
-import { Sequential } from "@/app/dashboard/configuraciones/page"
 import { InstallmentModal, Cuota } from "./InstallmentModal"
 import {ContactConfirmModal} from "@/app/dashboard/comprobantes/modals/ContactConfirmModal";
+import {Sequential} from "@/app/types/config-types";
 
 interface InvoiceModalProps {
     open: boolean
@@ -61,6 +61,10 @@ export function InvoiceModal({
         onConfirm(selectedGuides, isCredit ? cuotas : [], email, phone)
     }
 
+    const selectedSequential = tiposComprobante.find(
+        (tipo) => `${tipo.prefijo}|${tipo.tipo}` === invoiceType
+    )
+
     return (
         <>
             <Dialog open={open} onOpenChange={onOpenChange}>
@@ -94,6 +98,12 @@ export function InvoiceModal({
                                             ))}
                                         </SelectContent>
                                     </Select>
+
+                                    {selectedSequential?.desc_almacen && (
+                                        <p className="text-xs text-slate-500 mt-1.5 ml-1">
+                                            <span className="font-semibold text-gray-700">Almacén:</span> {selectedSequential.desc_almacen}
+                                        </p>
+                                    )}
                                 </div>
                                 <div>
                                     <Label className="text-sm font-medium mb-2 block">Transacción SUNAT</Label>

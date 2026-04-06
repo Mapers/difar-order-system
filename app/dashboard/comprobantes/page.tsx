@@ -29,12 +29,12 @@ import {CancelModal} from "@/app/dashboard/comprobantes/modals/CancelModal";
 import {PdfViewerModal} from "@/app/dashboard/comprobantes/modals/PdfViewerModal";
 import {ErrorModal} from "@/app/dashboard/comprobantes/modals/ErrorModal";
 import {GenerarGuiasModal} from "@/app/dashboard/comprobantes/modals/generar-guias-modal";
-import {Sequential} from "@/app/dashboard/configuraciones/page";
 import {EmailModal, WhatsAppModal} from "@/app/dashboard/comprobantes/modals/ActionModals";
 import {StatusModal} from "@/app/dashboard/comprobantes/modals/StatusModal";
 import {CreditNotesTable} from "@/app/dashboard/comprobantes/CreditNotesTable";
 import {GenerarNotaCreditoModal} from "@/app/dashboard/comprobantes/modals/GenerarNotaCreditoModal";
 import {Cuota} from "@/app/dashboard/comprobantes/modals/InstallmentModal";
+import {Sequential} from "@/app/types/config-types";
 
 export default function ComprobantesPage() {
   const [comprobantes, setComprobantes] = useState<Comprobante[]>([])
@@ -272,6 +272,7 @@ export default function ComprobantesPage() {
             cuotas: cuotas,
             email,
             phone,
+            id_almacen: tipoComprobante?.id_almacen || 1
           }
       )
 

@@ -9,6 +9,7 @@ export interface Sequential {
     usuMod: string
     activo: boolean
     id_almacen?: number | null
+    desc_almacen?: string | null
 }
 
 export interface AppConfig {
