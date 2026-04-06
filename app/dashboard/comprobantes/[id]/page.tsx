@@ -346,6 +346,7 @@ export default function OrderDetailsPage({ params }: { params: { id: string } })
                 <TableRow>
                   <TableHead>Código</TableHead>
                   <TableHead>Producto</TableHead>
+                  <TableHead>Laboratorio</TableHead>
                   <TableHead>Lote - Fec.Venc</TableHead>
                   <TableHead className="text-right">Cantidad</TableHead>
                   <TableHead className="text-right">Precio Unitario</TableHead>
@@ -362,6 +363,7 @@ export default function OrderDetailsPage({ params }: { params: { id: string } })
                         {item.is_autorizado === 'S' && <ArrowBigDownDash className="h-5 w-5 mr-2 text-orange-600" />}
                         {item.productoNombre || "Producto no especificado"}
                       </TableCell>
+                      <TableCell>{item.laboratorio || "No especificado"}</TableCell>
                       <TableCell>{item.cod_lote || ''} - {item.fec_venc_lote || ''}</TableCell>
                       <TableCell className="text-right">
                         {Number(item.cantPedido)}
@@ -403,6 +405,10 @@ export default function OrderDetailsPage({ params }: { params: { id: string } })
                     <div>
                       <p className="text-gray-500">Unidad:</p>
                       <p className="font-medium">{item.productoUnidad || "und"}</p>
+                    </div>
+                    <div>
+                      <p className="font-medium text-sm text-gray-500">Laboratorio</p>
+                      <p className="font-semibold">{item.laboratorio || "No especificado"}</p>
                     </div>
                     <div>
                       <p className="font-medium text-sm text-gray-500">Lote - Fec.Venc</p>

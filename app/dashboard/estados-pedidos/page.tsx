@@ -69,6 +69,7 @@ export interface PedidoDet {
   cod_lote?: string
   is_autorizado?: string
   is_editado?: string
+  laboratorio: string
 }
 
 interface Status {
