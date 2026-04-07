@@ -64,6 +64,11 @@ export function ComprobantesTable({
     }
 
     const getEstadoBadge = (comprobante: Comprobante) => {
+        if (comprobante.tieneNC) {
+            return (<div className="flex items-center gap-1">
+                <Badge variant="default">Tiene NC</Badge>
+            </div>)
+        }
         if (comprobante.anulado) {
             return (
                 <div className="flex items-center gap-1">
@@ -175,7 +180,7 @@ export function ComprobantesTable({
                                                         <DropdownMenuSeparator />
 
 
-                                                        {!comprobante.anulado && (
+                                                        {(!comprobante.anulado && !comprobante.tieneNC) && (
                                                             <>
                                                                 <DropdownMenuSeparator />
                                                                 <DropdownMenuItem className="text-red-600" onClick={() => onCancel(comprobante)}>
@@ -266,7 +271,7 @@ export function ComprobantesTable({
 
                                                 <DropdownMenuSeparator />
 
-                                                {!comprobante.anulado && (
+                                                {(!comprobante.anulado && !comprobante.tieneNC) && (
                                                     <>
                                                         <DropdownMenuSeparator />
                                                         <DropdownMenuItem className="text-red-600" onClick={() => onCancel(comprobante)}>

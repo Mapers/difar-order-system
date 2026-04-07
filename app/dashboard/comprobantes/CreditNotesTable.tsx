@@ -126,7 +126,6 @@ export function CreditNotesTable({
                                         <td className="p-4 text-sm">{format(parseISO(nota.fecha_envio), "dd/MM/yyyy")}</td>
                                         <td className="p-4 text-sm">
                                             <div className="flex items-center gap-2">
-                                                <FileDiff className="h-4 w-4 text-blue-500" />
                                                 {getTipoComprobante(nota.tipo_comprobante)}
                                             </div>
                                         </td>

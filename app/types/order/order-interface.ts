@@ -19,6 +19,7 @@ export interface Comprobante {
     raw_request: string
     raw_response: string
     motivo_anulado?: string
+    tieneNC: boolean
 }
 
 export interface GuiaRemision {

@@ -62,7 +62,7 @@ export function GenerarNotaCreditoModal({
             const response = await apiClient.get(url)
             const data = response.data.data.data || []
 
-            setComprobantes(data)
+            setComprobantes(data.filter((item: Comprobante) => !item.anulado && !item.tieneNC ))
         } catch (error) {
             console.error("Error buscando comprobantes para NC:", error)
         } finally {
