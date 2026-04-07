@@ -46,7 +46,7 @@ export function ContactConfirmModal({
                 <div className="grid gap-4 py-4">
                     <div className="space-y-2">
                         <Label htmlFor="email" className="flex items-center gap-2">
-                            <Mail className="h-4 w-4" /> Correo Electrónico
+                            <Mail className="h-4 w-4" /> Correo Electrónico (opcional)
                         </Label>
                         <Input
                             id="email"
@@ -57,7 +57,7 @@ export function ContactConfirmModal({
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="phone" className="flex items-center gap-2">
-                            <Phone className="h-4 w-4" /> WhatsApp / Teléfono
+                            <Phone className="h-4 w-4" /> WhatsApp / Teléfono (opcional)
                         </Label>
                         <Input
                             id="phone"
