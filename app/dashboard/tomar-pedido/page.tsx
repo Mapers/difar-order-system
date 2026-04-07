@@ -140,7 +140,7 @@ export default function OrderPage() {
 
   const [open, setOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
-  const [quantity, setQuantity] = useState(1)
+  const [quantity, setQuantity] = useState<number | "">(1)
   const [selectedProduct, setSelectedProduct] = useState<IProduct | null>(null)
   const [selectedProducts, setSelectedProducts] = useState<ISelectedProduct[]>([])
   const [isCheckingBonification, setIsCheckingBonification] = useState(false)
@@ -1309,7 +1309,27 @@ export default function OrderPage() {
                       min="1"
                       step="1"
                       value={quantity}
-                      onChange={(e) => setQuantity(Number.parseInt(e.target.value) || 1)}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (val === "") {
+                          setQuantity("");
+                        } else {
+                          const num = parseInt(val, 10);
+                          if (!isNaN(num) && num > 0) {
+                            setQuantity(num);
+                          }
+                        }
+                      }}
+                      onBlur={() => {
+                        if (quantity === "" || quantity < 1) {
+                          setQuantity(1);
+                        }
+                      }}
+                      onKeyDown={(e) => {
+                        if (['e', 'E', '+', '-', '.'].includes(e.key)) {
+                          e.preventDefault();
+                        }
+                      }}
                       className="bg-white"
                   />
                 </div>
@@ -1531,7 +1551,7 @@ export default function OrderPage() {
                           </tbody>
                           <TableFooter>
                             <TableRow>
-                              <TableCell colSpan={4}></TableCell>
+                              <TableCell colSpan={5}></TableCell>
                               <TableCell className="px-4 py-3 text-right text-sm font-medium text-gray-900">
                                 Total:
                               </TableCell>
@@ -1966,7 +1986,7 @@ export default function OrderPage() {
                       </tbody>
                       <TableFooter>
                         <TableRow>
-                          <TableCell colSpan={4}></TableCell>
+                          <TableCell colSpan={5}></TableCell>
                           <TableCell className="px-4 py-3 text-right text-sm font-medium text-gray-900">
                             Total:
                           </TableCell>
