@@ -1379,6 +1379,12 @@ export default function OrderPage() {
                                 scope="col"
                                 className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                             >
+                              Laboratorio
+                            </th>
+                            <th
+                                scope="col"
+                                className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                            >
                               Lote - Fec.Venc
                             </th>
                             <th
@@ -1453,6 +1459,10 @@ export default function OrderPage() {
                                           </Badge>
                                       )}
                                     </div>
+                                  </td>
+
+                                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-left">
+                                    {item.product.Descripcion}
                                   </td>
 
                                   <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-left">
@@ -1818,6 +1828,12 @@ export default function OrderPage() {
                           Producto
                         </th>
                         <th
+                            scope="col"
+                            className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                        >
+                          Laboratorio
+                        </th>
+                        <th
                           scope="col"
                           className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                         >
@@ -1895,6 +1911,10 @@ export default function OrderPage() {
                                     </Badge>
                                 )}
                               </div>
+                            </td>
+
+                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-left">
+                              {item.product.Descripcion}
                             </td>
 
                             <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-left">
