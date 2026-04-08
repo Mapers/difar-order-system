@@ -377,9 +377,9 @@ export default function LabSellerReportPage() {
                                             )
                                         })}
 
-                                        <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 mt-2 flex flex-col items-center shadow-sm">
-                                            <span className="text-[10px] font-bold text-emerald-600 uppercase mb-1">Total Ventas Laboratorio</span>
-                                            <span className="font-black text-emerald-800 text-lg">
+                                        <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-700/50 rounded-lg p-3 mt-2 flex flex-col items-center shadow-sm">
+                                            <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase mb-1">Total Ventas Laboratorio</span>
+                                            <span className="font-black text-emerald-800 dark:text-emerald-300 text-lg">
                                                 S/ {formatMoney(lab.totalVentasLaboratorio)}
                                             </span>
                                         </div>
@@ -388,8 +388,8 @@ export default function LabSellerReportPage() {
                             ))}
                         </div>
                     ) : (
-                        <div className="flex flex-col items-center justify-center py-16 bg-white rounded-lg border-2 border-dashed border-slate-200">
-                            <p className="text-slate-500 font-medium text-center px-4">
+                        <div className="flex flex-col items-center justify-center py-16 bg-white dark:bg-gray-900 rounded-lg border-2 border-dashed border-slate-200 dark:border-gray-700">
+                            <p className="text-slate-500 dark:text-gray-400 font-medium text-center px-4">
                                 No hay datos de ventas para mostrar con los filtros seleccionados.
                             </p>
                         </div>
@@ -398,13 +398,13 @@ export default function LabSellerReportPage() {
             </Card>
 
             <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-                <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden flex flex-col bg-slate-50 p-0">
-                    <DialogHeader className="p-4 md:p-6 bg-white border-b border-slate-200 flex-shrink-0">
+                <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden flex flex-col bg-slate-50 dark:bg-gray-800 p-0">
+                    <DialogHeader className="p-4 md:p-6 bg-white dark:bg-gray-900 border-b border-slate-200 dark:border-gray-700 flex-shrink-0">
                         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                             <div>
                                 <DialogTitle className="text-xl text-indigo-800">Detalle de Ventas por Laboratorio</DialogTitle>
                                 {detailData && detailData.length > 0 && (
-                                    <p className="text-sm text-slate-500 mt-1 font-medium">{detailData[0].Vendedor} | {detailData[0].Laboratorios[0].Laboratorio}</p>
+                                    <p className="text-sm text-slate-500 dark:text-gray-400 mt-1 font-medium">{detailData[0].Vendedor} | {detailData[0].Laboratorios[0].Laboratorio}</p>
                                 )}
                             </div>
                             <ExportDetalleLabVendedorPdf data={detailData} disabled={detailLoading || !detailData} />
@@ -415,19 +415,19 @@ export default function LabSellerReportPage() {
                         {detailLoading ? (
                             <div className="flex flex-col items-center justify-center py-12">
                                 <Loader2 className="h-8 w-8 animate-spin text-indigo-600 mb-4" />
-                                <p className="text-sm text-slate-500 font-medium">Cargando detalle...</p>
+                                <p className="text-sm text-slate-500 dark:text-gray-400 font-medium">Cargando detalle...</p>
                             </div>
                         ) : detailData && detailData.length > 0 ? (
                             <div className="space-y-6">
                                 {detailData[0].Laboratorios[0].Clientes.map((cli: any, cIdx: number) => (
-                                    <div key={cIdx} className="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
-                                        <div className="bg-slate-100 p-3 border-b border-slate-200">
-                                            <p className="text-sm font-bold text-slate-800">{cli.Codigo} | {cli.Nombre}</p>
-                                            {cli.NombreComercial && <p className="text-xs text-slate-500 mt-0.5">{cli.NombreComercial}</p>}
+                                    <div key={cIdx} className="bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden">
+                                        <div className="bg-slate-100 dark:bg-gray-800 p-3 border-b border-slate-200 dark:border-gray-700">
+                                            <p className="text-sm font-bold text-slate-800 dark:text-gray-200">{cli.Codigo} | {cli.Nombre}</p>
+                                            {cli.NombreComercial && <p className="text-xs text-slate-500 dark:text-gray-400 mt-0.5">{cli.NombreComercial}</p>}
                                         </div>
                                         <div className="hidden md:block overflow-x-auto">
-                                            <table className="w-full text-xs text-left text-slate-600">
-                                                <thead className="bg-white border-b border-slate-100">
+                                            <table className="w-full text-xs text-left text-slate-600 dark:text-gray-400">
+                                                <thead className="bg-white dark:bg-gray-900 border-b border-slate-100 dark:border-gray-700">
                                                 <tr>
                                                     <th className="px-3 py-2 font-semibold">Cód. Art</th>
                                                     <th className="px-3 py-2 font-semibold text-center">Cant</th>
