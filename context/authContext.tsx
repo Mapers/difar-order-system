@@ -1,11 +1,11 @@
 'use client';
 
-import {createContext, useContext, useEffect, useState, ReactNode, useCallback, use} from 'react';
+import {createContext, useContext, useEffect, useState, ReactNode, useCallback, use, useRef} from 'react';
 import { useRouter } from 'next/navigation';
 import { decodeToken, isTokenNearExpiry } from '@/app/utils/tokenUtils';
 import { AuthService } from '@/app/services/auth/AuthService';
 import { AuthContextType, SmsCheck, SmsSend, User, UserLoginDTO, UserRegisterDTO } from '@/app/services/auth/types';
-import { toast } from '@/app/hooks/use-toast';
+import { toast } from '@/app/hooks/useToast';
 import apiClient from "@/app/api/client";
 import {AppConfig} from "@/app/types/config-types";
 
@@ -27,12 +27,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const [loading, setLoading] = useState<boolean>(true);
     const router = useRouter();
     const [globalConfigs, setGlobalConfigs] = useState<AppConfig[]>([]);
+    const tokenRef = useRef("");
 
     const clearAuthState = useCallback(() => {
         setUser(null);
         setIsAuthenticated(false);
         localStorage.removeItem('token');
         localStorage.removeItem('invoice');
+        delete apiClient.defaults.headers.common['Authorization'];
     }, []);
 
     const fetchGlobalConfigs = useCallback(async () => {
@@ -89,7 +91,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 const token = response.data;
                 const tokenResult = decodeToken(token);
                 if (tokenResult.isValid && tokenResult.user) {
-                    setToken(response.data)
+                    tokenRef.current = response.data;
+                    setToken(response.data);
                     const telefono = tokenResult.user.telefono
                     return telefono
                 }
@@ -115,8 +118,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             setLoading(true);
             const resCheck = await AuthService.checkToken(smsCheck);
             if (resCheck.success) {
-                localStorage.setItem("token", token);
-                const tokenResult = decodeToken(token);
+                localStorage.setItem("token", tokenRef.current);
+                const tokenResult = decodeToken(tokenRef.current);
                 setUser(tokenResult.user);
                 setIsAuthenticated(true);
                 return resCheck;
@@ -170,11 +173,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 setUser(tokenResult.user);
                 setIsAuthenticated(true);
             } else {
-                console.log('Token inválido o expirado. Cerrando sesión...');
-                logout();
+                clearAuthState();
+                router.push('/');
             }
         }
-    }, []);
+    }, [clearAuthState, router]);
 
     const checkToken = useCallback(() => {
         const token = localStorage.getItem('token');

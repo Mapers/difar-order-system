@@ -11,7 +11,7 @@ import { consultDocClientRequest, fetchTypeDocuments } from "@/app/api/reports"
 import { TypeDocument, Document, Zone } from "@/app/types/report/report-interface"
 import { normalizeDocumentCode } from "@/app/utils/normalizeDocumentCode"
 import { documentoSchema } from '@/schemas/reports/documentoSchema'
-import { toast } from "@/app/hooks/use-toast"
+import { toast } from "@/app/hooks/useToast"
 import ZoneClientReport from "@/components/reporte/zoneClientReport"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { z } from 'zod'

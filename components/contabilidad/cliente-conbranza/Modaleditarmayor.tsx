@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Loader2, Check, Pencil } from "lucide-react"
 import apiClient from "@/app/api/client"
-import { toast } from "@/app/hooks/use-toast"
+import { toast } from "@/app/hooks/useToast"
 import { MayorItem } from "@/app/types/amortizacion-types"
 
 interface Props {

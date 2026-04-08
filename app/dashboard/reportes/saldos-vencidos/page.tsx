@@ -15,7 +15,7 @@ const calcDiasVencidos = (fechaVcto: string): number => {
         return Math.max(0, Math.floor((today.getTime() - vcto.getTime()) / 86_400_000))
     } catch { return 0 }
 }
-import { toast } from "@/app/hooks/use-toast"
+import { toast } from "@/app/hooks/useToast"
 import { ExportExpiredBalancesPdf } from "@/components/reporte/exportExpiredBalancesPdf"
 import { ZoneReportSkeleton } from "@/components/skeleton/ZoneReportSkeleton"
 import { VendedorVencido } from "@/app/types/report-types"

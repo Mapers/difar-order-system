@@ -88,3 +88,31 @@ export interface GuiaReferencia {
     tipo_comprobante: string;
     pdf_zip_base64: string;
 }
+
+export interface LoteProducto {
+    value: string
+}
+
+export interface ProductoConLotes {
+    prod_codigo: string
+    prod_descripcion: string
+    cantidadPedido: number
+    lotes: LoteProducto[]
+    loteSeleccionado?: string
+}
+
+export interface Seller {
+    idVendedor: number
+    codigo: string
+    nombres: string
+    apellidos: string
+    DNI: string
+    telefono: string
+    comisionVend: number
+    comisionCobranza: number
+    empRegistro: string
+}
+
+export type PriceType = 'contado' | 'credito' | 'porMayor' | 'porMenor' | 'custom'
+
+export type ModalLoaderType = 'BONIFICADO' | 'ESCALA' | 'EVALUACION' | null

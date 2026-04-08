@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
-import { toast } from "@/app/hooks/use-toast";
+import { toast } from "@/app/hooks/useToast";
 
 export interface LabSellerReportData {
     Laboratorio: string;

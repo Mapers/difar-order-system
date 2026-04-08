@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/dialog"
 import { Loader2, Pencil, Trash2, BookOpen, AlertCircle, RefreshCw } from "lucide-react"
 import apiClient from "@/app/api/client"
-import { toast } from "@/app/hooks/use-toast"
+import { toast } from "@/app/hooks/useToast"
 import { KardexItem, AmortizacionListItem } from "@/app/types/amortizacion-types"
 import ModalEditarKardex from "@/components/contabilidad/cliente-conbranza/Modaleditarkardex";
 import {fmtFecha, fmtMoney} from "@/lib/planilla.helper";

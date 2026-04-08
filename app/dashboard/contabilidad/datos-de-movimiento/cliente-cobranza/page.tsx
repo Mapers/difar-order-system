@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Search, Save, Loader2, X } from "lucide-react"
 import apiClient from "@/app/api/client"
 import { useAuth } from "@/context/authContext"
-import { toast } from "@/app/hooks/use-toast"
+import { toast } from "@/app/hooks/useToast"
 import { fetchGetAllClients } from "@/app/api/takeOrders"
 import { IClient } from "@/app/types/order/client-interface"
 import { Combobox } from "@/app/dashboard/mis-pedidos/page"

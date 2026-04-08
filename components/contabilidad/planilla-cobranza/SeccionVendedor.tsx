@@ -19,7 +19,7 @@ import {
     RefreshCw, FileText, Loader2, MapPin,
     DollarSign, Eye, X, Upload, Image as ImageIcon, Paperclip,
 } from 'lucide-react'
-import { toast } from '@/app/hooks/use-toast'
+import { toast } from '@/app/hooks/useToast'
 import DetalleVendedor from './DetalleVendedor'
 import EstadoPill from './EstadoPill'
 import {

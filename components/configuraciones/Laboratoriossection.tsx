@@ -19,7 +19,7 @@ import {
     Edit, Trash2, RefreshCw, Save,
     AlertCircle, Search, FlaskConical, X,
 } from 'lucide-react'
-import { toast } from '@/app/hooks/use-toast'
+import { toast } from '@/app/hooks/useToast'
 import apiClient from '@/app/api/client'
 
 interface Laboratorio {

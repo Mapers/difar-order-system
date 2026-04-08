@@ -11,7 +11,7 @@ import { Separator } from "@/components/ui/separator"
 import { useAuth } from '@/context/authContext';
 import { Popover, PopoverTrigger, PopoverContent } from '../ui/popover';
 import { Command, CommandInput, CommandList, CommandGroup, CommandItem, CommandEmpty } from '../ui/command';
-import { toast } from '@/app/hooks/use-toast'
+import { toast } from '@/app/hooks/useToast'
 import TabDireccionTecnica from '../cliente/tabDireccionTecnica'
 import TabCalificacion from '../cliente/tabCalificacion'
 import { ClientService } from '@/app/services/client/ClientService'

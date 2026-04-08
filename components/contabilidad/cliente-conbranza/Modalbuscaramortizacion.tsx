@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/dialog"
 import { Search, Loader2, Pencil, BookOpen, BookMarked, Trash2, X, AlertCircle, RefreshCw } from "lucide-react"
 import apiClient from "@/app/api/client"
-import { toast } from "@/app/hooks/use-toast"
+import { toast } from "@/app/hooks/useToast"
 import { AmortizacionListItem } from "@/app/types/amortizacion-types"
 import {fmtFecha, fmtMoney} from "@/lib/planilla.helper";
 

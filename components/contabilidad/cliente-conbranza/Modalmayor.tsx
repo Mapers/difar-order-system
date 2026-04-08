@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/dialog"
 import { Loader2, Pencil, Trash2, BookMarked, AlertCircle, RefreshCw } from "lucide-react"
 import apiClient from "@/app/api/client"
-import { toast } from "@/app/hooks/use-toast"
+import { toast } from "@/app/hooks/useToast"
 import { MayorItem, AmortizacionListItem } from "@/app/types/amortizacion-types"
 import ModalEditarMayor from "@/components/contabilidad/cliente-conbranza/Modaleditarmayor";
 import {fmtFecha, fmtMoney} from "@/lib/planilla.helper";

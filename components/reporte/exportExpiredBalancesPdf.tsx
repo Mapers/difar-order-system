@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Download, Loader2 } from "lucide-react";
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
-import { toast } from "@/app/hooks/use-toast";
+import { toast } from "@/app/hooks/useToast";
 import { VendedorVencido } from "@/app/types/report-types";
 
 interface ExportPdfProps {

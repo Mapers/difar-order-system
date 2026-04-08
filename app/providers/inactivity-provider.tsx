@@ -30,12 +30,8 @@ export function InactivityProvider({ children }: InactivityProviderProps) {
   const [shouldCheckInactivity, setShouldCheckInactivity] = useState(false);
 
   useEffect(() => {
-    if (isVendedor()) {
-      setShouldCheckInactivity(false);
-    } else {
-      setShouldCheckInactivity(isAuthenticated);
-    }
-  }, [isAuthenticated, user]);
+    setShouldCheckInactivity(isAuthenticated && !isVendedor());
+  }, [isAuthenticated, user, isVendedor]);
 
   const handleLogout = () => {
     if (isAuthenticated) {

@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Check, ChevronDown, ChevronRight, Edit, Plus, Settings, Trash2, X } from 'lucide-react'
 import apiClient from '@/app/api/client'
-import { toast } from "@/app/hooks/use-toast"
+import { toast } from "@/app/hooks/useToast"
 
 interface Rol {
   id: number

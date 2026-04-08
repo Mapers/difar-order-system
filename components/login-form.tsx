@@ -12,7 +12,7 @@ import { useAuth } from "@/context/authContext"
 import { SmsCheck, SmsSend, UserLoginDTO } from "@/app/services/auth/types"
 import { AuthService } from "@/app/services/auth/AuthService"
 import Image from "next/image"
-import { toast } from "@/app/hooks/use-toast"
+import { toast } from "@/app/hooks/useToast"
 
 export function LoginForm() {
   const { signin, sendDni, errors } = useAuth();
@@ -50,8 +50,6 @@ export function LoginForm() {
       }
     } catch (error: any) {
       console.error(error);
-      setShowVerification(true);
-      setVerificationCode(["", "", "", "", "", ""]);
     }
     finally {
       setLoading(false);
@@ -89,13 +87,13 @@ export function LoginForm() {
 
   const handleCodeChange = (index: number, value: string) => {
     if (value.length <= 1) {
-      const newCode = [...verificationCode]
-      newCode[index] = value
-      setVerificationCode(newCode)
-      // Auto-focus next input
+      const newCode = [...verificationCode];
+      newCode[index] = value;
+      setVerificationCode(newCode);
       if (value && index < 5) {
-        const nextInput = document.getElementById(`code-${index + 1}`)
-        nextInput?.focus()
+        document.getElementById(`code-${index + 1}`)?.focus();
+      } else if (!value && index > 0) {
+        document.getElementById(`code-${index - 1}`)?.focus();
       }
     }
   }

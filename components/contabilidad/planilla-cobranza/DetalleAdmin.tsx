@@ -17,7 +17,7 @@ import {
     CheckCircle2, XCircle, Loader2,
     PlayCircle, AlertTriangle,
 } from 'lucide-react'
-import { toast } from '@/app/hooks/use-toast'
+import { toast } from '@/app/hooks/useToast'
 import apiClient from '@/app/api/client'
 import {
     AdminInfo, CatalogosBanco,

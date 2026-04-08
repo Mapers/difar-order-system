@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react'
 import apiClient from '@/app/api/client'
-import { toast } from '@/app/hooks/use-toast'
+import { toast } from '@/app/hooks/useToast'
 import {
     AdminInfo,
     Catalogo,

@@ -122,7 +122,6 @@ const PaymentCondition: React.FC<ClientRowProps> = ({
                         {monedas.map((currency) => (
                             <CommandItem
                                 key={currency.value}
-                                // Opcional: También podrías cambiar esto a currency.label si quieres buscar por nombre de moneda
                                 value={currency.label}
                                 onSelect={() => {
                                   onCurrencyChange(currency);
