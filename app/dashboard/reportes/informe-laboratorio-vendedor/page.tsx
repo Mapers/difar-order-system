@@ -344,7 +344,7 @@ export default function LabSellerReportPage() {
                                                 <td colSpan={2} className="px-4 py-4 text-right text-emerald-800 dark:text-emerald-300 uppercase tracking-wider text-xs font-bold">
                                                     Total Ventas:
                                                 </td>
-                                                <td className="px-4 py-4 text-right text-emerald-700 text-base font-bold">
+                                                <td className="px-4 py-4 text-right text-emerald-700 dark:text-emerald-400 text-base font-bold">
                                                     S/ {formatMoney(lab.totalVentasLaboratorio)}
                                                 </td>
                                                 <td></td>
@@ -353,19 +353,19 @@ export default function LabSellerReportPage() {
                                         </table>
                                     </div>
 
-                                    <div className="grid grid-cols-1 gap-3 p-4 md:hidden bg-slate-50">
+                                    <div className="grid grid-cols-1 gap-3 p-4 md:hidden bg-slate-50 dark:bg-gray-800">
                                         {lab.vendedores.map((vend, vIdx) => {
                                             const nombreLimpio = vend.Vendedor.substring(vend.Codigo_Vend.length).trim();
                                             return (
-                                                <div key={vIdx} className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm flex flex-col gap-2">
+                                                <div key={vIdx} className="bg-white dark:bg-gray-900 p-4 rounded-lg border border-slate-200 dark:border-gray-700 shadow-sm flex flex-col gap-2">
                                                     <div className="flex justify-between items-start">
-                                                        <span className="font-bold text-sm text-slate-800 pr-2">{nombreLimpio}</span>
-                                                        <span className="font-mono text-[10px] text-slate-500 bg-slate-100 px-2 py-1 rounded font-bold whitespace-nowrap">
+                                                        <span className="font-bold text-sm text-slate-800 dark:text-gray-200 pr-2">{nombreLimpio}</span>
+                                                        <span className="font-mono text-[10px] text-slate-500 dark:text-gray-400 bg-slate-100 dark:bg-gray-800 px-2 py-1 rounded font-bold whitespace-nowrap">
                                                             {vend.Codigo_Vend}
                                                         </span>
                                                     </div>
-                                                    <div className="flex justify-between items-center border-t border-slate-100 pt-2 mt-1">
-                                                        <span className="text-xs uppercase text-slate-400 font-bold">Ventas:</span>
+                                                    <div className="flex justify-between items-center border-t border-slate-100 dark:border-gray-700 pt-2 mt-1">
+                                                        <span className="text-xs uppercase text-slate-400 dark:text-gray-500 font-bold">Ventas:</span>
                                                         <span className="font-bold text-indigo-700 text-sm">
                                                             S/ {formatMoney(vend.SumaDeVta_Tot)}
                                                         </span>
