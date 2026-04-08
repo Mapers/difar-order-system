@@ -113,22 +113,22 @@ export default function ItemKardexReportPage() {
     return (
         <div className="grid gap-6 p-4 md:p-6">
             <div className="flex flex-col gap-2">
-                <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-gray-900">Reporte Kardex Item</h1>
-                <p className="text-sm md:text-base text-gray-500">
+                <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100">Reporte Kardex Item</h1>
+                <p className="text-sm md:text-base text-gray-500 dark:text-gray-400">
                     Registro de inventario permanente en unidades físicas por producto.
                 </p>
             </div>
 
             <Card className="shadow-md">
-                <CardHeader className="bg-slate-50 border-b border-slate-200 p-4 md:p-6">
+                <CardHeader className="bg-slate-50 dark:bg-gray-800 border-b border-slate-200 dark:border-gray-700 p-4 md:p-6">
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-end">
                         <div className="flex flex-col gap-2 lg:col-span-2">
-                            <Label className="text-sm font-semibold flex items-center gap-2 text-slate-700">
+                            <Label className="text-sm font-semibold flex items-center gap-2 text-slate-700 dark:text-gray-300">
                                 <CalendarIcon className="w-4 h-4 "/> Fecha Inicio
                             </Label>
                             <Popover>
                                 <PopoverTrigger asChild>
-                                    <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal bg-white h-12", !startDate && "text-muted-foreground")}>
+                                    <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal bg-white dark:bg-gray-900 h-12", !startDate && "text-muted-foreground")}>
                                         <CalendarIcon className="mr-2 h-4 w-4 opacity-50" />
                                         {startDate ? format(startDate, "dd/MM/yyyy") : <span>Seleccionar</span>}
                                     </Button>
@@ -139,12 +139,12 @@ export default function ItemKardexReportPage() {
                             </Popover>
                         </div>
                         <div className="flex flex-col gap-2 lg:col-span-2">
-                            <Label className="text-sm font-semibold flex items-center gap-2 text-slate-700">
+                            <Label className="text-sm font-semibold flex items-center gap-2 text-slate-700 dark:text-gray-300">
                                 <CalendarIcon className="w-4 h-4 "/> Fecha Fin
                             </Label>
                             <Popover>
                                 <PopoverTrigger asChild>
-                                    <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal bg-white h-12", !endDate && "text-muted-foreground")}>
+                                    <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal bg-white dark:bg-gray-900 h-12", !endDate && "text-muted-foreground")}>
                                         <CalendarIcon className="mr-2 h-4 w-4 opacity-50" />
                                         {endDate ? format(endDate, "dd/MM/yyyy") : <span>Seleccionar</span>}
                                     </Button>
@@ -157,7 +157,7 @@ export default function ItemKardexReportPage() {
 
                         <div className="lg:col-span-5 space-y-3">
                             <div className="space-y-2">
-                                <Label htmlFor="product-search" className="text-sm font-semibold flex items-center gap-2 text-slate-700">
+                                <Label htmlFor="product-search" className="text-sm font-semibold flex items-center gap-2 text-slate-700 dark:text-gray-300">
                                     <Package className="w-4 h-4"/> Buscar Producto
                                 </Label>
                                 <div className="relative">
@@ -167,19 +167,19 @@ export default function ItemKardexReportPage() {
                                                 variant="outline"
                                                 role="combobox"
                                                 aria-expanded={popoverOpen}
-                                                className="w-full justify-between h-12 px-3 text-left font-normal text-sm min-h-12 bg-white"
+                                                className="w-full justify-between h-12 px-3 text-left font-normal text-sm min-h-12 bg-white dark:bg-gray-900"
                                             >
                                                 {selectedProduct ? (
                                                     <div className="flex flex-col items-start min-w-0 flex-1 overflow-hidden">
-                                                        <span className="font-bold text-slate-800 truncate w-full text-sm">
+                                                        <span className="font-bold text-slate-800 dark:text-gray-200 truncate w-full text-sm">
                                                             {selectedProduct.NombreItem}
                                                         </span>
-                                                        <span className="text-xs text-gray-500 truncate w-full font-mono">
+                                                        <span className="text-xs text-gray-500 dark:text-gray-400 truncate w-full font-mono">
                                                             {selectedProduct.Codigo_Art} | {selectedProduct.Presentacion}
                                                         </span>
                                                     </div>
                                                 ) : (
-                                                    <span className="text-gray-500 truncate">Buscar producto...</span>
+                                                    <span className="text-gray-500 dark:text-gray-400 truncate">Buscar producto...</span>
                                                 )}
                                                 <Search className="ml-2 h-4 w-4 shrink-0 opacity-50"/>
                                             </Button>
@@ -197,7 +197,7 @@ export default function ItemKardexReportPage() {
                                                     className="text-sm h-11"
                                                 />
                                                 <CommandList className="max-h-[60vh] custom-scrollbar">
-                                                    <CommandEmpty className="py-6 text-center text-slate-500">
+                                                    <CommandEmpty className="py-6 text-center text-slate-500 dark:text-gray-400">
                                                         {productsLoading ? "Buscando productos..." : "No se encontraron productos."}
                                                     </CommandEmpty>
                                                     <CommandGroup heading="Resultados" className="overflow-y-auto">
@@ -214,7 +214,7 @@ export default function ItemKardexReportPage() {
                                                                     </div>
                                                                     <div className="flex flex-col flex-1 min-w-0">
                                                                         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start w-full gap-1 sm:gap-2">
-                                                                            <span className="font-bold text-sm text-slate-800 break-words flex-1">
+                                                                            <span className="font-bold text-sm text-slate-800 dark:text-gray-200 break-words flex-1">
                                                                                 {product.NombreItem}
                                                                             </span>
                                                                             <div className="flex flex-wrap gap-1 shrink-0">
@@ -227,10 +227,10 @@ export default function ItemKardexReportPage() {
                                                                             </div>
                                                                         </div>
                                                                         <div className="flex flex-col xs:flex-row xs:justify-between xs:items-center w-full mt-1 gap-1">
-                                                                            <span className="text-xs text-slate-500 break-words font-mono">
+                                                                            <span className="text-xs text-slate-500 dark:text-gray-400 break-words font-mono">
                                                                                 {product.Codigo_Art}
                                                                             </span>
-                                                                            <span className="text-xs text-slate-500 break-words">
+                                                                            <span className="text-xs text-slate-500 dark:text-gray-400 break-words">
                                                                                 Lab: {product.Presentacion}
                                                                             </span>
                                                                         </div>
@@ -269,11 +269,11 @@ export default function ItemKardexReportPage() {
                     </div>
                 </CardHeader>
 
-                <CardContent className="p-0 bg-slate-100/30">
+                <CardContent className="p-0 bg-slate-100/30 dark:bg-gray-900/30">
                     {loading ? (
                         <div className="flex flex-col items-center justify-center py-24">
                             <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mb-4"></div>
-                            <p className="text-slate-500 font-medium">Generando kardex, por favor espera...</p>
+                            <p className="text-slate-500 dark:text-gray-400 font-medium">Generando kardex, por favor espera...</p>
                         </div>
                     ) : data.length > 0 ? (
                         <div className="w-full">
@@ -289,8 +289,8 @@ export default function ItemKardexReportPage() {
                             </div>
 
                             <div className="hidden md:block overflow-x-auto">
-                                <table className="w-full text-sm text-left text-slate-700">
-                                    <thead className="text-xs text-slate-600 uppercase bg-slate-50 border-b border-slate-200">
+                                <table className="w-full text-sm text-left text-slate-700 dark:text-gray-300">
+                                    <thead className="text-xs text-slate-600 dark:text-gray-400 uppercase bg-slate-50 dark:bg-gray-800 border-b border-slate-200 dark:border-gray-700">
                                     <tr>
                                         <th className="px-4 py-3 font-bold whitespace-nowrap">Fecha</th>
                                         <th className="px-4 py-3 font-bold">Doc.</th>
@@ -304,7 +304,7 @@ export default function ItemKardexReportPage() {
                                     </thead>
                                     <tbody>
                                     {data.map((row, idx) => (
-                                        <tr key={idx} className="bg-white border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                                        <tr key={idx} className="bg-white dark:bg-gray-900 border-b border-slate-100 dark:border-gray-700 hover:bg-slate-50 dark:hover:bg-gray-700/30 transition-colors">
                                             <td className="px-4 py-3 font-medium whitespace-nowrap">
                                                 {row.Fecha_Mvto ? row.Fecha_Mvto.split('-').reverse().join('/') : '-'}
                                             </td>
@@ -345,15 +345,15 @@ export default function ItemKardexReportPage() {
 
                             <div className="md:hidden p-4 space-y-4">
                                 {data.map((row, idx) => (
-                                    <div key={idx} className="bg-white border border-slate-200 rounded-lg shadow-sm p-4 flex flex-col gap-3">
-                                        <div className="flex justify-between items-start border-b border-slate-100 pb-2">
+                                    <div key={idx} className="bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-700 rounded-lg shadow-sm p-4 flex flex-col gap-3">
+                                        <div className="flex justify-between items-start border-b border-slate-100 dark:border-gray-700 pb-2">
                                             <div>
-                                                <span className="font-bold text-slate-800 text-sm">
+                                                <span className="font-bold text-slate-800 dark:text-gray-200 text-sm">
                                                     {row.Fecha_Mvto ? row.Fecha_Mvto.split('-').reverse().join('/') : '-'}
                                                 </span>
                                                 <div className="flex items-center gap-2 mt-1">
-                                                    <Badge variant="outline" className="text-[10px] bg-slate-50">{row.Abreviatura || '-'}</Badge>
-                                                    <span className="text-xs font-mono text-slate-500">{row.SerieNumero}</span>
+                                                    <Badge variant="outline" className="text-[10px] bg-slate-50 dark:bg-gray-800">{row.Abreviatura || '-'}</Badge>
+                                                    <span className="text-xs font-mono text-slate-500 dark:text-gray-400">{row.SerieNumero}</span>
                                                 </div>
                                             </div>
                                             <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100">
@@ -362,17 +362,17 @@ export default function ItemKardexReportPage() {
                                         </div>
 
                                         <div className="text-sm">
-                                            <span className="font-semibold text-slate-700">Concepto: </span>
-                                            <span className="text-slate-600">{row.OPERACION || '-'}</span>
+                                            <span className="font-semibold text-slate-700 dark:text-gray-300">Concepto: </span>
+                                            <span className="text-slate-600 dark:text-gray-400">{row.OPERACION || '-'}</span>
                                         </div>
 
                                         {row.formula_ab && (
-                                            <div className="text-xs text-slate-500 bg-slate-50 p-2 rounded">
+                                            <div className="text-xs text-slate-500 dark:text-gray-400 bg-slate-50 dark:bg-gray-800 p-2 rounded">
                                                 <span className="font-semibold">Fórmula: </span>{row.formula_ab}
                                             </div>
                                         )}
 
-                                        <div className="grid grid-cols-2 gap-2 mt-2 pt-2 border-t border-slate-100">
+                                        <div className="grid grid-cols-2 gap-2 mt-2 pt-2 border-t border-slate-100 dark:border-gray-700">
                                             <div className="flex flex-col">
                                                 <span className="text-[10px] font-bold uppercase text-slate-400">Ingreso</span>
                                                 <span className="font-bold text-emerald-600">
@@ -411,9 +411,9 @@ export default function ItemKardexReportPage() {
                             </div>
                         </div>
                     ) : (
-                        <div className="flex flex-col items-center justify-center py-24 border-t border-slate-100 bg-white">
+                        <div className="flex flex-col items-center justify-center py-24 border-t border-slate-100 dark:border-gray-700 bg-white dark:bg-gray-900">
                             <FileText className="h-16 w-16 text-slate-200 mb-4" />
-                            <p className="text-slate-500 font-medium text-center px-4 max-w-sm">
+                            <p className="text-slate-500 dark:text-gray-400 font-medium text-center px-4 max-w-sm">
                                 Selecciona un producto y un rango de fechas para visualizar los movimientos de inventario.
                             </p>
                         </div>

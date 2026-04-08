@@ -169,20 +169,20 @@ export default function LabSellerReportPage() {
     return (
         <div className="grid gap-6 p-4 md:p-6">
             <div className="flex flex-col gap-2">
-                <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-gray-900">Ventas por Vendedor</h1>
-                <p className="text-sm md:text-base text-gray-500">Consulta las ventas agrupadas por laboratorio y vendedor del mes seleccionado.</p>
+                <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100">Ventas por Vendedor</h1>
+                <p className="text-sm md:text-base text-gray-500 dark:text-gray-400">Consulta las ventas agrupadas por laboratorio y vendedor del mes seleccionado.</p>
             </div>
 
             <Card className="shadow-md">
-                <CardHeader className="bg-slate-50 border-b border-slate-200 p-4">
+                <CardHeader className="bg-slate-50 dark:bg-gray-800 border-b border-slate-200 dark:border-gray-700 p-4">
                     <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-start">
                         <div className={`flex flex-col gap-2 ${isManagerOrAdmin ? 'md:col-span-3' : 'md:col-span-4'}`}>
-                            <label className="text-sm font-semibold flex items-center gap-2 text-slate-700">
+                            <label className="text-sm font-semibold flex items-center gap-2 text-slate-700 dark:text-gray-300">
                                 <CalendarIcon className="w-4 h-4 "/> Periodo (Mes y Año)
                             </label>
                             <Popover>
                                 <PopoverTrigger asChild>
-                                    <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal bg-white h-10", !selectedDate && "text-muted-foreground")}>
+                                    <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal bg-white dark:bg-gray-900 h-10", !selectedDate && "text-muted-foreground")}>
                                         <CalendarIcon className="mr-2 h-4 w-4 opacity-50" />
                                         {selectedDate ? format(selectedDate, "MMMM yyyy", { locale: es }).replace(/^\w/, (c) => c.toUpperCase()) : <span>Seleccionar mes</span>}
                                     </Button>
@@ -194,12 +194,12 @@ export default function LabSellerReportPage() {
                         </div>
 
                         <div className={`flex flex-col gap-2 ${isManagerOrAdmin ? 'md:col-span-3' : 'md:col-span-4'}`}>
-                            <label className="text-sm font-semibold flex items-center gap-2 text-slate-700">
+                            <label className="text-sm font-semibold flex items-center gap-2 text-slate-700 dark:text-gray-300">
                                 <FlaskConical className="w-4 h-4 "/> Laboratorios
                             </label>
                             <Popover open={openLab} onOpenChange={setOpenLab}>
                                 <PopoverTrigger asChild>
-                                    <Button variant="outline" role="combobox" className="justify-between w-full h-auto min-h-10 px-3 py-2 bg-white">
+                                    <Button variant="outline" role="combobox" className="justify-between w-full h-auto min-h-10 px-3 py-2 bg-white dark:bg-gray-900">
                                         <div className="flex flex-wrap gap-1 items-center">
                                             {selectedLabs.length > 0 ? <span className="text-sm font-semibold text-blue-700">{selectedLabs.length} seleccionado(s)</span> : <span className="text-muted-foreground text-sm font-normal">Todos...</span>}
                                         </div>
@@ -233,7 +233,7 @@ export default function LabSellerReportPage() {
                                             </Badge>
                                         ) : null;
                                     })}
-                                    <span className="text-xs text-slate-500 cursor-pointer hover:text-slate-800 hover:underline pt-1 ml-1 font-medium" onClick={() => setSelectedLabs([])}>Limpiar</span>
+                                    <span className="text-xs text-slate-500 dark:text-gray-400 cursor-pointer hover:text-slate-800 dark:hover:text-gray-200 hover:underline pt-1 ml-1 font-medium" onClick={() => setSelectedLabs([])}>Limpiar</span>
                                 </div>
                             )}
                         </div>

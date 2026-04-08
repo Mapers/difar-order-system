@@ -166,12 +166,12 @@ export default function ExpiredBalancesPage() {
     return (
         <div className="grid gap-6 p-4 md:p-6">
             <div className="flex flex-col gap-2">
-                <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-gray-900">Saldos por Cobrar (Vencidos)</h1>
-                <p className="text-sm md:text-base text-gray-500">Listado general de documentos vencidos agrupado por Vendedor, Zona y Cliente.</p>
+                <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100">Saldos por Cobrar (Vencidos)</h1>
+                <p className="text-sm md:text-base text-gray-500 dark:text-gray-400">Listado general de documentos vencidos agrupado por Vendedor, Zona y Cliente.</p>
             </div>
 
             <Card className="shadow-md">
-                <CardHeader className="flex flex-col gap-6 bg-slate-50 border-b border-slate-200 p-4">
+                <CardHeader className="flex flex-col gap-6 bg-slate-50 dark:bg-gray-800 border-b border-slate-200 dark:border-gray-700 p-4">
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                         <div>
                             <h2 className="text-lg font-semibold tracking-tight">Filtros de búsqueda</h2>
@@ -251,7 +251,7 @@ export default function ExpiredBalancesPage() {
 
                                     {selectedCliente && (
                                         <div
-                                            className="absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer p-1 text-gray-500 hover:text-red-500 hover:bg-red-50 rounded-md z-10"
+                                            className="absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer p-1 text-gray-500 dark:text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md z-10"
                                             onClick={(e) => { e.preventDefault(); e.stopPropagation(); setSelectedCliente(""); setSearchClienteQuery(""); }}
                                         >
                                             <X className="h-4 w-4" />
@@ -301,12 +301,12 @@ export default function ExpiredBalancesPage() {
                         <div className="py-4"><ZoneReportSkeleton /></div>
                     ) : finalVisibleData.length > 0 || tabFilteredData.length > 0 ? (
                         <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-                            <TabsList className="flex flex-wrap h-auto w-full gap-2 mb-6 p-1 bg-slate-100/50 justify-start">
-                                <TabsTrigger value="todos" className="whitespace-normal h-auto py-2 text-xs font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-blue-700">
+                            <TabsList className="flex flex-wrap h-auto w-full gap-2 mb-6 p-1 bg-slate-100/50 dark:bg-gray-800/50 justify-start">
+                                <TabsTrigger value="todos" className="whitespace-normal h-auto py-2 text-xs font-medium data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800 data-[state=active]:shadow-sm data-[state=active]:text-blue-700">
                                     Todos
                                 </TabsTrigger>
                                 {data.map((vendedor, index) => (
-                                    <TabsTrigger key={index} value={vendedor.Vendedor} className="whitespace-normal h-auto py-2 text-xs font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-blue-700">
+                                    <TabsTrigger key={index} value={vendedor.Vendedor} className="whitespace-normal h-auto py-2 text-xs font-medium data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800 data-[state=active]:shadow-sm data-[state=active]:text-blue-700">
                                         {vendedor.Vendedor.length > 18 ? vendedor.Vendedor.slice(0, 18) + '...' : vendedor.Vendedor}
                                     </TabsTrigger>
                                 ))}
@@ -317,7 +317,7 @@ export default function ExpiredBalancesPage() {
                                     {finalVisibleData.length > 0 ? (
                                         <div className="space-y-6">
                                             {finalVisibleData.map((vendedor, vIdx) => (
-                                                <div key={vIdx} className="border border-slate-200 rounded-lg overflow-hidden bg-white">
+                                                <div key={vIdx} className="border border-slate-200 dark:border-gray-700 rounded-lg overflow-hidden bg-white dark:bg-gray-900">
                                                     <div className="bg-indigo-600 text-white p-3 md:p-4 font-bold text-base md:text-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
                                                         <span>{vendedor.Vendedor}</span>
                                                         <span className="text-xs bg-indigo-800/50 px-2 py-1 rounded-full font-medium">
@@ -326,23 +326,23 @@ export default function ExpiredBalancesPage() {
                                                     </div>
                                                     <div className="p-3 md:p-5 space-y-6 max-h-[600px] overflow-y-auto custom-scrollbar">
                                                         {vendedor.zonas.map((zona, zIdx) => (
-                                                            <div key={zIdx} className="bg-slate-50/50 rounded-lg p-3 md:p-4 border border-slate-100">
-                                                                <h3 className="font-bold text-slate-800 border-b border-slate-200 pb-2 mb-4 text-sm md:text-base flex items-center gap-2">
+                                                            <div key={zIdx} className="bg-slate-50/50 dark:bg-gray-800/50 rounded-lg p-3 md:p-4 border border-slate-100 dark:border-gray-700">
+                                                                <h3 className="font-bold text-slate-800 dark:text-gray-200 border-b border-slate-200 dark:border-gray-700 pb-2 mb-4 text-sm md:text-base flex items-center gap-2">
                                                                     <span className="w-2 h-2 rounded-full bg-blue-500"></span>
                                                                     ZONA: {zona.NombreZona}
                                                                 </h3>
 
                                                                 <div className="space-y-4">
                                                                     {zona.clientes.map((cliente, cIdx) => (
-                                                                        <div key={cIdx} className="bg-white p-3 md:p-4 rounded-md border border-slate-200 shadow-sm">
+                                                                        <div key={cIdx} className="bg-white dark:bg-gray-900 p-3 md:p-4 rounded-md border border-slate-200 dark:border-gray-700 shadow-sm">
                                                                             <div className="mb-3">
-                                                                                <p className="font-bold text-sm text-slate-900">{cliente.Cliente}</p>
-                                                                                <p className="text-xs text-slate-500">{cliente.Direccion}</p>
+                                                                                <p className="font-bold text-sm text-slate-900 dark:text-gray-100">{cliente.Cliente}</p>
+                                                                                <p className="text-xs text-slate-500 dark:text-gray-400">{cliente.Direccion}</p>
                                                                             </div>
 
                                                                             <div className="hidden md:block overflow-x-auto">
                                                                                 <table className="w-full text-xs text-left">
-                                                                                    <thead className="text-slate-500 border-b border-slate-200 bg-slate-50">
+                                                                                    <thead className="text-slate-500 dark:text-gray-400 border-b border-slate-200 dark:border-gray-700 bg-slate-50 dark:bg-gray-800">
                                                                                     <tr>
                                                                                         <th className="font-semibold py-2 px-2 whitespace-nowrap">Emisión</th>
                                                                                         <th className="font-semibold py-2 px-2 whitespace-nowrap">F. Vcto.</th>
@@ -352,21 +352,21 @@ export default function ExpiredBalancesPage() {
                                                                                         <th className="font-semibold py-2 px-2 text-right whitespace-nowrap">Saldo (S/)</th>
                                                                                     </tr>
                                                                                     </thead>
-                                                                                    <tbody className="divide-y divide-slate-100 font-mono">
+                                                                                    <tbody className="divide-y divide-slate-100 dark:divide-gray-700 font-mono">
                                                                                     {cliente.documentos.map((doc, dIdx) => {
                                                                                         const dias = calcDiasVencidos(doc.Fecha_Vcto)
                                                                                         return (
-                                                                                            <tr key={dIdx} className="hover:bg-slate-50/80">
+                                                                                            <tr key={dIdx} className="hover:bg-slate-50/80 dark:hover:bg-gray-700/30">
                                                                                                 <td className="py-2 px-2 whitespace-nowrap">{fmtFecha(doc.Fecha_Emision)}</td>
-                                                                                                <td className="py-2 px-2 whitespace-nowrap text-slate-600">{fmtFecha(doc.Fecha_Vcto)}</td>
+                                                                                                <td className="py-2 px-2 whitespace-nowrap text-slate-600 dark:text-gray-400">{fmtFecha(doc.Fecha_Vcto)}</td>
                                                                                                 <td className="py-2 px-2 text-center whitespace-nowrap">
                                                                                                     <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${dias > 90 ? 'bg-red-100 text-red-700' : dias > 30 ? 'bg-orange-100 text-orange-700' : 'bg-yellow-100 text-yellow-700'}`}>
                                                                                                         {dias}d
                                                                                                     </span>
                                                                                                 </td>
-                                                                                                <td className="py-2 px-2 font-medium text-slate-700 whitespace-nowrap">{doc.Serie_Numero}</td>
+                                                                                                <td className="py-2 px-2 font-medium text-slate-700 dark:text-gray-300 whitespace-nowrap">{doc.Serie_Numero}</td>
                                                                                                 <td className="py-2 px-2 whitespace-nowrap">
-                                                                                                    <span className="bg-slate-100 px-1.5 py-0.5 rounded text-[10px] md:text-xs">
+                                                                                                    <span className="bg-slate-100 dark:bg-gray-800 px-1.5 py-0.5 rounded text-[10px] md:text-xs">
                                                                                                         {doc.Abreviatura}
                                                                                                     </span>
                                                                                                 </td>
@@ -378,8 +378,8 @@ export default function ExpiredBalancesPage() {
                                                                                     })}
                                                                                     </tbody>
                                                                                     <tfoot>
-                                                                                        <tr className="border-t-2 border-slate-200 bg-slate-50">
-                                                                                            <td colSpan={5} className="py-1.5 px-2 text-[11px] font-bold text-slate-500 text-right">
+                                                                                        <tr className="border-t-2 border-slate-200 dark:border-gray-700 bg-slate-50 dark:bg-gray-800">
+                                                                                            <td colSpan={5} className="py-1.5 px-2 text-[11px] font-bold text-slate-500 dark:text-gray-400 text-right">
                                                                                                 Total cliente:
                                                                                             </td>
                                                                                             <td className="py-1.5 px-2 text-right font-bold text-red-600 whitespace-nowrap text-xs">
@@ -394,27 +394,27 @@ export default function ExpiredBalancesPage() {
                                                                                 {cliente.documentos.map((doc, dIdx) => {
                                                                                     const dias = calcDiasVencidos(doc.Fecha_Vcto)
                                                                                     return (
-                                                                                        <div key={dIdx} className="flex justify-between items-start border border-slate-100 bg-slate-50 rounded p-2 gap-2">
+                                                                                        <div key={dIdx} className="flex justify-between items-start border border-slate-100 dark:border-gray-700 bg-slate-50 dark:bg-gray-800 rounded p-2 gap-2">
                                                                                             <div className="space-y-1 flex-1">
                                                                                                 <div className="flex items-center gap-2 flex-wrap">
-                                                                                                    <span className="font-mono font-bold text-sm text-slate-800">{doc.Serie_Numero}</span>
-                                                                                                    <span className="bg-slate-200 px-1.5 py-0.5 rounded text-[10px] text-slate-600 font-medium">{doc.Abreviatura}</span>
+                                                                                                    <span className="font-mono font-bold text-sm text-slate-800 dark:text-gray-200">{doc.Serie_Numero}</span>
+                                                                                                    <span className="bg-slate-200 dark:bg-gray-700 px-1.5 py-0.5 rounded text-[10px] text-slate-600 dark:text-gray-400 font-medium">{doc.Abreviatura}</span>
                                                                                                     <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${dias > 90 ? 'bg-red-100 text-red-700' : dias > 30 ? 'bg-orange-100 text-orange-700' : 'bg-yellow-100 text-yellow-700'}`}>
                                                                                                         {dias}d venc.
                                                                                                     </span>
                                                                                                 </div>
-                                                                                                <p className="text-xs text-slate-500">Emisión: {fmtFecha(doc.Fecha_Emision)}</p>
-                                                                                                <p className="text-xs text-slate-500">Vcto: {fmtFecha(doc.Fecha_Vcto)}</p>
+                                                                                                <p className="text-xs text-slate-500 dark:text-gray-400">Emisión: {fmtFecha(doc.Fecha_Emision)}</p>
+                                                                                                <p className="text-xs text-slate-500 dark:text-gray-400">Vcto: {fmtFecha(doc.Fecha_Vcto)}</p>
                                                                                             </div>
                                                                                             <div className="text-right shrink-0">
-                                                                                                <p className="text-[10px] uppercase text-slate-400 font-bold mb-0.5">Saldo</p>
+                                                                                                <p className="text-[10px] uppercase text-slate-400 dark:text-gray-500 font-bold mb-0.5">Saldo</p>
                                                                                                 <p className="font-bold text-red-600 text-sm">S/ {doc.Saldo_Soles.toLocaleString('es-PE', { minimumFractionDigits: 2 })}</p>
                                                                                             </div>
                                                                                         </div>
                                                                                     )
                                                                                 })}
-                                                                                <div className="flex justify-between items-center bg-slate-100 border border-slate-200 rounded px-3 py-1.5 mt-1">
-                                                                                    <span className="text-[11px] font-bold text-slate-500">Total cliente</span>
+                                                                                <div className="flex justify-between items-center bg-slate-100 dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded px-3 py-1.5 mt-1">
+                                                                                    <span className="text-[11px] font-bold text-slate-500 dark:text-gray-400">Total cliente</span>
                                                                                     <span className="font-bold text-red-600 text-xs">S/ {cliente.totalSolesCliente.toLocaleString('es-PE', { minimumFractionDigits: 2 })}</span>
                                                                                 </div>
                                                                             </div>
@@ -437,11 +437,11 @@ export default function ExpiredBalancesPage() {
                                             ))}
                                         </div>
                                     ) : (
-                                        <div className="text-center text-sm text-gray-500 py-16 flex flex-col items-center">
-                                            <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-4">
+                                        <div className="text-center text-sm text-gray-500 dark:text-gray-400 py-16 flex flex-col items-center">
+                                            <div className="w-16 h-16 bg-slate-100 dark:bg-gray-800 rounded-full flex items-center justify-center mb-4">
                                                 <Search className="h-8 w-8 text-slate-300" />
                                             </div>
-                                            <p className="font-medium text-slate-600">No hay resultados con los filtros actuales</p>
+                                            <p className="font-medium text-slate-600 dark:text-gray-400">No hay resultados con los filtros actuales</p>
                                             <p className="text-xs mt-1">Intenta ajustar los filtros de zona o cliente.</p>
                                         </div>
                                     )}
@@ -449,11 +449,11 @@ export default function ExpiredBalancesPage() {
                             ))}
                         </Tabs>
                     ) : (
-                        <div className="text-center text-sm text-gray-500 py-16 flex flex-col items-center">
-                            <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-4">
+                        <div className="text-center text-sm text-gray-500 dark:text-gray-400 py-16 flex flex-col items-center">
+                            <div className="w-16 h-16 bg-slate-100 dark:bg-gray-800 rounded-full flex items-center justify-center mb-4">
                                 <RefreshCcw className="h-8 w-8 text-slate-300" />
                             </div>
-                            <p className="font-medium text-slate-600">No hay documentos vencidos para mostrar</p>
+                            <p className="font-medium text-slate-600 dark:text-gray-400">No hay documentos vencidos para mostrar</p>
                             <p className="text-xs mt-1">Actualiza el reporte para cargar los datos</p>
                         </div>
                     )}

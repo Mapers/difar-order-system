@@ -70,7 +70,7 @@ export default function MetasDashboardPage() {
             {/* ── Cabecera ── */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div>
-                    <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-gray-900">
+                    <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100">
                         {isVendedorView ? "Mi Dashboard de Metas" : "Metas por Vendedor"}
                     </h1>
                 </div>
@@ -82,7 +82,7 @@ export default function MetasDashboardPage() {
                             if (ciclo) setSelectedCiclo(ciclo)
                         }}
                     >
-                        <SelectTrigger className="w-[200px] h-9 text-sm bg-white">
+                        <SelectTrigger className="w-[200px] h-9 text-sm bg-white dark:bg-gray-900">
                             <SelectValue placeholder="Seleccionar ciclo" />
                         </SelectTrigger>
                         <SelectContent>
@@ -94,7 +94,7 @@ export default function MetasDashboardPage() {
                         </SelectContent>
                     </Select>
 
-                    <Badge variant="outline" className="text-xs bg-slate-50">
+                    <Badge variant="outline" className="text-xs bg-slate-50 dark:bg-gray-800">
                         Ciclo: {cicloLabel}
                     </Badge>
 
@@ -121,7 +121,7 @@ export default function MetasDashboardPage() {
 
             {/* ── Tabs (solo admin) ── */}
             {!isVendedorView && (
-                <div className="flex bg-white border border-slate-200 rounded-lg overflow-x-auto shadow-sm">
+                <div className="flex bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-700 rounded-lg overflow-x-auto shadow-sm">
                     {adminTabs.map(tab => {
                         const isActive = activeTab === tab.id
                         const Icon = tab.icon
@@ -131,8 +131,8 @@ export default function MetasDashboardPage() {
                                 onClick={() => setActiveTab(tab.id)}
                                 className={`flex items-center gap-1.5 px-4 py-2.5 text-xs font-semibold whitespace-nowrap transition-all border-b-2 ${
                                     isActive
-                                        ? "text-sky-700 border-sky-600 bg-sky-50/50"
-                                        : "text-slate-500 border-transparent hover:text-sky-600"
+                                        ? "text-sky-700 dark:text-sky-400 border-sky-600 bg-sky-50/50 dark:bg-sky-900/20"
+                                        : "text-slate-500 dark:text-gray-400 border-transparent hover:text-sky-600"
                                 }`}
                             >
                                 <Icon className="h-4 w-4" />
@@ -147,14 +147,14 @@ export default function MetasDashboardPage() {
             {loadingDashboard ? (
                 <div className="flex flex-col items-center justify-center py-16">
                     <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-sky-600 mb-4" />
-                    <p className="text-slate-500 font-medium">Cargando datos del ciclo...</p>
+                    <p className="text-slate-500 dark:text-gray-400 font-medium">Cargando datos del ciclo...</p>
                 </div>
             ) : !dashboardData ? (
                 <Card>
                     <CardContent className="flex flex-col items-center justify-center py-16">
                         <BarChart3 className="h-12 w-12 text-slate-300 mb-4" />
-                        <p className="text-slate-500">No hay datos disponibles para este ciclo</p>
-                        <p className="text-xs text-slate-400 mt-1">Selecciona un ciclo con metas configuradas</p>
+                        <p className="text-slate-500 dark:text-gray-400">No hay datos disponibles para este ciclo</p>
+                        <p className="text-xs text-slate-400 dark:text-gray-400 mt-1">Selecciona un ciclo con metas configuradas</p>
                     </CardContent>
                 </Card>
             ) : isVendedorView ? (

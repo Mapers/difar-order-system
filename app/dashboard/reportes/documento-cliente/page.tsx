@@ -118,8 +118,8 @@ export default function DocumentClientPage() {
   return (
       <div className="grid gap-6 p-4 md:p-6">
         <div className="flex flex-col gap-2">
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900">Consulta Documento Clientes</h1>
-          <p className="text-gray-500">Gestiona la información de tus clientes.</p>
+          <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100">Consulta Documento Clientes</h1>
+          <p className="text-gray-500 dark:text-gray-400">Gestiona la información de tus clientes.</p>
         </div>
 
         <Card className="shadow-md">
@@ -141,7 +141,7 @@ export default function DocumentClientPage() {
             </div>
             <div className="flex flex-col sm:flex-row gap-4 sm:items-center w-full">
               <Select value={selectedDocumentCode} onValueChange={handleDocumentSelect} required>
-                <SelectTrigger className="bg-white w-full sm:w-60 h-10">
+                <SelectTrigger className="bg-white dark:bg-gray-900 w-full sm:w-60 h-10">
                   <SelectValue placeholder="Seleccionar Documento" />
                 </SelectTrigger>
                 <SelectContent>
@@ -156,7 +156,7 @@ export default function DocumentClientPage() {
                           </SelectItem>
                       ))
                   ) : (
-                      <div className="p-4 text-sm text-gray-500">
+                      <div className="p-4 text-sm text-gray-500 dark:text-gray-400">
                         No se encontraron documentos
                       </div>
                   )}
@@ -167,7 +167,7 @@ export default function DocumentClientPage() {
                 <Input
                     type="search"
                     placeholder="Ej: F000-0000"
-                    className={`pl-4 bg-white h-10 ${isEmpty ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
+                    className={`pl-4 bg-white dark:bg-gray-900 h-10 ${isEmpty ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
                     value={documentCode}
                     onChange={(e) => {
                       setDocumentCode(e.target.value)
@@ -188,7 +188,7 @@ export default function DocumentClientPage() {
           </CardHeader>
 
           <CardContent>
-            <div className="rounded-md border bg-white p-4">
+            <div className="rounded-md border bg-white dark:bg-gray-900 p-4">
               {loadingZone ? (
                   <ZoneReportSkeleton />
               ) : dataZoneClient.length > 0 ? (

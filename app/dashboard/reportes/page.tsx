@@ -146,20 +146,20 @@ export default function ReportsPage() {
   return (
     <div className="grid gap-6">
       <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold tracking-tight text-gray-900">Clientes</h1>
-        <p className="text-gray-500">Gestiona la información de tus clientes.</p>
+        <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100">Clientes</h1>
+        <p className="text-gray-500 dark:text-gray-400">Gestiona la información de tus clientes.</p>
       </div>
 
       <Card className="shadow-md">
         <CardHeader className="flex flex-col sm:flex-row justify-between gap-4 sm:items-center">
-          <CardTitle className="text-xl font-semibold text-blue-700">Lista de Clientes</CardTitle>
+          <CardTitle className="text-xl font-semibold text-blue-700 dark:text-blue-400">Lista de Clientes</CardTitle>
           <div className="flex flex-col sm:flex-row gap-4 sm:items-center">
             <div className="relative">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500 dark:text-gray-400" />
               <Input
                 type="search"
                 placeholder="Buscar por código, nombre o RUC..."
-                className="pl-8 bg-white"
+                className="pl-8 bg-white dark:bg-gray-900"
                 value={searchQuery}
                 onChange={(e) => {
                   setSearchQuery(e.target.value)
@@ -174,9 +174,9 @@ export default function ReportsPage() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="rounded-md border bg-white">
+          <div className="rounded-md border bg-white dark:bg-gray-900 dark:border-gray-700">
             <Table>
-              <TableHeader className="bg-gray-50">
+              <TableHeader className="bg-gray-50 dark:bg-gray-800">
                 <TableRow>
                   <TableHead>Código</TableHead>
                   <TableHead>Nombre/Razón Social</TableHead>
@@ -213,7 +213,7 @@ export default function ReportsPage() {
                   ))
                 ) : clients.length > 0 ? (
                   clients.map((client, index) => (
-                    <TableRow key={client.Codigo + index} className="hover:bg-gray-50">
+                    <TableRow key={client.Codigo + index} className="hover:bg-gray-50 dark:hover:bg-gray-700/30">
                       <TableCell className="font-medium">{client.Codigo}</TableCell>
                       <TableCell className="font-medium">{client.Nombre}</TableCell>
                       <TableCell className="hidden md:table-cell">
@@ -227,8 +227,8 @@ export default function ReportsPage() {
                           variant={client.TipoCliente === "Activo" ? "default" : "secondary"}
                           className={
                             client.TipoCliente === "Activo"
-                              ? "bg-green-100 text-green-800 hover:bg-green-100"
-                              : "bg-gray-100 text-gray-800 hover:bg-gray-100"
+                              ? "bg-green-100 text-green-800 hover:bg-green-100 dark:bg-green-900/30 dark:text-green-300"
+                              : "bg-gray-100 text-gray-800 hover:bg-gray-100 dark:bg-gray-700 dark:text-gray-200"
                           }
                         >
                           {client.TipoCliente}
@@ -240,7 +240,7 @@ export default function ReportsPage() {
                             disabled
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                            className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20"
                           >
                             <Eye className="h-4 w-4" />
                             <span className="sr-only">Ver</span>
@@ -249,7 +249,7 @@ export default function ReportsPage() {
                             disabled
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8 text-amber-600 hover:text-amber-700 hover:bg-amber-50"
+                            className="h-8 w-8 text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-900/20"
                           >
                             <Edit className="h-4 w-4" />
                             <span className="sr-only">Editar</span>
@@ -258,7 +258,7 @@ export default function ReportsPage() {
                             disabled
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
+                            className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
                           >
                             <Trash className="h-4 w-4" />
                             <span className="sr-only">Eliminar</span>
@@ -269,7 +269,7 @@ export default function ReportsPage() {
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8 text-gray-500">
+                    <TableCell colSpan={7} className="text-center py-8 text-gray-500 dark:text-gray-400">
                       No se encontraron clientes
                     </TableCell>
                   </TableRow>
