@@ -214,8 +214,8 @@ export default function DocumentClientPage() {
                     ))}
                   </Tabs>
               ) : (
-                  <div className="flex flex-col items-center justify-center py-16 bg-white rounded-lg border-2 border-dashed border-slate-200">
-                    <p className="text-slate-500 font-medium text-center px-4">
+                  <div className="flex flex-col items-center justify-center py-16 bg-white dark:bg-gray-900 rounded-lg border-2 border-dashed border-slate-200 dark:border-gray-700">
+                    <p className="text-slate-500 dark:text-gray-400 font-medium text-center px-4">
                       No hay datos de ventas para mostrar con los filtros seleccionados.
                     </p>
                   </div>

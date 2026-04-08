@@ -240,12 +240,12 @@ export default function LabSellerReportPage() {
 
                         {isManagerOrAdmin && (
                             <div className="md:col-span-3 flex flex-col gap-2">
-                                <label className="text-sm font-semibold flex items-center gap-2 text-slate-700">
+                                <label className="text-sm font-semibold flex items-center gap-2 text-slate-700 dark:text-gray-300">
                                     <Users className="w-4 h-4"/> Vendedores
                                 </label>
                                 <Popover open={openVend} onOpenChange={setOpenVend}>
                                     <PopoverTrigger asChild>
-                                        <Button variant="outline" role="combobox" className="justify-between w-full h-auto min-h-10 px-3 py-2 bg-white">
+                                        <Button variant="outline" role="combobox" className="justify-between w-full h-auto min-h-10 px-3 py-2 bg-white dark:bg-gray-900">
                                             <div className="flex flex-wrap gap-1 items-center">
                                                 {selectedVends.length > 0 ? <span className="text-sm font-semibold text-orange-700">{selectedVends.length} seleccionado(s)</span> : <span className="text-muted-foreground text-sm font-normal">Todos...</span>}
                                             </div>
@@ -279,7 +279,7 @@ export default function LabSellerReportPage() {
                                                 </Badge>
                                             ) : null;
                                         })}
-                                        <span className="text-xs text-slate-500 cursor-pointer hover:text-slate-800 hover:underline pt-1 ml-1 font-medium" onClick={() => setSelectedVends([])}>Limpiar</span>
+                                        <span className="text-xs text-slate-500 dark:text-gray-400 cursor-pointer hover:text-slate-800 dark:hover:text-gray-200 hover:underline pt-1 ml-1 font-medium" onClick={() => setSelectedVends([])}>Limpiar</span>
                                     </div>
                                 )}
                             </div>
@@ -293,16 +293,16 @@ export default function LabSellerReportPage() {
                     </div>
                 </CardHeader>
 
-                <CardContent className="p-4 md:p-6 bg-slate-100/50">
+                <CardContent className="p-4 md:p-6 bg-slate-100/50 dark:bg-gray-800/50">
                     {loading ? (
                         <div className="flex flex-col items-center justify-center py-16">
                             <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mb-4"></div>
-                            <p className="text-slate-500 font-medium">Generando reporte, por favor espera...</p>
+                            <p className="text-slate-500 dark:text-gray-400 font-medium">Generando reporte, por favor espera...</p>
                         </div>
                     ) : data.length > 0 ? (
                         <div className="space-y-6">
                             {data.map((lab, idx) => (
-                                <div key={idx} className="border border-slate-200 rounded-lg overflow-hidden shadow-sm bg-white">
+                                <div key={idx} className="border border-slate-200 dark:border-gray-700 rounded-lg overflow-hidden shadow-sm bg-white dark:bg-gray-900">
                                     <div className="bg-indigo-600 text-white p-3 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
                                         <span className="text-lg font-bold text-center sm:text-left">{lab.Laboratorio}</span>
                                         <Badge className="text-[10px] sm:text-xs font-medium bg-indigo-800/60 hover:bg-indigo-800/60 text-indigo-50 border-none w-fit mx-auto sm:mx-0">
@@ -311,8 +311,8 @@ export default function LabSellerReportPage() {
                                     </div>
 
                                     <div className="hidden md:block overflow-x-auto">
-                                        <table className="w-full text-sm text-left text-gray-600">
-                                            <thead className="text-xs text-slate-500 uppercase bg-slate-50 border-b border-slate-200">
+                                        <table className="w-full text-sm text-left text-gray-600 dark:text-gray-400">
+                                            <thead className="text-xs text-slate-500 dark:text-gray-400 uppercase bg-slate-50 dark:bg-gray-800 border-b border-slate-200 dark:border-gray-700">
                                             <tr>
                                                 <th className="px-4 py-3 font-bold min-w-[120px]">Cód Vendedor</th>
                                                 <th className="px-4 py-3 font-bold min-w-[200px]">Nombre Vendedor</th>
@@ -324,10 +324,10 @@ export default function LabSellerReportPage() {
                                             {lab.vendedores.map((vend, vIdx) => {
                                                 const nombreLimpio = vend.Vendedor.substring(vend.Codigo_Vend.length).trim();
                                                 return (
-                                                    <tr key={vIdx} className="bg-white border-b border-slate-100 hover:bg-slate-50 transition-colors">
-                                                        <td className="px-4 py-3 font-mono font-medium text-slate-900">{vend.Codigo_Vend}</td>
-                                                        <td className="px-4 py-3 text-slate-700">{nombreLimpio}</td>
-                                                        <td className="px-4 py-3 text-right font-semibold text-slate-800">
+                                                    <tr key={vIdx} className="bg-white dark:bg-gray-900 border-b border-slate-100 dark:border-gray-700 hover:bg-slate-50 dark:hover:bg-gray-700/30 transition-colors">
+                                                        <td className="px-4 py-3 font-mono font-medium text-slate-900 dark:text-gray-100">{vend.Codigo_Vend}</td>
+                                                        <td className="px-4 py-3 text-slate-700 dark:text-gray-300">{nombreLimpio}</td>
+                                                        <td className="px-4 py-3 text-right font-semibold text-slate-800 dark:text-gray-200">
                                                             S/ {formatMoney(vend.SumaDeVta_Tot)}
                                                         </td>
                                                         <td className="px-4 py-3 text-center">
@@ -340,8 +340,8 @@ export default function LabSellerReportPage() {
                                             })}
                                             </tbody>
                                             <tfoot>
-                                            <tr className="bg-emerald-50/50">
-                                                <td colSpan={2} className="px-4 py-4 text-right text-emerald-800 uppercase tracking-wider text-xs font-bold">
+                                            <tr className="bg-emerald-50/50 dark:bg-emerald-900/20">
+                                                <td colSpan={2} className="px-4 py-4 text-right text-emerald-800 dark:text-emerald-300 uppercase tracking-wider text-xs font-bold">
                                                     Total Ventas:
                                                 </td>
                                                 <td className="px-4 py-4 text-right text-emerald-700 text-base font-bold">
