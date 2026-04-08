@@ -436,18 +436,18 @@ export default function LabSellerReportPage() {
                                                     <th className="px-3 py-2 font-semibold text-right">Total S/.</th>
                                                 </tr>
                                                 </thead>
-                                                <tbody className="divide-y divide-slate-50">
+                                                <tbody className="divide-y divide-slate-50 dark:divide-gray-700">
                                                 {cli.Items.map((item: any, iIdx: number) => (
-                                                    <tr key={iIdx} className="hover:bg-slate-50">
-                                                        <td className="px-3 py-2 font-mono text-slate-500">{item.Codigo_Art}</td>
+                                                    <tr key={iIdx} className="hover:bg-slate-50 dark:hover:bg-gray-700/30">
+                                                        <td className="px-3 py-2 font-mono text-slate-500 dark:text-gray-400">{item.Codigo_Art}</td>
                                                         <td className="px-3 py-2 text-center font-medium">{item.Cantidad_Sal}</td>
                                                         <td className="px-3 py-2 text-center text-[10px] uppercase">{item.AbrevUnidMed}</td>
                                                         <td className="px-3 py-2">{item.NombreItem}</td>
-                                                        <td className="px-3 py-2 text-right font-semibold text-slate-800">{formatMoney(item.SumaDeVta_Tot)}</td>
+                                                        <td className="px-3 py-2 text-right font-semibold text-slate-800 dark:text-gray-200">{formatMoney(item.SumaDeVta_Tot)}</td>
                                                     </tr>
                                                 ))}
                                                 </tbody>
-                                                <tfoot className="bg-indigo-50/50">
+                                                <tfoot className="bg-indigo-50/50 dark:bg-indigo-900/20">
                                                 <tr>
                                                     <td colSpan={4} className="px-3 py-2 text-right text-indigo-800 text-xs font-bold uppercase tracking-wider">Total Cliente:</td>
                                                     <td className="px-3 py-2 text-right text-indigo-700 font-bold">{formatMoney(cli.TotalCliente)}</td>
@@ -456,20 +456,20 @@ export default function LabSellerReportPage() {
                                             </table>
                                         </div>
 
-                                        <div className="md:hidden grid grid-cols-1 gap-2 p-3 bg-slate-50">
+                                        <div className="md:hidden grid grid-cols-1 gap-2 p-3 bg-slate-50 dark:bg-gray-800">
                                             {cli.Items.map((item: any, iIdx: number) => (
-                                                <div key={iIdx} className="bg-white border border-slate-100 rounded p-2 flex flex-col gap-1">
-                                                    <span className="text-xs font-medium text-slate-700">{item.NombreItem}</span>
+                                                <div key={iIdx} className="bg-white dark:bg-gray-900 border border-slate-100 dark:border-gray-700 rounded p-2 flex flex-col gap-1">
+                                                    <span className="text-xs font-medium text-slate-700 dark:text-gray-300">{item.NombreItem}</span>
                                                     <div className="flex justify-between items-center mt-1">
                                                         <div className="flex gap-2">
-                                                            <Badge variant="outline" className="text-[10px] bg-slate-100">{item.Cantidad_Sal} {item.AbrevUnidMed}</Badge>
+                                                            <Badge variant="outline" className="text-[10px] bg-slate-100 dark:bg-gray-800">{item.Cantidad_Sal} {item.AbrevUnidMed}</Badge>
                                                         </div>
                                                         <span className="text-sm font-bold text-indigo-700">S/ {formatMoney(item.SumaDeVta_Tot)}</span>
                                                     </div>
                                                 </div>
                                             ))}
-                                            <div className="flex justify-between items-center pt-2 mt-1 border-t border-indigo-100">
-                                                <span className="text-xs font-bold text-indigo-800 uppercase">Total Cliente</span>
+                                            <div className="flex justify-between items-center pt-2 mt-1 border-t border-indigo-100 dark:border-indigo-800/50">
+                                                <span className="text-xs font-bold text-indigo-800 dark:text-indigo-300 uppercase">Total Cliente</span>
                                                 <span className="text-sm font-black text-indigo-700">S/ {formatMoney(cli.TotalCliente)}</span>
                                             </div>
                                         </div>
@@ -477,16 +477,16 @@ export default function LabSellerReportPage() {
                                     </div>
                                 ))}
 
-                                <div className="flex flex-col sm:flex-row justify-end gap-4 border-t border-slate-200 pt-4 mt-4">
-                                    <div className="bg-indigo-50 p-3 rounded-lg border border-indigo-100 text-right">
-                                        <p className="text-[10px] font-bold text-indigo-500 uppercase">Total Vendedor</p>
-                                        <p className="text-lg font-black text-indigo-900">S/ {formatMoney(detailData[0].TotalVendedor)}</p>
+                                <div className="flex flex-col sm:flex-row justify-end gap-4 border-t border-slate-200 dark:border-gray-700 pt-4 mt-4">
+                                    <div className="bg-indigo-50 dark:bg-indigo-900/20 p-3 rounded-lg border border-indigo-100 dark:border-indigo-700/50 text-right">
+                                        <p className="text-[10px] font-bold text-indigo-500 dark:text-indigo-400 uppercase">Total Vendedor</p>
+                                        <p className="text-lg font-black text-indigo-900 dark:text-indigo-300">S/ {formatMoney(detailData[0].TotalVendedor)}</p>
                                     </div>
                                 </div>
                             </div>
                         ) : (
                             <div className="flex flex-col items-center justify-center py-16">
-                                <p className="text-slate-500 font-medium">No se encontraron detalles para este vendedor.</p>
+                                <p className="text-slate-500 dark:text-gray-400 font-medium">No se encontraron detalles para este vendedor.</p>
                             </div>
                         )}
                     </div>
