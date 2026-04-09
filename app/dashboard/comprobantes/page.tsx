@@ -35,6 +35,7 @@ import {CreditNotesTable} from "@/app/dashboard/comprobantes/CreditNotesTable";
 import {GenerarNotaCreditoModal} from "@/app/dashboard/comprobantes/modals/GenerarNotaCreditoModal";
 import {Cuota} from "@/app/dashboard/comprobantes/modals/InstallmentModal";
 import {Sequential} from "@/app/types/config-types";
+import {DeletePendienteModal} from "@/app/dashboard/comprobantes/modals/DeletePendienteModal";
 
 export default function ComprobantesPage() {
   const [comprobantes, setComprobantes] = useState<Comprobante[]>([])
@@ -95,6 +96,9 @@ export default function ComprobantesPage() {
 
   const [notasCredito, setNotasCredito] = useState<Comprobante[]>([])
   const [loadingNotas, setLoadingNotas] = useState(false)
+
+  const [pedidoToDelete, setPedidoToDelete] = useState<Pedido | null>(null)
+  const [isDeletingPedido, setIsDeletingPedido] = useState(false)
 
   const [showNotaCreditoModal, setShowNotaCreditoModal] = useState(false)
 
@@ -455,6 +459,34 @@ export default function ComprobantesPage() {
     }
   }
 
+  const handleDeletePendiente = (pedido: Pedido) => {
+    setPedidoToDelete(pedido)
+  }
+
+  const confirmDeletePendiente = async () => {
+    if (!pedidoToDelete) return
+    setIsDeletingPedido(true)
+    try {
+      await apiClient.delete(`/pedidos/soft/total/${pedidoToDelete.nroPedido}`, {
+        data: {
+          nroPedido: pedidoToDelete.nroPedido,
+          usuario: auth.user?.nombreCompleto || 'Usuario desconocido'
+        }
+      })
+      toast({ title: "Eliminado", description: `Pedido #${pedidoToDelete.nroPedido} eliminado correctamente` })
+      setPedidoToDelete(null)
+      await fetchPedidosPendientes()
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error?.response?.data?.message || "No se pudo eliminar el pedido",
+        variant: "destructive"
+      })
+    } finally {
+      setIsDeletingPedido(false)
+    }
+  }
+
   return (
       <div className="grid gap-6">
         <div className="flex flex-col gap-2">
@@ -501,7 +533,12 @@ export default function ComprobantesPage() {
                     <CardDescription>Estos pedidos están completados y listos para ser facturados</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <PendientesList pedidos={pedidosPendientes} loading={loadingPedidos} onInvoice={handleInvoiceOrder} />
+                    <PendientesList
+                        pedidos={pedidosPendientes}
+                        loading={loadingPedidos}
+                        onInvoice={handleInvoiceOrder}
+                        onDelete={handleDeletePendiente}
+                    />
                   </CardContent>
                 </Card>
               </TabsContent>
@@ -712,6 +749,14 @@ export default function ComprobantesPage() {
             onOpenChange={setShowStatusModal}
             data={statusData}
             loading={loadingStatus}
+        />
+
+        <DeletePendienteModal
+            open={!!pedidoToDelete}
+            onOpenChange={(open) => { if (!open) setPedidoToDelete(null) }}
+            pedido={pedidoToDelete}
+            isDeleting={isDeletingPedido}
+            onConfirm={confirmDeletePendiente}
         />
       </div>
   )

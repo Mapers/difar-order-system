@@ -1,7 +1,20 @@
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { AlertTriangle, Receipt, RefreshCw, Eye, Calendar, User, Wallet, Package, Clock, CheckCircle, Loader2 } from "lucide-react"
+import {
+    AlertTriangle,
+    Receipt,
+    RefreshCw,
+    Eye,
+    Calendar,
+    User,
+    Wallet,
+    Package,
+    Clock,
+    CheckCircle,
+    Loader2,
+    Trash2
+} from "lucide-react"
 import Link from "next/link"
 import { format, parseISO } from "date-fns"
 import {Pedido} from "@/app/types/order/order-interface";
@@ -10,9 +23,10 @@ interface PendientesListProps {
     pedidos: Pedido[]
     loading: boolean
     onInvoice: (pedido: Pedido) => void
+    onDelete: (pedido: Pedido) => void
 }
 
-export function PendientesList({ pedidos, loading, onInvoice }: PendientesListProps) {
+export function PendientesList({ pedidos, loading, onInvoice, onDelete }: PendientesListProps) {
     if (loading) {
         return (
             <div className="flex justify-center items-center h-64">
@@ -60,11 +74,23 @@ export function PendientesList({ pedidos, loading, onInvoice }: PendientesListPr
                                             <span className="hidden sm:inline">Facturar Ahora</span>
                                             <span className="sm:hidden">Facturar</span>
                                         </Button> :
-                                        <Button onClick={() => onInvoice(pedido)} variant="outline" size="sm" className="text-red-700 border-red-300 hover:bg-red-200 text-xs">
-                                            <RefreshCw className="h-4 w-4" />
-                                            <span className="hidden sm:inline">Reintentar Factura</span>
-                                            <span className="sm:hidden">Reintentar</span>
-                                        </Button>
+                                        <>
+                                            <Button onClick={() => onInvoice(pedido)} variant="outline" size="sm" className="text-red-700 border-red-300 hover:bg-red-200 text-xs">
+                                                <RefreshCw className="h-4 w-4" />
+                                                <span className="hidden sm:inline">Reintentar Factura</span>
+                                                <span className="sm:hidden">Reintentar</span>
+                                            </Button>
+                                            <Button
+                                                onClick={() => onDelete(pedido)}
+                                                variant="outline"
+                                                size="sm"
+                                                className="text-red-700 border-red-300 hover:bg-red-100 text-xs"
+                                            >
+                                                <Trash2 className="h-4 w-4" />
+                                                <span className="hidden sm:inline">Eliminar</span>
+                                                <span className="sm:hidden">Eliminar</span>
+                                            </Button>
+                                        </>
                                     }
                                     <Button className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto" size="sm" asChild>
                                         <Link href={`/dashboard/comprobantes/${pedido.nroPedido}`} className='flex items-center gap-2'>
