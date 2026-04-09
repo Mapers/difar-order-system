@@ -136,10 +136,7 @@ export default function ProductStep({
                     </div>
 
                     <div className="flex flex-col gap-3">
-                        {/* Desktop: todo en una fila | Mobile: columnas */}
                         <div className="flex flex-col lg:flex-row gap-2 lg:items-end">
-
-                            {/* Laboratorio */}
                             <div className="w-full lg:flex-1 space-y-1.5">
                                 <Label className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">Laboratorio</Label>
                                 <Button
@@ -160,9 +157,7 @@ export default function ProductStep({
                                 />
                             </div>
 
-                            {/* Cantidad + Botón: siempre juntos en la misma fila */}
                             <div className="flex gap-2 items-end shrink-0">
-                                {/* Cantidad */}
                                 <div className="shrink-0 space-y-1.5">
                                     <Label className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">
                                         Cant.
@@ -227,7 +222,6 @@ export default function ProductStep({
                                     </div>
                                 </div>
 
-                                {/* Botón Agregar */}
                                 <Button
                                     type="button"
                                     disabled={!selectedProduct || loadingProducts}
@@ -243,7 +237,7 @@ export default function ProductStep({
                     </div>
 
                     {selectedProduct && (() => {
-                        const unitPrice = priceType === 'contado' ? Number(selectedProduct.PUContado) : priceType === 'credito' ? Number(selectedProduct.PUCredito) : priceType === 'porMenor' ? Number(selectedProduct.PUPorMenor) : priceType === 'porMayor' ? Number(selectedProduct.PUPorMayor) : Number(priceEdit);
+                        const unitPrice = priceType === 'regalo' ? 0 : priceType === 'contado' ? Number(selectedProduct.PUContado) : priceType === 'credito' ? Number(selectedProduct.PUCredito) : priceType === 'porMenor' ? Number(selectedProduct.PUPorMenor) : priceType === 'porMayor' ? Number(selectedProduct.PUPorMayor) : Number(priceEdit);
                         const sym = getCurrencySymbol(currency?.value);
                         return (
                             <p className="text-[11px] text-right text-gray-500 mt-1.5">

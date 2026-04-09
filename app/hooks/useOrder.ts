@@ -238,15 +238,20 @@ export function useOrderPage() {
     const addProductToList = (isBonification: boolean, isEscale: boolean) => {
         setIsLoading(true)
         setTimeout(() => {
-            const finalPrice = priceType === 'contado'
-                ? Number(selectedProduct?.PUContado)
-                : priceType === 'credito'
-                    ? Number(selectedProduct?.PUCredito)
-                    : priceType === 'porMenor'
-                        ? Number(selectedProduct?.PUPorMenor)
-                        : priceType === 'porMayor'
-                            ? Number(selectedProduct?.PUPorMayor)
-                            : priceEdit
+
+            const resolvePrice = (): number => {
+                switch (priceType) {
+                    case 'contado':  return Number(selectedProduct?.PUContado)
+                    case 'credito':  return Number(selectedProduct?.PUCredito)
+                    case 'porMenor': return Number(selectedProduct?.PUPorMenor)
+                    case 'porMayor': return Number(selectedProduct?.PUPorMayor)
+                    case 'regalo':   return 0
+                    case 'custom':   return Number(priceEdit) || 0
+                    default:         return Number(selectedProduct?.PUContado)
+                }
+            }
+
+            const finalPrice = resolvePrice()
 
             const newItem: ISelectedProduct = {
                 product: selectedProduct!,
@@ -255,8 +260,9 @@ export function useOrderPage() {
                 isEscale,
                 appliedScale: null,
                 finalPrice,
-                isEdit: priceType === 'custom',
-                isAuthorize: priceType === 'custom' && priceEdit < Number(selectedProduct?.PUContado),
+                isEdit: priceType === 'custom' || priceType === 'regalo',
+                isAuthorize: (priceType === 'custom' && Number(priceEdit) < Number(selectedProduct?.PUContado))
+                    || priceType === 'regalo',
             }
 
             setSelectedProducts(prev => [...prev, newItem])
@@ -495,12 +501,24 @@ export function useOrderPage() {
     const handleAddTempProduct = async (product: IProduct, qty: number, pt: PriceType, customPrice?: number) => {
         setIsLoading(true)
         setModalLoader('BONIFICADO')
-
         const bonificacionesResult = await getBonificados(product.Codigo_Art, qty)
         const escalasProductos = await getEscalas(product.Codigo_Art, qty)
-
         setIsLoading(false)
         setModalLoader(null)
+
+        const resolvePrice = (): number => {
+            switch (pt) {
+                case 'contado':  return Number(product.PUContado)
+                case 'credito':  return Number(product.PUCredito)
+                case 'porMenor': return Number(product.PUPorMenor)
+                case 'porMayor': return Number(product.PUPorMayor)
+                case 'regalo':   return 0
+                case 'custom':   return Number(customPrice) || 0
+                default:         return Number(product.PUContado)
+            }
+        }
+
+        const finalPrice = resolvePrice()
 
         const newProduct: ISelectedProduct = {
             product,
@@ -508,17 +526,10 @@ export function useOrderPage() {
             isBonification: bonificacionesResult.length > 0,
             isEscale: escalasProductos.length > 0,
             appliedScale: null,
-            finalPrice: Number(pt === 'contado'
-                ? product.PUContado
-                : pt === 'credito'
-                    ? product.PUCredito
-                    : pt === 'porMenor'
-                        ? product.PUPorMenor
-                        : pt === 'porMayor'
-                            ? product.PUPorMayor
-                            : customPrice),
-            isEdit: pt === 'custom',
-            isAuthorize: (pt === 'custom' && customPrice != null) && customPrice < Number(product.PUContado),
+            finalPrice,
+            isEdit: pt === 'custom' || pt === 'regalo',
+            isAuthorize: (pt === 'custom' && customPrice != null && customPrice < Number(product.PUContado))
+                || pt === 'regalo',
         }
 
         setTempSelectedProducts(prev => [...prev, newProduct])

@@ -13,7 +13,8 @@ import { useLaboratoriesData } from "@/app/dashboard/lista-precios-lote/hooks/us
 import { getProductsLabRequest } from "@/app/api/products";
 import { Badge } from "@/components/ui/badge";
 import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card";
-import { Package, Minus, Plus, Trash } from "lucide-react";
+import {Package, Minus, Plus, Trash, Gift} from "lucide-react";
+import {PriceType} from "@/app/types/order/order-interface";
 
 export const LaboratorioModal = ({
                                    open,
@@ -29,7 +30,7 @@ export const LaboratorioModal = ({
   onOpenChange: (open: boolean) => void;
   laboratorio: string;
   products: IProduct[];
-  onAddTempProduct: (product: IProduct, quantity: number, priceType: 'contado' | 'credito' | 'porMayor' | 'porMenor' | 'custom', customPrice?: number) => void;
+  onAddTempProduct: (product: IProduct, quantity: number, priceType: PriceType, customPrice?: number) => void;
   tempSelectedProducts: ISelectedProduct[];
   onRemoveTempProduct: (index: number) => void;
   onConfirmSelection: () => void;
@@ -37,7 +38,7 @@ export const LaboratorioModal = ({
 }) => {
   const { laboratories } = useLaboratoriesData()
   const [quantities, setQuantities] = useState<Record<string, number | "">>({});
-  const [priceTypes, setPriceTypes] = useState<Record<string, 'contado' | 'credito' | 'porMayor' | 'porMenor' | 'custom'>>({});
+  const [priceTypes, setPriceTypes] = useState<Record<string, PriceType>>({});
   const [customPrices, setCustomPrices] = useState<Record<string, number>>({});
   const [products, setProducts] = useState<IProduct[]>([])
   const [loading, setLoading] = useState(false)
@@ -49,7 +50,7 @@ export const LaboratorioModal = ({
     }));
   };
 
-  const handlePriceTypeChange = (productId: string, value: 'contado' | 'credito' | 'porMayor' | 'porMenor' | 'custom') => {
+  const handlePriceTypeChange = (productId: string, value: PriceType) => {
     setPriceTypes(prev => ({
       ...prev,
       [productId]: value
@@ -78,6 +79,7 @@ export const LaboratorioModal = ({
     if (type === 'credito') return Number(product.PUCredito);
     if (type === 'porMayor') return Number(product.PUPorMayor);
     if (type === 'porMenor') return Number(product.PUPorMenor);
+    if (type === 'regalo') return 0;
     if (type === 'custom') return customPrices[productId] || Number(product.PUContado);
     return Number(product.PUContado);
   }
@@ -213,7 +215,7 @@ export const LaboratorioModal = ({
                 <Label className="text-xs font-medium">Tipo de Precio</Label>
                 <RadioGroup
                     value={currentPriceType}
-                    onValueChange={(value: 'contado' | 'credito' | 'porMayor' | 'porMenor' | 'custom') =>
+                    onValueChange={(value: PriceType) =>
                         handlePriceTypeChange(productId, value)
                     }
                     className="space-y-2"
@@ -263,14 +265,22 @@ export const LaboratorioModal = ({
                             handleCustomPriceChange(productId, parseFloat(val === '' ? '0' : val) || 0)
                           }}
                           onBlur={(e) => {
-                            if (e.target.value && e.target.value !== '0') {
-                              const numValue = parseFloat(e.target.value);
-                              handleCustomPriceChange(productId, parseFloat(isNaN(numValue) ? '0' : numValue.toFixed(2)) || 0)
+                            const numValue = parseFloat(e.target.value)
+                            if (!numValue || numValue <= 0) {
+                              handleCustomPriceChange(productId, contadoPrice)
+                            } else {
+                              handleCustomPriceChange(productId, parseFloat(numValue.toFixed(2)))
                             }
                           }}
                           className="h-6 w-16 text-center text-xs"
                           onClick={(e) => e.stopPropagation()}
                       />
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-1">
+                    <RadioGroupItem value="regalo" id={`${productId}-regalo`} className="h-3 w-3 border-pink-500" />
+                    <Label htmlFor={`${productId}-regalo`} className="text-xs cursor-pointer text-pink-600 flex items-center gap-1">
+                      <Gift className="h-3 w-3" /> Regalo
                     </Label>
                   </div>
                 </RadioGroup>
@@ -384,14 +394,22 @@ export const LaboratorioModal = ({
                                 handleCustomPriceChange(productId, parseFloat(value === '' ? '0' : value) || 0)
                               }}
                               onBlur={(e) => {
-                                if (e.target.value && e.target.value !== '0') {
-                                  const numValue = parseFloat(e.target.value);
-                                  handleCustomPriceChange(productId, parseFloat(isNaN(numValue) ? '0' : numValue.toFixed(2)) || 0)
+                                const numValue = parseFloat(e.target.value)
+                                if (!numValue || numValue <= 0) {
+                                  handleCustomPriceChange(productId, contadoPrice)
+                                } else {
+                                  handleCustomPriceChange(productId, parseFloat(numValue.toFixed(2)))
                                 }
                               }}
                               className="h-6 w-20 text-center text-xs bg-red-50"
                               onClick={(e) => e.stopPropagation()}
                           />
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="regalo" id={`${productId}-regalo`} className="border-pink-500" />
+                        <Label htmlFor={`${productId}-regalo`} className="text-sm cursor-pointer text-pink-600 flex items-center gap-1">
+                          <Gift className="h-3.5 w-3.5" /> Regalo
                         </Label>
                       </div>
                     </RadioGroup>

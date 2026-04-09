@@ -71,7 +71,6 @@ const OrderSummary: React.FC<ModalVerificationProps> = ({ selectedClient, contac
           </div>
         </div>
       </div>
-      {/* condiciones de pago */}
       <div className="space-y-4">
         <div className="flex items-center gap-2">
           <CreditCard className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
@@ -103,13 +102,11 @@ const OrderSummary: React.FC<ModalVerificationProps> = ({ selectedClient, contac
         </div>
       </div>
 
-      {/* Lista de productos */}
       <div className="space-y-4">
         <div className="flex items-center gap-2">
           <Package className="w-4 h-4 sm:w-5 sm:h-5 text-orange-600" />
           <h3 className="font-semibold text-gray-900 text-sm sm:text-base">Productos Seleccionados</h3>
         </div>
-        {/* <h3 className="text-lg font-medium text-gray-900">Productos</h3> */}
         <div className="rounded-md border">
           <Table>
             <TableHeader className="bg-gray-50">

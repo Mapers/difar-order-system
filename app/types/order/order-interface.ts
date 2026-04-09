@@ -113,6 +113,6 @@ export interface Seller {
     empRegistro: string
 }
 
-export type PriceType = 'contado' | 'credito' | 'porMayor' | 'porMenor' | 'custom'
+export type PriceType = 'contado' | 'credito' | 'porMayor' | 'porMenor' | 'custom' | 'regalo'
 
 export type ModalLoaderType = 'BONIFICADO' | 'ESCALA' | 'EVALUACION' | null
