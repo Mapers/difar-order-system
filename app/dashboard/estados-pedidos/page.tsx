@@ -101,6 +101,15 @@ export default function OrderStatusManagementPage() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [orderToDelete, setOrderToDelete] = useState<Pedido | null>(null)
 
+  const STATE_JUMPS: Record<number, number> = {
+    2: 4,
+    4: 7,
+  }
+
+  const getNextState = (currentState: number): number => {
+    return STATE_JUMPS[currentState] ?? currentState + 1
+  }
+
   const fetchOrders = async () => {
     try {
       setLoading(true)
@@ -157,7 +166,7 @@ export default function OrderStatusManagementPage() {
   const handleStateChange = async (order: Pedido) => {
     await fetchPedidoDetalle(order.nroPedido);
     setSelectedOrder(order)
-    setNewState(order.estadodePedido + 1)
+    setNewState(getNextState(order.estadodePedido))
     setIsChangeStateModalOpen(true)
   }
 
@@ -171,11 +180,8 @@ export default function OrderStatusManagementPage() {
     try {
       if (!selectedOrder) return;
 
-      const nextState = selectedOrder.estadodePedido + 1;
-      if (newState !== nextState) {
-        alert('Solo puedes avanzar al siguiente estado en la secuencia');
-        return;
-      }
+      const nextState = getNextState(selectedOrder.estadodePedido)
+
 
       if (selectedOrder.estadodePedido === 1 && newState === 2) {
         setLoading(true);
@@ -631,16 +637,14 @@ export default function OrderStatusManagementPage() {
                 <Label htmlFor="new-state">Nuevo Estado</Label>
                 <div className="mt-2 p-3 border rounded-md bg-gray-50">
                   <div className="flex items-center gap-2">
-                    <Badge className={getStateInfo((selectedOrder?.estadodePedido || 0) + 1, selectedOrder?.por_autorizar, selectedOrder?.is_autorizado)?.color}>
-                      {getStateInfo((selectedOrder?.estadodePedido || 0) + 1, selectedOrder?.por_autorizar, selectedOrder?.is_autorizado)?.name}
+                    <Badge className={getStateInfo(getNextState(selectedOrder?.estadodePedido || 0), selectedOrder?.por_autorizar, selectedOrder?.is_autorizado)?.color}>
+                      {getStateInfo(getNextState(selectedOrder?.estadodePedido || 0), selectedOrder?.por_autorizar, selectedOrder?.is_autorizado)?.name}
                     </Badge>
-                    <span className="text-sm text-gray-600">
-                    (Siguiente estado)
-                  </span>
+                    <span className="text-sm text-gray-600">(Siguiente estado)</span>
                   </div>
                 </div>
                 <p className="mt-2 text-sm text-gray-500">
-                  {getStateInfo((selectedOrder?.estadodePedido || 0) + 1, selectedOrder?.por_autorizar, selectedOrder?.is_autorizado)?.description}
+                  {getStateInfo(getNextState(selectedOrder?.estadodePedido || 0), selectedOrder?.por_autorizar, selectedOrder?.is_autorizado)?.description}
                 </p>
               </div>
 

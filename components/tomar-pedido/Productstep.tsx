@@ -136,84 +136,109 @@ export default function ProductStep({
                     </div>
 
                     <div className="flex flex-col gap-3">
+                        {/* Desktop: todo en una fila | Mobile: columnas */}
+                        <div className="flex flex-col lg:flex-row gap-2 lg:items-end">
 
-                        <div className="w-full space-y-1.5">
-                            <Label className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">Laboratorio</Label>
-                            <Button
-                                type="button" variant="outline" onClick={() => setLabModalSearchOpen(true)}
-                                className="w-full justify-start h-11 px-3 text-left font-normal text-xs sm:text-sm bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-white dark:hover:bg-gray-700 hover:border-purple-400 dark:hover:border-purple-500 overflow-hidden"
-                            >
-                                <Building className="mr-2 h-4 w-4 shrink-0 text-gray-400" />
-                                <span className="truncate text-gray-900 dark:text-gray-100">
-                                    {selectedLaboratorio
-                                        ? (laboratories.find(l => String(l.IdLineaGe) === selectedLaboratorio)?.Descripcion ?? selectedLaboratorio)
-                                        : <span className="text-gray-400">Seleccionar laboratorio...</span>}
-                                </span>
-                            </Button>
-                            <LabSearchDialog
-                                open={labModalSearchOpen} onOpenChange={setLabModalSearchOpen}
-                                laboratories={laboratories} selectedLaboratorio={selectedLaboratorio}
-                                onLaboratorioChange={onLaboratorioChange}
-                            />
-                        </div>
-
-                        <div className="flex gap-2 items-end">
-                            <div className="shrink-0 space-y-1.5">
-                                <Label className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">
-                                    Cant.
-                                    {selectedProduct && (() => {
-                                        const stockTotal = Number(selectedProduct.Stock);
-                                        const remaining = stockTotal - safeQuantity;
-                                        return (
-                                            <span className="ml-1.5 text-[10px] font-normal text-gray-400 dark:text-gray-500">
-                                                Stock: {stockTotal.toFixed(0)} · <span className={remaining <= 0 ? 'text-red-500 dark:text-red-400 font-semibold' : remaining <= 3 ? 'text-amber-500 dark:text-amber-400' : 'text-green-600 dark:text-green-400'}>
-                                                    Restante: {Math.max(0, remaining)}
-                                                </span>
-                                            </span>
-                                        );
-                                    })()}
-                                </Label>
-                                <div className={`flex items-center h-11 rounded-lg border overflow-hidden transition-colors ${!selectedProduct ? 'bg-gray-100 dark:bg-gray-800/50 border-gray-100 opacity-50 cursor-not-allowed' : (selectedProduct && safeQuantity >= Number(selectedProduct.Stock)) ? 'bg-gray-50 border-red-300' : 'bg-gray-50 border-gray-200'}`}>
-                                    <button
-                                        type="button" disabled={!selectedProduct}
-                                        onClick={() => safeQuantity <= 1 ? (onProductSelect(null), onQuantityChange(1)) : onQuantityChange(safeQuantity - 1)}
-                                        className={`h-full px-2.5 flex items-center justify-center transition-colors disabled:cursor-not-allowed ${safeQuantity <= 1 ? 'text-red-400 hover:text-red-600 hover:bg-red-50' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'}`}
-                                    >
-                                        {safeQuantity <= 1 ? <Trash className="h-3.5 w-3.5" /> : <Minus className="h-3.5 w-3.5" />}
-                                    </button>
-                                    <input
-                                        type="number" min="1" step="1" disabled={!selectedProduct}
-                                        value={quantity}
-                                        onChange={(e) => {
-                                            const val = e.target.value
-                                            if (val === "") onQuantityChange("")
-                                            else {
-                                                const num = parseInt(val, 10)
-                                                if (!isNaN(num) && num > 0) onQuantityChange(Math.min(num, selectedProduct ? Number(selectedProduct.Stock) : Infinity))
-                                            }
-                                        }}
-                                        onBlur={() => { if (quantity === "" || quantity < 1) onQuantityChange(1) }}
-                                        onKeyDown={(e) => { if (['e', 'E', '+', '-', '.'].includes(e.key)) e.preventDefault() }}
-                                        className="w-10 sm:w-12 bg-transparent outline-none text-center text-base font-semibold text-gray-900 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none disabled:cursor-not-allowed"
-                                    />
-                                    <button
-                                        type="button" disabled={!selectedProduct || (!!selectedProduct && safeQuantity >= Number(selectedProduct.Stock))}
-                                        onClick={() => onQuantityChange(Math.min(safeQuantity + 1, selectedProduct ? Number(selectedProduct.Stock) : Infinity))}
-                                        className={`h-full px-2.5 flex items-center justify-center transition-colors disabled:cursor-not-allowed ${selectedProduct && safeQuantity >= Number(selectedProduct.Stock) ? 'text-gray-300' : 'text-gray-500 hover:text-blue-600 hover:bg-blue-50'}`}
-                                    >
-                                        <Plus className="h-3.5 w-3.5" />
-                                    </button>
-                                </div>
+                            {/* Laboratorio */}
+                            <div className="w-full lg:flex-1 space-y-1.5">
+                                <Label className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">Laboratorio</Label>
+                                <Button
+                                    type="button" variant="outline" onClick={() => setLabModalSearchOpen(true)}
+                                    className="w-full justify-start h-11 px-3 text-left font-normal text-xs sm:text-sm bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-white dark:hover:bg-gray-700 hover:border-purple-400 dark:hover:border-purple-500 overflow-hidden"
+                                >
+                                    <Building className="mr-2 h-4 w-4 shrink-0 text-gray-400" />
+                                    <span className="truncate text-gray-900 dark:text-gray-100">
+                    {selectedLaboratorio
+                        ? (laboratories.find(l => String(l.IdLineaGe) === selectedLaboratorio)?.Descripcion ?? selectedLaboratorio)
+                        : <span className="text-gray-400">Seleccionar laboratorio...</span>}
+                </span>
+                                </Button>
+                                <LabSearchDialog
+                                    open={labModalSearchOpen} onOpenChange={setLabModalSearchOpen}
+                                    laboratories={laboratories} selectedLaboratorio={selectedLaboratorio}
+                                    onLaboratorioChange={onLaboratorioChange}
+                                />
                             </div>
 
-                            <Button
-                                type="button" disabled={!selectedProduct || loadingProducts} onClick={onAddProduct}
-                                className="h-11 flex-1 lg:flex-none lg:shrink-0 bg-indigo-600 hover:bg-indigo-700 font-medium px-3 sm:px-5 mt-auto"
-                            >
-                                <ShoppingCart className="h-4 w-4 lg:mr-2" />
-                                <span className="hidden lg:inline">Agregar al pedido</span>
-                                <span className="lg:hidden ml-2">Agregar</span>
-                            </Button>
+                            {/* Cantidad + Botón: siempre juntos en la misma fila */}
+                            <div className="flex gap-2 items-end shrink-0">
+                                {/* Cantidad */}
+                                <div className="shrink-0 space-y-1.5">
+                                    <Label className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">
+                                        Cant.
+                                        {selectedProduct && (() => {
+                                            const stockTotal = Number(selectedProduct.Stock);
+                                            const remaining = stockTotal - safeQuantity;
+                                            return (
+                                                <span className="ml-1 text-[10px] font-normal text-gray-400 dark:text-gray-500">
+                                Stock: {stockTotal.toFixed(0)} · <span className={remaining <= 0 ? 'text-red-500 font-semibold' : remaining <= 3 ? 'text-amber-500' : 'text-green-600'}>
+                                    Restante: {Math.max(0, remaining)}
+                                </span>
+                            </span>
+                                            );
+                                        })()}
+                                    </Label>
+                                    <div className={`flex items-center h-11 rounded-lg border overflow-hidden transition-colors
+                    ${!selectedProduct
+                                        ? 'bg-gray-100 dark:bg-gray-800/50 border-gray-100 opacity-50 cursor-not-allowed'
+                                        : (selectedProduct && safeQuantity >= Number(selectedProduct.Stock))
+                                            ? 'bg-gray-50 border-red-300'
+                                            : 'bg-gray-50 border-gray-200'}`}
+                                    >
+                                        <button
+                                            type="button" disabled={!selectedProduct}
+                                            onClick={() => safeQuantity <= 1
+                                                ? (onProductSelect(null), onQuantityChange(1))
+                                                : onQuantityChange(safeQuantity - 1)}
+                                            className={`h-full px-2.5 flex items-center justify-center transition-colors disabled:cursor-not-allowed
+                            ${safeQuantity <= 1
+                                                ? 'text-red-400 hover:text-red-600 hover:bg-red-50'
+                                                : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'}`}
+                                        >
+                                            {safeQuantity <= 1 ? <Trash className="h-3.5 w-3.5" /> : <Minus className="h-3.5 w-3.5" />}
+                                        </button>
+                                        <input
+                                            type="number" min="1" step="1" disabled={!selectedProduct}
+                                            value={quantity}
+                                            onChange={(e) => {
+                                                const val = e.target.value
+                                                if (val === "") onQuantityChange("")
+                                                else {
+                                                    const num = parseInt(val, 10)
+                                                    if (!isNaN(num) && num > 0)
+                                                        onQuantityChange(Math.min(num, selectedProduct ? Number(selectedProduct.Stock) : Infinity))
+                                                }
+                                            }}
+                                            onBlur={() => { if (quantity === "" || quantity < 1) onQuantityChange(1) }}
+                                            onKeyDown={(e) => { if (['e', 'E', '+', '-', '.'].includes(e.key)) e.preventDefault() }}
+                                            className="w-10 sm:w-12 bg-transparent outline-none text-center text-base font-semibold text-gray-900 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none disabled:cursor-not-allowed"
+                                        />
+                                        <button
+                                            type="button"
+                                            disabled={!selectedProduct || (!!selectedProduct && safeQuantity >= Number(selectedProduct.Stock))}
+                                            onClick={() => onQuantityChange(Math.min(safeQuantity + 1, selectedProduct ? Number(selectedProduct.Stock) : Infinity))}
+                                            className={`h-full px-2.5 flex items-center justify-center transition-colors disabled:cursor-not-allowed
+                            ${selectedProduct && safeQuantity >= Number(selectedProduct.Stock)
+                                                ? 'text-gray-300'
+                                                : 'text-gray-500 hover:text-blue-600 hover:bg-blue-50'}`}
+                                        >
+                                            <Plus className="h-3.5 w-3.5" />
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* Botón Agregar */}
+                                <Button
+                                    type="button"
+                                    disabled={!selectedProduct || loadingProducts}
+                                    onClick={onAddProduct}
+                                    className="h-11 shrink-0 bg-indigo-600 hover:bg-indigo-700 font-medium px-3 lg:px-5"
+                                >
+                                    <ShoppingCart className="h-4 w-4 lg:mr-2" />
+                                    <span className="hidden lg:inline">Agregar al pedido</span>
+                                    <span className="lg:hidden">Agregar</span>
+                                </Button>
+                            </div>
                         </div>
                     </div>
 
