@@ -33,6 +33,7 @@ export interface Pedido {
   idPedidocab: number
   nroPedido: string
   fechaPedido: string
+  horaPedido: string
   nombreCliente: string
   nombreComercial: string
   nombreVendedor: string
@@ -385,7 +386,7 @@ export default function OrderStatusManagementPage() {
                                 <div className="text-xs text-gray-500">{order.codigoCliente || 'N/A'}</div>
                               </div>
                             </td>
-                            <td className="p-4 text-sm">{format(parseISO(order.fechaPedido), "dd/MM/yyyy")}</td>
+                            <td className="p-4 text-sm">{format(parseISO(order.fechaPedido), "dd/MM/yyyy")} {order.horaPedido}</td>
                             <td className="p-4 font-medium text-sm">
                               {order.monedaPedido === "PEN" ? "S/ " : "$ "}
                               {Number(order.totalPedido).toFixed(2)}
@@ -486,7 +487,7 @@ export default function OrderStatusManagementPage() {
                               <div>
                                 <h3 className="font-bold text-blue-600 text-sm">{order.nroPedido}</h3>
                                 <p className="text-xs text-gray-500">
-                                  {format(parseISO(order.fechaPedido), "dd/MM/yyyy")}
+                                  {format(parseISO(order.fechaPedido), "dd/MM/yyyy")} {order.horaPedido}
                                 </p>
                               </div>
                               {(order.por_autorizar === 'S' && order.is_autorizado === 'N')
