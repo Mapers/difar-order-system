@@ -43,6 +43,11 @@ export interface GuiaRemision {
     raw_request: string
     raw_response: string
     motivo_anulado?: string
+    idComprobanteCab?: number | null
+    comprobante_serie?: string | null
+    comprobante_numero?: number | null
+    comprobante_tipo?: number | null
+    comprobante_enlace?: string | null
 }
 
 export interface SunatTransaccion {

@@ -2,7 +2,7 @@ import { useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import {Eye, MoreHorizontal, AlertTriangle, Loader2, FileJson, Code, AlertCircle} from "lucide-react"
+import {Eye, MoreHorizontal, AlertTriangle, Loader2, FileJson, Code, AlertCircle, Receipt} from "lucide-react"
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -14,6 +14,7 @@ import {Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Dia
 import { format, parseISO } from "date-fns"
 import {Comprobante, GuiaRemision} from "@/app/types/order/order-interface";
 import { Mail, MessageCircle, Activity } from "lucide-react"
+import {RelatedComprobanteModal} from "@/app/dashboard/comprobantes/modals/RelatedComprobanteModal";
 
 interface GuiasListProps {
     guias: GuiaRemision[]
@@ -23,17 +24,21 @@ interface GuiasListProps {
     onSendEmail: (guia: GuiaRemision) => void
     onSendWhatsApp: (guia: GuiaRemision) => void
     onCheckStatus: (guia: GuiaRemision) => void
+    onViewPdfInvoice: (url: string) => void
 }
 
 export function GuiasList({
                               guias, loading, onViewPdf, onErrorView,
-                              onSendEmail, onSendWhatsApp, onCheckStatus
+                              onSendEmail, onSendWhatsApp, onCheckStatus, onViewPdfInvoice
 }: GuiasListProps) {
     const [showJsonModal, setShowJsonModal] = useState(false)
     const [jsonContent, setJsonContent] = useState("")
     const [jsonTitle, setJsonTitle] = useState("")
     const [showReasonModal, setShowReasonModal] = useState(false)
     const [selectedReason, setSelectedReason] = useState("")
+    const [showComprobanteModal, setShowComprobanteModal] = useState(false)
+    const [selectedGuiaForComp, setSelectedGuiaForComp] = useState<GuiaRemision | null>(null)
+
 
     const getEstadoBadge = (guia: GuiaRemision) => {
         if (guia.anulado) {
@@ -55,6 +60,11 @@ export function GuiasList({
             )
         }
         return <Badge variant="success">Activo</Badge>
+    }
+
+    const handleViewComprobante = (guia: GuiaRemision) => {
+        setSelectedGuiaForComp(guia)
+        setShowComprobanteModal(true)
     }
 
     const handleViewReason = (reason: string) => {
@@ -119,6 +129,17 @@ export function GuiasList({
                                                 <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50" onClick={() => onViewPdf(guia.pdf_zip_base64)}>
                                                     <Eye className="h-4 w-4" />
                                                 </Button>
+                                                {guia.idComprobanteCab && (
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-blue-50"
+                                                        onClick={() => handleViewComprobante(guia)}
+                                                        title="Ver Comprobante Asociado"
+                                                    >
+                                                        <Receipt className="h-4 w-4" />
+                                                    </Button>
+                                                )}
                                                 <DropdownMenu>
                                                     <DropdownMenuTrigger asChild>
                                                         <Button variant="ghost" size="icon" className="h-8 w-8"><MoreHorizontal className="h-4 w-4" /></Button>
@@ -190,6 +211,17 @@ export function GuiasList({
                                         <Button variant="outline" size="sm" className="text-xs bg-transparent" onClick={() => onViewPdf(guia.pdf_zip_base64)}>
                                             <Eye className="h-3 w-3 mr-1" /> Ver PDF
                                         </Button>
+                                        {guia.idComprobanteCab && (
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-blue-50"
+                                                onClick={() => handleViewComprobante(guia)}
+                                                title="Ver Comprobante Asociado"
+                                            >
+                                                <Receipt className="h-4 w-4" />
+                                            </Button>
+                                        )}
 
                                         <DropdownMenu>
                                             <DropdownMenuTrigger asChild>
@@ -271,6 +303,13 @@ export function GuiasList({
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+
+            <RelatedComprobanteModal
+                open={showComprobanteModal}
+                onOpenChange={setShowComprobanteModal}
+                guia={selectedGuiaForComp}
+                onViewPdf={onViewPdfInvoice}
+            />
         </>
     )
 }

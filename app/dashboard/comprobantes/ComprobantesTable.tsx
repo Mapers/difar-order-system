@@ -222,9 +222,11 @@ export function ComprobantesTable({
                                             <p className="text-xs text-gray-500">Total</p>
                                         </div>
                                     </div>
-                                    <div className="border-t pt-3">
-                                        <p className="font-medium text-gray-900 truncate">{comprobante.cliente_denominacion}</p>
-                                        <p className="text-sm text-gray-600">{comprobante.cliente_numdoc}</p>
+                                    <div className="border-t pt-3 w-full overflow-hidden">
+                                        <p className="font-medium text-gray-900 break-words line-clamp-2" title={comprobante.cliente_denominacion}>
+                                            {comprobante.cliente_denominacion}
+                                        </p>
+                                        <p className="text-sm text-gray-600 break-words mt-0.5">{comprobante.cliente_numdoc}</p>
                                     </div>
                                     <div className="border-t pt-3 flex gap-2">
                                         <Button variant="outline" size="sm" className="text-xs bg-transparent" onClick={() => onViewPdf(comprobante.enlace)}>

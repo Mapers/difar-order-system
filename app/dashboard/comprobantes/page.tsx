@@ -686,6 +686,7 @@ export default function ComprobantesPage() {
                 guias={guiasRemision}
                 loading={loadingGuias}
                 onViewPdf={handleViewPdfGuia}
+                onViewPdfInvoice={handleViewPdf}
                 onErrorView={handleOpenErrorModal}
                 onSendEmail={handleEmailGuia}
                 onSendWhatsApp={handleWhatsappGuia}
