@@ -118,7 +118,7 @@ export default function OrderDetailsPage({ params }: { params: { id: string } })
     return ORDER_STATES.find(state => state.id === stateId)
   }
 
-  const canEdit = pedido?.estadodePedido === 1
+  const canEdit = [1, 2, 4].includes(pedido?.estadodePedido)
 
   const handleEditToggle = async () => {
     if (isEditing) {
