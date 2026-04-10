@@ -12,7 +12,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { addDays, format } from "date-fns"
 import apiClient from "@/app/api/client"
 import { useAuth } from "@/context/authContext"
-import { toast } from "@/components/ui/use-toast"
 import {
   Comprobante, GuiaReferencia,
   GuiaRemision,
@@ -36,6 +35,7 @@ import {GenerarNotaCreditoModal} from "@/app/dashboard/comprobantes/modals/Gener
 import {Cuota} from "@/app/dashboard/comprobantes/modals/InstallmentModal";
 import {Sequential} from "@/app/types/config-types";
 import {DeletePendienteModal} from "@/app/dashboard/comprobantes/modals/DeletePendienteModal";
+import {toast} from "@/app/hooks/useToast";
 
 export default function ComprobantesPage() {
   const [comprobantes, setComprobantes] = useState<Comprobante[]>([])
@@ -289,7 +289,7 @@ export default function ComprobantesPage() {
       }
     } catch (error) {
       console.error(error)
-      toast({ title: "Error", description: "Error de servidor al generar comprobante", variant: "destructive" })
+      toast({ title: "Error", description: error?.response?.data?.message || 'Error de servidor al generar comprobante', variant: "destructive" })
     } finally {
       setIsProcessingInvoice(false)
       setShowInvoiceModal(false)

@@ -669,7 +669,7 @@ export default function OrderStatusManagementPage() {
                   >
                     Cancelar
                   </Button>
-                  {(detalle.length > 0 && selectedOrder.estadodePedido ===  1) && (
+                  {(detalle.length > 0 && [1, 2, 4].includes(selectedOrder.estadodePedido)) && (
                       <Dialog>
                         <DialogTrigger asChild>
                           <Button
