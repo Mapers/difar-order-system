@@ -304,7 +304,7 @@ export const Remision = ({ pedido, detalles, onOpenChange }: RemisionModalProps)
     clienteEmail: "",
     fechaEmision: getFechaLocal(),
     formatoPdf: "A4",
-    tipoTransporte: "02",
+    tipoTransporte: "01",
     motivoTraslado: "",
     observaciones: "",
   });
@@ -331,7 +331,7 @@ export const Remision = ({ pedido, detalles, onOpenChange }: RemisionModalProps)
   const [reasonTrasGuide, setReasonTrasGuide] = useState<ReasonTrasGuide[]>([])
   const [conductores, setConductores] = useState<Conductor[]>([
     {
-      tipoDocumento: "1",
+      tipoDocumento: "",
       numeroDocumento: "",
       nombre: "",
       apellidos: "",
@@ -378,7 +378,7 @@ export const Remision = ({ pedido, detalles, onOpenChange }: RemisionModalProps)
         }
       }
 
-      if (!vehiculos[0].placa || vehiculos[0].placa.length !== 6) {
+      if (vehiculos[0].placa && vehiculos[0].placa.length !== 6) {
         setValidationError("La placa del vehículo debe tener 6 caracteres alfanuméricos");
         return false;
       }
@@ -386,27 +386,29 @@ export const Remision = ({ pedido, detalles, onOpenChange }: RemisionModalProps)
       const licenciaRegex = /^([A-Z]\d{8}|\d{9})$/;
 
       for (const [index, conductor] of conductores.entries()) {
-        if (!conductor.numeroDocumento) {
-          setValidationError(`El número de documento del conductor ${index + 1} es obligatorio`);
-          return false;
-        }
-        if (!conductor.nombre) {
-          setValidationError(`El nombre del conductor ${index + 1} es obligatorio`);
-          return false;
-        }
-        if (!conductor.apellidos) {
-          setValidationError(`Los apellidos del conductor ${index + 1} son obligatorios`);
-          return false;
-        }
+        if (vehiculos[0].placa) {
+          if (!conductor.numeroDocumento) {
+            setValidationError(`El número de documento del conductor es obligatorio`);
+            return false;
+          }
+          if (!conductor.nombre) {
+            setValidationError(`El nombre del conductor es obligatorio`);
+            return false;
+          }
+          if (!conductor.apellidos) {
+            setValidationError(`Los apellidos del conductor son obligatorios`);
+            return false;
+          }
 
-        if (!conductor.licencia) {
-          setValidationError(`La licencia del conductor ${index + 1} es obligatoria`);
-          return false;
-        }
+          if (!conductor.licencia) {
+            setValidationError(`La licencia del conductor es obligatoria`);
+            return false;
+          }
 
-        if (!licenciaRegex.test(conductor.licencia)) {
-          setValidationError(`La licencia del conductor ${index + 1} es inválida. Debe ser una letra seguida de 8 dígitos (Ej: Q12345678) o 9 dígitos numéricos.`);
-          return false;
+          if ((conductor.licencia) && !licenciaRegex.test(conductor.licencia)) {
+            setValidationError(`La licencia del conductor es inválida. Debe ser una letra seguida de 8 dígitos (Ej: Q12345678) o 9 dígitos numéricos.`);
+            return false;
+          }
         }
       }
 
@@ -658,6 +660,7 @@ export const Remision = ({ pedido, detalles, onOpenChange }: RemisionModalProps)
                       <SelectValue placeholder="Seleccione tipo" />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="01">01 - Transporte publico</SelectItem>
                       <SelectItem value="02">02 - Transporte privado</SelectItem>
                     </SelectContent>
                   </Select>
