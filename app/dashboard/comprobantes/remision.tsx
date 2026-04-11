@@ -29,6 +29,7 @@ interface PedidoDet {
   fec_venc_lote?: string
   cod_lote?: string
   laboratorio?: string
+  esRegalo?: number
 }
 
 interface Conductor {
@@ -556,7 +557,8 @@ export const Remision = ({ pedido, detalles, onOpenChange }: RemisionModalProps)
           p_cantidad: producto.cantPedido,
           p_laboratorio: producto.laboratorio,
           p_lote: producto.cod_lote,
-          p_vencimiento: producto.fec_venc_lote
+          p_vencimiento: producto.fec_venc_lote,
+          es_regalo: producto.esRegalo
         }))
       };
 
@@ -919,61 +921,6 @@ export const Remision = ({ pedido, detalles, onOpenChange }: RemisionModalProps)
               <CardHeader className="bg-blue-50 border-b">
                 <CardTitle className="text-lg font-semibold flex items-center gap-2">
                   <FileText className="h-5 w-5 text-blue-600" />
-                  Productos
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-6">
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Código</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Descripción</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cantidad</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Unidad</th>
-                    </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                    {productos.map((producto, index) => (
-                        <tr key={index}>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {producto.codigoitemPedido}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {producto.productoNombre}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {producto.cantPedido}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            <Select
-                                value={producto.productoUnidad}
-                                onValueChange={(value) => {
-                                  const newProductos = [...productos];
-                                  newProductos[index].productoUnidad = value;
-                                  setProductos(newProductos);
-                                }}
-                            >
-                              <SelectTrigger className="w-32">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="KGM">KGM - Kilogramo</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </td>
-                        </tr>
-                    ))}
-                    </tbody>
-                  </table>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="shadow-sm">
-              <CardHeader className="bg-blue-50 border-b">
-                <CardTitle className="text-lg font-semibold flex items-center gap-2">
-                  <FileText className="h-5 w-5 text-blue-600" />
                   Observaciones <span className='text-red-500'>*</span>
                 </CardTitle>
               </CardHeader>
@@ -1109,6 +1056,61 @@ export const Remision = ({ pedido, detalles, onOpenChange }: RemisionModalProps)
             {/*</Card>*/}
           </div>
         </div>
+
+        <Card className="shadow-sm">
+          <CardHeader className="bg-blue-50 border-b">
+            <CardTitle className="text-lg font-semibold flex items-center gap-2">
+              <FileText className="h-5 w-5 text-blue-600" />
+              Productos
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6">
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Código</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Descripción</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cantidad</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Unidad</th>
+                </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                {productos.map((producto, index) => (
+                    <tr key={index}>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {producto.codigoitemPedido}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {producto.productoNombre}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {producto.cantPedido}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        <Select
+                            value={producto.productoUnidad}
+                            onValueChange={(value) => {
+                              const newProductos = [...productos];
+                              newProductos[index].productoUnidad = value;
+                              setProductos(newProductos);
+                            }}
+                        >
+                          <SelectTrigger className="w-32">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="KGM">KGM - Kilogramo</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </td>
+                    </tr>
+                ))}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
 
         {error && (
             <Alert variant="destructive" className="animate-in fade-in slide-in-from-top-2">
