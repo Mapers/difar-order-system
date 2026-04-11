@@ -302,7 +302,7 @@ export const Remision = ({ pedido, detalles, onOpenChange }: RemisionModalProps)
     clienteNumDoc: pedido?.codigoCliente || "",
     clienteDenominacion: pedido?.nombreCliente || "",
     clienteDireccion: pedido?.direccionCliente || "",
-    clienteEmail: "",
+    clienteEmail: pedido?.email,
     fechaEmision: getFechaLocal(),
     formatoPdf: "A4",
     tipoTransporte: "01",
@@ -325,7 +325,7 @@ export const Remision = ({ pedido, detalles, onOpenChange }: RemisionModalProps)
     },
     llegada: {
       ubigeo: "",
-      direccion: "",
+      direccion: pedido?.direccionCliente || "",
       codigoSunat: "",
     },
   });
