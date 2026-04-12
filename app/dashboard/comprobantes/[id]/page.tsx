@@ -69,17 +69,16 @@ export default function OrderDetailsPage({ params }: { params: { id: string } })
     fetchPedido()
   }, [])
 
-  const calculateTotals = () => {
-    if (!detalles.length) return { subtotal: 0, igv: 0, total: 0 }
+  const calculateTotals = (items: PedidoDet[]) => {
+    if (!items.length) return { subtotal: 0, igv: 0, total: 0 }
 
-    const subtotal = detalles.reduce((sum, item) => sum + (item.cantPedido * Number(item.precioPedido)), 0)
+    const subtotal = items.reduce((sum, item) => sum + (item.cantPedido * Number(item.precioPedido)), 0)
     const igv = subtotal * 0.18
-    const total = subtotal + igv
 
-    return { subtotal, igv, total }
+    return { subtotal: subtotal / 1.18, igv, total: subtotal }
   }
 
-  const { subtotal, igv, total } = calculateTotals()
+  const { subtotal, igv, total } = calculateTotals(detalles)
 
   const getStateInfo = (stateId: number) => {
     return ORDER_STATES.find(state => state.id === stateId)
