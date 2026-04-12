@@ -13,10 +13,10 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { toast, useToast } from "@/components/ui/use-toast";
 import apiClient from "@/app/api/client";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {Pedido} from "@/app/types/order/order-interface";
+import {toast} from "@/app/hooks/useToast";
 
 interface PedidoDet {
   idPedidodet: number
@@ -282,7 +282,6 @@ const TransportistaSearchInput = ({
 };
 
 export const Remision = ({ pedido, detalles, onOpenChange }: RemisionModalProps) => {
-  const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [series, setSeries] = useState<Guide[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -570,9 +569,10 @@ export const Remision = ({ pedido, detalles, onOpenChange }: RemisionModalProps)
       onOpenChange(false);
     } catch (error) {
       console.error("Error al generar guía:", error);
+      const message =  error?.response?.data?.message ? error?.response?.data?.message.split('|')[0] : "Ocurrió un error al generar la guía"
       toast({
         title: "Error",
-        description: "Ocurrió un error al generar la guía",
+        description: message || "Ocurrió un error al generar la guía",
         variant: "destructive",
       });
     } finally {
