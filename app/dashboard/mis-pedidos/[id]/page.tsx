@@ -16,7 +16,7 @@ import {
   Save,
   Check,
   Pen,
-  ArrowBigDownDash, OctagonAlert, CheckCircle, XCircle
+  ArrowBigDownDash, OctagonAlert, CheckCircle, XCircle, Gift
 } from "lucide-react"
 import Link from "next/link"
 import { useEffect, useState } from "react"
@@ -556,7 +556,8 @@ export default function OrderDetailsPage({ params }: { params: { id: string } })
                     <TableRow key={item.idPedidodet || index} className="hover:bg-gray-50">
                       <TableCell>{item.codigoitemPedido}</TableCell>
                       <TableCell className='flex'>
-                        {item.is_editado === 'S' && <Pen className="h-4 w-4 mr-2 text-blue-600" />}
+                        {(item.is_editado === 'S' && Number(item.precioPedido) > 0) && <Pen className="h-4 w-4 mr-2 text-blue-600" />}
+                        {(item.is_editado === 'S' && Number(item.precioPedido) === 0) && <Gift className="h-4 w-4 mr-2 text-pink-600" />}
                         {item.is_autorizado === 'S' && <ArrowBigDownDash className="h-5 w-5 mr-2 text-orange-600" />}
                         {item.productoNombre || "Producto no especificado"}
                       </TableCell>
@@ -625,7 +626,8 @@ export default function OrderDetailsPage({ params }: { params: { id: string } })
                       <div>
                         <p className="font-medium text-sm text-gray-500">Producto</p>
                         <p className="font-semibold flex">
-                          {item.is_editado === 'S' && <Pen className="h-4 w-4 mr-2 text-blue-600" />}
+                          {(item.is_editado === 'S' && Number(item.precioPedido) > 0) && <Pen className="h-4 w-4 mr-2 text-blue-600" />}
+                          {(item.is_editado === 'S' && Number(item.precioPedido) === 0) && <Gift className="h-4 w-4 mr-2 text-pink-600" />}
                           {item.is_autorizado === 'S' && <ArrowBigDownDash className="h-5 w-5 mr-2 text-orange-600" />}
                           {item.productoNombre || "Producto no especificado"}
                         </p>

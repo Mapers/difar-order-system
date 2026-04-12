@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import {ArrowLeft, Printer, FileDown, Clock, Pen, ArrowBigDownDash} from "lucide-react"
+import {ArrowLeft, Printer, FileDown, Clock, Pen, ArrowBigDownDash, Gift} from "lucide-react"
 import Link from "next/link"
 import { useEffect, useState } from "react"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -359,7 +359,8 @@ export default function OrderDetailsPage({ params }: { params: { id: string } })
                     <TableRow key={item.idPedidodet} className="hover:bg-gray-50">
                       <TableCell>{item.codigoitemPedido}</TableCell>
                       <TableCell className='flex'>
-                        {item.is_editado === 'S' && <Pen className="h-4 w-4 mr-2 text-blue-600" />}
+                        {(item.is_editado === 'S' && Number(item.precioPedido) > 0) && <Pen className="h-4 w-4 mr-2 text-blue-600" />}
+                        {(item.is_editado === 'S' && Number(item.precioPedido) === 0) && <Gift className="h-4 w-4 mr-2 text-pink-600" />}
                         {item.is_autorizado === 'S' && <ArrowBigDownDash className="h-5 w-5 mr-2 text-orange-600" />}
                         {item.productoNombre || "Producto no especificado"}
                       </TableCell>
@@ -393,7 +394,8 @@ export default function OrderDetailsPage({ params }: { params: { id: string } })
               detalles.map((item) => (
                 <div key={item.idPedidodet} className="border rounded-md p-3 bg-gray-50">
                   <div className="font-medium mb-2 flex">
-                    {item.is_editado === 'S' && <Pen className="h-4 w-4 mr-2 text-blue-600" />}
+                    {(item.is_editado === 'S' && Number(item.precioPedido) > 0) && <Pen className="h-4 w-4 mr-2 text-blue-600" />}
+                    {(item.is_editado === 'S' && Number(item.precioPedido) === 0) && <Gift className="h-4 w-4 mr-2 text-pink-600" />}
                     {item.is_autorizado === 'S' && <ArrowBigDownDash className="h-5 w-5 mr-2 text-orange-600" />}
                     {item.productoNombre || "Producto no especificado"}
                   </div>

@@ -36,7 +36,8 @@ export default function SelectedProductsTable({
         <>
             {item.isBonification && <Badge variant="outline" className="bg-yellow-50 text-yellow-700">Bonificado</Badge>}
             {item.appliedScale && <Badge variant="outline" className="bg-purple-50 text-purple-700">Escala {item.appliedScale.porcentaje_descuento}% desc.</Badge>}
-            {item.isEdit && <Badge variant="outline" className="bg-green-100 text-green-700 border-green-300">Editado</Badge>}
+            {(item.isEdit && Number(item.finalPrice || 0) > 0) && <Badge variant="outline" className="bg-green-100 text-green-700 border-green-300">Editado</Badge>}
+            {(item.isEdit && item.finalPrice === 0) && <Badge variant="outline" className="bg-pink-100 text-pink-700 border-pink-300">REGALO</Badge>}
             {item.isAuthorize && <Badge variant="outline" className="bg-blue-100 text-blue-700 border-blue-300">Por Autorizar</Badge>}
         </>
     )

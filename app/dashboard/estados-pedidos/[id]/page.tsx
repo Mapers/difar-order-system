@@ -16,7 +16,7 @@ import {
   Save,
   Pen,
   ArrowBigDownDash,
-  OctagonAlert, Minus
+  OctagonAlert, Minus, Gift
 } from "lucide-react"
 import Link from "next/link"
 import { useEffect, useState } from "react"
@@ -622,16 +622,15 @@ export default function OrderDetailsPage({ params }: { params: { id: string } })
         </CardHeader>
 
         <CardContent className="p-0">
-          {/* TABLAS DE DETALLE (Mantenidas exactamente igual a tu original) */}
           <div className="rounded-md border m-4 hidden md:block">
             <Table>
-              {/* ... Cabeceras y body original de tu tabla ... */}
               <TableBody>
                 {(isEditing ? tempDetalles : detalles).map((item, index) => (
                     <TableRow key={item.idPedidodet || index} className="hover:bg-gray-50">
                       <TableCell>{item.codigoitemPedido}</TableCell>
                       <TableCell className='flex'>
-                        {item.is_editado === 'S' && <Pen className="h-4 w-4 mr-2 text-blue-600" />}
+                        {(item.is_editado === 'S' && Number(item.precioPedido) > 0) && <Pen className="h-4 w-4 mr-2 text-blue-600" />}
+                        {(item.is_editado === 'S' && Number(item.precioPedido) === 0) && <Gift className="h-4 w-4 mr-2 text-pink-600" />}
                         {item.is_autorizado === 'S' && <ArrowBigDownDash className="h-5 w-5 mr-2 text-orange-600" />}
                         {item.productoNombre || "Producto no especificado"}
                       </TableCell>
