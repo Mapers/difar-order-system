@@ -1,15 +1,17 @@
-import { useState, useEffect } from "react"
+'use client'
+
+import { useState, useEffect, useMemo } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
-import { Receipt, Loader2, Truck, AlertTriangle, Check, FileText, CreditCard, Calendar } from "lucide-react"
+import { Receipt, Loader2, Truck, AlertTriangle, Check, FileText, CreditCard } from "lucide-react"
 import { Pedido, SunatTransaccion, TipoDocSunat, GuiaReferencia } from "@/app/types/order/order-interface"
 import { GuidesSelectorModal } from "./GuidesSelectorModal"
 import { Badge } from "@/components/ui/badge"
 import { InstallmentModal, Cuota } from "./InstallmentModal"
-import {ContactConfirmModal} from "@/app/dashboard/comprobantes/modals/ContactConfirmModal";
-import {Sequential} from "@/app/types/config-types";
+import { ContactConfirmModal } from "@/app/dashboard/comprobantes/modals/ContactConfirmModal"
+import { Sequential } from "@/app/types/config-types"
 
 interface InvoiceModalProps {
     open: boolean
@@ -25,7 +27,7 @@ interface InvoiceModalProps {
     tipoSunat: string
     setTipoSunat: (v: string) => void
     isProcessing: boolean
-    onConfirm: (guiasSeleccionadas: GuiaReferencia[], cuotas: Cuota[], email: string, phone: string) => void
+    onConfirm: (guiasSeleccionadas: GuiaReferencia[], cuotas: Cuota[], email: string, phone: string, idAlmacen: number) => void
 }
 
 export function InvoiceModal({
@@ -33,19 +35,46 @@ export function InvoiceModal({
                                  invoiceType, setInvoiceType, sunatTransaction, setSunatTransaction, tipoSunat, setTipoSunat,
                                  isProcessing, onConfirm
                              }: InvoiceModalProps) {
-    const [showGuidesModal, setShowGuidesModal] = useState(false)
-    const [selectedGuides, setSelectedGuides] = useState<GuiaReferencia[]>([])
-    const [showContactModal, setShowContactModal] = useState(false)
+    const [showGuidesModal, setShowGuidesModal]       = useState(false)
+    const [selectedGuides, setSelectedGuides]         = useState<GuiaReferencia[]>([])
+    const [showContactModal, setShowContactModal]     = useState(false)
     const [showInstallmentModal, setShowInstallmentModal] = useState(false)
-    const [cuotas, setCuotas] = useState<Cuota[]>([])
+    const [cuotas, setCuotas]                         = useState<Cuota[]>([])
+
+    const [selectedAlmacen, setSelectedAlmacen] = useState<string>("")
 
     const isCredit = selectedOrder?.condicionCredito === '1'
+
+    const almacenesDisponibles = useMemo(() => {
+        const seen = new Set<string>()
+        return tiposComprobante
+            .filter(t => t.id_almacen && t.desc_almacen)
+            .reduce<{ id: string; desc: string }[]>((acc, t) => {
+                const key = String(t.id_almacen)
+                if (!seen.has(key)) {
+                    seen.add(key)
+                    acc.push({ id: key, desc: t.desc_almacen! })
+                }
+                return acc
+            }, [])
+    }, [tiposComprobante])
+
+    useEffect(() => {
+        if (!invoiceType) return
+        const sequential = tiposComprobante.find(
+            t => `${t.prefijo}|${t.tipo}` === invoiceType
+        )
+        if (sequential?.id_almacen) {
+            setSelectedAlmacen(String(sequential.id_almacen))
+        }
+    }, [invoiceType, tiposComprobante])
 
     useEffect(() => {
         if (!open) {
             setSelectedGuides([])
             setCuotas([])
-        } else if (selectedOrder && selectedOrder.condicionCredito === '1') {
+            setSelectedAlmacen("")
+        } else if (selectedOrder?.condicionCredito === '1') {
             setCuotas([{
                 fecha: new Date(new Date().setDate(new Date().getDate() + 30)).toISOString().split('T')[0],
                 monto: Number(selectedOrder.totalPedido)
@@ -53,24 +82,27 @@ export function InvoiceModal({
         }
     }, [open, selectedOrder])
 
-    const handleInitialConfirm = () => {
-        setShowContactModal(true)
-    }
+    const handleInitialConfirm = () => setShowContactModal(true)
 
     const handleFinalConfirm = (email: string, phone: string) => {
-        onConfirm(selectedGuides, isCredit ? cuotas : [], email, phone)
+        onConfirm(selectedGuides, isCredit ? cuotas : [], email, phone, Number(selectedAlmacen) || 1)
     }
 
-    const selectedSequential = tiposComprobante.find(
-        (tipo) => `${tipo.prefijo}|${tipo.tipo}` === invoiceType
-    )
+    const canConfirm =
+        !isProcessing &&
+        !!invoiceType &&
+        !!sunatTransaction &&
+        !!selectedAlmacen &&
+        (!isCredit || cuotas.length > 0)
 
     return (
         <>
             <Dialog open={open} onOpenChange={onOpenChange}>
                 <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2"><Receipt className="h-5 w-5" /> Confirmar Facturación</DialogTitle>
+                        <DialogTitle className="flex items-center gap-2">
+                            <Receipt className="h-5 w-5" /> Confirmar Facturación
+                        </DialogTitle>
                     </DialogHeader>
 
                     {selectedOrder && (
@@ -81,8 +113,16 @@ export function InvoiceModal({
                                     <p><strong>Pedido:</strong> {selectedOrder.nroPedido}</p>
                                     <p><strong>Cliente:</strong> {selectedOrder.nombreCliente}</p>
                                     <div className="flex justify-between items-center">
-                                        <p><strong>Total:</strong> {selectedOrder.monedaPedido === 'PEN' ? 'S/ ' : '$ '} {Number(selectedOrder.totalPedido).toFixed(2)}</p>
-                                        {isCredit && <Badge variant="outline" className="bg-purple-100 text-purple-800 border-purple-300">Venta al Crédito</Badge>}
+                                        <p>
+                                            <strong>Total:</strong>{" "}
+                                            {selectedOrder.monedaPedido === 'PEN' ? 'S/ ' : '$ '}
+                                            {Number(selectedOrder.totalPedido).toFixed(2)}
+                                        </p>
+                                        {isCredit && (
+                                            <Badge variant="outline" className="bg-purple-100 text-purple-800 border-purple-300">
+                                                Venta al Crédito
+                                            </Badge>
+                                        )}
                                     </div>
                                 </div>
                             </div>
@@ -91,38 +131,70 @@ export function InvoiceModal({
                                 <div>
                                     <Label className="text-sm font-medium mb-2 block">Tipo de Comprobante</Label>
                                     <Select value={invoiceType} onValueChange={setInvoiceType} disabled={isProcessing}>
-                                        <SelectTrigger><SelectValue placeholder="Seleccionar tipo"/></SelectTrigger>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Seleccionar tipo" />
+                                        </SelectTrigger>
                                         <SelectContent>
-                                            {tiposComprobante.filter((s: Sequential) => s.tipo !== '8' && s.tipo !== '7').map((tipo) => (
-                                                <SelectItem key={tipo.prefijo} value={tipo.prefijo + '|' + tipo.tipo}>{tipo.prefijo} - {tipo.nombre}</SelectItem>
-                                            ))}
+                                            {tiposComprobante
+                                                .filter((s: Sequential) => s.tipo !== '8' && s.tipo !== '7')
+                                                .map((tipo) => (
+                                                    <SelectItem key={tipo.prefijo} value={`${tipo.prefijo}|${tipo.tipo}`}>
+                                                        {tipo.prefijo} - {tipo.nombre}
+                                                    </SelectItem>
+                                                ))}
                                         </SelectContent>
                                     </Select>
-
-                                    {selectedSequential?.desc_almacen && (
-                                        <p className="text-xs text-slate-500 mt-1.5 ml-1">
-                                            <span className="font-semibold text-gray-700">Almacén:</span> {selectedSequential.desc_almacen}
-                                        </p>
-                                    )}
                                 </div>
+
                                 <div>
                                     <Label className="text-sm font-medium mb-2 block">Transacción SUNAT</Label>
                                     <Select value={sunatTransaction} onValueChange={setSunatTransaction} disabled={isProcessing}>
-                                        <SelectTrigger><SelectValue placeholder="Seleccionar transacción"/></SelectTrigger>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Seleccionar transacción" />
+                                        </SelectTrigger>
                                         <SelectContent>
                                             {sunatTransacciones.map((trans) => (
-                                                <SelectItem key={trans.idTransaction} value={trans.idTransaction.toString()}>{trans.descripcion}</SelectItem>
+                                                <SelectItem key={trans.idTransaction} value={trans.idTransaction.toString()}>
+                                                    {trans.descripcion}
+                                                </SelectItem>
                                             ))}
                                         </SelectContent>
                                     </Select>
                                 </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
                                     <Label className="text-sm font-medium mb-2 block">Tipo Doc.</Label>
                                     <Select value={tipoSunat} onValueChange={setTipoSunat} disabled={isProcessing}>
-                                        <SelectTrigger><SelectValue placeholder="Seleccionar tipo documento"/></SelectTrigger>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Seleccionar tipo documento" />
+                                        </SelectTrigger>
                                         <SelectContent>
                                             {tipoDocsSunat.map((trans) => (
-                                                <SelectItem key={trans.codigo} value={trans.codigo}>{trans.descripcion}</SelectItem>
+                                                <SelectItem key={trans.codigo} value={trans.codigo}>
+                                                    {trans.descripcion}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+
+                                <div>
+                                    <Label className="text-sm font-medium mb-2 block">Almacén Afectado</Label>
+                                    <Select
+                                        value={selectedAlmacen}
+                                        onValueChange={setSelectedAlmacen}
+                                        disabled={isProcessing || almacenesDisponibles.length === 0}
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Seleccionar almacén" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {almacenesDisponibles.map((alm) => (
+                                                <SelectItem key={alm.id} value={alm.id}>
+                                                    {alm.desc}
+                                                </SelectItem>
                                             ))}
                                         </SelectContent>
                                     </Select>
@@ -144,19 +216,18 @@ export function InvoiceModal({
                                             Configurar
                                         </Button>
                                     </div>
-
                                     {cuotas.length > 0 ? (
                                         <div className="space-y-1">
                                             <div className="flex items-center gap-2 text-sm">
-                                                <Badge className="">{cuotas.length} Cuota(s)</Badge>
+                                                <Badge>{cuotas.length} Cuota(s)</Badge>
                                                 <span className="text-xs text-gray-500">
-                                                    Último vencimiento: {cuotas[cuotas.length-1].fecha}
+                                                    Último vencimiento: {cuotas[cuotas.length - 1].fecha}
                                                 </span>
                                             </div>
                                             <div className="text-xs text-gray-500 mt-1 max-h-[60px] overflow-y-auto">
                                                 {cuotas.map((c, i) => (
                                                     <div key={i} className="flex justify-between w-[90%]">
-                                                        <span>Cuota {i+1} ({c.fecha}):</span>
+                                                        <span>Cuota {i + 1} ({c.fecha}):</span>
                                                         <span className="font-medium">{c.monto.toFixed(2)}</span>
                                                     </div>
                                                 ))}
@@ -203,7 +274,7 @@ export function InvoiceModal({
 
                             <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-200">
                                 <p className="text-sm text-yellow-800">
-                                    <strong>¿Confirmas la facturación?</strong><br/>
+                                    <strong>¿Confirmas la facturación?</strong><br />
                                     Se generará el comprobante electrónico para este pedido. Esta acción no se puede deshacer.
                                 </p>
                             </div>
@@ -211,16 +282,24 @@ export function InvoiceModal({
                     )}
 
                     <DialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0">
-                        <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isProcessing} className="w-full sm:w-auto">Cancelar</Button>
-                        <div className="flex gap-2 w-full sm:w-auto">
-                            <Button
-                                onClick={handleInitialConfirm}
-                                disabled={isProcessing || !invoiceType || !sunatTransaction || (isCredit && cuotas.length === 0)}
-                                className="bg-green-600 hover:bg-green-700 flex-1"
-                            >
-                                {isProcessing ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Procesando...</> : <><Receipt className="mr-2 h-4 w-4" /> Confirmar Facturación</>}
-                            </Button>
-                        </div>
+                        <Button
+                            variant="outline"
+                            onClick={() => onOpenChange(false)}
+                            disabled={isProcessing}
+                            className="w-full sm:w-auto"
+                        >
+                            Cancelar
+                        </Button>
+                        <Button
+                            onClick={handleInitialConfirm}
+                            disabled={!canConfirm}
+                            className="bg-green-600 hover:bg-green-700 flex-1 sm:flex-none"
+                        >
+                            {isProcessing
+                                ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Procesando...</>
+                                : <><Receipt className="mr-2 h-4 w-4" /> Confirmar Facturación</>
+                            }
+                        </Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
@@ -234,7 +313,6 @@ export function InvoiceModal({
                         selectedGuides={selectedGuides}
                         onConfirmSelection={setSelectedGuides}
                     />
-
                     <InstallmentModal
                         open={showInstallmentModal}
                         onOpenChange={setShowInstallmentModal}

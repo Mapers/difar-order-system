@@ -253,7 +253,13 @@ export default function ComprobantesPage() {
     }
   }
 
-  const handleConfirmInvoice = async (guiasSeleccionadas: GuiaReferencia[] = [], cuotas: Cuota[] = [], email: string, phone: string) => {
+  const handleConfirmInvoice = async (
+      guiasSeleccionadas: GuiaReferencia[] = [],
+      cuotas: Cuota[] = [],
+      email: string,
+      phone: string,
+      idAlmacen: number
+  ) => {
     setIsProcessingInvoice(true)
     try {
       const tipoComprobante = tiposComprobante.find(t => t.prefijo === invoiceType.split('|')[0])
@@ -276,7 +282,7 @@ export default function ComprobantesPage() {
             cuotas: cuotas,
             email,
             phone,
-            id_almacen: tipoComprobante?.id_almacen || 1
+            id_almacen: idAlmacen
           }
       )
 
