@@ -129,7 +129,7 @@ export function GuiasList({
                                                 <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50" onClick={() => onViewPdf(guia.pdf_zip_base64)}>
                                                     <Eye className="h-4 w-4" />
                                                 </Button>
-                                                {guia.idComprobanteCab && (
+                                                {(guia.idComprobanteCab && guia.comprobante_serie != null) && (
                                                     <Button
                                                         variant="ghost"
                                                         size="icon"
@@ -211,7 +211,7 @@ export function GuiasList({
                                         <Button variant="outline" size="sm" className="text-xs bg-transparent" onClick={() => onViewPdf(guia.pdf_zip_base64)}>
                                             <Eye className="h-3 w-3 mr-1" /> Ver PDF
                                         </Button>
-                                        {guia.idComprobanteCab && (
+                                        {(guia.idComprobanteCab && guia.comprobante_serie != null) && (
                                             <Button
                                                 variant="ghost"
                                                 size="icon"

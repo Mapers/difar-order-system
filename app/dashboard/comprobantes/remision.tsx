@@ -61,6 +61,7 @@ interface RemisionModalProps {
   pedido: Pedido | null;
   detalles: PedidoDet[];
   onOpenChange: (open: boolean) => void
+  fetchGuiasRemision: () => void;
 }
 
 interface ReasonTrasGuide {
@@ -77,7 +78,7 @@ interface Guide {
 const UbigeoSearchInput = ({
                              value,
                              onSelect,
-                             disabled = false
+                             disabled = false,
                            }: {
   value: string,
   onSelect: (codigo: string, texto: string) => void,
@@ -281,7 +282,7 @@ const TransportistaSearchInput = ({
   );
 };
 
-export const Remision = ({ pedido, detalles, onOpenChange }: RemisionModalProps) => {
+export const Remision = ({ pedido, detalles, onOpenChange, fetchGuiasRemision }: RemisionModalProps) => {
   const [loading, setLoading] = useState(false);
   const [series, setSeries] = useState<Guide[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -331,15 +332,15 @@ export const Remision = ({ pedido, detalles, onOpenChange }: RemisionModalProps)
   const [reasonTrasGuide, setReasonTrasGuide] = useState<ReasonTrasGuide[]>([])
   const [conductores, setConductores] = useState<Conductor[]>([
     {
-      tipoDocumento: "",
-      numeroDocumento: "",
-      nombre: "",
-      apellidos: "",
-      licencia: "",
+      tipoDocumento: "1",
+      numeroDocumento: "32912218",
+      nombre: "Ivan",
+      apellidos: "Luna",
+      licencia: "E32912218",
     },
   ]);
 
-  const [vehiculos, setVehiculos] = useState<Vehiculo[]>([{ placa: "" }]);
+  const [vehiculos, setVehiculos] = useState<Vehiculo[]>([{ placa: "T4Q205" }]);
 
   const [datosTransportista, setDatosTransportista] = useState({
     tipoDocumento: "6",
@@ -366,6 +367,11 @@ export const Remision = ({ pedido, detalles, onOpenChange }: RemisionModalProps)
     try {
       setError(null);
 
+      if (!datosGuia.motivoTraslado) {
+        setValidationError("El motivo de traslado es obligatorio");
+        return false;
+      }
+
       if (!datosTraslado.pesoBruto) {
         setValidationError("El peso bruto total es obligatorio");
         return false;
@@ -378,38 +384,44 @@ export const Remision = ({ pedido, detalles, onOpenChange }: RemisionModalProps)
         }
       }
 
-      if (vehiculos[0].placa && vehiculos[0].placa.length !== 6) {
-        setValidationError("La placa del vehículo debe tener 6 caracteres alfanuméricos");
-        return false;
-      }
+      if (datosGuia.tipoTransporte === '02') {
+        if (!vehiculos[0].placa) {
+          setValidationError("La placa del vehículo es obligatoria para transporte privado");
+          return false;
+        }
+        if (vehiculos[0].placa.length !== 6) {
+          setValidationError("La placa del vehículo debe tener 6 caracteres alfanuméricos");
+          return false;
+        }
 
-      const licenciaRegex = /^([A-Z]\d{8}|\d{9})$/;
-
-      for (const [index, conductor] of conductores.entries()) {
-        if (vehiculos[0].placa) {
+        const licenciaRegex = /^([A-Z]\d{8}|\d{9})$/;
+        for (const conductor of conductores) {
           if (!conductor.numeroDocumento) {
-            setValidationError(`El número de documento del conductor es obligatorio`);
+            setValidationError("El número de documento del conductor es obligatorio");
             return false;
           }
           if (!conductor.nombre) {
-            setValidationError(`El nombre del conductor es obligatorio`);
+            setValidationError("El nombre del conductor es obligatorio");
             return false;
           }
           if (!conductor.apellidos) {
-            setValidationError(`Los apellidos del conductor son obligatorios`);
+            setValidationError("Los apellidos del conductor son obligatorios");
             return false;
           }
-
           if (!conductor.licencia) {
-            setValidationError(`La licencia del conductor es obligatoria`);
+            setValidationError("La licencia del conductor es obligatoria");
             return false;
           }
-
-          if ((conductor.licencia) && !licenciaRegex.test(conductor.licencia)) {
-            setValidationError(`La licencia del conductor es inválida. Debe ser una letra seguida de 8 dígitos (Ej: Q12345678) o 9 dígitos numéricos.`);
+          if (!licenciaRegex.test(conductor.licencia)) {
+            setValidationError("La licencia es inválida. Formato: letra+8 dígitos (Q12345678) o 9 dígitos numéricos.");
             return false;
           }
         }
+      }
+
+      if (vehiculos[0].placa && vehiculos[0].placa.length !== 6) {
+        setValidationError("La placa del vehículo debe tener 6 caracteres alfanuméricos");
+        return false;
       }
 
       if (!puntosUbicacion.llegada.direccion) {
@@ -427,7 +439,7 @@ export const Remision = ({ pedido, detalles, onOpenChange }: RemisionModalProps)
       console.log(error);
       return false;
     }
-  };
+  }
 
   const handlePlacaChange = (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
     const value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6);
@@ -567,6 +579,7 @@ export const Remision = ({ pedido, detalles, onOpenChange }: RemisionModalProps)
         description: "Guía de remisión generada correctamente",
       });
       onOpenChange(false);
+      fetchGuiasRemision();
     } catch (error) {
       console.error("Error al generar guía:", error);
       const message =  error?.response?.data?.message ? error?.response?.data?.message.split('|')[0] : "Ocurrió un error al generar la guía"
@@ -652,21 +665,18 @@ export const Remision = ({ pedido, detalles, onOpenChange }: RemisionModalProps)
                   </Select>
                 </div>
 
-                <div className="space-y-2">
-                  <Label>Tipo de transporte</Label>
-                  <Select
-                      value={datosGuia.tipoTransporte}
-                      disabled
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleccione tipo" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="01">01 - Transporte publico</SelectItem>
-                      <SelectItem value="02">02 - Transporte privado</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                <Select
+                    value={datosGuia.tipoTransporte}
+                    onValueChange={(value) => setDatosGuia({...datosGuia, tipoTransporte: value})}  // ✅
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccione tipo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="01">01 - Transporte público</SelectItem>
+                    <SelectItem value="02">02 - Transporte privado</SelectItem>
+                  </SelectContent>
+                </Select>
               </CardContent>
             </Card>
             <Card className="shadow-sm">
@@ -917,6 +927,127 @@ export const Remision = ({ pedido, detalles, onOpenChange }: RemisionModalProps)
               </CardContent>
             </Card>
 
+            {datosGuia.tipoTransporte === '02' && <Card className="shadow-sm">
+              <CardHeader className="bg-blue-50 border-b">
+                <CardTitle className="text-lg font-semibold flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Truck className="h-5 w-5 text-blue-600" />
+                    Vehículos
+                  </div>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-6 space-y-4">
+                <div className="space-y-2">
+                  <Label>Vehículo principal (Placa)</Label>
+                  <Input
+                      value={vehiculos[0].placa}
+                      onChange={(e) => handlePlacaChange(e, 0)}
+                      placeholder="ABC123"
+                      maxLength={6}
+                  />
+                </div>
+              </CardContent>
+            </Card>}
+
+            {datosGuia.tipoTransporte === '02' && <Card className="shadow-sm">
+              <CardHeader className="bg-blue-50 border-b">
+                <CardTitle className="text-lg font-semibold flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <UserPlus className="h-5 w-5 text-blue-600" />
+                    Conductores
+                  </div>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-6 space-y-4">
+                {conductores.map((conductor, index) => (
+                    <div key={index} className="space-y-4 border-b pb-4 last:border-b-0 last:pb-0">
+                      {index > 0 && (
+                          <div className="flex justify-between items-center">
+                            <h4 className="font-medium">Conductor {index + 1}</h4>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => eliminarConductor(index)}
+                            >
+                              <Trash2 className="h-4 w-4 text-red-500" />
+                            </Button>
+                          </div>
+                      )}
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label>Tipo de documento</Label>
+                          <Select
+                              value={conductor.tipoDocumento}
+                              onValueChange={(value) => {
+                                const newConductores = [...conductores];
+                                newConductores[index].tipoDocumento = value;
+                                setConductores(newConductores);
+                              }}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="1">DNI</SelectItem>
+                              <SelectItem value="4">Carné de extranjería</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Número de documento</Label>
+                          <Input
+                              value={conductor.numeroDocumento}
+                              onChange={(e) => {
+                                const newConductores = [...conductores];
+                                newConductores[index].numeroDocumento = e.target.value;
+                                setConductores(newConductores);
+                              }}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label>Nombres</Label>
+                          <Input
+                              value={conductor.nombre}
+                              onChange={(e) => {
+                                const newConductores = [...conductores];
+                                newConductores[index].nombre = e.target.value;
+                                setConductores(newConductores);
+                              }}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Apellidos</Label>
+                          <Input
+                              value={conductor.apellidos}
+                              onChange={(e) => {
+                                const newConductores = [...conductores];
+                                newConductores[index].apellidos = e.target.value;
+                                setConductores(newConductores);
+                              }}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Número de licencia</Label>
+                        <Input
+                            value={conductores[0].licencia}
+                            onChange={(e) => handleLicenciaChange(e, 0)}
+                            placeholder="Q12345678 o 123456789"
+                            maxLength={9}
+                        />
+                        <p className="text-xs text-muted-foreground">Formato: Letra+8 dígitos (Q12345678) o 9 dígitos.</p>
+                      </div>
+                    </div>
+                ))}
+
+              </CardContent>
+            </Card>}
+
             <Card className="shadow-sm">
               <CardHeader className="bg-blue-50 border-b">
                 <CardTitle className="text-lg font-semibold flex items-center gap-2">
@@ -933,127 +1064,6 @@ export const Remision = ({ pedido, detalles, onOpenChange }: RemisionModalProps)
                 />
               </CardContent>
             </Card>
-
-            {/*<Card className="shadow-sm">*/}
-            {/*  <CardHeader className="bg-blue-50 border-b">*/}
-            {/*    <CardTitle className="text-lg font-semibold flex items-center justify-between">*/}
-            {/*      <div className="flex items-center gap-2">*/}
-            {/*        <Truck className="h-5 w-5 text-blue-600" />*/}
-            {/*        Vehículos*/}
-            {/*      </div>*/}
-            {/*    </CardTitle>*/}
-            {/*  </CardHeader>*/}
-            {/*  <CardContent className="p-6 space-y-4">*/}
-            {/*    <div className="space-y-2">*/}
-            {/*      <Label>Vehículo principal (Placa)</Label>*/}
-            {/*      <Input*/}
-            {/*          value={vehiculos[0].placa}*/}
-            {/*          onChange={(e) => handlePlacaChange(e, 0)}*/}
-            {/*          placeholder="ABC123"*/}
-            {/*          maxLength={6}*/}
-            {/*      />*/}
-            {/*    </div>*/}
-            {/*  </CardContent>*/}
-            {/*</Card>*/}
-
-            {/*<Card className="shadow-sm">*/}
-            {/*  <CardHeader className="bg-blue-50 border-b">*/}
-            {/*    <CardTitle className="text-lg font-semibold flex items-center justify-between">*/}
-            {/*      <div className="flex items-center gap-2">*/}
-            {/*        <UserPlus className="h-5 w-5 text-blue-600" />*/}
-            {/*        Conductores*/}
-            {/*      </div>*/}
-            {/*    </CardTitle>*/}
-            {/*  </CardHeader>*/}
-            {/*  <CardContent className="p-6 space-y-4">*/}
-            {/*    {conductores.map((conductor, index) => (*/}
-            {/*        <div key={index} className="space-y-4 border-b pb-4 last:border-b-0 last:pb-0">*/}
-            {/*          {index > 0 && (*/}
-            {/*              <div className="flex justify-between items-center">*/}
-            {/*                <h4 className="font-medium">Conductor {index + 1}</h4>*/}
-            {/*                <Button*/}
-            {/*                    variant="ghost"*/}
-            {/*                    size="sm"*/}
-            {/*                    onClick={() => eliminarConductor(index)}*/}
-            {/*                >*/}
-            {/*                  <Trash2 className="h-4 w-4 text-red-500" />*/}
-            {/*                </Button>*/}
-            {/*              </div>*/}
-            {/*          )}*/}
-
-            {/*          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">*/}
-            {/*            <div className="space-y-2">*/}
-            {/*              <Label>Tipo de documento</Label>*/}
-            {/*              <Select*/}
-            {/*                  value={conductor.tipoDocumento}*/}
-            {/*                  onValueChange={(value) => {*/}
-            {/*                    const newConductores = [...conductores];*/}
-            {/*                    newConductores[index].tipoDocumento = value;*/}
-            {/*                    setConductores(newConductores);*/}
-            {/*                  }}*/}
-            {/*              >*/}
-            {/*                <SelectTrigger>*/}
-            {/*                  <SelectValue />*/}
-            {/*                </SelectTrigger>*/}
-            {/*                <SelectContent>*/}
-            {/*                  <SelectItem value="1">DNI</SelectItem>*/}
-            {/*                  <SelectItem value="4">Carné de extranjería</SelectItem>*/}
-            {/*                </SelectContent>*/}
-            {/*              </Select>*/}
-            {/*            </div>*/}
-            {/*            <div className="space-y-2">*/}
-            {/*              <Label>Número de documento</Label>*/}
-            {/*              <Input*/}
-            {/*                  value={conductor.numeroDocumento}*/}
-            {/*                  onChange={(e) => {*/}
-            {/*                    const newConductores = [...conductores];*/}
-            {/*                    newConductores[index].numeroDocumento = e.target.value;*/}
-            {/*                    setConductores(newConductores);*/}
-            {/*                  }}*/}
-            {/*              />*/}
-            {/*            </div>*/}
-            {/*          </div>*/}
-
-            {/*          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">*/}
-            {/*            <div className="space-y-2">*/}
-            {/*              <Label>Nombres</Label>*/}
-            {/*              <Input*/}
-            {/*                  value={conductor.nombre}*/}
-            {/*                  onChange={(e) => {*/}
-            {/*                    const newConductores = [...conductores];*/}
-            {/*                    newConductores[index].nombre = e.target.value;*/}
-            {/*                    setConductores(newConductores);*/}
-            {/*                  }}*/}
-            {/*              />*/}
-            {/*            </div>*/}
-            {/*            <div className="space-y-2">*/}
-            {/*              <Label>Apellidos</Label>*/}
-            {/*              <Input*/}
-            {/*                  value={conductor.apellidos}*/}
-            {/*                  onChange={(e) => {*/}
-            {/*                    const newConductores = [...conductores];*/}
-            {/*                    newConductores[index].apellidos = e.target.value;*/}
-            {/*                    setConductores(newConductores);*/}
-            {/*                  }}*/}
-            {/*              />*/}
-            {/*            </div>*/}
-            {/*          </div>*/}
-
-            {/*          <div className="space-y-2">*/}
-            {/*            <Label>Número de licencia</Label>*/}
-            {/*            <Input*/}
-            {/*                value={conductores[0].licencia}*/}
-            {/*                onChange={(e) => handleLicenciaChange(e, 0)}*/}
-            {/*                placeholder="Q12345678 o 123456789"*/}
-            {/*                maxLength={9}*/}
-            {/*            />*/}
-            {/*            <p className="text-xs text-muted-foreground">Formato: Letra+8 dígitos (Q12345678) o 9 dígitos.</p>*/}
-            {/*          </div>*/}
-            {/*        </div>*/}
-            {/*    ))}*/}
-
-            {/*  </CardContent>*/}
-            {/*</Card>*/}
           </div>
         </div>
 

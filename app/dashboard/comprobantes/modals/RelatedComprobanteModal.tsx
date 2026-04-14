@@ -35,7 +35,7 @@ export function RelatedComprobanteModal({
                 </DialogHeader>
 
                 <div className="py-4">
-                    {guia?.idComprobanteCab ? (
+                    {(guia?.idComprobanteCab && guia.comprobante_serie != null) ? (
                         <div className="space-y-3">
                             <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">
                                 Comprobante Referenciado

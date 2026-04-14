@@ -5,13 +5,15 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
-import { Receipt, Loader2, Truck, AlertTriangle, Check, FileText, CreditCard } from "lucide-react"
+import {Receipt, Loader2, Truck, AlertTriangle, Check, FileText, CreditCard, Package} from "lucide-react"
 import { Pedido, SunatTransaccion, TipoDocSunat, GuiaReferencia } from "@/app/types/order/order-interface"
 import { GuidesSelectorModal } from "./GuidesSelectorModal"
 import { Badge } from "@/components/ui/badge"
 import { InstallmentModal, Cuota } from "./InstallmentModal"
 import { ContactConfirmModal } from "@/app/dashboard/comprobantes/modals/ContactConfirmModal"
 import { Sequential } from "@/app/types/config-types"
+import {Checkbox} from "@/components/ui/checkbox";
+import {Input} from "@/components/ui/input";
 
 interface InvoiceModalProps {
     open: boolean
@@ -27,7 +29,7 @@ interface InvoiceModalProps {
     tipoSunat: string
     setTipoSunat: (v: string) => void
     isProcessing: boolean
-    onConfirm: (guiasSeleccionadas: GuiaReferencia[], cuotas: Cuota[], email: string, phone: string, idAlmacen: number) => void
+    onConfirm: (guiasSeleccionadas: GuiaReferencia[], cuotas: Cuota[], email: string, phone: string, idAlmacen: number, flete: { activo: boolean; monto: number }) => void
 }
 
 export function InvoiceModal({
@@ -40,6 +42,13 @@ export function InvoiceModal({
     const [showContactModal, setShowContactModal]     = useState(false)
     const [showInstallmentModal, setShowInstallmentModal] = useState(false)
     const [cuotas, setCuotas]                         = useState<Cuota[]>([])
+
+    const [fleteActivo, setFleteActivo] = useState(false)
+    const [fleteMonto,  setFleteMonto]  = useState<string>("")
+    const [fleteError,  setFleteError]  = useState<string>("")
+    const valorFlete    = fleteActivo ? Number(fleteMonto) || 0 : 0
+    const igvFlete      = Number((valorFlete * 0.18).toFixed(2))
+    const fleteConIgv   = Number((valorFlete + igvFlete).toFixed(2))
 
     const [selectedAlmacen, setSelectedAlmacen] = useState<string>("")
 
@@ -82,10 +91,24 @@ export function InvoiceModal({
         }
     }, [open, selectedOrder])
 
-    const handleInitialConfirm = () => setShowContactModal(true)
+    const handleInitialConfirm = () => {
+        if (fleteActivo && (!fleteMonto || Number(fleteMonto) <= 0)) {
+            setFleteError("Ingrese un monto válido para el flete")
+            return
+        }
+        setFleteError("")
+        setShowContactModal(true)
+    }
 
     const handleFinalConfirm = (email: string, phone: string) => {
-        onConfirm(selectedGuides, isCredit ? cuotas : [], email, phone, Number(selectedAlmacen) || 1)
+        onConfirm(
+            selectedGuides,
+            isCredit ? cuotas : [],
+            email,
+            phone,
+            Number(selectedAlmacen) || 1,
+            { activo: fleteActivo, monto: valorFlete }
+        )
     }
 
     const canConfirm =
@@ -93,7 +116,8 @@ export function InvoiceModal({
         !!invoiceType &&
         !!sunatTransaction &&
         !!selectedAlmacen &&
-        (!isCredit || cuotas.length > 0)
+        (!isCredit || cuotas.length > 0) &&
+        (!fleteActivo || (!!fleteMonto && Number(fleteMonto) > 0))
 
     return (
         <>
@@ -200,6 +224,72 @@ export function InvoiceModal({
                                     </Select>
                                 </div>
                             </div>
+
+                            {/*<div className="border rounded-md p-3 space-y-3">*/}
+                            {/*    <div className="flex items-center gap-2">*/}
+                            {/*        <Checkbox*/}
+                            {/*            id="chk-flete"*/}
+                            {/*            checked={fleteActivo}*/}
+                            {/*            onCheckedChange={(v) => {*/}
+                            {/*                setFleteActivo(!!v)*/}
+                            {/*                if (!v) { setFleteMonto(""); setFleteError("") }*/}
+                            {/*            }}*/}
+                            {/*            disabled={isProcessing}*/}
+                            {/*        />*/}
+                            {/*        <Label htmlFor="chk-flete" className="text-sm font-medium flex items-center gap-2 cursor-pointer">*/}
+                            {/*            <Package className="h-4 w-4 text-gray-600" />*/}
+                            {/*            Incluir Cargo por Flete*/}
+                            {/*        </Label>*/}
+                            {/*    </div>*/}
+
+                            {/*    {fleteActivo && (*/}
+                            {/*        <div className="space-y-2 pl-6">*/}
+                            {/*            <div className="flex items-center gap-3">*/}
+                            {/*                <div className="flex-1 space-y-1">*/}
+                            {/*                    <Label className="text-xs text-gray-500">*/}
+                            {/*                        Monto Flete <span className="text-gray-400">(sin IGV)</span>*/}
+                            {/*                    </Label>*/}
+                            {/*                    <div className="relative">*/}
+                            {/*                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-500">S/</span>*/}
+                            {/*                        <Input*/}
+                            {/*                            type="number"*/}
+                            {/*                            min="0.01"*/}
+                            {/*                            step="0.01"*/}
+                            {/*                            value={fleteMonto}*/}
+                            {/*                            onChange={(e) => {*/}
+                            {/*                                setFleteMonto(e.target.value)*/}
+                            {/*                                setFleteError("")*/}
+                            {/*                            }}*/}
+                            {/*                            className={`pl-9 ${fleteError ? 'border-red-400' : ''}`}*/}
+                            {/*                            placeholder="0.00"*/}
+                            {/*                            disabled={isProcessing}*/}
+                            {/*                        />*/}
+                            {/*                    </div>*/}
+                            {/*                    {fleteError && (*/}
+                            {/*                        <p className="text-xs text-red-500">{fleteError}</p>*/}
+                            {/*                    )}*/}
+                            {/*                </div>*/}
+                            {/*            </div>*/}
+
+                            {/*            {valorFlete > 0 && (*/}
+                            {/*                <div className="bg-gray-50 border border-gray-200 rounded p-2 text-xs space-y-1">*/}
+                            {/*                    <div className="flex justify-between text-gray-600">*/}
+                            {/*                        <span>Valor flete (sin IGV):</span>*/}
+                            {/*                        <span>S/ {valorFlete.toFixed(2)}</span>*/}
+                            {/*                    </div>*/}
+                            {/*                    <div className="flex justify-between text-gray-600">*/}
+                            {/*                        <span>IGV flete (18%):</span>*/}
+                            {/*                        <span>S/ {igvFlete.toFixed(2)}</span>*/}
+                            {/*                    </div>*/}
+                            {/*                    <div className="flex justify-between font-semibold text-gray-800 border-t pt-1">*/}
+                            {/*                        <span>Total flete (inc. IGV):</span>*/}
+                            {/*                        <span>S/ {fleteConIgv.toFixed(2)}</span>*/}
+                            {/*                    </div>*/}
+                            {/*                </div>*/}
+                            {/*            )}*/}
+                            {/*        </div>*/}
+                            {/*    )}*/}
+                            {/*</div>*/}
 
                             {isCredit && (
                                 <div className="border rounded-md p-3">

@@ -22,6 +22,7 @@ interface GenerarGuiasModalProps {
   pedidosDisponibles: Pedido[]
   isProcessing: boolean
   onGenerarGuias: () => Promise<void>
+  fetchGuiasRemision: () => void;
 }
 
 interface PedidoDet {
@@ -40,6 +41,7 @@ export function GenerarGuiasModal({
                                     isProcessing,
                                     pedidoPreseleccionado,
                                     pedidosDisponibles,
+                                    fetchGuiasRemision
                                   }: GenerarGuiasModalProps) {
   const [step, setStep] = useState(1)
   const [selectedPedido, setSelectedPedido] = useState<Pedido | null>(null)
@@ -225,6 +227,7 @@ export function GenerarGuiasModal({
                               onOpenChange={onOpenChange}
                               detalles={detalles}
                               pedido={selectedPedido}
+                              fetchGuiasRemision={fetchGuiasRemision}
                           />
                         </TabsContent>
                     ) : (

@@ -258,7 +258,8 @@ export default function ComprobantesPage() {
       cuotas: Cuota[] = [],
       email: string,
       phone: string,
-      idAlmacen: number
+      idAlmacen: number,
+      flete: { activo: boolean; monto: number }
   ) => {
     setIsProcessingInvoice(true)
     try {
@@ -282,7 +283,8 @@ export default function ComprobantesPage() {
             cuotas: cuotas,
             email,
             phone,
-            id_almacen: idAlmacen
+            id_almacen: idAlmacen,
+            flete_monto: flete.activo ? flete.monto : 0,
           }
       )
 
@@ -723,7 +725,7 @@ export default function ComprobantesPage() {
         {showGuiasModal && (
             <GenerarGuiasModal
                 open={showGuiasModal} onOpenChange={setShowGuiasModal} isProcessing={isProcessingGuias} onGenerarGuias={handleGenerarGuias}
-                pedidoPreseleccionado={selectedOrder} pedidosDisponibles={pedidosPendientes}
+                pedidoPreseleccionado={selectedOrder} pedidosDisponibles={pedidosPendientes} fetchGuiasRemision={fetchGuiasRemision}
             />
         )}
 
