@@ -9,8 +9,8 @@ import { Button } from "@/components/ui/button"
 import { Comprobante } from "@/app/types/order/order-interface"
 import { Loader2, Save, FileDiff } from "lucide-react"
 import apiClient from "@/app/api/client"
-import { toast } from "@/components/ui/use-toast"
 import {Sequential} from "@/app/types/config-types";
+import {toast} from "@/app/hooks/useToast";
 
 interface NotaCreditoFormProps {
     comprobante: Comprobante
@@ -97,7 +97,7 @@ export function NotaCreditoForm({ comprobante, onClose, onSuccess }: NotaCredito
         setLoading(true)
         try {
             const [prefijo, tipo] = selectedSerie.split('|')
-            await apiClient.post(`/pedidos/generateNotaCredito`, {
+            const response = await apiClient.post(`/pedidos/generateNotaCredito`, {
                 idComprobanteRef: comprobante.idComprobanteCab,
                 nroPedido:        comprobante.nroPedido,
                 motivo,
@@ -107,11 +107,15 @@ export function NotaCreditoForm({ comprobante, onClose, onSuccess }: NotaCredito
                 codOperacion:     idOperacion
             })
 
-            toast({ title: "Éxito", description: "Nota de crédito generada correctamente" })
-            onSuccess()
-        } catch (error: any) {
+            if (response.data.success) {
+                toast({ title: "Éxito", description: "Nota de crédito generada correctamente" })
+                onSuccess()
+            } else {
+                toast({ title: "Error", description: response.data.message || "Error al generar", variant: "destructive" })
+            }
+        } catch (error) {
             console.error(error)
-            const msg = error.response?.data?.message || "Error al generar la nota de crédito"
+            const msg = error?.response?.data?.message || "Error al generar la nota de crédito"
             toast({ title: "Error", description: msg, variant: "destructive" })
         } finally {
             setLoading(false)
