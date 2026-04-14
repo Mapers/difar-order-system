@@ -116,19 +116,6 @@ export function GenerarNotaCreditoModal({
                                 <Label className="text-xs">Fecha Hasta</Label>
                                 <Input type="date" value={fechaHasta} onChange={(e) => setFechaHasta(e.target.value)} className="bg-white h-8 text-xs"/>
                             </div>
-                            <div className="md:col-span-4 space-y-1">
-                                {/*<Label className="text-xs">Buscar (Serie, Número, Cliente)</Label>*/}
-                                {/*<div className="relative">*/}
-                                {/*    <Search className="absolute left-2 top-1.5 h-4 w-4 text-gray-400" />*/}
-                                {/*    <Input*/}
-                                {/*        placeholder="F001, Cliente..."*/}
-                                {/*        value={searchQuery}*/}
-                                {/*        onChange={(e) => setSearchQuery(e.target.value)}*/}
-                                {/*        onKeyDown={(e) => e.key === 'Enter' && fetchComprobantes()}*/}
-                                {/*        className="pl-8 bg-white h-8 text-xs"*/}
-                                {/*    />*/}
-                                {/*</div>*/}
-                            </div>
                             <div className="md:col-span-2 flex items-end">
                                 <Button onClick={fetchComprobantes} disabled={loading} size="sm" className="w-full h-8 text-xs">
                                     {loading ? <Loader2 className="h-3 w-3 animate-spin" /> : "Buscar"}
