@@ -16,6 +16,30 @@ interface ProductSearchDialogProps {
     currency: IMoneda | null
 }
 
+const IgvBadge = ({ product }: { product: IProduct }) => {
+    if (product.afecto_igv === 1) return null
+
+    if (product.tipo_afectacion_igv === '20') {
+        return (
+            <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-full border bg-yellow-50 text-yellow-700 border-yellow-300 dark:bg-yellow-950/30 dark:text-yellow-400 dark:border-yellow-900/50 shrink-0">
+                <span className="w-1.5 h-1.5 rounded-full bg-yellow-400 inline-block" />
+                EXONERADO
+            </span>
+        )
+    }
+
+    if (product.tipo_afectacion_igv === '30') {
+        return (
+            <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-full border bg-blue-50 text-blue-700 border-blue-300 dark:bg-blue-950/30 dark:text-blue-400 dark:border-blue-900/50 shrink-0">
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-400 inline-block" />
+                INAFECTO
+            </span>
+        )
+    }
+
+    return null
+}
+
 export default function ProductSearchDialog({
                                                 open, onOpenChange, searchQuery, onSearchQueryChange,
                                                 filteredProducts, onProductSelect, currency
@@ -92,13 +116,15 @@ export default function ProductSearchDialog({
 
                                 return (
                                     <button
-                                        key={product.Codigo_Art} type="button"
+                                        key={product.Codigo_Art}
+                                        type="button"
                                         onClick={() => onProductSelect(product)}
                                         className="w-full flex items-start gap-3 px-4 py-3 hover:bg-blue-50 dark:hover:bg-blue-950/20 active:bg-blue-100 transition-colors text-left"
                                     >
                                         <div className="bg-blue-100 dark:bg-blue-900/40 p-2 rounded-lg shrink-0 mt-0.5">
                                             <Package className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                                         </div>
+
                                         <div className="flex flex-col flex-1 min-w-0 gap-1">
                                             <div className="flex items-start justify-between gap-2">
                                                 <span className="font-semibold text-sm text-gray-900 dark:text-gray-100 line-clamp-2 flex-1 leading-tight">
@@ -108,6 +134,7 @@ export default function ProductSearchDialog({
                                                     Stock: {stockNum.toFixed(0)}
                                                 </span>
                                             </div>
+
                                             <div className="flex flex-wrap gap-x-3 gap-y-0.5">
                                                 <span className="text-xs text-gray-500 dark:text-gray-400">
                                                     <span className="font-medium text-gray-600 dark:text-gray-300">Cód:</span> {product.Codigo_Art}
@@ -116,13 +143,15 @@ export default function ProductSearchDialog({
                                                     <span className="font-medium text-gray-600 dark:text-gray-300">Lab:</span> {product.Descripcion}
                                                 </span>
                                             </div>
-                                            <div className="flex gap-3 mt-0.5">
+
+                                            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-0.5">
                                                 <span className="text-xs font-semibold text-green-700 dark:text-green-400">
                                                     Contado: {currency?.value === "PEN" ? "S/." : "$"}{Number(product.PUContado).toFixed(2)}
                                                 </span>
                                                 <span className="text-xs font-semibold text-blue-700 dark:text-blue-400">
                                                     Crédito: {currency?.value === "PEN" ? "S/." : "$"}{Number(product.PUCredito).toFixed(2)}
                                                 </span>
+                                                <IgvBadge product={product} />
                                             </div>
                                         </div>
                                     </button>

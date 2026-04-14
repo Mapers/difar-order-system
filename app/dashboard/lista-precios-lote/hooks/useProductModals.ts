@@ -2,6 +2,8 @@ import { useState } from "react";
 import { PriceService } from "@/app/services/price/PriceService";
 import apiClient from "@/app/api/client";
 import { PrecioLote, LoteInfo, Escala, Bonificacion } from "../types";
+import {toast} from "@/app/hooks/useToast";
+import {useAuth} from "@/context/authContext";
 
 export function useProductModals() {
     const [selectedProduct, setSelectedProduct] = useState<PrecioLote | null>(null);
@@ -25,8 +27,19 @@ export function useProductModals() {
 
     // Edición de Precios
     const [isEditing, setIsEditing] = useState(false);
-    const [editForms, setEditForms] = useState({ contado: "", credito: "", bonifCont: "", bonifCred: "" });
+    const [editForms, setEditForms] = useState({
+        contado: "",
+        credito: "",
+        bonifCont: "",
+        bonifCred: "",
+        afectoIgv: true,
+        tipoAfectacion: "10",
+        motivoIgv: "",
+        igvEstado: "A",
+        igvId: null as number | null,
+    });
     const [saving, setSaving] = useState(false);
+    const { user } = useAuth()
 
     const openLots = async (product: PrecioLote) => {
         setSelectedProduct(product);
@@ -61,10 +74,15 @@ export function useProductModals() {
         setPricesModalOpen(true);
         setIsEditing(false);
         setEditForms({
-            contado: product.precio_contado || "",
-            credito: product.precio_credito || "",
-            bonifCont: product.precio_bonif_cont || "",
-            bonifCred: product.precio_bonif_cred || ""
+            contado:        product.precio_contado   || "",
+            credito:        product.precio_credito   || "",
+            bonifCont:      product.precio_bonif_cont || "",
+            bonifCred:      product.precio_bonif_cred || "",
+            afectoIgv:      (product.afecto_igv ?? 1) === 1,
+            tipoAfectacion: product.tipo_afectacion_igv ?? "10",
+            motivoIgv:      product.igv_motivo       ?? "",
+            igvEstado:      product.igv_estado        ?? "A",
+            igvId:          product.igv_id            ?? null,
         });
 
         setLoadingDetails(true);
@@ -90,22 +108,51 @@ export function useProductModals() {
         if (!priceDetails) return;
         setSaving(true);
         try {
-            const payload = {
-                code: priceDetails.prod_codigo,
-                contado: editForms.contado, credito: editForms.credito,
-                contadoBonif: editForms.bonifCont, creditoBonif: editForms.bonifCred
+            const pricePayload = {
+                code:         priceDetails.prod_codigo,
+                contado:      editForms.contado,
+                credito:      editForms.credito,
+                contadoBonif: editForms.bonifCont,
+                creditoBonif: editForms.bonifCred,
             };
-            const response = await apiClient.post('/price/list-prices/edit', payload);
-            if (response.data.success) {
-                setPriceDetails({
-                    ...priceDetails,
-                    precio_contado: editForms.contado, precio_credito: editForms.credito,
-                    precio_bonif_cont: editForms.bonifCont, precio_bonif_cred: editForms.bonifCred
-                });
-                setIsEditing(false);
+            const priceResponse = await apiClient.post("/price/list-prices/edit", pricePayload);
+
+            if (!priceResponse.data.success) {
+                toast({title: 'Precios', description: 'Error al guardar los precios', variant: 'error'});
+                return;
             }
+
+            const igvPayload = {
+                igv_id: editForms.igvId,
+                codigo_art: priceDetails.prod_codigo,
+                tipo_afectacion_igv: editForms.afectoIgv
+                    ? null
+                    : editForms.tipoAfectacion,
+                motivo: editForms.motivoIgv || null,
+                estado: editForms.afectoIgv ? "I" : "A",
+                user: user?.codigo || user?.nombreCompleto
+            };
+            const igvResponse = await apiClient.post("/price/igv-afectacion/save", igvPayload);
+            const savedIgvId  = igvResponse.data?.data?.id ?? editForms.igvId;
+
+            setPriceDetails({
+                ...priceDetails,
+                precio_contado:       editForms.contado,
+                precio_credito:       editForms.credito,
+                precio_bonif_cont:    editForms.bonifCont,
+                precio_bonif_cred:    editForms.bonifCred,
+                afecto_igv:           editForms.afectoIgv ? 1 : 0,
+                tipo_afectacion_igv:  editForms.afectoIgv ? "10" : editForms.tipoAfectacion,
+                igv_motivo:           editForms.motivoIgv,
+                igv_estado:           editForms.afectoIgv ? "I" : "A",
+                igv_id:               savedIgvId,
+            });
+
+            setEditForms((prev) => ({ ...prev, igvId: savedIgvId }));
+            setIsEditing(false);
+
         } catch (error) {
-            alert("Error al guardar los precios");
+            toast({title: 'Precios', description: 'Error al guardar', variant: 'error'});
         } finally {
             setSaving(false);
         }

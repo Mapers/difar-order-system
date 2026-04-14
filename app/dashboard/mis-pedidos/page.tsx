@@ -18,12 +18,12 @@ import {
   MapPin,
   Home,
   XCircle,
-  UserSearch, OctagonAlert, Wallet
+  UserSearch, OctagonAlert, Wallet, Link2
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Label } from "@/components/ui/label"
 import Link from "next/link"
-import { useEffect, useState } from "react"
+import {useEffect, useMemo, useState} from "react"
 import { Skeleton } from "@/components/ui/skeleton"
 import apiClient from "@/app/api/client"
 import {format, parseISO} from "date-fns";
@@ -153,6 +153,8 @@ interface Pedido {
   por_autorizar: string
   represPedido: number
   nombreRepresentante: string
+  codigo_grupo: string
+  tipo_afectacion: string
 }
 
 export default function MyOrdersPage() {
@@ -280,6 +282,57 @@ export default function MyOrdersPage() {
     return ORDER_STATES.find(state => state.id === stateId)
   }
 
+  const AfectacionBadge = ({ tipo }: { tipo: string }) => {
+    if (!tipo || tipo === 'GRAVADO') {
+      return (
+          <Badge className="bg-green-50 text-green-700 border border-green-300 text-[10px] font-semibold px-1.5 py-0.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block mr-1" />
+            GRAVADO
+          </Badge>
+      )
+    }
+    if (tipo === 'EXONERADO') {
+      return (
+          <Badge className="bg-yellow-50 text-yellow-700 border border-yellow-300 text-[10px] font-semibold px-1.5 py-0.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-yellow-500 inline-block mr-1" />
+            EXONERADO
+          </Badge>
+      )
+    }
+    return (
+        <Badge className="bg-blue-50 text-blue-700 border border-blue-300 text-[10px] font-semibold px-1.5 py-0.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-blue-500 inline-block mr-1" />
+          INAFECTO
+        </Badge>
+    )
+  }
+
+  const pedidosAgrupados = useMemo(() => {
+    const grupos: { codigo_grupo: string | null; pedidos: Pedido[] }[] = []
+    const sinGrupo: Pedido[] = []
+    const mapaGrupos = new Map<string, Pedido[]>()
+
+    for (const pedido of orders) {
+      if (pedido.codigo_grupo) {
+        if (!mapaGrupos.has(pedido.codigo_grupo)) {
+          mapaGrupos.set(pedido.codigo_grupo, [])
+        }
+        mapaGrupos.get(pedido.codigo_grupo)!.push(pedido)
+      } else {
+        sinGrupo.push(pedido)
+      }
+    }
+
+    mapaGrupos.forEach((pedidos, codigo_grupo) => {
+      grupos.push({ codigo_grupo, pedidos })
+    })
+
+    sinGrupo.forEach(p => grupos.push({ codigo_grupo: null, pedidos: [p] }))
+
+    return grupos
+  }, [orders])
+
+
   return (
     <div className="grid gap-6">
       <div className="flex flex-col gap-2">
@@ -342,131 +395,210 @@ export default function MyOrdersPage() {
 
       <div className="space-y-4">
         {loading ? (
-          Array.from({length: 5}).map((_, index) => (
-            <Card key={index} className="bg-white shadow-sm">
-              <CardContent className="p-4 sm:p-6">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <div className="flex-1 space-y-3">
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
-                      <Skeleton className="h-6 w-24"/>
-                      <Skeleton className="h-5 w-20"/>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-sm">
-                      <div className="flex items-center gap-2">
-                        <Skeleton className="h-4 w-4"/>
-                        <Skeleton className="h-4 w-16"/>
-                        <Skeleton className="h-4 w-24"/>
+            Array.from({ length: 5 }).map((_, index) => (
+                <Card key={index} className="bg-white shadow-sm">
+                  <CardContent className="p-4 sm:p-6">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      <div className="flex-1 space-y-3">
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+                          <Skeleton className="h-6 w-24" />
+                          <Skeleton className="h-5 w-20" />
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-sm">
+                          {Array.from({ length: 4 }).map((_, i) => (
+                              <div key={i} className="flex items-center gap-2">
+                                <Skeleton className="h-4 w-4" />
+                                <Skeleton className="h-4 w-16" />
+                                <Skeleton className="h-4 w-24" />
+                              </div>
+                          ))}
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <Skeleton className="h-4 w-4"/>
-                        <Skeleton className="h-4 w-16"/>
-                        <Skeleton className="h-4 w-24"/>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Skeleton className="h-4 w-4"/>
-                        <Skeleton className="h-4 w-16"/>
-                        <Skeleton className="h-4 w-24"/>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Skeleton className="h-4 w-4"/>
-                        <Skeleton className="h-4 w-16"/>
-                        <Skeleton className="h-4 w-24"/>
+                      <div className="flex flex-col sm:flex-row gap-2">
+                        <Skeleton className="h-9 w-24" />
                       </div>
                     </div>
-                  </div>
-
-                  <div className="flex flex-col sm:flex-row gap-2">
-                    <Skeleton className="h-9 w-24"/>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))
+                  </CardContent>
+                </Card>
+            ))
         ) : orders.length > 0 ? (
-          orders.map((pedido) => {
-            const stateInfo = getStateInfo(pedido.estadodePedido, pedido.por_autorizar, pedido.is_autorizado)
-            const StateIcon = stateInfo?.icon || Clock
+            pedidosAgrupados.map(({ codigo_grupo, pedidos }) => {
+              const esGrupo = !!codigo_grupo && pedidos.length > 1
 
-            return (
-              <Card key={pedido.idPedidocab} className="bg-white shadow-sm hover:shadow-md transition-shadow">
-                <CardContent className="p-4 sm:p-6">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div className="flex-1 space-y-3">
-                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
-                        <h3 className="text-lg font-semibold text-gray-900">Pedido #{pedido.nroPedido}</h3>
-                        <div className="flex items-center gap-2">
-                          <Badge className={`${stateInfo?.color} flex items-center gap-1 text-xs`}>
-                            <StateIcon className="h-3 w-3" />
-                            {stateInfo?.name || 'Desconocido'}
-                          </Badge>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-sm">
-                        <div className="flex items-center gap-2">
-                          <Calendar className="h-4 w-4 text-gray-500"/>
-                          <span className="text-gray-600">Fecha:</span>
-                          <span className="font-medium">{format(parseISO(pedido.fechaPedido), "dd/MM/yyyy")}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <User className="h-4 w-4 text-gray-500"/>
-                          <span className="text-gray-600">Cliente:</span>
-                          <span className="font-medium truncate">{pedido.nombreCliente}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Wallet className="h-4 w-4 text-gray-500"/>
-                          <span className="text-gray-600">Total:</span>
-                          <span className="font-bold text-green-600">
-                          {pedido.monedaPedido === "PEN" ? "S/ " : "$ "}
-                            {Number(pedido.totalPedido).toFixed(2)}
+              if (esGrupo) {
+                return (
+                    <div key={codigo_grupo} className="space-y-0">
+                      <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-50 border border-amber-200 rounded-t-lg border-b-0">
+                        <Link2 className="h-3.5 w-3.5 text-amber-600 shrink-0" />
+                        <span className="text-xs font-semibold text-amber-700">
+                            Pedidos vinculados · Grupo {codigo_grupo}
                         </span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Package className="h-4 w-4 text-gray-500"/>
-                          <span className="text-gray-600">Condición:</span>
-                          <span className="font-medium">{pedido.condicionPedido}</span>
-                        </div>
-                        {auth.user?.idRol !== 1 && (
-                          <div className="flex items-center gap-2">
-                            <UserSearch className="h-4 w-4 text-gray-500"/>
-                            <span className="text-gray-600">{!!pedido.represPedido ? 'Representante' : 'Vendedor'}:</span>
-                            <span className="font-medium uppercase">{!!pedido.represPedido ? pedido.nombreRepresentante : pedido.nombreVendedor}</span>
-                          </div>
-                        )}
+                        <span className="text-xs text-amber-600 ml-auto">
+                            {pedidos.length} pedidos
+                        </span>
+                      </div>
+
+                      <div className="border border-amber-200 rounded-b-lg overflow-hidden divide-y divide-amber-100">
+                        {pedidos.map((pedido, idx) => {
+                          const stateInfo  = getStateInfo(pedido.estadodePedido, pedido.por_autorizar, pedido.is_autorizado)
+                          const StateIcon  = stateInfo?.icon || Clock
+
+                          return (
+                              <Card key={pedido.idPedidocab} className="bg-white shadow-none rounded-none border-0">
+                                <CardContent className="p-4 sm:p-5">
+                                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                    <div className="flex-1 space-y-2 min-w-0">
+                                      <div className="flex flex-wrap items-center gap-2">
+                                        <h3 className="text-base font-semibold text-gray-900 shrink-0">
+                                          Pedido #{pedido.nroPedido}
+                                        </h3>
+                                        <Badge className={`${stateInfo?.color} flex items-center gap-1 text-xs shrink-0`}>
+                                          <StateIcon className="h-3 w-3" />
+                                          {stateInfo?.name || 'Desconocido'}
+                                        </Badge>
+                                        <AfectacionBadge tipo={pedido.tipo_afectacion} />
+                                        {idx === 0 && (
+                                            <span className="text-[10px] text-amber-600 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5 font-medium shrink-0">
+                                                Pedido principal
+                                            </span>
+                                        )}
+                                      </div>
+
+                                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 text-sm">
+                                        <div className="flex items-center gap-2">
+                                          <Calendar className="h-4 w-4 text-gray-400 shrink-0" />
+                                          <span className="text-gray-500">Fecha:</span>
+                                          <span className="font-medium">{format(parseISO(pedido.fechaPedido), "dd/MM/yyyy")}</span>
+                                        </div>
+                                        <div className="flex items-center gap-2 min-w-0">
+                                          <User className="h-4 w-4 text-gray-400 shrink-0" />
+                                          <span className="text-gray-500 shrink-0">Cliente:</span>
+                                          <span className="font-medium truncate">{pedido.nombreCliente}</span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                          <Wallet className="h-4 w-4 text-gray-400 shrink-0" />
+                                          <span className="text-gray-500">Total:</span>
+                                          <span className="font-bold text-green-600">
+                                                            {pedido.monedaPedido === "PEN" ? "S/ " : "$ "}
+                                            {Number(pedido.totalPedido).toFixed(2)}
+                                                        </span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                          <Package className="h-4 w-4 text-gray-400 shrink-0" />
+                                          <span className="text-gray-500">Condición:</span>
+                                          <span className="font-medium">{pedido.condicionPedido}</span>
+                                        </div>
+                                        {auth.user?.idRol !== 1 && (
+                                            <div className="flex items-center gap-2 min-w-0">
+                                              <UserSearch className="h-4 w-4 text-gray-400 shrink-0" />
+                                              <span className="text-gray-500 shrink-0">
+                                                                {!!pedido.represPedido ? 'Representante' : 'Vendedor'}:
+                                                            </span>
+                                              <span className="font-medium uppercase truncate">
+                                                                {!!pedido.represPedido ? pedido.nombreRepresentante : pedido.nombreVendedor}
+                                                            </span>
+                                            </div>
+                                        )}
+                                      </div>
+                                    </div>
+
+                                    <div className="flex flex-row sm:flex-col gap-2 shrink-0">
+                                      <Link href={`/dashboard/mis-pedidos/${pedido.nroPedido}`}>
+                                        <Button variant="outline" size="sm" className="flex items-center gap-2 w-full">
+                                          <Eye className="h-4 w-4" /> Ver Detalle
+                                        </Button>
+                                      </Link>
+                                      {/*<Button variant="outline" size="sm" className="flex items-center gap-2" disabled>*/}
+                                      {/*  <Printer className="h-4 w-4" /> Imprimir*/}
+                                      {/*</Button>*/}
+                                    </div>
+                                  </div>
+                                </CardContent>
+                              </Card>
+                          )
+                        })}
                       </div>
                     </div>
+                )
+              }
 
-                    <div className="flex flex-col sm:flex-row gap-2">
-                      <Link href={`/dashboard/mis-pedidos/${pedido.nroPedido}`}>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="flex items-center gap-2"
-                        >
-                          <Eye className="h-4 w-4"/>
-                          Ver Detalle
-                        </Button>
-                      </Link>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="flex items-center gap-2"
-                        disabled
-                      >
-                        <Printer className="h-4 w-4"/>
-                        Imprimir
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )
-          })
+              const pedido    = pedidos[0]
+              const stateInfo = getStateInfo(pedido.estadodePedido, pedido.por_autorizar, pedido.is_autorizado)
+              const StateIcon = stateInfo?.icon || Clock
+
+              return (
+                  <Card key={pedido.idPedidocab} className="bg-white shadow-sm hover:shadow-md transition-shadow">
+                    <CardContent className="p-4 sm:p-6">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div className="flex-1 space-y-3 min-w-0">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <h3 className="text-lg font-semibold text-gray-900 shrink-0">
+                              Pedido #{pedido.nroPedido}
+                            </h3>
+                            <Badge className={`${stateInfo?.color} flex items-center gap-1 text-xs shrink-0`}>
+                              <StateIcon className="h-3 w-3" />
+                              {stateInfo?.name || 'Desconocido'}
+                            </Badge>
+                            <AfectacionBadge tipo={pedido.tipo_afectacion} />
+                          </div>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-sm">
+                            <div className="flex items-center gap-2">
+                              <Calendar className="h-4 w-4 text-gray-500 shrink-0" />
+                              <span className="text-gray-600">Fecha:</span>
+                              <span className="font-medium">{format(parseISO(pedido.fechaPedido), "dd/MM/yyyy")}</span>
+                            </div>
+                            <div className="flex items-center gap-2 min-w-0">
+                              <User className="h-4 w-4 text-gray-500 shrink-0" />
+                              <span className="text-gray-600 shrink-0">Cliente:</span>
+                              <span className="font-medium truncate">{pedido.nombreCliente}</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Wallet className="h-4 w-4 text-gray-500 shrink-0" />
+                              <span className="text-gray-600">Total:</span>
+                              <span className="font-bold text-green-600">
+                                        {pedido.monedaPedido === "PEN" ? "S/ " : "$ "}
+                                {Number(pedido.totalPedido).toFixed(2)}
+                                    </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Package className="h-4 w-4 text-gray-500 shrink-0" />
+                              <span className="text-gray-600">Condición:</span>
+                              <span className="font-medium">{pedido.condicionPedido}</span>
+                            </div>
+                            {auth.user?.idRol !== 1 && (
+                                <div className="flex items-center gap-2 min-w-0">
+                                  <UserSearch className="h-4 w-4 text-gray-500 shrink-0" />
+                                  <span className="text-gray-600 shrink-0">
+                                            {!!pedido.represPedido ? 'Representante' : 'Vendedor'}:
+                                        </span>
+                                  <span className="font-medium uppercase truncate">
+                                            {!!pedido.represPedido ? pedido.nombreRepresentante : pedido.nombreVendedor}
+                                        </span>
+                                </div>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="flex flex-col sm:flex-row gap-2 shrink-0">
+                          <Link href={`/dashboard/mis-pedidos/${pedido.nroPedido}`}>
+                            <Button variant="outline" size="sm" className="flex items-center gap-2">
+                              <Eye className="h-4 w-4" /> Ver Detalle
+                            </Button>
+                          </Link>
+                          {/*<Button variant="outline" size="sm" className="flex items-center gap-2" disabled>*/}
+                          {/*  <Printer className="h-4 w-4" /> Imprimir*/}
+                          {/*</Button>*/}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+              )
+            })
         ) : (
-          <div className="text-center py-8 text-gray-500">
-            No se encontraron pedidos
-          </div>
+            <div className="text-center py-8 text-gray-500">
+              No se encontraron pedidos
+            </div>
         )}
       </div>
     </div>

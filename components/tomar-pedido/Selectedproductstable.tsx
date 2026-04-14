@@ -8,8 +8,8 @@ import { TableCell, TableRow, TableFooter } from "@/components/ui/table"
 import { Trash, Package, Pencil } from "lucide-react"
 import { ISelectedProduct } from "@/app/types/order/product-interface"
 import { format, parseISO } from "date-fns"
-import { ProductoConLotes } from "@/app/types/order/order-interface";
-import {getCurrencySymbol, parseLoteString} from "@/app/utils/order-helpers";
+import { ProductoConLotes } from "@/app/types/order/order-interface"
+import { getCurrencySymbol, parseLoteString } from "@/app/utils/order-helpers"
 
 interface SelectedProductsTableProps {
     selectedProducts: ISelectedProduct[]
@@ -19,6 +19,47 @@ interface SelectedProductsTableProps {
     onChangeLote?: (items: ISelectedProduct[]) => void
     onEditClick?: (index: number) => void
     showActions?: boolean
+}
+
+const IgvBadge = ({ product }: { product: ISelectedProduct["product"] }) => {
+    if (!product || product.afecto_igv === 1 || product.afecto_igv === undefined) {
+        return (
+            <Badge variant="outline" className="bg-yellow-50 text-green-700 border-green-300 text-[10px]">
+                <span className="w-1.5 h-1.5 rounded-full bg-green-400 inline-block mr-1" />
+                GRAVADO
+            </Badge>
+        )
+    }
+    if (product.tipo_afectacion_igv === "20") {
+        return (
+            <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-300 text-[10px]">
+                <span className="w-1.5 h-1.5 rounded-full bg-yellow-400 inline-block mr-1" />
+                EXONERADO
+            </Badge>
+        )
+    }
+    if (product.tipo_afectacion_igv === "30") {
+        return (
+            <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-300 text-[10px]">
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-400 inline-block mr-1" />
+                INAFECTO
+            </Badge>
+        )
+    }
+    return null
+}
+
+const igvLabel = (product: ISelectedProduct["product"]) => {
+    if (!product || product.afecto_igv === 1 || product.afecto_igv === undefined) return "+ IGV"
+    return "sin IGV"
+}
+
+const productNameWithIgv = (item: ISelectedProduct) => {
+    const { product } = item
+    if (!product || product.afecto_igv === 1 || product.afecto_igv === undefined) {
+        return product?.NombreItem ?? ""
+    }
+    return `${product.NombreItem}`
 }
 
 export default function SelectedProductsTable({
@@ -39,6 +80,7 @@ export default function SelectedProductsTable({
             {(item.isEdit && Number(item.finalPrice || 0) > 0) && <Badge variant="outline" className="bg-green-100 text-green-700 border-green-300">Editado</Badge>}
             {(item.isEdit && item.finalPrice === 0) && <Badge variant="outline" className="bg-pink-100 text-pink-700 border-pink-300">REGALO</Badge>}
             {item.isAuthorize && <Badge variant="outline" className="bg-blue-100 text-blue-700 border-blue-300">Por Autorizar</Badge>}
+            <IgvBadge product={item.product} />
         </>
     )
 
@@ -60,6 +102,19 @@ export default function SelectedProductsTable({
         )
     }
 
+    const renderSubtotal = (item: ISelectedProduct, subtotal: number) => {
+        const label = igvLabel(item.product)
+        const isGravado = !item.product || item.product.afecto_igv === 1 || item.product.afecto_igv === undefined
+        return (
+            <div className="flex flex-col items-end">
+                <span className="font-medium">{sym}{subtotal.toFixed(2)}</span>
+                <span className={`text-[10px] font-medium ${isGravado ? "text-green-600" : "text-gray-400"}`}>
+                    {label}
+                </span>
+            </div>
+        )
+    }
+
     return (
         <>
             <div className="hidden sm:block border rounded-md overflow-hidden">
@@ -74,7 +129,7 @@ export default function SelectedProductsTable({
                             <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Cantidad</th>
                             <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Precio Unit.</th>
                             <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Subtotal</th>
-                            {showActions && <th scope="col" className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>}
+                            {showActions && <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>}
                         </tr>
                         </thead>
                         <tbody>
@@ -91,36 +146,39 @@ export default function SelectedProductsTable({
 
                             return (
                                 <tr key={index} className={rowBgClass}>
-                                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
-                                        <div className="flex items-center flex-wrap gap-1">
+                                    <td className="px-4 py-3 text-sm text-gray-700">
+                                        <div className="flex items-start flex-wrap gap-1">
                                             {renderBadges(item)}
-                                            <span>{item.product.NombreItem}</span>
+                                            <span className="w-full">{productNameWithIgv(item)}</span>
                                         </div>
                                     </td>
-                                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-left">{item.product.Descripcion}</td>
-                                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-left">
+                                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{item.product.Descripcion}</td>
+                                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
                                         {cod} - Vence: {fec.length > 0 && format(parseISO(fec), "dd/MM/yyyy")}
                                     </td>
                                     <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-right">{stk}</td>
                                     <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-right font-medium">{item.quantity}</td>
                                     <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-right">{renderPrice(item)}</td>
-                                    <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900 text-right">
-                                        {sym}{subtotal.toFixed(2)}
+                                    <td className="px-4 py-3 whitespace-nowrap text-sm text-right">
+                                        {renderSubtotal(item, subtotal)}
                                     </td>
                                     {showActions && (
                                         <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
                                             <div className="flex justify-center gap-1.5">
                                                 {onEditClick && (
-                                                    <Button type="button" variant="ghost" size="sm" onClick={() => onEditClick(index)} className="h-8 w-8 p-0 text-amber-600 hover:text-amber-800 hover:bg-amber-50" title="Editar Cantidad">
+                                                    <Button type="button" variant="ghost" size="sm" onClick={() => onEditClick(index)}
+                                                            className="h-8 w-8 p-0 text-amber-600 hover:text-amber-800 hover:bg-amber-50" title="Editar Cantidad">
                                                         <Pencil className="h-4 w-4" />
                                                     </Button>
                                                 )}
                                                 {onChangeLote && (
-                                                    <Button type="button" variant="ghost" size="sm" onClick={() => onChangeLote([item])} className="h-8 w-8 p-0 text-blue-600 hover:text-blue-800 hover:bg-blue-50" title="Cambiar Lote">
+                                                    <Button type="button" variant="ghost" size="sm" onClick={() => onChangeLote([item])}
+                                                            className="h-8 w-8 p-0 text-blue-600 hover:text-blue-800 hover:bg-blue-50" title="Cambiar Lote">
                                                         <Package className="h-4 w-4" />
                                                     </Button>
                                                 )}
-                                                <Button type="button" variant="ghost" size="sm" onClick={() => onRemoveItem(index)} className="h-8 w-8 p-0 text-red-600 hover:text-red-800 hover:bg-red-50" title="Eliminar">
+                                                <Button type="button" variant="ghost" size="sm" onClick={() => onRemoveItem(index)}
+                                                        className="h-8 w-8 p-0 text-red-600 hover:text-red-800 hover:bg-red-50" title="Eliminar">
                                                     <Trash className="h-4 w-4" />
                                                 </Button>
                                             </div>
@@ -132,12 +190,12 @@ export default function SelectedProductsTable({
                         </tbody>
                         <TableFooter>
                             <TableRow>
-                                <TableCell colSpan={5}></TableCell>
+                                <TableCell colSpan={5} />
                                 <TableCell className="px-4 py-3 text-right text-sm font-medium text-gray-900">Total:</TableCell>
                                 <TableCell className="px-4 py-3 whitespace-nowrap text-sm font-bold text-gray-900 text-right">
                                     {sym}{total.toFixed(2)}
                                 </TableCell>
-                                {showActions && <TableCell></TableCell>}
+                                {showActions && <TableCell />}
                             </TableRow>
                         </TableFooter>
                     </table>
@@ -162,29 +220,37 @@ export default function SelectedProductsTable({
                             {showActions && (
                                 <div className="absolute top-2 right-2 flex items-center gap-1 bg-white/80 rounded-md backdrop-blur-sm p-1">
                                     {onEditClick && (
-                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-amber-500 hover:text-amber-700 hover:bg-amber-50" onClick={() => onEditClick(index)} type="button">
+                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-amber-500 hover:text-amber-700 hover:bg-amber-50"
+                                                onClick={() => onEditClick(index)} type="button">
                                             <Pencil className="h-4 w-4" />
                                         </Button>
                                     )}
                                     {onChangeLote && (
-                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-500 hover:text-blue-700 hover:bg-blue-50" onClick={() => onChangeLote([item])} type="button">
+                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-500 hover:text-blue-700 hover:bg-blue-50"
+                                                onClick={() => onChangeLote([item])} type="button">
                                             <Package className="h-4 w-4" />
                                         </Button>
                                     )}
-                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50" onClick={() => onRemoveItem(index)} type="button">
+                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50"
+                                            onClick={() => onRemoveItem(index)} type="button">
                                         <Trash className="h-4 w-4" />
                                     </Button>
                                 </div>
                             )}
+
                             <div className="space-y-3 pt-6 sm:pt-0">
                                 <div className="flex justify-between items-start">
                                     <div className="flex-1 min-w-0 pr-16">
                                         <div className="flex flex-wrap gap-1 mb-2">{renderBadges(item)}</div>
-                                        <h4 className="font-medium text-sm line-clamp-2">{item.product.NombreItem}</h4>
+                                        <h4 className="font-medium text-sm line-clamp-2">{productNameWithIgv(item)}</h4>
+                                        {item.product.afecto_igv === 0 && (
+                                            <p className="text-[10px] text-gray-400 mt-0.5">{item.product.tipo_afectacion_descripcion}</p>
+                                        )}
                                         <p className="text-xs text-gray-500 mt-1">Cód: {item.product.Codigo_Art}</p>
                                         <p className="text-xs text-gray-500 line-clamp-1">{item.product.Descripcion}</p>
                                     </div>
                                 </div>
+
                                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm bg-gray-50/50 p-3 rounded-md border border-gray-100">
                                     <div className="col-span-2 sm:col-span-1">
                                         <Label className="text-[10px] uppercase text-gray-500 font-semibold">Lote - Vencimiento</Label>
@@ -205,7 +271,7 @@ export default function SelectedProductsTable({
                                     </div>
                                     <div>
                                         <Label className="text-[10px] uppercase text-gray-500 font-semibold">Subtotal</Label>
-                                        <p className="font-bold text-sm mt-0.5">{sym}{subtotal.toFixed(2)}</p>
+                                        <div className="mt-0.5">{renderSubtotal(item, subtotal)}</div>
                                     </div>
                                 </div>
                             </div>

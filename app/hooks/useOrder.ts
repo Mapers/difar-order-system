@@ -21,6 +21,7 @@ import { toast } from "@/app/hooks/useToast"
 import {ModalLoaderType, PriceType, ProductoConLotes, Seller} from "@/app/types/order/order-interface";
 
 export function useOrderPage() {
+    const COMENTARIO_INAFECTO = '[INAFECTO IGV] Productos inafectos al IGV - Art. 2° TUO Ley del IGV. No aplica impuesto.';
     const router = useRouter()
     const { user, isAdmin } = useAuth()
 
@@ -568,39 +569,88 @@ export function useOrderPage() {
                 fechaVencimiento: format(parseISO(producto.loteSeleccionado?.split('|')[1] || ''), "dd/MM/yyyy")
             }))
 
-            const pedidoData = {
-                clientePedido: client,
-                clienteNamePedido: clientName,
-                monedaPedido: currency?.value,
-                condicionPedido: condition?.CodigoCondicion,
-                contactoPedido: contactoPedido,
-                direccionEntrega: selectedClient?.Dirección,
-                referenciaDireccion: referenciaDireccion,
-                fechaPedido: moment(new Date()).format('yyyy-MM-DD'),
-                usuario: 1,
-                vendedorPedido: isAdmin() ? seller?.codigo : user?.codigo,
-                represPedido: user?.codRepres || null,
-                detalles: selectedProducts.map(item => ({
-                    iditemPedido: item.product.IdArticulo,
+            const buildDetalles = (products: ISelectedProduct[]) =>
+                products.map(item => ({
+                    iditemPedido:     item.product.IdArticulo,
                     codigoitemPedido: item.product.Codigo_Art,
-                    cantPedido: item.quantity,
-                    precioPedido: item?.finalPrice,
-                    isbonificado: item.isBonification ? 1 : 0,
-                    isescala: item.isEscale ? 1 : 0,
-                    lote: lotesData.find(x => x.codigoProducto === item.product.Codigo_Art)?.lote,
-                    fecVenc: lotesData.find(x => x.codigoProducto === item.product.Codigo_Art)?.fechaVencimiento,
-                    isEdit: item.isEdit ? 'S' : 'N',
-                    isAuthorize: item.isAuthorize ? 'S' : 'N',
-                })),
-                estadodePedido: 1,
-                telefonoPedido: selectedClient?.telefono,
-                horaPedido: moment(new Date()).format('HH:mm'),
-                notaPedido: note,
+                    cantPedido:       item.quantity,
+                    precioPedido:     item?.finalPrice,
+                    isbonificado:     item.isBonification ? 1 : 0,
+                    isescala:         item.isEscale ? 1 : 0,
+                    lote:             lotesData.find(x => x.codigoProducto === item.product.Codigo_Art)?.lote,
+                    fecVenc:          lotesData.find(x => x.codigoProducto === item.product.Codigo_Art)?.fechaVencimiento,
+                    isEdit:           item.isEdit      ? 'S' : 'N',
+                    isAuthorize:      item.isAuthorize ? 'S' : 'N',
+                    tipo_afectacion_igv: item.product.tipo_afectacion_igv ?? '10',
+                }))
+
+            const basePedido = {
+                clientePedido:       client,
+                clienteNamePedido:   clientName,
+                monedaPedido:        currency?.value,
+                condicionPedido:     condition?.CodigoCondicion,
+                contactoPedido:      contactoPedido,
+                direccionEntrega:    selectedClient?.Dirección,
+                referenciaDireccion: referenciaDireccion,
+                fechaPedido:         moment(new Date()).format('yyyy-MM-DD'),
+                usuario:             1,
+                vendedorPedido:      isAdmin() ? seller?.codigo : user?.codigo,
+                represPedido:        user?.codRepres || null,
+                estadodePedido:      1,
+                telefonoPedido:      selectedClient?.telefono,
+                horaPedido:          moment(new Date()).format('HH:mm'),
+                notaPedido:          note,
             }
 
-            const response = await apiClient.post('/pedidos', pedidoData)
-            if (response.status === 201) {
-                router.push("/dashboard/mis-pedidos")
+            const tiposPresentes = [...new Set(
+                selectedProducts.map(p => {
+                    const afecto = Number(p.product.afecto_igv)
+                    const tipo   = p.product.tipo_afectacion_igv
+
+                    if (afecto === 1 || tipo === '10' || !tipo) return 'GRAVADO'
+                    if (tipo === '20') return 'EXONERADO'
+                    if (tipo === '30') return 'INAFECTO'
+                    return 'GRAVADO'
+                })
+            )]
+            console.log(tiposPresentes)
+
+            const hayMixto = tiposPresentes.length > 1
+
+            if (hayMixto) {
+                const gravados    = selectedProducts.filter(p => p.product.afecto_igv === 1)
+                const noGravados  = selectedProducts.filter(p => p.product.afecto_igv === 0)
+
+                const response = await apiClient.post('/pedidos/multiple', {
+                    ...basePedido,
+                    grupos: [
+                        {
+                            tipo_afectacion: 'GRAVADO',
+                            detalles: buildDetalles(gravados)
+                        },
+                        {
+                            tipo_afectacion: noGravados[0]?.product.tipo_afectacion_igv === '20'
+                                ? 'EXONERADO'
+                                : 'INAFECTO',
+                            detalles: buildDetalles(noGravados)
+                        }
+                    ]
+                })
+
+                if (response.status === 201) {
+                    router.push("/dashboard/mis-pedidos")
+                }
+            } else {
+                const tipoAfectacion = tiposPresentes[0]
+                const response = await apiClient.post('/pedidos', {
+                    ...basePedido,
+                    tipo_afectacion: tipoAfectacion,
+                    detalles: buildDetalles(selectedProducts)
+                })
+
+                if (response.status === 201) {
+                    router.push("/dashboard/mis-pedidos")
+                }
             }
         } catch (error) {
             console.error("Error creating order:", error)

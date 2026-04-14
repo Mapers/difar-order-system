@@ -75,6 +75,9 @@ export interface IProduct {
   isbonificado?: number;
   isescala?: number;
   principioActivo?: string;
+  afecto_igv: number;
+  tipo_afectacion_igv: string;
+  tipo_afectacion_descripcion: string;
 }
 
 // Interfaz order item

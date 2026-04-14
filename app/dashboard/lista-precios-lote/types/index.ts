@@ -16,6 +16,11 @@ export interface PrecioLote {
     precio_credito: string;
     precio_bonif_cont: string;
     precio_bonif_cred: string;
+    afecto_igv: number;
+    tipo_afectacion_igv: string;
+    igv_motivo: string;
+    igv_estado: string;
+    igv_id: number;
 }
 
 export interface PriceListParams {

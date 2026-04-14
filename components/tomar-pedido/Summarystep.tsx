@@ -1,5 +1,5 @@
 'use client'
-import React from "react"
+import React, {useState} from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
@@ -13,6 +13,7 @@ import { ISelectedProduct } from "@/app/types/order/product-interface"
 import { ProductoConLotes } from "@/app/types/order/order-interface"
 import SelectedProductsTable from "@/components/tomar-pedido/Selectedproductstable";
 import { calcularTotal, getCurrencySymbol } from "@/app/utils/order-helpers"
+import ConfirmOrderDialog from "@/components/tomar-pedido/ConfirmOrderDialog";
 
 interface SummaryStepProps {
     selectedClient: IClient | null
@@ -27,14 +28,16 @@ interface SummaryStepProps {
     onRemoveItem: (index: number) => void
     onPrev: () => void
     isLoadingSave: boolean
-    handleSaveDraft: () => void
+    handleSaveDraft: () => void,
+    onConfirmOrder: () => void
 }
 
 export default function SummaryStep({
                                         selectedClient, contactoPedido, nameZone, condition, currency,
                                         selectedProducts, productosConLotes, note, onNoteChange,
-                                        onRemoveItem, onPrev, isLoadingSave, handleSaveDraft
+                                        onRemoveItem, onPrev, isLoadingSave, handleSaveDraft, onConfirmOrder
                                     }: SummaryStepProps) {
+    const [confirmOpen, setConfirmOpen] = useState(false)
     const sym = getCurrencySymbol(currency?.value)
 
     return (
@@ -185,11 +188,26 @@ export default function SummaryStep({
                         <span className="hidden lg:inline">Guardar Borrador</span>
                     </Button>
                 </div>
-                <Button type="submit" className="bg-green-600 hover:bg-green-700" disabled={isLoadingSave}>
+                <Button
+                    type="button"
+                    className="bg-green-600 hover:bg-green-700"
+                    disabled={isLoadingSave}
+                    onClick={() => setConfirmOpen(true)}
+                >
                     <Check className="mr-2 h-4 w-4" />
                     <span className="hidden lg:inline">Confirmar Pedido</span>
                     <span className="lg:hidden">Confirmar</span>
                 </Button>
+                <ConfirmOrderDialog
+                    open={confirmOpen}
+                    onOpenChange={setConfirmOpen}
+                    selectedProducts={selectedProducts}
+                    isLoading={isLoadingSave}
+                    onConfirm={() => {
+                        setConfirmOpen(false)
+                        onConfirmOrder()
+                    }}
+                />
             </CardFooter>
         </Card>
     )

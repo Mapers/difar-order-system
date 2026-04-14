@@ -1,33 +1,31 @@
 'use client'
 
 import { Button } from "@/components/ui/button"
-import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import {
-  Search,
-  Eye,
-  Clock, Edit, FileText, MoreHorizontal, Download, Printer, Receipt, OctagonAlert, Layers, Trash2
+  Search, Eye, Clock, Edit, FileText, Download, Printer,
+  OctagonAlert, Layers, Trash2, Link2
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
-import {useEffect, useRef, useState} from "react"
+import { useEffect, useRef, useState, useMemo } from "react"
 import { Skeleton } from "@/components/ui/skeleton"
 import apiClient from "@/app/api/client"
-import {format, parseISO} from "date-fns";
-import {fetchGetStatus, fetchUpdateStatus, fetchUpdateStatusConfirm} from "@/app/api/takeOrders";
+import { format, parseISO } from "date-fns"
+import { fetchGetStatus, fetchUpdateStatus, fetchUpdateStatusConfirm } from "@/app/api/takeOrders"
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle, DialogTrigger,
+  Dialog, DialogContent, DialogDescription, DialogFooter,
+  DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog"
-import {Label} from "@/components/ui/label";
-import {useAuth} from "@/context/authContext";
-import Link from "next/link";
-import {generateOrderPdf} from "@/lib/pdf";
-import {TimelineModal} from "@/app/dashboard/estados-pedidos/timeline-modal";
-import {ORDER_STATES} from "@/app/dashboard/mis-pedidos/page";
+import { Label } from "@/components/ui/label"
+import { useAuth } from "@/context/authContext"
+import Link from "next/link"
+import { generateOrderPdf } from "@/lib/pdf"
+import { TimelineModal } from "@/app/dashboard/estados-pedidos/timeline-modal"
+import { ORDER_STATES } from "@/app/dashboard/mis-pedidos/page"
+import {ChangeStateDialog} from "@/app/dashboard/estados-pedidos/modals/ChangeStateDialog";
+import {DeleteOrderDialog} from "@/app/dashboard/estados-pedidos/modals/DeleteOrderDialog";
+import {DocumentsDialog} from "@/app/dashboard/estados-pedidos/modals/DocumentsDialog";
 
 export interface Pedido {
   idPedidocab: number
@@ -52,6 +50,8 @@ export interface Pedido {
   is_autorizado: string
   continue: number
   correo?: string
+  codigo_grupo?: string
+  tipo_afectacion?: string
 }
 
 export interface PedidoDet {
@@ -71,6 +71,7 @@ export interface PedidoDet {
   is_autorizado?: string
   is_editado?: string
   laboratorio: string
+  tipo_afectacion_igv?: string
 }
 
 interface Status {
@@ -78,16 +79,37 @@ interface Status {
   id_estado_pedido: number
 }
 
+const AfectacionBadge = ({ tipo }: { tipo?: string }) => {
+  if (!tipo || tipo === 'GRAVADO') {
+    return (
+        <Badge className="bg-green-50 text-green-700 border border-green-300 text-[10px] font-semibold px-1.5 py-0.5 shrink-0">
+          <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block mr-1" />
+          GRAVADO
+        </Badge>
+    )
+  }
+  if (tipo === 'EXONERADO') {
+    return (
+        <Badge className="bg-yellow-50 text-yellow-700 border border-yellow-300 text-[10px] font-semibold px-1.5 py-0.5 shrink-0">
+          <span className="w-1.5 h-1.5 rounded-full bg-yellow-500 inline-block mr-1" />
+          EXONERADO
+        </Badge>
+    )
+  }
+  return (
+      <Badge className="bg-blue-50 text-blue-700 border border-blue-300 text-[10px] font-semibold px-1.5 py-0.5 shrink-0">
+        <span className="w-1.5 h-1.5 rounded-full bg-blue-500 inline-block mr-1" />
+        INAFECTO
+      </Badge>
+  )
+}
+
 export default function OrderStatusManagementPage() {
   const [orders, setOrders] = useState<Pedido[]>([])
   const [detalle, setDetalle] = useState<PedidoDet[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
-
-  const [filters, setFilters] = useState({
-    estado: 1,
-  })
-
+  const [filters, setFilters] = useState({ estado: 1 })
   const auth = useAuth()
   const [currentPage, setCurrentPage] = useState(1)
   const [states, setStates] = useState<Status[]>([])
@@ -101,29 +123,37 @@ export default function OrderStatusManagementPage() {
   const objectUrlRef = useRef<string | null>(null)
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [orderToDelete, setOrderToDelete] = useState<Pedido | null>(null)
+  const [pedidoHermano, setPedidoHermano] = useState<Pedido | null>(null)
 
-  const STATE_JUMPS: Record<number, number> = {
-    2: 4,
-    4: 7,
-  }
+  const STATE_JUMPS: Record<number, number> = { 2: 4, 4: 7 }
+  const getNextState = (currentState: number): number => STATE_JUMPS[currentState] ?? currentState + 1
 
-  const getNextState = (currentState: number): number => {
-    return STATE_JUMPS[currentState] ?? currentState + 1
-  }
+  const pedidosAgrupados = useMemo(() => {
+    const mapaGrupos = new Map<string, Pedido[]>()
+    const sinGrupo: Pedido[] = []
+
+    for (const pedido of orders) {
+      if (pedido.codigo_grupo) {
+        if (!mapaGrupos.has(pedido.codigo_grupo)) mapaGrupos.set(pedido.codigo_grupo, [])
+        mapaGrupos.get(pedido.codigo_grupo)!.push(pedido)
+      } else {
+        sinGrupo.push(pedido)
+      }
+    }
+
+    const grupos: { codigo_grupo: string | null; pedidos: Pedido[] }[] = []
+    mapaGrupos.forEach((pedidos, codigo_grupo) => grupos.push({ codigo_grupo, pedidos }))
+    sinGrupo.forEach(p => grupos.push({ codigo_grupo: null, pedidos: [p] }))
+    return grupos
+  }, [orders])
 
   const fetchOrders = async () => {
     try {
       setLoading(true)
       let url = `/pedidos/filter?busqueda=${encodeURIComponent(searchQuery)}`
-
-      if (filters.estado !== -1) {
-        url += `&estado=${filters.estado}`;
-      }
-
+      if (filters.estado !== -1) url += `&estado=${filters.estado}`
       const response = await apiClient.get(url)
-      const { data: { data } } = response.data
-
-      setOrders(data)
+      setOrders(response.data.data.data)
     } catch (error) {
       console.error("Error fetching orders:", error)
     } finally {
@@ -133,9 +163,10 @@ export default function OrderStatusManagementPage() {
 
   const fetchPedidoDetalle = async (id: string) => {
     try {
-      const resDet = await apiClient.get(`/pedidosDetalles/${id}/detalles?${auth.user?.idRol === 1 ? `vendedor=${(auth.user?.codigo || null)}` : ''}`)
-      const detallesData = resDet.data.data
-      setDetalle(detallesData)
+      const resDet = await apiClient.get(
+          `/pedidosDetalles/${id}/detalles?${auth.user?.idRol === 1 ? `vendedor=${auth.user?.codigo || null}` : ''}`
+      )
+      setDetalle(resDet.data.data)
     } catch (err) {
       console.error(err)
     }
@@ -146,7 +177,7 @@ export default function OrderStatusManagementPage() {
       const response = await fetchGetStatus()
       setStates(response.data?.data?.data || [])
     } catch (error) {
-      console.error("Error fetching status:", error)
+      console.error(error)
     }
   }
 
@@ -160,59 +191,77 @@ export default function OrderStatusManagementPage() {
     setCurrentPage(1)
   }
 
-  const getStateCount = (stateId: number) => {
-    return orders.filter(order => order.estadodePedido === stateId).length
-  }
-
   const handleStateChange = async (order: Pedido) => {
-    await fetchPedidoDetalle(order.nroPedido);
+    await fetchPedidoDetalle(order.nroPedido)
     setSelectedOrder(order)
     setNewState(getNextState(order.estadodePedido))
+
+    if (order.codigo_grupo) {
+      const hermano = orders.find(
+          o => o.codigo_grupo === order.codigo_grupo && o.nroPedido !== order.nroPedido
+      ) || null
+      setPedidoHermano(hermano)
+    } else {
+      setPedidoHermano(null)
+    }
+
     setIsChangeStateModalOpen(true)
   }
 
   const getStateInfo = (stateId: number, porAutorizar: string, isAutorizado: string) => {
-    if (porAutorizar === 'S' && isAutorizado === 'N') return ORDER_STATES.find(e => e.id === -2);
-    if (porAutorizar === 'S' && (isAutorizado === '' || isAutorizado === null)) return ORDER_STATES.find(e => e.id === -1);
+    if (porAutorizar === 'S' && isAutorizado === 'N') return ORDER_STATES.find(e => e.id === -2)
+    if (porAutorizar === 'S' && (isAutorizado === '' || isAutorizado === null)) return ORDER_STATES.find(e => e.id === -1)
     return ORDER_STATES.find(state => state.id === stateId)
   }
 
   const confirmStateChange = async () => {
     try {
-      if (!selectedOrder) return;
+      if (!selectedOrder) return
+      setLoading(true)
 
       const nextState = getNextState(selectedOrder.estadodePedido)
 
-
       if (selectedOrder.estadodePedido === 1 && newState === 2) {
-        setLoading(true);
-        await fetchUpdateStatusConfirm(selectedOrder.nroPedido);
+        await fetchUpdateStatusConfirm(selectedOrder.nroPedido)
       }
-      await fetchUpdateStatus(selectedOrder.nroPedido, nextState);
-
+      await fetchUpdateStatus(selectedOrder.nroPedido, nextState)
       await apiClient.post(`/pedidos/state`, {
-        nroPedido: selectedOrder.nroPedido,
+        nroPedido:      selectedOrder.nroPedido,
         estadoAnterior: selectedOrder.estadodePedido,
-        estadoNuevo: nextState,
-        usuario: auth.user?.nombreCompleto || 'Usuario desconocido',
-        nota: stateChangeNotes,
+        estadoNuevo:    nextState,
+        usuario:        auth.user?.nombreCompleto || 'Usuario desconocido',
+        nota:           stateChangeNotes,
       })
 
-      await fetchOrders();
+      if (pedidoHermano && pedidoHermano.estadodePedido === selectedOrder.estadodePedido) {
+        const nextStateHermano = getNextState(pedidoHermano.estadodePedido)
 
-      setIsChangeStateModalOpen(false);
-      setStateChangeNotes("");
-      if (newState === 4) {
-        setShowDocumentAlert(true);
+        if (pedidoHermano.estadodePedido === 1 && nextStateHermano === 2) {
+          await fetchUpdateStatusConfirm(pedidoHermano.nroPedido)
+        }
+        await fetchUpdateStatus(pedidoHermano.nroPedido, nextStateHermano)
+        await apiClient.post(`/pedidos/state`, {
+          nroPedido:      pedidoHermano.nroPedido,
+          estadoAnterior: pedidoHermano.estadodePedido,
+          estadoNuevo:    nextStateHermano,
+          usuario:        auth.user?.nombreCompleto || 'Usuario desconocido',
+          nota:           `Cambio automático por pedido vinculado #${selectedOrder.nroPedido}`,
+        })
       }
 
+      await fetchOrders()
+      setIsChangeStateModalOpen(false)
+      setStateChangeNotes("")
+      setPedidoHermano(null)
+      if (newState === 4) setShowDocumentAlert(true)
+
     } catch (error) {
-      console.error('Error al cambiar estado:', error);
-      alert('Error al cambiar el estado del pedido');
+      console.error('Error al cambiar estado:', error)
+      alert('Error al cambiar el estado del pedido')
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   const handleDownload = () => {
     if (!pdfUrl) return
@@ -226,7 +275,6 @@ export default function OrderStatusManagementPage() {
     if (selectedOrder) {
       const build = async () => {
         const blob = await generateOrderPdf(selectedOrder, detalle)
-
         if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current)
         const url = URL.createObjectURL(blob)
         objectUrlRef.current = url
@@ -234,10 +282,7 @@ export default function OrderStatusManagementPage() {
       }
       build()
       return () => {
-        if (objectUrlRef.current) {
-          URL.revokeObjectURL(objectUrlRef.current)
-          objectUrlRef.current = null
-        }
+        if (objectUrlRef.current) { URL.revokeObjectURL(objectUrlRef.current); objectUrlRef.current = null }
       }
     }
   }, [selectedOrder, detalle])
@@ -264,6 +309,140 @@ export default function OrderStatusManagementPage() {
     setIsDeleteModalOpen(true)
   }
 
+  const renderTableRow = (order: Pedido, esGrupo = false) => {
+    const stateInfo = getStateInfo(order.estadodePedido, order.por_autorizar, order.is_autorizado)
+    const StateIcon = stateInfo?.icon || Clock
+
+    return (
+        <tr key={order.idPedidocab} className={`border-b hover:bg-gray-50 ${esGrupo ? 'bg-amber-50/30' : ''}`}>
+          <td className="p-4 font-medium text-sm">
+            <div className="flex items-center gap-1.5">
+              {esGrupo && <Link2 className="h-3.5 w-3.5 text-amber-500 shrink-0" />}
+              {order.nroPedido}
+            </div>
+          </td>
+          <td className="p-4">
+            <div>
+              <div className="font-medium text-sm">{order.nombreCliente}</div>
+              <div className="text-xs text-gray-500">{order.codigoCliente || 'N/A'}</div>
+            </div>
+          </td>
+          <td className="p-4 text-sm">{format(parseISO(order.fechaPedido), "dd/MM/yyyy")} {order.horaPedido}</td>
+          <td className="p-4 font-medium text-sm">
+            {order.monedaPedido === "PEN" ? "S/ " : "$ "}
+            {Number(order.totalPedido).toFixed(2)}
+          </td>
+          <td className="p-4">
+            <div className="flex flex-wrap items-center gap-1">
+              <Badge className={`${stateInfo?.color} flex items-center gap-1 text-xs`}>
+                <StateIcon className="h-3 w-3" />
+                {stateInfo?.name || 'Desconocido'}
+              </Badge>
+              <AfectacionBadge tipo={order.tipo_afectacion} />
+            </div>
+          </td>
+          <td className="p-4 text-sm">{order.nombreVendedor || 'N/A'}</td>
+          <td className="p-4">
+            <div className="flex gap-2 flex-wrap">
+              <Button
+                  variant="outline" size="sm"
+                  onClick={() => handleStateChange(order)}
+                  disabled={order.estadodePedido >= 8 || (order.por_autorizar === 'S' && (order.is_autorizado === 'N' || order.is_autorizado === ''))}
+                  className="text-xs"
+              >
+                <Edit className="h-3 w-3 mr-1" /> Cambiar
+              </Button>
+              <Button variant="outline" size="sm" className="text-blue-600 hover:text-blue-700 bg-transparent text-xs">
+                <Link href={`/dashboard/estados-pedidos/${order.nroPedido}`} className="flex">
+                  <Eye className="h-3 w-3 mr-1" /> Ver detalle
+                </Link>
+              </Button>
+              <TimelineModal pedido={order} />
+              {order.estadodePedido === 1 && (
+                  <Button variant="outline" size="sm" onClick={() => openDeleteModal(order)}
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50 text-xs">
+                    <Trash2 className="h-3 w-3 mr-1" /> Eliminar
+                  </Button>
+              )}
+            </div>
+          </td>
+        </tr>
+    )
+  }
+
+  const renderMobileCard = (order: Pedido, esGrupo = false) => {
+    const stateInfo = getStateInfo(order.estadodePedido, order.por_autorizar, order.is_autorizado)
+    const StateIcon = stateInfo?.icon || Clock
+
+    return (
+        <Card key={order.idPedidocab} className={`border ${esGrupo ? 'border-amber-200 rounded-none border-x-amber-200' : 'border-gray-200'}`}>
+          <CardContent className="p-4">
+            <div className="flex justify-between items-start mb-3">
+              <div>
+                <div className="flex items-center gap-1.5">
+                  {esGrupo && <Link2 className="h-3.5 w-3.5 text-amber-500" />}
+                  <h3 className="font-bold text-blue-600 text-sm">{order.nroPedido}</h3>
+                </div>
+                <p className="text-xs text-gray-500">
+                  {format(parseISO(order.fechaPedido), "dd/MM/yyyy")} {order.horaPedido}
+                </p>
+              </div>
+              <div className="flex flex-col items-end gap-1">
+                {(order.por_autorizar === 'S' && order.is_autorizado === 'N')
+                    ? <Badge className="bg-teal-100 text-teal-800 flex items-center gap-1 text-xs">
+                      <OctagonAlert className="h-3 w-3" /> POR AUTORIZAR
+                    </Badge>
+                    : <Badge className={`${stateInfo?.color} flex items-center gap-1 text-xs`}>
+                      <StateIcon className="h-3 w-3" /> {stateInfo?.name || 'Desconocido'}
+                    </Badge>
+                }
+                <AfectacionBadge tipo={order.tipo_afectacion} />
+              </div>
+            </div>
+
+            <div className="space-y-2 mb-3">
+              <div>
+                <p className="font-medium text-sm truncate">{order.nombreCliente}</p>
+                <p className="text-xs text-gray-500">{order.codigoCliente || 'N/A'}</p>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-xs text-gray-500">Total:</span>
+                <span className="font-bold text-sm">
+                                {order.monedaPedido === "PEN" ? "S/ " : "$ "}
+                  {Number(order.totalPedido).toFixed(2)}
+                            </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-xs text-gray-500">Vendedor:</span>
+                <span className="text-xs">{order.nombreVendedor || 'N/A'}</span>
+              </div>
+            </div>
+
+            <div className="flex gap-2 flex-wrap">
+              <Button variant="outline" size="sm"
+                      onClick={() => handleStateChange(order)}
+                      disabled={order.estadodePedido >= 8 || (order.por_autorizar === 'S' && order.is_autorizado === 'N')}
+                      className="flex-1 text-xs">
+                <Edit className="h-3 w-3 mr-1" /> Cambiar Estado
+              </Button>
+              <Button variant="outline" size="sm" className="text-blue-600 bg-transparent text-xs">
+                <Link href={`/dashboard/estados-pedidos/${order.nroPedido}`} className="flex">
+                  <Eye className="h-3 w-3 mr-1" /> Ver
+                </Link>
+              </Button>
+              <TimelineModal pedido={order} />
+              {order.estadodePedido === 1 && (
+                  <Button variant="outline" size="sm" onClick={() => openDeleteModal(order)}
+                          className="text-red-600 hover:bg-red-50 text-xs">
+                    <Trash2 className="h-3 w-3 mr-1" /> Eliminar
+                  </Button>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+    )
+  }
+
   return (
       <div className="grid gap-6">
         <div className="flex flex-col gap-2">
@@ -272,33 +451,24 @@ export default function OrderStatusManagementPage() {
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-9 gap-2 sm:gap-4">
-          <Card
-              onClick={() => handleCardClick(-1)}
-              className={`cursor-pointer transition-all duration-200 border-2 ${filters.estado === -1 ? 'border-gray-800 ring-2 ring-gray-400 ring-offset-2 scale-105' : 'border-transparent hover:border-gray-300 hover:scale-105 opacity-80 hover:opacity-100'}`}
-          >
+          <Card onClick={() => handleCardClick(-1)}
+                className={`cursor-pointer transition-all duration-200 border-2 ${filters.estado === -1 ? 'border-gray-800 ring-2 ring-gray-400 ring-offset-2 scale-105' : 'border-transparent hover:border-gray-300 hover:scale-105 opacity-80 hover:opacity-100'}`}>
             <CardContent className="p-2 sm:p-4 text-center">
               <div className="inline-flex items-center justify-center w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-gray-800 text-white mb-1 sm:mb-2">
-                <Layers className="h-3 w-3 sm:h-4 sm:w-4"/>
+                <Layers className="h-3 w-3 sm:h-4 sm:w-4" />
               </div>
               <div className="text-xs font-bold text-gray-600 mt-1">TODOS</div>
             </CardContent>
           </Card>
-
           {ORDER_STATES.filter(item => item.id !== -1 && item.id !== -2).map((state) => {
             const Icon = state.icon
             const isSelected = filters.estado === state.id
-
             return (
-                <Card
-                    key={state.id}
-                    onClick={() => handleCardClick(state.id)}
-                    className={`${state.borderColor} border-2 cursor-pointer transition-all duration-200 ${isSelected ? 'ring-2 ring-offset-2 ring-blue-500 shadow-md scale-105 opacity-100' : 'hover:scale-105 opacity-70 hover:opacity-100'}`}
-                >
+                <Card key={state.id} onClick={() => handleCardClick(state.id)}
+                      className={`${state.borderColor} border-2 cursor-pointer transition-all duration-200 ${isSelected ? 'ring-2 ring-offset-2 ring-blue-500 shadow-md scale-105 opacity-100' : 'hover:scale-105 opacity-70 hover:opacity-100'}`}>
                   <CardContent className="p-2 sm:p-4 text-center">
-                    <div
-                        className={`inline-flex items-center justify-center w-6 h-6 sm:w-8 sm:h-8 rounded-full ${state.color} mb-1 sm:mb-2`}
-                    >
-                      <Icon className="h-3 w-3 sm:h-4 sm:w-4"/>
+                    <div className={`inline-flex items-center justify-center w-6 h-6 sm:w-8 sm:h-8 rounded-full ${state.color} mb-1 sm:mb-2`}>
+                      <Icon className="h-3 w-3 sm:h-4 sm:w-4" />
                     </div>
                     <div className={`text-xs font-bold truncate ${isSelected ? 'text-gray-900' : 'text-gray-500'}`}>{state.name}</div>
                   </CardContent>
@@ -310,26 +480,16 @@ export default function OrderStatusManagementPage() {
         <Card className="shadow-md">
           <CardHeader className="flex flex-col sm:flex-row justify-between gap-4 sm:items-center border-b bg-gray-50">
             <CardTitle className="text-xl font-semibold text-teal-700">
-              {filters.estado === -1
-                  ? "Todos los Pedidos"
-                  : `Pedidos en estado: ${ORDER_STATES.find(s => s.id === filters.estado)?.name || 'Desconocido'}`
-              }
+              {filters.estado === -1 ? "Todos los Pedidos" : `Pedidos en estado: ${ORDER_STATES.find(s => s.id === filters.estado)?.name || 'Desconocido'}`}
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
-            <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="relative w-full">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500"/>
-                <Input
-                    type="search"
-                    placeholder="Buscar por Id, RUC, cliente, vendedor..."
-                    className="pl-8 bg-white w-full"
-                    value={searchQuery}
-                    onChange={(e) => {
-                      setSearchQuery(e.target.value)
-                      setCurrentPage(1)
-                    }}
-                />
+            <div className="p-4">
+              <div className="relative w-full md:w-1/2">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+                <Input type="search" placeholder="Buscar por Id, RUC, cliente, vendedor..."
+                       className="pl-8 bg-white w-full" value={searchQuery}
+                       onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1) }} />
               </div>
             </div>
           </CardContent>
@@ -341,6 +501,7 @@ export default function OrderStatusManagementPage() {
             <CardDescription>Gestiona el estado de cada pedido y visualiza su progreso</CardDescription>
           </CardHeader>
           <CardContent className="p-0">
+
             <div className="hidden lg:block overflow-x-auto">
               <table className="w-full border-collapse">
                 <thead>
@@ -349,94 +510,44 @@ export default function OrderStatusManagementPage() {
                   <th className="text-left p-4 font-medium text-sm">Cliente</th>
                   <th className="text-left p-4 font-medium text-sm">Fecha</th>
                   <th className="text-left p-4 font-medium text-sm">Total</th>
-                  <th className="text-left p-4 font-medium text-sm">Estado Actual</th>
+                  <th className="text-left p-4 font-medium text-sm">Estado / Tipo</th>
                   <th className="text-left p-4 font-medium text-sm">Vendedor</th>
                   <th className="text-left p-4 font-medium text-sm">Acciones</th>
                 </tr>
                 </thead>
                 <tbody>
                 {loading ? (
-                    Array.from({length: 5}).map((_, index) => (
-                        <tr key={index} className="border-b">
-                          <td className="p-4"><Skeleton className="h-4 w-[80px]" /></td>
-                          <td className="p-4"><Skeleton className="h-4 w-[120px]" /></td>
-                          <td className="p-4"><Skeleton className="h-4 w-[80px]" /></td>
-                          <td className="p-4"><Skeleton className="h-4 w-[80px]" /></td>
-                          <td className="p-4"><Skeleton className="h-4 w-[100px]" /></td>
-                          <td className="p-4"><Skeleton className="h-4 w-[100px]" /></td>
-                          <td className="p-4">
-                            <div className="flex gap-2">
-                              <Skeleton className="h-8 w-[80px]" />
-                              <Skeleton className="h-8 w-[80px]" />
-                            </div>
-                          </td>
+                    Array.from({ length: 5 }).map((_, i) => (
+                        <tr key={i} className="border-b">
+                          {Array.from({ length: 7 }).map((_, j) => (
+                              <td key={j} className="p-4"><Skeleton className="h-4 w-full" /></td>
+                          ))}
                         </tr>
                     ))
                 ) : orders.length > 0 ? (
-                    orders.map((order, index) => {
-                      const stateInfo = getStateInfo(order.estadodePedido, order.por_autorizar, order.is_autorizado)
-                      const StateIcon = stateInfo?.icon || Clock
-
-                      return (
-                          <tr key={index} className="border-b hover:bg-gray-50">
-                            <td className="p-4 font-medium text-sm">{order.nroPedido}</td>
-                            <td className="p-4">
-                              <div>
-                                <div className="font-medium text-sm">{order.nombreCliente}</div>
-                                <div className="text-xs text-gray-500">{order.codigoCliente || 'N/A'}</div>
-                              </div>
-                            </td>
-                            <td className="p-4 text-sm">{format(parseISO(order.fechaPedido), "dd/MM/yyyy")} {order.horaPedido}</td>
-                            <td className="p-4 font-medium text-sm">
-                              {order.monedaPedido === "PEN" ? "S/ " : "$ "}
-                              {Number(order.totalPedido).toFixed(2)}
-                            </td>
-                            <td className="p-4">
-                              <Badge className={`${stateInfo?.color} flex items-center gap-1 text-xs`}>
-                                <StateIcon className="h-3 w-3" />
-                                {stateInfo?.name || 'Desconocido'}
-                              </Badge>
-                            </td>
-                            <td className="p-4 text-sm">{order.nombreVendedor || 'N/A'}</td>
-                            <td className="p-4">
-                              <div className="flex gap-2">
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => handleStateChange(order)}
-                                    disabled={order.estadodePedido >= 8 || (order.por_autorizar === 'S' && (order.is_autorizado === 'N' || order.is_autorizado === '')) }
-                                    className="text-xs"
-                                >
-                                  <Edit className="h-3 w-3 mr-1" />
-                                  Cambiar
-                                </Button>
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="text-blue-600 hover:text-blue-700 bg-transparent text-xs"
-                                >
-                                  <Link href={`/dashboard/estados-pedidos/${order.nroPedido}`} className='flex'>
-                                    <Eye className="h-3 w-3 mr-1" />
-                                    Ver detalle
-                                  </Link>
-                                </Button>
-                                <TimelineModal pedido={order} />
-
-                                {order.estadodePedido === 1 && (
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => openDeleteModal(order)}
-                                        className="text-red-600 hover:text-red-700 hover:bg-red-50 text-xs"
-                                    >
-                                      <Trash2 className="h-3 w-3 mr-1" />
-                                      Eliminar
-                                    </Button>
-                                )}
-                              </div>
-                            </td>
-                          </tr>
-                      )
+                    pedidosAgrupados.map(({ codigo_grupo, pedidos }) => {
+                      const esGrupo = !!codigo_grupo && pedidos.length > 1
+                      if (esGrupo) {
+                        return (
+                            <>
+                              <tr key={codigo_grupo} className="bg-amber-50 border-b border-amber-200">
+                                <td colSpan={7} className="px-4 py-1.5">
+                                  <div className="flex items-center gap-2">
+                                    <Link2 className="h-3.5 w-3.5 text-amber-600" />
+                                    <span className="text-xs font-semibold text-amber-700">
+                                                                    Pedidos vinculados · Grupo {codigo_grupo}
+                                                                </span>
+                                    <span className="text-xs text-amber-500 ml-auto">
+                                                                    {pedidos.length} pedidos relacionados
+                                                                </span>
+                                  </div>
+                                </td>
+                              </tr>
+                              {pedidos.map(p => renderTableRow(p, true))}
+                            </>
+                        )
+                      }
+                      return renderTableRow(pedidos[0], false)
                     })
                 ) : (
                     <tr>
@@ -451,23 +562,11 @@ export default function OrderStatusManagementPage() {
 
             <div className="lg:hidden space-y-3 p-4">
               {loading ? (
-                  Array.from({length: 3}).map((_, index) => (
-                      <Card key={index} className="border border-gray-200">
-                        <CardContent className="p-4">
-                          <div className="flex justify-between items-start mb-3">
-                            <div>
-                              <Skeleton className="h-5 w-24 mb-1" />
-                              <Skeleton className="h-4 w-16" />
-                            </div>
-                            <Skeleton className="h-5 w-20" />
-                          </div>
-
-                          <div className="space-y-2 mb-3">
-                            <Skeleton className="h-4 w-full" />
-                            <Skeleton className="h-4 w-3/4" />
-                            <Skeleton className="h-4 w-1/2" />
-                          </div>
-
+                  Array.from({ length: 3 }).map((_, i) => (
+                      <Card key={i} className="border border-gray-200">
+                        <CardContent className="p-4 space-y-3">
+                          <Skeleton className="h-5 w-24" />
+                          <Skeleton className="h-4 w-full" />
                           <div className="flex gap-2">
                             <Skeleton className="h-8 w-full" />
                             <Skeleton className="h-8 w-full" />
@@ -476,92 +575,28 @@ export default function OrderStatusManagementPage() {
                       </Card>
                   ))
               ) : orders.length > 0 ? (
-                  orders.map((order, index) => {
-                    const stateInfo = getStateInfo(order.estadodePedido, order.por_autorizar, order.is_autorizado)
-                    const StateIcon = stateInfo?.icon || Clock
-
-                    return (
-                        <Card key={index} className="border border-gray-200">
-                          <CardContent className="p-4">
-                            <div className="flex justify-between items-start mb-3">
-                              <div>
-                                <h3 className="font-bold text-blue-600 text-sm">{order.nroPedido}</h3>
-                                <p className="text-xs text-gray-500">
-                                  {format(parseISO(order.fechaPedido), "dd/MM/yyyy")} {order.horaPedido}
-                                </p>
-                              </div>
-                              {(order.por_autorizar === 'S' && order.is_autorizado === 'N')
-                                  ? <Badge className={`bg-teal-100 text-teal-800 flex items-center gap-1 text-xs`}>
-                                    <OctagonAlert className="h-3 w-3" />
-                                    POR AUTORIZAR
-                                  </Badge>
-                                  : <Badge className={`${stateInfo?.color} flex items-center gap-1 text-xs`}>
-                                    <StateIcon className="h-3 w-3" />
-                                    {stateInfo?.name || 'Desconocido'}
-                                  </Badge>
-                              }
+                  pedidosAgrupados.map(({ codigo_grupo, pedidos }) => {
+                    const esGrupo = !!codigo_grupo && pedidos.length > 1
+                    if (esGrupo) {
+                      return (
+                          <div key={`mgrp-${codigo_grupo}`} className="space-y-0">
+                            <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-50 border border-amber-200 rounded-t-lg border-b-0">
+                              <Link2 className="h-3.5 w-3.5 text-amber-600 shrink-0" />
+                              <span className="text-xs font-semibold text-amber-700 truncate flex-1">
+                                                    Vinculados · {codigo_grupo}
+                                                </span>
+                              <span className="text-xs text-amber-500 shrink-0">{pedidos.length} pedidos</span>
                             </div>
-
-                            <div className="space-y-2 mb-3">
-                              <div>
-                                <p className="font-medium text-sm truncate">{order.nombreCliente}</p>
-                                <p className="text-xs text-gray-500">{order.codigoCliente || 'N/A'}</p>
-                              </div>
-                              <div className="flex justify-between items-center">
-                                <span className="text-xs text-gray-500">Total:</span>
-                                <span className="font-bold text-sm">
-                            {order.monedaPedido === "PEN" ? "S/ " : "$ "}
-                                  {Number(order.totalPedido).toFixed(2)}
-                          </span>
-                              </div>
-                              <div className="flex justify-between items-center">
-                                <span className="text-xs text-gray-500">Vendedor:</span>
-                                <span className="text-xs">{order.nombreVendedor || 'N/A'}</span>
-                              </div>
+                            <div className="border border-amber-200 border-t-0 rounded-b-lg overflow-hidden">
+                              {pedidos.map(p => renderMobileCard(p, true))}
                             </div>
-
-                            <div className="flex gap-2">
-                              <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => handleStateChange(order)}
-                                  disabled={order.estadodePedido >= 8 || (order.por_autorizar === 'S' && order.is_autorizado === 'N')}
-                                  className="flex-1 text-xs"
-                              >
-                                <Edit className="h-3 w-3 mr-1" />
-                                Cambiar Estado
-                              </Button>
-                              <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="text-blue-600 hover:text-blue-700 bg-transparent text-xs"
-                              >
-                                <Link href={`/dashboard/estados-pedidos/${order.nroPedido}`} className='flex'>
-                                  <Eye className="h-3 w-3 mr-1" />
-                                  Ver detalle
-                                </Link>
-                              </Button>
-                              <TimelineModal pedido={order} />
-                              {order.estadodePedido === 1 && (
-                                  <Button
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={() => openDeleteModal(order)}
-                                      className="text-red-600 hover:text-red-700 hover:bg-red-50 text-xs"
-                                  >
-                                    <Trash2 className="h-3 w-3 mr-1" />
-                                    Eliminar
-                                  </Button>
-                              )}
-                            </div>
-                          </CardContent>
-                        </Card>
-                    )
+                          </div>
+                      )
+                    }
+                    return renderMobileCard(pedidos[0], false)
                   })
               ) : (
-                  <div className="text-center py-8 text-gray-500">
-                    No se encontraron pedidos
-                  </div>
+                  <div className="text-center py-8 text-gray-500">No se encontraron pedidos</div>
               )}
             </div>
           </CardContent>
@@ -577,15 +612,11 @@ export default function OrderStatusManagementPage() {
                 const Icon = state.icon
                 return (
                     <div key={state.id} className="flex items-start gap-2 p-2 rounded-lg bg-gray-50">
-                      <div
-                          className={`inline-flex items-center justify-center w-5 h-5 sm:w-6 sm:h-6 rounded-full ${state.color} flex-shrink-0`}
-                      >
+                      <div className={`inline-flex items-center justify-center w-5 h-5 sm:w-6 sm:h-6 rounded-full ${state.color} flex-shrink-0`}>
                         <Icon className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <div className="font-medium text-xs sm:text-sm truncate">
-                          {state.id}. {state.name}
-                        </div>
+                        <div className="font-medium text-xs sm:text-sm truncate">{state.id}. {state.name}</div>
                         <div className="text-xs text-gray-600 line-clamp-2 hidden sm:block">{state.description}</div>
                         <div className="text-xs font-medium text-blue-600 mt-1">📄 {state.documents}</div>
                       </div>
@@ -596,159 +627,35 @@ export default function OrderStatusManagementPage() {
           </CardContent>
         </Card>
 
-        <Dialog open={isDocumentsModalOpen} onOpenChange={setIsDocumentsModalOpen}>
-          <DialogContent className="sm:max-w-2xl">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <FileText className="h-5 w-5" />
-                Documentos del Pedido {selectedOrder?.idPedidocab}
-              </DialogTitle>
-              <DialogDescription>
-                Cliente: {selectedOrder?.nombreCliente} - Estado: {getStateInfo(selectedOrder?.estadodePedido || 0, selectedOrder?.por_autorizar, selectedOrder?.is_autorizado)?.name}
-              </DialogDescription>
-            </DialogHeader>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setIsDocumentsModalOpen(false)}>
-                Cerrar
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        <ChangeStateDialog
+            open={isChangeStateModalOpen}
+            onOpenChange={setIsChangeStateModalOpen}
+            selectedOrder={selectedOrder}
+            pedidoHermano={pedidoHermano}
+            detalle={detalle}
+            loading={loading}
+            pdfUrl={pdfUrl}
+            getNextState={getNextState}
+            getStateInfo={getStateInfo}
+            onConfirm={confirmStateChange}
+            onCancel={() => { setIsChangeStateModalOpen(false); setPedidoHermano(null) }}
+            onDownload={handleDownload}
+        />
 
-        <Dialog open={isChangeStateModalOpen} onOpenChange={setIsChangeStateModalOpen}>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle>Cambiar Estado del Pedido</DialogTitle>
-              <DialogDescription>
-                Pedido: {selectedOrder?.nroPedido} - {selectedOrder?.nombreCliente}
-              </DialogDescription>
-            </DialogHeader>
+        <DeleteOrderDialog
+            open={isDeleteModalOpen}
+            onOpenChange={setIsDeleteModalOpen}
+            order={orderToDelete}
+            loading={loading}
+            onConfirm={handleDeleteOrder}
+        />
 
-            <div className="space-y-4">
-              <div>
-                <Label>Estado Actual</Label>
-                <div className="mt-1">
-                  <Badge className={getStateInfo(selectedOrder?.estadodePedido || 0, selectedOrder?.por_autorizar, selectedOrder?.is_autorizado)?.color}>
-                    {getStateInfo(selectedOrder?.estadodePedido || 0, selectedOrder?.por_autorizar, selectedOrder?.is_autorizado)?.name}
-                  </Badge>
-                </div>
-              </div>
-
-              <div>
-                <Label htmlFor="new-state">Nuevo Estado</Label>
-                <div className="mt-2 p-3 border rounded-md bg-gray-50">
-                  <div className="flex items-center gap-2">
-                    <Badge className={getStateInfo(getNextState(selectedOrder?.estadodePedido || 0), selectedOrder?.por_autorizar, selectedOrder?.is_autorizado)?.color}>
-                      {getStateInfo(getNextState(selectedOrder?.estadodePedido || 0), selectedOrder?.por_autorizar, selectedOrder?.is_autorizado)?.name}
-                    </Badge>
-                    <span className="text-sm text-gray-600">(Siguiente estado)</span>
-                  </div>
-                </div>
-                <p className="mt-2 text-sm text-gray-500">
-                  {getStateInfo(getNextState(selectedOrder?.estadodePedido || 0), selectedOrder?.por_autorizar, selectedOrder?.is_autorizado)?.description}
-                </p>
-              </div>
-
-              {selectedOrder?.continue === 0 && (
-                  <div className="p-3 bg-amber-50 border border-amber-200 rounded-md flex gap-3 items-start">
-                    <OctagonAlert className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
-                    <div className="text-sm text-amber-800">
-                      <span className="font-semibold block mb-1">Acción requerida</span>
-                      El pedido no tiene su comprobante generado o enlazado. Por favor, genere el comprobante y <b>refresque la página</b> para habilitar el cambio de estado.
-                    </div>
-                  </div>
-              )}
-            </div>
-
-            {selectedOrder && (
-                <DialogFooter>
-                  <Button
-                      variant="outline"
-                      onClick={() => setIsChangeStateModalOpen(false)}
-                      disabled={loading}
-                  >
-                    Cancelar
-                  </Button>
-                  {(detalle.length > 0 && [1, 2, 4].includes(selectedOrder.estadodePedido)) && (
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button
-                              size="sm"
-                              variant="outline"
-                              className="text-red-600 hover:text-red-700 bg-transparent text-xs"
-                          >
-                            <FileText className="h-3 w-3 mr-1" />
-                            Ver PDF
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent className="min-w-[90vw] h-[95vh] p-0 overflow-hidden">
-                          <DialogHeader className="px-4 py-3 border-b w-[100%] absolute bg-white">
-                            <div className="flex items-center justify-between">
-                              <DialogTitle>PDF — {String(selectedOrder.nroPedido).padStart(10, '0')}</DialogTitle>
-                              <Button size="sm" onClick={handleDownload}>
-                                <Download className="w-4 h-4 mr-2" />
-                                Descargar
-                              </Button>
-                            </div>
-                          </DialogHeader>
-                          <div className="w-full h-full mt-16">
-                            {pdfUrl ? (
-                                <iframe title="Recibo PDF" src={pdfUrl} className="w-full h-full" />
-                            ) : (
-                                <div className="p-6">Generando PDF…</div>
-                            )}
-                          </div>
-                        </DialogContent>
-                      </Dialog>
-                  )}
-                  <Button
-                      onClick={confirmStateChange}
-                      disabled={loading || selectedOrder.continue === 0}
-                  >
-                    {loading ? 'Procesando...' : 'Confirmar Cambio'}
-                  </Button>
-                </DialogFooter>
-            )}
-          </DialogContent>
-        </Dialog>
-
-        <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2 text-red-600">
-                <Trash2 className="h-5 w-5" />
-                Eliminar Pedido
-              </DialogTitle>
-              <DialogDescription>
-                Esta acción no se puede deshacer.
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="py-2 space-y-2">
-              <p className="text-sm text-gray-700">
-                ¿Estás seguro que deseas eliminar el pedido{" "}
-                <span className="font-semibold">{orderToDelete?.nroPedido}</span>?
-              </p>
-            </div>
-
-            <DialogFooter>
-              <Button
-                  variant="outline"
-                  onClick={() => setIsDeleteModalOpen(false)}
-                  disabled={loading}
-              >
-                Cancelar
-              </Button>
-              <Button
-                  variant="destructive"
-                  onClick={handleDeleteOrder}
-                  disabled={loading}
-              >
-                {loading ? "Eliminando..." : "Sí, eliminar"}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        <DocumentsDialog
+            open={isDocumentsModalOpen}
+            onOpenChange={setIsDocumentsModalOpen}
+            order={selectedOrder}
+            getStateInfo={getStateInfo}
+        />
       </div>
   )
 }

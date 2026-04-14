@@ -174,6 +174,7 @@ export default function OrderPage() {
                   onRemoveItem={order.handleRemoveItem}
                   onPrev={order.prevStep}
                   handleSaveDraft={handleSaveDraft}
+                  onConfirmOrder={order.handleSaveOrder}
               />
           )}
         </form>
