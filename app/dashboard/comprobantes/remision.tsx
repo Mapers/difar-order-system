@@ -343,7 +343,7 @@ export const Remision = ({ pedido, detalles, onOpenChange, fetchGuiasRemision }:
   const [vehiculos, setVehiculos] = useState<Vehiculo[]>([{ placa: "T4Q205" }]);
 
   const [datosTransportista, setDatosTransportista] = useState({
-    tipoDocumento: "6",
+    tipoDocumento: "",
     numeroDocumento: "",
     denominacion: "",
     registroMtc: "",
@@ -865,7 +865,7 @@ export const Remision = ({ pedido, detalles, onOpenChange, fetchGuiasRemision }:
               </CardContent>
             </Card>
 
-            <Card className="shadow-sm">
+            {datosGuia.tipoTransporte === '01' && <Card className="shadow-sm">
               <CardHeader className="bg-blue-50 border-b">
                 <CardTitle className="text-lg font-semibold flex items-center gap-2">
                   <Truck className="h-5 w-5 text-blue-600" />
@@ -925,7 +925,7 @@ export const Remision = ({ pedido, detalles, onOpenChange, fetchGuiasRemision }:
                   />
                 </div>
               </CardContent>
-            </Card>
+            </Card>}
 
             {datosGuia.tipoTransporte === '02' && <Card className="shadow-sm">
               <CardHeader className="bg-blue-50 border-b">
