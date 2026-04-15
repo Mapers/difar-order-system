@@ -47,8 +47,6 @@ export function InvoiceModal({
     const [fleteMonto,  setFleteMonto]  = useState<string>("")
     const [fleteError,  setFleteError]  = useState<string>("")
     const valorFlete    = fleteActivo ? Number(fleteMonto) || 0 : 0
-    const igvFlete      = Number((valorFlete * 0.18).toFixed(2))
-    const fleteConIgv   = Number((valorFlete + igvFlete).toFixed(2))
 
     const [selectedAlmacen, setSelectedAlmacen] = useState<string>("")
 
@@ -225,71 +223,54 @@ export function InvoiceModal({
                                 </div>
                             </div>
 
-                            {/*<div className="border rounded-md p-3 space-y-3">*/}
-                            {/*    <div className="flex items-center gap-2">*/}
-                            {/*        <Checkbox*/}
-                            {/*            id="chk-flete"*/}
-                            {/*            checked={fleteActivo}*/}
-                            {/*            onCheckedChange={(v) => {*/}
-                            {/*                setFleteActivo(!!v)*/}
-                            {/*                if (!v) { setFleteMonto(""); setFleteError("") }*/}
-                            {/*            }}*/}
-                            {/*            disabled={isProcessing}*/}
-                            {/*        />*/}
-                            {/*        <Label htmlFor="chk-flete" className="text-sm font-medium flex items-center gap-2 cursor-pointer">*/}
-                            {/*            <Package className="h-4 w-4 text-gray-600" />*/}
-                            {/*            Incluir Cargo por Flete*/}
-                            {/*        </Label>*/}
-                            {/*    </div>*/}
+                            <div className="border rounded-md p-3 space-y-3">
+                                <div className="flex items-center gap-2">
+                                    <Checkbox
+                                        id="chk-flete"
+                                        checked={fleteActivo}
+                                        onCheckedChange={(v) => {
+                                            setFleteActivo(!!v)
+                                            if (!v) { setFleteMonto(""); setFleteError("") }
+                                        }}
+                                        disabled={isProcessing}
+                                    />
+                                    <Label htmlFor="chk-flete" className="text-sm font-medium flex items-center gap-2 cursor-pointer">
+                                        <Package className="h-4 w-4 text-gray-600" />
+                                        Incluir Cargo por Flete
+                                    </Label>
+                                </div>
 
-                            {/*    {fleteActivo && (*/}
-                            {/*        <div className="space-y-2 pl-6">*/}
-                            {/*            <div className="flex items-center gap-3">*/}
-                            {/*                <div className="flex-1 space-y-1">*/}
-                            {/*                    <Label className="text-xs text-gray-500">*/}
-                            {/*                        Monto Flete <span className="text-gray-400">(sin IGV)</span>*/}
-                            {/*                    </Label>*/}
-                            {/*                    <div className="relative">*/}
-                            {/*                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-500">S/</span>*/}
-                            {/*                        <Input*/}
-                            {/*                            type="number"*/}
-                            {/*                            min="0.01"*/}
-                            {/*                            step="0.01"*/}
-                            {/*                            value={fleteMonto}*/}
-                            {/*                            onChange={(e) => {*/}
-                            {/*                                setFleteMonto(e.target.value)*/}
-                            {/*                                setFleteError("")*/}
-                            {/*                            }}*/}
-                            {/*                            className={`pl-9 ${fleteError ? 'border-red-400' : ''}`}*/}
-                            {/*                            placeholder="0.00"*/}
-                            {/*                            disabled={isProcessing}*/}
-                            {/*                        />*/}
-                            {/*                    </div>*/}
-                            {/*                    {fleteError && (*/}
-                            {/*                        <p className="text-xs text-red-500">{fleteError}</p>*/}
-                            {/*                    )}*/}
-                            {/*                </div>*/}
-                            {/*            </div>*/}
-
-                            {/*            {valorFlete > 0 && (*/}
-                            {/*                <div className="bg-gray-50 border border-gray-200 rounded p-2 text-xs space-y-1">*/}
-                            {/*                    <div className="flex justify-between text-gray-600">*/}
-                            {/*                        <span>Valor flete (sin IGV):</span>*/}
-                            {/*                        <span>S/ {valorFlete.toFixed(2)}</span>*/}
-                            {/*                    </div>*/}
-                            {/*                    <div className="flex justify-between text-gray-600">*/}
-                            {/*                        <span>IGV flete (18%):</span>*/}
-                            {/*                        <span>S/ {igvFlete.toFixed(2)}</span>*/}
-                            {/*                    </div>*/}
-                            {/*                    <div className="flex justify-between font-semibold text-gray-800 border-t pt-1">*/}
-                            {/*                        <span>Total flete (inc. IGV):</span>*/}
-                            {/*                        <span>S/ {fleteConIgv.toFixed(2)}</span>*/}
-                            {/*                    </div>*/}
-                            {/*                </div>*/}
-                            {/*            )}*/}
-                            {/*        </div>*/}
-                            {/*    )}*/}
-                            {/*</div>*/}
+                                {fleteActivo && (
+                                    <div className="space-y-2 pl-6">
+                                        <div className="flex items-center gap-3">
+                                            <div className="flex-1 space-y-1">
+                                                <Label className="text-xs text-gray-500">
+                                                    Monto Flete <span className="text-gray-400">(sin IGV)</span>
+                                                </Label>
+                                                <div className="relative">
+                                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-500">S/</span>
+                                                    <Input
+                                                        type="number"
+                                                        min="0.01"
+                                                        step="0.01"
+                                                        value={fleteMonto}
+                                                        onChange={(e) => {
+                                                            setFleteMonto(e.target.value)
+                                                            setFleteError("")
+                                                        }}
+                                                        className={`pl-9 ${fleteError ? 'border-red-400' : ''}`}
+                                                        placeholder="0.00"
+                                                        disabled={isProcessing}
+                                                    />
+                                                </div>
+                                                {fleteError && (
+                                                    <p className="text-xs text-red-500">{fleteError}</p>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
 
                             {isCredit && (
                                 <div className="border rounded-md p-3">
