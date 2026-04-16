@@ -74,7 +74,10 @@ export default function EstadosPedidosDetailPage({ params }: { params: { id: str
   const handleSaveChanges = async () => {
     try {
       const payload = {
-        insertedId: pedido?.idPedidocab, usuario: 0,
+        insertedId: pedido?.idPedidocab,
+        usuario: 0,
+        nroPedido: pedido?.nroPedido,
+        state: pedido?.estadodePedido,
         detalles: tempDetalles.map(item => ({
           iditemPedido: item.iditemPedido, codigoitemPedido: item.codigoitemPedido,
           cantPedido: Number(item.cantPedido), precioPedido: item.precioPedido,

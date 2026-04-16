@@ -79,7 +79,7 @@ export default function ConfirmOrderDialog({
                                     {gravados.map((item, i) => (
                                         <li key={i} className="px-3 py-2 flex items-center justify-between gap-2">
                                             <div className="flex-1 min-w-0 space-y-0.5">
-                                                <p className="text-sm font-medium text-gray-800 break-words leading-snug">
+                                                <p className="text-sm font-medium text-gray-800 break-words leading-snug truncate">
                                                     {item.product.NombreItem}
                                                 </p>
                                                 <p className="text-xs text-gray-400">{item.product.Codigo_Art}</p>
