@@ -35,7 +35,7 @@ export async function generateOrderPdf(order: Pedido, items: PedidoDet[]): Promi
     console.warn('No se pudo cargar el logo:', error);
   }
 
-  const title = "RECIBO DE VENTA"
+  const title = "NOTA DE PEDIDO"
   const numberStr = "Nro. " + String(order?.nroPedido || 0).padStart(10, '0')
   const titleSize = 16
   const numSize = 14
