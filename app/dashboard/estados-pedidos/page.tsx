@@ -36,6 +36,7 @@ export interface Pedido {
   nombreComercial: string
   nombreVendedor: string
   condicionPedido: string
+  CodigoCondicion: string
   monedaPedido: string
   estadodePedido: number
   totalPedido: string

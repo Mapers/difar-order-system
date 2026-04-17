@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Skeleton } from "@/components/ui/skeleton"
 import {
     ArrowLeft, Printer, FileDown, Edit, X, Save, Plus, Trash,
-    Pen, ArrowBigDownDash, Gift, Search, Minus, CheckCircle, XCircle
+    Pen, ArrowBigDownDash, Gift, Search, Minus, CheckCircle, XCircle, Check, ChevronDown, User, MapPin
 } from "lucide-react"
 import Link from "next/link"
 import {
@@ -19,6 +19,11 @@ import {
 import { Badge as IgvBadgeBase } from "@/components/ui/badge"
 import { ORDER_STATES } from "@/app/dashboard/mis-pedidos/page"
 import {Pedido, PedidoDet} from "@/app/dashboard/estados-pedidos/page"
+import {Popover, PopoverContent, PopoverTrigger} from "@/components/ui/popover";
+import {Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList} from "@/components/ui/command";
+import {cn} from "@/lib/utils";
+import SearchPickerDialog from "@/components/tomar-pedido/SearchPickerDialog";
+import React from "react";
 
 export type OrderDetailContext = 'mis-pedidos' | 'estados-pedidos' | 'comprobantes'
 
@@ -44,6 +49,18 @@ export interface OrderDetailViewProps {
     onAuthorize?:    () => void
     onReject?:       () => void
     authLoading?:    boolean
+    conditions?: any[]
+    selectedCondition?: any | null
+    onConditionChange?: (c: any) => void
+    isConditionOpen?: boolean
+    setIsConditionOpen?: (val: boolean) => void
+    clientsFiltered?: any[]
+    selectedClient?: any | null
+    onClientSelect?: (c: any | null) => void
+    openClientSearch?: boolean
+    setOpenClientSearch?: (val: boolean) => void
+    clientSearchQuery?: string
+    setClientSearchQuery?: (val: string) => void
 }
 
 const IgvBadge = ({ tipo }: { tipo?: string }) => {
@@ -166,6 +183,8 @@ export default function OrderDetailView({
                                             canEdit, isEditing, tempDetalles, onEditToggle, onSaveChanges, onRemoveItem, onQuantityChange,
                                             canAddProduct, openAddModal, onOpenAddModal, addProductSlot,
                                             canAuthorize, onAuthorize, onReject, authLoading,
+                                            clientsFiltered = [], selectedClient, onClientSelect, openClientSearch, setOpenClientSearch, clientSearchQuery, setClientSearchQuery,
+                                            conditions = [], selectedCondition, onConditionChange, isConditionOpen, setIsConditionOpen,
                                         }: OrderDetailViewProps) {
 
     const activeDetalles = isEditing ? (tempDetalles ?? detalles) : detalles
@@ -279,9 +298,53 @@ export default function OrderDetailView({
                                 <p className="text-sm font-medium text-gray-500">Fecha:</p>
                                 <p>{new Date(pedido.fechaPedido).toLocaleDateString()}</p>
                             </div>
-                            <div>
-                                <p className="text-sm font-medium text-gray-500">Condición:</p>
-                                <p>{pedido.condicionPedido}</p>
+                            <div className="col-span-2 sm:col-span-1">
+                                <p className="text-sm font-medium text-gray-500 mb-1">Condición:</p>
+                                {isEditing && onConditionChange ? (
+                                    <Popover
+                                        open={isConditionOpen}
+                                        onOpenChange={setIsConditionOpen}
+                                    >
+                                        <PopoverTrigger asChild>
+                                            <Button variant="outline" role="combobox" className="w-full justify-between h-9 px-3">
+                                                {selectedCondition
+                                                    ? selectedCondition.Descripcion
+                                                    : 'Seleccionar...'}
+                                                <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-full p-0">
+                                            <Command>
+                                                <CommandInput placeholder="Buscar condición..." />
+                                                <CommandList>
+                                                    <CommandEmpty>No se encontraron resultados.</CommandEmpty>
+                                                    <CommandGroup>
+                                                        {conditions.map((condition: any) => (
+                                                            <CommandItem
+                                                                key={condition.CodigoCondicion}
+                                                                value={condition.Descripcion}
+                                                                onSelect={() => {
+                                                                    onConditionChange(condition);
+                                                                    setIsConditionOpen?.(false);
+                                                                }}
+                                                            >
+                                                                <Check
+                                                                    className={cn(
+                                                                        'mr-2 h-4 w-4',
+                                                                        selectedCondition?.CodigoCondicion === condition.CodigoCondicion ? 'opacity-100' : 'opacity-0'
+                                                                    )}
+                                                                />
+                                                                {condition.Descripcion}
+                                                            </CommandItem>
+                                                        ))}
+                                                    </CommandGroup>
+                                                </CommandList>
+                                            </Command>
+                                        </PopoverContent>
+                                    </Popover>
+                                ) : (
+                                    <p>{pedido.condicionPedido}</p>
+                                )}
                             </div>
                             <div>
                                 <p className="text-sm font-medium text-gray-500">Moneda:</p>
@@ -313,13 +376,86 @@ export default function OrderDetailView({
                     </CardHeader>
                     <CardContent className="p-6">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="md:col-span-2">
-                                <p className="text-sm font-medium text-gray-500">Razón Social:</p>
-                                <p className="font-medium text-lg">{pedido.nombreComercial || 'No especificada'}</p>
-                            </div>
-                            <div>
-                                <p className="text-sm font-medium text-gray-500">Cliente / Contacto:</p>
-                                <p>{pedido.nombreCliente}</p>
+                            <div className="md:col-span-2 flex justify-between items-start">
+                                <div>
+                                    <p className="text-sm font-medium text-gray-500 mb-1">Razón Social:</p>
+                                    <p className="font-medium text-lg text-gray-900">
+                                        {isEditing && selectedClient ? selectedClient.NombreComercial : (pedido.nombreComercial || 'No especificada')}
+                                    </p>
+                                    <p className="text-sm font-medium text-gray-500 mb-1">Cliente:</p>
+                                    <p className="font-medium text-lg text-gray-900">
+                                        {isEditing && selectedClient ? selectedClient.Nombre : (pedido.nombreCliente || 'No especificada')}
+                                    </p>
+                                    <p className="text-xs text-gray-500">
+                                        RUC: {isEditing && selectedClient ? selectedClient.RUC : pedido.codigoCliente || 'No especificada'}
+                                    </p>
+                                </div>
+                                {isEditing && setOpenClientSearch && (
+                                    <>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => setOpenClientSearch(true)}
+                                            className="shrink-0"
+                                        >
+                                            <Search className="h-4 w-4 mr-2" />
+                                            Cambiar Cliente
+                                        </Button>
+
+                                        <SearchPickerDialog<any>
+                                            open={openClientSearch!}
+                                            onOpenChange={setOpenClientSearch}
+                                            title="Buscar cliente"
+                                            placeholder="RUC, DNI o nombre..."
+                                            searchValue={clientSearchQuery || ""}
+                                            onSearchChange={(val) => setClientSearchQuery?.(val)}
+                                            onClearSearch={() => setClientSearchQuery?.("")}
+                                            items={clientsFiltered}
+                                            emptyMessage="No se encontraron clientes"
+                                            idleMessage="Escribe para buscar clientes"
+                                            searchTransform={(value) => value.toUpperCase()}
+                                            getKey={(c) => c.codigo || c.RUC}
+                                            onSelect={(c) => onClientSelect?.(c)}
+                                            renderItem={(c) => (
+                                                <div className="flex items-start gap-3 px-4 py-3">
+                                                    <div className="bg-blue-100 dark:bg-blue-900/40 p-2 rounded-full shrink-0 mt-0.5">
+                                                        <User className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                                                    </div>
+
+                                                    <div className="flex flex-col flex-1 min-w-0 gap-0.5">
+                    <span className="font-semibold text-sm text-gray-900 dark:text-gray-100 line-clamp-1 leading-tight">
+                      {c.Nombre}
+                    </span>
+
+                                                        {c.NombreComercial && (
+                                                            <span className="text-xs text-gray-500 dark:text-gray-400 line-clamp-1">
+                        {c.NombreComercial}
+                      </span>
+                                                        )}
+
+                                                        <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-0.5">
+                                                            {c.RUC && (
+                                                                <span className="text-xs text-gray-500 dark:text-gray-400">
+                          <span className="font-medium text-gray-600 dark:text-gray-300">
+                            RUC:
+                          </span>{' '}
+                                                                    {c.RUC}
+                        </span>
+                                                            )}
+
+                                                            {c.Dirección && (
+                                                                <span className="text-xs text-gray-400 dark:text-gray-500 line-clamp-1 flex items-center gap-1">
+                          <MapPin className="h-3 w-3 shrink-0" />
+                                                                    {c.Dirección}
+                        </span>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        />
+                                    </>
+                                )}
                             </div>
                             <div>
                                 <p className="text-sm font-medium text-gray-500">Correo Electrónico:</p>

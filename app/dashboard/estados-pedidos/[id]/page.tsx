@@ -17,56 +17,95 @@ import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Minus, Plus } from "lucide-react"
 import OrderDetailView from "@/components/OrderDetailView";
+import {fetchGetAllClients, fetchGetConditions} from "@/app/api/takeOrders";
 
 export default function EstadosPedidosDetailPage({ params }: { params: { id: string } }) {
   const { id } = use(params)
   const auth = useAuth()
 
-  const [pedido,       setPedido]       = useState<Pedido | null>(null)
-  const [detalles,     setDetalles]     = useState<PedidoDet[]>([])
-  const [loading,      setLoading]      = useState(true)
-  const [error,        setError]        = useState<string | null>(null)
-  const [isEditing,    setIsEditing]    = useState(false)
+  const [pedido, setPedido] = useState<Pedido | null>(null)
+  const [detalles, setDetalles] = useState<PedidoDet[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [isEditing, setIsEditing] = useState(false)
   const [tempDetalles, setTempDetalles] = useState<PedidoDet[]>([])
 
-  const [openAddModal,    setOpenAddModal]    = useState(false)
-  const [openProdSearch,  setOpenProdSearch]  = useState(false)
-  const [products,        setProducts]        = useState<any[]>([])
-  const [searchQuery,     setSearchQuery]     = useState("")
+  // --- ESTADOS PARA PRODUCTOS ---
+  const [openAddModal, setOpenAddModal] = useState(false)
+  const [openProdSearch, setOpenProdSearch] = useState(false)
+  const [products, setProducts] = useState<any[]>([])
+  const [searchQuery, setSearchQuery] = useState("")
   const [selectedProduct, setSelectedProduct] = useState<any | null>(null)
-  const [quantity,        setQuantity]        = useState<number | "">(1)
-  const [priceType,       setPriceType]       = useState<PriceType>('contado')
-  const [priceEdit,       setPriceEdit]       = useState<number>(0)
-  const [isLoading,       setIsLoading]       = useState(false)
-  const [modalLoader,     setModalLoader]     = useState<any>(null)
-  const [showLotesModal,  setShowLotesModal]  = useState(false)
-  const [loadingLotes,    setLoadingLotes]    = useState(false)
-  const [editingLotes,    setEditingLotes]    = useState<ProductoConLotes[]>([])
-  const [pendingDetalle,  setPendingDetalle]  = useState<PedidoDet | null>(null)
+  const [quantity, setQuantity] = useState<number | "">(1)
+  const [priceType, setPriceType] = useState<PriceType>('contado')
+  const [priceEdit, setPriceEdit] = useState<number>(0)
+
+  // --- ESTADOS PARA CLIENTE Y CONDICIÓN ---
+  const [clientsFiltered, setClientsFiltered] = useState<any[]>([])
+  const [selectedClient, setSelectedClient] = useState<any | null>(null)
+  const [openClientSearch, setOpenClientSearch] = useState(false)
+  const [clientSearchQuery, setClientSearchQuery] = useState("")
+
+  const [conditions, setConditions] = useState<any[]>([])
+  const [selectedCondition, setSelectedCondition] = useState<any | null>(null)
+  const [isConditionOpen, setIsConditionOpen] = useState(false)
+
+  const [isLoading, setIsLoading] = useState(false)
+  const [modalLoader, setModalLoader] = useState<any>(null)
+  const [showLotesModal, setShowLotesModal] = useState(false)
+  const [loadingLotes, setLoadingLotes] = useState(false)
+  const [editingLotes, setEditingLotes] = useState<ProductoConLotes[]>([])
+  const [pendingDetalle, setPendingDetalle] = useState<PedidoDet | null>(null)
+
+  const fetch = async () => {
+    try {
+      setLoading(true)
+      const cab = await apiClient.get(`/pedidos/${id}`)
+      let url = `/pedidosDetalles/${id}/detalles`
+      if (auth.user?.idRol === 1) url += `?vendedor=${auth.user?.codigo}`
+      const det = await apiClient.get(url)
+      setPedido(cab.data.data)
+      const mapped = det.data.data.map(i => ({ ...i, cantPedido: Number(i.cantPedido) }))
+      setDetalles(mapped)
+      setTempDetalles(mapped)
+    } catch { setError("Error al cargar el pedido") }
+    finally { setLoading(false) }
+  }
 
   useEffect(() => {
-    const fetch = async () => {
-      try {
-        setLoading(true)
-        const cab = await apiClient.get(`/pedidos/${id}`)
-        let url = `/pedidosDetalles/${id}/detalles`
-        if (auth.user?.idRol === 1) url += `?vendedor=${auth.user?.codigo}`
-        const det = await apiClient.get(url)
-        setPedido(cab.data.data)
-        const mapped = det.data.data.map(i => ({ ...i, cantPedido: Number(i.cantPedido) }))
-        setDetalles(mapped)
-        setTempDetalles(mapped)
-      } catch { setError("Error al cargar el pedido") }
-      finally { setLoading(false) }
-    }
     fetch()
   }, [id, auth.user])
 
   const handleEditToggle = async () => {
-    if (isEditing) { setTempDetalles(detalles) }
-    else {
-      const res = await getProductsRequest()
-      setProducts(res.data?.data?.data || [])
+    if (isEditing) {
+      setTempDetalles(detalles)
+      setSelectedClient(null)
+      setSelectedCondition(null)
+    } else {
+      setIsLoading(true)
+      try {
+        const sellerCode = auth.isAdmin() ? "" : (auth.user?.codigo || "")
+
+        const [resProd, resCli, resCond] = await Promise.all([
+          getProductsRequest(),
+          fetchGetAllClients(sellerCode, auth.isAdmin()),
+          fetchGetConditions('')
+        ])
+        setProducts(resProd.data?.data?.data || [])
+        setClientsFiltered(resCli.data?.data?.data || [])
+        setConditions(resCond.data?.data?.data || [])
+
+        if (pedido) {
+          const currentClient = resCli.data?.data?.data?.find((c: any) => c.codigo === pedido.codigoCliente || c.RUC === pedido.codigoCliente)
+          const currentCond = resCond.data?.data?.data?.find((c: any) => c.CodigoCondicion === pedido.condicionPedido)
+          setSelectedClient(currentClient || { Nombre: pedido.nombreCliente, RUC: pedido.codigoCliente })
+          setSelectedCondition(currentCond || { CodigoCondicion: pedido.CodigoCondicion, Descripcion: pedido.condicionPedido })
+        }
+      } catch (err) {
+        console.error("Error cargando catálogos de edición", err)
+      } finally {
+        setIsLoading(false)
+      }
     }
     setIsEditing(prev => !prev)
   }
@@ -74,6 +113,12 @@ export default function EstadosPedidosDetailPage({ params }: { params: { id: str
   const handleSaveChanges = async () => {
     try {
       const payload = {
+        nroPedido: pedido?.nroPedido,
+        clientePedido: selectedClient?.codigo || selectedClient?.RUC || pedido?.codigoCliente,
+        condicionPedido: selectedCondition?.CodigoCondicion || pedido?.condicionPedido,
+      }
+
+      const payloadDet = {
         insertedId: pedido?.idPedidocab,
         usuario: 0,
         nroPedido: pedido?.nroPedido,
@@ -86,11 +131,17 @@ export default function EstadosPedidosDetailPage({ params }: { params: { id: str
           isEdit: item.is_editado || 'N', isAuthorize: item.is_autorizado || 'N',
         }))
       }
-      const res = await apiClient.post('/pedidosDetalles/detalles', payload)
-      if (res.status === 201) {
-        const det = await apiClient.get(`/pedidosDetalles/${id}/detalles`)
-        setDetalles(det.data.data)
-        setIsEditing(false)
+
+      const res = await apiClient.put(`/pedidos/${id}`, payload)
+
+      if (res.status === 200) {
+        const res = await apiClient.post('/pedidosDetalles/detalles', payloadDet)
+        if (res.status === 201) {
+          const det = await apiClient.get(`/pedidosDetalles/${id}/detalles`)
+          setDetalles(det.data.data)
+          setIsEditing(false)
+          fetch();
+        }
       }
     } catch { setError("Error al guardar los cambios") }
   }
@@ -169,7 +220,7 @@ export default function EstadosPedidosDetailPage({ params }: { params: { id: str
   const fakeCurrency = { value: pedido?.monedaPedido || 'PEN' } as any
   const canEdit = [1, 2, 4].includes(pedido?.estadodePedido ?? 0)
 
-  // Slot de agregar producto que se pasa al componente
+
   const addProductSlot = (
       <div className="space-y-6 pt-2">
         <div className="space-y-2">
@@ -227,6 +278,10 @@ export default function EstadosPedidosDetailPage({ params }: { params: { id: str
       </div>
   )
 
+  const filteredClients = clientSearchQuery
+      ? clientsFiltered.filter(c => c.Nombre.toLowerCase().includes(clientSearchQuery.toLowerCase()) || c.RUC?.includes(clientSearchQuery))
+      : clientsFiltered;
+
   return (
       <>
         <OrderDetailView
@@ -239,6 +294,20 @@ export default function EstadosPedidosDetailPage({ params }: { params: { id: str
             onQuantityChange={(i, q) => { if (q > 0) { const n = [...tempDetalles]; n[i].cantPedido = String(q); setTempDetalles(n) }}}
             canAddProduct={true} openAddModal={openAddModal}
             onOpenAddModal={setOpenAddModal} addProductSlot={addProductSlot}
+
+            clientsFiltered={filteredClients}
+            selectedClient={selectedClient}
+            onClientSelect={setSelectedClient}
+            openClientSearch={openClientSearch}
+            setOpenClientSearch={setOpenClientSearch}
+            clientSearchQuery={clientSearchQuery}
+            setClientSearchQuery={setClientSearchQuery}
+
+            conditions={conditions}
+            selectedCondition={selectedCondition}
+            onConditionChange={setSelectedCondition}
+            isConditionOpen={isConditionOpen}
+            setIsConditionOpen={setIsConditionOpen}
         />
         <ModalLoader open={isLoading} onOpenChange={setIsLoading} caseKey={modalLoader ?? undefined} />
         <LotesModal open={showLotesModal} onOpenChange={setShowLotesModal}
