@@ -39,6 +39,7 @@ export interface GuiaRemision {
     enlace_xml: string
     pdf_zip_base64: string
     sunat_description?: string
+    sunat_soap_error?: string
     sunat_responsecode: string
     raw_request: string
     raw_response: string

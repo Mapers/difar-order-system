@@ -26,10 +26,10 @@ export function ErrorModal({ open, onOpenChange, guia }: ErrorModalProps) {
                     <div className="space-y-4">
                         <div className="bg-red-50 border border-red-200 rounded-md p-4">
                             <div className="space-y-3">
-                                {guia.sunat_description && (
+                                {(guia.sunat_description || guia.sunat_soap_error) && (
                                     <div>
                                         <h4 className="text-sm font-semibold text-red-900 mb-1">Descripción:</h4>
-                                        <p className="text-sm text-red-800">{guia.sunat_description}</p>
+                                        <p className="text-sm text-red-800">{guia.sunat_description || guia.sunat_soap_error}</p>
                                     </div>
                                 )}
                             </div>
