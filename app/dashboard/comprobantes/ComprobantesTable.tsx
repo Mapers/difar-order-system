@@ -131,7 +131,7 @@ export function ComprobantesTable({
                             {comprobantes.length > 0 ? (
                                 comprobantes.map((comprobante) => (
                                     <tr key={comprobante.nroPedido} className="hover:bg-gray-50">
-                                        <td className="p-4 text-sm">{format(parseISO(comprobante.fecha_envio), "dd/MM/yyyy")}</td>
+                                        <td className="p-4 text-sm">{format(parseISO(comprobante.fecha_envio), "dd/MM/yyyy HH:mm a")}</td>
                                         <td className="p-4 text-sm">{getTipoComprobante(comprobante.tipo_comprobante)}</td>
                                         <td className="p-4 font-medium text-sm">{comprobante.serie}-{comprobante.numero}</td>
                                         <td className="p-4"><div className="font-medium text-sm">{comprobante.cliente_denominacion}</div></td>
