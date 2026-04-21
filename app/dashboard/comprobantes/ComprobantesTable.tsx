@@ -16,7 +16,7 @@ import {
 } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
-import { format, parseISO } from "date-fns"
+import {addHours, format, parseISO, subHours} from "date-fns"
 import { Comprobante } from "@/app/types/order/order-interface";
 import { Sequential } from "@/app/dashboard/configuraciones/page";
 import {RelatedGuidesModal} from "@/app/dashboard/comprobantes/modals/RelatedGuidesModal";
@@ -131,7 +131,7 @@ export function ComprobantesTable({
                             {comprobantes.length > 0 ? (
                                 comprobantes.map((comprobante) => (
                                     <tr key={comprobante.nroPedido} className="hover:bg-gray-50">
-                                        <td className="p-4 text-sm">{format(parseISO(comprobante.fecha_envio), "dd/MM/yyyy HH:mm a")}</td>
+                                        <td className="p-4 text-sm">{format(addHours(parseISO(comprobante.fecha_envio), 5), "dd/MM/yyyy HH:mm a")}</td>
                                         <td className="p-4 text-sm">{getTipoComprobante(comprobante.tipo_comprobante)}</td>
                                         <td className="p-4 font-medium text-sm">{comprobante.serie}-{comprobante.numero}</td>
                                         <td className="p-4"><div className="font-medium text-sm">{comprobante.cliente_denominacion}</div></td>
