@@ -52,6 +52,14 @@ export function ComprobantesTable({
         return tipoObj ? tipoObj.nombre : "Desconocido"
     }
 
+    const handleVerPdf = (comprobante: Comprobante) => {
+        if (comprobante.enlace) {
+            onViewPdf(comprobante.enlace)
+        } else if (comprobante.enlace_pdf) {
+            onViewPdf(`data:application/pdf;base64,${comprobante.enlace_pdf}`)
+        }
+    }
+
     const handleViewReason = (reason: string) => {
         setSelectedReason(reason || "Sin motivo especificado.")
         setShowReasonModal(true)
@@ -140,7 +148,7 @@ export function ComprobantesTable({
                                         <td className="p-4">{getEstadoBadge(comprobante)}</td>
                                         <td className="p-4">
                                             <div className="flex gap-2">
-                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50" onClick={() => onViewPdf(comprobante.enlace)} title="Ver PDF">
+                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50" onClick={() => handleVerPdf(comprobante)} title="Ver PDF">
                                                     <Eye className="h-4 w-4" />
                                                 </Button>
                                                 {comprobante.tieneGuia === 1 && <Button
@@ -229,7 +237,7 @@ export function ComprobantesTable({
                                         <p className="text-sm text-gray-600 break-words mt-0.5">{comprobante.cliente_numdoc}</p>
                                     </div>
                                     <div className="border-t pt-3 flex gap-2">
-                                        <Button variant="outline" size="sm" className="text-xs bg-transparent" onClick={() => onViewPdf(comprobante.enlace)}>
+                                        <Button variant="outline" size="sm" className="text-xs bg-transparent" onClick={() => handleVerPdf(comprobante)}>
                                             <Eye className="h-3 w-3 mr-1" /> Ver PDF
                                         </Button>
 
