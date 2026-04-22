@@ -18,8 +18,8 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
 import {addHours, format, parseISO, subHours} from "date-fns"
 import { Comprobante } from "@/app/types/order/order-interface";
-import { Sequential } from "@/app/dashboard/configuraciones/page";
 import {RelatedGuidesModal} from "@/app/dashboard/comprobantes/modals/RelatedGuidesModal";
+import {Sequential} from "@/app/types/config-types";
 
 interface ComprobantesTableProps {
     comprobantes: Comprobante[]
@@ -47,8 +47,8 @@ export function ComprobantesTable({
     const [showGuidesModal, setShowGuidesModal] = useState(false)
     const [selectedComprobanteForGuides, setSelectedComprobanteForGuides] = useState<Comprobante | null>(null)
 
-    const getTipoComprobante = (tipo: number) => {
-        const tipoObj = tiposComprobante.find(t => Number(t.tipo) == tipo)
+    const getTipoComprobante = (serie: string) => {
+        const tipoObj = tiposComprobante.find(t => t.prefijo == serie)
         return tipoObj ? tipoObj.nombre : "Desconocido"
     }
 
@@ -147,7 +147,7 @@ export function ComprobantesTable({
                                 comprobantes.map((comprobante) => (
                                     <tr key={comprobante.nroPedido} className="hover:bg-gray-50">
                                         <td className="p-4 text-sm">{format(addHours(parseISO(comprobante.fecha_envio), 5), "dd/MM/yyyy HH:mm a")}</td>
-                                        <td className="p-4 text-sm">{getTipoComprobante(comprobante.tipo_comprobante)}</td>
+                                        <td className="p-4 text-sm">{getTipoComprobante(comprobante.serie)}</td>
                                         <td className="p-4 font-medium text-sm">{comprobante.serie}-{comprobante.numero}</td>
                                         <td className="p-4"><div className="font-medium text-sm">{comprobante.cliente_denominacion}</div></td>
                                         <td className="p-4 text-sm">{comprobante.cliente_numdoc}</td>
@@ -227,7 +227,7 @@ export function ComprobantesTable({
                                     <div className="flex justify-between items-start">
                                         <div>
                                             <div className="flex items-center gap-2 mb-1">
-                                                <span className="font-semibold text-gray-900">{getTipoComprobante(comprobante.tipo_comprobante)} {comprobante.serie}-{comprobante.numero}</span>
+                                                <span className="font-semibold text-gray-900">{getTipoComprobante(comprobante.serie)} {comprobante.serie}-{comprobante.numero}</span>
                                                 {getEstadoBadge(comprobante)}
                                             </div>
                                             <p className="text-sm text-gray-600">{format(parseISO(comprobante.fecha_envio), "dd/MM/yyyy")}</p>
