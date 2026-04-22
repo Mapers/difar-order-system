@@ -20,6 +20,7 @@ export interface Comprobante {
     raw_response: string
     motivo_anulado?: string
     tieneNC: boolean
+    aceptada_por_sunat?: number
 }
 
 export interface GuiaRemision {
