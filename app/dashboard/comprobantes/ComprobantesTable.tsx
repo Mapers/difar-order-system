@@ -77,6 +77,13 @@ export function ComprobantesTable({
                 <Badge variant="default">Tiene NC</Badge>
             </div>)
         }
+
+        if (comprobante.aceptada_por_sunat != null && comprobante.aceptada_por_sunat === 104) {
+            return (<div className="flex items-center gap-1">
+                <Badge variant="default">Rechazado</Badge>
+            </div>)
+        }
+
         if (comprobante.anulado) {
             return (
                 <div className="flex items-center gap-1">
