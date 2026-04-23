@@ -8,16 +8,11 @@ import {
   OctagonAlert, Layers, Trash2, Link2
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
-import { useEffect, useRef, useState, useMemo } from "react"
+import { useEffect, useRef, useState, useMemo, Fragment } from "react"
 import { Skeleton } from "@/components/ui/skeleton"
 import apiClient from "@/app/api/client"
 import { format, parseISO } from "date-fns"
 import { fetchGetStatus, fetchUpdateStatus, fetchUpdateStatusConfirm } from "@/app/api/takeOrders"
-import {
-  Dialog, DialogContent, DialogDescription, DialogFooter,
-  DialogHeader, DialogTitle, DialogTrigger,
-} from "@/components/ui/dialog"
-import { Label } from "@/components/ui/label"
 import { useAuth } from "@/context/authContext"
 import Link from "next/link"
 import { generateOrderPdf } from "@/lib/pdf"
@@ -131,21 +126,29 @@ export default function OrderStatusManagementPage() {
 
   const pedidosAgrupados = useMemo(() => {
     const mapaGrupos = new Map<string, Pedido[]>()
-    const sinGrupo: Pedido[] = []
+    const gruposVistos = new Set<string>()
+    const resultado: { codigo_grupo: string | null; pedidos: Pedido[] }[] = []
 
     for (const pedido of orders) {
       if (pedido.codigo_grupo) {
-        if (!mapaGrupos.has(pedido.codigo_grupo)) mapaGrupos.set(pedido.codigo_grupo, [])
+        if (!mapaGrupos.has(pedido.codigo_grupo)) {
+          mapaGrupos.set(pedido.codigo_grupo, [])
+        }
         mapaGrupos.get(pedido.codigo_grupo)!.push(pedido)
+
+        if (!gruposVistos.has(pedido.codigo_grupo)) {
+          gruposVistos.add(pedido.codigo_grupo)
+          resultado.push({
+            codigo_grupo: pedido.codigo_grupo,
+            pedidos: mapaGrupos.get(pedido.codigo_grupo)!
+          })
+        }
       } else {
-        sinGrupo.push(pedido)
+        resultado.push({ codigo_grupo: null, pedidos: [pedido] })
       }
     }
 
-    const grupos: { codigo_grupo: string | null; pedidos: Pedido[] }[] = []
-    mapaGrupos.forEach((pedidos, codigo_grupo) => grupos.push({ codigo_grupo, pedidos }))
-    sinGrupo.forEach(p => grupos.push({ codigo_grupo: null, pedidos: [p] }))
-    return grupos
+    return resultado
   }, [orders])
 
   const fetchOrders = async () => {
@@ -530,7 +533,7 @@ export default function OrderStatusManagementPage() {
                       const esGrupo = !!codigo_grupo && pedidos.length > 1
                       if (esGrupo) {
                         return (
-                            <>
+                            <Fragment key={`grp-${codigo_grupo}`}>
                               <tr key={codigo_grupo} className="bg-amber-50 border-b border-amber-200">
                                 <td colSpan={7} className="px-4 py-1.5">
                                   <div className="flex items-center gap-2">
@@ -545,7 +548,7 @@ export default function OrderStatusManagementPage() {
                                 </td>
                               </tr>
                               {pedidos.map(p => renderTableRow(p, true))}
-                            </>
+                            </Fragment>
                         )
                       }
                       return renderTableRow(pedidos[0], false)

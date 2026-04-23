@@ -308,9 +308,9 @@ export default function MyOrdersPage() {
   }
 
   const pedidosAgrupados = useMemo(() => {
-    const grupos: { codigo_grupo: string | null; pedidos: Pedido[] }[] = []
-    const sinGrupo: Pedido[] = []
     const mapaGrupos = new Map<string, Pedido[]>()
+    const gruposVistos = new Set<string>()
+    const resultado: { codigo_grupo: string | null; pedidos: Pedido[] }[] = []
 
     for (const pedido of orders) {
       if (pedido.codigo_grupo) {
@@ -318,18 +318,20 @@ export default function MyOrdersPage() {
           mapaGrupos.set(pedido.codigo_grupo, [])
         }
         mapaGrupos.get(pedido.codigo_grupo)!.push(pedido)
+
+        if (!gruposVistos.has(pedido.codigo_grupo)) {
+          gruposVistos.add(pedido.codigo_grupo)
+          resultado.push({
+            codigo_grupo: pedido.codigo_grupo,
+            pedidos: mapaGrupos.get(pedido.codigo_grupo)!
+          })
+        }
       } else {
-        sinGrupo.push(pedido)
+        resultado.push({ codigo_grupo: null, pedidos: [pedido] })
       }
     }
 
-    mapaGrupos.forEach((pedidos, codigo_grupo) => {
-      grupos.push({ codigo_grupo, pedidos })
-    })
-
-    sinGrupo.forEach(p => grupos.push({ codigo_grupo: null, pedidos: [p] }))
-
-    return grupos
+    return resultado
   }, [orders])
 
 
