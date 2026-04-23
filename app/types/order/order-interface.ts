@@ -1,26 +1,28 @@
 export interface Comprobante {
-    idSunat: number
-    idComprobanteCab: number
-    nroPedido: number
-    fecha_envio: string
-    serie: string
-    numero: string
-    cliente_numdoc: string
-    cliente_denominacion: string
-    moneda: number
-    total: string
-    tipo_comprobante: number
-    anulado: boolean
-    enlace: string
-    enlace_pdf: string
-    enlace_cdr: string
-    enlace_xml: string
-    tieneGuia: number
-    raw_request: string
-    raw_response: string
-    motivo_anulado?: string
-    tieneNC: boolean
-    aceptada_por_sunat?: number
+    idSunat:               number  | null
+    idComprobanteCab:      number  | null
+    nroPedido:             number  | null
+    fecha_envio:           string  | null
+    serie:                 string
+    numero:                string
+    cliente_numdoc:        string  | null
+    cliente_denominacion:  string  | null
+    moneda:                number  | null
+    total:                 string  | null
+    tipo_comprobante:      number  | null
+    anulado:               boolean
+    enlace:                string  | null
+    enlace_pdf:            string  | null
+    enlace_cdr:            string  | null
+    enlace_xml:            string  | null
+    tieneGuia:             number
+    raw_request:           string  | null
+    raw_response:          string  | null
+    motivo_anulado?:       string  | null
+    tieneNC:               boolean
+    aceptada_por_sunat?:   number  | null
+    estado_correlativo:    'OCUPADO' | 'LIBRE'
+    fecha_emision?:        string  | null
 }
 
 export interface GuiaRemision {
