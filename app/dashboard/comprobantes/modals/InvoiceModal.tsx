@@ -55,6 +55,7 @@ export function InvoiceModal({
     const [fleteMonto,           setFleteMonto]           = useState<string>("")
     const [fleteError,           setFleteError]           = useState<string>("")
     const [selectedAlmacen,      setSelectedAlmacen]      = useState<string>("")
+    const [isSubmitting, setIsSubmitting] = useState(false)
 
     const valorFlete = fleteActivo ? Number(fleteMonto) || 0 : 0
     const isCredit   = selectedOrder?.condicionCredito === '1'
@@ -80,6 +81,12 @@ export function InvoiceModal({
     }, [invoiceType, tiposComprobante])
 
     useEffect(() => {
+        if (!isProcessing) {
+            setIsSubmitting(false)
+        }
+    }, [isProcessing])
+
+    useEffect(() => {
         if (!open) {
             setSelectedGuides([])
             setCuotas([])
@@ -87,6 +94,7 @@ export function InvoiceModal({
             setFleteActivo(false)
             setFleteMonto("")
             setFleteError("")
+            setIsSubmitting(false)
             return
         }
 
@@ -127,6 +135,8 @@ export function InvoiceModal({
     }
 
     const handleFinalConfirm = (email: string, phone: string) => {
+        if (isSubmitting) return
+        setIsSubmitting(true)
         onConfirm(
             selectedGuides,
             isCredit ? cuotas : [],
