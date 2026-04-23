@@ -8,26 +8,22 @@ import { Loader2, Truck, AlertCircle } from "lucide-react"
 import { format, parseISO } from "date-fns"
 import apiClient from "@/app/api/client"
 import { toast } from "@/components/ui/use-toast"
-import {GuiaReferencia} from "@/app/types/order/order-interface";
+import { GuiaReferencia } from "@/app/types/order/order-interface"
 
 interface GuidesSelectorModalProps {
-    open: boolean
-    onOpenChange: (open: boolean) => void
-    nroPedido: string
-    selectedGuides: GuiaReferencia[]
-    onConfirmSelection: (guias: GuiaReferencia[]) => void
+    open:                boolean
+    onOpenChange:        (open: boolean) => void
+    nroPedido:           string
+    selectedGuides:      GuiaReferencia[]
+    onConfirmSelection:  (guias: GuiaReferencia[]) => void
 }
 
 export function GuidesSelectorModal({
-                                        open,
-                                        onOpenChange,
-                                        nroPedido,
-                                        selectedGuides,
-                                        onConfirmSelection
+                                        open, onOpenChange, nroPedido, selectedGuides, onConfirmSelection
                                     }: GuidesSelectorModalProps) {
-    const [loading, setLoading] = useState(false)
+    const [loading,          setLoading]          = useState(false)
     const [guiasDisponibles, setGuiasDisponibles] = useState<GuiaReferencia[]>([])
-    const [tempSelected, setTempSelected] = useState<GuiaReferencia[]>([])
+    const [tempSelected,     setTempSelected]     = useState<GuiaReferencia[]>([])
 
     useEffect(() => {
         if (open && nroPedido) {
@@ -35,6 +31,10 @@ export function GuidesSelectorModal({
             setTempSelected(selectedGuides)
         }
     }, [open, nroPedido])
+
+    useEffect(() => {
+        setTempSelected(selectedGuides)
+    }, [selectedGuides])
 
     const fetchGuiasRelacionadas = async () => {
         setLoading(true)
@@ -58,11 +58,9 @@ export function GuidesSelectorModal({
     const toggleGuide = (guia: GuiaReferencia) => {
         setTempSelected(prev => {
             const exists = prev.find(g => g.idGuiaRemCab === guia.idGuiaRemCab)
-            if (exists) {
-                return prev.filter(g => g.idGuiaRemCab !== guia.idGuiaRemCab)
-            } else {
-                return [...prev, guia]
-            }
+            return exists
+                ? prev.filter(g => g.idGuiaRemCab !== guia.idGuiaRemCab)
+                : [...prev, guia]
         })
     }
 
@@ -111,10 +109,12 @@ export function GuidesSelectorModal({
                                         <div className="grid gap-1.5 leading-none w-full">
                                             <label
                                                 htmlFor={`guia-${guia.idGuiaRemCab}`}
-                                                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer flex justify-between"
+                                                className="text-sm font-medium leading-none cursor-pointer flex justify-between"
                                             >
                                                 <span>{guia.serie}-{guia.numero}</span>
-                                                <span className="text-gray-500 font-normal">{format(parseISO(guia.fecha_emision), "dd/MM/yyyy")}</span>
+                                                <span className="text-gray-500 font-normal">
+                                                    {format(parseISO(guia.fecha_emision), "dd/MM/yyyy")}
+                                                </span>
                                             </label>
                                         </div>
                                     </div>
