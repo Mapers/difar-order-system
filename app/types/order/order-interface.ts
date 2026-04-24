@@ -23,6 +23,7 @@ export interface Comprobante {
     aceptada_por_sunat?:   number  | null
     estado_correlativo:    'OCUPADO' | 'LIBRE'
     fecha_emision?:        string  | null
+    estado?:               string | null
 }
 
 export interface GuiaRemision {

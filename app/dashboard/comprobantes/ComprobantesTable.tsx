@@ -74,6 +74,14 @@ export function ComprobantesTable({
             }
         }
 
+        if (comprobante.tipo_comprobante === null) {
+            return {
+                label: comprobante?.estado || '',
+                cellBg: 'bg-gray-50',
+                textColor: 'text-gray-700',
+            }
+        }
+
         if (comprobante.tieneNC) {
             return {
                 label: 'Tiene NC',
@@ -160,7 +168,6 @@ export function ComprobantesTable({
 
     return (
         <>
-            {/* ── Desktop ── */}
             <div className="hidden lg:block">
                 <Card className="bg-white shadow-sm">
                     <div className="overflow-x-auto">
@@ -173,7 +180,6 @@ export function ComprobantesTable({
                                 <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cliente</th>
                                 <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Documento</th>
                                 <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total</th>
-                                {/* ✅ celda estado sin padding para que el fondo ocupe todo */}
                                 <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estado</th>
                                 <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Acciones</th>
                             </tr>
@@ -184,7 +190,6 @@ export function ComprobantesTable({
                                     <tr key={`${comprobante.serie}-${comprobante.numero}`}
                                         className={`hover:brightness-95 transition-all ${esLibre(comprobante) ? 'opacity-60' : ''}`}>
                                         <td className="p-4 text-sm">
-                                            {/* ✅ fecha_envio puede ser null en libres */}
                                             {comprobante.fecha_envio
                                                 ? format(addHours(parseISO(comprobante.fecha_envio), 5), "dd/MM/yyyy HH:mm a")
                                                 : '—'}
@@ -202,12 +207,11 @@ export function ComprobantesTable({
                                                 ? `${comprobante.moneda === 1 ? 'S/ ' : '$ '}${Number(comprobante.total).toFixed(2)}`
                                                 : '—'}
                                         </td>
-                                        {/* ✅ td relativo para que el fondo absoluto funcione */}
                                         <td className="relative p-0 min-w-[100px]">
                                             <EstadoCell comprobante={comprobante} />
                                         </td>
                                         <td className="p-4">
-                                            {!esLibre(comprobante) && (
+                                            {(comprobante.tipo_comprobante !== null && !esLibre(comprobante)) && (
                                                 <div className="flex gap-2">
                                                     <Button variant="ghost" size="icon"
                                                             className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
@@ -267,7 +271,6 @@ export function ComprobantesTable({
                 </Card>
             </div>
 
-            {/* ── Mobile ── */}
             <div className="lg:hidden space-y-3">
                 {comprobantes.length > 0 ? (
                     comprobantes.map((comprobante) => (
@@ -299,7 +302,7 @@ export function ComprobantesTable({
                                         </div>
                                     </div>
 
-                                    {!esLibre(comprobante) && (
+                                    {(comprobante.tipo_comprobante !== null && !esLibre(comprobante)) && (
                                         <>
                                             <div className="border-t pt-3 w-full overflow-hidden">
                                                 <p className="font-medium text-gray-900 break-words line-clamp-2"
@@ -370,7 +373,6 @@ export function ComprobantesTable({
                 )}
             </div>
 
-            {/* ── Modales ── */}
             <Dialog open={showJsonModal} onOpenChange={setShowJsonModal}>
                 <DialogContent className="sm:max-w-[800px] h-[80vh] flex flex-col">
                     <DialogHeader>
