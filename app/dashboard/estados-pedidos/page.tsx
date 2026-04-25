@@ -21,6 +21,8 @@ import { ORDER_STATES } from "@/app/dashboard/mis-pedidos/page"
 import {ChangeStateDialog} from "@/app/dashboard/estados-pedidos/modals/ChangeStateDialog";
 import {DeleteOrderDialog} from "@/app/dashboard/estados-pedidos/modals/DeleteOrderDialog";
 import {DocumentsDialog} from "@/app/dashboard/estados-pedidos/modals/DocumentsDialog";
+import {Sequential} from "@/app/types/config-types";
+import {SunatTransaccion, TipoDocSunat} from "@/app/types/order/order-interface";
 
 export interface Pedido {
   idPedidocab: number
@@ -120,6 +122,14 @@ export default function OrderStatusManagementPage() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [orderToDelete, setOrderToDelete] = useState<Pedido | null>(null)
   const [pedidoHermano, setPedidoHermano] = useState<Pedido | null>(null)
+
+  const [loadingPreview, setLoadingPreview] = useState(false)
+  const [pdfPreviewBase64, setPdfPreviewBase64] = useState<string | null>(null)
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false)
+  const [tiposComprobante,   setTiposComprobante]   = useState<Sequential[]>([])
+  const [sunatTransacciones, setSunatTransacciones] = useState<SunatTransaccion[]>([])
+  const [tipoDocsSunat,      setTipoDocsSunat]      = useState<TipoDocSunat[]>([])
+
 
   const STATE_JUMPS: Record<number, number> = { 2: 4, 4: 7 }
   const getNextState = (currentState: number): number => STATE_JUMPS[currentState] ?? currentState + 1
@@ -291,6 +301,25 @@ export default function OrderStatusManagementPage() {
     }
   }, [selectedOrder, detalle])
 
+  useEffect(() => {
+    const fetchCatalogs = async () => {
+      try {
+        const [tiposRes, transRes, docsRes] = await Promise.all([
+          apiClient.get('/admin/listar/secuenciales'),
+          apiClient.get('/pedidos/sunatTrans'),
+          apiClient.get('/pedidos/tipoDocSunat'),
+        ])
+        setTiposComprobante(tiposRes.data.data)
+        setSunatTransacciones(transRes.data.data.data)
+        setTipoDocsSunat(docsRes.data.data.data)
+      } catch (error) {
+        console.error('Error cargando catálogos preview:', error)
+      }
+    }
+    fetchCatalogs()
+  }, [])
+
+
   const handleDeleteOrder = async () => {
     if (!orderToDelete) return
     try {
@@ -311,6 +340,30 @@ export default function OrderStatusManagementPage() {
   const openDeleteModal = (order: Pedido) => {
     setOrderToDelete(order)
     setIsDeleteModalOpen(true)
+  }
+
+  const handlePreview = async (
+      invoiceType: string,
+      sunatTransaction: string,
+      tipoSunat: string,
+      selectedAlmacen: string
+  ) => {
+    if (!selectedOrder) return
+    try {
+      setLoadingPreview(true)
+      const [prefijo, tipoCompr] = invoiceType.split('|')
+      const response = await apiClient.post(
+          `/pedidos/generatePreviewCompr?nroPedido=${selectedOrder.nroPedido}&tipoCompr=${tipoCompr}&sunatTrans=${sunatTransaction}&tipoDocSunat=${tipoSunat}&prefijo=${prefijo}`,
+          { flete_monto: 0, id_almacen: selectedAlmacen, }
+      )
+      setPdfPreviewBase64(response.data.data.pdf_bytes)
+      setIsPreviewOpen(true)
+    } catch (error) {
+      console.error('Error generando preview:', error)
+      alert('Error al generar el preview del comprobante')
+    } finally {
+      setLoadingPreview(false)
+    }
   }
 
   const renderTableRow = (order: Pedido, esGrupo = false) => {
@@ -644,6 +697,14 @@ export default function OrderStatusManagementPage() {
             onConfirm={confirmStateChange}
             onCancel={() => { setIsChangeStateModalOpen(false); setPedidoHermano(null) }}
             onDownload={handleDownload}
+            onPreview={handlePreview}
+            loadingPreview={loadingPreview}
+            pdfPreviewBase64={pdfPreviewBase64}
+            isPreviewOpen={isPreviewOpen}
+            onClosePreview={() => { setIsPreviewOpen(false); setPdfPreviewBase64(null) }}
+            tiposComprobante={tiposComprobante}
+            sunatTransacciones={sunatTransacciones}
+            tipoDocsSunat={tipoDocsSunat}
         />
 
         <DeleteOrderDialog

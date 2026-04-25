@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
-import { Receipt, Loader2, Truck, AlertTriangle, Check, FileText, CreditCard, Package } from "lucide-react"
+import {Receipt, Loader2, Truck, AlertTriangle, Check, FileText, CreditCard, Package, RefreshCw} from "lucide-react"
 import { Pedido, SunatTransaccion, TipoDocSunat, GuiaReferencia } from "@/app/types/order/order-interface"
 import { GuidesSelectorModal } from "./GuidesSelectorModal"
 import { Badge } from "@/components/ui/badge"
@@ -56,6 +56,12 @@ export function InvoiceModal({
     const [fleteError,           setFleteError]           = useState<string>("")
     const [selectedAlmacen,      setSelectedAlmacen]      = useState<string>("")
     const [isSubmitting, setIsSubmitting] = useState(false)
+    const [previewExistente, setPreviewExistente] = useState<{
+        serie: string
+        numero: string
+        tipo_cpe: string
+    } | null>(null)
+    const [loadingPreviewData, setLoadingPreviewData] = useState(false)
 
     const valorFlete = fleteActivo ? Number(fleteMonto) || 0 : 0
     const isCredit   = selectedOrder?.condicionCredito === '1'
@@ -98,7 +104,6 @@ export function InvoiceModal({
             return
         }
 
-        // ✅ Cargar guías automáticamente al abrir
         if (selectedOrder?.nroPedido) {
             const fetchGuias = async () => {
                 setLoadingGuides(true)
@@ -124,6 +129,47 @@ export function InvoiceModal({
             }])
         }
     }, [open, selectedOrder])
+
+    useEffect(() => {
+        if (!open || !selectedOrder) return
+
+        const fetchPreview = async () => {
+            setLoadingPreviewData(true)
+            try {
+                const res = await apiClient.get(
+                    `/pedidos/getPreviewCompr?nroPedido=${selectedOrder.nroPedido}`
+                )
+                const data = res.data?.data
+                if (data?.idPreview) {
+                    setPreviewExistente({
+                        serie:    data.serie    || '',
+                        numero:   data.numero   || '',
+                        tipo_cpe: data.tipo_cpe || '',
+                    })
+                    const matchTipo = tiposComprobante.find(t => t.prefijo === data.serie)
+                    if (matchTipo) {
+                        setInvoiceType(`${matchTipo.prefijo}|${matchTipo.tipo}`)
+                    }
+                    if (data.tipo_cpe === '01') setTipoSunat('6')
+                    else if (data.tipo_cpe === '03') setTipoSunat('1')
+                    if (data.idTransaction) {
+                        setSunatTransaction(data.idTransaction)
+                    }
+                    if (data.idAlmacen) {
+                        setSelectedAlmacen(data.idAlmacen)
+                    }
+                } else {
+                    setPreviewExistente(null)
+                }
+            } catch {
+                setPreviewExistente(null)
+            } finally {
+                setLoadingPreviewData(false)
+            }
+        }
+
+        fetchPreview()
+    }, [open, selectedOrder?.nroPedido])
 
     const handleInitialConfirm = () => {
         if (fleteActivo && (!fleteMonto || Number(fleteMonto) <= 0)) {
@@ -189,8 +235,17 @@ export function InvoiceModal({
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
-                                    <Label className="text-sm font-medium mb-2 block">Tipo de Comprobante</Label>
-                                    <Select value={invoiceType} onValueChange={setInvoiceType} disabled={isProcessing}>
+                                    <Label className="text-sm font-medium mb-2 block">
+                                        Tipo de Comprobante
+                                        {previewExistente && (
+                                            <span className="ml-1 text-amber-600">(bloqueado)</span>
+                                        )}
+                                    </Label>
+                                    <Select
+                                        value={invoiceType}
+                                        onValueChange={setInvoiceType}
+                                        disabled={isProcessing || !!previewExistente || loadingPreviewData}
+                                    >
                                         <SelectTrigger><SelectValue placeholder="Seleccionar tipo" /></SelectTrigger>
                                         <SelectContent>
                                             {tiposComprobante
@@ -205,7 +260,11 @@ export function InvoiceModal({
                                 </div>
                                 <div>
                                     <Label className="text-sm font-medium mb-2 block">Transacción SUNAT</Label>
-                                    <Select value={sunatTransaction} onValueChange={setSunatTransaction} disabled={isProcessing}>
+                                    <Select
+                                        value={sunatTransaction}
+                                        onValueChange={setSunatTransaction}
+                                        disabled={isProcessing || loadingPreviewData}
+                                    >
                                         <SelectTrigger><SelectValue placeholder="Seleccionar transacción" /></SelectTrigger>
                                         <SelectContent>
                                             {sunatTransacciones.map((trans) => (
@@ -221,7 +280,11 @@ export function InvoiceModal({
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
                                     <Label className="text-sm font-medium mb-2 block">Tipo Doc.</Label>
-                                    <Select value={tipoSunat} onValueChange={setTipoSunat} disabled={isProcessing}>
+                                    <Select
+                                        value={tipoSunat}
+                                        onValueChange={setTipoSunat}
+                                        disabled={isProcessing || loadingPreviewData}
+                                    >
                                         <SelectTrigger><SelectValue placeholder="Seleccionar tipo documento" /></SelectTrigger>
                                         <SelectContent>
                                             {tipoDocsSunat.map((trans) => (
@@ -237,7 +300,7 @@ export function InvoiceModal({
                                     <Select
                                         value={selectedAlmacen}
                                         onValueChange={setSelectedAlmacen}
-                                        disabled={isProcessing || almacenesDisponibles.length === 0}
+                                        disabled={isProcessing || almacenesDisponibles.length === 0 || loadingPreviewData}
                                     >
                                         <SelectTrigger><SelectValue placeholder="Seleccionar almacén" /></SelectTrigger>
                                         <SelectContent>
@@ -360,12 +423,28 @@ export function InvoiceModal({
                                 </div>
                             )}
 
-                            <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-200">
+                            {loadingPreviewData ? (
+                                <div className="flex items-center gap-2 text-xs text-gray-500 py-1">
+                                    <Loader2 className="h-3 w-3 animate-spin" /> Verificando correlativo existente...
+                                </div>
+                            ) : previewExistente && (
+                                <div className="p-3 bg-amber-50 border border-amber-300 rounded-md flex gap-2 items-start">
+                                    <RefreshCw className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+                                    <div className="text-sm text-amber-800">
+                                        <span className="font-semibold block">
+                                            Correlativo asociado: {previewExistente.serie}-{previewExistente.numero}
+                                        </span>
+                                        Al confirmar la facturación se generará con estos datos el comprobante.
+                                    </div>
+                                </div>
+                            )}
+                            {(!previewExistente && !loadingPreviewData) && <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-200">
                                 <p className="text-sm text-yellow-800">
-                                    <strong>¿Confirmas la facturación?</strong><br />
-                                    Se generará el comprobante electrónico para este pedido. Esta acción no se puede deshacer.
+                                    <strong>¿Confirmas la facturación?</strong><br/>
+                                    Se generará el comprobante electrónico para este pedido. Esta acción no se puede
+                                    deshacer.
                                 </p>
-                            </div>
+                            </div>}
                         </div>
                     )}
 
@@ -374,7 +453,7 @@ export function InvoiceModal({
                                 disabled={isProcessing} className="w-full sm:w-auto">
                             Cancelar
                         </Button>
-                        <Button onClick={handleInitialConfirm} disabled={!canConfirm}
+                        <Button onClick={handleInitialConfirm} disabled={!canConfirm || loadingPreviewData}
                                 className="bg-green-600 hover:bg-green-700 flex-1 sm:flex-none">
                             {isProcessing
                                 ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Procesando...</>
