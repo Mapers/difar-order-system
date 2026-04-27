@@ -101,4 +101,5 @@ export interface ISelectedProduct {
   finalPrice?: number
   isEdit?: boolean
   isAuthorize?: boolean
+  lote?: string
 }

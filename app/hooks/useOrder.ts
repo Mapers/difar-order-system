@@ -59,6 +59,7 @@ export function useOrderPage() {
     const [searchQuery, setSearchQuery] = useState("")
     const [quantity, setQuantity] = useState<number | "">(1)
     const [selectedProduct, setSelectedProduct] = useState<IProduct | null>(null)
+    const [selectedIndexLote, setSelectedIndexLote] = useState<number>(0)
     const [selectedProducts, setSelectedProducts] = useState<ISelectedProduct[]>([])
     const [products, setProducts] = useState<IProduct[]>([])
     const [priceEdit, setPriceEdit] = useState(0)
@@ -267,14 +268,14 @@ export function useOrderPage() {
             }
 
             setSelectedProducts(prev => [...prev, newItem])
-            handleListarLotes([newItem])
+            handleListarLotes([newItem], selectedProducts.length)
             setSelectedProduct(null)
             setQuantity(1)
             setIsLoading(false)
         }, 600)
     }
 
-    const handleListarLotes = async (productsToList: ISelectedProduct[]) => {
+    const handleListarLotes = async (productsToList: ISelectedProduct[], index: number) => {
         try {
             setShowLotesModal(true)
             setLoadingLotes(true)
@@ -292,7 +293,10 @@ export function useOrderPage() {
                     stock: Number(lote.stock).toFixed(2),
                 }))
 
-                const lotesFiltered = lotes.filter((item: any) => Number(item.stock) > 0)
+                const lotesFiltered = lotes.filter((item: any) => {
+                    const existInCart = selectedProducts.some(s => item.value === s.lote);
+                    return Number(item.stock) > 0 && !existInCart
+                })
 
                 if (lotesFiltered.some((item: any) => item.numeroLote !== null && item.fechaVencimiento !== null)) {
                     const existingSelection = productosConLotes.find(x => x.prod_codigo === producto.product.Codigo_Art)
@@ -307,6 +311,7 @@ export function useOrderPage() {
                 }
             }
 
+            setSelectedIndexLote(index)
             setEditingLotes(productosTemp)
             setLoadingLotes(false)
         } catch (e) {
@@ -361,14 +366,26 @@ export function useOrderPage() {
     }
 
     const handleConfirmarLotes = () => {
-        setProductosConLotes(prev => {
+        setSelectedProducts(prev => {
             const newMap = [...prev]
-            editingLotes.forEach(editItem => {
-                const index = newMap.findIndex(x => x.prod_codigo === editItem.prod_codigo)
-                if (index >= 0) {
-                    newMap[index] = editItem
-                } else {
-                    newMap.push(editItem)
+            editingLotes.forEach((editItem) => {
+                const found = newMap.find((_, i) =>
+                    i === selectedIndexLote
+                )
+
+                if (found) {
+                    newMap[selectedIndexLote] = {
+                        lote: editItem.loteSeleccionado,
+                        product: found!.product,
+                        finalPrice: found?.finalPrice,
+                        isEdit: found?.isEdit,
+                        isAuthorize: found?.isAuthorize,
+                        appliedScale: found?.appliedScale,
+                        isEscale: found?.isEscale,
+                        quantity: found?.quantity || 0,
+                        isBonification: found?.isBonification,
+                        bonificationId: found?.bonificationId
+                    }
                 }
             })
             return newMap
@@ -542,7 +559,7 @@ export function useOrderPage() {
 
     const handleConfirmSelection = () => {
         setSelectedProducts(prev => [...prev, ...tempSelectedProducts])
-        handleListarLotes([...tempSelectedProducts])
+        handleListarLotes([...tempSelectedProducts], 0)
         setTempSelectedProducts([])
         setShowLaboratorioModal(false)
         setSelectedLaboratorio(null)
@@ -563,11 +580,6 @@ export function useOrderPage() {
         if (isLoadingSave) return
         try {
             setIsLoadingSave(true)
-            const lotesData = productosConLotes.map(producto => ({
-                codigoProducto: producto.prod_codigo,
-                lote: producto.loteSeleccionado?.split('|')[0],
-                fechaVencimiento: format(parseISO(producto.loteSeleccionado?.split('|')[1] || ''), "dd/MM/yyyy")
-            }))
 
             const buildDetalles = (products: ISelectedProduct[]) =>
                 products.map(item => ({
@@ -577,8 +589,8 @@ export function useOrderPage() {
                     precioPedido:     item?.finalPrice,
                     isbonificado:     item.isBonification ? 1 : 0,
                     isescala:         item.isEscale ? 1 : 0,
-                    lote:             lotesData.find(x => x.codigoProducto === item.product.Codigo_Art)?.lote,
-                    fecVenc:          lotesData.find(x => x.codigoProducto === item.product.Codigo_Art)?.fechaVencimiento,
+                    lote:             item.lote?.split('|')[0],
+                    fecVenc:          format(parseISO(item.lote?.split('|')[1] || ''), "dd/MM/yyyy"),
                     isEdit:           item.isEdit      ? 'S' : 'N',
                     isAuthorize:      item.isAuthorize ? 'S' : 'N',
                     tipo_afectacion_igv: item.product.tipo_afectacion_igv ?? '10',
@@ -704,7 +716,7 @@ export function useOrderPage() {
             case 0:
                 return !!client && currency && condition && (isAdmin() ? (!!seller) : true)
             case 1:
-                return selectedProducts.length > 0
+                return selectedProducts.length > 0 && !selectedProducts.find((item, index) => !item.lote)
             default:
                 return true
         }
@@ -732,7 +744,9 @@ export function useOrderPage() {
         if (search.client) {
             setClientsFiltered(clients.filter(item =>
                 item.RUC?.includes(search.client) ||
-                item.Nombre?.toUpperCase().includes(search.client.toUpperCase())))
+                item.Nombre?.toUpperCase().includes(search.client.toUpperCase()) ||
+                item.NombreComercial?.toUpperCase().includes(search.client.toUpperCase())
+            ))
         } else {
             setClientsFiltered(clients)
         }

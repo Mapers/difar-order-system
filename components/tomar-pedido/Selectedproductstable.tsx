@@ -16,7 +16,7 @@ interface SelectedProductsTableProps {
     productosConLotes: ProductoConLotes[]
     currencyValue?: string
     onRemoveItem: (index: number) => void
-    onChangeLote?: (items: ISelectedProduct[]) => void
+    onChangeLote?: (items: ISelectedProduct[], index: number) => void
     onEditClick?: (index: number) => void
     showActions?: boolean
 }
@@ -136,9 +136,7 @@ export default function SelectedProductsTable({
                         {selectedProducts.map((item, index) => {
                             const pu = item.isBonification ? 0 : item.appliedScale?.precio_escala ?? item.finalPrice
                             const subtotal = pu * item.quantity
-                            const { cod, fec, stk } = parseLoteString(
-                                productosConLotes.find(x => x.prod_codigo === item.product.Codigo_Art)?.loteSeleccionado || '||'
-                            )
+                            const { cod, fec, stk } = parseLoteString(item.lote || '||')
 
                             let rowBgClass = index % 2 === 0 ? "bg-white" : "bg-gray-50"
                             if (item.isAuthorize) rowBgClass = "bg-blue-50 border-l-4 border-l-blue-500"
@@ -172,7 +170,7 @@ export default function SelectedProductsTable({
                                                     </Button>
                                                 )}
                                                 {onChangeLote && (
-                                                    <Button type="button" variant="ghost" size="sm" onClick={() => onChangeLote([item])}
+                                                    <Button type="button" variant="ghost" size="sm" onClick={() => onChangeLote([item], index)}
                                                             className="h-8 w-8 p-0 text-blue-600 hover:text-blue-800 hover:bg-blue-50" title="Cambiar Lote">
                                                         <Package className="h-4 w-4" />
                                                     </Button>
@@ -227,7 +225,7 @@ export default function SelectedProductsTable({
                                     )}
                                     {onChangeLote && (
                                         <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-500 hover:text-blue-700 hover:bg-blue-50"
-                                                onClick={() => onChangeLote([item])} type="button">
+                                                onClick={() => onChangeLote([item], index)} type="button">
                                             <Package className="h-4 w-4" />
                                         </Button>
                                     )}

@@ -43,7 +43,7 @@ interface ProductStepProps {
     selectedProducts: ISelectedProduct[]
     productosConLotes: ProductoConLotes[]
     onRemoveItem: (index: number) => void
-    onChangeLote: (items: ISelectedProduct[]) => void
+    onChangeLote: (items: ISelectedProduct[], index: number) => void
     onClearAll: () => void
     onNext: () => void
     onPrev: () => void
@@ -294,10 +294,13 @@ export default function ProductStep({
                                 <span className="hidden lg:inline">Guardar Borrador</span>
                             </Button>
                         </div>
-                        <Button type="button" onClick={onNext} disabled={!isStepValid} className="bg-blue-600 hover:bg-blue-700">
-                            <span className="hidden lg:inline">Siguiente</span>
-                            <ArrowRight className="ml-0 lg:ml-2 h-4 w-4" />
-                        </Button>
+                        <div className='flex gap-2 items-center'>
+                            {!isStepValid && <span className='text-orange-600'>Hay lotes no seleccionados</span>}
+                            <Button type="button" onClick={onNext} disabled={!isStepValid} className="bg-blue-600 hover:bg-blue-700">
+                                <span className="hidden lg:inline">Siguiente</span>
+                                <ArrowRight className="ml-0 lg:ml-2 h-4 w-4" />
+                            </Button>
+                        </div>
                     </CardFooter>
                 </Card>
             )}

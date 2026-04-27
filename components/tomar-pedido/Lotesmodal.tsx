@@ -27,7 +27,6 @@ export default function LotesModal({ open, onOpenChange, editingLotes, loadingLo
                     <DialogTitle className="flex items-center gap-2">
                         <Package className="h-5 w-5" /> Seleccionar Lotes
                     </DialogTitle>
-                    <DialogDescription>Seleccione los lotes y cantidades para los productos</DialogDescription>
                 </DialogHeader>
 
                 {loadingLotes ? (
@@ -36,6 +35,10 @@ export default function LotesModal({ open, onOpenChange, editingLotes, loadingLo
                     </div>
                 ) : (
                     <div className="space-y-6 grid grid-cols-1 gap-4">
+                        {editingLotes.length <= 0 ?
+                          <DialogDescription>No hay lotes disponibles o ya fueron seleccionados todos</DialogDescription> :
+                            <DialogDescription>Seleccione los lotes y cantidades para los productos</DialogDescription>
+                        }
                         {editingLotes.map((producto, productIndex) => (
                             <Card key={productIndex}>
                                 <CardHeader className="bg-gray-50 py-3">
