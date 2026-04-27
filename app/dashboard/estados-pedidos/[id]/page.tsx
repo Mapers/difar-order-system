@@ -186,11 +186,15 @@ export default function EstadosPedidosDetailPage({ params }: { params: { id: str
       setPendingDetalle(newDetalle)
       setLoadingLotes(true)
       setShowLotesModal(true)
+
       const lotesRes = await PriceService.getProductLots(selectedProduct.Codigo_Art)
       const lotes = lotesRes.data.map((l: any) => ({
         value: `${l.numeroLote}|${l.fechaVencimiento}|${Number(l.stock).toFixed(2)}`,
         numeroLote: l.numeroLote, fechaVencimiento: l.fechaVencimiento, stock: Number(l.stock).toFixed(2)
-      })).filter((l: any) => Number(l.stock) > 0)
+      })).filter((l: any) => {
+        const existInCart = tempDetalles.some(s => l.numeroLote === s.cod_lote);
+        return Number(l.stock) > 0 && !existInCart
+      })
 
       setEditingLotes(lotes.length > 0 ? [{
         prod_codigo: selectedProduct.Codigo_Art, prod_descripcion: selectedProduct.NombreItem,
