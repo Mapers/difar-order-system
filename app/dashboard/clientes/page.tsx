@@ -93,7 +93,8 @@ export default function ClientsPage() {
     const filtered = clients.filter(client =>
         client.codigoInterno?.toLowerCase().includes(lowerSearch) ||
         client.razonSocial?.toLowerCase().includes(lowerSearch) ||
-        client.provincia?.toLowerCase().includes(lowerSearch)
+        client.provincia?.toLowerCase().includes(lowerSearch) ||
+        client.nombreComercial?.toLowerCase().includes(lowerSearch)
     );
     setFilteredClients(filtered);
   }, [searchTerm, clients]);
