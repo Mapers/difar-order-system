@@ -3,10 +3,10 @@ import {Comprobante} from "@/app/types/order/order-interface";
 
 export function ComprobantesStats({ comprobantes }: { comprobantes: Comprobante[] }) {
     const calculateTotals = () => {
-        const facturas = comprobantes.filter(c => c.tipo_comprobante === 1 && !c.anulado)
-        const boletas = comprobantes.filter(c => c.tipo_comprobante === 2 && !c.anulado)
-        const notasCredito = comprobantes.filter(c => c.tipo_comprobante === 3 && !c.anulado)
-        const notasDebito = comprobantes.filter(c => c.tipo_comprobante === 4 && !c.anulado)
+        const facturas = comprobantes.filter(c => c.tipo_comprobante === 1 && !c.anulado && c.aceptada_por_sunat === 0)
+        const boletas = comprobantes.filter(c => c.tipo_comprobante === 2 && !c.anulado && c.aceptada_por_sunat === 0)
+        const notasCredito = comprobantes.filter(c => c.tipo_comprobante === 1 && !c.anulado && c.tieneNC && c.aceptada_por_sunat === 0)
+        const notasDebito = comprobantes.filter(c => c.tipo_comprobante === 2 && !c.anulado && c.tieneNC && c.aceptada_por_sunat === 0)
 
         return {
             totalFacturas: facturas.reduce((sum, c) => sum + Number(c.total), 0),
