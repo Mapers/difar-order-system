@@ -15,6 +15,8 @@ export interface IClient {
   referenciaDireccion?: string;
   zona?: IZona;
   CondicionPago?: string;
+  NombreZona?: string;
+  Vendedor?: string;
 }
 
 // Interfaz condición

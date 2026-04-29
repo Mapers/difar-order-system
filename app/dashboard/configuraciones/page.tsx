@@ -3,12 +3,13 @@
 import { useState, useCallback } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { FileText, Plus, Truck, Settings, CreditCard, Target, FlaskConical, Hash } from "lucide-react"
+import {FileText, Plus, Truck, Settings, CreditCard, Target, FlaskConical, Hash, Landmark} from "lucide-react"
 import AppConfigSection from "@/components/configuraciones/AppConfigSection";
 import SequentialSection from "@/components/configuraciones/SequentialSection";
 import ClientConditionsSection from "@/components/configuraciones/ClientConditionsSection";
 import MetasConfigSection from "@/components/configuraciones/MetasConfigSection";
 import LaboratoriosSection from "@/components/configuraciones/Laboratoriossection";
+import CreditLineSection from "@/components/configuraciones/CreditLineSection";
 
 const sections = [
     {
@@ -60,6 +61,13 @@ const sections = [
         icon: Settings,
         color: "orange"
     },
+    {
+        id: "lineas_credito",
+        title: "Líneas de Crédito",
+        description: "Gestión de límites de crédito por cliente",
+        icon: Landmark,
+        color: "amber"
+    },
 ]
 
 const iconColorMap: Record<string, string> = {
@@ -70,6 +78,7 @@ const iconColorMap: Record<string, string> = {
     metas: "text-sky-600",
     configuraciones: "text-orange-600",
     laboratorios: 'text-sky-600',
+    lineas_credito: "text-amber-600",
 }
 
 const activeBgMap: Record<string, string> = {
@@ -80,6 +89,7 @@ const activeBgMap: Record<string, string> = {
     metas: "bg-sky-50 border-sky-500 text-sky-700",
     configuraciones: "bg-orange-50 border-orange-500 text-orange-700",
     laboratorios: 'bg-sky-50 border-sky-500 text-sky-700',
+    lineas_credito: "bg-amber-50 border-amber-500 text-amber-700",
 }
 
 const activeIconBg: Record<string, string> = {
@@ -90,6 +100,7 @@ const activeIconBg: Record<string, string> = {
     metas: "bg-sky-100 text-sky-600",
     configuraciones: "bg-orange-100 text-orange-600",
     laboratorios: 'bg-sky-100 text-sky-600',
+    lineas_credito: "bg-amber-100 text-amber-600",
 }
 
 export default function ConfiguracionesPage() {
@@ -156,6 +167,8 @@ export default function ConfiguracionesPage() {
                                 <CardDescription>
                                     {activeSection === "configuraciones"
                                         ? "Configura las variables de entorno de la base de datos."
+                                        : activeSection === "lineas_credito"
+                                            ? "Gestiona las líneas de crédito asignadas a cada cliente."
                                         : activeSection === "metas"
                                             ? "Administra ciclos, metas por laboratorio, vendedor y producto."
                                             : activeSection === "condiciones_cliente"
@@ -165,12 +178,12 @@ export default function ConfiguracionesPage() {
                                                     : `Configura la numeración para ${activeSection === "secuenciales" ? "facturas y boletas" : "guías de remisión"}`}
                                 </CardDescription>
                             </div>
-                            <Button
+                            {activeSection !== 'lineas_credito' && <Button
                                 onClick={() => openModalFn && openModalFn()}
                                 className="flex items-center gap-2 w-full sm:w-auto"
                             >
-                                <Plus className="h-4 w-4" /> Nuevo Registro
-                            </Button>
+                                <Plus className="h-4 w-4"/> Nuevo Registro
+                            </Button>}
                         </CardHeader>
 
                         <CardContent>
@@ -178,6 +191,8 @@ export default function ConfiguracionesPage() {
                                 <AppConfigSection onOpenModalChange={handleSetOpenModalFn} />
                             ) : activeSection === "condiciones_cliente" ? (
                                 <ClientConditionsSection onOpenModalChange={handleSetOpenModalFn} />
+                            ) : activeSection === 'lineas_credito' ? (
+                                <CreditLineSection onOpenModalChange={handleSetOpenModalFn} />
                             ) : activeSection === "metas" ? (
                                 <MetasConfigSection onOpenModalChange={handleSetOpenModalFn} />
                             ) : activeSection === 'laboratorios' ? (
