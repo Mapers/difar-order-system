@@ -50,8 +50,19 @@ export default function CreditLineSection({ onOpenModalChange }: LineasCreditoSe
         return () => clearTimeout(timer)
     }, [searchQuery])
 
-    const totalPages = Math.max(1, Math.ceil(data.length / PAGE_SIZE))
-    const paginatedData = data.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+    const filteredData = data.filter(item => {
+        if (!debouncedQuery) return true;
+        const q = debouncedQuery.toLowerCase();
+        return (
+            item.Nombre?.toLowerCase().includes(q) ||
+            item.NombreComercial?.toLowerCase().includes(q) ||
+            item.RUC?.toLowerCase().includes(q) ||
+            item.codigo?.toLowerCase().includes(q)
+        );
+    });
+
+    const totalPages = Math.max(1, Math.ceil(filteredData.length / PAGE_SIZE))
+    const paginatedData = filteredData.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
 
     const noOp = useCallback(() => {}, [])
     useEffect(() => { onOpenModalChange(noOp) }, [onOpenModalChange, noOp])
@@ -127,7 +138,7 @@ export default function CreditLineSection({ onOpenModalChange }: LineasCreditoSe
                 />
                 {data.length > 0 && (
                     <Badge variant="outline" className="text-xs whitespace-nowrap">
-                        {data.length} cliente{data.length === 1 ? '' : 's'}
+                        {filteredData.length} cliente{filteredData.length === 1 ? '' : 's'}
                     </Badge>
                 )}
             </div>
