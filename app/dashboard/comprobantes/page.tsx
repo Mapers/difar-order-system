@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect } from "react"
-import {Search, FileText, AlertTriangle, Truck, Loader2, FileDiff} from "lucide-react"
+import {useState, useEffect, useCallback, useRef} from "react"
+import {Search, FileText, AlertTriangle, Truck, Loader2, FileDiff, X} from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -37,6 +37,15 @@ import {Sequential} from "@/app/types/config-types";
 import {DeletePendienteModal} from "@/app/dashboard/comprobantes/modals/DeletePendienteModal";
 import {toast} from "@/app/hooks/useToast";
 
+function useDebounce(value: string, delay: number = 500) {
+  const [debounced, setDebounced] = useState(value)
+  useEffect(() => {
+    const timer = setTimeout(() => setDebounced(value), delay)
+    return () => clearTimeout(timer)
+  }, [value, delay])
+  return debounced
+}
+
 export default function ComprobantesPage() {
   const [comprobantes, setComprobantes] = useState<Comprobante[]>([])
   const [pedidosPendientes, setPedidosPendientes] = useState<Pedido[]>([])
@@ -46,7 +55,16 @@ export default function ComprobantesPage() {
   const [loadingPedidos, setLoadingPedidos] = useState(false)
   const [loadingGuias, setLoadingGuias] = useState(false)
 
-  const [searchQuery, setSearchQuery] = useState("")
+  const [searchComprobantes, setSearchComprobantes] = useState("")
+  const [searchNotas, setSearchNotas] = useState("")
+  const [searchGuias, setSearchGuias] = useState("")
+  const [searchPendientes, setSearchPendientes] = useState("")
+
+  const debouncedComprobantes = useDebounce(searchComprobantes)
+  const debouncedNotas = useDebounce(searchNotas)
+  const debouncedGuias = useDebounce(searchGuias)
+  const debouncedPendientes = useDebounce(searchPendientes)
+
   const today = new Date()
   const tomorrow = addDays(today, 1)
   const [filters, setFilters] = useState({
@@ -56,6 +74,10 @@ export default function ComprobantesPage() {
     fechaHasta: format(tomorrow, 'yyyy-MM-dd')
   })
   const [filtersGuias, setFiltersGuias] = useState({
+    fechaDesde: format(today, 'yyyy-MM-dd'),
+    fechaHasta: format(tomorrow, 'yyyy-MM-dd')
+  })
+  const [filtersNotas, setFiltersNotas] = useState({
     fechaDesde: format(today, 'yyyy-MM-dd'),
     fechaHasta: format(tomorrow, 'yyyy-MM-dd')
   })
@@ -102,11 +124,6 @@ export default function ComprobantesPage() {
 
   const [showNotaCreditoModal, setShowNotaCreditoModal] = useState(false)
 
-  const [filtersNotas, setFiltersNotas] = useState({
-    fechaDesde: format(today, 'yyyy-MM-dd'),
-    fechaHasta: format(tomorrow, 'yyyy-MM-dd')
-  })
-
   const handleNotaCreditoGenerada = async () => {
     await fetchNotasCredito()
     await fetchComprobantes()
@@ -114,41 +131,59 @@ export default function ComprobantesPage() {
 
   const auth = useAuth()
 
-  const fetchComprobantes = async () => {
+  const abortControllerRef = useRef<AbortController | null>(null)
+
+  const fetchComprobantes = useCallback(async () => {
+    // Cancelar petición anterior si existe
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort()
+    }
+
+    const tieneFechas = filters.fechaDesde && filters.fechaHasta
+    const tieneTexto = debouncedComprobantes.length > 3
+    if (!tieneFechas && !tieneTexto) {
+      setComprobantes([])
+      return
+    }
+
+    const controller = new AbortController()
+    abortControllerRef.current = controller
+
     try {
       setLoadingComprobantes(true)
-      let url = `/pedidos/comprobantes?`
       const params = new URLSearchParams()
       if (auth.user?.idRol === 1) params.append('vendedor', auth.user?.codigo || '')
       if (filters.tipo !== '|-1') params.append('tipoDoc', filters.tipo.split('|')[1])
       if (filters.tipo !== '|-1') params.append('serie', filters.tipo.split('|')[0])
-      if (filters.fechaDesde) params.append('fechaDesde', filters.fechaDesde)
-      if (filters.fechaHasta) params.append('fechaHasta', filters.fechaHasta)
-      if (searchQuery) params.append('busqueda', searchQuery)
-      url += params.toString()
+      if (tieneFechas) {
+        params.append('fechaDesde', filters.fechaDesde)
+        params.append('fechaHasta', filters.fechaHasta)
+      }
+      if (tieneTexto) params.append('busqueda', debouncedComprobantes)
 
-      const response = await apiClient.get(url)
+      const response = await apiClient.get(`/pedidos/comprobantes?${params.toString()}`, {
+        signal: controller.signal
+      })
       setComprobantes(response.data.data.data)
-    } catch (error) {
+      setLoadingComprobantes(false)
+    } catch (error: any) {
+      if (error?.name === 'CanceledError' || error?.code === 'ERR_CANCELED') return
       console.error("Error fetching comprobantes:", error)
       toast({ title: "Error", description: "No se pudieron cargar los comprobantes", variant: "destructive" })
-    } finally {
       setLoadingComprobantes(false)
     }
-  }
+  }, [filters, debouncedComprobantes, auth.user?.idRol, auth.user?.codigo])
 
-  const fetchNotasCredito = async () => {
+  const fetchNotasCredito = useCallback(async () => {
     try {
       setLoadingNotas(true)
-      let url = `/pedidos/ncEmitidos?`
       const params = new URLSearchParams()
       if (auth.user?.idRol === 1) params.append('vendedor', auth.user?.codigo || '')
       if (filtersNotas.fechaDesde) params.append('fechaDesde', filtersNotas.fechaDesde)
       if (filtersNotas.fechaHasta) params.append('fechaHasta', filtersNotas.fechaHasta)
-      if (searchQuery) params.append('busqueda', searchQuery)
-      url += params.toString()
+      if (debouncedNotas) params.append('busqueda', debouncedNotas)
 
-      const response = await apiClient.get(url)
+      const response = await apiClient.get(`/pedidos/ncEmitidos?${params.toString()}`)
       setNotasCredito(response.data.data.data)
     } catch (error) {
       console.error("Error fetching notas credito:", error)
@@ -156,20 +191,18 @@ export default function ComprobantesPage() {
     } finally {
       setLoadingNotas(false)
     }
-  }
+  }, [filtersNotas, debouncedNotas, auth.user?.idRol, auth.user?.codigo])
 
-  const fetchGuiasRemision = async () => {
+  const fetchGuiasRemision = useCallback(async () => {
     try {
       setLoadingGuias(true)
-      let url = `/pedidos/guiasEmitidas?`
       const params = new URLSearchParams()
       if (auth.user?.idRol === 1) params.append('vendedor', auth.user?.codigo || '')
       if (filtersGuias.fechaDesde) params.append('fechaDesde', filtersGuias.fechaDesde)
       if (filtersGuias.fechaHasta) params.append('fechaHasta', filtersGuias.fechaHasta)
-      if (searchQuery) params.append('busqueda', searchQuery)
-      url += params.toString()
+      if (debouncedGuias) params.append('busqueda', debouncedGuias)
 
-      const response = await apiClient.get(url)
+      const response = await apiClient.get(`/pedidos/guiasEmitidas?${params.toString()}`)
       setGuiasRemision(response.data.data.data || [])
     } catch (error) {
       console.error("Error fetching guías:", error)
@@ -177,12 +210,12 @@ export default function ComprobantesPage() {
     } finally {
       setLoadingGuias(false)
     }
-  }
+  }, [filtersGuias, debouncedGuias, auth.user?.idRol, auth.user?.codigo])
 
-  const fetchPedidosPendientes = async () => {
+  const fetchPedidosPendientes = useCallback(async () => {
     try {
       setLoadingPedidos(true)
-      const response = await apiClient.get(`/pedidos/porFacturar?busqueda=${encodeURIComponent(searchQuery)}&estado=4`)
+      const response = await apiClient.get(`/pedidos/porFacturar?busqueda=${encodeURIComponent(debouncedPendientes)}&estado=4`)
       setPedidosPendientes(response.data.data.data)
     } catch (error) {
       console.error("Error fetching orders:", error)
@@ -190,14 +223,14 @@ export default function ComprobantesPage() {
     } finally {
       setLoadingPedidos(false)
     }
-  }
+  }, [debouncedPendientes])
 
+  useEffect(() => { fetchComprobantes() }, [fetchComprobantes])
+  useEffect(() => { fetchNotasCredito() }, [fetchNotasCredito])
+  useEffect(() => { fetchPedidosPendientes() }, [fetchPedidosPendientes])
   useEffect(() => {
-    fetchComprobantes()
-    fetchPedidosPendientes()
-    fetchNotasCredito()
     if (filtersGuias.fechaDesde && filtersGuias.fechaHasta) fetchGuiasRemision()
-  }, [searchQuery, filters, filtersGuias, filtersNotas])
+  }, [fetchGuiasRemision])
 
   const handleFilterNotasChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -208,7 +241,6 @@ export default function ComprobantesPage() {
     const fetchCatalogs = async () => {
       try {
         const [tiposResponse, transResponse, docsSunat] = await Promise.all([
-          // apiClient.get('/pedidos/tiposCompr'),
           apiClient.get('/admin/listar/secuenciales'),
           apiClient.get('/pedidos/sunatTrans'),
           apiClient.get('/pedidos/tipoDocSunat'),
@@ -218,7 +250,6 @@ export default function ComprobantesPage() {
         setSunatTransacciones(transResponse.data.data.data)
         setTipoDocsSunat(docsSunat.data.data.data)
 
-        // if (tiposResponse.data.data?.length > 0) setInvoiceType(tiposResponse.data.data[0].tipo)
         if (transResponse.data.data.data?.length > 0) setSunatTransaction(transResponse.data.data.data[0].idTransaction.toString())
         if (docsSunat.data.data.data?.length > 0) handleInvoiceType(tiposResponse.data.data[0].prefijo + '|' + tiposResponse.data.data[0].tipo)
       } catch (error) {
@@ -295,7 +326,7 @@ export default function ComprobantesPage() {
       } else {
         toast({ title: "Error", description: response.data.message || "Error al generar", variant: "destructive" })
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error(error)
       toast({ title: "Error", description: error?.response?.data?.message || 'Error de servidor al generar comprobante', variant: "destructive" })
     } finally {
@@ -392,7 +423,6 @@ export default function ComprobantesPage() {
     }
   }
 
-  // HANDLERS PARA GUIAS
   const handleEmailGuia = (guia: GuiaRemision) => {
     setSelectedDocForAction({ id: guia.idGuiaRemCab, type: 'GUIA', email: '' })
     setShowEmailModal(true)
@@ -423,7 +453,6 @@ export default function ComprobantesPage() {
       setLoadingStatus(false)
     }
   }
-
 
   const performSendEmail = async (email: string) => {
     if (!selectedDocForAction) return
@@ -531,6 +560,7 @@ export default function ComprobantesPage() {
             </TabsTrigger>
           </TabsList>
 
+          {/* ── TAB: PENDIENTES ── */}
           {auth.user?.idRol !== 1 && (
               <TabsContent value="pendientes" className="space-y-4">
                 <Card className="bg-white shadow-sm">
@@ -541,6 +571,17 @@ export default function ComprobantesPage() {
                     <CardDescription>Estos pedidos están completados y listos para ser facturados</CardDescription>
                   </CardHeader>
                   <CardContent>
+                    <div className="mb-4">
+                      <div className="relative">
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-3 w-3 sm:h-4 sm:w-4" />
+                        <Input
+                            placeholder="Buscar pendientes..."
+                            value={searchPendientes}
+                            onChange={(e) => setSearchPendientes(e.target.value)}
+                            className="pl-8 sm:pl-10 text-xs sm:text-sm"
+                        />
+                      </div>
+                    </div>
                     <PendientesList
                         pedidos={pedidosPendientes}
                         loading={loadingPedidos}
@@ -552,6 +593,7 @@ export default function ComprobantesPage() {
               </TabsContent>
           )}
 
+          {/* ── TAB: COMPROBANTES ── */}
           <TabsContent value="comprobantes" className="space-y-4">
             <Card className="bg-white shadow-sm">
               <CardContent className="p-3 sm:p-4 lg:p-6">
@@ -559,11 +601,29 @@ export default function ComprobantesPage() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                     <div className="space-y-1">
                       <Label className="text-xs text-gray-500">Fecha desde</Label>
-                      <Input type="date" className="bg-white" name="fechaDesde" value={filters.fechaDesde} onChange={handleFilterChange} />
+                      <div className="relative">
+                        <Input type="date" className="bg-white pr-8" name="fechaDesde" value={filters.fechaDesde}
+                               onChange={handleFilterChange} />
+                        {filters.fechaDesde && (
+                            <button type="button" onClick={() => setFilters(prev => ({ ...prev, fechaDesde: '', fechaHasta: '' }))}
+                                    className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                              <X className="h-3.5 w-3.5" />
+                            </button>
+                        )}
+                      </div>
                     </div>
                     <div className="space-y-1">
                       <Label className="text-xs text-gray-500">Fecha hasta</Label>
-                      <Input type="date" className="bg-white" name="fechaHasta" value={filters.fechaHasta} onChange={handleFilterChange} />
+                      <div className="relative">
+                        <Input type="date" className="bg-white pr-8" name="fechaHasta" value={filters.fechaHasta}
+                               onChange={handleFilterChange} />
+                        {filters.fechaHasta && (
+                            <button type="button" onClick={() => setFilters(prev => ({ ...prev, fechaDesde: '', fechaHasta: '' }))}
+                                    className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                              <X className="h-3.5 w-3.5" />
+                            </button>
+                        )}
+                      </div>
                     </div>
                     <div className="space-y-1">
                       <Label className="text-xs text-gray-500">Tipo de comprobante</Label>
@@ -585,10 +645,23 @@ export default function ComprobantesPage() {
                       <Label className="text-xs text-gray-500">Buscar</Label>
                       <div className="relative">
                         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-3 w-3 sm:h-4 sm:w-4" />
-                        <Input placeholder="Buscar..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-8 sm:pl-10 text-xs sm:text-sm" />
+                        <Input
+                            placeholder="Buscar por numero comprobante, documento, nombre cliente, ..."
+                            value={searchComprobantes}
+                            onChange={(e) => setSearchComprobantes(e.target.value)}
+                            className="pl-8 sm:pl-10 text-xs sm:text-sm"
+                        />
                       </div>
                     </div>
                   </div>
+
+                  {!filters.fechaDesde && !filters.fechaHasta && debouncedComprobantes.length <= 3 && (
+                      <p className="text-xs text-amber-600 flex items-center gap-1.5">
+                        <AlertTriangle className="h-3.5 w-3.5" />
+                        Seleccione un rango de fechas o escriba más de 3 caracteres para buscar
+                      </p>
+                  )}
+
                   <div className="flex justify-end">
                     <Button onClick={fetchComprobantes} disabled={loadingComprobantes} className="flex items-center gap-2">
                       {loadingComprobantes ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />} Buscar
@@ -611,6 +684,7 @@ export default function ComprobantesPage() {
             <ComprobantesStats comprobantes={comprobantes} />
           </TabsContent>
 
+          {/* ── TAB: NOTAS DE CRÉDITO ── */}
           <TabsContent value="notas" className="space-y-4">
             <Card className="bg-white shadow-sm">
               <CardContent className="p-3 sm:p-4 lg:p-6">
@@ -628,7 +702,12 @@ export default function ComprobantesPage() {
                       <Label className="text-xs text-gray-500">Buscar</Label>
                       <div className="relative">
                         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-3 w-3 sm:h-4 sm:w-4" />
-                        <Input placeholder="Buscar..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-8 sm:pl-10 text-xs sm:text-sm" />
+                        <Input
+                            placeholder="Buscar notas..."
+                            value={searchNotas}
+                            onChange={(e) => setSearchNotas(e.target.value)}
+                            className="pl-8 sm:pl-10 text-xs sm:text-sm"
+                        />
                       </div>
                     </div>
                   </div>
@@ -636,7 +715,6 @@ export default function ComprobantesPage() {
                     <Button onClick={() => setShowNotaCreditoModal(true)} variant="outline">
                       <FileDiff className="mr-2 h-4 w-4" /> Generar Nota de Crédito
                     </Button>
-
                     <Button onClick={fetchNotasCredito} disabled={loadingNotas} className="flex items-center gap-2">
                       {loadingNotas ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />} Buscar
                     </Button>
@@ -657,6 +735,7 @@ export default function ComprobantesPage() {
             />
           </TabsContent>
 
+          {/* ── TAB: GUÍAS ── */}
           <TabsContent value="guias" className="space-y-4">
             <Card className="bg-white shadow-sm">
               <CardContent className="p-3 sm:p-4 lg:p-6">
@@ -674,7 +753,12 @@ export default function ComprobantesPage() {
                       <Label className="text-xs text-gray-500">Buscar</Label>
                       <div className="relative">
                         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-3 w-3 sm:h-4 sm:w-4" />
-                        <Input placeholder="Buscar..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-8 sm:pl-10 text-xs sm:text-sm" />
+                        <Input
+                            placeholder="Buscar guías..."
+                            value={searchGuias}
+                            onChange={(e) => setSearchGuias(e.target.value)}
+                            className="pl-8 sm:pl-10 text-xs sm:text-sm"
+                        />
                       </div>
                     </div>
                   </div>
@@ -703,6 +787,7 @@ export default function ComprobantesPage() {
           </TabsContent>
         </Tabs>
 
+        {/* ── MODALES ── */}
         {showInvoiceModal && <InvoiceModal
             open={showInvoiceModal} onOpenChange={setShowInvoiceModal} selectedOrder={selectedOrder}
             tiposComprobante={tiposComprobante} sunatTransacciones={sunatTransacciones} tipoDocsSunat={tipoDocsSunat}
