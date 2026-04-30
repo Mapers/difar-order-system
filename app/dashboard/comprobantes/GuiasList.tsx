@@ -110,14 +110,14 @@ export function GuiasList({
                             <tbody className="bg-white divide-y divide-gray-200">
                             {guias.length > 0 ? (
                                 guias.map((guia) => (
-                                    <tr key={guia.idGuiaRemCab ?? `${guia.serie}-${guia.numero}`}
+                                    <tr key={guia.idGuiaRemCab ?? `${guia.serie}-${Number(guia.numero)}`}
                                         className={`hover:bg-gray-50 ${!guia.idGuiaRemCab ? 'opacity-60' : ''}`}>
                                         <td className="p-4 text-sm">
                                             {guia.fecha_emision
                                                 ? format(parseISO(guia.fecha_emision), "dd/MM/yyyy")
                                                 : '—'}
                                         </td>
-                                        <td className="p-4 font-medium text-sm">{guia.serie}-{guia.numero}</td>
+                                        <td className="p-4 font-medium text-sm">{guia.serie}-{Number(guia.numero)}</td>
                                         <td className="p-4">
                                             <div className="font-medium text-sm">{guia.cliente_denominacion ?? '—'}</div>
                                         </td>
@@ -194,16 +194,16 @@ export function GuiasList({
             <div className="lg:hidden space-y-3">
                 {guias.length > 0 ? (
                     guias.map((guia) => (
-                        <Card key={guia.idGuiaRemCab ?? `${guia.serie}-${guia.numero}`}
+                        <Card key={guia.idGuiaRemCab ?? `${guia.serie}-${Number(guia.numero)}`}
                               className={`border ${!guia.idGuiaRemCab ? 'border-slate-200 opacity-60' : 'border-gray-200'}`}>
                             <CardContent className="p-4">
                                 <div className="space-y-3">
                                     <div className="flex justify-between items-start">
                                         <div>
                                             <div className="flex items-center gap-2 mb-1">
-                        <span className="font-semibold text-gray-900">
-                            {guia.serie}-{guia.numero}
-                        </span>
+                                                <span className="font-semibold text-gray-900">
+                                                    {guia.serie}-{Number(guia.numero)}
+                                                </span>
                                                 {!guia.idGuiaRemCab
                                                     ? <Badge variant="outline" className="text-slate-500 border-slate-300">No utilizado</Badge>
                                                     : getEstadoBadge(guia)
