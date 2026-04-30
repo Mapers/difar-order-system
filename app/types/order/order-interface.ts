@@ -27,32 +27,33 @@ export interface Comprobante {
 }
 
 export interface GuiaRemision {
-    idGuiaRemCab: number
-    nroPedido: number
-    fecha_emision: string
-    serie: string
-    numero: string
-    cliente_num_doc: string
+    idGuiaRemCab:         number | null
+    nroPedido:            number | null
+    fecha_emision:        string | null
+    serie:                string
+    numero:               string
+    cliente_num_doc:      string
     cliente_denominacion: string
-    peso_bruto_total: string
-    tipo_comprobante: number
-    anulado: boolean
-    enlace: string
-    enlace_pdf: string
-    enlace_cdr: string
-    enlace_xml: string
-    pdf_zip_base64: string
-    sunat_description?: string
-    sunat_soap_error?: string
-    sunat_responsecode: string
-    raw_request: string
-    raw_response: string
-    motivo_anulado?: string
-    idComprobanteCab?: number | null
-    comprobante_serie?: string | null
-    comprobante_numero?: number | null
-    comprobante_tipo?: number | null
-    comprobante_enlace?: string | null
+    peso_bruto_total:     string | null
+    tipo_comprobante:     number | null
+    anulado:              boolean
+    enlace:               string | null
+    enlace_pdf:           string | null
+    enlace_cdr:           string | null
+    enlace_xml:           string | null
+    pdf_zip_base64:       string | null
+    sunat_description:    string | null
+    sunat_soap_error:     string | null
+    sunat_responsecode:   string | null
+    raw_request:          string | null
+    raw_response:         string | null
+    motivo_anulado:       string | null
+    idComprobanteCab:     number | null
+    comprobante_serie:    string | null
+    comprobante_numero:   number | null
+    comprobante_tipo:     number | null
+    comprobante_enlace:   string | null
+    estado:               string
 }
 
 export interface SunatTransaccion {

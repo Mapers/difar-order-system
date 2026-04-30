@@ -44,7 +44,7 @@ export function GuiasList({
         if (guia.anulado) {
             return (
                 <div className="flex items-center gap-1">
-                    <Badge variant="destructive">Anulado</Badge>
+                    <Badge variant="destructive">Compr. Anulado</Badge>
                     {guia.motivo_anulado && (
                         <Button
                             variant="ghost"
@@ -110,62 +110,75 @@ export function GuiasList({
                             <tbody className="bg-white divide-y divide-gray-200">
                             {guias.length > 0 ? (
                                 guias.map((guia) => (
-                                    <tr key={guia.idGuiaRemCab} className="hover:bg-gray-50">
-                                        <td className="p-4 text-sm">{format(parseISO(guia.fecha_emision), "dd/MM/yyyy")}</td>
+                                    <tr key={guia.idGuiaRemCab ?? `${guia.serie}-${guia.numero}`}
+                                        className={`hover:bg-gray-50 ${!guia.idGuiaRemCab ? 'opacity-60' : ''}`}>
+                                        <td className="p-4 text-sm">
+                                            {guia.fecha_emision
+                                                ? format(parseISO(guia.fecha_emision), "dd/MM/yyyy")
+                                                : '—'}
+                                        </td>
                                         <td className="p-4 font-medium text-sm">{guia.serie}-{guia.numero}</td>
-                                        <td className="p-4"><div className="font-medium text-sm">{guia.cliente_denominacion}</div></td>
-                                        <td className="p-4 text-sm">{guia.cliente_num_doc}</td>
                                         <td className="p-4">
-                                            <div className="flex flex-col gap-1 items-start">
-                                                {guia.sunat_responsecode !== '0' ? (
-                                                    <Button variant="ghost" size="sm" onClick={() => onErrorView(guia)} className="h-auto p-0 hover:bg-transparent text-red-600 hover:text-red-700 font-normal text-xs flex items-center gap-1 mt-1">
-                                                        <AlertTriangle className="h-3 w-3" /> <span className="underline decoration-dotted underline-offset-2">Ver Error SUNAT</span>
-                                                    </Button>
-                                                ) : getEstadoBadge(guia)}
-                                            </div>
+                                            <div className="font-medium text-sm">{guia.cliente_denominacion ?? '—'}</div>
+                                        </td>
+                                        <td className="p-4 text-sm">{guia.cliente_num_doc ?? '—'}</td>
+                                        <td className="p-4">
+                                            {!guia.idGuiaRemCab ? (
+                                                <Badge variant="outline" className="text-slate-500 border-slate-300">
+                                                    No utilizado
+                                                </Badge>
+                                            ) : guia.sunat_responsecode !== '0' ? (
+                                                <Button variant="ghost" size="sm"
+                                                        onClick={() => onErrorView(guia)}
+                                                        className="h-auto p-0 hover:bg-transparent text-red-600 hover:text-red-700 font-normal text-xs flex items-center gap-1 mt-1">
+                                                    <AlertTriangle className="h-3 w-3" />
+                                                    <span className="underline decoration-dotted underline-offset-2">Ver Error SUNAT</span>
+                                                </Button>
+                                            ) : getEstadoBadge(guia)}
                                         </td>
                                         <td className="p-4">
-                                            <div className="flex gap-2">
-                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50" onClick={() => onViewPdf(guia.pdf_zip_base64)}>
-                                                    <Eye className="h-4 w-4" />
-                                                </Button>
-                                                {(guia.idComprobanteCab && guia.comprobante_serie != null) && (
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-blue-50"
-                                                        onClick={() => handleViewComprobante(guia)}
-                                                        title="Ver Comprobante Asociado"
-                                                    >
-                                                        <Receipt className="h-4 w-4" />
+                                            {guia.idGuiaRemCab && (
+                                                <div className="flex gap-2">
+                                                    <Button variant="ghost" size="icon"
+                                                            className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                                            onClick={() => onViewPdf(guia.pdf_zip_base64!)}>
+                                                        <Eye className="h-4 w-4" />
                                                     </Button>
-                                                )}
-                                                <DropdownMenu>
-                                                    <DropdownMenuTrigger asChild>
-                                                        <Button variant="ghost" size="icon" className="h-8 w-8"><MoreHorizontal className="h-4 w-4" /></Button>
-                                                    </DropdownMenuTrigger>
-                                                    <DropdownMenuContent align="end" className="w-56">
-                                                        <DropdownMenuItem onClick={() => handleViewJson('JSON Solicitud (Request)', guia.raw_request)}>
-                                                            <Code className="mr-2 h-4 w-4 text-gray-500" /> JSON Solicitud
-                                                        </DropdownMenuItem>
-                                                        <DropdownMenuItem onClick={() => handleViewJson('JSON Respuesta (Response)', guia.raw_response)}>
-                                                            <FileJson className="mr-2 h-4 w-4 text-gray-500" /> JSON Respuesta
-                                                        </DropdownMenuItem>
-
-                                                        <DropdownMenuSeparator />
-
-                                                        <DropdownMenuItem onClick={() => onSendEmail(guia)}>
-                                                            <Mail className="mr-2 h-4 w-4 text-blue-500" /> Enviar por Correo
-                                                        </DropdownMenuItem>
-                                                        <DropdownMenuItem onClick={() => onSendWhatsApp(guia)}>
-                                                            <MessageCircle className="mr-2 h-4 w-4 text-green-500" /> Enviar por WhatsApp
-                                                        </DropdownMenuItem>
-                                                        <DropdownMenuItem onClick={() => onCheckStatus(guia)}>
-                                                            <Activity className="mr-2 h-4 w-4 text-orange-500" /> Ver Estado SUNAT
-                                                        </DropdownMenuItem>
-                                                    </DropdownMenuContent>
-                                                </DropdownMenu>
-                                            </div>
+                                                    {(guia.idComprobanteCab && guia.comprobante_serie != null) && (
+                                                        <Button variant="ghost" size="icon"
+                                                                className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-blue-50"
+                                                                onClick={() => handleViewComprobante(guia)}
+                                                                title="Ver Comprobante Asociado">
+                                                            <Receipt className="h-4 w-4" />
+                                                        </Button>
+                                                    )}
+                                                    <DropdownMenu>
+                                                        <DropdownMenuTrigger asChild>
+                                                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                                                                <MoreHorizontal className="h-4 w-4" />
+                                                            </Button>
+                                                        </DropdownMenuTrigger>
+                                                        <DropdownMenuContent align="end" className="w-56">
+                                                            <DropdownMenuItem onClick={() => handleViewJson('JSON Solicitud (Request)', guia.raw_request!)}>
+                                                                <Code className="mr-2 h-4 w-4 text-gray-500" /> JSON Solicitud
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuItem onClick={() => handleViewJson('JSON Respuesta (Response)', guia.raw_response!)}>
+                                                                <FileJson className="mr-2 h-4 w-4 text-gray-500" /> JSON Respuesta
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuSeparator />
+                                                            <DropdownMenuItem onClick={() => onSendEmail(guia)}>
+                                                                <Mail className="mr-2 h-4 w-4 text-blue-500" /> Enviar por Correo
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuItem onClick={() => onSendWhatsApp(guia)}>
+                                                                <MessageCircle className="mr-2 h-4 w-4 text-green-500" /> Enviar por WhatsApp
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuItem onClick={() => onCheckStatus(guia)}>
+                                                                <Activity className="mr-2 h-4 w-4 text-orange-500" /> Ver Estado SUNAT
+                                                            </DropdownMenuItem>
+                                                        </DropdownMenuContent>
+                                                    </DropdownMenu>
+                                                </div>
+                                            )}
                                         </td>
                                     </tr>
                                 ))
@@ -181,77 +194,93 @@ export function GuiasList({
             <div className="lg:hidden space-y-3">
                 {guias.length > 0 ? (
                     guias.map((guia) => (
-                        <Card key={guia.idGuiaRemCab} className="border border-gray-200">
+                        <Card key={guia.idGuiaRemCab ?? `${guia.serie}-${guia.numero}`}
+                              className={`border ${!guia.idGuiaRemCab ? 'border-slate-200 opacity-60' : 'border-gray-200'}`}>
                             <CardContent className="p-4">
                                 <div className="space-y-3">
                                     <div className="flex justify-between items-start">
                                         <div>
                                             <div className="flex items-center gap-2 mb-1">
-                                                <span className="font-semibold text-gray-900">{guia.serie}-{guia.numero}</span>
-                                                {getEstadoBadge(guia)}
+                        <span className="font-semibold text-gray-900">
+                            {guia.serie}-{guia.numero}
+                        </span>
+                                                {!guia.idGuiaRemCab
+                                                    ? <Badge variant="outline" className="text-slate-500 border-slate-300">No utilizado</Badge>
+                                                    : getEstadoBadge(guia)
+                                                }
                                             </div>
-                                            <p className="text-sm text-gray-600">{format(parseISO(guia.fecha_emision), "dd/MM/yyyy")}</p>
+                                            <p className="text-sm text-gray-600">
+                                                {guia.fecha_emision
+                                                    ? format(parseISO(guia.fecha_emision), "dd/MM/yyyy")
+                                                    : '—'}
+                                            </p>
                                         </div>
                                     </div>
-                                    <div className="border-t pt-3">
-                                        <p className="font-medium text-gray-900 truncate">{guia.cliente_denominacion}</p>
-                                        <p className="text-sm text-gray-600">{guia.cliente_num_doc}</p>
-                                    </div>
-                                    {guia.sunat_responsecode !== "0" && (
-                                        <div className="bg-red-100 border border-red-200 rounded-md p-3 mt-2">
-                                            <div className="flex items-center gap-2 mb-2">
-                                                <AlertTriangle className="h-4 w-4 text-red-600" /><h4 className="font-medium text-red-800 text-sm">Error SUNAT</h4>
-                                            </div>
-                                            <div className="text-xs text-red-700 space-y-1">
-                                                {guia.sunat_description && <p><strong>Descripción:</strong> {guia.sunat_description}</p>}
-                                            </div>
-                                        </div>
-                                    )}
-                                    <div className="border-t pt-3 flex gap-2">
-                                        <Button variant="outline" size="sm" className="text-xs bg-transparent" onClick={() => onViewPdf(guia.pdf_zip_base64)}>
-                                            <Eye className="h-3 w-3 mr-1" /> Ver PDF
-                                        </Button>
-                                        {(guia.idComprobanteCab && guia.comprobante_serie != null) && (
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-blue-50"
-                                                onClick={() => handleViewComprobante(guia)}
-                                                title="Ver Comprobante Asociado"
-                                            >
-                                                <Receipt className="h-4 w-4" />
-                                            </Button>
-                                        )}
 
-                                        <DropdownMenu>
-                                            <DropdownMenuTrigger asChild>
-                                                <Button variant="outline" size="sm" className="text-xs bg-transparent">
-                                                    <MoreHorizontal className="h-3 w-3 mr-1" /> Opciones
+                                    {guia.idGuiaRemCab && (
+                                        <>
+                                            <div className="border-t pt-3">
+                                                <p className="font-medium text-gray-900 truncate">
+                                                    {guia.cliente_denominacion ?? '—'}
+                                                </p>
+                                                <p className="text-sm text-gray-600">
+                                                    {guia.cliente_num_doc ?? '—'}
+                                                </p>
+                                            </div>
+                                            {guia.sunat_responsecode !== "0" && (
+                                                <div className="bg-red-100 border border-red-200 rounded-md p-3 mt-2">
+                                                    <div className="flex items-center gap-2 mb-2">
+                                                        <AlertTriangle className="h-4 w-4 text-red-600" />
+                                                        <h4 className="font-medium text-red-800 text-sm">Error SUNAT</h4>
+                                                    </div>
+                                                    <div className="text-xs text-red-700 space-y-1">
+                                                        {guia.sunat_description && (
+                                                            <p><strong>Descripción:</strong> {guia.sunat_description}</p>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            )}
+                                            <div className="border-t pt-3 flex gap-2">
+                                                <Button variant="outline" size="sm" className="text-xs bg-transparent"
+                                                        onClick={() => onViewPdf(guia.pdf_zip_base64!)}>
+                                                    <Eye className="h-3 w-3 mr-1" /> Ver PDF
                                                 </Button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent align="end" className="w-56">
-                                                <DropdownMenuItem onClick={() => handleViewJson('JSON Solicitud (Request)', guia.raw_request)}>
-                                                    <Code className="mr-2 h-4 w-4 text-gray-500" /> JSON Solicitud
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem onClick={() => handleViewJson('JSON Respuesta (Response)', guia.raw_response)}>
-                                                    <FileJson className="mr-2 h-4 w-4 text-gray-500" /> JSON Respuesta
-                                                </DropdownMenuItem>
-
-                                                <DropdownMenuSeparator />
-
-                                                <DropdownMenuItem onClick={() => onSendEmail(guia)}>
-                                                    <Mail className="mr-2 h-4 w-4 text-blue-500" /> Enviar por Correo
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem onClick={() => onSendWhatsApp(guia)}>
-                                                    <MessageCircle className="mr-2 h-4 w-4 text-green-500" /> Enviar por WhatsApp
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem onClick={() => onCheckStatus(guia)}>
-                                                    <Activity className="mr-2 h-4 w-4 text-orange-500" /> Ver Estado SUNAT
-                                                </DropdownMenuItem>
-
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
-                                    </div>
+                                                {(guia.idComprobanteCab && guia.comprobante_serie != null) && (
+                                                    <Button variant="ghost" size="icon"
+                                                            className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-blue-50"
+                                                            onClick={() => handleViewComprobante(guia)}
+                                                            title="Ver Comprobante Asociado">
+                                                        <Receipt className="h-4 w-4" />
+                                                    </Button>
+                                                )}
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild>
+                                                        <Button variant="outline" size="sm" className="text-xs bg-transparent">
+                                                            <MoreHorizontal className="h-3 w-3 mr-1" /> Opciones
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent align="end" className="w-56">
+                                                        <DropdownMenuItem onClick={() => handleViewJson('JSON Solicitud', guia.raw_request!)}>
+                                                            <Code className="mr-2 h-4 w-4 text-gray-500" /> JSON Solicitud
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem onClick={() => handleViewJson('JSON Respuesta', guia.raw_response!)}>
+                                                            <FileJson className="mr-2 h-4 w-4 text-gray-500" /> JSON Respuesta
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuSeparator />
+                                                        <DropdownMenuItem onClick={() => onSendEmail(guia)}>
+                                                            <Mail className="mr-2 h-4 w-4 text-blue-500" /> Enviar por Correo
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem onClick={() => onSendWhatsApp(guia)}>
+                                                            <MessageCircle className="mr-2 h-4 w-4 text-green-500" /> Enviar por WhatsApp
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem onClick={() => onCheckStatus(guia)}>
+                                                            <Activity className="mr-2 h-4 w-4 text-orange-500" /> Ver Estado SUNAT
+                                                        </DropdownMenuItem>
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
+                                            </div>
+                                        </>
+                                    )}
                                 </div>
                             </CardContent>
                         </Card>
@@ -288,7 +317,7 @@ export function GuiasList({
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2">
                             <AlertCircle className="h-5 w-5" />
-                            Motivo de Anulación
+                            Motivo de Anulación del Comprobante
                         </DialogTitle>
                     </DialogHeader>
 
