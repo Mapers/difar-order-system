@@ -283,7 +283,7 @@ export default function EstadosPedidosDetailPage({ params }: { params: { id: str
   )
 
   const filteredClients = clientSearchQuery
-      ? clientsFiltered.filter(c => c.Nombre.toLowerCase().includes(clientSearchQuery.toLowerCase()) || c.RUC?.includes(clientSearchQuery))
+      ? clientsFiltered.filter(c => String(c?.Nombre || '').toLowerCase().includes(clientSearchQuery.toLowerCase()) || c.RUC?.includes(clientSearchQuery))
       : clientsFiltered;
 
   return (
