@@ -49,8 +49,8 @@ export function CreditNotesTable({
     const [showReasonModal, setShowReasonModal] = useState(false)
     const [selectedReason, setSelectedReason] = useState("")
 
-    const getTipoComprobante = (tipo: number) => {
-        const tipoObj = tiposComprobante.find(t => Number(t.tipo) == tipo)
+    const getTipoComprobante = (prefijo: string) => {
+        const tipoObj = tiposComprobante.find(t => t.prefijo == prefijo && t.tipo === '7')
         return tipoObj ? tipoObj.nombre : "Nota de Crédito"
     }
 
@@ -126,7 +126,7 @@ export function CreditNotesTable({
                                         <td className="p-4 text-sm">{format(parseISO(nota.fecha_envio), "dd/MM/yyyy")}</td>
                                         <td className="p-4 text-sm">
                                             <div className="flex items-center gap-2">
-                                                {getTipoComprobante(nota.tipo_comprobante)}
+                                                {getTipoComprobante(nota.serie)}
                                             </div>
                                         </td>
                                         <td className="p-4 font-medium text-sm">{nota.serie}-{nota.numero}</td>
