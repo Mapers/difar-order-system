@@ -329,7 +329,7 @@ export default function ClientStep({
                                 selectedCurrency={currency}
                             />
 
-                            <OrderHistory client={selectedClient} />
+                            {/*<OrderHistory client={selectedClient} />*/}
                         </div>
                     </div>
                 )}

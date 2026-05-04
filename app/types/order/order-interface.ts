@@ -19,7 +19,7 @@ export interface Comprobante {
     raw_request:           string  | null
     raw_response:          string  | null
     motivo_anulado?:       string  | null
-    tieneNC:               boolean
+    tipoNC:               string
     aceptada_por_sunat?:   number  | null
     estado_correlativo:    'OCUPADO' | 'LIBRE'
     fecha_emision?:        string  | null

@@ -82,9 +82,9 @@ export function ComprobantesTable({
             }
         }
 
-        if (comprobante.tieneNC) {
+        if (comprobante.tipoNC !== 'sin_nc') {
             return {
-                label: 'Tiene NC',
+                label: `NC ${comprobante.tipoNC.toUpperCase()}`,
                 cellBg: 'bg-purple-50',
                 textColor: 'text-purple-700',
             }
