@@ -23,6 +23,7 @@ import {DeleteOrderDialog} from "@/app/dashboard/estados-pedidos/modals/DeleteOr
 import {DocumentsDialog} from "@/app/dashboard/estados-pedidos/modals/DocumentsDialog";
 import {Sequential} from "@/app/types/config-types";
 import {SunatTransaccion, TipoDocSunat} from "@/app/types/order/order-interface";
+import {toast} from "@/app/hooks/useToast";
 
 export interface Pedido {
   idPedidocab: number
@@ -272,7 +273,6 @@ export default function OrderStatusManagementPage() {
 
     } catch (error) {
       console.error('Error al cambiar estado:', error)
-      alert('Error al cambiar el estado del pedido')
     } finally {
       setLoading(false)
     }
@@ -361,7 +361,11 @@ export default function OrderStatusManagementPage() {
       setIsPreviewOpen(true)
     } catch (error) {
       console.error('Error generando preview:', error)
-      alert('Error al generar el preview del comprobante')
+      toast({
+        title: 'Error',
+        description: error.response?.data?.message || 'Error al Cargar preview',
+        variant: 'destructive'
+      })
     } finally {
       setLoadingPreview(false)
     }
