@@ -21,3 +21,7 @@ export const getEscalasRequest = async (requestEscala: IPromocionRequest): Promi
 export const getBonificadosRequest = async (requestBonificado: IPromocionRequest): Promise<any> => {
     return apiClient.post(`/articulos/bonificados`, requestBonificado)
 }
+
+export const getProductsByAlmacenRequest = async (almacen: number): Promise<any> => {
+    return apiClient.get(`/articulos/byAlmacen?almacen=${almacen}`)
+}

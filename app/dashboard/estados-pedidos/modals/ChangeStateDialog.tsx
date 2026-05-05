@@ -109,6 +109,7 @@ export function ChangeStateDialog({
             if (first) {
                 setInvoiceType(`${first.prefijo}|${first.tipo}`)
                 if (first.id_almacen) setSelectedAlmacen(String(first.id_almacen))
+                if (selectedOrder?.idAlmacen) setSelectedAlmacen(String(selectedOrder?.idAlmacen))
                 if (first.tipo === '1') setTipoSunat('6')
                 else if (first.tipo === '3') setTipoSunat('1')
             }

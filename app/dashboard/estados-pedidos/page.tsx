@@ -50,6 +50,7 @@ export interface Pedido {
   correo?: string
   codigo_grupo?: string
   tipo_afectacion?: string
+  idAlmacen?: number
 }
 
 export interface PedidoDet {

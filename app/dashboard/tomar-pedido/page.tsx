@@ -18,6 +18,7 @@ import DraftsModal from "@/components/tomar-pedido/DraftsModal";
 import {OrderDraft, useOrderDrafts} from "@/app/hooks/useOrderDrafts";
 import {toast} from "@/app/hooks/useToast";
 import {Button} from "@/components/ui/button";
+import AlmacenModal from "@/components/tomar-pedido/AlmacenModal";
 
 const steps = [
   { label: "Cliente", icon: User },
@@ -243,6 +244,18 @@ export default function OrderPage() {
             deleteDraft={deleteDraft}
             applyDraft={handleApplyDraft}
         />
+
+          <AlmacenModal
+              open={order.showAlmacenModal}
+              onOpenChange={order.setShowAlmacenModal}
+              almacenes={order.almacenes}
+              selectedAlmacen={order.selectedAlmacen}
+              onSelectAlmacen={(alm) => {
+                  order.setSelectedAlmacen(alm)
+                  order.setShowAlmacenModal(false)
+                  order.setCurrentStep(1)
+              }}
+          />
       </div>
   )
 }

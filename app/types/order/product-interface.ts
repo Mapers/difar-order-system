@@ -103,3 +103,9 @@ export interface ISelectedProduct {
   isAuthorize?: boolean
   lote?: string
 }
+
+export interface IAlmacen {
+  IdAlmacen:   number
+  Codigo_Alm:  string
+  Descripcion: string
+}

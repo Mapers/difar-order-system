@@ -11,7 +11,12 @@ import {
     fetchUnidaTerritorial,
     fetchUpdateClientRef,
 } from "@/app/api/takeOrders"
-import { getBonificadosRequest, getEscalasRequest, getProductsRequest } from "@/app/api/products"
+import {
+    getBonificadosRequest,
+    getEscalasRequest,
+    getProductsByAlmacenRequest,
+    getProductsRequest
+} from "@/app/api/products"
 import { IProduct, ISelectedProduct, IPromocionRequest } from "@/app/types/order/product-interface"
 import { IClient, ICondicion, IDistrito, IMoneda, ITerritorio } from "@/app/types/order/client-interface"
 import { useAuth } from "@/context/authContext"
@@ -68,6 +73,9 @@ export function useOrderPage() {
     const [showLaboratorioModal, setShowLaboratorioModal] = useState(false)
     const [tempSelectedProducts, setTempSelectedProducts] = useState<ISelectedProduct[]>([])
     const [isCheckingBonification, setIsCheckingBonification] = useState(false)
+    const [selectedAlmacen, setSelectedAlmacen] = useState<IAlmacen | null>(null)
+    const [almacenes, setAlmacenes] = useState<IAlmacen[]>([])
+    const [showAlmacenModal, setShowAlmacenModal] = useState(false)
 
     // Alternative products
     const [showAlternativesModal, setShowAlternativesModal] = useState(false)
@@ -612,6 +620,7 @@ export function useOrderPage() {
                 telefonoPedido:      selectedClient?.telefono,
                 horaPedido:          moment(new Date()).format('HH:mm'),
                 notaPedido:          note,
+                idAlmacen:           selectedAlmacen?.IdAlmacen || null,
             }
 
             const tiposPresentes = [...new Set(
@@ -625,7 +634,6 @@ export function useOrderPage() {
                     return 'GRAVADO'
                 })
             )]
-            console.log(tiposPresentes)
 
             const hayMixto = tiposPresentes.length > 1
 
@@ -700,6 +708,14 @@ export function useOrderPage() {
     // --- Navigation ---
 
     const nextStep = () => {
+        if (currentStep === 0) {
+            if (!selectedAlmacen || selectedProducts.length === 0) {
+                setShowAlmacenModal(true)
+                return
+            }
+            setCurrentStep(1)
+            return
+        }
         if (currentStep < 2) setCurrentStep(currentStep + 1)
     }
 
@@ -737,6 +753,7 @@ export function useOrderPage() {
         if (user) {
             debouncedFetchClients()
             if (isAdmin()) fetchVendedores()
+            fetchAlmacenes()
         }
     }, [user])
 
@@ -768,9 +785,10 @@ export function useOrderPage() {
 
     useEffect(() => {
         const fetchProducts = async () => {
+            if (!selectedAlmacen) return
             try {
                 setLoading(prev => ({ ...prev, products: true }))
-                const response = await getProductsRequest()
+                const response = await getProductsByAlmacenRequest(selectedAlmacen.IdAlmacen)
                 setProducts(response.data?.data?.data || [])
             } catch (error) {
                 console.error("Error fetching products:", error)
@@ -779,12 +797,21 @@ export function useOrderPage() {
             }
         }
         fetchProducts()
-    }, [search.product])
+    }, [selectedAlmacen])
 
     const clear = () => {
         setSelectedProducts([]);
         setProductosConLotes([]);
     };
+
+    const fetchAlmacenes = async () => {
+        try {
+            const response = await apiClient.get('/admin/listar/almacenes')
+            setAlmacenes(response.data.data || [])
+        } catch (error) {
+            console.error("Error fetching almacenes:", error)
+        }
+    }
 
     // --- Draft ---
 
@@ -803,7 +830,8 @@ export function useOrderPage() {
         selectedProducts,
         productosConLotes,
         note,
-        editedClientData
+        editedClientData,
+        getOrderStateForDraft
     });
 
     const loadStateFromDraft = (draft: any) => {
@@ -825,6 +853,7 @@ export function useOrderPage() {
         setProductosConLotes(draft.productosConLotes);
         setNote(draft.note);
         setEditedClientData(draft.editedClientData);
+        setSelectedAlmacen(draft.selectedAlmacen || null);
     };
 
     return {
@@ -862,6 +891,9 @@ export function useOrderPage() {
         handleAutoCreateClient,
         nextStep, prevStep, goToStep, isStepValid,
         isAdmin, clear,
-        getOrderStateForDraft, loadStateFromDraft
+        getOrderStateForDraft, loadStateFromDraft,
+        selectedAlmacen, setSelectedAlmacen,
+        almacenes, showAlmacenModal, setShowAlmacenModal,
+        setCurrentStep
     }
 }
