@@ -9,9 +9,25 @@ import {InactivityProvider} from "@/app/providers/inactivity-provider";
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "Sistema de Pedidos",
-  description: "Sistema de gestión de pedidos",
-  generator: 'v0.dev'
+  title: "Difar Order System",
+  description: "Sistema de gestión de pedidos Difar",
+  generator: 'v0.dev',
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Difar",
+  },
+  icons: {
+    icon: [
+      { url: "/icons/icon-16x16.png", sizes: "16x16", type: "image/png" },
+      { url: "/icons/icon-32x32.png", sizes: "32x32", type: "image/png" },
+      { url: "/icons/icon-192x192.png", sizes: "192x192", type: "image/png" },
+    ],
+    apple: [
+      { url: "/icons/icon-180x180.png", sizes: "180x180", type: "image/png" },
+    ],
+  },
 }
 
 export default function RootLayout({
