@@ -5,7 +5,18 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
-import {Receipt, Loader2, Truck, AlertTriangle, Check, FileText, CreditCard, Package, RefreshCw} from "lucide-react"
+import {
+    Receipt,
+    Loader2,
+    Truck,
+    AlertTriangle,
+    Check,
+    FileText,
+    CreditCard,
+    Package,
+    RefreshCw,
+    Tag
+} from "lucide-react"
 import { Pedido, SunatTransaccion, TipoDocSunat, GuiaReferencia } from "@/app/types/order/order-interface"
 import { GuidesSelectorModal } from "./GuidesSelectorModal"
 import { Badge } from "@/components/ui/badge"
@@ -36,7 +47,8 @@ interface InvoiceModalProps {
         email: string,
         phone: string,
         idAlmacen: number,
-        flete: { activo: boolean; monto: number }
+        flete: { activo: boolean; monto: number },
+        descuento: { activo: boolean; monto: number }
     ) => void
 }
 
@@ -62,6 +74,12 @@ export function InvoiceModal({
         tipo_cpe: string
     } | null>(null)
     const [loadingPreviewData, setLoadingPreviewData] = useState(false)
+
+    const [descuentoActivo,  setDescuentoActivo]  = useState(false)
+    const [descuentoMonto,   setDescuentoMonto]   = useState<string>("")
+    const [descuentoError,   setDescuentoError]   = useState<string>("")
+
+    const valorDescuento = descuentoActivo ? Number(descuentoMonto) || 0 : 0
 
     const valorFlete = fleteActivo ? Number(fleteMonto) || 0 : 0
     const isCredit   = selectedOrder?.condicionCredito === '1'
@@ -176,7 +194,12 @@ export function InvoiceModal({
             setFleteError("Ingrese un monto válido para el flete")
             return
         }
+        if (descuentoActivo && (!descuentoMonto || Number(descuentoMonto) <= 0)) {
+            setDescuentoError("Ingrese un monto válido para el descuento")
+            return
+        }
         setFleteError("")
+        setDescuentoError("")
         setShowContactModal(true)
     }
 
@@ -189,17 +212,19 @@ export function InvoiceModal({
             email,
             phone,
             Number(selectedAlmacen) || 1,
-            { activo: fleteActivo, monto: valorFlete }
+            { activo: fleteActivo, monto: valorFlete },
+            { activo: descuentoActivo, monto: valorDescuento }
         )
     }
 
-    const canConfirm =
+    const canConfirm =handleFinalConfirm
         !isProcessing &&
         !!invoiceType &&
         !!sunatTransaction &&
         !!selectedAlmacen &&
         (!isCredit || cuotas.length > 0) &&
-        (!fleteActivo || (!!fleteMonto && Number(fleteMonto) > 0))
+        (!fleteActivo || (!!fleteMonto && Number(fleteMonto) > 0)) &&
+        (!descuentoActivo || (!!descuentoMonto && Number(descuentoMonto) > 0))
 
     return (
         <>
@@ -348,6 +373,47 @@ export function InvoiceModal({
                                                 />
                                             </div>
                                             {fleteError && <p className="text-xs text-red-500">{fleteError}</p>}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="border rounded-md p-3 space-y-3">
+                                <div className="flex items-center gap-2">
+                                    <Checkbox
+                                        id="chk-descuento"
+                                        checked={descuentoActivo}
+                                        onCheckedChange={(v) => {
+                                            setDescuentoActivo(!!v)
+                                            if (!v) { setDescuentoMonto(""); setDescuentoError("") }
+                                        }}
+                                        disabled={isProcessing}
+                                    />
+                                    <Label htmlFor="chk-descuento" className="text-sm font-medium flex items-center gap-2 cursor-pointer">
+                                        <Tag className="h-4 w-4 text-gray-600" />
+                                        Incluir Descuento Global
+                                    </Label>
+                                </div>
+                                {descuentoActivo && (
+                                    <div className="space-y-2 pl-6">
+                                        <div className="flex-1 space-y-1">
+                                            <Label className="text-xs text-gray-500">
+                                                Monto Descuento <span className="text-gray-400">(sobre el total)</span>
+                                            </Label>
+                                            <div className="relative">
+                                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-500">S/</span>
+                                                <Input
+                                                    type="number"
+                                                    min="0.01"
+                                                    step="0.01"
+                                                    value={descuentoMonto}
+                                                    onChange={(e) => { setDescuentoMonto(e.target.value); setDescuentoError("") }}
+                                                    className={`pl-9 ${descuentoError ? 'border-red-400' : ''}`}
+                                                    placeholder="0.00"
+                                                    disabled={isProcessing}
+                                                />
+                                            </div>
+                                            {descuentoError && <p className="text-xs text-red-500">{descuentoError}</p>}
                                         </div>
                                     </div>
                                 )}
