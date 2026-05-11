@@ -36,6 +36,8 @@ import {Cuota} from "@/app/dashboard/comprobantes/modals/InstallmentModal";
 import {Sequential} from "@/app/types/config-types";
 import {DeletePendienteModal} from "@/app/dashboard/comprobantes/modals/DeletePendienteModal";
 import {toast} from "@/app/hooks/useToast";
+import {CorregirDescripcionModal} from "@/app/dashboard/comprobantes/modals/CorregirDescripcionModal";
+import {ModificarCuotasModal} from "@/app/dashboard/comprobantes/modals/ModificarCuotasModal";
 
 function useDebounce(value: string, delay: number = 500) {
   const [debounced, setDebounced] = useState(value)
@@ -64,6 +66,10 @@ export default function ComprobantesPage() {
   const debouncedNotas = useDebounce(searchNotas)
   const debouncedGuias = useDebounce(searchGuias)
   const debouncedPendientes = useDebounce(searchPendientes)
+
+  const [showCorregirDescModal, setShowCorregirDescModal] = useState(false)
+  const [showModificarCuotasModal, setShowModificarCuotasModal] = useState(false)
+  const [comprobanteSeleccionado, setComprobanteSeleccionado] = useState<Comprobante | null>(null)
 
   const today = new Date()
   const tomorrow = addDays(today, 1)
@@ -109,7 +115,7 @@ export default function ComprobantesPage() {
   const [showEmailModal, setShowEmailModal] = useState(false)
   const [showWhatsappModal, setShowWhatsappModal] = useState(false)
 
-  const [selectedDocForAction, setSelectedDocForAction] = useState<{id: number | string, type: 'COMPROBANTE' | 'GUIA', email?: string, phone?: string} | null>(null)
+  const [selectedDocForAction, setSelectedDocForAction] = useState<{id: number | string | null, type: 'COMPROBANTE' | 'GUIA', email?: string, phone?: string} | null>(null)
   const [actionLoading, setActionLoading] = useState(false)
 
   const [showStatusModal, setShowStatusModal] = useState(false)
@@ -526,6 +532,80 @@ export default function ComprobantesPage() {
     }
   }
 
+  const handleCorregirDescripcion = (comprobante: Comprobante) => {
+    setComprobanteSeleccionado(comprobante)
+    setShowCorregirDescModal(true)
+  }
+
+  const handleModificarCuotas = (comprobante: Comprobante) => {
+    setComprobanteSeleccionado(comprobante)
+    setShowModificarCuotasModal(true)
+  }
+
+  const handleConfirmCorreccionDesc = async (
+      items_descripcion: { cod_item: string; nueva_descripcion: string }[],
+      observaciones: string,
+      prefijo: string,
+      tipoCompr: string,
+      codOperacion: string
+  ) => {
+    if (!comprobanteSeleccionado) return
+    try {
+      const response = await apiClient.post('/pedidos/generateNotaCredito', {
+        idComprobanteRef: comprobanteSeleccionado.idComprobanteCab,
+        nroPedido:        comprobanteSeleccionado.nroPedido,
+        motivo:           '03',
+        observaciones,
+        prefijo,
+        tipoCompr,
+        codOperacion,
+        items_descripcion
+      })
+      if (response.data.success) {
+        toast({ title: "Éxito", description: "Corrección de descripción generada" })
+        setShowCorregirDescModal(false)
+        fetchComprobantes()
+        fetchNotasCredito()
+      } else {
+        toast({ title: "Error", description: response.data.message, variant: "destructive" })
+      }
+    } catch (error: any) {
+      toast({ title: "Error", description: error?.response?.data?.message || "Error al generar", variant: "destructive" })
+    }
+  }
+
+  const handleConfirmModificacionCuotas = async (
+      cuotas_nuevas: { fecha: string; monto: number }[],
+      observaciones: string,
+      prefijo: string,
+      tipoCompr: string,
+      codOperacion: string
+  ) => {
+    if (!comprobanteSeleccionado) return
+    try {
+      const response = await apiClient.post('/pedidos/generateNotaCredito', {
+        idComprobanteRef: comprobanteSeleccionado.idComprobanteCab,
+        nroPedido:        comprobanteSeleccionado.nroPedido,
+        motivo:           '13',
+        observaciones,
+        prefijo,
+        tipoCompr,
+        codOperacion,
+        cuotas_nuevas
+      })
+      if (response.data.success) {
+        toast({ title: "Éxito", description: "Modificación de cuotas generada" })
+        setShowModificarCuotasModal(false)
+        fetchComprobantes()
+        fetchNotasCredito()
+      } else {
+        toast({ title: "Error", description: response.data.message, variant: "destructive" })
+      }
+    } catch (error: any) {
+      toast({ title: "Error", description: error?.response?.data?.message || "Error al generar", variant: "destructive" })
+    }
+  }
+
   return (
       <div className="grid gap-6">
         <div className="flex flex-col gap-2">
@@ -682,6 +762,8 @@ export default function ComprobantesPage() {
                 onSendEmail={handleEmailCompr}
                 onSendWhatsApp={handleWhatsappCompr}
                 onCheckStatus={handleStatusCompr}
+                onCorregirDescripcion={handleCorregirDescripcion}
+                onModificarCuotas={handleModificarCuotas}
             />
             <ComprobantesStats comprobantes={comprobantes} />
           </TabsContent>
@@ -854,6 +936,26 @@ export default function ComprobantesPage() {
             isDeleting={isDeletingPedido}
             onConfirm={confirmDeletePendiente}
         />
+
+        {showCorregirDescModal && comprobanteSeleccionado && (
+            <CorregirDescripcionModal
+                open={showCorregirDescModal}
+                onOpenChange={setShowCorregirDescModal}
+                comprobante={comprobanteSeleccionado}
+                tiposComprobante={tiposComprobante}
+                onConfirm={handleConfirmCorreccionDesc}
+            />
+        )}
+
+        {showModificarCuotasModal && comprobanteSeleccionado && (
+            <ModificarCuotasModal
+                open={showModificarCuotasModal}
+                onOpenChange={setShowModificarCuotasModal}
+                comprobante={comprobanteSeleccionado}
+                tiposComprobante={tiposComprobante}
+                onConfirm={handleConfirmModificacionCuotas}
+            />
+        )}
       </div>
   )
 }

@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import {
     Eye, MoreHorizontal, XCircle, Loader2, FileJson, Code,
-    AlertCircle, Info, Truck, MessageCircle, Mail, Activity, Lock
+    AlertCircle, Info, Truck, MessageCircle, Mail, Activity, Lock, PenLine, CalendarClock
 } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
@@ -21,16 +21,20 @@ interface ComprobantesTableProps {
     onSendEmail: (comprobante: Comprobante) => void
     onSendWhatsApp: (comprobante: Comprobante) => void
     onCheckStatus: (comprobante: Comprobante) => void
+    onCorregirDescripcion: (comprobante: Comprobante) => void
+    onModificarCuotas: (comprobante: Comprobante) => void
 }
 
 export function ComprobantesTable({
                                       comprobantes, loading, tiposComprobante, onViewPdf, onCancel,
-                                      onSendEmail, onSendWhatsApp, onCheckStatus
+                                      onSendEmail, onSendWhatsApp, onCheckStatus, onCorregirDescripcion,
+                                      onModificarCuotas
                                   }: ComprobantesTableProps) {
     const [showJsonModal,    setShowJsonModal]    = useState(false)
     const [jsonContent,      setJsonContent]      = useState("")
     const [jsonTitle,        setJsonTitle]        = useState("")
     const [showReasonModal,  setShowReasonModal]  = useState(false)
+    const [showMotivoNCModal, setShowMotivoNCModal] = useState(false)
     const [selectedReason,   setSelectedReason]   = useState("")
     const [showGuidesModal,  setShowGuidesModal]  = useState(false)
     const [selectedComprobanteForGuides, setSelectedComprobanteForGuides] = useState<Comprobante | null>(null)
@@ -51,6 +55,11 @@ export function ComprobantesTable({
     const handleViewReason = (reason: string) => {
         setSelectedReason(reason || "Sin motivo especificado.")
         setShowReasonModal(true)
+    }
+
+    const handleViewReasonNC = (reason: string) => {
+        setSelectedReason(reason || "Sin motivo especificado.")
+        setShowMotivoNCModal(true)
     }
 
     const handleViewGuides = (comprobante: Comprobante) => {
@@ -119,6 +128,15 @@ export function ComprobantesTable({
             label: 'Activo',
             cellBg: 'bg-green-50',
             textColor: 'text-green-700',
+            extra: (comprobante.tieneNCModificacion === 1) ? (
+                <button
+                    className="ml-1 text-blue-400 hover:text-blue-600"
+                    onClick={() => handleViewReasonNC('ESTE DOCUMENTO TIENE MODIFICACIONES, REVISAR NOTAS DE CRÉDITO')}
+                    title="Ver motivo"
+                >
+                    <AlertCircle className="h-3.5 w-3.5" />
+                </button>
+            ) : undefined
         }
     }
 
@@ -250,7 +268,22 @@ export function ComprobantesTable({
                                                                 <Activity className="mr-2 h-4 w-4 text-orange-500" /> Ver Estado SUNAT
                                                             </DropdownMenuItem>
                                                             <DropdownMenuSeparator />
-                                                            {(!comprobante.anulado && !comprobante.tieneNC) && (
+
+                                                            {(!comprobante.anulado && comprobante.tipoNC === 'sin_nc') && (
+                                                                <>
+                                                                    <DropdownMenuSeparator />
+                                                                    <DropdownMenuItem onClick={() => onCorregirDescripcion(comprobante)}>
+                                                                        <PenLine className="mr-2 h-4 w-4 text-blue-500" /> Corregir Descripción
+                                                                    </DropdownMenuItem>
+                                                                    {comprobante.condicionCredito === '1' && (
+                                                                        <DropdownMenuItem onClick={() => onModificarCuotas(comprobante)}>
+                                                                            <CalendarClock className="mr-2 h-4 w-4 text-purple-500" /> Modificar Cuotas
+                                                                        </DropdownMenuItem>
+                                                                    )}
+                                                                </>
+                                                            )}
+
+                                                            {(!comprobante.anulado && comprobante.tipoNC === 'sin_nc') && (
                                                                 <DropdownMenuItem className="text-red-600" onClick={() => onCancel(comprobante)}>
                                                                     <XCircle className="mr-2 h-4 w-4" /> Anular Comprobante
                                                                 </DropdownMenuItem>
@@ -354,7 +387,7 @@ export function ComprobantesTable({
                                                             <Activity className="mr-2 h-4 w-4 text-orange-500" /> Ver Estado SUNAT
                                                         </DropdownMenuItem>
                                                         <DropdownMenuSeparator />
-                                                        {(!comprobante.anulado && !comprobante.tieneNC) && (
+                                                        {(!comprobante.anulado && comprobante.tipoNC === 'sin_nc') && (
                                                             <DropdownMenuItem className="text-red-600" onClick={() => onCancel(comprobante)}>
                                                                 <XCircle className="mr-2 h-4 w-4" /> Anular
                                                             </DropdownMenuItem>
@@ -402,6 +435,27 @@ export function ComprobantesTable({
                     </div>
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setShowReasonModal(false)}>Cerrar</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={showMotivoNCModal} onOpenChange={setShowMotivoNCModal}>
+                <DialogContent className="sm:max-w-[500px]">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <AlertCircle className="h-5 w-5" />
+                            Motivo de NC
+                        </DialogTitle>
+                    </DialogHeader>
+
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-2">
+                        <p className="text-sm text-blue-900 whitespace-pre-wrap leading-relaxed">
+                            {selectedReason.toUpperCase()}
+                        </p>
+                    </div>
+
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setShowMotivoNCModal(false)}>Cerrar</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

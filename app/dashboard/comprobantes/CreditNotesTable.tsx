@@ -47,6 +47,7 @@ export function CreditNotesTable({
     const [jsonTitle, setJsonTitle] = useState("")
 
     const [showReasonModal, setShowReasonModal] = useState(false)
+    const [showMotivoNCModal, setShowMotivoNCModal] = useState(false)
     const [selectedReason, setSelectedReason] = useState("")
 
     const getTipoComprobante = (prefijo: string) => {
@@ -57,6 +58,11 @@ export function CreditNotesTable({
     const handleViewReason = (reason: string) => {
         setSelectedReason(reason || "Sin motivo especificado.")
         setShowReasonModal(true)
+    }
+
+    const handleViewReasonNC = (reason: string) => {
+        setSelectedReason(reason || "Sin motivo especificado.")
+        setShowMotivoNCModal(true)
     }
 
     const getEstadoBadge = (nota: Comprobante) => {
@@ -78,7 +84,20 @@ export function CreditNotesTable({
                 </div>
             )
         }
-        return <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-200 border-blue-200">Emitido</Badge>
+        return <div className="flex items-center gap-1">
+            <Badge className='bg-blue-100 text-blue-800 hover:bg-blue-200 border-blue-200'>Emitido</Badge>
+            {nota.motivo_descripcion !== 'Nota de Crédito' && (
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6 text-blue-500 hover:text-blue-700 hover:bg-blue-50"
+                    onClick={() => handleViewReasonNC(nota.motivo_descripcion!)}
+                    title="Ver motivo"
+                >
+                    <AlertCircle className="h-4 w-4" />
+                </Button>
+            )}
+        </div>
     }
 
     const handleViewJson = (title: string, content: string) => {
@@ -122,7 +141,7 @@ export function CreditNotesTable({
                             <tbody className="bg-white divide-y divide-gray-200">
                             {notas.length > 0 ? (
                                 notas.map((nota) => (
-                                    <tr key={nota.idComprobanteCab} className="hover:bg-gray-50">
+                                    <tr key={`${nota.idSunat}-${nota.idComprobanteCab}`} className="hover:bg-gray-50">
                                         <td className="p-4 text-sm">{format(parseISO(nota.fecha_envio), "dd/MM/yyyy")}</td>
                                         <td className="p-4 text-sm">
                                             <div className="flex items-center gap-2">
@@ -195,7 +214,7 @@ export function CreditNotesTable({
             <div className="lg:hidden space-y-3">
                 {notas.length > 0 ? (
                     notas.map((nota) => (
-                        <Card key={nota.idComprobanteCab} className="border border-gray-200">
+                        <Card key={`${nota.idSunat}-${nota.idComprobanteCab}`} className="border border-gray-200">
                             <CardContent className="p-4">
                                 <div className="space-y-3">
                                     <div className="flex justify-between items-start">
@@ -308,12 +327,33 @@ export function CreditNotesTable({
 
                     <div className="bg-red-50 border border-red-200 rounded-lg p-4 mt-2">
                         <p className="text-sm text-red-900 whitespace-pre-wrap leading-relaxed">
-                            {selectedReason}
+                            {selectedReason.toUpperCase()}
                         </p>
                     </div>
 
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setShowReasonModal(false)}>Cerrar</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={showMotivoNCModal} onOpenChange={setShowMotivoNCModal}>
+                <DialogContent className="sm:max-w-[500px]">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <AlertCircle className="h-5 w-5" />
+                            Motivo de NC
+                        </DialogTitle>
+                    </DialogHeader>
+
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-2">
+                        <p className="text-sm text-blue-900 whitespace-pre-wrap leading-relaxed">
+                            {selectedReason.toUpperCase()}
+                        </p>
+                    </div>
+
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setShowMotivoNCModal(false)}>Cerrar</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

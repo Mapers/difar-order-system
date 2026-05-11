@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Plus, Trash2, CalendarClock, AlertCircle } from "lucide-react"
+import { Plus, Trash2, CalendarClock } from "lucide-react"
 import { format, addDays } from "date-fns"
 
 export interface Cuota {
@@ -13,69 +13,112 @@ export interface Cuota {
     monto: number
 }
 
-interface InstallmentModalProps {
-    open: boolean
-    onOpenChange: (open: boolean) => void
-    totalImporte: number
-    initialCuotas: Cuota[]
-    onSave: (cuotas: Cuota[]) => void
+interface CuotaInput {
+    fecha:       string
+    montoInput:  string
+    monto:       number
 }
 
-export function InstallmentModal({ open, onOpenChange, totalImporte, initialCuotas, onSave }: InstallmentModalProps) {
-    const [cuotas, setCuotas] = useState<Cuota[]>([])
+interface InstallmentModalProps {
+    open:          boolean
+    onOpenChange:  (open: boolean) => void
+    totalImporte:  number
+    initialCuotas: Cuota[]
+    onSave:        (cuotas: Cuota[]) => void
+}
+
+export function InstallmentModal({
+                                     open, onOpenChange, totalImporte, initialCuotas, onSave
+                                 }: InstallmentModalProps) {
+    const [cuotas,       setCuotas]       = useState<CuotaInput[]>([])
     const [numCuotasGen, setNumCuotasGen] = useState(1)
+    const [numInput,     setNumInput]     = useState("1")
 
     useEffect(() => {
-        if (open) {
-            if (initialCuotas.length > 0) {
-                setCuotas(initialCuotas)
-            } else {
-                setCuotas([{ fecha: format(addDays(new Date(), 30), 'yyyy-MM-dd'), monto: totalImporte }])
-            }
+        if (!open) return
+        if (initialCuotas.length > 0) {
+            setCuotas(initialCuotas.map(c => ({
+                fecha:      c.fecha,
+                montoInput: String(c.monto),
+                monto:      c.monto
+            })))
+        } else {
+            setCuotas([{
+                fecha:      format(addDays(new Date(), 30), 'yyyy-MM-dd'),
+                montoInput: String(totalImporte),
+                monto:      totalImporte
+            }])
         }
     }, [open, totalImporte, initialCuotas])
 
     const handleGenerarCuotas = () => {
-        const montoPorCuota = Number((totalImporte / numCuotasGen).toFixed(2))
-        const nuevasCuotas: Cuota[] = []
-        let sumaAcumulada = 0
+        const n = numCuotasGen
+        if (n <= 0) return
 
-        for (let i = 0; i < numCuotasGen; i++) {
-            const monto = (i === numCuotasGen - 1)
-                ? Number((totalImporte - sumaAcumulada).toFixed(2))
+        const montoPorCuota = Number((totalImporte / n).toFixed(2))
+        const nuevas: CuotaInput[] = []
+        let acumulado = 0
+
+        for (let i = 0; i < n; i++) {
+            const monto = i === n - 1
+                ? Number((totalImporte - acumulado).toFixed(2))
                 : montoPorCuota
-
-            sumaAcumulada += monto
-
-            nuevasCuotas.push({
-                fecha: format(addDays(new Date(), (i + 1) * 30), 'yyyy-MM-dd'),
-                monto: monto
+            acumulado += monto
+            nuevas.push({
+                fecha:      format(addDays(new Date(), (i + 1) * 30), 'yyyy-MM-dd'),
+                montoInput: String(monto),
+                monto
             })
         }
-        setCuotas(nuevasCuotas)
-    }
-
-    const updateCuota = (index: number, field: keyof Cuota, value: string | number) => {
-        const nuevas = [...cuotas]
-        nuevas[index] = { ...nuevas[index], [field]: value }
         setCuotas(nuevas)
     }
 
+    const updateFecha = (index: number, value: string) => {
+        setCuotas(prev => prev.map((c, i) =>
+            i === index ? { ...c, fecha: value } : c
+        ))
+    }
+
+    const updateMontoInput = (index: number, value: string) => {
+        if (value !== '' && !/^\d*\.?\d*$/.test(value)) return
+
+        const parsed = parseFloat(value)
+        const monto  = isNaN(parsed) ? 0 : parsed
+
+        setCuotas(prev => prev.map((c, i) =>
+            i === index ? { ...c, montoInput: value, monto } : c
+        ))
+    }
+
+    const handleMontoBlur = (index: number) => {
+        setCuotas(prev => prev.map((c, i) =>
+            i === index
+                ? { ...c, montoInput: c.monto === 0 ? '' : String(c.monto) }
+                : c
+        ))
+    }
+
     const removeCuota = (index: number) => {
-        setCuotas(cuotas.filter((_, i) => i !== index))
+        setCuotas(prev => prev.filter((_, i) => i !== index))
     }
 
     const addCuotaManual = () => {
-        setCuotas([...cuotas, { fecha: format(new Date(), 'yyyy-MM-dd'), monto: 0 }])
+        setCuotas(prev => [...prev, {
+            fecha:      format(addDays(new Date(), 30), 'yyyy-MM-dd'),
+            montoInput: '',
+            monto:      0
+        }])
     }
 
-    const totalCuotas = cuotas.reduce((sum, c) => sum + Number(c.monto), 0)
-    const diferencia = totalImporte - totalCuotas
-    const esValido = Math.abs(diferencia) < 0.1
+    const totalCuotas = cuotas.reduce((sum, c) => sum + c.monto, 0)
+    const diferencia  = Number((totalImporte - totalCuotas).toFixed(2))
+    const esValido    = Math.abs(diferencia) < 0.01
+        && cuotas.length > 0
+        && cuotas.every(c => c.monto > 0 && c.fecha)
 
     const handleConfirmar = () => {
         if (!esValido) return
-        onSave(cuotas)
+        onSave(cuotas.map(c => ({ fecha: c.fecha, monto: c.monto })))
         onOpenChange(false)
     }
 
@@ -93,14 +136,28 @@ export function InstallmentModal({ open, onOpenChange, totalImporte, initialCuot
                         <div className="space-y-1 flex-1">
                             <Label className="text-xs">Cantidad de Cuotas</Label>
                             <Input
-                                type="number"
-                                min={1}
-                                max={60}
-                                value={numCuotasGen}
-                                onChange={(e) => setNumCuotasGen(Number(e.target.value))}
+                                type="text"
+                                inputMode="numeric"
+                                value={numInput}
+                                onChange={e => {
+                                    const val = e.target.value
+                                    if (val === '' || /^\d+$/.test(val)) {
+                                        setNumInput(val)
+                                        const n = parseInt(val)
+                                        if (!isNaN(n) && n > 0) setNumCuotasGen(n)
+                                    }
+                                }}
+                                onBlur={() => {
+                                    if (!numInput || parseInt(numInput) < 1) {
+                                        setNumInput('1')
+                                        setNumCuotasGen(1)
+                                    }
+                                }}
                             />
                         </div>
-                        <Button onClick={handleGenerarCuotas} variant="secondary">Generar</Button>
+                        <Button onClick={handleGenerarCuotas} variant="secondary">
+                            Generar
+                        </Button>
                     </div>
 
                     <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
@@ -108,8 +165,9 @@ export function InstallmentModal({ open, onOpenChange, totalImporte, initialCuot
                             <div className="col-span-1 text-center">#</div>
                             <div className="col-span-5">Fecha Vencimiento</div>
                             <div className="col-span-5">Importe</div>
-                            <div className="col-span-1"></div>
+                            <div className="col-span-1" />
                         </div>
+
                         {cuotas.map((cuota, index) => (
                             <div key={index} className="grid grid-cols-12 gap-2 items-center">
                                 <div className="col-span-1 text-center font-bold text-sm bg-gray-100 rounded h-8 flex items-center justify-center">
@@ -119,43 +177,75 @@ export function InstallmentModal({ open, onOpenChange, totalImporte, initialCuot
                                     <Input
                                         type="date"
                                         value={cuota.fecha}
-                                        onChange={(e) => updateCuota(index, 'fecha', e.target.value)}
+                                        onChange={e => updateFecha(index, e.target.value)}
                                     />
                                 </div>
                                 <div className="col-span-5">
                                     <Input
-                                        type="number"
-                                        value={cuota.monto}
-                                        onChange={(e) => updateCuota(index, 'monto', Number(e.target.value))}
+                                        type="text"
+                                        inputMode="decimal"
+                                        value={cuota.montoInput}
+                                        placeholder="0.00"
+                                        onChange={e => updateMontoInput(index, e.target.value)}
+                                        onBlur={() => handleMontoBlur(index)}
+                                        className={cuota.monto <= 0 ? 'border-red-300 focus-visible:ring-red-400' : ''}
                                     />
                                 </div>
                                 <div className="col-span-1">
-                                    <Button variant="ghost" size="icon" onClick={() => removeCuota(index)} className="h-8 w-8 text-red-500 hover:bg-red-50">
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={() => removeCuota(index)}
+                                        className="h-8 w-8 text-red-500 hover:bg-red-50"
+                                    >
                                         <Trash2 className="h-4 w-4" />
                                     </Button>
                                 </div>
                             </div>
                         ))}
+
+                        {cuotas.length === 0 && (
+                            <p className="text-center text-sm text-gray-400 py-4">
+                                No hay cuotas. Generá o agregá una manualmente.
+                            </p>
+                        )}
                     </div>
 
-                    <Button onClick={addCuotaManual} variant="outline" size="sm" className="w-full border-dashed">
+                    <Button
+                        onClick={addCuotaManual}
+                        variant="outline"
+                        size="sm"
+                        className="w-full border-dashed"
+                    >
                         <Plus className="h-4 w-4 mr-2" /> Agregar Cuota Manual
                     </Button>
 
-                    <div className={`p-3 rounded-md border flex justify-between items-center ${esValido ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
-                        <span className="text-sm font-medium">Total Pedido: <strong>{totalImporte.toFixed(2)}</strong></span>
+                    <div className={`p-3 rounded-md border flex justify-between items-center ${
+                        esValido ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'
+                    }`}>
+                        <span className="text-sm font-medium">
+                            Total: <strong>S/ {totalImporte.toFixed(2)}</strong>
+                        </span>
                         <div className="text-right">
                             <span className={`text-sm font-bold block ${esValido ? 'text-green-700' : 'text-red-700'}`}>
-                                Total Cuotas: {totalCuotas.toFixed(2)}
+                                Cuotas: S/ {totalCuotas.toFixed(2)}
                             </span>
-                            {!esValido && <span className="text-xs text-red-600">Diferencia: {diferencia.toFixed(2)}</span>}
+                            {!esValido && diferencia !== 0 && (
+                                <span className="text-xs text-red-600">
+                                    {diferencia > 0 ? `Falta: ${diferencia.toFixed(2)}` : `Excede: ${Math.abs(diferencia).toFixed(2)}`}
+                                </span>
+                            )}
                         </div>
                     </div>
                 </div>
 
                 <DialogFooter>
-                    <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-                    <Button onClick={handleConfirmar} disabled={!esValido}>Guardar Cuotas</Button>
+                    <Button variant="outline" onClick={() => onOpenChange(false)}>
+                        Cancelar
+                    </Button>
+                    <Button onClick={handleConfirmar} disabled={!esValido}>
+                        Guardar Cuotas
+                    </Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>

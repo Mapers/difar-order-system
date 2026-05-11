@@ -176,7 +176,7 @@ export function NotaCreditoForm({
                         </div>
                         <div className="flex justify-between">
                             <span className="text-gray-500">Cliente:</span>
-                            <span className="truncate max-w-[200px]" title={comprobante.cliente_denominacion}>
+                            <span className="truncate max-w-[200px]" title={comprobante.cliente_denominacion || ''}>
                                 {comprobante.cliente_denominacion}
                             </span>
                         </div>

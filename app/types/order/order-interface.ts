@@ -11,6 +11,7 @@ export interface Comprobante {
     total:                 string  | null
     tipo_comprobante:      number  | null
     anulado:               boolean
+    condicionCredito:      string | null
     enlace:                string  | null
     enlace_pdf:            string  | null
     enlace_cdr:            string  | null
@@ -24,6 +25,8 @@ export interface Comprobante {
     estado_correlativo:    'OCUPADO' | 'LIBRE'
     fecha_emision?:        string  | null
     estado?:               string | null
+    motivo_descripcion?:     string  | null
+    tieneNCModificacion?:    number  | null
 }
 
 export interface GuiaRemision {
