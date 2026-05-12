@@ -134,8 +134,8 @@ export function ExportRegistroButton({
                                          guias            = [],
                                          tiposComprobante = [],
                                          mesLabel,
-                                         empresaNombre    = 'DISTRIBUIDORA E IMPORTADORA FARMACEUTICA S.A.C.',
-                                         empresaRuc       = '20481321892',
+                                         empresaNombre    = 'DROGUERÍA DIFAR',
+                                         empresaRuc       = '2056138401',
                                      }: ExportRegistroButtonProps) {
 
     const [loading, setLoading] = useState(false)
