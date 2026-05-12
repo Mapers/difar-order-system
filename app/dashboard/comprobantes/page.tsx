@@ -38,6 +38,7 @@ import {DeletePendienteModal} from "@/app/dashboard/comprobantes/modals/DeletePe
 import {toast} from "@/app/hooks/useToast";
 import {CorregirDescripcionModal} from "@/app/dashboard/comprobantes/modals/CorregirDescripcionModal";
 import {ModificarCuotasModal} from "@/app/dashboard/comprobantes/modals/ModificarCuotasModal";
+import {ExportRegistroButton} from "@/app/dashboard/comprobantes/Exportregistrobutton";
 
 function useDebounce(value: string, delay: number = 500) {
   const [debounced, setDebounced] = useState(value)
@@ -744,7 +745,12 @@ export default function ComprobantesPage() {
                       </p>
                   )}
 
-                  <div className="flex justify-end">
+                  <div className="flex justify-end gap-2">
+                    {comprobantes.length > 0 && <ExportRegistroButton
+                        type="comprobantes"
+                        data={comprobantes}
+                        tiposComprobante={tiposComprobante}
+                    />}
                     <Button onClick={fetchComprobantes} disabled={loadingComprobantes} className="flex items-center gap-2">
                       {loadingComprobantes ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />} Buscar
                     </Button>
@@ -799,6 +805,7 @@ export default function ComprobantesPage() {
                     <Button onClick={() => setShowNotaCreditoModal(true)} variant="outline">
                       <FileDiff className="mr-2 h-4 w-4" /> Generar Nota de Crédito
                     </Button>
+                    {notasCredito.length > 0 && <ExportRegistroButton type="notas" data={notasCredito} tiposComprobante={tiposComprobante}/>}
                     <Button onClick={fetchNotasCredito} disabled={loadingNotas} className="flex items-center gap-2">
                       {loadingNotas ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />} Buscar
                     </Button>
@@ -850,6 +857,7 @@ export default function ComprobantesPage() {
                     <Button onClick={() => { setSelectedOrder(null); setShowGuiasModal(true) }} variant="outline">
                       <Truck className="mr-2 h-4 w-4" /> Generar Guías
                     </Button>
+                    {guiasRemision.length > 0 && <ExportRegistroButton type="guias" guias={guiasRemision}/>}
                     <Button onClick={fetchGuiasRemision} disabled={loadingGuias} className="flex items-center gap-2">
                       {loadingGuias ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />} Buscar
                     </Button>
