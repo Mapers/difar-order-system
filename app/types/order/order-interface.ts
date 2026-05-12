@@ -27,6 +27,9 @@ export interface Comprobante {
     estado?:               string | null
     motivo_descripcion?:     string  | null
     tieneNCModificacion?:    number  | null
+    nc_serie?:   string | null
+    nc_numero?:  string | null
+    nc_fecha?:   string | null
 }
 
 export interface GuiaRemision {
