@@ -9,8 +9,6 @@ import { Comprobante, GuiaRemision } from '@/app/types/order/order-interface'
 import { Sequential } from '@/app/types/config-types'
 import apiClient from "@/app/api/client";
 
-// ─── Props ────────────────────────────────────────────────────────────────────
-
 type ReportType = 'comprobantes' | 'notas' | 'guias'
 
 interface FiltersComprobantes {
@@ -26,40 +24,29 @@ interface ExportRegistroButtonProps {
     mesLabel?        : string
     empresaNombre?   : string
     empresaRuc?      : string
-    filters?         : FiltersComprobantes   // solo para type='comprobantes'
+    filters?         : FiltersComprobantes
 }
-
-// ─── Columnas ─────────────────────────────────────────────────────────────────
-// Grupo "Comprobante Emitido"  → índices 0-12  (F.Emision → Total)
-// Grupo "Comprobante Original" → índices 13-15 (F.Emision | Serie | Numero)
-//   solo se renderiza cuando algún registro tiene tipoNC !== 'sin_nc'
 
 type ColDef = { label: string; width: number; align: 'left' | 'right' | 'center' }
 
 const COLS_COMPROBANTES: ColDef[] = [
-    // ── Comprobante Emitido ──────────────────────────
-    { label: 'F.Emision',    width: 52,  align: 'left'   },  // 0
-    { label: 'Doc',          width: 26,  align: 'left'   },  // 1
-    { label: 'Serie',        width: 34,  align: 'left'   },  // 2
-    { label: 'NroDesde',     width: 44,  align: 'left'   },  // 3
-    { label: 'F.Vcto.',      width: 50,  align: 'left'   },  // 4
-    { label: 'Cliente',      width: 130, align: 'left'   },  // 5
-    { label: 'D.I.',         width: 26,  align: 'center' },  // 6
-    { label: 'Nº D.I.',      width: 62,  align: 'left'   },  // 7
-    { label: 'T/C',          width: 24,  align: 'center' },  // 8
-    { label: 'No Grabado',   width: 50,  align: 'right'  },  // 9
-    { label: 'B.Imponible',  width: 52,  align: 'right'  },  // 10
-    { label: 'IGV',          width: 44,  align: 'right'  },  // 11
-    { label: 'Total',        width: 48,  align: 'right'  },  // 12
-    // ── Comprobante Original (solo si tieneNC) ───────
-    { label: 'F.Emision',    width: 52,  align: 'left'   },  // 13
-    { label: 'Serie',        width: 36,  align: 'left'   },  // 14
-    { label: 'Numero',       width: 44,  align: 'left'   },  // 15
+    { label: 'F.Emision',    width: 52,  align: 'left'   },
+    { label: 'Doc',          width: 26,  align: 'left'   },
+    { label: 'Serie',        width: 34,  align: 'left'   },
+    { label: 'NroDesde',     width: 44,  align: 'left'   },
+    { label: 'F.Vcto.',      width: 50,  align: 'left'   },
+    { label: 'Cliente',      width: 130, align: 'left'   },
+    { label: 'D.I.',         width: 26,  align: 'center' },
+    { label: 'Nº D.I.',      width: 62,  align: 'left'   },
+    { label: 'T/C',          width: 24,  align: 'center' },
+    { label: 'No Grabado',   width: 50,  align: 'right'  },
+    { label: 'B.Imponible',  width: 52,  align: 'right'  },
+    { label: 'IGV',          width: 44,  align: 'right'  },
+    { label: 'Total',        width: 48,  align: 'right'  },
+    { label: 'F.Emision',    width: 52,  align: 'left'   },
+    { label: 'Serie',        width: 36,  align: 'left'   },
+    { label: 'Numero',       width: 44,  align: 'left'   },
 ]
-
-// Anchos de cada grupo
-const W_EMITIDO  = COLS_COMPROBANTES.slice(0, 13).reduce((s, c) => s + c.width, 0)
-const W_ORIGINAL = COLS_COMPROBANTES.slice(13).reduce((s, c) => s + c.width, 0)
 
 const COLS_NOTAS: ColDef[] = [
     { label: 'F.Emision',    width: 55,  align: 'left'   },
@@ -89,24 +76,20 @@ const COLS_GUIAS: ColDef[] = [
     { label: 'Cód. SUNAT',   width: 62,  align: 'center' },
 ]
 
-// ─── Paleta de colores (imagen de referencia) ─────────────────────────────────
-const C_HEADER_BG  = rgb(0.086, 0.192, 0.361)   // azul marino #162F5C
-const C_STATS_BG   = rgb(0.118, 0.263, 0.482)   // azul medio  #1E4379
-const C_COL_HDR    = rgb(0.086, 0.192, 0.361)   // azul marino (cabecera cols)
-const C_GRP_EMIT   = rgb(0.18,  0.38,  0.68 )   // grupo Emitido
-const C_GRP_ORIG   = rgb(0.14,  0.30,  0.56 )   // grupo Original
-const C_ROW_EVEN   = rgb(1,     1,     1    )   // fila par — blanco
-const C_ROW_ODD    = rgb(0.945, 0.953, 0.965)   // fila impar — gris muy claro
-const C_ROW_ANUL   = rgb(1,     0.93,  0.93 )   // fila anulada — rojo suave
+const C_HEADER_BG  = rgb(0.086, 0.192, 0.361)
+const C_STATS_BG   = rgb(0.118, 0.263, 0.482)
+const C_COL_HDR    = rgb(0.086, 0.192, 0.361)
+const C_GRP_EMIT   = rgb(0.18,  0.38,  0.68 )
+const C_GRP_ORIG   = rgb(0.14,  0.30,  0.56 )
+const C_ROW_EVEN   = rgb(1,     1,     1    )
+const C_ROW_ODD    = rgb(0.945, 0.953, 0.965)
+const C_ROW_ANUL   = rgb(1,     0.93,  0.93 )
 const C_WHITE      = rgb(1,     1,     1    )
-const C_TEXT       = rgb(0.13,  0.17,  0.24 )   // texto oscuro
-const C_MUTED      = rgb(0.42,  0.47,  0.56 )   // gris footer
+const C_TEXT       = rgb(0.13,  0.17,  0.24 )
 const C_RED        = rgb(0.78,  0.10,  0.10 )
 const C_ANULADO    = rgb(0.72,  0.08,  0.08 )
-const C_SEPARATOR  = rgb(0.82,  0.85,  0.90 )   // línea entre filas
-const C_ACCENT     = rgb(0.235, 0.486, 0.784)   // azul acento
+const C_SEPARATOR  = rgb(0.82,  0.85,  0.90 )
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function safeDate(str: string | null | undefined, offset = 0): string {
     if (!str) return '—'
@@ -151,8 +134,6 @@ function splitTextIntoLines(
     return lines.length > 0 ? lines : ['']
 }
 
-// ─── Componente ───────────────────────────────────────────────────────────────
-
 export function ExportRegistroButton({
                                          type,
                                          data             = [],
@@ -172,7 +153,6 @@ export function ExportRegistroButton({
         guias        : 'Registro Guías de Remisión',
     }
 
-    // Hay NC si algún registro tiene tipo_cpe='07' → nc_serie viene populated
     const tieneNC = type === 'comprobantes'
         && data.some(c => c.tipoNC !== 'sin_nc')
 
@@ -191,17 +171,14 @@ export function ExportRegistroButton({
             const minYPosition = margin + 20
             const baseFontSize = 7
 
-            // Ancho disponible para la tabla
             const availableW = pageWidth - margin * 2
 
-            // Seleccionar cols base según tipo y si hay NC
             const baseCols: ColDef[] =
                 type === 'comprobantes'
                     ? COLS_COMPROBANTES
                     : type === 'notas' ? COLS_NOTAS
                         : COLS_GUIAS
 
-            // Escalar proporcionalmente para que sumen exactamente availableW
             const rawW  = baseCols.reduce((s, c) => s + c.width, 0)
             const scale = availableW / rawW
             const cols: ColDef[] = baseCols.map((c, i) => {
@@ -211,7 +188,6 @@ export function ExportRegistroButton({
                 return { ...c, width: scaled }
             })
 
-            // W grupos reescalados
             const scaledWEmitido  = type === 'comprobantes' ? cols.slice(0, 13).reduce((s, c) => s + c.width, 0) : 0
             const scaledWOriginal = type === 'comprobantes' ? cols.slice(13).reduce((s, c) => s + c.width, 0) : 0
 
@@ -221,7 +197,6 @@ export function ExportRegistroButton({
                 ?? `${format(new Date(), 'MMMM')} del ${format(new Date(), 'yyyy')}`
                     .replace(/^\w/, c => c.toUpperCase())
 
-            // ── Logo ──
             let logoImage: any = null
             try {
                 const logoBytes = await fetch('/difar-logo.png').then(r => {
@@ -231,9 +206,6 @@ export function ExportRegistroButton({
                 logoImage = await pdfDoc.embedPng(logoBytes)
             } catch { /* sin logo */ }
 
-            // ── Fetch registro de ventas del SP (solo comprobantes con fechas) ──
-            // Los datos del SP tienen campos numéricos reales (NoGrabado, BImponible, IGV, Total)
-            // que se usan directamente en lugar de recalcular desde c.total
             type RegistroVenta = {
                 Fecha            : string
                 Doc              : string
@@ -258,7 +230,6 @@ export function ExportRegistroButton({
 
             if (usarSP) {
                 try {
-                    // Extraer anio y mes de fechaDesde (el SP sigue usando p_anio y p_mes)
                     const [anio, mes] = filters!.fechaDesde.split('-').map(Number)
                     const params = new URLSearchParams({
                         anio : String(anio),
@@ -273,7 +244,6 @@ export function ExportRegistroButton({
                 }
             }
 
-            // ── Pre-calcular totales (para stats de primera página) ──
             let totBase  = 0
             let totIGV   = 0
             let totTotal = 0
@@ -288,7 +258,6 @@ export function ExportRegistroButton({
             }
             const countItems = type === 'guias' ? guias.length : data.length
 
-            // ── Helper rect relleno ──
             const fillRect = (
                 page: any,
                 x: number, y: number, w: number, h: number,
@@ -301,12 +270,10 @@ export function ExportRegistroButton({
             let yPosition   = pageHeight - margin
             let pageNumber  = 1
             let isFirstPage = true
-            let rowColorIdx = 0   // alterna colores de fila
+            let rowColorIdx = 0
 
-            // ── drawHeader ────────────────────────────────────────────────────
             const drawHeader = (page: any) => {
 
-                // 1. Banda azul marino (header)
                 const headerH = 58
                 fillRect(page, 0, pageHeight - headerH, pageWidth, headerH, C_HEADER_BG)
 
@@ -319,8 +286,7 @@ export function ExportRegistroButton({
                     titleXPos = margin + 60
                 }
 
-                // Nombre empresa (izquierda) — centrado vertical en headerH
-                const hMid      = pageHeight - headerH / 2   // centro de la banda
+                const hMid      = pageHeight - headerH / 2
                 page.drawText(empresaNombre, {
                     x: titleXPos, y: hMid + 4,
                     size: 13, font: boldFont, color: C_WHITE,
@@ -330,7 +296,6 @@ export function ExportRegistroButton({
                     size: 7.5, font, color: rgb(0.68, 0.78, 0.90),
                 })
 
-                // Título del reporte (derecha) — mismo centrado
                 const titleText = TITLES[type]
                 const titleW    = boldFont.widthOfTextAtSize(titleText, 13)
                 page.drawText(titleText, {
@@ -339,7 +304,6 @@ export function ExportRegistroButton({
                     size: 13, font: boldFont, color: C_WHITE,
                 })
 
-                // Período (derecha, bajo título)
                 const periodoText = `Periodo: ${mesStr}`
                 const periodoW    = font.widthOfTextAtSize(periodoText, 8)
                 page.drawText(periodoText, {
@@ -350,28 +314,27 @@ export function ExportRegistroButton({
 
                 yPosition = pageHeight - headerH
 
-                // 2. Bloque de stats (solo primera página)
                 if (isFirstPage) {
-                    const statsH      = 62          // altura total del bloque
-                    const sideW       = 18          // ancho de los laterales blancos
-                    const lineThick   = 5           // grosor líneas celestes
-                    const lineColor   = rgb(0.22, 0.60, 0.85)  // celeste #38A0DA
+                    const statsH      = 62
+                    const sideW       = 18
+                    const lineThick   = 5
+                    const lineColor   = rgb(0.22, 0.60, 0.85)
                     const statsTop    = yPosition
                     const statsBot    = yPosition - statsH
 
-                    // Fondo azul medio (área interior entre los laterales)
+
                     fillRect(page, sideW, statsBot, pageWidth - sideW * 2, statsH, C_STATS_BG)
 
-                    // Laterales blancos izquierdo y derecho
+
                     fillRect(page, 0,                statsBot, sideW, statsH, rgb(1, 1, 1))
                     fillRect(page, pageWidth - sideW, statsBot, sideW, statsH, rgb(1, 1, 1))
 
-                    // Línea celeste superior — mismo ancho total y grosor que la inferior
+
                     fillRect(page, 0, statsTop - lineThick, pageWidth, lineThick, lineColor)
-                    // Línea celeste inferior — ancho total de la hoja
+
                     fillRect(page, 0, statsBot, pageWidth, lineThick, lineColor)
 
-                    // Separador vertical central — toca ambas líneas celestes
+
                     const midX = pageWidth / 2
                     page.drawLine({
                         start    : { x: midX, y: statsBot + lineThick },
@@ -379,14 +342,13 @@ export function ExportRegistroButton({
                         thickness: 1, color: rgb(0.45, 0.60, 0.80),
                     })
 
-                    // Centros horizontales de cada mitad
+
                     const lCX = sideW + (pageWidth / 2 - sideW) / 2
                     const rCX = pageWidth / 2 + (pageWidth / 2 - sideW) / 2
 
-                    // Centro vertical del bloque
+
                     const sMid = statsBot + statsH / 2
 
-                    // Stat izquierda — comprobantes emitidos
                     const cntStr  = String(countItems)
                     const cntW    = boldFont.widthOfTextAtSize(cntStr, 20)
                     const cntLbl  = 'COMPROBANTES EMITIDOS'
@@ -400,7 +362,6 @@ export function ExportRegistroButton({
                         size: 7, font, color: rgb(0.68, 0.80, 0.93),
                     })
 
-                    // Stat derecha — total facturado
                     const totStr  = totTotal.toLocaleString('es-PE', { minimumFractionDigits: 2 })
                     const totW    = boldFont.widthOfTextAtSize(totStr, 20)
                     const totLbl  = 'TOTAL FACTURADO (S/)'
@@ -419,7 +380,6 @@ export function ExportRegistroButton({
                     yPosition -= 8
                 }
 
-                // 3. Títulos de grupo — solo comprobantes
                 if (type === 'comprobantes') {
                     const xEmitido  = margin
                     const xOriginal = margin + scaledWEmitido
@@ -440,7 +400,6 @@ export function ExportRegistroButton({
                     yPosition -= groupH
                 }
 
-                // 4. Cabecera columnas
                 const colHdrH = 14
                 fillRect(page, margin, yPosition - colHdrH, totalColsW, colHdrH, C_COL_HDR)
 
@@ -466,7 +425,6 @@ export function ExportRegistroButton({
             drawHeader(currentPage)
             isFirstPage = false
 
-            // ── drawRow ───────────────────────────────────────────────────────
             const ROW_H = 18
 
             const drawRow = (
@@ -482,7 +440,6 @@ export function ExportRegistroButton({
                     drawHeader(currentPage)
                 }
 
-                // Fondo alternado por fila
                 const rowBg = anulado
                     ? C_ROW_ANUL
                     : rowColorIdx % 2 === 0 ? C_ROW_EVEN : C_ROW_ODD
@@ -500,7 +457,6 @@ export function ExportRegistroButton({
                         : col.align === 'center' ? xPosition + (col.width - tw) / 2
                             : xPosition + 3
 
-                    // Cols 10-12 (B.Imponible, IGV, Total) en rojo si negativo
                     const isNumCol = i >= 10 && i <= 12
                     const color    = anulado              ? C_ANULADO
                         : negativo && isNumCol ? C_RED
@@ -513,7 +469,6 @@ export function ExportRegistroButton({
                     xPosition += col.width
                 })
 
-                // Línea separadora sutil
                 page.drawLine({
                     start    : { x: margin,              y: yPosition - ROW_H + 2 },
                     end      : { x: margin + totalColsW, y: yPosition - ROW_H + 2 },
@@ -524,10 +479,7 @@ export function ExportRegistroButton({
                 rowColorIdx++
             }
 
-            // ── Render comprobantes ───────────────────────────────────────────
             if (type === 'comprobantes') {
-                // Si tenemos datos del SP los usamos directamente (más precisos)
-                // Si no, fallback a los datos locales (data[])
                 if (usarSP && registroVentas.length > 0) {
                     for (const rv of registroVentas) {
                         if (yPosition - ROW_H < minYPosition) {
@@ -555,7 +507,6 @@ export function ExportRegistroButton({
                             isNaN(Number(rv.BImponible)) ? '0.00' : Number(rv.BImponible).toFixed(2),
                             isNaN(Number(rv.IGV))        ? '0.00' : Number(rv.IGV).toFixed(2),
                             isNaN(Number(rv.Total))      ? '0.00' : Number(rv.Total).toFixed(2),
-                            // Comprobante Original
                             hasOriginal ? safeDate(rv.FechaDocOriginal) : '—',
                             hasOriginal ? s(rv.SerieDocOriginal)        : '—',
                             hasOriginal ? s(rv.NumeroDocOriginal)       : '—',
@@ -564,7 +515,6 @@ export function ExportRegistroButton({
                         drawRow(currentPage, cells, false, false)
                     }
                 } else {
-                    // Fallback: datos locales
                     for (const c of data) {
                         if (yPosition - ROW_H < minYPosition) {
                             currentPage = addNewPage()
@@ -611,7 +561,6 @@ export function ExportRegistroButton({
                 }
             }
 
-            // ── Render notas ──────────────────────────────────────────────────
             if (type === 'notas') {
                 for (const c of data) {
                     if (yPosition - ROW_H < minYPosition) {
@@ -646,7 +595,6 @@ export function ExportRegistroButton({
                 }
             }
 
-            // ── Render guías ──────────────────────────────────────────────────
             if (type === 'guias') {
                 for (const g of guias) {
                     if (yPosition - ROW_H < minYPosition) {
@@ -681,7 +629,6 @@ export function ExportRegistroButton({
                 }
             }
 
-            // ── Fila totales ──────────────────────────────────────────────────
             if (type !== 'guias' && data.length > 0) {
                 if (yPosition - 14 < minYPosition) {
                     currentPage = addNewPage()
@@ -690,10 +637,8 @@ export function ExportRegistroButton({
                     drawHeader(currentPage)
                 }
 
-                // Separación visual antes de totales
                 yPosition -= 6
 
-                // Fondo azul marino para la fila de totales (más alta)
                 const totRowH = 22
                 fillRect(currentPage, margin, yPosition - totRowH, totalColsW, totRowH, C_HEADER_BG)
 
@@ -723,7 +668,6 @@ export function ExportRegistroButton({
                 })
             }
 
-            // ── Footer en todas las páginas ───────────────────────────────────
             const allPages = pdfDoc.getPages()
             allPages.forEach((pg, idx) => {
                 const now       = new Date()
@@ -731,12 +675,10 @@ export function ExportRegistroButton({
                 const pgText    = `Pagina ${idx + 1}`
                 const pgW       = font.widthOfTextAtSize(pgText, 7.5)
                 const footerH   = 26
-                const fy        = 0   // base de la página
+                const fy        = 0
 
-                // Fondo azul marino ancho total
                 pg.drawRectangle({ x: 0, y: fy, width: pageWidth, height: footerH, color: C_HEADER_BG })
 
-                // Línea celeste superior del footer
                 pg.drawRectangle({ x: 0, y: fy + footerH - 2.5, width: pageWidth, height: 2.5, color: rgb(0.22, 0.60, 0.85) })
 
                 const textY = fy + footerH / 2 - 3
@@ -750,7 +692,6 @@ export function ExportRegistroButton({
                 })
             })
 
-            // ── Guardar y descargar ───────────────────────────────────────────
             const pdfBytes = await pdfDoc.save()
             const blob     = new Blob([pdfBytes], { type: 'application/pdf' })
             const link     = document.createElement('a')
