@@ -258,8 +258,6 @@ export function ExportRegistroButton({
                 // 1. Banda azul marino (header)
                 const headerH = 58
                 fillRect(page, 0, pageHeight - headerH, pageWidth, headerH, C_HEADER_BG)
-                // Franja decorativa inferior (azul acento, 3px)
-                fillRect(page, 0, pageHeight - headerH - 3, pageWidth, 3, C_ACCENT)
 
                 let titleXPos = margin
                 if (logoImage) {
@@ -299,13 +297,13 @@ export function ExportRegistroButton({
                     size: 8, font, color: rgb(0.68, 0.78, 0.90),
                 })
 
-                yPosition = pageHeight - headerH - 3
+                yPosition = pageHeight - headerH
 
                 // 2. Bloque de stats (solo primera página)
                 if (isFirstPage) {
                     const statsH      = 62          // altura total del bloque
                     const sideW       = 18          // ancho de los laterales blancos
-                    const lineThick   = 2.5         // grosor líneas celestes
+                    const lineThick   = 5           // grosor líneas celestes
                     const lineColor   = rgb(0.22, 0.60, 0.85)  // celeste #38A0DA
                     const statsTop    = yPosition
                     const statsBot    = yPosition - statsH
@@ -317,16 +315,16 @@ export function ExportRegistroButton({
                     fillRect(page, 0,                statsBot, sideW, statsH, rgb(1, 1, 1))
                     fillRect(page, pageWidth - sideW, statsBot, sideW, statsH, rgb(1, 1, 1))
 
-                    // Línea celeste superior
-                    fillRect(page, sideW, statsTop - lineThick, pageWidth - sideW * 2, lineThick, lineColor)
+                    // Línea celeste superior — mismo ancho total y grosor que la inferior
+                    fillRect(page, 0, statsTop - lineThick, pageWidth, lineThick, lineColor)
                     // Línea celeste inferior — ancho total de la hoja
                     fillRect(page, 0, statsBot, pageWidth, lineThick, lineColor)
 
-                    // Separador vertical central (blanco semitransparente)
+                    // Separador vertical central — toca ambas líneas celestes
                     const midX = pageWidth / 2
                     page.drawLine({
-                        start    : { x: midX, y: statsBot + 12 },
-                        end      : { x: midX, y: statsTop - 12 },
+                        start    : { x: midX, y: statsBot + lineThick },
+                        end      : { x: midX, y: statsTop - lineThick },
                         thickness: 1, color: rgb(0.45, 0.60, 0.80),
                     })
 
@@ -647,22 +645,23 @@ export function ExportRegistroButton({
                 const fechaText = `Fecha de emision: ${now.toLocaleDateString('es-PE')} ${now.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit', hour12: true })}`
                 const pgText    = `Pagina ${idx + 1}`
                 const pgW       = font.widthOfTextAtSize(pgText, 7.5)
-                const fy        = margin - 16
+                const footerH   = 26
+                const fy        = 0   // base de la página
 
-                // Línea separadora
-                pg.drawLine({
-                    start    : { x: margin,              y: fy + 12 },
-                    end      : { x: pageWidth - margin,  y: fy + 12 },
-                    thickness: 0.5, color: rgb(0.80, 0.83, 0.88),
-                })
+                // Fondo azul marino ancho total
+                pg.drawRectangle({ x: 0, y: fy, width: pageWidth, height: footerH, color: C_HEADER_BG })
 
+                // Línea celeste superior del footer
+                pg.drawRectangle({ x: 0, y: fy + footerH - 2.5, width: pageWidth, height: 2.5, color: rgb(0.22, 0.60, 0.85) })
+
+                const textY = fy + footerH / 2 - 3
                 pg.drawText(fechaText, {
-                    x: margin, y: fy,
-                    size: 7.5, font, color: C_MUTED,
+                    x: margin, y: textY,
+                    size: 7.5, font, color: C_WHITE,
                 })
                 pg.drawText(pgText, {
-                    x: pageWidth - margin - pgW, y: fy,
-                    size: 7.5, font, color: C_MUTED,
+                    x: pageWidth - margin - pgW, y: textY,
+                    size: 7.5, font, color: C_WHITE,
                 })
             })
 
