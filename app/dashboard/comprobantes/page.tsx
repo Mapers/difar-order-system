@@ -750,6 +750,7 @@ export default function ComprobantesPage() {
                         type="comprobantes"
                         data={comprobantes}
                         tiposComprobante={tiposComprobante}
+                        filters={filters}
                     />}
                     <Button onClick={fetchComprobantes} disabled={loadingComprobantes} className="flex items-center gap-2">
                       {loadingComprobantes ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />} Buscar

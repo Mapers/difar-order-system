@@ -7,10 +7,16 @@ import { PDFDocument, StandardFonts, rgb } from 'pdf-lib'
 import { format, parseISO, addHours } from 'date-fns'
 import { Comprobante, GuiaRemision } from '@/app/types/order/order-interface'
 import { Sequential } from '@/app/types/config-types'
+import apiClient from "@/app/api/client";
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
 type ReportType = 'comprobantes' | 'notas' | 'guias'
+
+interface FiltersComprobantes {
+    fechaDesde: string
+    fechaHasta: string
+}
 
 interface ExportRegistroButtonProps {
     type             : ReportType
@@ -20,6 +26,7 @@ interface ExportRegistroButtonProps {
     mesLabel?        : string
     empresaNombre?   : string
     empresaRuc?      : string
+    filters?         : FiltersComprobantes   // solo para type='comprobantes'
 }
 
 // ─── Columnas ─────────────────────────────────────────────────────────────────
@@ -124,10 +131,11 @@ function calcIGV(total: string | null): number {
 }
 
 function splitTextIntoLines(
-    text: string, maxWidth: number, font: any, fontSize: number
+    text: any, maxWidth: number, font: any, fontSize: number
 ): string[] {
-    if (!text) return ['']
-    const words = text.split(' ')
+    const str = (text === null || text === undefined) ? '' : String(text)
+    if (!str) return ['']
+    const words = str.split(' ')
     const lines: string[] = []
     let currentLine = ''
     for (const word of words) {
@@ -153,6 +161,7 @@ export function ExportRegistroButton({
                                          mesLabel,
                                          empresaNombre    = 'DROGUERÍA DIFAR',
                                          empresaRuc       = '2056138401',
+                                         filters,
                                      }: ExportRegistroButtonProps) {
 
     const [loading, setLoading] = useState(false)
@@ -221,6 +230,48 @@ export function ExportRegistroButton({
                 })
                 logoImage = await pdfDoc.embedPng(logoBytes)
             } catch { /* sin logo */ }
+
+            // ── Fetch registro de ventas del SP (solo comprobantes con fechas) ──
+            // Los datos del SP tienen campos numéricos reales (NoGrabado, BImponible, IGV, Total)
+            // que se usan directamente en lugar de recalcular desde c.total
+            type RegistroVenta = {
+                Fecha            : string
+                Doc              : string
+                Serie            : string
+                NroDesde         : string
+                FVcto            : string
+                Cliente          : string
+                DI               : string
+                NroDI            : string
+                TC               : string | number
+                NoGrabado        : number
+                BImponible       : number
+                IGV              : number
+                Total            : number
+                FechaDocOriginal : string | null
+                SerieDocOriginal : string | null
+                NumeroDocOriginal: string | null
+            }
+
+            let registroVentas: RegistroVenta[] = []
+            const usarSP = type === 'comprobantes' && filters?.fechaDesde && filters?.fechaHasta
+
+            if (usarSP) {
+                try {
+                    // Extraer anio y mes de fechaDesde (el SP sigue usando p_anio y p_mes)
+                    const [anio, mes] = filters!.fechaDesde.split('-').map(Number)
+                    const params = new URLSearchParams({
+                        anio : String(anio),
+                        mes  : String(mes),
+                    })
+                    const resp = await apiClient.get(`/pedidos/registroVentas?${params}`)
+                    if (resp.data.data.data) {
+                        registroVentas = resp.data.data.data
+                    }
+                } catch (e) {
+                    console.warn('No se pudo obtener registro de ventas del SP, se usarán datos locales', e)
+                }
+            }
 
             // ── Pre-calcular totales (para stats de primera página) ──
             let totBase  = 0
@@ -441,7 +492,8 @@ export function ExportRegistroButton({
                 cells.forEach((cell, i) => {
                     const col   = cols[i]
                     const maxW  = col.width - 4
-                    const lines = splitTextIntoLines(cell ?? '—', maxW, font, baseFontSize)
+                    const safeCell = (cell === null || cell === undefined) ? '—' : String(cell)
+                    const lines = splitTextIntoLines(safeCell, maxW, font, baseFontSize)
                     const txt   = lines[0] ?? ''
                     const tw    = font.widthOfTextAtSize(txt, baseFontSize)
                     const tx    = col.align === 'right'  ? xPosition + col.width - tw - 3
@@ -474,55 +526,88 @@ export function ExportRegistroButton({
 
             // ── Render comprobantes ───────────────────────────────────────────
             if (type === 'comprobantes') {
-                for (const c of data) {
-                    if (yPosition - ROW_H < minYPosition) {
-                        currentPage = addNewPage()
-                        pageNumber++
-                        yPosition   = pageHeight - margin
-                        drawHeader(currentPage)
+                // Si tenemos datos del SP los usamos directamente (más precisos)
+                // Si no, fallback a los datos locales (data[])
+                if (usarSP && registroVentas.length > 0) {
+                    for (const rv of registroVentas) {
+                        if (yPosition - ROW_H < minYPosition) {
+                            currentPage = addNewPage()
+                            pageNumber++
+                            yPosition   = pageHeight - margin
+                            drawHeader(currentPage)
+                        }
+
+                        const hasOriginal = !!(rv.SerieDocOriginal && rv.NumeroDocOriginal)
+                        const tcStr       = rv.TC ? String(rv.TC) : '1.00'
+
+                        const s = (v: any) => (v === null || v === undefined) ? '—' : String(v)
+                        const cells: string[] = [
+                            safeDate(rv.Fecha),
+                            s(rv.Doc),
+                            s(rv.Serie),
+                            s(rv.NroDesde),
+                            safeDate(rv.FVcto),
+                            s(rv.Cliente),
+                            s(rv.DI),
+                            s(rv.NroDI),
+                            tcStr,
+                            isNaN(Number(rv.NoGrabado))  ? '0.00' : Number(rv.NoGrabado).toFixed(2),
+                            isNaN(Number(rv.BImponible)) ? '0.00' : Number(rv.BImponible).toFixed(2),
+                            isNaN(Number(rv.IGV))        ? '0.00' : Number(rv.IGV).toFixed(2),
+                            isNaN(Number(rv.Total))      ? '0.00' : Number(rv.Total).toFixed(2),
+                            // Comprobante Original
+                            hasOriginal ? safeDate(rv.FechaDocOriginal) : '—',
+                            hasOriginal ? s(rv.SerieDocOriginal)        : '—',
+                            hasOriginal ? s(rv.NumeroDocOriginal)       : '—',
+                        ]
+
+                        drawRow(currentPage, cells, false, false)
                     }
+                } else {
+                    // Fallback: datos locales
+                    for (const c of data) {
+                        if (yPosition - ROW_H < minYPosition) {
+                            currentPage = addNewPage()
+                            pageNumber++
+                            yPosition   = pageHeight - margin
+                            drawHeader(currentPage)
+                        }
 
-                    const base    = calcBase(c.total)
-                    const igv     = calcIGV(c.total)
-                    const total   = Number(c.total) || 0
-                    const anulado = c.anulado
-                    // hasNC → el SP devolvió nc_serie populated (tipo_cpe='07' existe)
-                    const hasNC   = c.tipoNC !== 'sin_nc'
-                    const moneda  = c.moneda === 1 ? 'S/' : '$'
-                    const tiDoc   = c.tipo_comprobante === 1 ? 'FAC'
-                        : c.tipo_comprobante === 3 ? 'BOL'
-                            : String(c.tipo_comprobante ?? '—')
-                    const tiDI    = c.tipo_comprobante === 1 ? 'RUC' : 'DNI'
+                        const base    = calcBase(c.total)
+                        const igv     = calcIGV(c.total)
+                        const total   = Number(c.total) || 0
+                        const anulado = c.anulado
+                        const hasNC   = c.tipoNC !== 'sin_nc'
+                        const moneda  = c.moneda === 1 ? 'S/' : '$'
+                        const tiDoc   = c.tipo_comprobante === 1 ? 'FAC'
+                            : c.tipo_comprobante === 3 ? 'BOL'
+                                : String(c.tipo_comprobante ?? '—')
+                        const tiDI    = c.tipo_comprobante === 1 ? 'RUC' : 'DNI'
 
-                    const cells: string[] = [
-                        // Comprobante Emitido:
-                        // hasNC  -> datos de la NC emitida (nc_serie, nc_numero, nc_fecha)
-                        // !hasNC -> datos normales del comprobante
-                        hasNC ? safeDate(c.nc_fecha)      : safeDate(c.fecha_envio, 5),
-                        tiDoc,
-                        hasNC ? (c.nc_serie  ?? '—')      : c.serie,
-                        hasNC ? (c.nc_numero ?? '—')      : c.numero,
-                        hasNC ? safeDate(c.nc_fecha)      : safeDate(c.fecha_emision ?? c.fecha_envio, 5),
-                        c.cliente_denominacion ?? '—',
-                        tiDI,
-                        c.cliente_numdoc ?? '—',
-                        moneda,
-                        '0.00',
-                        fmtMoney(base,  hasNC),
-                        fmtMoney(igv,   hasNC),
-                        fmtMoney(total, hasNC),
-                    ]
+                        const cells: string[] = [
+                            hasNC ? safeDate(c.nc_fecha)      : safeDate(c.fecha_envio, 5),
+                            tiDoc,
+                            hasNC ? (c.nc_serie  ?? '—')      : c.serie,
+                            hasNC ? (c.nc_numero ?? '—')      : c.numero,
+                            hasNC ? safeDate(c.nc_fecha)      : safeDate(c.fecha_emision ?? c.fecha_envio, 5),
+                            c.cliente_denominacion ?? '—',
+                            tiDI,
+                            c.cliente_numdoc ?? '—',
+                            moneda,
+                            '0.00',
+                            fmtMoney(base,  hasNC),
+                            fmtMoney(igv,   hasNC),
+                            fmtMoney(total, hasNC),
+                        ]
 
-                    // Comprobante Original: siempre se muestran las 3 cols
-                    // hasNC  -> datos del comprobante padre
-                    // !hasNC -> guiones
-                    cells.push(
-                        hasNC ? safeDate(c.fecha_envio, 5) : '—',
-                        hasNC ? c.serie                     : '—',
-                        hasNC ? c.numero                    : '—',
-                    )
+                        cells.push(
+                            hasNC ? safeDate(c.fecha_envio, 5) : '—',
+                            hasNC ? c.serie                     : '—',
+                            hasNC ? c.numero                    : '—',
+                        )
 
-                    drawRow(currentPage, cells, anulado, hasNC)
+                        drawRow(currentPage, cells, anulado, hasNC)
+                    }
                 }
             }
 
