@@ -82,6 +82,23 @@ const COLS_GUIAS: ColDef[] = [
     { label: 'Cód. SUNAT',   width: 62,  align: 'center' },
 ]
 
+// ─── Paleta de colores (imagen de referencia) ─────────────────────────────────
+const C_HEADER_BG  = rgb(0.086, 0.192, 0.361)   // azul marino #162F5C
+const C_STATS_BG   = rgb(0.118, 0.263, 0.482)   // azul medio  #1E4379
+const C_COL_HDR    = rgb(0.086, 0.192, 0.361)   // azul marino (cabecera cols)
+const C_GRP_EMIT   = rgb(0.18,  0.38,  0.68 )   // grupo Emitido
+const C_GRP_ORIG   = rgb(0.14,  0.30,  0.56 )   // grupo Original
+const C_ROW_EVEN   = rgb(1,     1,     1    )   // fila par — blanco
+const C_ROW_ODD    = rgb(0.945, 0.953, 0.965)   // fila impar — gris muy claro
+const C_ROW_ANUL   = rgb(1,     0.93,  0.93 )   // fila anulada — rojo suave
+const C_WHITE      = rgb(1,     1,     1    )
+const C_TEXT       = rgb(0.13,  0.17,  0.24 )   // texto oscuro
+const C_MUTED      = rgb(0.42,  0.47,  0.56 )   // gris footer
+const C_RED        = rgb(0.78,  0.10,  0.10 )
+const C_ANULADO    = rgb(0.72,  0.08,  0.08 )
+const C_SEPARATOR  = rgb(0.82,  0.85,  0.90 )   // línea entre filas
+const C_ACCENT     = rgb(0.235, 0.486, 0.784)   // azul acento
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function safeDate(str: string | null | undefined, offset = 0): string {
@@ -165,14 +182,31 @@ export function ExportRegistroButton({
             const minYPosition = margin + 20
             const baseFontSize = 7
 
-            // Si no hay NC en el dataset recortamos las cols 13-15
-            const cols: ColDef[] =
+            // Ancho disponible para la tabla
+            const availableW = pageWidth - margin * 2
+
+            // Seleccionar cols base según tipo y si hay NC
+            const baseCols: ColDef[] =
                 type === 'comprobantes'
-                    ? (tieneNC ? COLS_COMPROBANTES : COLS_COMPROBANTES.slice(0, 13))
+                    ? COLS_COMPROBANTES
                     : type === 'notas' ? COLS_NOTAS
                         : COLS_GUIAS
 
-            const totalColsW = cols.reduce((s, c) => s + c.width, 0)
+            // Escalar proporcionalmente para que sumen exactamente availableW
+            const rawW  = baseCols.reduce((s, c) => s + c.width, 0)
+            const scale = availableW / rawW
+            const cols: ColDef[] = baseCols.map((c, i) => {
+                const scaled = i < baseCols.length - 1
+                    ? Math.floor(c.width * scale)
+                    : availableW - baseCols.slice(0, -1).reduce((s2, col, j) => s2 + Math.floor(col.width * scale), 0)
+                return { ...c, width: scaled }
+            })
+
+            // W grupos reescalados
+            const scaledWEmitido  = type === 'comprobantes' ? cols.slice(0, 13).reduce((s, c) => s + c.width, 0) : 0
+            const scaledWOriginal = type === 'comprobantes' ? cols.slice(13).reduce((s, c) => s + c.width, 0) : 0
+
+            const totalColsW = availableW
 
             const mesStr = mesLabel
                 ?? `${format(new Date(), 'MMMM')} del ${format(new Date(), 'yyyy')}`
@@ -188,121 +222,177 @@ export function ExportRegistroButton({
                 logoImage = await pdfDoc.embedPng(logoBytes)
             } catch { /* sin logo */ }
 
+            // ── Pre-calcular totales (para stats de primera página) ──
+            let totBase  = 0
+            let totIGV   = 0
+            let totTotal = 0
+            if (type !== 'guias') {
+                for (const c of data) {
+                    if (!c.anulado) {
+                        totBase  += calcBase(c.total)
+                        totIGV   += calcIGV(c.total)
+                        totTotal += Number(c.total) || 0
+                    }
+                }
+            }
+            const countItems = type === 'guias' ? guias.length : data.length
+
+            // ── Helper rect relleno ──
+            const fillRect = (
+                page: any,
+                x: number, y: number, w: number, h: number,
+                color: ReturnType<typeof rgb>
+            ) => page.drawRectangle({ x, y, width: w, height: h, color })
+
             const addNewPage = () => pdfDoc.addPage([pageWidth, pageHeight])
 
             let currentPage = addNewPage()
             let yPosition   = pageHeight - margin
             let pageNumber  = 1
+            let isFirstPage = true
+            let rowColorIdx = 0   // alterna colores de fila
 
             // ── drawHeader ────────────────────────────────────────────────────
             const drawHeader = (page: any) => {
-                let titleXPos = margin
 
+                // 1. Banda azul marino (header)
+                const headerH = 58
+                fillRect(page, 0, pageHeight - headerH, pageWidth, headerH, C_HEADER_BG)
+                // Franja decorativa inferior (azul acento, 3px)
+                fillRect(page, 0, pageHeight - headerH - 3, pageWidth, 3, C_ACCENT)
+
+                let titleXPos = margin
                 if (logoImage) {
                     page.drawImage(logoImage, {
-                        x: margin, y: pageHeight - margin - 15,
+                        x: margin, y: pageHeight - headerH + 12,
                         width: 50, height: 30,
                     })
                     titleXPos = margin + 60
                 }
 
+                // Nombre empresa (izquierda)
                 page.drawText(empresaNombre, {
-                    x: titleXPos, y: pageHeight - margin,
-                    size: 10, font: boldFont, color: rgb(0, 0, 0),
+                    x: titleXPos, y: pageHeight - margin - 2,
+                    size: 13, font: boldFont, color: C_WHITE,
                 })
-                page.drawText(empresaRuc, {
-                    x: titleXPos, y: pageHeight - margin - 12,
-                    size: 8, font, color: rgb(0, 0, 0),
-                })
-
-                const now        = new Date()
-                const fechaText  = `Fecha: ${now.toLocaleDateString()} ${now.toLocaleTimeString()}`
-                const paginaText = `Página: ${pageNumber}`
-
-                page.drawText(fechaText, {
-                    x: pageWidth - margin - font.widthOfTextAtSize(fechaText, 8),
-                    y: pageHeight - margin,
-                    size: 8, font, color: rgb(0, 0, 0),
-                })
-                page.drawText(paginaText, {
-                    x: pageWidth - margin - font.widthOfTextAtSize(paginaText, 8),
-                    y: pageHeight - margin - 12,
-                    size: 8, font, color: rgb(0, 0, 0),
+                page.drawText(`RUC: ${empresaRuc}`, {
+                    x: titleXPos, y: pageHeight - margin - 15,
+                    size: 7.5, font, color: rgb(0.68, 0.78, 0.90),
                 })
 
-                const titleWidth = boldFont.widthOfTextAtSize(TITLES[type], 12)
-                page.drawText(TITLES[type], {
-                    x: (pageWidth - titleWidth) / 2,
-                    y: pageHeight - margin - 30,
-                    size: 12, font: boldFont, color: rgb(0, 0, 0),
+                // Título del reporte (derecha)
+                const titleText = TITLES[type]
+                const titleW    = boldFont.widthOfTextAtSize(titleText, 13)
+                page.drawText(titleText, {
+                    x: pageWidth - margin - titleW,
+                    y: pageHeight - margin - 2,
+                    size: 13, font: boldFont, color: C_WHITE,
                 })
 
-                const mesW = font.widthOfTextAtSize(`Mes  ${mesStr}`, 9)
-                page.drawText(`Mes  ${mesStr}`, {
-                    x: (pageWidth - mesW) / 2,
-                    y: pageHeight - margin - 43,
-                    size: 9, font, color: rgb(0, 0, 0),
+                // Período (derecha, bajo título)
+                const periodoText = `Periodo: ${mesStr}`
+                const periodoW    = font.widthOfTextAtSize(periodoText, 8)
+                page.drawText(periodoText, {
+                    x: pageWidth - margin - periodoW,
+                    y: pageHeight - margin - 15,
+                    size: 8, font, color: rgb(0.68, 0.78, 0.90),
                 })
 
-                yPosition = pageHeight - margin - 57
+                yPosition = pageHeight - headerH - 3
 
-                // ── Títulos de grupo — solo comprobantes ──────────────────────
-                if (type === 'comprobantes') {
-                    const xEmitido  = margin
-                    const xOriginal = margin + W_EMITIDO
+                // 2. Bloque de stats (solo primera página)
+                if (isFirstPage) {
+                    const statsH = 52
+                    fillRect(page, 0, yPosition - statsH, pageWidth, statsH, C_STATS_BG)
 
-                    // "Comprobante Emitido"
+                    // Divisor vertical centrado
                     page.drawLine({
-                        start: { x: xEmitido,             y: yPosition + 2 },
-                        end:   { x: xEmitido + W_EMITIDO, y: yPosition + 2 },
-                        thickness: 0.6, color: rgb(0, 0, 0),
-                    })
-                    page.drawText('Comprobante Emitido', {
-                        x: xEmitido + 2, y: yPosition - 6,
-                        size: baseFontSize, font: boldFont, color: rgb(0, 0, 0),
+                        start    : { x: pageWidth / 2, y: yPosition - statsH + 10 },
+                        end      : { x: pageWidth / 2, y: yPosition - 10 },
+                        thickness: 0.8, color: rgb(0.30, 0.50, 0.75),
                     })
 
-                    // "Comprobante Original" solo cuando tieneNC
-                    if (tieneNC) {
-                        page.drawLine({
-                            start: { x: xOriginal,              y: yPosition + 2 },
-                            end:   { x: xOriginal + W_ORIGINAL, y: yPosition + 2 },
-                            thickness: 0.6, color: rgb(0, 0, 0),
-                        })
-                        page.drawText('Comprobante Original', {
-                            x: xOriginal + 2, y: yPosition - 6,
-                            size: baseFontSize, font: boldFont, color: rgb(0, 0, 0),
-                        })
-                    }
+                    // Stat izquierda — comprobantes emitidos
+                    const cntStr  = String(countItems)
+                    const cntW    = boldFont.widthOfTextAtSize(cntStr, 18)
+                    const cntLbl  = 'COMPROBANTES EMITIDOS'
+                    const cntLblW = font.widthOfTextAtSize(cntLbl, 7)
+                    const lCX     = pageWidth / 4
+                    page.drawText(cntStr, {
+                        x: lCX - cntW / 2, y: yPosition - statsH + 24,
+                        size: 18, font: boldFont, color: C_WHITE,
+                    })
+                    page.drawText(cntLbl, {
+                        x: lCX - cntLblW / 2, y: yPosition - statsH + 10,
+                        size: 7, font, color: rgb(0.68, 0.80, 0.93),
+                    })
 
-                    yPosition -= 14
+                    // Stat derecha — total facturado
+                    const totStr  = totTotal.toLocaleString('es-PE', { minimumFractionDigits: 2 })
+                    const totW    = boldFont.widthOfTextAtSize(totStr, 18)
+                    const totLbl  = 'TOTAL FACTURADO (S/)'
+                    const totLblW = font.widthOfTextAtSize(totLbl, 7)
+                    const rCX     = (pageWidth / 4) * 3
+                    page.drawText(totStr, {
+                        x: rCX - totW / 2, y: yPosition - statsH + 24,
+                        size: 18, font: boldFont, color: C_WHITE,
+                    })
+                    page.drawText(totLbl, {
+                        x: rCX - totLblW / 2, y: yPosition - statsH + 10,
+                        size: 7, font, color: rgb(0.68, 0.80, 0.93),
+                    })
+
+                    yPosition -= statsH + 10
+                } else {
+                    yPosition -= 8
                 }
 
-                // ── Cabecera columnas ─────────────────────────────────────────
+                // 3. Títulos de grupo — solo comprobantes
+                if (type === 'comprobantes') {
+                    const xEmitido  = margin
+                    const xOriginal = margin + scaledWEmitido
+                    const groupH    = 12
+
+                    fillRect(page, xEmitido, yPosition - groupH, scaledWEmitido, groupH, C_GRP_EMIT)
+                    page.drawText('Comprobante Emitido', {
+                        x: xEmitido + 3, y: yPosition - groupH + 3,
+                        size: baseFontSize, font: boldFont, color: C_WHITE,
+                    })
+
+                    fillRect(page, xOriginal, yPosition - groupH, scaledWOriginal, groupH, C_GRP_ORIG)
+                    page.drawText('Comprobante Original', {
+                        x: xOriginal + 3, y: yPosition - groupH + 3,
+                        size: baseFontSize, font: boldFont, color: C_WHITE,
+                    })
+
+                    yPosition -= groupH
+                }
+
+                // 4. Cabecera columnas
+                const colHdrH = 14
+                fillRect(page, margin, yPosition - colHdrH, totalColsW, colHdrH, C_COL_HDR)
+
                 let xPosition = margin
                 cols.forEach(col => {
+                    const lw = boldFont.widthOfTextAtSize(col.label, baseFontSize)
+                    const tx = col.align === 'right'
+                        ? xPosition + col.width - lw - 3
+                        : col.align === 'center'
+                            ? xPosition + (col.width - lw) / 2
+                            : xPosition + 3
                     page.drawText(col.label, {
-                        x: xPosition + 2, y: yPosition,
-                        size: baseFontSize, font: boldFont, color: rgb(0, 0, 0),
+                        x: tx, y: yPosition - colHdrH + 4,
+                        size: baseFontSize, font: boldFont, color: C_WHITE,
                     })
                     xPosition += col.width
                 })
 
-                page.drawLine({
-                    start: { x: margin,              y: yPosition - 5 },
-                    end:   { x: margin + totalColsW, y: yPosition - 5 },
-                    thickness: 1, color: rgb(0, 0, 0),
-                })
-
-                yPosition -= 15
+                yPosition -= colHdrH + 2
+                rowColorIdx = 0
             }
 
             drawHeader(currentPage)
-
-            // ── Acumuladores ──
-            let totBase  = 0
-            let totIGV   = 0
-            let totTotal = 0
+            isFirstPage = false
 
             // ── drawRow ───────────────────────────────────────────────────────
             const drawRow = (
@@ -311,39 +401,52 @@ export function ExportRegistroButton({
                 anulado : boolean,
                 negativo: boolean = false
             ) => {
-                const rowColor = anulado ? rgb(0.7, 0, 0) : rgb(0, 0, 0)
-                let xPosition  = margin
+                if (yPosition - 12 < minYPosition) {
+                    currentPage = addNewPage()
+                    pageNumber++
+                    yPosition   = pageHeight - margin
+                    drawHeader(currentPage)
+                }
 
+                // Fondo alternado por fila
+                const rowBg = anulado
+                    ? C_ROW_ANUL
+                    : rowColorIdx % 2 === 0 ? C_ROW_EVEN : C_ROW_ODD
+                fillRect(page, margin, yPosition - 10, totalColsW, 12, rowBg)
+
+                let xPosition = margin
                 cells.forEach((cell, i) => {
                     const col   = cols[i]
                     const maxW  = col.width - 4
                     const lines = splitTextIntoLines(cell ?? '—', maxW, font, baseFontSize)
                     const txt   = lines[0] ?? ''
                     const tw    = font.widthOfTextAtSize(txt, baseFontSize)
-                    const tx    = col.align === 'right'  ? xPosition + col.width - tw - 2
+                    const tx    = col.align === 'right'  ? xPosition + col.width - tw - 3
                         : col.align === 'center' ? xPosition + (col.width - tw) / 2
-                            : xPosition + 2
+                            : xPosition + 3
 
                     // Cols 10-12 (B.Imponible, IGV, Total) en rojo si negativo
                     const isNumCol = i >= 10 && i <= 12
-                    const color    = anulado              ? rowColor
-                        : negativo && isNumCol ? rgb(0.8, 0, 0)
-                            : rowColor
+                    const color    = anulado              ? C_ANULADO
+                        : negativo && isNumCol ? C_RED
+                            : C_TEXT
 
                     page.drawText(txt, {
-                        x: tx, y: yPosition,
+                        x: tx, y: yPosition - 8,
                         size: baseFontSize, font, color,
                     })
                     xPosition += col.width
                 })
 
+                // Línea separadora sutil
                 page.drawLine({
-                    start: { x: margin,              y: yPosition - 4 },
-                    end:   { x: margin + totalColsW, y: yPosition - 4 },
-                    thickness: 0.2, color: rgb(0.8, 0.8, 0.8),
+                    start    : { x: margin,              y: yPosition - 10 },
+                    end      : { x: margin + totalColsW, y: yPosition - 10 },
+                    thickness: 0.3, color: C_SEPARATOR,
                 })
 
                 yPosition -= 12
+                rowColorIdx++
             }
 
             // ── Render comprobantes ───────────────────────────────────────────
@@ -368,8 +471,6 @@ export function ExportRegistroButton({
                             : String(c.tipo_comprobante ?? '—')
                     const tiDI    = c.tipo_comprobante === 1 ? 'RUC' : 'DNI'
 
-                    if (!anulado) { totBase += base; totIGV += igv; totTotal += total }
-
                     const cells: string[] = [
                         // Comprobante Emitido:
                         // hasNC  -> datos de la NC emitida (nc_serie, nc_numero, nc_fecha)
@@ -389,16 +490,14 @@ export function ExportRegistroButton({
                         fmtMoney(total, hasNC),
                     ]
 
-                    // Comprobante Original:
-                    // hasNC  -> datos del comprobante padre (c.serie, c.numero, c.fecha_envio)
-                    // !hasNC -> vacio
-                    if (tieneNC) {
-                        cells.push(
-                            hasNC ? safeDate(c.fecha_envio, 5) : '—',
-                            hasNC ? c.serie                     : '—',
-                            hasNC ? c.numero                    : '—',
-                        )
-                    }
+                    // Comprobante Original: siempre se muestran las 3 cols
+                    // hasNC  -> datos del comprobante padre
+                    // !hasNC -> guiones
+                    cells.push(
+                        hasNC ? safeDate(c.fecha_envio, 5) : '—',
+                        hasNC ? c.serie                     : '—',
+                        hasNC ? c.numero                    : '—',
+                    )
 
                     drawRow(currentPage, cells, anulado, hasNC)
                 }
@@ -420,8 +519,6 @@ export function ExportRegistroButton({
                     const anulado = c.anulado
                     const moneda  = c.moneda === 1 ? 'S/' : '$'
                     const tiDI    = c.tipo_comprobante === 1 ? 'RUC' : 'DNI'
-
-                    if (!anulado) { totBase += base; totIGV += igv; totTotal += total }
 
                     drawRow(currentPage, [
                         safeDate(c.fecha_envio),
@@ -485,14 +582,12 @@ export function ExportRegistroButton({
                     drawHeader(currentPage)
                 }
 
-                currentPage.drawLine({
-                    start: { x: margin,              y: yPosition + 4 },
-                    end:   { x: margin + totalColsW, y: yPosition + 4 },
-                    thickness: 0.8, color: rgb(0, 0, 0),
-                })
+                // Fondo azul marino para la fila de totales
+                fillRect(currentPage, margin, yPosition - 12, totalColsW, 16, C_HEADER_BG)
+
                 currentPage.drawText('TOTALES', {
-                    x: margin + 2, y: yPosition,
-                    size: baseFontSize, font: boldFont, color: rgb(0, 0, 0),
+                    x: margin + 3, y: yPosition - 8,
+                    size: baseFontSize, font: boldFont, color: C_WHITE,
                 })
 
                 const totMap: Record<string, string> = {
@@ -508,13 +603,39 @@ export function ExportRegistroButton({
                     if (val) {
                         const vw = boldFont.widthOfTextAtSize(val, baseFontSize)
                         currentPage.drawText(val, {
-                            x: tx + col.width - vw - 2, y: yPosition,
-                            size: baseFontSize, font: boldFont, color: rgb(0, 0, 0),
+                            x: tx + col.width - vw - 3, y: yPosition - 8,
+                            size: baseFontSize, font: boldFont, color: C_WHITE,
                         })
                     }
                     tx += col.width
                 })
             }
+
+            // ── Footer en todas las páginas ───────────────────────────────────
+            const allPages = pdfDoc.getPages()
+            allPages.forEach((pg, idx) => {
+                const now       = new Date()
+                const fechaText = `Fecha de emision: ${now.toLocaleDateString('es-PE')} ${now.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit', hour12: true })}`
+                const pgText    = `Pagina ${idx + 1}`
+                const pgW       = font.widthOfTextAtSize(pgText, 7.5)
+                const fy        = margin - 16
+
+                // Línea separadora
+                pg.drawLine({
+                    start    : { x: margin,              y: fy + 12 },
+                    end      : { x: pageWidth - margin,  y: fy + 12 },
+                    thickness: 0.5, color: rgb(0.80, 0.83, 0.88),
+                })
+
+                pg.drawText(fechaText, {
+                    x: margin, y: fy,
+                    size: 7.5, font, color: C_MUTED,
+                })
+                pg.drawText(pgText, {
+                    x: pageWidth - margin - pgW, y: fy,
+                    size: 7.5, font, color: C_MUTED,
+                })
+            })
 
             // ── Guardar y descargar ───────────────────────────────────────────
             const pdfBytes = await pdfDoc.save()
