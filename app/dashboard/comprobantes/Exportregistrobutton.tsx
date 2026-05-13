@@ -270,22 +270,23 @@ export function ExportRegistroButton({
                     titleXPos = margin + 60
                 }
 
-                // Nombre empresa (izquierda)
+                // Nombre empresa (izquierda) — centrado vertical en headerH
+                const hMid      = pageHeight - headerH / 2   // centro de la banda
                 page.drawText(empresaNombre, {
-                    x: titleXPos, y: pageHeight - margin - 2,
+                    x: titleXPos, y: hMid + 4,
                     size: 13, font: boldFont, color: C_WHITE,
                 })
                 page.drawText(`RUC: ${empresaRuc}`, {
-                    x: titleXPos, y: pageHeight - margin - 15,
+                    x: titleXPos, y: hMid - 9,
                     size: 7.5, font, color: rgb(0.68, 0.78, 0.90),
                 })
 
-                // Título del reporte (derecha)
+                // Título del reporte (derecha) — mismo centrado
                 const titleText = TITLES[type]
                 const titleW    = boldFont.widthOfTextAtSize(titleText, 13)
                 page.drawText(titleText, {
                     x: pageWidth - margin - titleW,
-                    y: pageHeight - margin - 2,
+                    y: hMid + 4,
                     size: 13, font: boldFont, color: C_WHITE,
                 })
 
@@ -294,7 +295,7 @@ export function ExportRegistroButton({
                 const periodoW    = font.widthOfTextAtSize(periodoText, 8)
                 page.drawText(periodoText, {
                     x: pageWidth - margin - periodoW,
-                    y: pageHeight - margin - 15,
+                    y: hMid - 9,
                     size: 8, font, color: rgb(0.68, 0.78, 0.90),
                 })
 
@@ -302,47 +303,69 @@ export function ExportRegistroButton({
 
                 // 2. Bloque de stats (solo primera página)
                 if (isFirstPage) {
-                    const statsH = 52
-                    fillRect(page, 0, yPosition - statsH, pageWidth, statsH, C_STATS_BG)
+                    const statsH      = 62          // altura total del bloque
+                    const sideW       = 18          // ancho de los laterales blancos
+                    const lineThick   = 2.5         // grosor líneas celestes
+                    const lineColor   = rgb(0.22, 0.60, 0.85)  // celeste #38A0DA
+                    const statsTop    = yPosition
+                    const statsBot    = yPosition - statsH
 
-                    // Divisor vertical centrado
+                    // Fondo azul medio (área interior entre los laterales)
+                    fillRect(page, sideW, statsBot, pageWidth - sideW * 2, statsH, C_STATS_BG)
+
+                    // Laterales blancos izquierdo y derecho
+                    fillRect(page, 0,                statsBot, sideW, statsH, rgb(1, 1, 1))
+                    fillRect(page, pageWidth - sideW, statsBot, sideW, statsH, rgb(1, 1, 1))
+
+                    // Línea celeste superior
+                    fillRect(page, sideW, statsTop - lineThick, pageWidth - sideW * 2, lineThick, lineColor)
+                    // Línea celeste inferior — ancho total de la hoja
+                    fillRect(page, 0, statsBot, pageWidth, lineThick, lineColor)
+
+                    // Separador vertical central (blanco semitransparente)
+                    const midX = pageWidth / 2
                     page.drawLine({
-                        start    : { x: pageWidth / 2, y: yPosition - statsH + 10 },
-                        end      : { x: pageWidth / 2, y: yPosition - 10 },
-                        thickness: 0.8, color: rgb(0.30, 0.50, 0.75),
+                        start    : { x: midX, y: statsBot + 12 },
+                        end      : { x: midX, y: statsTop - 12 },
+                        thickness: 1, color: rgb(0.45, 0.60, 0.80),
                     })
+
+                    // Centros horizontales de cada mitad
+                    const lCX = sideW + (pageWidth / 2 - sideW) / 2
+                    const rCX = pageWidth / 2 + (pageWidth / 2 - sideW) / 2
+
+                    // Centro vertical del bloque
+                    const sMid = statsBot + statsH / 2
 
                     // Stat izquierda — comprobantes emitidos
                     const cntStr  = String(countItems)
-                    const cntW    = boldFont.widthOfTextAtSize(cntStr, 18)
+                    const cntW    = boldFont.widthOfTextAtSize(cntStr, 20)
                     const cntLbl  = 'COMPROBANTES EMITIDOS'
                     const cntLblW = font.widthOfTextAtSize(cntLbl, 7)
-                    const lCX     = pageWidth / 4
                     page.drawText(cntStr, {
-                        x: lCX - cntW / 2, y: yPosition - statsH + 24,
-                        size: 18, font: boldFont, color: C_WHITE,
+                        x: lCX - cntW / 2, y: sMid + 4,
+                        size: 20, font: boldFont, color: C_WHITE,
                     })
                     page.drawText(cntLbl, {
-                        x: lCX - cntLblW / 2, y: yPosition - statsH + 10,
+                        x: lCX - cntLblW / 2, y: sMid - 10,
                         size: 7, font, color: rgb(0.68, 0.80, 0.93),
                     })
 
                     // Stat derecha — total facturado
                     const totStr  = totTotal.toLocaleString('es-PE', { minimumFractionDigits: 2 })
-                    const totW    = boldFont.widthOfTextAtSize(totStr, 18)
+                    const totW    = boldFont.widthOfTextAtSize(totStr, 20)
                     const totLbl  = 'TOTAL FACTURADO (S/)'
                     const totLblW = font.widthOfTextAtSize(totLbl, 7)
-                    const rCX     = (pageWidth / 4) * 3
                     page.drawText(totStr, {
-                        x: rCX - totW / 2, y: yPosition - statsH + 24,
-                        size: 18, font: boldFont, color: C_WHITE,
+                        x: rCX - totW / 2, y: sMid + 4,
+                        size: 20, font: boldFont, color: C_WHITE,
                     })
                     page.drawText(totLbl, {
-                        x: rCX - totLblW / 2, y: yPosition - statsH + 10,
+                        x: rCX - totLblW / 2, y: sMid - 10,
                         size: 7, font, color: rgb(0.68, 0.80, 0.93),
                     })
 
-                    yPosition -= statsH + 10
+                    yPosition -= statsH + 8
                 } else {
                     yPosition -= 8
                 }
@@ -395,13 +418,15 @@ export function ExportRegistroButton({
             isFirstPage = false
 
             // ── drawRow ───────────────────────────────────────────────────────
+            const ROW_H = 18
+
             const drawRow = (
                 page    : any,
                 cells   : string[],
                 anulado : boolean,
                 negativo: boolean = false
             ) => {
-                if (yPosition - 12 < minYPosition) {
+                if (yPosition - ROW_H < minYPosition) {
                     currentPage = addNewPage()
                     pageNumber++
                     yPosition   = pageHeight - margin
@@ -412,7 +437,7 @@ export function ExportRegistroButton({
                 const rowBg = anulado
                     ? C_ROW_ANUL
                     : rowColorIdx % 2 === 0 ? C_ROW_EVEN : C_ROW_ODD
-                fillRect(page, margin, yPosition - 10, totalColsW, 12, rowBg)
+                fillRect(page, margin, yPosition - ROW_H + 2, totalColsW, ROW_H, rowBg)
 
                 let xPosition = margin
                 cells.forEach((cell, i) => {
@@ -432,7 +457,7 @@ export function ExportRegistroButton({
                             : C_TEXT
 
                     page.drawText(txt, {
-                        x: tx, y: yPosition - 8,
+                        x: tx, y: yPosition - ROW_H + 5,
                         size: baseFontSize, font, color,
                     })
                     xPosition += col.width
@@ -440,19 +465,19 @@ export function ExportRegistroButton({
 
                 // Línea separadora sutil
                 page.drawLine({
-                    start    : { x: margin,              y: yPosition - 10 },
-                    end      : { x: margin + totalColsW, y: yPosition - 10 },
+                    start    : { x: margin,              y: yPosition - ROW_H + 2 },
+                    end      : { x: margin + totalColsW, y: yPosition - ROW_H + 2 },
                     thickness: 0.3, color: C_SEPARATOR,
                 })
 
-                yPosition -= 12
+                yPosition -= ROW_H
                 rowColorIdx++
             }
 
             // ── Render comprobantes ───────────────────────────────────────────
             if (type === 'comprobantes') {
                 for (const c of data) {
-                    if (yPosition - 12 < minYPosition) {
+                    if (yPosition - ROW_H < minYPosition) {
                         currentPage = addNewPage()
                         pageNumber++
                         yPosition   = pageHeight - margin
@@ -506,7 +531,7 @@ export function ExportRegistroButton({
             // ── Render notas ──────────────────────────────────────────────────
             if (type === 'notas') {
                 for (const c of data) {
-                    if (yPosition - 12 < minYPosition) {
+                    if (yPosition - ROW_H < minYPosition) {
                         currentPage = addNewPage()
                         pageNumber++
                         yPosition   = pageHeight - margin
@@ -541,7 +566,7 @@ export function ExportRegistroButton({
             // ── Render guías ──────────────────────────────────────────────────
             if (type === 'guias') {
                 for (const g of guias) {
-                    if (yPosition - 12 < minYPosition) {
+                    if (yPosition - ROW_H < minYPosition) {
                         currentPage = addNewPage()
                         pageNumber++
                         yPosition   = pageHeight - margin
@@ -582,12 +607,16 @@ export function ExportRegistroButton({
                     drawHeader(currentPage)
                 }
 
-                // Fondo azul marino para la fila de totales
-                fillRect(currentPage, margin, yPosition - 12, totalColsW, 16, C_HEADER_BG)
+                // Separación visual antes de totales
+                yPosition -= 6
+
+                // Fondo azul marino para la fila de totales (más alta)
+                const totRowH = 22
+                fillRect(currentPage, margin, yPosition - totRowH, totalColsW, totRowH, C_HEADER_BG)
 
                 currentPage.drawText('TOTALES', {
-                    x: margin + 3, y: yPosition - 8,
-                    size: baseFontSize, font: boldFont, color: C_WHITE,
+                    x: margin + 3, y: yPosition - totRowH / 2 - 3,
+                    size: baseFontSize + 1, font: boldFont, color: C_WHITE,
                 })
 
                 const totMap: Record<string, string> = {
@@ -603,8 +632,8 @@ export function ExportRegistroButton({
                     if (val) {
                         const vw = boldFont.widthOfTextAtSize(val, baseFontSize)
                         currentPage.drawText(val, {
-                            x: tx + col.width - vw - 3, y: yPosition - 8,
-                            size: baseFontSize, font: boldFont, color: C_WHITE,
+                            x: tx + col.width - vw - 3, y: yPosition - totRowH / 2 - 3,
+                            size: baseFontSize + 1, font: boldFont, color: C_WHITE,
                         })
                     }
                     tx += col.width
