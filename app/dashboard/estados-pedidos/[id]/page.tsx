@@ -193,7 +193,7 @@ export default function EstadosPedidosDetailPage({ params }: { params: { id: str
         numeroLote: l.numeroLote, fechaVencimiento: l.fechaVencimiento, stock: Number(l.stock).toFixed(2)
       })).filter((l: any) => {
         const existInCart = tempDetalles.some(s => l.numeroLote === s.cod_lote);
-        return Number(l.stock) > 0 && !existInCart
+        return Number(l.stock) > 0 // && !existInCart
       })
 
       setEditingLotes(lotes.length > 0 ? [{

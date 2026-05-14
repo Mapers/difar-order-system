@@ -303,7 +303,7 @@ export function useOrderPage() {
 
                 const lotesFiltered = lotes.filter((item: any) => {
                     const existInCart = selectedProducts.some(s => item.value === s.lote);
-                    return Number(item.stock) > 0 && !existInCart
+                    return Number(item.stock) > 0 // && !existInCart
                 })
 
                 if (lotesFiltered.some((item: any) => item.numeroLote !== null && item.fechaVencimiento !== null)) {
