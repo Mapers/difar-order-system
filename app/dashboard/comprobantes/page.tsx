@@ -38,7 +38,8 @@ import {DeletePendienteModal} from "@/app/dashboard/comprobantes/modals/DeletePe
 import {toast} from "@/app/hooks/useToast";
 import {CorregirDescripcionModal} from "@/app/dashboard/comprobantes/modals/CorregirDescripcionModal";
 import {ModificarCuotasModal} from "@/app/dashboard/comprobantes/modals/ModificarCuotasModal";
-import {ExportRegistroButton} from "@/app/dashboard/comprobantes/Exportregistrobutton";
+import {ExportRegistroButton} from "@/app/dashboard/comprobantes/Exportregistrobutton"
+import {ExcelExportButton} from "@/app/dashboard/comprobantes/ExcelExportButton";
 
 function useDebounce(value: string, delay: number = 500) {
   const [debounced, setDebounced] = useState(value)
@@ -746,6 +747,11 @@ export default function ComprobantesPage() {
                   )}
 
                   <div className="flex justify-end gap-2">
+                    {comprobantes.length > 0 && <ExcelExportButton
+                        data={comprobantes}
+                        tiposComprobante={tiposComprobante}
+                        filters={filters}
+                    />}
                     {comprobantes.length > 0 && <ExportRegistroButton
                         type="comprobantes"
                         data={comprobantes}
