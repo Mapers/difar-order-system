@@ -375,68 +375,70 @@ export function GenerarNotaCreditoModal({
                                     Indicá la cantidad a devolver por cada producto (0 = no incluir en la NC)
                                 </p>
 
-                                <ScrollArea className="flex-1 max-h-[380px] border rounded-md bg-white">
-                                    <table className="min-w-full divide-y divide-gray-200">
-                                        <thead className="bg-gray-50 sticky top-0">
-                                        <tr>
-                                            <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">Producto</th>
-                                            <th className="px-3 py-2 text-right text-xs font-medium text-gray-500">P. Unit</th>
-                                            <th className="px-3 py-2 text-center text-xs font-medium text-gray-500">Cant. Max</th>
-                                            <th className="px-3 py-2 text-center text-xs font-medium text-gray-500">A Devolver</th>
-                                        </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-gray-100">
-                                        {itemsSeleccionados.map((item, index) => (
-                                            <tr key={item.cod_item}
-                                                className={item.cantidad > 0 ? 'bg-green-50' : ''}>
-                                                <td className="px-3 py-2">
-                                                    <p className="text-xs font-medium text-gray-800">{item.descripcion}</p>
-                                                    <p className="text-[10px] text-gray-400">{item.cod_item}</p>
-                                                </td>
-                                                <td className="px-3 py-2 text-right text-xs text-gray-600">
-                                                    S/ {item.precio.toFixed(2)}
-                                                </td>
-                                                <td className="px-3 py-2 text-center text-xs text-gray-500">
-                                                    {item.cantMax}
-                                                </td>
-                                                <td className="px-3 py-2">
-                                                    {item.bloqueado ? (
-                                                        <p className="text-center text-xs text-red-500 font-medium">
-                                                            NC total emitida
-                                                        </p>
-                                                    ) : item.cantMax === 0 ? (
-                                                        <p className="text-center text-xs text-gray-400">
-                                                            Sin stock disponible
-                                                        </p>
-                                                    ) : (
-                                                        <div className="flex items-center justify-center gap-1">
-                                                            <button
-                                                                onClick={() => handleCantidadChange(index, -1)}
-                                                                className="h-6 w-6 rounded-full flex items-center justify-center border border-gray-300 hover:border-red-400 hover:text-red-500 transition-colors"
-                                                            >
-                                                                <Minus className="h-3 w-3" />
-                                                            </button>
-                                                            <input
-                                                                type="number"
-                                                                min={0}
-                                                                max={item.cantMax}
-                                                                value={item.cantidad}
-                                                                onChange={(e) => handleCantidadInput(index, e.target.value)}
-                                                                className="w-12 text-center text-sm font-semibold border rounded px-1 py-0.5 focus:outline-none focus:ring-1 focus:ring-blue-400"
-                                                            />
-                                                            <button
-                                                                onClick={() => handleCantidadChange(index, 1)}
-                                                                className="h-6 w-6 rounded-full flex items-center justify-center border border-gray-300 hover:border-green-400 hover:text-green-500 transition-colors"
-                                                            >
-                                                                <Plus className="h-3 w-3" />
-                                                            </button>
-                                                        </div>
-                                                    )}
-                                                </td>
+                                <ScrollArea className="h-[380px] w-full rounded-md border bg-white">
+                                    <div className="min-w-full">
+                                        <table className="min-w-full divide-y divide-gray-200">
+                                            <thead className="bg-gray-50 sticky top-0">
+                                            <tr>
+                                                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">Producto</th>
+                                                <th className="px-3 py-2 text-right text-xs font-medium text-gray-500">P. Unit</th>
+                                                <th className="px-3 py-2 text-center text-xs font-medium text-gray-500">Cant. Max</th>
+                                                <th className="px-3 py-2 text-center text-xs font-medium text-gray-500">A Devolver</th>
                                             </tr>
-                                        ))}
-                                        </tbody>
-                                    </table>
+                                            </thead>
+                                            <tbody className="divide-y divide-gray-100">
+                                            {itemsSeleccionados.map((item, index) => (
+                                                <tr key={item.cod_item}
+                                                    className={item.cantidad > 0 ? 'bg-green-50' : ''}>
+                                                    <td className="px-3 py-2">
+                                                        <p className="text-xs font-medium text-gray-800">{item.descripcion}</p>
+                                                        <p className="text-[10px] text-gray-400">{item.cod_item}</p>
+                                                    </td>
+                                                    <td className="px-3 py-2 text-right text-xs text-gray-600">
+                                                        S/ {item.precio.toFixed(2)}
+                                                    </td>
+                                                    <td className="px-3 py-2 text-center text-xs text-gray-500">
+                                                        {item.cantMax}
+                                                    </td>
+                                                    <td className="px-3 py-2">
+                                                        {item.bloqueado ? (
+                                                            <p className="text-center text-xs text-red-500 font-medium">
+                                                                NC total emitida
+                                                            </p>
+                                                        ) : item.cantMax === 0 ? (
+                                                            <p className="text-center text-xs text-gray-400">
+                                                                Sin stock disponible
+                                                            </p>
+                                                        ) : (
+                                                            <div className="flex items-center justify-center gap-1">
+                                                                <button
+                                                                    onClick={() => handleCantidadChange(index, -1)}
+                                                                    className="h-6 w-6 rounded-full flex items-center justify-center border border-gray-300 hover:border-red-400 hover:text-red-500 transition-colors"
+                                                                >
+                                                                    <Minus className="h-3 w-3" />
+                                                                </button>
+                                                                <input
+                                                                    type="number"
+                                                                    min={0}
+                                                                    max={item.cantMax}
+                                                                    value={item.cantidad}
+                                                                    onChange={(e) => handleCantidadInput(index, e.target.value)}
+                                                                    className="w-12 text-center text-sm font-semibold border rounded px-1 py-0.5 focus:outline-none focus:ring-1 focus:ring-blue-400"
+                                                                />
+                                                                <button
+                                                                    onClick={() => handleCantidadChange(index, 1)}
+                                                                    className="h-6 w-6 rounded-full flex items-center justify-center border border-gray-300 hover:border-green-400 hover:text-green-500 transition-colors"
+                                                                >
+                                                                    <Plus className="h-3 w-3" />
+                                                                </button>
+                                                            </div>
+                                                        )}
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
                                 </ScrollArea>
 
                                 {canProceedParcial && (
