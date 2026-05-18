@@ -21,7 +21,7 @@ export interface Vendedor {
     telefono: string;
     comisionVend: number;
     comisionCobranza: number;
-    empRegistro: string;
+    EmpRegistro: string;
     activo: number;
     nombre_completo: string;
 }

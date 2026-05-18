@@ -269,7 +269,7 @@ export default function UsuariosPage() {
         Telefonos: editingVendedor.telefono,
         ComisionVend: editingVendedor.comisionVend,
         ComisionCobranza: editingVendedor.comisionCobranza,
-        EmpRegistro: editingVendedor.empRegistro,
+        EmpRegistro: editingVendedor.EmpRegistro,
         Estado: editingVendedor.activo === 1 ? 'A' : 'I'
       };
 
@@ -1154,7 +1154,7 @@ export default function UsuariosPage() {
               {isMobile ? (
                 <div className="p-2">
                   {vendedores.map((vendedor) => (
-                    <MobileVendedorCard key={vendedor.idVendedor + '|' + vendedor.empRegistro} vendedor={vendedor} />
+                    <MobileVendedorCard key={vendedor.idVendedor + '|' + vendedor.EmpRegistro} vendedor={vendedor} />
                   ))}
                 </div>
               ) : (
@@ -1418,16 +1418,16 @@ export default function UsuariosPage() {
               <Input
                 disabled
                 placeholder="Código de Empresa (11 caracteres)"
-                value={editingVendedor ? editingVendedor.empRegistro : newVendedor.empRegistro}
+                value={editingVendedor ? editingVendedor.EmpRegistro : newVendedor.empRegistro}
                 onChange={(e) => {
                   const value = e.target.value.slice(0, 11);
                   editingVendedor
-                    ? setEditingVendedor({...editingVendedor, empRegistro: value})
+                    ? setEditingVendedor({...editingVendedor, EmpRegistro: value})
                     : setNewVendedor({...newVendedor, empRegistro: value})
                 }}
                 required
               />
-              {(!editingVendedor?.empRegistro && !newVendedor.empRegistro) && (
+              {(!editingVendedor?.EmpRegistro && !newVendedor.empRegistro) && (
                 <p className="text-red-500 text-xs mt-1">La empresa de registro es requerida</p>
               )}
             </div>
@@ -1458,7 +1458,7 @@ export default function UsuariosPage() {
                 (!editingVendedor?.DNI && !newVendedor.DNI) ||
                 (editingVendedor?.comisionVend === undefined && newVendedor.comisionVend === undefined) ||
                 (editingVendedor?.comisionCobranza === undefined && newVendedor.comisionCobranza === undefined) ||
-                (!editingVendedor?.empRegistro && !newVendedor.empRegistro)
+                (!editingVendedor?.EmpRegistro && !newVendedor.empRegistro)
               }
             >
               {editingVendedor ? 'Actualizar' : 'Crear'}
