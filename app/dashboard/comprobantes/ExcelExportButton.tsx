@@ -187,9 +187,9 @@ export function ExcelExportButton({
                         nroDi       : c.cliente_numdoc ?? '—',
                         tc          : moneda,
                         noGrabado   : 0,
-                        bImponible  : Number((hasNC ? -base  : base).toFixed(2)),
-                        igv         : Number((hasNC ? -igv   : igv).toFixed(2)),
-                        total       : Number((hasNC ? -totalN : totalN).toFixed(2)),
+                        bImponible  : Number((c.anulado ? 0 : base).toFixed(2)),
+                        igv         : Number((c.anulado ? 0 : igv).toFixed(2)),
+                        total       : Number((c.anulado ? 0 :totalN).toFixed(2)),
                         fEmisionOrig: hasNC ? safeDate(c.fecha_envio, 5) : '—',
                         serieOrig   : hasNC ? c.serie   : '—',
                         numeroOrig  : hasNC ? c.numero  : '—',
@@ -275,11 +275,9 @@ export function ExcelExportButton({
                     if (cellStr.length > maxLen[idx]) maxLen[idx] = cellStr.length
                 })
 
-                if (!fila.anulado) {
-                    totBase  += Number(fila.row.bImponible) || 0
-                    totIGV   += Number(fila.row.igv)        || 0
-                    totTotal += Number(fila.row.total)       || 0
-                }
+                totBase  += Number(fila.row.bImponible) || 0
+                totIGV   += Number(fila.row.igv)        || 0
+                totTotal += Number(fila.row.total)       || 0
             })
 
             // Totals row
