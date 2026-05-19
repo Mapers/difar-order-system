@@ -244,11 +244,137 @@ export function ExportRegistroButton({
                 }
             }
 
+            // ── Tipo de fila unificada (compartida para comprobantes) ──────
+            type FilaUnificada = {
+                fechaOrden: number
+                cells     : string[]
+                anulado   : boolean
+                negativo  : boolean
+                bImponible: number
+                igv       : number
+                total     : number
+            }
+
+            const parseFecha = (f: string | null | undefined): number => {
+                if (!f) return 0
+                const t = new Date(f).getTime()
+                return isNaN(t) ? 0 : t
+            }
+
+            // ── Construcción de filas para 'comprobantes' (igual que Excel) ─
+            const filasComprobantes: FilaUnificada[] = []
+
+            if (type === 'comprobantes') {
+                if (usarSP && registroVentas.length > 0) {
+                    const s = (v: any) => (v === null || v === undefined) ? '—' : String(v)
+
+                    for (const rv of registroVentas) {
+                        const hasOriginal = !!(rv.SerieDocOriginal && rv.NumeroDocOriginal)
+                        const tcStr       = rv.TC ? String(rv.TC) : '1.00'
+
+                        const bImp  = isNaN(Number(rv.BImponible)) ? 0 : Number(Number(rv.BImponible).toFixed(2))
+                        const igvN  = isNaN(Number(rv.IGV))        ? 0 : Number(Number(rv.IGV).toFixed(2))
+                        const totN  = isNaN(Number(rv.Total))      ? 0 : Number(Number(rv.Total).toFixed(2))
+
+                        filasComprobantes.push({
+                            fechaOrden: parseFecha(rv.Fecha),
+                            anulado   : false,
+                            negativo  : false,
+                            bImponible: bImp,
+                            igv       : igvN,
+                            total     : totN,
+                            cells: [
+                                safeDate(rv.Fecha),
+                                s(rv.Doc),
+                                s(rv.Serie),
+                                s(rv.NroDesde),
+                                safeDate(rv.FVcto),
+                                s(rv.Cliente),
+                                s(rv.DI),
+                                s(rv.NroDI),
+                                tcStr,
+                                isNaN(Number(rv.NoGrabado))  ? '0.00' : Number(rv.NoGrabado).toFixed(2),
+                                bImp.toFixed(2),
+                                igvN.toFixed(2),
+                                totN.toFixed(2),
+                                hasOriginal ? safeDate(rv.FechaDocOriginal) : '—',
+                                hasOriginal ? s(rv.SerieDocOriginal)        : '—',
+                                hasOriginal ? s(rv.NumeroDocOriginal)       : '—',
+                            ],
+                        })
+                    }
+                }
+
+                for (const c of data) {
+                    // Mismo filtro que el Excel: descartar sin idSunat o rechazados (104)
+                    if (c.idSunat === null || (c.aceptada_por_sunat != null && c.aceptada_por_sunat === 104)) {
+                        continue
+                    }
+
+                    const base    = calcBase(c.total)
+                    const igv     = calcIGV(c.total)
+                    const totalN  = Number(c.total) || 0
+                    const anulado = c.anulado
+                    const hasNC   = c.tipoNC !== 'sin_nc'
+                    const moneda  = c.moneda === 1 ? 'S/' : '$'
+                    const tiDoc   = c.tipo_comprobante === 1 ? 'FAC'
+                        : c.tipo_comprobante === 3 ? 'BOL'
+                            : String(c.tipo_comprobante ?? '—')
+                    const tiDI    = c.tipo_comprobante === 1 ? 'RUC' : 'DNI'
+
+                    const fechaMostrada = hasNC ? c.nc_fecha : c.fecha_envio
+
+                    // Valores numéricos: si está anulado, todo en 0 (igual que Excel)
+                    const baseRow  = Number((anulado ? 0 : base).toFixed(2))
+                    const igvRow   = Number((anulado ? 0 : igv).toFixed(2))
+                    const totalRow = Number((anulado ? 0 : totalN).toFixed(2))
+
+                    filasComprobantes.push({
+                        fechaOrden: parseFecha(fechaMostrada),
+                        anulado,
+                        negativo  : hasNC,
+                        bImponible: baseRow,
+                        igv       : igvRow,
+                        total     : totalRow,
+                        cells: [
+                            hasNC ? safeDate(c.nc_fecha)      : safeDate(c.fecha_envio, 5),
+                            tiDoc,
+                            hasNC ? (c.nc_serie  ?? '—')      : c.serie,
+                            hasNC ? (c.nc_numero ?? '—')      : c.numero,
+                            hasNC ? safeDate(c.nc_fecha)      : safeDate(c.fecha_emision ?? c.fecha_envio, 5),
+                            c.cliente_denominacion ?? '—',
+                            tiDI,
+                            c.cliente_numdoc ?? '—',
+                            moneda,
+                            '0.00',
+                            fmtMoney(anulado ? 0 : base,   hasNC),
+                            fmtMoney(anulado ? 0 : igv,    hasNC),
+                            fmtMoney(anulado ? 0 : totalN, hasNC),
+                            hasNC ? safeDate(c.fecha_envio, 5) : '—',
+                            hasNC ? c.serie                     : '—',
+                            hasNC ? c.numero                    : '—',
+                        ],
+                    })
+                }
+
+                filasComprobantes.sort((a, b) => a.fechaOrden - b.fechaOrden)
+            }
+
+            // ── Totales: calculados recorriendo las filas FINALES ──────────
+            // Para 'comprobantes' se suma exactamente lo que se dibuja en la tabla
+            // (mismo criterio que el Excel). Para 'notas' se mantiene la lógica
+            // previa sobre 'data'.
             let totBase  = 0
             let totIGV   = 0
             let totTotal = 0
-            const comprobantes = [...data?.filter(c => c.idSunat !== null && !(c.aceptada_por_sunat != null && c.aceptada_por_sunat === 104)), ...registroVentas]
-            if (type !== 'guias') {
+
+            if (type === 'comprobantes') {
+                for (const fila of filasComprobantes) {
+                    totBase  += fila.bImponible
+                    totIGV   += fila.igv
+                    totTotal += fila.total
+                }
+            } else if (type === 'notas') {
                 for (const c of data) {
                     if (!c.anulado) {
                         totBase  += calcBase(c.total)
@@ -256,14 +382,16 @@ export function ExportRegistroButton({
                         totTotal += Number(c.total) || 0
                     }
                 }
-
-                for (const c of registroVentas) {
-                    totBase  += calcBase(c.Total)
-                    totIGV   += calcIGV(c.Total)
-                    totTotal += Number(c.Total) || 0
-                }
             }
-            const countItems = type === 'guias' ? guias.length : comprobantes.length
+
+            totBase  = Number(totBase.toFixed(2))
+            totIGV   = Number(totIGV.toFixed(2))
+            totTotal = Number(totTotal.toFixed(2))
+
+            const countItems =
+                type === 'guias'        ? guias.length
+                    : type === 'comprobantes' ? filasComprobantes.length
+                        : data.length
 
             const fillRect = (
                 page: any,
@@ -445,6 +573,7 @@ export function ExportRegistroButton({
                     pageNumber++
                     yPosition   = pageHeight - margin
                     drawHeader(currentPage)
+                    page = currentPage
                 }
 
                 const rowBg = anulado
@@ -487,100 +616,7 @@ export function ExportRegistroButton({
             }
 
             if (type === 'comprobantes') {
-                type FilaUnificada = {
-                    fechaOrden: number
-                    cells     : string[]
-                    anulado   : boolean
-                    negativo  : boolean
-                }
-
-                const parseFecha = (f: string | null | undefined): number => {
-                    if (!f) return 0
-                    const t = new Date(f).getTime()
-                    return isNaN(t) ? 0 : t
-                }
-
-                const filas: FilaUnificada[] = []
-
-                if (usarSP && registroVentas.length > 0) {
-                    const s = (v: any) => (v === null || v === undefined) ? '—' : String(v)
-
-                    for (const rv of registroVentas) {
-                        const hasOriginal = !!(rv.SerieDocOriginal && rv.NumeroDocOriginal)
-                        const tcStr       = rv.TC ? String(rv.TC) : '1.00'
-
-                        filas.push({
-                            fechaOrden: parseFecha(rv.Fecha),
-                            anulado   : false,
-                            negativo  : false,
-                            cells: [
-                                safeDate(rv.Fecha),
-                                s(rv.Doc),
-                                s(rv.Serie),
-                                s(rv.NroDesde),
-                                safeDate(rv.FVcto),
-                                s(rv.Cliente),
-                                s(rv.DI),
-                                s(rv.NroDI),
-                                tcStr,
-                                isNaN(Number(rv.NoGrabado))  ? '0.00' : Number(rv.NoGrabado).toFixed(2),
-                                isNaN(Number(rv.BImponible)) ? '0.00' : Number(rv.BImponible).toFixed(2),
-                                isNaN(Number(rv.IGV))        ? '0.00' : Number(rv.IGV).toFixed(2),
-                                isNaN(Number(rv.Total))      ? '0.00' : Number(rv.Total).toFixed(2),
-                                hasOriginal ? safeDate(rv.FechaDocOriginal) : '—',
-                                hasOriginal ? s(rv.SerieDocOriginal)        : '—',
-                                hasOriginal ? s(rv.NumeroDocOriginal)       : '—',
-                            ],
-                        })
-                    }
-                }
-
-                for (const c of data) {
-                    const base    = calcBase(c.total)
-                    const igv     = calcIGV(c.total)
-                    const total   = Number(c.total) || 0
-                    const anulado = c.anulado
-                    const hasNC   = c.tipoNC !== 'sin_nc'
-                    const moneda  = c.moneda === 1 ? 'S/' : '$'
-                    const tiDoc   = c.tipo_comprobante === 1 ? 'FAC'
-                        : c.tipo_comprobante === 3 ? 'BOL'
-                            : String(c.tipo_comprobante ?? '—')
-                    const tiDI    = c.tipo_comprobante === 1 ? 'RUC' : 'DNI'
-
-                    const fechaMostrada = hasNC ? c.nc_fecha : c.fecha_envio
-
-                    const cells: string[] = [
-                        hasNC ? safeDate(c.nc_fecha)      : safeDate(c.fecha_envio, 5),
-                        tiDoc,
-                        hasNC ? (c.nc_serie  ?? '—')      : c.serie,
-                        hasNC ? (c.nc_numero ?? '—')      : c.numero,
-                        hasNC ? safeDate(c.nc_fecha)      : safeDate(c.fecha_emision ?? c.fecha_envio, 5),
-                        c.cliente_denominacion ?? '—',
-                        tiDI,
-                        c.cliente_numdoc ?? '—',
-                        moneda,
-                        '0.00',
-                        fmtMoney(base,  hasNC),
-                        fmtMoney(igv,   hasNC),
-                        fmtMoney(total, hasNC),
-                        hasNC ? safeDate(c.fecha_envio, 5) : '—',
-                        hasNC ? c.serie                     : '—',
-                        hasNC ? c.numero                    : '—',
-                    ]
-
-                    if (c.idSunat !== null && !(c.aceptada_por_sunat != null && c.aceptada_por_sunat === 104)) {
-                        filas.push({
-                            fechaOrden: parseFecha(fechaMostrada),
-                            anulado,
-                            negativo: hasNC,
-                            cells,
-                        })
-                    }
-                }
-
-                filas.sort((a, b) => a.fechaOrden - b.fechaOrden)
-
-                for (const fila of filas) {
+                for (const fila of filasComprobantes) {
                     if (yPosition - ROW_H < minYPosition) {
                         currentPage = addNewPage()
                         pageNumber++
@@ -659,7 +695,13 @@ export function ExportRegistroButton({
                 }
             }
 
-            if (type !== 'guias' && data.length > 0) {
+            // ── Fila de TOTALES ────────────────────────────────────────────
+            const hayFilasParaTotal =
+                type === 'comprobantes' ? filasComprobantes.length > 0
+                    : type === 'notas'        ? data.length > 0
+                        : false
+
+            if (type !== 'guias' && hayFilasParaTotal) {
                 if (yPosition - 14 < minYPosition) {
                     currentPage = addNewPage()
                     pageNumber++
