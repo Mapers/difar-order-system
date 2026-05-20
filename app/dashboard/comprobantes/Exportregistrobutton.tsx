@@ -244,7 +244,6 @@ export function ExportRegistroButton({
                 }
             }
 
-            // ── Tipo de fila unificada (compartida para comprobantes) ──────
             type FilaUnificada = {
                 fechaOrden: number
                 cells     : string[]
@@ -261,7 +260,6 @@ export function ExportRegistroButton({
                 return isNaN(t) ? 0 : t
             }
 
-            // ── Construcción de filas para 'comprobantes' (igual que Excel) ─
             const filasComprobantes: FilaUnificada[] = []
 
             if (type === 'comprobantes') {
@@ -306,13 +304,12 @@ export function ExportRegistroButton({
                 }
 
                 for (const c of data) {
-                    // Mismo filtro que el Excel: descartar sin idSunat o rechazados (104)
                     if (c.idSunat === null || (c.aceptada_por_sunat != null && c.aceptada_por_sunat === 104)) {
                         continue
                     }
 
-                    const base    = calcBase(c.total)
-                    const igv     = calcIGV(c.total)
+                    const base    = Number(c.total_gravada) || 0
+                    const igv     = Number(c.total_igv) || 0
                     const totalN  = Number(c.total) || 0
                     const anulado = c.anulado
                     const hasNC   = c.tipoNC !== 'sin_nc'
@@ -324,7 +321,6 @@ export function ExportRegistroButton({
 
                     const fechaMostrada = hasNC ? c.nc_fecha : c.fecha_envio
 
-                    // Valores numéricos: si está anulado, todo en 0 (igual que Excel)
                     const baseRow  = Number((anulado ? 0 : base).toFixed(2))
                     const igvRow   = Number((anulado ? 0 : igv).toFixed(2))
                     const totalRow = Number((anulado ? 0 : totalN).toFixed(2))
@@ -360,10 +356,6 @@ export function ExportRegistroButton({
                 filasComprobantes.sort((a, b) => a.fechaOrden - b.fechaOrden)
             }
 
-            // ── Totales: calculados recorriendo las filas FINALES ──────────
-            // Para 'comprobantes' se suma exactamente lo que se dibuja en la tabla
-            // (mismo criterio que el Excel). Para 'notas' se mantiene la lógica
-            // previa sobre 'data'.
             let totBase  = 0
             let totIGV   = 0
             let totTotal = 0
