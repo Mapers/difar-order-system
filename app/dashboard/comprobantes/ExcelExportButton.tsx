@@ -163,8 +163,8 @@ export function ExcelExportButton({
 
             for (const c of data) {
                 if (c.idSunat === null || (c.aceptada_por_sunat != null && c.aceptada_por_sunat === 104)) continue
-                const base    = calcBase(c.total)
-                const igv     = calcIGV(c.total)
+                const base    = Number(c.total_gravada || 0)
+                const igv     = Number(c.total_igv || 0)
                 const totalN  = Number(c.total) || 0
                 const hasNC   = c.tipoNC !== 'sin_nc'
                 const moneda  = c.moneda === 1 ? 'S/' : '$'

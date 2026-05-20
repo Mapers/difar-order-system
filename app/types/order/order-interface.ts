@@ -9,6 +9,8 @@ export interface Comprobante {
     cliente_denominacion:  string  | null
     moneda:                number  | null
     total:                 string  | null
+    total_igv:             string  | null
+    total_gravada:         string  | null
     tipo_comprobante:      number  | null
     anulado:               boolean
     condicionCredito:      string | null
