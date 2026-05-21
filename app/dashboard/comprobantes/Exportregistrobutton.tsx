@@ -249,6 +249,7 @@ export function ExportRegistroButton({
                 cells     : string[]
                 anulado   : boolean
                 negativo  : boolean
+                noGrabado : number
                 bImponible: number
                 igv       : number
                 total     : number
@@ -278,6 +279,7 @@ export function ExportRegistroButton({
                             fechaOrden: parseFecha(rv.Fecha),
                             anulado   : false,
                             negativo  : false,
+                            noGrabado : isNaN(Number(rv.NoGrabado)) ? 0 : Number(Number(rv.NoGrabado).toFixed(2)),
                             bImponible: bImp,
                             igv       : igvN,
                             total     : totN,
@@ -319,14 +321,16 @@ export function ExportRegistroButton({
                             : String(c.tipo_comprobante ?? '—')
                     const tiDI    = c.tipo_comprobante === 1 ? 'RUC' : 'DNI'
 
-                    const baseRow  = Number((anulado ? 0 : base).toFixed(2))
-                    const igvRow   = Number((anulado ? 0 : igv).toFixed(2))
-                    const totalRow = Number((anulado ? 0 : totalN).toFixed(2))
+                    const baseRow      = Number((anulado ? 0 : base).toFixed(2))
+                    const igvRow       = Number((anulado ? 0 : igv).toFixed(2))
+                    const totalRow     = Number((anulado ? 0 : totalN).toFixed(2))
+                    const noGrabadoRow = Number((anulado ? 0 : Number(c.no_gravadas || 0)).toFixed(2))
 
                     filasComprobantes.push({
                         fechaOrden: parseFecha(c.fecha_envio),
                         anulado,
                         negativo  : hasNC,
+                        noGrabado : noGrabadoRow,
                         bImponible: baseRow,
                         igv       : igvRow,
                         total     : totalRow,
@@ -340,7 +344,7 @@ export function ExportRegistroButton({
                             tiDI,
                             c.cliente_numdoc ?? '—',
                             moneda,
-                            '0.00',
+                            noGrabadoRow.toFixed(2),
                             fmtMoney(anulado ? 0 : base,   hasNC),
                             fmtMoney(anulado ? 0 : igv,    hasNC),
                             fmtMoney(anulado ? 0 : totalN, hasNC),
@@ -354,29 +358,33 @@ export function ExportRegistroButton({
                 filasComprobantes.sort((a, b) => a.fechaOrden - b.fechaOrden)
             }
 
-            let totBase  = 0
-            let totIGV   = 0
-            let totTotal = 0
+            let totBase      = 0
+            let totNoGrabado = 0
+            let totIGV       = 0
+            let totTotal     = 0
 
             if (type === 'comprobantes') {
                 for (const fila of filasComprobantes) {
-                    totBase  += fila.bImponible
-                    totIGV   += fila.igv
-                    totTotal += fila.total
+                    totBase      += fila.bImponible
+                    totNoGrabado += fila.noGrabado
+                    totIGV       += fila.igv
+                    totTotal     += fila.total
                 }
             } else if (type === 'notas') {
                 for (const c of data) {
                     if (!c.anulado) {
-                        totBase  += calcBase(c.total)
-                        totIGV   += calcIGV(c.total)
-                        totTotal += Number(c.total) || 0
+                        totBase      += calcBase(c.total)
+                        totNoGrabado += Number(c.no_gravadas || 0)
+                        totIGV       += calcIGV(c.total)
+                        totTotal     += Number(c.total) || 0
                     }
                 }
             }
 
-            totBase  = Number(totBase.toFixed(2))
-            totIGV   = Number(totIGV.toFixed(2))
-            totTotal = Number(totTotal.toFixed(2))
+            totBase      = Number(totBase.toFixed(2))
+            totNoGrabado = Number(totNoGrabado.toFixed(2))
+            totIGV       = Number(totIGV.toFixed(2))
+            totTotal     = Number(totTotal.toFixed(2))
 
             const countItems =
                 type === 'guias'        ? guias.length
@@ -643,7 +651,7 @@ export function ExportRegistroButton({
                         tiDI,
                         c.cliente_numdoc ?? '—',
                         moneda,
-                        '0.00',
+                        (anulado ? 0 : Number(c.no_gravadas || 0)).toFixed(2),
                         fmtMoney(base),
                         fmtMoney(igv),
                         fmtMoney(total),
@@ -709,10 +717,10 @@ export function ExportRegistroButton({
                 })
 
                 const totMap: Record<string, string> = {
-                    'No Grabado':  '0.00',
+                    'No Grabado':  fmtMoney(totNoGrabado),
                     'B.Imponible': fmtMoney(totBase),
                     'IGV':         fmtMoney(totIGV),
-                    'Total':       fmtMoney(totTotal),
+                    'Total':       fmtMoney(totBase + totNoGrabado + totIGV),
                 }
 
                 let tx = margin

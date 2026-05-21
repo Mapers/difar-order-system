@@ -11,6 +11,7 @@ export interface Comprobante {
     total:                 string  | null
     total_igv:             string  | null
     total_gravada:         string  | null
+    no_gravadas:            string  | null
     tipo_comprobante:      number  | null
     anulado:               boolean
     condicionCredito:      string | null

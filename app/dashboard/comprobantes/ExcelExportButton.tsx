@@ -53,20 +53,6 @@ function safeDate(str: string | null | undefined, offset = 0): string {
     } catch { return '—' }
 }
 
-function fmtMoney(val: number, negative = false): string {
-    return negative ? `-${Math.abs(val).toFixed(2)}` : val.toFixed(2)
-}
-
-function calcBase(total: string | null): number {
-    const t = Number(total)
-    return isNaN(t) ? 0 : t / 1.18
-}
-
-function calcIGV(total: string | null): number {
-    const t = Number(total)
-    return isNaN(t) ? 0 : t - t / 1.18
-}
-
 const COLUMNS = [
     { header: 'F.Emision',     key: 'fEmision',     width: 12, numFmt: '@',       group: 'emit' },
     { header: 'Doc',           key: 'doc',           width:  6, numFmt: '@',       group: 'emit' },
@@ -185,7 +171,7 @@ export function ExcelExportButton({
                         di          : tiDI,
                         nroDi       : c.cliente_numdoc ?? '—',
                         tc          : moneda,
-                        noGrabado   : 0,
+                        noGrabado   : Number((c.anulado ? 0 : Number(c.no_gravadas || 0)).toFixed(2)),
                         bImponible  : Number((c.anulado ? 0 : base).toFixed(2)),
                         igv         : Number((c.anulado ? 0 : igv).toFixed(2)),
                         total       : Number((c.anulado ? 0 :totalN).toFixed(2)),
@@ -251,7 +237,7 @@ export function ExcelExportButton({
             const maxLen: number[] = COLUMNS.map(c => c.header.length)
 
             // Data rows
-            let totBase = 0, totIGV = 0, totTotal = 0
+            let totBase = 0, totNoGrabado = 0, totIGV = 0, totTotal = 0
             filas.forEach((fila, i) => {
                 const dataRow = ws.addRow(fila.row)
                 dataRow.height = 16
@@ -274,18 +260,19 @@ export function ExcelExportButton({
                     if (cellStr.length > maxLen[idx]) maxLen[idx] = cellStr.length
                 })
 
-                totBase  += Number(fila.row.bImponible) || 0
-                totIGV   += Number(fila.row.igv)        || 0
-                totTotal += Number(fila.row.total)       || 0
+                totBase      += Number(fila.row.bImponible) || 0
+                totNoGrabado += Number(fila.row.noGrabado)  || 0
+                totIGV       += Number(fila.row.igv)        || 0
+                totTotal     += Number(fila.row.total)      || 0
             })
 
             // Totals row
             const totRow = ws.addRow({
                 fEmision  : 'TOTALES',
-                noGrabado : 0,
+                noGrabado : Number(totNoGrabado.toFixed(2)),
                 bImponible: Number(totBase.toFixed(2)),
                 igv       : Number(totIGV.toFixed(2)),
-                total     : Number(totTotal.toFixed(2)),
+                total     : Number((totBase + totNoGrabado + totIGV).toFixed(2)),
             })
             totRow.height = 20
             COLUMNS.forEach((col, idx) => {
