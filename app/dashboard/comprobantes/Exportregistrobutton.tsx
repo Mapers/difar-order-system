@@ -495,7 +495,7 @@ export function ExportRegistroButton({
                         size: 7, font, color: rgb(0.68, 0.80, 0.93),
                     })
 
-                    const totStr  = totTotal.toLocaleString('es-PE', { minimumFractionDigits: 2 })
+                    const totStr  = (totBase + totNoGrabado + totIGV).toLocaleString('es-PE', { minimumFractionDigits: 2 })
                     const totW    = boldFont.widthOfTextAtSize(totStr, 20)
                     const totLbl  = 'TOTAL FACTURADO (S/)'
                     const totLblW = font.widthOfTextAtSize(totLbl, 7)
