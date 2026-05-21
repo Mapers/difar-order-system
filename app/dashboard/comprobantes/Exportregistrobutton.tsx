@@ -319,25 +319,23 @@ export function ExportRegistroButton({
                             : String(c.tipo_comprobante ?? '—')
                     const tiDI    = c.tipo_comprobante === 1 ? 'RUC' : 'DNI'
 
-                    const fechaMostrada = hasNC ? c.nc_fecha : c.fecha_envio
-
                     const baseRow  = Number((anulado ? 0 : base).toFixed(2))
                     const igvRow   = Number((anulado ? 0 : igv).toFixed(2))
                     const totalRow = Number((anulado ? 0 : totalN).toFixed(2))
 
                     filasComprobantes.push({
-                        fechaOrden: parseFecha(fechaMostrada),
+                        fechaOrden: parseFecha(c.fecha_envio),
                         anulado,
                         negativo  : hasNC,
                         bImponible: baseRow,
                         igv       : igvRow,
                         total     : totalRow,
                         cells: [
-                            hasNC ? safeDate(c.nc_fecha)      : safeDate(c.fecha_envio, 5),
+                            safeDate(c.fecha_envio, 5),
                             tiDoc,
-                            hasNC ? (c.nc_serie  ?? '—')      : c.serie,
-                            hasNC ? (c.nc_numero ?? '—')      : c.numero,
-                            hasNC ? safeDate(c.nc_fecha)      : safeDate(c.fecha_emision ?? c.fecha_envio, 5),
+                            c.serie,
+                            c.numero,
+                            safeDate(c.fecha_emision ?? c.fecha_envio, 5),
                             c.cliente_denominacion ?? '—',
                             tiDI,
                             c.cliente_numdoc ?? '—',
@@ -346,9 +344,9 @@ export function ExportRegistroButton({
                             fmtMoney(anulado ? 0 : base,   hasNC),
                             fmtMoney(anulado ? 0 : igv,    hasNC),
                             fmtMoney(anulado ? 0 : totalN, hasNC),
-                            hasNC ? safeDate(c.fecha_envio, 5) : '—',
-                            hasNC ? c.serie                     : '—',
-                            hasNC ? c.numero                    : '—',
+                            '—',
+                            '—',
+                            '—',
                         ],
                     })
                 }
@@ -687,7 +685,6 @@ export function ExportRegistroButton({
                 }
             }
 
-            // ── Fila de TOTALES ────────────────────────────────────────────
             const hayFilasParaTotal =
                 type === 'comprobantes' ? filasComprobantes.length > 0
                     : type === 'notas'        ? data.length > 0

@@ -170,18 +170,17 @@ export function ExcelExportButton({
                 const moneda  = c.moneda === 1 ? 'S/' : '$'
                 const tiDoc   = c.tipo_comprobante === 1 ? 'FAC' : c.tipo_comprobante === 3 ? 'BOL' : String(c.tipo_comprobante ?? '—')
                 const tiDI    = c.tipo_comprobante === 1 ? 'RUC' : 'DNI'
-                const fechaMostrada = hasNC ? c.nc_fecha : c.fecha_envio
 
                 filas.push({
-                    fechaOrden: parseFecha(fechaMostrada),
+                    fechaOrden: parseFecha(c.fecha_envio),
                     anulado   : c.anulado,
                     negativo  : hasNC,
                     row: {
-                        fEmision    : hasNC ? safeDate(c.nc_fecha) : safeDate(c.fecha_envio, 5),
+                        fEmision    : safeDate(c.fecha_envio, 5),
                         doc         : tiDoc,
-                        serie       : hasNC ? (c.nc_serie  ?? '—') : c.serie,
-                        nroDesde    : hasNC ? (c.nc_numero ?? '—') : c.numero,
-                        fVcto       : hasNC ? safeDate(c.nc_fecha) : safeDate(c.fecha_emision ?? c.fecha_envio, 5),
+                        serie       : c.serie,
+                        nroDesde    : c.numero,
+                        fVcto       : safeDate(c.fecha_emision ?? c.fecha_envio, 5),
                         cliente     : c.cliente_denominacion ?? '—',
                         di          : tiDI,
                         nroDi       : c.cliente_numdoc ?? '—',
@@ -190,9 +189,9 @@ export function ExcelExportButton({
                         bImponible  : Number((c.anulado ? 0 : base).toFixed(2)),
                         igv         : Number((c.anulado ? 0 : igv).toFixed(2)),
                         total       : Number((c.anulado ? 0 :totalN).toFixed(2)),
-                        fEmisionOrig: hasNC ? safeDate(c.fecha_envio, 5) : '—',
-                        serieOrig   : hasNC ? c.serie   : '—',
-                        numeroOrig  : hasNC ? c.numero  : '—',
+                        fEmisionOrig: '—',
+                        serieOrig   : '—',
+                        numeroOrig  : '—',
                     },
                 })
             }

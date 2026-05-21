@@ -1,7 +1,7 @@
 'use client'
 
 import {useState, useEffect, useCallback, useRef} from "react"
-import {Search, FileText, AlertTriangle, Truck, Loader2, FileDiff, X} from "lucide-react"
+import {Search, FileText, AlertTriangle, Truck, Loader2, FileDiff, X, FileSearch} from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -40,6 +40,7 @@ import {CorregirDescripcionModal} from "@/app/dashboard/comprobantes/modals/Corr
 import {ModificarCuotasModal} from "@/app/dashboard/comprobantes/modals/ModificarCuotasModal";
 import {ExportRegistroButton} from "@/app/dashboard/comprobantes/Exportregistrobutton"
 import {ExcelExportButton} from "@/app/dashboard/comprobantes/ExcelExportButton";
+import {ValidacionModal} from "@/app/dashboard/comprobantes/modals/ValidacionModal";
 
 function useDebounce(value: string, delay: number = 500) {
   const [debounced, setDebounced] = useState(value)
@@ -131,6 +132,7 @@ export default function ComprobantesPage() {
   const [isDeletingPedido, setIsDeletingPedido] = useState(false)
 
   const [showNotaCreditoModal, setShowNotaCreditoModal] = useState(false)
+  const [showValidacionModal,  setShowValidacionModal]  = useState(false)
 
   const handleNotaCreditoGenerada = async () => {
     await fetchNotasCredito()
@@ -747,6 +749,10 @@ export default function ComprobantesPage() {
                   )}
 
                   <div className="flex justify-end gap-2">
+                    <Button variant="outline" onClick={() => setShowValidacionModal(true)} className="flex items-center gap-2">
+                      <FileSearch className="h-4 w-4" />
+                      Validar SUNAT
+                    </Button>
                     {comprobantes.length > 0 && <ExcelExportButton
                         data={comprobantes}
                         tiposComprobante={tiposComprobante}
@@ -971,6 +977,12 @@ export default function ComprobantesPage() {
                 onConfirm={handleConfirmModificacionCuotas}
             />
         )}
+
+        <ValidacionModal
+            open={showValidacionModal}
+            onOpenChange={setShowValidacionModal}
+            data={comprobantes}
+        />
       </div>
   )
 }
