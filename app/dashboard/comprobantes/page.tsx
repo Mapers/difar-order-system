@@ -749,10 +749,11 @@ export default function ComprobantesPage() {
                   )}
 
                   <div className="flex justify-end gap-2">
-                    <Button variant="outline" onClick={() => setShowValidacionModal(true)} className="flex items-center gap-2">
-                      <FileSearch className="h-4 w-4" />
+                    {comprobantes.length > 0 && <Button variant="outline" onClick={() => setShowValidacionModal(true)}
+                             className="flex items-center gap-2">
+                      <FileSearch className="h-4 w-4"/>
                       Validar SUNAT
-                    </Button>
+                    </Button>}
                     {comprobantes.length > 0 && <ExcelExportButton
                         data={comprobantes}
                         tiposComprobante={tiposComprobante}
