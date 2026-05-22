@@ -82,17 +82,17 @@ export default function DashboardLayout({
             <MobileNav />
             <div className="flex-1 p-4 pt-20 md:p-8 md:pl-72 md:pt-8">{children}</div>
 
-            <Dialog open={visibleModalNewOrder} onOpenChange={setVisibleModalNewOrder}>
+            {(visibleModalNewOrder && newOrderData) && <Dialog open={visibleModalNewOrder} onOpenChange={setVisibleModalNewOrder}>
                 <DialogContent className="sm:max-w-md md:max-w-lg">
                     <DialogHeader>
                         <div className="flex items-center gap-2">
                             <div className="p-2 bg-green-100 rounded-full">
-                                <ShoppingCart className="h-6 w-6 text-green-600" />
+                                <ShoppingCart className="h-6 w-6 text-green-600"/>
                             </div>
                             <div>
                                 <DialogTitle className="text-lg">¡Nueva Orden Recibida!</DialogTitle>
                                 <DialogDescription>
-                                    {newOrderData ? newOrderData.message : 'Sin asignación'}
+                                    {newOrderData ? newOrderData.message : 'Sin asignación'} {newOrderData.vendedor}
                                 </DialogDescription>
                             </div>
                         </div>
@@ -103,7 +103,7 @@ export default function DashboardLayout({
                             <Card>
                                 <CardContent className="p-4">
                                     <div className="flex items-center gap-3">
-                                        <User className="h-5 w-5 text-gray-500" />
+                                        <User className="h-5 w-5 text-gray-500"/>
                                         <div>
                                             <p className="font-semibold">{newOrderData.cliente?.nombre || 'Cliente'}</p>
                                             <p className="text-sm text-gray-600">{newOrderData.cliente?.ruc || 'Sin RUC'}</p>
@@ -117,7 +117,7 @@ export default function DashboardLayout({
 
                             <div className="grid grid-cols-2 gap-3">
                                 <div className="flex items-center gap-2 text-sm">
-                                    <Calendar className="h-4 w-4 text-blue-500" />
+                                    <Calendar className="h-4 w-4 text-blue-500"/>
                                     <span>{formatDate(newOrderData.fecha || new Date().toISOString())}</span>
                                 </div>
                             </div>
@@ -134,7 +134,7 @@ export default function DashboardLayout({
                         </div>
                     )}
                 </DialogContent>
-            </Dialog>
+            </Dialog>}
         </div>
     )
 }
