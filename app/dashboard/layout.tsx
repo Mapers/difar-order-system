@@ -1,6 +1,7 @@
 'use client'
 
-import React, {use, useEffect, useState} from "react"
+import React, {useEffect, useState} from "react"
+import { useRouter } from "next/navigation"
 import { SideNav } from "@/components/side-nav"
 import { MobileNav } from "@/components/mobile-nav"
 import socket from "@/app/api/socket";
@@ -17,7 +18,14 @@ export default function DashboardLayout({
                                         }: {
     children: React.ReactNode
 }) {
-    const { user } = useAuth()
+    const { user, isAuthenticated, loading } = useAuth()
+    const router = useRouter()
+
+    useEffect(() => {
+        if (!loading && !isAuthenticated) {
+            router.push('/')
+        }
+    }, [isAuthenticated, loading, router])
     const [socketLocal, setSocketLocal] = useState<Socket>();
     const [visibleModalNewOrder, setVisibleModalNewOrder] = useState(false);
     const [newOrderData, setNewOrderData] = useState<any>(null);

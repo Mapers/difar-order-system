@@ -1,16 +1,26 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { LoginForm } from "@/components/login-form";
-import {useInactivityContext} from "@/app/providers/inactivity-provider";
+import { useInactivityContext } from "@/app/providers/inactivity-provider";
+import { useAuth } from "@/context/authContext";
 
 export default function Home() {
   const [loading, setLoading] = useState(true);
   const { resetInactivityTimer } = useInactivityContext();
+  const { isAuthenticated, loading: authLoading } = useAuth();
+  const router = useRouter();
 
   useEffect(() => {
     setLoading(false);
   }, []);
+
+  useEffect(() => {
+    if (!authLoading && isAuthenticated) {
+      router.push("/dashboard");
+    }
+  }, [isAuthenticated, authLoading, router]);
 
   // Reiniciar el timer cuando haya actividad
   useEffect(() => {

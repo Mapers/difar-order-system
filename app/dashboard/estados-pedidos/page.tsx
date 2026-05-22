@@ -14,7 +14,7 @@ import apiClient from "@/app/api/client"
 import { format, parseISO } from "date-fns"
 import { fetchGetStatus, fetchUpdateStatus, fetchUpdateStatusConfirm } from "@/app/api/takeOrders"
 import { useAuth } from "@/context/authContext"
-import Link from "next/link"
+import { EstadosPedidosDetailModal } from "@/app/dashboard/estados-pedidos/modals/EstadosPedidosDetailModal"
 import { generateOrderPdf } from "@/lib/pdf"
 import { TimelineModal } from "@/app/dashboard/estados-pedidos/timeline-modal"
 import { ORDER_STATES } from "@/app/dashboard/mis-pedidos/page"
@@ -124,6 +124,8 @@ export default function OrderStatusManagementPage() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [orderToDelete, setOrderToDelete] = useState<Pedido | null>(null)
   const [pedidoHermano, setPedidoHermano] = useState<Pedido | null>(null)
+  const [detailNroPedido, setDetailNroPedido] = useState("")
+  const [isDetailOpen, setIsDetailOpen] = useState(false)
 
   const [loadingPreview, setLoadingPreview] = useState(false)
   const [pdfPreviewBase64, setPdfPreviewBase64] = useState<string | null>(null)
@@ -414,10 +416,9 @@ export default function OrderStatusManagementPage() {
               >
                 <Edit className="h-3 w-3 mr-1" /> Cambiar
               </Button>
-              <Button variant="outline" size="sm" className="text-blue-600 hover:text-blue-700 bg-transparent text-xs">
-                <Link href={`/dashboard/estados-pedidos/${order.nroPedido}`} className="flex">
-                  <Eye className="h-3 w-3 mr-1" /> Ver detalle
-                </Link>
+              <Button variant="outline" size="sm" className="text-blue-600 hover:text-blue-700 bg-transparent text-xs"
+                      onClick={() => { setDetailNroPedido(order.nroPedido); setIsDetailOpen(true) }}>
+                <Eye className="h-3 w-3 mr-1" /> Ver detalle
               </Button>
               <TimelineModal pedido={order} />
               {order.estadodePedido === 1 && (
@@ -487,10 +488,9 @@ export default function OrderStatusManagementPage() {
                       className="flex-1 text-xs">
                 <Edit className="h-3 w-3 mr-1" /> Cambiar Estado
               </Button>
-              <Button variant="outline" size="sm" className="text-blue-600 bg-transparent text-xs">
-                <Link href={`/dashboard/estados-pedidos/${order.nroPedido}`} className="flex">
-                  <Eye className="h-3 w-3 mr-1" /> Ver
-                </Link>
+              <Button variant="outline" size="sm" className="text-blue-600 bg-transparent text-xs"
+                      onClick={() => { setDetailNroPedido(order.nroPedido); setIsDetailOpen(true) }}>
+                <Eye className="h-3 w-3 mr-1" /> Ver
               </Button>
               <TimelineModal pedido={order} />
               {order.estadodePedido === 1 && (
@@ -725,6 +725,12 @@ export default function OrderStatusManagementPage() {
             onOpenChange={setIsDocumentsModalOpen}
             order={selectedOrder}
             getStateInfo={getStateInfo}
+        />
+
+        <EstadosPedidosDetailModal
+          open={isDetailOpen}
+          onOpenChange={setIsDetailOpen}
+          nroPedido={detailNroPedido}
         />
       </div>
   )

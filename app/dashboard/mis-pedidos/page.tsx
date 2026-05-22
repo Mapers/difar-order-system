@@ -22,8 +22,8 @@ import {
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Label } from "@/components/ui/label"
-import Link from "next/link"
 import {useEffect, useMemo, useState} from "react"
+import { MisPedidosDetailModal } from "@/app/dashboard/mis-pedidos/modals/MisPedidosDetailModal"
 import { Skeleton } from "@/components/ui/skeleton"
 import apiClient from "@/app/api/client"
 import {format, parseISO} from "date-fns";
@@ -173,6 +173,8 @@ export default function MyOrdersPage() {
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [totalItems, setTotalItems] = useState(0)
+  const [detailNroPedido, setDetailNroPedido] = useState("")
+  const [isDetailOpen, setIsDetailOpen] = useState(false)
   const auth = useAuth();
 
   const fetchOrders = async () => {
@@ -505,11 +507,10 @@ export default function MyOrdersPage() {
                                     </div>
 
                                     <div className="flex flex-row sm:flex-col gap-2 shrink-0">
-                                      <Link href={`/dashboard/mis-pedidos/${pedido.nroPedido}`}>
-                                        <Button variant="outline" size="sm" className="flex items-center gap-2 w-full">
-                                          <Eye className="h-4 w-4" /> Ver Detalle
-                                        </Button>
-                                      </Link>
+                                      <Button variant="outline" size="sm" className="flex items-center gap-2 w-full"
+                                              onClick={() => { setDetailNroPedido(pedido.nroPedido); setIsDetailOpen(true) }}>
+                                        <Eye className="h-4 w-4" /> Ver Detalle
+                                      </Button>
                                       {/*<Button variant="outline" size="sm" className="flex items-center gap-2" disabled>*/}
                                       {/*  <Printer className="h-4 w-4" /> Imprimir*/}
                                       {/*</Button>*/}
@@ -583,11 +584,10 @@ export default function MyOrdersPage() {
                         </div>
 
                         <div className="flex flex-col sm:flex-row gap-2 shrink-0">
-                          <Link href={`/dashboard/mis-pedidos/${pedido.nroPedido}`}>
-                            <Button variant="outline" size="sm" className="flex items-center gap-2">
-                              <Eye className="h-4 w-4" /> Ver Detalle
-                            </Button>
-                          </Link>
+                          <Button variant="outline" size="sm" className="flex items-center gap-2"
+                                  onClick={() => { setDetailNroPedido(pedido.nroPedido); setIsDetailOpen(true) }}>
+                            <Eye className="h-4 w-4" /> Ver Detalle
+                          </Button>
                           {/*<Button variant="outline" size="sm" className="flex items-center gap-2" disabled>*/}
                           {/*  <Printer className="h-4 w-4" /> Imprimir*/}
                           {/*</Button>*/}
@@ -603,6 +603,12 @@ export default function MyOrdersPage() {
             </div>
         )}
       </div>
+
+      <MisPedidosDetailModal
+        open={isDetailOpen}
+        onOpenChange={setIsDetailOpen}
+        nroPedido={detailNroPedido}
+      />
     </div>
   )
 }

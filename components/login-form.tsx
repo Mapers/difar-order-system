@@ -74,7 +74,6 @@ export function LoginForm() {
         toast({ title: "Validación Código", description: response.message, variant: "warning" })
         setVerificationCode(["", "", "", "", "", ""]);
         (document.getElementById("code-0") as HTMLInputElement)?.focus();
-        setLoading(false);
       }
     } catch (error) {
       console.error(error)

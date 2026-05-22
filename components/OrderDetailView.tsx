@@ -29,7 +29,8 @@ export type OrderDetailContext = 'mis-pedidos' | 'estados-pedidos' | 'comprobant
 
 export interface OrderDetailViewProps {
     context: OrderDetailContext
-    backHref: string
+    backHref?: string
+    isModal?: boolean
     pedido:   Pedido | null
     detalles: PedidoDet[]
     loading:  boolean
@@ -179,6 +180,7 @@ const LoadingSkeleton = () => (
 
 export default function OrderDetailView({
                                             context, backHref,
+                                            isModal = false,
                                             pedido, detalles, loading, error,
                                             canEdit, isEditing, tempDetalles, onEditToggle, onSaveChanges, onRemoveItem, onQuantityChange,
                                             canAddProduct, openAddModal, onOpenAddModal, addProductSlot,
@@ -201,11 +203,13 @@ export default function OrderDetailView({
     if (error || !pedido) return (
         <div className="grid gap-6">
             <div className="flex items-center gap-4">
-                <Link href={backHref}>
-                    <Button variant="outline" size="icon" className="h-8 w-8">
-                        <ArrowLeft className="h-4 w-4" />
-                    </Button>
-                </Link>
+                {!isModal && backHref && (
+                    <Link href={backHref}>
+                        <Button variant="outline" size="icon" className="h-8 w-8">
+                            <ArrowLeft className="h-4 w-4" />
+                        </Button>
+                    </Link>
+                )}
                 <h1 className="text-2xl font-bold text-gray-900">
                     {error ? 'Error' : 'Pedido no encontrado'}
                 </h1>
@@ -230,11 +234,13 @@ export default function OrderDetailView({
             <div className="flex flex-col gap-2">
                 <div className="flex items-center justify-between gap-4 flex-wrap">
                     <div className="flex items-center gap-4">
-                        <Link href={backHref}>
-                            <Button variant="outline" size="icon" className="h-8 w-8">
-                                <ArrowLeft className="h-4 w-4" />
-                            </Button>
-                        </Link>
+                        {!isModal && backHref && (
+                            <Link href={backHref}>
+                                <Button variant="outline" size="icon" className="h-8 w-8">
+                                    <ArrowLeft className="h-4 w-4" />
+                                </Button>
+                            </Link>
+                        )}
                         <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-gray-900">
                             Pedido #{pedido.nroPedido}
                         </h1>

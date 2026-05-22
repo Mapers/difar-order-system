@@ -1,6 +1,6 @@
 'use client';
 
-import {createContext, useContext, useEffect, useState, ReactNode, useCallback, use, useRef} from 'react';
+import {createContext, useContext, useEffect, useState, ReactNode, useCallback, useRef} from 'react';
 import { useRouter } from 'next/navigation';
 import { decodeToken, isTokenNearExpiry } from '@/app/utils/tokenUtils';
 import { AuthService } from '@/app/services/auth/AuthService';
@@ -21,7 +21,6 @@ export const useAuth = () => {
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const [user, setUser] = useState<User | null>(null);
-    const [token, setToken] = useState<string>("");
     const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
     const [errors, setErrors] = useState<string[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
@@ -34,7 +33,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setIsAuthenticated(false);
         localStorage.removeItem('token');
         localStorage.removeItem('invoice');
-        delete apiClient.defaults.headers.common['Authorization'];
     }, []);
 
     const fetchGlobalConfigs = useCallback(async () => {
@@ -92,7 +90,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 const tokenResult = decodeToken(token);
                 if (tokenResult.isValid && tokenResult.user) {
                     tokenRef.current = response.data;
-                    setToken(response.data);
                     const telefono = tokenResult.user.telefono
                     return telefono
                 }

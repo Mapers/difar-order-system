@@ -1,4 +1,4 @@
-import {AppConfig} from "@/app/dashboard/configuraciones/page";
+import {AppConfig} from "@/app/types/config-types";
 
 export interface UserLoginDTO {
     dni: string;
@@ -28,6 +28,7 @@ export interface JwtPayload {
         codRepres: string;
         idRepresentante: string;
         vendedores: VendedorRelacionado[];
+        edicion_pedido: boolean;
     },
     menus: Menu[]
     iat: number;
@@ -59,6 +60,7 @@ export interface User {
     menus: Menu[];
     codRepres: string;
     vendedores: VendedorRelacionado[];
+    edicion_pedido: boolean;
 }
 
 export interface UserRegisterDTO {

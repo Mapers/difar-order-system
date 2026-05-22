@@ -40,7 +40,8 @@ import {CorregirDescripcionModal} from "@/app/dashboard/comprobantes/modals/Corr
 import {ModificarCuotasModal} from "@/app/dashboard/comprobantes/modals/ModificarCuotasModal";
 import {ExportRegistroButton} from "@/app/dashboard/comprobantes/Exportregistrobutton"
 import {ExcelExportButton} from "@/app/dashboard/comprobantes/ExcelExportButton";
-import {ValidacionModal} from "@/app/dashboard/comprobantes/modals/ValidacionModal";
+import {ValidacionModal} from "@/app/dashboard/comprobantes/modals/ValidacionModal"
+import { ComprobantesDetailModal } from "@/app/dashboard/comprobantes/modals/ComprobantesDetailModal";
 
 function useDebounce(value: string, delay: number = 500) {
   const [debounced, setDebounced] = useState(value)
@@ -133,6 +134,9 @@ export default function ComprobantesPage() {
 
   const [showNotaCreditoModal, setShowNotaCreditoModal] = useState(false)
   const [showValidacionModal,  setShowValidacionModal]  = useState(false)
+
+  const [detailNroPedido, setDetailNroPedido] = useState("")
+  const [isDetailOpen, setIsDetailOpen] = useState(false)
 
   const handleNotaCreditoGenerada = async () => {
     await fetchNotasCredito()
@@ -673,6 +677,7 @@ export default function ComprobantesPage() {
                         loading={loadingPedidos}
                         onInvoice={handleInvoiceOrder}
                         onDelete={handleDeletePendiente}
+                        onViewDetail={(nroPedido) => { setDetailNroPedido(nroPedido); setIsDetailOpen(true) }}
                     />
                   </CardContent>
                 </Card>
@@ -983,6 +988,12 @@ export default function ComprobantesPage() {
             open={showValidacionModal}
             onOpenChange={setShowValidacionModal}
             data={comprobantes}
+        />
+
+        <ComprobantesDetailModal
+          open={isDetailOpen}
+          onOpenChange={setIsDetailOpen}
+          nroPedido={detailNroPedido}
         />
       </div>
   )

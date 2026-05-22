@@ -7,6 +7,7 @@ export interface Usuario {
     dni: string;
     telefono: string;
     activo: boolean;
+    edicion_pedido: boolean;
     id_rol: number;
     nombre_rol: string;
     tipo: string;

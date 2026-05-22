@@ -15,7 +15,6 @@ import {
     Loader2,
     Trash2
 } from "lucide-react"
-import Link from "next/link"
 import { format, parseISO } from "date-fns"
 import {Pedido} from "@/app/types/order/order-interface";
 
@@ -24,9 +23,10 @@ interface PendientesListProps {
     loading: boolean
     onInvoice: (pedido: Pedido) => void
     onDelete: (pedido: Pedido) => void
+    onViewDetail: (nroPedido: string) => void
 }
 
-export function PendientesList({ pedidos, loading, onInvoice, onDelete }: PendientesListProps) {
+export function PendientesList({ pedidos, loading, onInvoice, onDelete, onViewDetail }: PendientesListProps) {
     if (loading) {
         return (
             <div className="flex justify-center items-center h-64">
@@ -92,12 +92,11 @@ export function PendientesList({ pedidos, loading, onInvoice, onDelete }: Pendie
                                             </Button>
                                         </>
                                     }
-                                    <Button className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto" size="sm" asChild>
-                                        <Link href={`/dashboard/comprobantes/${pedido.nroPedido}`} className='flex items-center gap-2'>
-                                            <Eye className="h-4 w-4" />
-                                            <span className="hidden sm:inline">Detalles</span>
-                                            <span className="sm:hidden">Detalles</span>
-                                        </Link>
+                                    <Button className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto" size="sm"
+                                            onClick={() => onViewDetail(pedido.nroPedido)}>
+                                        <Eye className="h-4 w-4" />
+                                        <span className="hidden sm:inline">Detalles</span>
+                                        <span className="sm:hidden">Detalles</span>
                                     </Button>
                                 </div>
                             </div>
