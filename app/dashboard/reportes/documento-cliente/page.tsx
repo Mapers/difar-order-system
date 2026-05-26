@@ -54,6 +54,7 @@ export default function DocumentClientPage() {
       }
       setIsEmpty(false)
       const normalizedDocumenCode = normalizeDocumentCode(documentCode)
+
       const documento = `${selectedDocumentCode}-${normalizedDocumenCode}`
       documentoSchema.parse({ documento })
       const docClient: Document = { documento }

@@ -3,7 +3,7 @@ import { z } from 'zod'
 export const documentoSchema = z.object({
     documento: z.string()
         .nonempty('El campo "documento" es obligatorio.')
-        .regex(/^\d{2}-[A-Z]\d{3}-\d{4}$/, 'El formato del "documento" es inválido. Ej: 01-F001-9061')
+        .regex(/^\d{2}-[A-Z]\d{3}-\d+$/, 'El formato del "documento" es inválido. Ej: 01-F001-9061')
 })
 
 
