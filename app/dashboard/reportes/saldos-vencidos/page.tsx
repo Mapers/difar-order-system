@@ -104,14 +104,23 @@ export default function ExpiredBalancesPage() {
             })).filter(vendedor => vendedor.zonas.length > 0)
         }
 
-        return filtered;
+        return filtered.map(vendedor => {
+            const zonasRecalculadas = vendedor.zonas.map(zona => ({
+                ...zona,
+                totalSolesZona: zona.clientes.reduce((s, c) => s + c.totalSolesCliente, 0),
+                totalDolaresZona: zona.clientes.reduce((s, c) => s + c.totalDolaresCliente, 0),
+            }));
+            return {
+                ...vendedor,
+                zonas: zonasRecalculadas,
+                totalSolesVendedor: zonasRecalculadas.reduce((s, z) => s + z.totalSolesZona, 0),
+                totalDolaresVendedor: zonasRecalculadas.reduce((s, z) => s + z.totalDolaresZona, 0),
+            };
+        });
     }, [tabFilteredData, selectedZona, selectedCliente]);
 
     const handleTabChange = (value: string) => {
         setActiveTab(value);
-        setSelectedZona("");
-        setSelectedCliente("");
-        setSearchClienteQuery("");
     };
 
     const fetchReport = async () => {
