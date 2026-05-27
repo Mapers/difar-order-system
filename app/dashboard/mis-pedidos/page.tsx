@@ -177,6 +177,7 @@ export default function MyOrdersPage() {
   const [detailNroPedido, setDetailNroPedido] = useState("")
   const [isDetailOpen, setIsDetailOpen] = useState(false)
   const [activeTab, setActiveTab] = useState<'activos' | 'historicos'>('activos')
+  const [historicFecha, setHistoricFecha] = useState(format(new Date(), 'yyyy-MM-dd'))
   const auth = useAuth();
 
   const fetchOrders = async () => {
@@ -189,16 +190,16 @@ export default function MyOrdersPage() {
       } else {
         url = `/pedidos?cliente=${filters.cliente}`
 
-        if (filters.fechaDesde && filters.fechaHasta) {
-          url += `&fechaDesde=${filters.fechaDesde}&fechaHasta=${filters.fechaHasta}`
+        if (activeTab === 'historicos') {
+          url += `&historico=true&fecha=${historicFecha}`
+        } else {
+          if (filters.fechaDesde && filters.fechaHasta) {
+            url += `&fechaDesde=${filters.fechaDesde}&fechaHasta=${filters.fechaHasta}`
+          }
         }
 
         if (auth.user?.idRol === 1) {
           url += `&vendedor=${auth.user?.codigo}`;
-        }
-
-        if (activeTab === 'historicos') {
-          url += `&historico=true`
         }
       }
 
@@ -222,7 +223,7 @@ export default function MyOrdersPage() {
 
   useEffect(() => {
     fetchOrders()
-  }, [currentPage, searchQuery, filters, activeTab])
+  }, [currentPage, searchQuery, filters, activeTab, historicFecha])
 
   useEffect(() => {
     if (auth.user) {
@@ -361,36 +362,45 @@ export default function MyOrdersPage() {
         </CardHeader>
         <CardContent className="p-0">
           <form onSubmit={handleFilterSubmit} className="p-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+            {activeTab === 'activos' ? (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="fechaDesde" className="text-gray-700">Desde</Label>
+                  <Input
+                    id="fechaDesde"
+                    type="date"
+                    className="bg-white"
+                    name="fechaDesde"
+                    value={filters.fechaDesde}
+                    onChange={handleFilterChange}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="fechaHasta" className="text-gray-700">Hasta</Label>
+                  <Input
+                    id="fechaHasta"
+                    type="date"
+                    className="bg-white"
+                    name="fechaHasta"
+                    value={filters.fechaHasta}
+                    onChange={handleFilterChange}
+                  />
+                </div>
+              </>
+            ) : (
+              <div className="space-y-2">
+                <Label htmlFor="historicFecha" className="text-gray-700">Fecha</Label>
+                <Input
+                  id="historicFecha"
+                  type="date"
+                  className="bg-white"
+                  value={historicFecha}
+                  onChange={(e) => { setHistoricFecha(e.target.value); setCurrentPage(1) }}
+                />
+              </div>
+            )}
             <div className="space-y-2">
-              <Label htmlFor="fechaDesde" className="text-gray-700">
-                Desde
-              </Label>
-              <Input
-                id="fechaDesde"
-                type="date"
-                className="bg-white"
-                name="fechaDesde"
-                value={filters.fechaDesde}
-                onChange={handleFilterChange}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="fechaHasta" className="text-gray-700">
-                Hasta
-              </Label>
-              <Input
-                id="fechaHasta"
-                type="date"
-                className="bg-white"
-                name="fechaHasta"
-                value={filters.fechaHasta}
-                onChange={handleFilterChange}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="cliente" className="text-gray-700">
-                Cliente
-              </Label>
+              <Label htmlFor="cliente" className="text-gray-700">Cliente</Label>
               <Combobox<IClient>
                 items={clientsFiltered}
                 value={filters.cliente}
