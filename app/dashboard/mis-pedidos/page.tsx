@@ -23,6 +23,7 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Label } from "@/components/ui/label"
 import {useEffect, useMemo, useState} from "react"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { MisPedidosDetailModal } from "@/app/dashboard/mis-pedidos/modals/MisPedidosDetailModal"
 import { Skeleton } from "@/components/ui/skeleton"
 import apiClient from "@/app/api/client"
@@ -175,6 +176,7 @@ export default function MyOrdersPage() {
   const [totalItems, setTotalItems] = useState(0)
   const [detailNroPedido, setDetailNroPedido] = useState("")
   const [isDetailOpen, setIsDetailOpen] = useState(false)
+  const [activeTab, setActiveTab] = useState<'activos' | 'historicos'>('activos')
   const auth = useAuth();
 
   const fetchOrders = async () => {
@@ -194,6 +196,10 @@ export default function MyOrdersPage() {
         if (auth.user?.idRol === 1) {
           url += `&vendedor=${auth.user?.codigo}`;
         }
+
+        if (activeTab === 'historicos') {
+          url += `&historico=true`
+        }
       }
 
       const response = await apiClient.get(url)
@@ -209,9 +215,14 @@ export default function MyOrdersPage() {
     }
   }
 
+  const handleTabChange = (value: string) => {
+    setActiveTab(value as 'activos' | 'historicos')
+    setCurrentPage(1)
+  }
+
   useEffect(() => {
     fetchOrders()
-  }, [currentPage, searchQuery, filters])
+  }, [currentPage, searchQuery, filters, activeTab])
 
   useEffect(() => {
     if (auth.user) {
@@ -397,7 +408,15 @@ export default function MyOrdersPage() {
         </CardContent>
       </Card>
 
-      <div className="space-y-4">
+      <Tabs value={activeTab} onValueChange={handleTabChange}>
+        <TabsList>
+          <TabsTrigger value="activos">Pedidos</TabsTrigger>
+          <TabsTrigger value="historicos">Históricos</TabsTrigger>
+        </TabsList>
+
+        {(['activos', 'historicos'] as const).map(tab => (
+          <TabsContent key={tab} value={tab} className="mt-4">
+        <div className="space-y-4">
         {loading ? (
             Array.from({ length: 5 }).map((_, index) => (
                 <Card key={index} className="bg-white shadow-sm">
@@ -599,10 +618,13 @@ export default function MyOrdersPage() {
             })
         ) : (
             <div className="text-center py-8 text-gray-500">
-              No se encontraron pedidos
+              {activeTab === 'historicos' ? 'No se encontraron pedidos históricos' : 'No se encontraron pedidos'}
             </div>
         )}
-      </div>
+        </div>
+          </TabsContent>
+        ))}
+      </Tabs>
 
       <MisPedidosDetailModal
         open={isDetailOpen}

@@ -5,9 +5,12 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Search, Eye, Edit, Download, Plus, Filter, ChevronDown, FileText, Phone, Mail, Building, CheckCircle, User, MapPin, ChevronLeft, ChevronRight, CreditCard, Activity } from "lucide-react"
+import { Search, Eye, Edit, Download, Plus, Filter, ChevronDown, Check, FileText, Phone, Mail, Building, CheckCircle, User, MapPin, ChevronLeft, ChevronRight, CreditCard, Activity, X } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Label } from "@/components/ui/label"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
+import { cn } from "@/lib/utils"
 import { useAuth } from '@/context/authContext';
 import { IClient } from "@/app/types/clients/client-interface"
 import { mapClientFromApi } from "@/mappers/clients"
@@ -15,11 +18,14 @@ import { formatSafeDate } from "@/app/utils/date"
 import { ClientService } from "@/app/services/client/ClientService"
 import { ClientMethodsService } from "./services/clientMethodsService"
 import NuevoClienteForm from "@/components/modal/NuevoClienteForm"
+import SolicitarClienteModal from "@/components/modal/SolicitarClienteModal"
 import ModalClientView from "@/components/modal/modalClientView"
+import SolicitudesTab from "@/components/clientes/SolicitudesTab"
 import { SkeletonCardClient, SkeletonClientRow } from "@/components/skeleton/ClientSkeleton"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 export default function ClientsPage() {
-  const { user, isAuthenticated, globalConfigs, isVendedor, isRepresentante } = useAuth();
+  const { user, isAuthenticated, globalConfigs, isVendedor, isRepresentante, isAdmin } = useAuth();
   const [clients, setClients] = useState<IClient[]>([])
   const [filteredClients, setFilteredClients] = useState<IClient[]>([])
   const [loading, setLoading] = useState(false)
@@ -29,8 +35,11 @@ export default function ClientsPage() {
   const [itemsPerPage, setItemsPerPage] = useState(20)
   const [totalPages, setTotalPages] = useState(1)
   const [showCreateModal, setShowCreateModal] = useState(false)
+  const [showSolicitarModal, setShowSolicitarModal] = useState(false)
   const [showViewModal, setShowViewModal] = useState(false)
   const [showFilters, setShowFilters] = useState(false)
+  const [selectedZona, setSelectedZona] = useState("")
+  const [openZona, setOpenZona] = useState(false)
   const [codClient, setCodClient] = useState<any>('')
 
   const handleEdit = (codigoCliente: string) => {
@@ -39,8 +48,7 @@ export default function ClientsPage() {
   }
 
   const handleCreateNewEvaluation = () => {
-    setCodClient('')
-    setShowCreateModal(true);
+    setShowSolicitarModal(true)
   };
 
   const handleView = (codClient: string) => {
@@ -84,20 +92,26 @@ export default function ClientsPage() {
     }
   }, [user, vistaTablaClientes]);
 
+  const zonaOptions = useMemo(() => {
+    const set = new Set(clients.map(c => c.zona).filter(Boolean))
+    return Array.from(set).sort()
+  }, [clients])
+
   useEffect(() => {
-    if (!searchTerm) {
-      setFilteredClients(clients);
-      return;
-    }
     const lowerSearch = searchTerm.toLowerCase();
-    const filtered = clients.filter(client =>
-        client.codigoInterno?.toLowerCase().includes(lowerSearch) ||
-        client.razonSocial?.toLowerCase().includes(lowerSearch) ||
-        client.provincia?.toLowerCase().includes(lowerSearch) ||
-        client.nombreComercial?.toLowerCase().includes(lowerSearch)
-    );
+    const filtered = clients.filter((client: any) => {
+      const matchesSearch = !searchTerm || (
+          client.codigoInterno?.toLowerCase().includes(lowerSearch) ||
+          client.razonSocial?.toLowerCase().includes(lowerSearch) ||
+          client.provincia?.toLowerCase().includes(lowerSearch) ||
+          client.nombreComercial?.toLowerCase().includes(lowerSearch) ||
+          client.direccion?.toLowerCase().includes(lowerSearch)
+      )
+      const matchesZona = !selectedZona || client.zona === selectedZona
+      return matchesSearch && matchesZona
+    });
     setFilteredClients(filtered);
-  }, [searchTerm, clients]);
+  }, [searchTerm, selectedZona, clients]);
 
   const getPaginatedData = () => {
     const startIndex = (currentPage - 1) * itemsPerPage;
@@ -116,13 +130,13 @@ export default function ClientsPage() {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm]);
+  }, [searchTerm, selectedZona]);
 
   useEffect(() => {
-    if (isAuthenticated && user) {
+    if (isAuthenticated && user && globalConfigs.length > 0) {
       getAllClients();
     }
-  }, [isAuthenticated, user, getAllClients]);
+  }, [isAuthenticated, user, globalConfigs]);
 
   const goToPage = (page: number) => {
     if (page >= 1 && page <= totalPages) {
@@ -171,7 +185,7 @@ export default function ClientsPage() {
               {/*  <Download className="mr-2 h-4 w-4" />*/}
               {/*  Exportar*/}
               {/*</Button>*/}
-              <Button onClick={handleCreateNewEvaluation} className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto">
+              <Button onClick={handleCreateNewEvaluation} className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto" disabled>
                 <Plus className="mr-2 h-4 w-4" />
                 Nuevo cliente
               </Button>
@@ -179,6 +193,15 @@ export default function ClientsPage() {
           </CardHeader>
 
           <CardContent className="p-4 sm:p-6 w-full">
+            <Tabs defaultValue="lista">
+              {isAdmin() && (
+                  <TabsList className="mb-6">
+                    <TabsTrigger value="lista">Lista de Clientes</TabsTrigger>
+                    <TabsTrigger value="solicitudes">Solicitudes</TabsTrigger>
+                  </TabsList>
+              )}
+
+              <TabsContent value="lista" className="mt-0">
             {error && (
                 <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-md">
                   <p className="text-red-800 text-sm">{error}</p>
@@ -204,20 +227,70 @@ export default function ClientsPage() {
                 </div>
               </CardHeader>
               <CardContent className={`space-y-4 ${showFilters ? "block" : "hidden sm:block"}`}>
-                <div className="space-y-2">
-                  <Label htmlFor="search" className="text-sm font-medium">
-                    Buscar por código, cliente o provincia
-                  </Label>
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                    <Input
-                        id="search"
-                        type="search"
-                        placeholder="Ej: 10067929611, AMADO LOARTE BENITA, Condorcanqui..."
-                        className="pl-10"
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                    />
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <div className="flex-1 space-y-2">
+                    <Label htmlFor="search" className="text-sm font-medium">
+                      Buscar por código, cliente, provincia o dirección
+                    </Label>
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                      <Input
+                          id="search"
+                          type="search"
+                          placeholder="Ej: 20613786768, FARMACIA ACUARIO, Jr. Lima 123..."
+                          className="pl-10"
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="sm:w-56 space-y-2">
+                    <Label className="text-sm font-medium">Zona</Label>
+                    <Popover open={openZona} onOpenChange={setOpenZona}>
+                      <div className="relative w-full">
+                        <PopoverTrigger asChild>
+                          <Button
+                              variant="outline"
+                              role="combobox"
+                              className={cn("w-full justify-between h-10 font-normal bg-white", selectedZona && "pr-8")}
+                          >
+                            <span className="truncate">
+                              {selectedZona || "Todas las zonas"}
+                            </span>
+                            {!selectedZona && <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />}
+                          </Button>
+                        </PopoverTrigger>
+                        {selectedZona && (
+                            <div
+                                className="absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer p-1 text-gray-500 hover:text-red-500 hover:bg-red-50 rounded-md z-10"
+                                onClick={(e) => { e.preventDefault(); e.stopPropagation(); setSelectedZona("") }}
+                            >
+                              <X className="h-4 w-4" />
+                            </div>
+                        )}
+                      </div>
+                      <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                        <Command>
+                          <CommandInput placeholder="Buscar zona..." />
+                          <CommandList>
+                            <CommandEmpty>No se encontraron zonas.</CommandEmpty>
+                            <CommandGroup>
+                              {zonaOptions.map(zona => (
+                                  <CommandItem
+                                      key={zona}
+                                      value={zona}
+                                      onSelect={() => { setSelectedZona(zona); setOpenZona(false) }}
+                                  >
+                                    <Check className={cn("mr-2 h-4 w-4 flex-shrink-0", selectedZona === zona ? "opacity-100" : "opacity-0")} />
+                                    <span className="truncate">{zona}</span>
+                                  </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
                   </div>
                 </div>
               </CardContent>
@@ -379,8 +452,6 @@ export default function ClientsPage() {
 
               {/* VISTA DESKTOP (TABLA RESPONSIVA) */}
               <div className="hidden lg:block w-full max-w-full rounded-lg border bg-white shadow-sm overflow-hidden">
-
-                {/* CLAVE 4: El contenedor exacto donde vive el scroll horizontal */}
                 <div className="w-full overflow-x-auto relative scrollbar-thin scrollbar-thumb-gray-300">
                   <Table className="w-full min-w-max">
                     <TableHeader className="bg-gray-50">
@@ -475,7 +546,7 @@ export default function ClientsPage() {
                                         <TableCell className="whitespace-nowrap text-sm px-4">{client.correoElectronico || '-'}</TableCell>
                                         <TableCell className="whitespace-nowrap text-sm px-4">{client.provinciaId || '-'}</TableCell>
                                         <TableCell className="whitespace-nowrap text-sm px-4">{client.idDistrito || '-'}</TableCell>
-                                        <TableCell className="whitespace-nowrap text-sm px-4">{client.idZona || '-'}</TableCell>
+                                        <TableCell className="whitespace-nowrap text-sm px-4">{client.zona || '-'}</TableCell>
                                         <TableCell className="whitespace-nowrap text-sm px-4">{formatSafeDate(client.fechaInicio) || '-'}</TableCell>
                                         <TableCell className="whitespace-nowrap text-sm px-4">{client.relacion || '-'}</TableCell>
                                         <TableCell className="whitespace-nowrap text-sm px-4">{client.ctaContab || '-'}</TableCell>
@@ -640,6 +711,15 @@ export default function ClientsPage() {
                   </div>
               )}
             </div>
+
+              </TabsContent>
+
+              {isAdmin() && (
+                  <TabsContent value="solicitudes" className="mt-0">
+                    <SolicitudesTab />
+                  </TabsContent>
+              )}
+            </Tabs>
           </CardContent>
 
           <NuevoClienteForm
@@ -652,6 +732,11 @@ export default function ClientsPage() {
                 }
               }}
               codClient={codClient}
+          />
+
+          <SolicitarClienteModal
+              open={showSolicitarModal}
+              onOpenChange={setShowSolicitarModal}
           />
 
           <ModalClientView

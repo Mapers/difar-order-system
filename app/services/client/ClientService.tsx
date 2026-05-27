@@ -151,4 +151,24 @@ export class ClientService {
     const response = await apiClient.get(`/rutas/clients/by-zone?zone=${zone}`);
     return response.data
   };
+
+  static async crearSolicitudCliente(ruc: string): Promise<any> {
+    const response = await apiClient.post('/clientes/solicitudes', { ruc });
+    return response.data;
+  };
+
+  static async getSolicitudesClientes(): Promise<any> {
+    const response = await apiClient.get('/clientes/solicitudes');
+    return response.data;
+  };
+
+  static async aprobarSolicitud(id: number): Promise<any> {
+    const response = await apiClient.post(`/clientes/solicitudes/${id}/aprobar`);
+    return response.data;
+  };
+
+  static async rechazarSolicitud(id: number): Promise<any> {
+    const response = await apiClient.post(`/clientes/solicitudes/${id}/rechazar`);
+    return response.data;
+  };
 }

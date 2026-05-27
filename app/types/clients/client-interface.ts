@@ -59,6 +59,7 @@ export interface IEvaluation {
   codigoInterno: string
   nombreComercial: string
   razonSocial: string
+  tipoDocIdent: string
   ruc: string
   direccion: string
   telefono: string

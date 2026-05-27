@@ -69,3 +69,52 @@ export interface IEvaluacionCalif {
     observacionesGlobal: string | null
 }
 
+export interface ISolicitudCliente {
+    id: number
+    ruc: string
+    estado: 'solicitando' | 'completado' | 'aprobado' | 'rechazado'
+    fechaSolicitud: string
+    solicitadoPor?: string
+    resultado?: IResultadoDigemid
+}
+
+export interface IResultadoDigemid {
+    ok: boolean
+    total: number
+    registros: IRegistroDigemid[]
+}
+
+export interface IRegistroDigemid {
+    idRegistro: string
+    item: string
+    nroRegistro: string
+    categoria: string
+    nombreComercial: string
+    razonSocial: string
+    ruc: string
+    direccion: string
+    ubigeo: string
+    situacion: string
+    empadronado: string
+    detalle: IDetalleDigemid
+}
+
+export interface IDetalleDigemid {
+    nroRegistro: string
+    situacion: string
+    lugarRegistro: string
+    fechaInicio: string
+    nroRuc: string
+    categoria: string
+    nombreComercial: string
+    razonSocial: string
+    direccion: string
+    depProvDist: string
+    horario: string
+    tipo: string
+    motivo: string
+    solicitante: string
+    representantes: Record<string, string>[]
+    personal: Record<string, string>[]
+}
+

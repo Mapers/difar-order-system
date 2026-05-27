@@ -54,8 +54,6 @@ export default function DashboardLayout({
     useEffect(() => {
         if (socketLocal && user) {
             socketLocal.on('notification:newOrder', data => {
-                console.log('data newOrder', data);
-
                 if (user?.idRol !== 1) {
                     audio?.play();
                     setNewOrderData(data);
@@ -63,8 +61,6 @@ export default function DashboardLayout({
                 }
             })
             socketLocal.on('notification:newApprove', data => {
-                console.log('data newApprove', data);
-
                 if (user?.idRol !== 1) {
                     audio?.play();
                     setNewOrderData(data);

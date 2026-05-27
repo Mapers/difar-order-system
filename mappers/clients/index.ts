@@ -5,7 +5,7 @@ export const mapClientFromApi = (data: any): IClient => ({
   codigoInterno: data.codigoInterno || data.codigo || "No registrado",
   razonSocial: data.razonSocial || data.cliente_nombre || "No registrado",
   nombreComercial: data.nombreComercial || data.cliente_comercial || "No registrado",
-  tipoDocumento: data.tipoDocumento || data.documento_abrev || "No registrado",
+  tipoDocumento: data.documento_abrev || "No registrado",
   numeroDocumento: data.numeroDocumento || data.documento_numero || "No registrado",
   categoria: data.categoria || "No registrado",
   fechaEvaluacion: data.fecha_evaluacion || data.fechaRegistros || "Sin fecha",
