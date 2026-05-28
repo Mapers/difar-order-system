@@ -3,13 +3,14 @@
 import { useState, useCallback } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import {FileText, Plus, Truck, Settings, CreditCard, Target, FlaskConical, Hash, Landmark} from "lucide-react"
+import {FileText, Plus, Truck, Settings, CreditCard, Target, FlaskConical, Hash, Landmark, MessageCircle} from "lucide-react"
 import AppConfigSection from "@/components/configuraciones/AppConfigSection";
 import SequentialSection from "@/components/configuraciones/SequentialSection";
 import ClientConditionsSection from "@/components/configuraciones/ClientConditionsSection";
 import MetasConfigSection from "@/components/configuraciones/MetasConfigSection";
 import LaboratoriosSection from "@/components/configuraciones/Laboratoriossection";
 import CreditLineSection from "@/components/configuraciones/CreditLineSection";
+import WhatsappSection from "@/components/configuraciones/WhatsappSection";
 
 const sections = [
     {
@@ -68,6 +69,13 @@ const sections = [
         icon: Landmark,
         color: "amber"
     },
+    {
+        id: "whatsapp",
+        title: "WhatsApp",
+        description: "Números que recibirán notificaciones de ventas",
+        icon: MessageCircle,
+        color: "green"
+    },
 ]
 
 const iconColorMap: Record<string, string> = {
@@ -79,6 +87,7 @@ const iconColorMap: Record<string, string> = {
     configuraciones: "text-orange-600",
     laboratorios: 'text-sky-600',
     lineas_credito: "text-amber-600",
+    whatsapp: "text-green-600",
 }
 
 const activeBgMap: Record<string, string> = {
@@ -90,6 +99,7 @@ const activeBgMap: Record<string, string> = {
     configuraciones: "bg-orange-50 border-orange-500 text-orange-700",
     laboratorios: 'bg-sky-50 border-sky-500 text-sky-700',
     lineas_credito: "bg-amber-50 border-amber-500 text-amber-700",
+    whatsapp: "bg-green-50 border-green-500 text-green-700",
 }
 
 const activeIconBg: Record<string, string> = {
@@ -101,6 +111,7 @@ const activeIconBg: Record<string, string> = {
     configuraciones: "bg-orange-100 text-orange-600",
     laboratorios: 'bg-sky-100 text-sky-600',
     lineas_credito: "bg-amber-100 text-amber-600",
+    whatsapp: "bg-green-100 text-green-600",
 }
 
 export default function ConfiguracionesPage() {
@@ -175,7 +186,9 @@ export default function ConfiguracionesPage() {
                                                 ? "Asigna condiciones de pago a cliente-cobranza específicos."
                                                 : activeSection === "otros_correlativos"
                                                     ? "Configura la numeración para otros documentos internos."
-                                                    : `Configura la numeración para ${activeSection === "secuenciales" ? "facturas y boletas" : "guías de remisión"}`}
+                                                    : activeSection === "whatsapp"
+                                                        ? "Registra los números de WhatsApp que recibirán notificaciones de ventas."
+                                                        : `Configura la numeración para ${activeSection === "secuenciales" ? "facturas y boletas" : "guías de remisión"}`}
                                 </CardDescription>
                             </div>
                             {activeSection !== 'lineas_credito' && <Button
@@ -197,6 +210,8 @@ export default function ConfiguracionesPage() {
                                 <MetasConfigSection onOpenModalChange={handleSetOpenModalFn} />
                             ) : activeSection === 'laboratorios' ? (
                                 <LaboratoriosSection onOpenModalChange={handleSetOpenModalFn} />
+                            ) : activeSection === 'whatsapp' ? (
+                                <WhatsappSection onOpenModalChange={handleSetOpenModalFn} />
                             ) : (
                                 <SequentialSection
                                     key={activeSection}

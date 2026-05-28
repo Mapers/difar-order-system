@@ -22,6 +22,14 @@ export interface AppConfig {
     est_config: string
 }
 
+export interface WhatsappConfig {
+    id_whatsapp: number
+    numero: string
+    nombre: string
+    descripcion?: string
+    est_whatsapp: string
+}
+
 export const DOCUMENT_TYPES = [
     { value: "1", label: "Factura" },
     { value: "3", label: "Boleta" },
