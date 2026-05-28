@@ -113,7 +113,7 @@ export default function WhatsappSection({ onOpenModalChange }: WhatsappSectionPr
                                         </div>
                                         <div>
                                             <p className="font-semibold text-sm text-gray-900">{item.nombre}</p>
-                                            <p className="text-xs text-gray-500 font-mono">+{item.numero}</p>
+                                            <p className="text-xs text-gray-500 font-mono">+51 {item.numero}</p>
                                         </div>
                                     </div>
                                     <Badge
@@ -178,7 +178,7 @@ export default function WhatsappSection({ onOpenModalChange }: WhatsappSectionPr
                                 maxLength={15}
                             />
                             {errors.numero && <p className="text-xs text-red-500">{errors.numero}</p>}
-                            <p className="text-xs text-gray-400">Incluye código de país sin el +. Ej: 51987654321</p>
+                            <p className="text-xs text-gray-400">Incluye código de país sin el +51. Ej: 987654321</p>
                         </div>
 
                         <div className="space-y-2">
