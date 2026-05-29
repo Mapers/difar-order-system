@@ -622,7 +622,8 @@ export function useOrderPage() {
                 horaPedido:          moment(new Date()).format('HH:mm'),
                 notaPedido:          note,
                 idAlmacen:           selectedAlmacen?.IdAlmacen || null,
-                vendedorNombre:      `${seller?.nombres} ${seller?.apellidos}`
+                vendedorNombre:      `${seller?.nombres} ${seller?.apellidos}`,
+                almacen:             selectedAlmacen?.Descripcion || ''
             }
 
             const tiposPresentes = [...new Set(
