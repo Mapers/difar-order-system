@@ -71,7 +71,8 @@ export default function CreditLineSection({ onOpenModalChange }: LineasCreditoSe
         setLoading(true)
         try {
             const sellerCode = isAdmin() ? "" : (user?.codigo || "");
-            const resCli = await fetchGetAllClients(sellerCode, isAdmin());
+            const representante = isAdmin() ? "" : (user?.codRepres || "")
+            const resCli = await fetchGetAllClients(sellerCode, isAdmin(), representante);
             const clientes = resCli.data?.data?.data || resCli.data?.data || [];
             setData(clientes);
         } catch (error) {

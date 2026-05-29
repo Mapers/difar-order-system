@@ -245,7 +245,8 @@ export default function MyOrdersPage() {
     setLoadingClients(true);
     try {
       const sellerCode = auth.isAdmin() ? "" : (auth.user?.codigo || "");
-      const response = await fetchGetAllClients(sellerCode, auth.isAdmin());
+      const representante = isAdmin() ? "" : (user?.codRepres || "")
+      const response = await fetchGetAllClients(sellerCode, auth.isAdmin(), representante);
       if (response.data?.data?.data.length === 0) {
         setClients([])
       } else {

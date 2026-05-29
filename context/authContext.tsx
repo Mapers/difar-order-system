@@ -145,10 +145,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
 
     const isVendedor = (): boolean =>
-        user?.rolDescripcion?.toLowerCase() === 'vendedor';
+        user?.rolDescripcion?.toLowerCase().includes('vendedor') || false;
 
     const isRepresentante = (): boolean =>
-        user?.rolDescripcion?.toLowerCase() === 'representante';
+        user?.rolDescripcion?.toLowerCase().includes('repre') || false;
 
     const hasRole = (roleName: string | string[]): boolean => {
         const desc = user?.rolDescripcion?.toLowerCase() ?? '';

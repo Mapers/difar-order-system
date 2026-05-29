@@ -58,7 +58,8 @@ export default function ClientConditionsSection({ onOpenModalChange }: ClientCon
         const loadInitialData = async () => {
             try {
                 const sellerCode = isAdmin() ? "" : (user?.codigo || "");
-                const resCli = await fetchGetAllClients(sellerCode, isAdmin());
+                const representante = isAdmin() ? "" : (user?.codRepres || "")
+                const resCli = await fetchGetAllClients(sellerCode, isAdmin(), representante);
                 const clientes = resCli.data?.data?.data || resCli.data?.data || [];
                 setClientOptions(clientes);
 

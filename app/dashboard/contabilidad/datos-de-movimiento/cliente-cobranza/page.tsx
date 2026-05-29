@@ -91,7 +91,7 @@ export default function ClienteCobranzaPage() {
     const fetchClients = async () => {
         setLoadingClients(true)
         try {
-            const response = await fetchGetAllClients("", true)
+            const response = await fetchGetAllClients("", true, "")
             const data = response.data?.data?.data || []
             setClients(data)
             setClientsFiltered(data)

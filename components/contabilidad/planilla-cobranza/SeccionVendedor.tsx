@@ -152,7 +152,8 @@ export default function SeccionVendedor({
         setLoadingClients(true)
         try {
             const sellerCode = isAdmin() ? "" : (user?.codigo || "")
-            const response = await fetchGetAllClients(sellerCode, false)
+            const representante = isAdmin() ? "" : (user?.codRepres || "")
+            const response = await fetchGetAllClients(sellerCode, false, representante)
             const data = response.data?.data?.data || []
             setClients(data)
             setClientsFiltered(data)

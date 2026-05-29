@@ -185,7 +185,7 @@ export default function ClientsPage() {
               {/*  <Download className="mr-2 h-4 w-4" />*/}
               {/*  Exportar*/}
               {/*</Button>*/}
-              <Button onClick={handleCreateNewEvaluation} className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto" disabled>
+              <Button onClick={handleCreateNewEvaluation} className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto">
                 <Plus className="mr-2 h-4 w-4" />
                 Nuevo cliente
               </Button>
@@ -737,6 +737,7 @@ export default function ClientsPage() {
           <SolicitarClienteModal
               open={showSolicitarModal}
               onOpenChange={setShowSolicitarModal}
+              user={user?.nombreCompleto || ''}
           />
 
           <ModalClientView

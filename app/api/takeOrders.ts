@@ -2,8 +2,8 @@
 import { IDistrito } from "@/app/types/order/client-interface";
 import apiClient from "./client";
 
-export const fetchGetAllClients = async (seller: string, isGerente: boolean): Promise<any> => {
-    return apiClient.get(`/tomarPedido/cliente/all?vendedor=${seller}&isGerente=${isGerente}`);
+export const fetchGetAllClients = async (seller: string, isGerente: boolean, representante: string): Promise<any> => {
+    return apiClient.get(`/tomarPedido/cliente/all?vendedor=${seller}&isGerente=${isGerente}&representante=${representante}`);
 };
 
 export const fetchGetConditions = async (query: string): Promise<any> => {

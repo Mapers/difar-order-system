@@ -13,9 +13,10 @@ interface SolicitarClienteModalProps {
     open: boolean
     onOpenChange: (open: boolean) => void
     onSolicitudCreada?: () => void
+    user: string
 }
 
-export default function SolicitarClienteModal({ open, onOpenChange, onSolicitudCreada }: SolicitarClienteModalProps) {
+export default function SolicitarClienteModal({ open, onOpenChange, onSolicitudCreada, user }: SolicitarClienteModalProps) {
     const [ruc, setRuc] = useState("")
     const [loading, setLoading] = useState(false)
 
@@ -33,7 +34,7 @@ export default function SolicitarClienteModal({ open, onOpenChange, onSolicitudC
         }
         setLoading(true)
         try {
-            await ClientService.crearSolicitudCliente(rucLimpio)
+            await ClientService.crearSolicitudCliente(rucLimpio, user)
             toast({ description: "Solicitud enviada correctamente. El resultado estará disponible en unos minutos." })
             setRuc("")
             onOpenChange(false)

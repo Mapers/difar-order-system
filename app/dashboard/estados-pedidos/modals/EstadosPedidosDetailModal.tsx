@@ -102,9 +102,10 @@ export function EstadosPedidosDetailModal({ open, onOpenChange, nroPedido }: Est
       setIsLoading(true)
       try {
         const sellerCode = auth.isAdmin() ? "" : (auth.user?.codigo || "")
+        const representante = auth.isAdmin() ? "" : (auth.user?.codRepres || "")
         const [resProd, resCli, resCond] = await Promise.all([
           getProductsRequest(),
-          fetchGetAllClients(sellerCode, auth.isAdmin()),
+          fetchGetAllClients(sellerCode, auth.isAdmin(), representante),
           fetchGetConditions('')
         ])
         setProducts(resProd.data?.data?.data || [])

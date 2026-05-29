@@ -166,7 +166,8 @@ export function useOrderPage() {
         setLoading(prev => ({ ...prev, clients: true }))
         try {
             const sellerCode = isAdmin() ? "" : (user?.codigo || "")
-            const response = await fetchGetAllClients(sellerCode, isAdmin())
+            const representante = isAdmin() ? "" : (user?.codRepres || "")
+            const response = await fetchGetAllClients(sellerCode, isAdmin(), representante)
             if (response.data?.data?.data.length === 0) {
                 setClients([])
             } else {

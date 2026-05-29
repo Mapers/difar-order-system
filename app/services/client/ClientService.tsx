@@ -152,8 +152,8 @@ export class ClientService {
     return response.data
   };
 
-  static async crearSolicitudCliente(ruc: string): Promise<any> {
-    const response = await apiClient.post('/clientes/solicitudes', { ruc });
+  static async crearSolicitudCliente(ruc: string, solicitadoPor: string): Promise<any> {
+    const response = await apiClient.post('/clientes/solicitudes', { ruc, solicitadoPor });
     return response.data;
   };
 

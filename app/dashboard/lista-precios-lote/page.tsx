@@ -20,7 +20,7 @@ export default function PricePage() {
 
   const [currentDateTime, setCurrentDateTime] = useState({ date: "", time: "" });
 
-  const listData = usePriceList(isAuthenticated);
+  const listData = usePriceList(isAuthenticated, user, isAdmin());
   const modals = useProductModals();
 
   useEffect(() => {

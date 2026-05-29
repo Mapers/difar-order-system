@@ -2,8 +2,9 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import debounce from 'lodash.debounce';
 import { PriceService } from "@/app/services/price/PriceService";
 import { PrecioLote, PriceListParams } from "../types";
+import {User} from "@/app/services/auth/types";
 
-export function usePriceList(isAuthenticated: boolean) {
+export function usePriceList(isAuthenticated: boolean, user: User | null, isAdmin: boolean) {
     const [searchTerm, setSearchTerm] = useState("");
     const [selectedLabs, setSelectedLabs] = useState<number[]>([]);
     const [excludeNoStock, setExcludeNoStock] = useState(false);
@@ -25,6 +26,14 @@ export function usePriceList(isAuthenticated: boolean) {
             } else if (labs.length > 0) {
                 payload.laboratorio = labs.join(",");
             }
+
+            // const sellerCode = isAdmin ? "" : (user?.codigo || "")
+            const representante = isAdmin ? "" : (user?.codRepres || "")
+
+            if (!isAdmin) {
+                payload.codRepres = representante;
+                // payload.codVendedor = sellerCode;
+            }
             const response = await PriceService.getPricesLot(payload);
             setListPricesLots(response.data || []);
         } catch (error) {
@@ -40,10 +49,10 @@ export function usePriceList(isAuthenticated: boolean) {
     );
 
     useEffect(() => {
-        if (isAuthenticated) {
+        if (isAuthenticated && user) {
             debouncedFetch(searchTerm, selectedLabs);
         }
-    }, [isAuthenticated, searchTerm, selectedLabs, debouncedFetch]);
+    }, [isAuthenticated, searchTerm, selectedLabs, debouncedFetch, user, isAdmin]);
 
     const uniquePrinciples = useMemo(() => {
         const principles = listPricesLots
