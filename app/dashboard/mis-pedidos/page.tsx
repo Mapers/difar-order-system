@@ -18,6 +18,7 @@ import {
   MapPin,
   Home,
   XCircle,
+  X,
   UserSearch, OctagonAlert, Wallet, Link2
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
@@ -183,6 +184,7 @@ export default function MyOrdersPage() {
   const fetchOrders = async () => {
     try {
       setLoading(true)
+      const representante = auth.isAdmin() ? "" : (auth.user?.codRepres || "")
 
       let url
       if (searchQuery) {
@@ -202,6 +204,8 @@ export default function MyOrdersPage() {
           url += `&vendedor=${auth.user?.codigo}`;
         }
       }
+
+      url += `&repres=${representante}`;
 
       const response = await apiClient.get(url)
       const { data: { data, pagination } } = response.data
@@ -245,7 +249,7 @@ export default function MyOrdersPage() {
     setLoadingClients(true);
     try {
       const sellerCode = auth.isAdmin() ? "" : (auth.user?.codigo || "");
-      const representante = isAdmin() ? "" : (user?.codRepres || "")
+      const representante = auth.isAdmin() ? "" : (auth.user?.codRepres || "")
       const response = await fetchGetAllClients(sellerCode, auth.isAdmin(), representante);
       if (response.data?.data?.data.length === 0) {
         setClients([])
@@ -678,19 +682,40 @@ export function Combobox<T>({
 
   const selectedItem = items.find(item => getItemKey(item) === value)
 
+  const handleClear = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    onSelect(null)
+    setSearch("")
+    onSearchChange("")
+    setOpen(false)
+  }
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
+      <div className="flex items-center gap-1">
       <PopoverTrigger asChild>
         <Button
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className={cn("w-full justify-between", className)}
+          className={cn("flex-1 justify-between min-w-0", className)}
         >
-          {selectedItem ? getItemLabel(selectedItem) : placeholder}
+          <span className="truncate">{selectedItem ? getItemLabel(selectedItem) : placeholder}</span>
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
+      {selectedItem && (
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="h-9 w-9 shrink-0 text-gray-400 hover:text-gray-700"
+          onClick={handleClear}
+        >
+          <X className="h-4 w-4" />
+        </Button>
+      )}
+      </div>
       <PopoverContent className="w-[300px] p-0">
         <Command shouldFilter={false}>
           <CommandInput

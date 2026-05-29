@@ -166,7 +166,8 @@ export default function ComprobantesPage() {
     try {
       setLoadingComprobantes(true)
       const params = new URLSearchParams()
-      if (auth.user?.idRol === 1) params.append('vendedor', auth.user?.codigo || '')
+      if (auth.isVendedor()) params.append('vendedor', auth.user?.codigo || '')
+      if (auth.isRepresentante()) params.append('representante', auth.user?.codRepres || '')
       if (filters.tipo !== '|-1') params.append('tipoDoc', filters.tipo.split('|')[1])
       if (filters.tipo !== '|-1') params.append('serie', filters.tipo.split('|')[0])
       if (tieneFechas) {
@@ -192,7 +193,8 @@ export default function ComprobantesPage() {
     try {
       setLoadingNotas(true)
       const params = new URLSearchParams()
-      if (auth.user?.idRol === 1) params.append('vendedor', auth.user?.codigo || '')
+      if (auth.isVendedor()) params.append('vendedor', auth.user?.codigo || '')
+      if (auth.isRepresentante()) params.append('representante', auth.user?.codRepres || '')
       if (filtersNotas.fechaDesde) params.append('fechaDesde', filtersNotas.fechaDesde)
       if (filtersNotas.fechaHasta) params.append('fechaHasta', filtersNotas.fechaHasta)
       if (debouncedNotas) params.append('busqueda', debouncedNotas)
@@ -211,7 +213,8 @@ export default function ComprobantesPage() {
     try {
       setLoadingGuias(true)
       const params = new URLSearchParams()
-      if (auth.user?.idRol === 1) params.append('vendedor', auth.user?.codigo || '')
+      if (auth.isVendedor()) params.append('vendedor', auth.user?.codigo || '')
+      if (auth.isRepresentante()) params.append('representante', auth.user?.codRepres || '')
       if (filtersGuias.fechaDesde) params.append('fechaDesde', filtersGuias.fechaDesde)
       if (filtersGuias.fechaHasta) params.append('fechaHasta', filtersGuias.fechaHasta)
       if (debouncedGuias) params.append('busqueda', debouncedGuias)
@@ -621,9 +624,9 @@ export default function ComprobantesPage() {
           <p className="text-gray-500">Administración de facturas, boletas y notas electrónicas</p>
         </div>
 
-        <Tabs defaultValue={auth.user?.idRol !== 1 ? 'pendientes' : 'comprobantes'} className="w-full">
+        <Tabs defaultValue={!(auth.isVendedor() || auth.isRepresentante()) ? 'pendientes' : 'comprobantes'} className="w-full">
           <TabsList className="grid w-full grid-cols-4">
-            {auth.user?.idRol !== 1 && (
+            {!(auth.isVendedor() || auth.isRepresentante()) && (
                 <TabsTrigger value="pendientes" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
                   <AlertTriangle className="h-3 w-3 sm:h-4 sm:w-4" />
                   <span className="hidden sm:inline">Pedidos por Facturar</span>
@@ -651,7 +654,7 @@ export default function ComprobantesPage() {
           </TabsList>
 
           {/* ── TAB: PENDIENTES ── */}
-          {auth.user?.idRol !== 1 && (
+          {!(auth.isVendedor() || auth.isRepresentante()) && (
               <TabsContent value="pendientes" className="space-y-4">
                 <Card className="bg-white shadow-sm">
                   <CardHeader>
