@@ -17,7 +17,7 @@ import {
     getProductsByAlmacenRequest,
     getProductsRequest
 } from "@/app/api/products"
-import { IProduct, ISelectedProduct, IPromocionRequest } from "@/app/types/order/product-interface"
+import {IProduct, ISelectedProduct, IPromocionRequest, IAlmacen} from "@/app/types/order/product-interface"
 import { IClient, ICondicion, IDistrito, IMoneda, ITerritorio } from "@/app/types/order/client-interface"
 import { useAuth } from "@/context/authContext"
 import { PriceService } from "@/app/services/price/PriceService"
@@ -790,7 +790,8 @@ export function useOrderPage() {
             if (!selectedAlmacen) return
             try {
                 setLoading(prev => ({ ...prev, products: true }))
-                const response = await getProductsByAlmacenRequest(selectedAlmacen.IdAlmacen)
+                const representante = isAdmin() ? "" : (user?.codRepres || "")
+                const response = await getProductsByAlmacenRequest(selectedAlmacen.IdAlmacen, representante)
                 setProducts(response.data?.data?.data || [])
             } catch (error) {
                 console.error("Error fetching products:", error)

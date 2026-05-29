@@ -22,6 +22,6 @@ export const getBonificadosRequest = async (requestBonificado: IPromocionRequest
     return apiClient.post(`/articulos/bonificados`, requestBonificado)
 }
 
-export const getProductsByAlmacenRequest = async (almacen: number): Promise<any> => {
-    return apiClient.get(`/articulos/byAlmacen?almacen=${almacen}`)
+export const getProductsByAlmacenRequest = async (almacen: number, codRepres: string): Promise<any> => {
+    return apiClient.get(`/articulos/byAlmacen?almacen=${almacen}&codRepres=${codRepres}`)
 }
