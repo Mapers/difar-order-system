@@ -1,9 +1,9 @@
 'use client'
 
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
-import { Check, ChevronDown, FlaskConical, Search, Users, X, Calendar as CalendarIcon, Eye, Loader2 } from "lucide-react"
+import { Check, ChevronDown, FlaskConical, Search, Users, X, Calendar as CalendarIcon, Eye, Loader2, Package } from "lucide-react"
 import { toast } from "@/app/hooks/useToast"
 import { useAuth } from "@/context/authContext"
 import { Badge } from "@/components/ui/badge"
@@ -42,6 +42,9 @@ export default function LabSellerReportPage() {
     const [modalOpen, setModalOpen] = useState(false);
     const [detailLoading, setDetailLoading] = useState(false);
     const [detailData, setDetailData] = useState<any>(null);
+    const [viewMode, setViewMode] = useState<'laboratorios' | 'productos'>('laboratorios');
+    const [selectionModalOpen, setSelectionModalOpen] = useState(false);
+    const [pendingDetail, setPendingDetail] = useState<{ labName: string; vendCodigo: string } | null>(null);
 
     useEffect(() => {
         const fetchCatalogs = async () => {
@@ -159,6 +162,43 @@ export default function LabSellerReportPage() {
         } finally {
             setDetailLoading(false);
         }
+    };
+
+    const productosAgrupados = useMemo(() => {
+        if (!detailData || detailData.length === 0) return [];
+        const map = new Map<string, { Codigo_Art: string; NombreItem: string; AbrevUnidMed: string; TotalCantidad: number; TotalVentas: number }>();
+        for (const lab of detailData[0].Laboratorios) {
+            for (const cli of lab.Clientes) {
+                for (const item of cli.Items) {
+                    const existing = map.get(item.Codigo_Art);
+                    if (existing) {
+                        existing.TotalCantidad += item.Cantidad_Sal;
+                        existing.TotalVentas += item.SumaDeVta_Tot;
+                    } else {
+                        map.set(item.Codigo_Art, {
+                            Codigo_Art: item.Codigo_Art,
+                            NombreItem: item.NombreItem,
+                            AbrevUnidMed: item.AbrevUnidMed,
+                            TotalCantidad: item.Cantidad_Sal,
+                            TotalVentas: item.SumaDeVta_Tot
+                        });
+                    }
+                }
+            }
+        }
+        return Array.from(map.values()).sort((a, b) => b.TotalVentas - a.TotalVentas);
+    }, [detailData]);
+
+    const handleDetalleBtnClick = (labName: string, vendCodigo: string) => {
+        setPendingDetail({ labName, vendCodigo });
+        setSelectionModalOpen(true);
+    };
+
+    const executeDetailModal = (mode: 'laboratorios' | 'productos') => {
+        if (!pendingDetail) return;
+        setViewMode(mode);
+        setSelectionModalOpen(false);
+        openDetailModal(pendingDetail.labName, pendingDetail.vendCodigo);
     };
 
     const toggleLab = (id: number) => setSelectedLabs(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
@@ -331,7 +371,7 @@ export default function LabSellerReportPage() {
                                                             S/ {formatMoney(vend.SumaDeVta_Tot)}
                                                         </td>
                                                         <td className="px-4 py-3 text-center">
-                                                            <Button size="sm" variant="ghost" className="text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50" onClick={() => openDetailModal(lab.Laboratorio, vend.Codigo_Vend)}>
+                                                            <Button size="sm" variant="ghost" className="text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50" onClick={() => handleDetalleBtnClick(lab.Laboratorio, vend.Codigo_Vend)}>
                                                                 <Eye className="w-4 h-4 mr-1"/> Detalle
                                                             </Button>
                                                         </td>
@@ -370,7 +410,7 @@ export default function LabSellerReportPage() {
                                                             S/ {formatMoney(vend.SumaDeVta_Tot)}
                                                         </span>
                                                     </div>
-                                                    <Button variant="outline" size="sm" className="w-full mt-2 text-indigo-600 border-indigo-200 bg-indigo-50/50" onClick={() => openDetailModal(lab.Laboratorio, vend.Codigo_Vend)}>
+                                                    <Button variant="outline" size="sm" className="w-full mt-2 text-indigo-600 border-indigo-200 bg-indigo-50/50" onClick={() => handleDetalleBtnClick(lab.Laboratorio, vend.Codigo_Vend)}>
                                                         <Eye className="w-4 h-4 mr-2"/> Ver Detalle
                                                     </Button>
                                                 </div>
@@ -397,17 +437,50 @@ export default function LabSellerReportPage() {
                 </CardContent>
             </Card>
 
+            <Dialog open={selectionModalOpen} onOpenChange={setSelectionModalOpen}>
+                <DialogContent className="max-w-sm">
+                    <DialogHeader>
+                        <DialogTitle className="text-slate-800">¿Cómo deseas ver el detalle?</DialogTitle>
+                    </DialogHeader>
+                    <div className="grid grid-cols-2 gap-3 py-2">
+                        <button
+                            onClick={() => executeDetailModal('laboratorios')}
+                            className="flex flex-col items-center gap-2 p-4 rounded-lg border-2 border-slate-200 hover:border-indigo-400 hover:bg-indigo-50 transition-colors cursor-pointer"
+                        >
+                            <FlaskConical className="h-8 w-8 text-indigo-500" />
+                            <span className="text-sm font-semibold text-slate-800">Por Laboratorios</span>
+                            <span className="text-[11px] text-slate-500 text-center leading-tight">Agrupado por cliente e ítem</span>
+                        </button>
+                        <button
+                            onClick={() => executeDetailModal('productos')}
+                            className="flex flex-col items-center gap-2 p-4 rounded-lg border-2 border-slate-200 hover:border-emerald-400 hover:bg-emerald-50 transition-colors cursor-pointer"
+                        >
+                            <Package className="h-8 w-8 text-emerald-500" />
+                            <span className="text-sm font-semibold text-slate-800">Por Productos</span>
+                            <span className="text-[11px] text-slate-500 text-center leading-tight">Total cantidad y monto por producto</span>
+                        </button>
+                    </div>
+                </DialogContent>
+            </Dialog>
+
             <Dialog open={modalOpen} onOpenChange={setModalOpen}>
                 <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden flex flex-col bg-slate-50 p-0">
                     <DialogHeader className="p-4 md:p-6 bg-white border-b border-slate-200 flex-shrink-0">
                         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                             <div>
-                                <DialogTitle className="text-xl text-indigo-800">Detalle de Ventas por Laboratorio</DialogTitle>
+                                <DialogTitle className="text-xl text-indigo-800">
+                                    {viewMode === 'laboratorios' ? 'Detalle por Laboratorio' : 'Detalle por Productos'}
+                                </DialogTitle>
                                 {detailData && detailData.length > 0 && (
                                     <p className="text-sm text-slate-500 mt-1 font-medium">{detailData[0].Vendedor} | {detailData[0].Laboratorios[0].Laboratorio}</p>
                                 )}
                             </div>
-                            <ExportDetalleLabVendedorPdf data={detailData} disabled={detailLoading || !detailData} />
+                            <ExportDetalleLabVendedorPdf
+                                data={detailData}
+                                viewMode={viewMode}
+                                productData={productosAgrupados}
+                                disabled={detailLoading || !detailData}
+                            />
                         </div>
                     </DialogHeader>
 
@@ -418,72 +491,118 @@ export default function LabSellerReportPage() {
                                 <p className="text-sm text-slate-500 font-medium">Cargando detalle...</p>
                             </div>
                         ) : detailData && detailData.length > 0 ? (
-                            <div className="space-y-6">
-                                {detailData[0].Laboratorios[0].Clientes.map((cli: any, cIdx: number) => (
-                                    <div key={cIdx} className="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
-                                        <div className="bg-slate-100 p-3 border-b border-slate-200">
-                                            <p className="text-sm font-bold text-slate-800">{cli.Codigo} | {cli.Nombre}</p>
-                                            {cli.NombreComercial && <p className="text-xs text-slate-500 mt-0.5">{cli.NombreComercial}</p>}
-                                        </div>
-                                        <div className="hidden md:block overflow-x-auto">
-                                            <table className="w-full text-xs text-left text-slate-600">
-                                                <thead className="bg-white border-b border-slate-100">
-                                                <tr>
-                                                    <th className="px-3 py-2 font-semibold">Cód. Art</th>
-                                                    <th className="px-3 py-2 font-semibold text-center">Cant</th>
-                                                    <th className="px-3 py-2 font-semibold text-center">U.M.</th>
-                                                    <th className="px-3 py-2 font-semibold">Descripción</th>
-                                                    <th className="px-3 py-2 font-semibold text-right">Total S/.</th>
-                                                </tr>
-                                                </thead>
-                                                <tbody className="divide-y divide-slate-50">
-                                                {cli.Items.map((item: any, iIdx: number) => (
-                                                    <tr key={iIdx} className="hover:bg-slate-50">
-                                                        <td className="px-3 py-2 font-mono text-slate-500">{item.Codigo_Art}</td>
-                                                        <td className="px-3 py-2 text-center font-medium">{item.Cantidad_Sal}</td>
-                                                        <td className="px-3 py-2 text-center text-[10px] uppercase">{item.AbrevUnidMed}</td>
-                                                        <td className="px-3 py-2">{item.NombreItem}</td>
-                                                        <td className="px-3 py-2 text-right font-semibold text-slate-800">{formatMoney(item.SumaDeVta_Tot)}</td>
+                            viewMode === 'laboratorios' ? (
+                                <div className="space-y-6">
+                                    {detailData[0].Laboratorios[0].Clientes.map((cli: any, cIdx: number) => (
+                                        <div key={cIdx} className="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
+                                            <div className="bg-slate-100 p-3 border-b border-slate-200">
+                                                <p className="text-sm font-bold text-slate-800">{cli.Codigo} | {cli.Nombre}</p>
+                                                {cli.NombreComercial && <p className="text-xs text-slate-500 mt-0.5">{cli.NombreComercial}</p>}
+                                            </div>
+                                            <div className="hidden md:block overflow-x-auto">
+                                                <table className="w-full text-xs text-left text-slate-600">
+                                                    <thead className="bg-white border-b border-slate-100">
+                                                    <tr>
+                                                        <th className="px-3 py-2 font-semibold">Cód. Art</th>
+                                                        <th className="px-3 py-2 font-semibold text-center">Cant</th>
+                                                        <th className="px-3 py-2 font-semibold text-center">U.M.</th>
+                                                        <th className="px-3 py-2 font-semibold">Descripción</th>
+                                                        <th className="px-3 py-2 font-semibold text-right">Total S/.</th>
                                                     </tr>
-                                                ))}
-                                                </tbody>
-                                                <tfoot className="bg-indigo-50/50">
-                                                <tr>
-                                                    <td colSpan={4} className="px-3 py-2 text-right text-indigo-800 text-xs font-bold uppercase tracking-wider">Total Cliente:</td>
-                                                    <td className="px-3 py-2 text-right text-indigo-700 font-bold">{formatMoney(cli.TotalCliente)}</td>
-                                                </tr>
-                                                </tfoot>
-                                            </table>
-                                        </div>
-
-                                        <div className="md:hidden grid grid-cols-1 gap-2 p-3 bg-slate-50">
-                                            {cli.Items.map((item: any, iIdx: number) => (
-                                                <div key={iIdx} className="bg-white border border-slate-100 rounded p-2 flex flex-col gap-1">
-                                                    <span className="text-xs font-medium text-slate-700">{item.NombreItem}</span>
-                                                    <div className="flex justify-between items-center mt-1">
-                                                        <div className="flex gap-2">
+                                                    </thead>
+                                                    <tbody className="divide-y divide-slate-50">
+                                                    {cli.Items.map((item: any, iIdx: number) => (
+                                                        <tr key={iIdx} className="hover:bg-slate-50">
+                                                            <td className="px-3 py-2 font-mono text-slate-500">{item.Codigo_Art}</td>
+                                                            <td className="px-3 py-2 text-center font-medium">{item.Cantidad_Sal}</td>
+                                                            <td className="px-3 py-2 text-center text-[10px] uppercase">{item.AbrevUnidMed}</td>
+                                                            <td className="px-3 py-2">{item.NombreItem}</td>
+                                                            <td className="px-3 py-2 text-right font-semibold text-slate-800">{formatMoney(item.SumaDeVta_Tot)}</td>
+                                                        </tr>
+                                                    ))}
+                                                    </tbody>
+                                                    <tfoot className="bg-indigo-50/50">
+                                                    <tr>
+                                                        <td colSpan={4} className="px-3 py-2 text-right text-indigo-800 text-xs font-bold uppercase tracking-wider">Total Cliente:</td>
+                                                        <td className="px-3 py-2 text-right text-indigo-700 font-bold">{formatMoney(cli.TotalCliente)}</td>
+                                                    </tr>
+                                                    </tfoot>
+                                                </table>
+                                            </div>
+                                            <div className="md:hidden grid grid-cols-1 gap-2 p-3 bg-slate-50">
+                                                {cli.Items.map((item: any, iIdx: number) => (
+                                                    <div key={iIdx} className="bg-white border border-slate-100 rounded p-2 flex flex-col gap-1">
+                                                        <span className="text-xs font-medium text-slate-700">{item.NombreItem}</span>
+                                                        <div className="flex justify-between items-center mt-1">
                                                             <Badge variant="outline" className="text-[10px] bg-slate-100">{item.Cantidad_Sal} {item.AbrevUnidMed}</Badge>
+                                                            <span className="text-sm font-bold text-indigo-700">S/ {formatMoney(item.SumaDeVta_Tot)}</span>
                                                         </div>
-                                                        <span className="text-sm font-bold text-indigo-700">S/ {formatMoney(item.SumaDeVta_Tot)}</span>
                                                     </div>
+                                                ))}
+                                                <div className="flex justify-between items-center pt-2 mt-1 border-t border-indigo-100">
+                                                    <span className="text-xs font-bold text-indigo-800 uppercase">Total Cliente</span>
+                                                    <span className="text-sm font-black text-indigo-700">S/ {formatMoney(cli.TotalCliente)}</span>
                                                 </div>
-                                            ))}
-                                            <div className="flex justify-between items-center pt-2 mt-1 border-t border-indigo-100">
-                                                <span className="text-xs font-bold text-indigo-800 uppercase">Total Cliente</span>
-                                                <span className="text-sm font-black text-indigo-700">S/ {formatMoney(cli.TotalCliente)}</span>
                                             </div>
                                         </div>
-
-                                    </div>
-                                ))}
-
-                                <div className="flex flex-col sm:flex-row justify-end gap-4 border-t border-slate-200 pt-4 mt-4">
-                                    <div className="bg-indigo-50 p-3 rounded-lg border border-indigo-100 text-right">
-                                        <p className="text-[10px] font-bold text-indigo-500 uppercase">Total Vendedor</p>
-                                        <p className="text-lg font-black text-indigo-900">S/ {formatMoney(detailData[0].TotalVendedor)}</p>
+                                    ))}
+                                    <div className="flex justify-end border-t border-slate-200 pt-4">
+                                        <div className="bg-indigo-50 p-3 rounded-lg border border-indigo-100 text-right">
+                                            <p className="text-[10px] font-bold text-indigo-500 uppercase">Total Vendedor</p>
+                                            <p className="text-lg font-black text-indigo-900">S/ {formatMoney(detailData[0].TotalVendedor)}</p>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
+                            ) : (
+                                <div className="space-y-4">
+                                    <div className="hidden md:block overflow-x-auto bg-white border border-slate-200 rounded-lg shadow-sm">
+                                        <table className="w-full text-xs text-left text-slate-600">
+                                            <thead className="bg-slate-50 border-b border-slate-200">
+                                            <tr>
+                                                <th className="px-3 py-2 font-semibold">Cód. Art</th>
+                                                <th className="px-3 py-2 font-semibold">Descripción</th>
+                                                <th className="px-3 py-2 font-semibold text-center">U.M.</th>
+                                                <th className="px-3 py-2 font-semibold text-right">Cant. Total</th>
+                                                <th className="px-3 py-2 font-semibold text-right">Total S/.</th>
+                                            </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-slate-100">
+                                            {productosAgrupados.map((prod, pIdx) => (
+                                                <tr key={pIdx} className="hover:bg-slate-50">
+                                                    <td className="px-3 py-2 font-mono text-slate-500">{prod.Codigo_Art}</td>
+                                                    <td className="px-3 py-2 text-slate-700">{prod.NombreItem}</td>
+                                                    <td className="px-3 py-2 text-center text-[10px] uppercase">{prod.AbrevUnidMed}</td>
+                                                    <td className="px-3 py-2 text-right font-medium">{prod.TotalCantidad}</td>
+                                                    <td className="px-3 py-2 text-right font-semibold text-slate-800">{formatMoney(prod.TotalVentas)}</td>
+                                                </tr>
+                                            ))}
+                                            </tbody>
+                                            <tfoot className="bg-emerald-50/50">
+                                            <tr>
+                                                <td colSpan={4} className="px-3 py-2 text-right text-emerald-800 text-xs font-bold uppercase tracking-wider">Total Vendedor:</td>
+                                                <td className="px-3 py-2 text-right text-emerald-700 font-bold">{formatMoney(detailData[0].TotalVendedor)}</td>
+                                            </tr>
+                                            </tfoot>
+                                        </table>
+                                    </div>
+                                    <div className="md:hidden grid grid-cols-1 gap-2">
+                                        {productosAgrupados.map((prod, pIdx) => (
+                                            <div key={pIdx} className="bg-white border border-slate-200 rounded-lg p-3 flex flex-col gap-1.5">
+                                                <p className="text-xs font-semibold text-slate-800">{prod.NombreItem}</p>
+                                                <p className="text-[10px] font-mono text-slate-400">{prod.Codigo_Art}</p>
+                                                <div className="flex justify-between items-center border-t border-slate-100 pt-2 mt-1">
+                                                    <Badge variant="outline" className="text-[10px] bg-slate-100">{prod.TotalCantidad} {prod.AbrevUnidMed}</Badge>
+                                                    <span className="text-sm font-bold text-emerald-700">S/ {formatMoney(prod.TotalVentas)}</span>
+                                                </div>
+                                            </div>
+                                        ))}
+                                        <div className="flex justify-between items-center pt-2 border-t border-emerald-100">
+                                            <span className="text-xs font-bold text-emerald-800 uppercase">Total Vendedor</span>
+                                            <span className="text-sm font-black text-emerald-700">S/ {formatMoney(detailData[0].TotalVendedor)}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            )
                         ) : (
                             <div className="flex flex-col items-center justify-center py-16">
                                 <p className="text-slate-500 font-medium">No se encontraron detalles para este vendedor.</p>
