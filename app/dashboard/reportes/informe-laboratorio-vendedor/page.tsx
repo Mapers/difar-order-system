@@ -189,6 +189,11 @@ export default function LabSellerReportPage() {
         return Array.from(map.values()).sort((a, b) => b.TotalVentas - a.TotalVentas);
     }, [detailData]);
 
+    const totalGeneral = useMemo(
+        () => data.reduce((acc, lab) => acc + (lab.totalVentasLaboratorio || 0), 0),
+        [data]
+    );
+
     const handleDetalleBtnClick = (labName: string, vendCodigo: string) => {
         setPendingDetail({ labName, vendCodigo });
         setSelectionModalOpen(true);
@@ -426,6 +431,14 @@ export default function LabSellerReportPage() {
                                     </div>
                                 </div>
                             ))}
+
+                            <div className="bg-white border border-blue-200 p-4 rounded-lg flex flex-col sm:flex-row justify-between items-center shadow-md mt-6 sticky bottom-4">
+                                <span className="text-sm font-bold uppercase tracking-wider text-slate-700 mb-2 sm:mb-0">Total General (Todos los Laboratorios)</span>
+                                <div className="text-center sm:text-right bg-blue-50 p-2 rounded-md sm:bg-transparent sm:p-0 border border-blue-100 sm:border-none">
+                                    <p className="text-xs text-blue-600 font-semibold uppercase">Total Ventas</p>
+                                    <p className="text-lg sm:text-xl font-bold text-blue-800">S/ {formatMoney(totalGeneral)}</p>
+                                </div>
+                            </div>
                         </div>
                     ) : (
                         <div className="flex flex-col items-center justify-center py-16 bg-white rounded-lg border-2 border-dashed border-slate-200">

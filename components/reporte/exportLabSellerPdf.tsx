@@ -182,6 +182,24 @@ export const ExportLabSellerPdf: React.FC<ExportPdfProps> = ({ data, disabled = 
                 yPosition -= 35;
             }
 
+            // --- CUADRO FINAL: TOTAL GENERAL (TODOS LOS LABORATORIOS) ---
+            const totalGeneral = data.reduce((acc, lab) => acc + (lab.totalVentasLaboratorio || 0), 0);
+
+            checkPageBreak(40);
+            yPosition -= 5;
+
+            currentPage.drawRectangle({ x: margin, y: yPosition - 20, width: contentWidth, height: 25, color: rgb(0.1, 0.4, 0.8) });
+            currentPage.drawText("TOTAL GENERAL:", { x: margin + 10, y: yPosition - 10, size: 9, font: boldFont, color: rgb(1, 1, 1) });
+
+            const txtTotalGeneral = `S/ ${formatMoney(totalGeneral)}`;
+            currentPage.drawText(txtTotalGeneral, {
+                x: pageWidth - margin - boldFont.widthOfTextAtSize(txtTotalGeneral, 9) - 10,
+                y: yPosition - 10,
+                size: 9,
+                font: boldFont,
+                color: rgb(1, 1, 1)
+            });
+
             const pdfBytes = await pdfDoc.save();
             const blob = new Blob([pdfBytes], { type: 'application/pdf' });
             const link = document.createElement('a');
