@@ -37,6 +37,7 @@ type RegistroVenta = {
     FechaDocOriginal : string | null
     SerieDocOriginal : string | null
     NumeroDocOriginal: string | null
+    Vendedor         : string
 }
 
 const HEADER_ARGB    = 'FF163161'
@@ -70,6 +71,7 @@ const COLUMNS = [
     { header: 'F.Emision',    key: 'fEmisionOrig',  width: 12, numFmt: '@',       group: 'orig' },
     { header: 'Serie',         key: 'serieOrig',     width:  8, numFmt: '@',       group: 'orig' },
     { header: 'Numero',        key: 'numeroOrig',    width: 10, numFmt: '@',       group: 'orig' },
+    { header: 'Vendedor',      key: 'vendedor',      width: 24, numFmt: '@',       group: 'vend' },
 ] as const
 
 export function ExcelExportButton({
@@ -142,6 +144,7 @@ export function ExcelExportButton({
                             fEmisionOrig: hasOriginal ? safeDate(rv.FechaDocOriginal) : '—',
                             serieOrig   : hasOriginal ? s(rv.SerieDocOriginal)        : '—',
                             numeroOrig  : hasOriginal ? s(rv.NumeroDocOriginal)       : '—',
+                            vendedor    : s(rv.Vendedor),
                         },
                     })
                 }
@@ -178,6 +181,7 @@ export function ExcelExportButton({
                         fEmisionOrig: '—',
                         serieOrig   : '—',
                         numeroOrig  : '—',
+                        vendedor    : c.Vendedor || '—',
                     },
                 })
             }
@@ -232,6 +236,15 @@ export function ExcelExportButton({
                     bottom: { style: 'thin', color: { argb: 'FF3A78D8' } },
                 }
             })
+
+            // Vendedor column: single header spanning both header rows
+            const vendCol = origEnd + 1
+            ws.mergeCells(1, vendCol, 2, vendCol)
+            const vendCell = ws.getCell(1, vendCol)
+            vendCell.value     = 'Vendedor'
+            vendCell.font      = { bold: true, color: { argb: 'FFFFFFFF' }, size: 9 }
+            vendCell.fill      = { type: 'pattern', pattern: 'solid', fgColor: { argb: HEADER_ARGB } }
+            vendCell.alignment = { horizontal: 'center', vertical: 'middle' }
 
             // Track max content length for auto-width
             const maxLen: number[] = COLUMNS.map(c => c.header.length)

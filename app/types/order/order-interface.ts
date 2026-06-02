@@ -33,6 +33,7 @@ export interface Comprobante {
     nc_serie?:   string | null
     nc_numero?:  string | null
     nc_fecha?:   string | null
+    Vendedor?: string | null
 }
 
 export interface GuiaRemision {
