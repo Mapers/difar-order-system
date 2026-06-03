@@ -1,9 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Bell, BellOff } from "lucide-react";
+import { Bell, BellOff, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Popover,
   PopoverContent,
@@ -14,7 +13,8 @@ import { useNotifications } from "@/app/providers/notification-provider";
 import { NOTIFICATION_CARDS } from "./cards";
 
 export function NotificationBell() {
-  const { notifications, unreadCount, markAllRead, remove } = useNotifications();
+  const { notifications, unreadCount, markAllRead, remove, clearAll } =
+    useNotifications();
   const [open, setOpen] = useState(false);
 
   const handleOpenChange = (next: boolean) => {
@@ -48,9 +48,14 @@ export function NotificationBell() {
         <div className="flex items-center justify-between border-b px-4 py-3">
           <p className="text-sm font-semibold">Notificaciones</p>
           {notifications.length > 0 && (
-            <span className="text-xs text-gray-400">
-              {notifications.length}
-            </span>
+            <button
+              type="button"
+              onClick={clearAll}
+              className="flex items-center gap-1 text-xs font-medium text-red-600 hover:text-red-700"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              Eliminar todas
+            </button>
           )}
         </div>
 
@@ -60,7 +65,7 @@ export function NotificationBell() {
             <p className="text-sm">No tienes notificaciones</p>
           </div>
         ) : (
-          <ScrollArea className="max-h-[70vh]">
+          <div className="max-h-[60vh] overflow-y-auto overscroll-contain">
             <ul className="divide-y">
               {notifications.map((notification) => {
                 const Card = NOTIFICATION_CARDS[notification.kind];
@@ -89,7 +94,7 @@ export function NotificationBell() {
                 );
               })}
             </ul>
-          </ScrollArea>
+          </div>
         )}
       </PopoverContent>
     </Popover>

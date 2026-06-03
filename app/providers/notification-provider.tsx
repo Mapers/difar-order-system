@@ -33,6 +33,7 @@ interface NotificationContextType {
   markAllRead: () => void;
   markRead: (id: string) => void;
   remove: (id: string) => void;
+  clearAll: () => void;
   updateStatus: (id: string, status: NotificationStatus) => void;
   dismissArrival: () => void;
   refresh: () => void;
@@ -224,6 +225,16 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
         if (PERSISTED_KINDS.has(kind as NotificationKind) && dbId) {
           NotificationService.deleteNotification(dbId).catch(() => {});
         }
+      },
+      clearAll: () => {
+        // bucle sobre las notificaciones actuales: borra en backend las persistidas
+        notifications.forEach((n) => {
+          const [kind, dbId] = n.id.split(":");
+          if (PERSISTED_KINDS.has(kind as NotificationKind) && dbId) {
+            NotificationService.deleteNotification(dbId).catch(() => {});
+          }
+        });
+        setNotifications([]);
       },
       updateStatus: (id, status) =>
         setNotifications((prev) =>
