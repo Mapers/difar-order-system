@@ -13,13 +13,13 @@ import {
     Mail,
     MessageCircle,
     Activity,
-    FileDiff, Info
+    FileDiff, Info, Ban
 } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
 import { format, parseISO } from "date-fns"
 import { Comprobante } from "@/app/types/order/order-interface";
-import { Sequential } from "@/app/dashboard/configuraciones/page";
+import {Sequential} from "@/app/types/config-types";
 
 interface CreditNotesTableProps {
     notas: Comprobante[]
@@ -50,6 +50,18 @@ export function CreditNotesTable({
     const [showMotivoNCModal, setShowMotivoNCModal] = useState(false)
     const [selectedReason, setSelectedReason] = useState("")
 
+    const esNoUtilizado = (nota: Comprobante) =>
+        nota.estado === 'No utilizado' || nota.idSunat == null
+
+    const formatFecha = (fecha?: string | null) => {
+        if (!fecha) return "—"
+        try {
+            return format(parseISO(fecha), "dd/MM/yyyy")
+        } catch {
+            return "—"
+        }
+    }
+
     const getTipoComprobante = (prefijo: string) => {
         const tipoObj = tiposComprobante.find(t => t.prefijo == prefijo && t.tipo === '7')
         return tipoObj ? tipoObj.nombre : "Nota de Crédito"
@@ -66,6 +78,14 @@ export function CreditNotesTable({
     }
 
     const getEstadoBadge = (nota: Comprobante) => {
+        if (esNoUtilizado(nota)) {
+            return (
+                <Badge variant="outline" className="border-amber-300 bg-amber-50 text-amber-700">
+                    No utilizado
+                </Badge>
+            )
+        }
+
         if (nota.anulado) {
             return (
                 <div className="flex items-center gap-1">
@@ -86,7 +106,7 @@ export function CreditNotesTable({
         }
         return <div className="flex items-center gap-1">
             <Badge className='bg-blue-100 text-blue-800 hover:bg-blue-200 border-blue-200'>Emitido</Badge>
-            {nota.motivo_descripcion !== 'Nota de Crédito' && (
+            {nota.motivo_descripcion && nota.motivo_descripcion !== 'Nota de Crédito' && (
                 <Button
                     variant="ghost"
                     size="icon"
@@ -100,7 +120,7 @@ export function CreditNotesTable({
         </div>
     }
 
-    const handleViewJson = (title: string, content: string) => {
+    const handleViewJson = (title: string, content: string | null) => {
         setJsonTitle(title)
         try {
             const parsed = typeof content === 'string' ? JSON.parse(content) : content
@@ -121,7 +141,6 @@ export function CreditNotesTable({
 
     return (
         <>
-            {/* VISTA DESKTOP */}
             <div className="hidden lg:block">
                 <Card className="bg-white shadow-sm">
                     <div className="overflow-x-auto">
@@ -140,32 +159,147 @@ export function CreditNotesTable({
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200">
                             {notas.length > 0 ? (
-                                notas.map((nota) => (
-                                    <tr key={`${nota.idSunat}-${nota.idComprobanteCab}`} className="hover:bg-gray-50">
-                                        <td className="p-4 text-sm">{format(parseISO(nota.fecha_envio), "dd/MM/yyyy")}</td>
-                                        <td className="p-4 text-sm">
-                                            <div className="flex items-center gap-2">
-                                                {getTipoComprobante(nota.serie)}
+                                notas.map((nota) => {
+                                    const noUtilizado = esNoUtilizado(nota)
+                                    return (
+                                        <tr
+                                            key={`${nota.serie}-${nota.numero}-${nota.idSunat ?? 'libre'}`}
+                                        >
+                                            <td className="p-4 text-sm">{formatFecha(nota.fecha_envio)}</td>
+                                            <td className="p-4 text-sm">
+                                                <div className="flex items-center gap-2">
+                                                    {noUtilizado ? "—" : getTipoComprobante(nota.serie)}
+                                                </div>
+                                            </td>
+                                            <td className="p-4 font-medium text-sm">{nota.serie}-{nota.numero}</td>
+                                            <td className="p-4">
+                                                <div className={`font-medium text-sm`}>
+                                                    {nota.cliente_denominacion}
+                                                </div>
+                                            </td>
+                                            <td className="p-4 text-sm">{nota.cliente_numdoc ?? "—"}</td>
+                                            <td className="p-4 font-medium text-sm text-red-600">
+                                                {noUtilizado
+                                                    ? <span className="text-gray-400">—</span>
+                                                    : <>{nota.moneda === 1 ? 'S/ ' : '$ '} -{Number(nota.total ?? 0).toFixed(2)}</>
+                                                }
+                                            </td>
+                                            <td className="p-4">{getEstadoBadge(nota)}</td>
+                                            <td className="p-4">
+                                                {noUtilizado ? (
+                                                    <span className="text-xs text-gray-400 flex items-center gap-1">
+                                                    <Ban className="h-3 w-3" /> Sin acciones
+                                                </span>
+                                                ) : (
+                                                    <div className="flex gap-2">
+                                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50" onClick={() => nota.enlace && onViewPdf(nota.enlace)} disabled={!nota.enlace} title="Ver PDF">
+                                                            <Eye className="h-4 w-4" />
+                                                        </Button>
+
+                                                        <DropdownMenu>
+                                                            <DropdownMenuTrigger asChild>
+                                                                <Button variant="ghost" size="icon" className="h-8 w-8"><MoreHorizontal className="h-4 w-4" /></Button>
+                                                            </DropdownMenuTrigger>
+                                                            <DropdownMenuContent align="end" className="w-56">
+                                                                <DropdownMenuItem onClick={() => handleViewJson('JSON Solicitud (Request)', nota.raw_request)}>
+                                                                    <Code className="mr-2 h-4 w-4 text-gray-500" /> JSON Solicitud
+                                                                </DropdownMenuItem>
+                                                                <DropdownMenuItem onClick={() => handleViewJson('JSON Respuesta (Response)', nota.raw_response)}>
+                                                                    <FileJson className="mr-2 h-4 w-4 text-gray-500" /> JSON Respuesta
+                                                                </DropdownMenuItem>
+
+                                                                <DropdownMenuSeparator />
+
+                                                                <DropdownMenuItem onClick={() => onSendEmail(nota)}>
+                                                                    <Mail className="mr-2 h-4 w-4 text-blue-500" /> Enviar por Correo
+                                                                </DropdownMenuItem>
+                                                                <DropdownMenuItem onClick={() => onSendWhatsApp(nota)}>
+                                                                    <MessageCircle className="mr-2 h-4 w-4 text-green-500" /> Enviar por WhatsApp
+                                                                </DropdownMenuItem>
+                                                                <DropdownMenuItem onClick={() => onCheckStatus(nota)}>
+                                                                    <Activity className="mr-2 h-4 w-4 text-orange-500" /> Ver Estado SUNAT
+                                                                </DropdownMenuItem>
+
+                                                                {!nota.anulado && (
+                                                                    <>
+                                                                        <DropdownMenuSeparator />
+                                                                        <DropdownMenuItem className="text-red-600" onClick={() => onCancel(nota)}>
+                                                                            <XCircle className="mr-2 h-4 w-4" /> Dar de Baja (Anular)
+                                                                        </DropdownMenuItem>
+                                                                    </>
+                                                                )}
+                                                            </DropdownMenuContent>
+                                                        </DropdownMenu>
+                                                    </div>
+                                                )}
+                                            </td>
+                                        </tr>
+                                    )
+                                })
+                            ) : (
+                                <tr><td colSpan={8} className="text-center py-8 text-gray-500">No se encontraron notas de crédito</td></tr>
+                            )}
+                            </tbody>
+                        </table>
+                    </div>
+                </Card>
+            </div>
+
+            <div className="lg:hidden space-y-3">
+                {notas.length > 0 ? (
+                    notas.map((nota) => {
+                        const noUtilizado = esNoUtilizado(nota)
+                        return (
+                            <Card
+                                key={`${nota.serie}-${nota.numero}-${nota.idSunat ?? 'libre'}`}
+                            >
+                                <CardContent className="p-4">
+                                    <div className="space-y-3">
+                                        <div className="flex justify-between items-start">
+                                            <div>
+                                                <div className="flex items-center gap-2 mb-1">
+                                                    <FileDiff className={`h-4 w-4 ${noUtilizado ? 'text-amber-500' : 'text-blue-500'}`} />
+                                                    <span className="font-semibold text-gray-900">{nota.serie}-{nota.numero}</span>
+                                                    {getEstadoBadge(nota)}
+                                                </div>
+                                                <p className="text-sm text-gray-600">{formatFecha(nota.fecha_envio)}</p>
                                             </div>
-                                        </td>
-                                        <td className="p-4 font-medium text-sm">{nota.serie}-{nota.numero}</td>
-                                        <td className="p-4"><div className="font-medium text-sm">{nota.cliente_denominacion}</div></td>
-                                        <td className="p-4 text-sm">{nota.cliente_numdoc}</td>
-                                        <td className="p-4 font-medium text-sm text-red-600">
-                                            {nota.moneda === 1 ? 'S/ ' : '$ '} -{Number(nota.total).toFixed(2)}
-                                        </td>
-                                        <td className="p-4">{getEstadoBadge(nota)}</td>
-                                        <td className="p-4">
-                                            <div className="flex gap-2">
-                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50" onClick={() => onViewPdf(nota.enlace)} title="Ver PDF">
-                                                    <Eye className="h-4 w-4" />
+                                            <div className="text-right">
+                                                {noUtilizado ? (
+                                                    <p className="text-sm font-medium text-amber-600">Correlativo libre</p>
+                                                ) : (
+                                                    <>
+                                                        <p className="text-lg font-bold text-red-600">
+                                                            {nota.moneda === 1 ? 'S/ ' : '$ '} -{Number(nota.total ?? 0).toFixed(2)}
+                                                        </p>
+                                                        <p className="text-xs text-gray-500">Total Devuelto</p>
+                                                    </>
+                                                )}
+                                            </div>
+                                        </div>
+                                        <div className="border-t pt-3">
+                                            <p className={`font-medium truncate ${noUtilizado ? 'italic text-amber-700' : 'text-gray-900'}`}>
+                                                {nota.cliente_denominacion}
+                                            </p>
+                                            <p className="text-sm text-gray-600">{nota.cliente_numdoc ?? "—"}</p>
+                                        </div>
+
+                                        {!noUtilizado && (
+                                            <div className="border-t pt-3 flex gap-2">
+                                                <Button variant="outline" size="sm" className="text-xs bg-transparent" onClick={() => nota.enlace && onViewPdf(nota.enlace)} disabled={!nota.enlace}>
+                                                    <Eye className="h-3 w-3 mr-1" /> Ver PDF
                                                 </Button>
 
                                                 <DropdownMenu>
                                                     <DropdownMenuTrigger asChild>
-                                                        <Button variant="ghost" size="icon" className="h-8 w-8"><MoreHorizontal className="h-4 w-4" /></Button>
+                                                        <Button variant="outline" size="sm" className="text-xs bg-transparent"><MoreHorizontal className="h-3 w-3 mr-1" /> Opciones</Button>
                                                     </DropdownMenuTrigger>
                                                     <DropdownMenuContent align="end" className="w-56">
+                                                        {(nota.anulado && nota.motivo_anulado) && (
+                                                            <DropdownMenuItem onClick={() => handleViewReason(nota.motivo_anulado!)}>
+                                                                <Info className="mr-2 h-4 w-4 text-red-500" /> Ver Motivo Anulación
+                                                            </DropdownMenuItem>
+                                                        )}
                                                         <DropdownMenuItem onClick={() => handleViewJson('JSON Solicitud (Request)', nota.raw_request)}>
                                                             <Code className="mr-2 h-4 w-4 text-gray-500" /> JSON Solicitud
                                                         </DropdownMenuItem>
@@ -185,115 +319,28 @@ export function CreditNotesTable({
                                                             <Activity className="mr-2 h-4 w-4 text-orange-500" /> Ver Estado SUNAT
                                                         </DropdownMenuItem>
 
-                                                        <DropdownMenuSeparator />
-
                                                         {!nota.anulado && (
                                                             <>
                                                                 <DropdownMenuSeparator />
                                                                 <DropdownMenuItem className="text-red-600" onClick={() => onCancel(nota)}>
-                                                                    <XCircle className="mr-2 h-4 w-4" /> Dar de Baja (Anular)
+                                                                    <XCircle className="mr-2 h-4 w-4" /> Anular
                                                                 </DropdownMenuItem>
                                                             </>
                                                         )}
                                                     </DropdownMenuContent>
                                                 </DropdownMenu>
                                             </div>
-                                        </td>
-                                    </tr>
-                                ))
-                            ) : (
-                                <tr><td colSpan={8} className="text-center py-8 text-gray-500">No se encontraron notas de crédito</td></tr>
-                            )}
-                            </tbody>
-                        </table>
-                    </div>
-                </Card>
-            </div>
-
-            {/* VISTA MOBILE */}
-            <div className="lg:hidden space-y-3">
-                {notas.length > 0 ? (
-                    notas.map((nota) => (
-                        <Card key={`${nota.idSunat}-${nota.idComprobanteCab}`} className="border border-gray-200">
-                            <CardContent className="p-4">
-                                <div className="space-y-3">
-                                    <div className="flex justify-between items-start">
-                                        <div>
-                                            <div className="flex items-center gap-2 mb-1">
-                                                <FileDiff className="h-4 w-4 text-blue-500" />
-                                                <span className="font-semibold text-gray-900">{nota.serie}-{nota.numero}</span>
-                                                {getEstadoBadge(nota)}
-                                            </div>
-                                            <p className="text-sm text-gray-600">{format(parseISO(nota.fecha_envio), "dd/MM/yyyy")}</p>
-                                        </div>
-                                        <div className="text-right">
-                                            <p className="text-lg font-bold text-red-600">
-                                                {nota.moneda === 1 ? 'S/ ' : '$ '} -{Number(nota.total).toFixed(2)}
-                                            </p>
-                                            <p className="text-xs text-gray-500">Total Devuelto</p>
-                                        </div>
+                                        )}
                                     </div>
-                                    <div className="border-t pt-3">
-                                        <p className="font-medium text-gray-900 truncate">{nota.cliente_denominacion}</p>
-                                        <p className="text-sm text-gray-600">{nota.cliente_numdoc}</p>
-                                    </div>
-                                    <div className="border-t pt-3 flex gap-2">
-                                        <Button variant="outline" size="sm" className="text-xs bg-transparent" onClick={() => onViewPdf(nota.enlace)}>
-                                            <Eye className="h-3 w-3 mr-1" /> Ver PDF
-                                        </Button>
-
-                                        <DropdownMenu>
-                                            <DropdownMenuTrigger asChild>
-                                                <Button variant="outline" size="sm" className="text-xs bg-transparent"><MoreHorizontal className="h-3 w-3 mr-1" /> Opciones</Button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent align="end" className="w-56">
-                                                {(nota.anulado && nota.motivo_anulado) && (
-                                                    <DropdownMenuItem onClick={() => handleViewReason(nota.motivo_anulado!)}>
-                                                        <Info className="mr-2 h-4 w-4 text-red-500" /> Ver Motivo Anulación
-                                                    </DropdownMenuItem>
-                                                )}
-                                                <DropdownMenuItem onClick={() => handleViewJson('JSON Solicitud (Request)', nota.raw_request)}>
-                                                    <Code className="mr-2 h-4 w-4 text-gray-500" /> JSON Solicitud
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem onClick={() => handleViewJson('JSON Respuesta (Response)', nota.raw_response)}>
-                                                    <FileJson className="mr-2 h-4 w-4 text-gray-500" /> JSON Respuesta
-                                                </DropdownMenuItem>
-
-                                                <DropdownMenuSeparator />
-
-                                                <DropdownMenuItem onClick={() => onSendEmail(nota)}>
-                                                    <Mail className="mr-2 h-4 w-4 text-blue-500" /> Enviar por Correo
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem onClick={() => onSendWhatsApp(nota)}>
-                                                    <MessageCircle className="mr-2 h-4 w-4 text-green-500" /> Enviar por WhatsApp
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem onClick={() => onCheckStatus(nota)}>
-                                                    <Activity className="mr-2 h-4 w-4 text-orange-500" /> Ver Estado SUNAT
-                                                </DropdownMenuItem>
-
-                                                <DropdownMenuSeparator />
-
-                                                {!nota.anulado && (
-                                                    <>
-                                                        <DropdownMenuSeparator />
-                                                        <DropdownMenuItem className="text-red-600" onClick={() => onCancel(nota)}>
-                                                            <XCircle className="mr-2 h-4 w-4" /> Anular
-                                                        </DropdownMenuItem>
-                                                    </>
-                                                )}
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    ))
+                                </CardContent>
+                            </Card>
+                        )
+                    })
                 ) : (
                     <div className="text-center py-8 text-gray-500">No se encontraron notas de crédito</div>
                 )}
             </div>
 
-            {/* Modales Reutilizados (JSON y Motivo) */}
             <Dialog open={showJsonModal} onOpenChange={setShowJsonModal}>
                 <DialogContent className="sm:max-w-[800px] h-[80vh] flex flex-col">
                     <DialogHeader>

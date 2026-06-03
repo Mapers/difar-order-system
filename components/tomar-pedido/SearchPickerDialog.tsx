@@ -23,6 +23,8 @@ interface SearchPickerDialogProps<T> {
     idleMessage?: string
 
     renderItem: (item: T) => React.ReactNode
+    renderItemAction?: (item: T) => React.ReactNode
+    isItemDisabled?: (item: T) => boolean
     getKey: (item: T, index: number) => string | number
     onSelect: (item: T) => void
 
@@ -45,6 +47,8 @@ export default function SearchPickerDialog<T>({
                                                   emptySubMessage,
                                                   idleMessage = 'Escribe para buscar',
                                                   renderItem,
+                                                  renderItemAction,
+                                                  isItemDisabled,
                                                   getKey,
                                                   onSelect,
                                                   widthClassName = 'sm:w-[620px]',
@@ -138,20 +142,45 @@ export default function SearchPickerDialog<T>({
                         </div>
                     ) : (
                         <div className="divide-y divide-gray-100 dark:divide-gray-800">
-                            {items.map((item, index) => (
-                                <button
-                                    key={getKey(item, index)}
-                                    type="button"
-                                    onClick={() => {
-                                        onSelect(item)
-                                        onOpenChange(false)
-                                        onClearSearch?.()
-                                    }}
-                                    className="w-full text-left hover:bg-blue-50 dark:hover:bg-blue-950/20 active:bg-blue-100 dark:active:bg-blue-950/40 transition-colors"
-                                >
-                                    {renderItem(item)}
-                                </button>
-                            ))}
+                            {items.map((item, index) => {
+                                const disabled = isItemDisabled?.(item) ?? false
+                                return (
+                                    <div
+                                        key={getKey(item, index)}
+                                        className={`flex items-stretch transition-colors ${
+                                            disabled
+                                                ? ''
+                                                : 'hover:bg-blue-50 dark:hover:bg-blue-950/20 active:bg-blue-100 dark:active:bg-blue-950/40'
+                                        }`}
+                                    >
+                                        <button
+                                            type="button"
+                                            disabled={disabled}
+                                            aria-disabled={disabled}
+                                            onClick={() => {
+                                                if (disabled) return
+                                                onSelect(item)
+                                                onOpenChange(false)
+                                                onClearSearch?.()
+                                            }}
+                                            className={`flex-1 min-w-0 text-left ${
+                                                disabled ? 'cursor-not-allowed opacity-60' : ''
+                                            }`}
+                                        >
+                                            {renderItem(item)}
+                                        </button>
+
+                                        {renderItemAction && (
+                                            <div
+                                                className="flex items-center pr-3 shrink-0"
+                                                onClick={(e) => e.stopPropagation()}
+                                            >
+                                                {renderItemAction(item)}
+                                            </div>
+                                        )}
+                                    </div>
+                                )
+                            })}
                         </div>
                     )}
                 </div>

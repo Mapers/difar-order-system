@@ -17,6 +17,7 @@ export interface IClient {
   CondicionPago?: string;
   NombreZona?: string;
   Vendedor?: string;
+  isMine?: boolean | number;
 }
 
 // Interfaz condición

@@ -21,6 +21,7 @@ import { IClient, ICondicion, IMoneda, ITerritorio } from '@/app/types/order/cli
 import { Seller } from '@/app/types/order/order-interface'
 import { monedas } from '@/constants'
 import SearchPickerDialog from "@/components/tomar-pedido/SearchPickerDialog";
+import { ClientTransferButton } from "@/components/tomar-pedido/ClientTransferButton";
 
 interface ClientStepProps {
     search: { client: string; product: string; condition: string }
@@ -169,6 +170,10 @@ export default function ClientStep({
                             searchTransform={(value) => value.toUpperCase()}
                             getKey={(c) => c.codigo}
                             onSelect={(c) => onClientSelect(c)}
+                            isItemDisabled={(c) => !c.isMine}
+                            renderItemAction={(c) =>
+                                !c.isMine ? <ClientTransferButton client={c} /> : null
+                            }
                             widthClassName="sm:w-[620px]"
                             heightClassName="sm:h-[75vh]"
                             renderItem={(c) => (

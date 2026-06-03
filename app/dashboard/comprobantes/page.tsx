@@ -66,9 +66,7 @@ export default function ComprobantesPage() {
   const [searchGuias, setSearchGuias] = useState("")
   const [searchPendientes, setSearchPendientes] = useState("")
 
-  const debouncedComprobantes = useDebounce(searchComprobantes)
-  const debouncedNotas = useDebounce(searchNotas)
-  const debouncedGuias = useDebounce(searchGuias)
+  // Solo "Pendientes por facturar" mantiene búsqueda reactiva (no tiene botón Buscar).
   const debouncedPendientes = useDebounce(searchPendientes)
 
   const [showCorregirDescModal, setShowCorregirDescModal] = useState(false)
@@ -154,7 +152,7 @@ export default function ComprobantesPage() {
     }
 
     const tieneFechas = filters.fechaDesde && filters.fechaHasta
-    const tieneTexto = debouncedComprobantes.length > 3
+    const tieneTexto = searchComprobantes.length > 3
     if (!tieneFechas && !tieneTexto) {
       setComprobantes([])
       return
@@ -174,7 +172,7 @@ export default function ComprobantesPage() {
         params.append('fechaDesde', filters.fechaDesde)
         params.append('fechaHasta', filters.fechaHasta)
       }
-      if (tieneTexto) params.append('busqueda', debouncedComprobantes)
+      if (tieneTexto) params.append('busqueda', searchComprobantes)
 
       const response = await apiClient.get(`/pedidos/comprobantes?${params.toString()}`, {
         signal: controller.signal
@@ -187,7 +185,7 @@ export default function ComprobantesPage() {
       toast({ title: "Error", description: "No se pudieron cargar los comprobantes", variant: "destructive" })
       setLoadingComprobantes(false)
     }
-  }, [filters, debouncedComprobantes, auth.user?.idRol, auth.user?.codigo])
+  }, [filters, searchComprobantes, auth.user?.idRol, auth.user?.codigo])
 
   const fetchNotasCredito = useCallback(async () => {
     try {
@@ -197,7 +195,7 @@ export default function ComprobantesPage() {
       if (auth.isRepresentante()) params.append('representante', auth.user?.codRepres || '')
       if (filtersNotas.fechaDesde) params.append('fechaDesde', filtersNotas.fechaDesde)
       if (filtersNotas.fechaHasta) params.append('fechaHasta', filtersNotas.fechaHasta)
-      if (debouncedNotas) params.append('busqueda', debouncedNotas)
+      if (searchNotas) params.append('busqueda', searchNotas)
 
       const response = await apiClient.get(`/pedidos/ncEmitidos?${params.toString()}`)
       setNotasCredito(response.data.data.data)
@@ -207,7 +205,7 @@ export default function ComprobantesPage() {
     } finally {
       setLoadingNotas(false)
     }
-  }, [filtersNotas, debouncedNotas, auth.user?.idRol, auth.user?.codigo])
+  }, [filtersNotas, searchNotas, auth.user?.idRol, auth.user?.codigo])
 
   const fetchGuiasRemision = useCallback(async () => {
     try {
@@ -217,7 +215,7 @@ export default function ComprobantesPage() {
       if (auth.isRepresentante()) params.append('representante', auth.user?.codRepres || '')
       if (filtersGuias.fechaDesde) params.append('fechaDesde', filtersGuias.fechaDesde)
       if (filtersGuias.fechaHasta) params.append('fechaHasta', filtersGuias.fechaHasta)
-      if (debouncedGuias) params.append('busqueda', debouncedGuias)
+      if (searchGuias) params.append('busqueda', searchGuias)
 
       const response = await apiClient.get(`/pedidos/guiasEmitidas?${params.toString()}`)
       setGuiasRemision(response.data.data.data || [])
@@ -227,7 +225,7 @@ export default function ComprobantesPage() {
     } finally {
       setLoadingGuias(false)
     }
-  }, [filtersGuias, debouncedGuias, auth.user?.idRol, auth.user?.codigo])
+  }, [filtersGuias, searchGuias, auth.user?.idRol, auth.user?.codigo])
 
   const fetchPedidosPendientes = useCallback(async () => {
     try {
@@ -242,12 +240,17 @@ export default function ComprobantesPage() {
     }
   }, [debouncedPendientes])
 
-  useEffect(() => { fetchComprobantes() }, [fetchComprobantes])
-  useEffect(() => { fetchNotasCredito() }, [fetchNotasCredito])
-  useEffect(() => { fetchPedidosPendientes() }, [fetchPedidosPendientes])
+  // Carga inicial (una sola vez al montar). Las búsquedas posteriores NO son
+  // reactivas: se disparan manualmente con el botón "Buscar" de cada pestaña.
   useEffect(() => {
+    fetchComprobantes()
+    fetchNotasCredito()
     if (filtersGuias.fechaDesde && filtersGuias.fechaHasta) fetchGuiasRemision()
-  }, [fetchGuiasRemision])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Pendientes por facturar conserva su búsqueda reactiva (no tiene botón Buscar).
+  useEffect(() => { fetchPedidosPendientes() }, [fetchPedidosPendientes])
 
   const handleFilterNotasChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -749,7 +752,7 @@ export default function ComprobantesPage() {
                     </div>
                   </div>
 
-                  {!filters.fechaDesde && !filters.fechaHasta && debouncedComprobantes.length <= 3 && (
+                  {!filters.fechaDesde && !filters.fechaHasta && searchComprobantes.length <= 3 && (
                       <p className="text-xs text-amber-600 flex items-center gap-1.5">
                         <AlertTriangle className="h-3.5 w-3.5" />
                         Seleccione un rango de fechas o escriba más de 3 caracteres para buscar

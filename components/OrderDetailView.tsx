@@ -23,6 +23,7 @@ import {Popover, PopoverContent, PopoverTrigger} from "@/components/ui/popover";
 import {Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList} from "@/components/ui/command";
 import {cn} from "@/lib/utils";
 import SearchPickerDialog from "@/components/tomar-pedido/SearchPickerDialog";
+import { ClientTransferButton } from "@/components/tomar-pedido/ClientTransferButton";
 import React from "react";
 
 export type OrderDetailContext = 'mis-pedidos' | 'estados-pedidos' | 'comprobantes'
@@ -422,6 +423,10 @@ export default function OrderDetailView({
                                             searchTransform={(value) => value.toUpperCase()}
                                             getKey={(c) => c.codigo || c.RUC}
                                             onSelect={(c) => onClientSelect?.(c)}
+                                            isItemDisabled={(c) => !c.isMine}
+                                            renderItemAction={(c) =>
+                                                !c.isMine ? <ClientTransferButton client={c} /> : null
+                                            }
                                             renderItem={(c) => (
                                                 <div className="flex items-start gap-3 px-4 py-3">
                                                     <div className="bg-blue-100 dark:bg-blue-900/40 p-2 rounded-full shrink-0 mt-0.5">
