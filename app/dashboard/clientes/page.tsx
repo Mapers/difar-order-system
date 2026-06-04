@@ -40,6 +40,8 @@ export default function ClientsPage() {
   const [showFilters, setShowFilters] = useState(false)
   const [selectedZona, setSelectedZona] = useState("")
   const [openZona, setOpenZona] = useState(false)
+  const [selectedVendedor, setSelectedVendedor] = useState("")
+  const [openVendedor, setOpenVendedor] = useState(false)
   const [codClient, setCodClient] = useState<any>('')
 
   const handleEdit = (codigoCliente: string) => {
@@ -97,6 +99,17 @@ export default function ClientsPage() {
     return Array.from(set).sort()
   }, [clients])
 
+  const vendedorOptions = useMemo(() => {
+    const map = new Map<string, string>()
+    clients.forEach(c => {
+      if (c.codigoVendedor) {
+        map.set(c.codigoVendedor, c.nombreVendedor || c.codigoVendedor)
+      }
+    })
+    return Array.from(map, ([codigo, nombre]) => ({ codigo, nombre }))
+        .sort((a, b) => a.nombre.localeCompare(b.nombre))
+  }, [clients])
+
   useEffect(() => {
     const lowerSearch = searchTerm.toLowerCase();
     const filtered = clients.filter((client: any) => {
@@ -108,10 +121,11 @@ export default function ClientsPage() {
           client.direccion?.toLowerCase().includes(lowerSearch)
       )
       const matchesZona = !selectedZona || client.zona === selectedZona
-      return matchesSearch && matchesZona
+      const matchesVendedor = !selectedVendedor || client.codigoVendedor === selectedVendedor
+      return matchesSearch && matchesZona && matchesVendedor
     });
     setFilteredClients(filtered);
-  }, [searchTerm, selectedZona, clients]);
+  }, [searchTerm, selectedZona, selectedVendedor, clients]);
 
   const getPaginatedData = () => {
     const startIndex = (currentPage - 1) * itemsPerPage;
@@ -292,6 +306,56 @@ export default function ClientsPage() {
                       </PopoverContent>
                     </Popover>
                   </div>
+
+                  {isRepresentante() && (
+                    <div className="sm:w-56 space-y-2">
+                      <Label className="text-sm font-medium">Vendedor</Label>
+                      <Popover open={openVendedor} onOpenChange={setOpenVendedor}>
+                        <div className="relative w-full">
+                          <PopoverTrigger asChild>
+                            <Button
+                                variant="outline"
+                                role="combobox"
+                                className={cn("w-full justify-between h-10 font-normal bg-white", selectedVendedor && "pr-8")}
+                            >
+                              <span className="truncate">
+                                {vendedorOptions.find(v => v.codigo === selectedVendedor)?.nombre || "Todos los vendedores"}
+                              </span>
+                              {!selectedVendedor && <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />}
+                            </Button>
+                          </PopoverTrigger>
+                          {selectedVendedor && (
+                              <div
+                                  className="absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer p-1 text-gray-500 hover:text-red-500 hover:bg-red-50 rounded-md z-10"
+                                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); setSelectedVendedor("") }}
+                              >
+                                <X className="h-4 w-4" />
+                              </div>
+                          )}
+                        </div>
+                        <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                          <Command>
+                            <CommandInput placeholder="Buscar vendedor..." />
+                            <CommandList>
+                              <CommandEmpty>No se encontraron vendedores.</CommandEmpty>
+                              <CommandGroup>
+                                {vendedorOptions.map(v => (
+                                    <CommandItem
+                                        key={v.codigo}
+                                        value={v.nombre}
+                                        onSelect={() => { setSelectedVendedor(v.codigo); setOpenVendedor(false) }}
+                                    >
+                                      <Check className={cn("mr-2 h-4 w-4 flex-shrink-0", selectedVendedor === v.codigo ? "opacity-100" : "opacity-0")} />
+                                      <span className="truncate">{v.nombre}</span>
+                                    </CommandItem>
+                                ))}
+                              </CommandGroup>
+                            </CommandList>
+                          </Command>
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -344,7 +408,6 @@ export default function ClientsPage() {
                                 </div>
 
                                 {vistaTablaClientes === '1' ? (
-                                    // --- CARD VISTA 1 (Resumida) ---
                                     <>
                                       <div className="bg-blue-50 rounded-lg p-3">
                                         <div className="flex items-center gap-2">
@@ -380,7 +443,6 @@ export default function ClientsPage() {
                                       </div>
                                     </>
                                 ) : (
-                                    // --- CARD VISTA 2 (Detallada) ---
                                     <div className="space-y-2">
                                       <div className="grid grid-cols-2 gap-2">
                                         <div className="bg-blue-50 rounded-md p-2 flex items-center gap-2">

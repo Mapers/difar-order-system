@@ -40,6 +40,7 @@ import {CorregirDescripcionModal} from "@/app/dashboard/comprobantes/modals/Corr
 import {ModificarCuotasModal} from "@/app/dashboard/comprobantes/modals/ModificarCuotasModal";
 import {ExportRegistroButton} from "@/app/dashboard/comprobantes/Exportregistrobutton"
 import {ExcelExportButton} from "@/app/dashboard/comprobantes/ExcelExportButton";
+import {ResultCounter} from "@/components/comprobantes/ResultCounter";
 import {ValidacionModal} from "@/app/dashboard/comprobantes/modals/ValidacionModal"
 import { ComprobantesDetailModal } from "@/app/dashboard/comprobantes/modals/ComprobantesDetailModal";
 
@@ -759,7 +760,9 @@ export default function ComprobantesPage() {
                       </p>
                   )}
 
-                  <div className="flex justify-end gap-2">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <ResultCounter count={comprobantes.length} label="Comprobantes recuperados" />
+                    <div className="flex flex-wrap items-center gap-2">
                     {comprobantes.length > 0 && <Button variant="outline" onClick={() => setShowValidacionModal(true)}
                              className="flex items-center gap-2">
                       <FileSearch className="h-4 w-4"/>
@@ -779,6 +782,7 @@ export default function ComprobantesPage() {
                     <Button onClick={fetchComprobantes} disabled={loadingComprobantes} className="flex items-center gap-2">
                       {loadingComprobantes ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />} Buscar
                     </Button>
+                    </div>
                   </div>
                 </div>
               </CardContent>
@@ -826,7 +830,9 @@ export default function ComprobantesPage() {
                       </div>
                     </div>
                   </div>
-                  <div className="flex justify-end gap-2">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <ResultCounter count={notasCredito.length} label="Notas de crédito recuperadas" />
+                    <div className="flex flex-wrap items-center gap-2">
                     <Button onClick={() => setShowNotaCreditoModal(true)} variant="outline">
                       <FileDiff className="mr-2 h-4 w-4" /> Generar Nota de Crédito
                     </Button>
@@ -834,6 +840,7 @@ export default function ComprobantesPage() {
                     <Button onClick={fetchNotasCredito} disabled={loadingNotas} className="flex items-center gap-2">
                       {loadingNotas ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />} Buscar
                     </Button>
+                    </div>
                   </div>
                 </div>
               </CardContent>
@@ -878,7 +885,9 @@ export default function ComprobantesPage() {
                       </div>
                     </div>
                   </div>
-                  <div className="flex justify-end gap-2">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <ResultCounter count={guiasRemision.length} label="Guías recuperadas" />
+                    <div className="flex flex-wrap items-center gap-2">
                     <Button onClick={() => { setSelectedOrder(null); setShowGuiasModal(true) }} variant="outline">
                       <Truck className="mr-2 h-4 w-4" /> Generar Guías
                     </Button>
@@ -886,6 +895,7 @@ export default function ComprobantesPage() {
                     <Button onClick={fetchGuiasRemision} disabled={loadingGuias} className="flex items-center gap-2">
                       {loadingGuias ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />} Buscar
                     </Button>
+                    </div>
                   </div>
                 </div>
               </CardContent>

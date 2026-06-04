@@ -60,6 +60,11 @@ export class MetasService {
         return response.data;
     }
 
+    static async crearMetasLabBulk(data: any): Promise<any> {
+        const response = await apiClient.post(`/metas/laboratorios/bulk`, data);
+        return response.data;
+    }
+
     static async actualizarMetaLab(id: number, data: any): Promise<any> {
         const response = await apiClient.put(`/metas/laboratorios/${id}`, data);
         return response.data;
@@ -81,6 +86,11 @@ export class MetasService {
         return response.data;
     }
 
+    static async crearMetasVendBulk(data: any): Promise<any> {
+        const response = await apiClient.post(`/metas/vendedores/bulk`, data);
+        return response.data;
+    }
+
     static async actualizarMetaVend(id: number, data: any): Promise<any> {
         const response = await apiClient.put(`/metas/vendedores/${id}`, data);
         return response.data;
@@ -99,6 +109,11 @@ export class MetasService {
 
     static async crearMetaItem(data: any): Promise<any> {
         const response = await apiClient.post(`/metas/items`, data);
+        return response.data;
+    }
+
+    static async crearMetasItemBulk(data: any): Promise<any> {
+        const response = await apiClient.post(`/metas/items/bulk`, data);
         return response.data;
     }
 

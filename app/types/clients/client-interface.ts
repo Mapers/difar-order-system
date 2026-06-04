@@ -19,6 +19,7 @@ export interface IClient {
   relacion?: string;
   ctaContab?: string | number;
   codigoVendedor?: string;
+  nombreVendedor?: string;
   tipoCliente?: string;
   estadoSunat?: string;
   fechaInicio?: string;

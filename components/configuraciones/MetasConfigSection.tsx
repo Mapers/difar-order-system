@@ -32,6 +32,8 @@ import {cn} from "@/lib/utils";
 import {getProductsRequest} from "@/app/api/products";
 import {useAuth} from "@/context/authContext";
 import apiClient from "@/app/api/client";
+import { MetaExcelButtons } from "@/components/configuraciones/metas/MetaExcelButtons";
+import { MetaColumn } from "@/components/configuraciones/metas/metaExcel";
 
 interface MetasConfigSectionProps {
     onOpenModalChange: (fn: () => void) => void;
@@ -52,6 +54,32 @@ const MESES = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
 const MESES_CORTO = ['', 'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
 
 const fmtMoney = (n: number) => "S/ " + Number(n).toLocaleString("es-PE", { minimumFractionDigits: 2 })
+
+const TIPO_PRECIO_OPTS = ['PRECIO_LISTA', 'PRECIO_CREDITO', 'PRECIO_CONTADO']
+
+const LAB_EXCEL_COLUMNS: MetaColumn[] = [
+    { header: "Código", key: "cod", width: 14, prefill: (l) => l.Codigo_Linea },
+    { header: "Laboratorio", key: "nombre", width: 34, prefill: (l) => l.Descripcion },
+    { header: "Meta Monto S/", key: "meta_monto", width: 16, required: true },
+    { header: "Meta Clientes", key: "meta_clientes", width: 16 },
+    { header: "Observación", key: "observacion", width: 30 },
+]
+
+const VEND_EXCEL_COLUMNS: MetaColumn[] = [
+    { header: "Código", key: "cod", width: 16, prefill: (v) => v.Codigo_Vend || v.codigo },
+    { header: "Vendedor", key: "nombre", width: 32, prefill: (v) => `${v.Nombres || v.nombres || ''} ${v.Apellidos || v.apellidos || ''}`.trim() },
+    { header: "Meta Monto S/", key: "meta_monto", width: 16, required: true },
+    { header: "Meta Clientes", key: "meta_clientes", width: 16 },
+]
+
+const ITEM_EXCEL_COLUMNS: MetaColumn[] = [
+    { header: "Código", key: "cod", width: 16, prefill: (p) => p.Codigo_Art },
+    { header: "Producto", key: "nombre", width: 34, prefill: (p) => p.NombreItem },
+    { header: "Presentación", key: "presentacion", width: 18, prefill: (p) => p.Presentacion || '' },
+    { header: "Tipo Precio", key: "tipo_precio_ref", width: 16, prefill: () => 'PRECIO_LISTA', options: TIPO_PRECIO_OPTS },
+    { header: "Precio Ref", key: "precio_ref", width: 14, prefill: (p) => Number(p.PUCredito) || Number(p.PUContado) || '' },
+    { header: "Meta Cantidad", key: "meta_cantidad", width: 16, required: true },
+]
 
 export default function MetasConfigSection({ onOpenModalChange }: MetasConfigSectionProps) {
     const [activeSubTab, setActiveSubTab] = useState<SubTab>('ciclos');
@@ -451,6 +479,34 @@ function LaboratoriosSection({ onOpenModalChange }: { onOpenModalChange: (fn: ()
                     </SelectContent>
                 </Select>
                 {data.length > 0 && <Badge variant="outline" className="text-xs">{data.length} labs</Badge>}
+                <div className="ml-auto flex gap-2">
+                    <MetaExcelButtons
+                        fileBaseName="metas-laboratorios"
+                        sheetName="Laboratorios"
+                        columns={LAB_EXCEL_COLUMNS}
+                        disabled={!selectedCiclo}
+                        disabledHint="Selecciona un ciclo primero"
+                        loadEntities={async () => {
+                            const res = await apiClient.get('/price/laboratories')
+                            return res.data?.data || []
+                        }}
+                        rowToItem={(r) => ({
+                            id_linea_ge: Number(r.cod),
+                            meta_monto: Number(r.meta_monto) || 0,
+                            meta_clientes: Number(r.meta_clientes) || 0,
+                            observacion: r.observacion || '',
+                        })}
+                        submit={async (items) => {
+                            const body = await MetasService.crearMetasLabBulk({
+                                id_ciclo: Number(selectedCiclo),
+                                usuario: user?.nombreCompleto || 'WEB',
+                                items,
+                            })
+                            return body?.data ?? body
+                        }}
+                        onDone={fetchData}
+                    />
+                </div>
             </div>
 
             {loading ? (
@@ -751,6 +807,33 @@ function VendedoresSection({ onOpenModalChange }: { onOpenModalChange: (fn: () =
                     <SelectTrigger className="w-[180px] h-9 text-sm bg-white"><SelectValue placeholder="Laboratorio" /></SelectTrigger>
                     <SelectContent>{labs.map(l => <SelectItem key={l.id_meta_lab} value={String(l.id_meta_lab)}>{l.linea_desc || `Lab #${l.id_linea_ge}`}</SelectItem>)}</SelectContent>
                 </Select>
+                <div className="ml-auto flex gap-2">
+                    <MetaExcelButtons
+                        fileBaseName="metas-vendedores"
+                        sheetName="Vendedores"
+                        columns={VEND_EXCEL_COLUMNS}
+                        disabled={!selectedLab}
+                        disabledHint="Selecciona un ciclo y laboratorio primero"
+                        loadEntities={async () => {
+                            const res = await apiClient.get('/usuarios/listar/vendedores')
+                            return res.data?.data?.data || res.data?.data || []
+                        }}
+                        rowToItem={(r) => ({
+                            cod_vendedor: r.cod,
+                            meta_monto: Number(r.meta_monto) || 0,
+                            meta_clientes: Number(r.meta_clientes) || 0,
+                        })}
+                        submit={async (items) => {
+                            const body = await MetasService.crearMetasVendBulk({
+                                id_meta_lab: Number(selectedLab),
+                                usuario: user?.nombreCompleto || 'WEB',
+                                items,
+                            })
+                            return body?.data ?? body
+                        }}
+                        onDone={fetchData}
+                    />
+                </div>
             </div>
 
             {loading ? <Skeleton className="h-40" /> : data.length > 0 ? (
@@ -1108,6 +1191,34 @@ function ItemsSection({ onOpenModalChange }: { onOpenModalChange: (fn: () => voi
                     <SelectTrigger className="w-[130px] h-8 text-xs bg-white"><SelectValue /></SelectTrigger>
                     <SelectContent>{vendedores.map(v => <SelectItem key={v.id_meta_lab_vend} value={String(v.id_meta_lab_vend)}>{v.vendedor}</SelectItem>)}</SelectContent>
                 </Select>
+                <div className="ml-auto flex gap-2">
+                    <MetaExcelButtons
+                        fileBaseName="metas-productos"
+                        sheetName="Productos"
+                        columns={ITEM_EXCEL_COLUMNS}
+                        disabled={!selectedVend}
+                        disabledHint="Selecciona ciclo, laboratorio y vendedor primero"
+                        loadEntities={async () => {
+                            const res = await getProductsRequest()
+                            return res.data?.data?.data || []
+                        }}
+                        rowToItem={(r) => ({
+                            cod_articulo: r.cod,
+                            tipo_precio_ref: r.tipo_precio_ref || 'PRECIO_LISTA',
+                            precio_ref: Number(r.precio_ref) || 0,
+                            meta_cantidad: Number(r.meta_cantidad) || 0,
+                        })}
+                        submit={async (items) => {
+                            const body = await MetasService.crearMetasItemBulk({
+                                id_meta_lab_vend: Number(selectedVend),
+                                usuario: user?.nombreCompleto || 'WEB',
+                                items,
+                            })
+                            return body?.data ?? body
+                        }}
+                        onDone={fetchData}
+                    />
+                </div>
             </div>
 
             {loading ? <Skeleton className="h-40" /> : data.length > 0 ? (

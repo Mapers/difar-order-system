@@ -20,6 +20,7 @@ export const mapClientFromApi = (data: any): IClient => ({
   relacion: data.relacion || "",
   ctaContab: data.ctaContab || "",
   codigoVendedor: data.codigoVendedor || "",
+  nombreVendedor: data.nombreVendedor || "",
   tipoCliente: data.tipoCliente || "",
   estadoSunat: data.estadoSUNAT || data.estadoSunat || "",
   fechaInicio: data.FECHA_INICIO || data.fechaInicio || "",
