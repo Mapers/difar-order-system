@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Search, Calendar as CalendarIcon, Package, FileText } from "lucide-react"
@@ -15,7 +15,8 @@ import { es } from "date-fns/locale"
 import { cn } from "@/lib/utils"
 
 import apiClient from '@/app/api/client'
-import { getProductsRequest } from "@/app/api/products"
+import { getProductsRequest, getProductsLabRequest } from "@/app/api/products"
+import { useLaboratoriesData } from "@/app/dashboard/lista-precios-lote/hooks/useLaboratoriesData"
 
 import { ExportItemKardexPdf, KardexItemData } from "@/components/reporte/ExportItemKardexPdf"
 
@@ -44,22 +45,48 @@ export default function ItemKardexReportPage() {
     const [selectedProduct, setSelectedProduct] = useState<Producto | null>(null);
     const [popoverOpen, setPopoverOpen] = useState(false);
 
-    const fetchAllProducts = async () => {
+    // Laboratorios asignados al usuario (mismo mecanismo que "Lista de Precios por Lote").
+    // Representante → trae sus labs; admin/otros → vacío (ven todo).
+    const { laboratoriesRepres, loadingLab } = useLaboratoriesData();
+
+    const fetchProducts = useCallback(async () => {
+        setProductsLoading(true);
         try {
-            setProductsLoading(true);
-            const response = await getProductsRequest();
-            setAllProducts(response.data?.data?.data || response.data?.data || []);
+            if (laboratoriesRepres.length > 0) {
+                // restringe a los productos de los laboratorios asignados
+                const responses = await Promise.all(
+                    laboratoriesRepres.map((lab: any) =>
+                        getProductsLabRequest(String(lab.IdLineaGe)).catch(() => null)
+                    )
+                );
+                const merged: Producto[] = [];
+                const seen = new Set<string>();
+                responses.forEach(res => {
+                    const list = res?.data?.data?.data || res?.data?.data || [];
+                    list.forEach((p: Producto) => {
+                        if (p?.Codigo_Art && !seen.has(p.Codigo_Art)) {
+                            seen.add(p.Codigo_Art);
+                            merged.push(p);
+                        }
+                    });
+                });
+                setAllProducts(merged);
+            } else {
+                const response = await getProductsRequest();
+                setAllProducts(response.data?.data?.data || response.data?.data || []);
+            }
         } catch (error) {
-            console.error("Error fetching all products:", error);
+            console.error("Error fetching products:", error);
             setAllProducts([]);
         } finally {
             setProductsLoading(false);
         }
-    };
+    }, [laboratoriesRepres]);
 
     useEffect(() => {
-        fetchAllProducts();
-    }, []);
+        if (loadingLab) return; // espera a saber los labs del usuario antes de cargar productos
+        fetchProducts();
+    }, [loadingLab, fetchProducts]);
 
     const filteredAllProducts = allProducts.filter(product =>
         product.NombreItem.toLowerCase().includes(productSearchQuery.toLowerCase()) ||

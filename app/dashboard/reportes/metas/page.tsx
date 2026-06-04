@@ -42,6 +42,13 @@ export default function MetasDashboardPage() {
         refreshDashboard,
         kpis,
         isVendedorView,
+        showRepresFilters,
+        labOptions,
+        vendOptions,
+        selectedLab,
+        setSelectedLab,
+        selectedVend,
+        setSelectedVend,
     } = useMetasDashboard()
 
     const handleVendedorClick = (vendedor: IVendedorDashboard) => {
@@ -93,6 +100,40 @@ export default function MetasDashboardPage() {
                             ))}
                         </SelectContent>
                     </Select>
+
+                    {showRepresFilters && (
+                        <>
+                            <Select
+                                value={selectedLab || "all"}
+                                onValueChange={(v) => setSelectedLab(v === "all" ? "" : v)}
+                            >
+                                <SelectTrigger className="w-[170px] h-9 text-sm bg-white">
+                                    <SelectValue placeholder="Laboratorio" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">Todos los laboratorios</SelectItem>
+                                    {labOptions.map(o => (
+                                        <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+
+                            <Select
+                                value={selectedVend || "all"}
+                                onValueChange={(v) => setSelectedVend(v === "all" ? "" : v)}
+                            >
+                                <SelectTrigger className="w-[170px] h-9 text-sm bg-white">
+                                    <SelectValue placeholder="Vendedor" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">Todos los vendedores</SelectItem>
+                                    {vendOptions.map(o => (
+                                        <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </>
+                    )}
 
                     <Badge variant="outline" className="text-xs bg-slate-50">
                         Ciclo: {cicloLabel}

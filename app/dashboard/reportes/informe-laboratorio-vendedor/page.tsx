@@ -56,8 +56,10 @@ export default function LabSellerReportPage() {
                     const resVends = await apiClient.get('/usuarios/listar/vendedores');
                     const vendsList = resVends.data?.data?.data || resVends.data?.data || [];
                     setCatVendedores(vendsList);
-                } else {
-                    if(auth.user?.codigo) setSelectedVends([auth.user.codigo]);
+                } else if (isVendor) {
+                    // solo el vendedor se pre-selecciona con su propio código;
+                    // el representante NO, para que handleSearch use sus vendedores (user.vendedores)
+                    if (auth.user?.codigo) setSelectedVends([auth.user.codigo]);
                 }
             } catch (error) {
                 console.error("Error cargando catálogos", error);

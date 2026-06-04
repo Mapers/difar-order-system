@@ -132,15 +132,19 @@ export default function ExpiredBalancesPage() {
 
                 const user = auth.user;
                 if (user) {
-                    if (user.idRol === 1) {
-                        reportData = reportData.filter((v: any) => v.codigoVendedor === user.codigo);
-                    } else if (user.idRol === 7 && user.codRepres) {
+                    // código de vendedor de la fila: campo explícito, con fallback al prefijo del nombre
+                    const getCodVend = (v: any): string =>
+                        v.codigoVendedor || (typeof v.Vendedor === 'string' ? v.Vendedor.split(' ')[0] : '');
+
+                    if (auth.isRepresentante()) {
+                        // representante: solo los vendedores que le pertenecen
                         const codigosPermitidos = user.vendedores?.map(vend => vend.codigo) || [];
-                        reportData = reportData.filter((v: any) => {
-                            const codigoVendedor = v.Vendedor.split(' ')[0];
-                            return codigosPermitidos.includes(codigoVendedor);
-                        });
+                        reportData = reportData.filter((v: any) => codigosPermitidos.includes(getCodVend(v)));
+                    } else if (auth.isVendedor()) {
+                        // vendedor: solo sus propios saldos
+                        reportData = reportData.filter((v: any) => getCodVend(v) === user.codigo);
                     }
+                    // admin u otros roles: ven todo (sin filtro)
                 }
 
                 setData(reportData);
