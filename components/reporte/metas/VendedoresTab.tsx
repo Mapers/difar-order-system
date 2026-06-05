@@ -4,6 +4,7 @@ import { useState, useMemo } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Search } from "lucide-react"
 import ProgressBar from "@/components/reporte/metas/ProgressBar"
 import StatusChip from "@/components/reporte/metas/StatusChip"
@@ -14,9 +15,29 @@ import { FilterStatus, SortMode } from "@/app/types/metas-types"
 interface VendedoresTabProps {
     vendedores: IVendedorDashboard[];
     onVendedorClick?: (vendedor: IVendedorDashboard) => void;
+    showSelector?: boolean;
+    selectorOptions?: { value: string; label: string }[];
+    selectorValue?: string;
+    onSelectorChange?: (v: string) => void;
+    allLabel?: string;
+    // Selector de zona (filtra ventas/clientes del vendedor por zona del cliente)
+    zonaOptions?: { value: string; label: string }[];
+    zonaValue?: string;
+    onZonaChange?: (v: string) => void;
 }
 
-export default function VendedoresTab({ vendedores, onVendedorClick }: VendedoresTabProps) {
+export default function VendedoresTab({
+    vendedores,
+    onVendedorClick,
+    showSelector,
+    selectorOptions = [],
+    selectorValue,
+    onSelectorChange,
+    allLabel = "Todos",
+    zonaOptions,
+    zonaValue,
+    onZonaChange,
+}: VendedoresTabProps) {
     const [search, setSearch] = useState("");
     const [filter, setFilter] = useState<FilterStatus>("todos");
     const [sort, setSort] = useState<SortMode>("pct");
@@ -62,14 +83,48 @@ export default function VendedoresTab({ vendedores, onVendedorClick }: Vendedore
         <div className="space-y-4">
             <Card className="shadow-sm">
                 <CardContent className="p-4 space-y-3">
-                    <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                        <Input
-                            placeholder="Buscar vendedor..."
-                            value={search}
-                            onChange={e => setSearch(e.target.value)}
-                            className="pl-10 bg-slate-50"
-                        />
+                    <div className="flex flex-col sm:flex-row gap-2">
+                        <div className="relative flex-1">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                            <Input
+                                placeholder="Buscar vendedor..."
+                                value={search}
+                                onChange={e => setSearch(e.target.value)}
+                                className="pl-10 bg-slate-50"
+                            />
+                        </div>
+                        {showSelector && (
+                            <Select
+                                value={selectorValue || "__all__"}
+                                onValueChange={v => onSelectorChange?.(v === "__all__" ? "" : v)}
+                            >
+                                <SelectTrigger className="h-10 text-sm bg-white sm:w-[200px]">
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="__all__">{allLabel}</SelectItem>
+                                    {selectorOptions.map(o => (
+                                        <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        )}
+                        {zonaOptions && (
+                            <Select
+                                value={zonaValue || "__all__"}
+                                onValueChange={v => onZonaChange?.(v === "__all__" ? "" : v)}
+                            >
+                                <SelectTrigger className="h-10 text-sm bg-white sm:w-[200px]">
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="__all__">Todas las zonas</SelectItem>
+                                    {zonaOptions.map(o => (
+                                        <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        )}
                     </div>
                     <div className="flex flex-wrap items-center justify-between gap-2">
                         <div className="flex items-center gap-1.5 flex-wrap">

@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { ICiclo, IDashboardData, IItemDashboard, ILabDashboard, IVendedorDashboard } from "@/app/types/metas-types";
 import { MetasService } from "@/app/services/reports/metasService";
 import { PriceService } from "@/app/services/price/PriceService";
+import { fetchAvailableZones } from "@/app/api/reports";
 import { useAuth } from "@/context/authContext";
 import { User } from "@/app/services/auth/types";
 
@@ -49,8 +50,26 @@ export function useMetasDashboard() {
 
     const [selectedLab, setSelectedLab] = useState<string>("");
     const [selectedVend, setSelectedVend] = useState<string>("");
+    // Zona (filtra server-side las ventas/clientes del vendedor por zona del cliente)
+    const [selectedZona, setSelectedZona] = useState<string>("");
+    const [zonaOptions, setZonaOptions] = useState<{ value: string; label: string }[]>([]);
 
     const codVendedor: string | undefined = isVendedor() ? user?.codigo : undefined;
+
+    useEffect(() => {
+        fetchAvailableZones()
+            .then(res => {
+                const list: any[] = res?.data?.data || res?.data || [];
+                setZonaOptions(list.map(z => ({ value: String(z.IdZona), label: z.NombreZona })));
+            })
+            .catch(console.error);
+    }, []);
+
+    // Resetea los filtros de cliente (lab/vend) al cambiar de ciclo
+    useEffect(() => {
+        setSelectedLab("");
+        setSelectedVend("");
+    }, [selectedCiclo]);
 
     useEffect(() => {
         const loadCiclos = async () => {
@@ -74,20 +93,18 @@ export function useMetasDashboard() {
         if (!selectedCiclo) return;
         setLoadingDashboard(true);
         try {
-            const res = await MetasService.getDashboard(selectedCiclo.id_ciclo, codVendedor);
+            const res = await MetasService.getDashboard(selectedCiclo.id_ciclo, codVendedor, selectedZona);
             let data: IDashboardData | null = res?.data || null;
             if (data && isRepresentante()) {
                 data = await filterDashboardForRepresentante(data, user);
             }
             setBaseData(data);
-            setSelectedLab("");
-            setSelectedVend("");
         } catch (error) {
             console.error("Error cargando dashboard:", error);
         } finally {
             setLoadingDashboard(false);
         }
-    }, [selectedCiclo, codVendedor]);
+    }, [selectedCiclo, codVendedor, selectedZona]);
 
     useEffect(() => {
         loadDashboard();
@@ -152,6 +169,9 @@ export function useMetasDashboard() {
         setSelectedLab,
         selectedVend,
         setSelectedVend,
+        zonaOptions,
+        selectedZona,
+        setSelectedZona,
     };
 }
 

@@ -68,7 +68,7 @@ const VEND_EXCEL_COLUMNS: MetaColumn[] = [
     { header: "Código", key: "cod", width: 16, prefill: (v) => v.Codigo_Vend || v.codigo },
     { header: "Vendedor", key: "nombre", width: 32, prefill: (v) => `${v.Nombres || v.nombres || ''} ${v.Apellidos || v.apellidos || ''}`.trim() },
     { header: "Meta Monto S/", key: "meta_monto", width: 16, required: true },
-    { header: "Meta Clientes", key: "meta_clientes", width: 16 },
+    { header: "Meta Clientes", key: "meta_clientes", width: 16, prefill: (v) => v.totalClientes ?? '' },
 ]
 
 const ITEM_EXCEL_COLUMNS: MetaColumn[] = [
@@ -564,7 +564,7 @@ function LaboratoriosSection({ onOpenModalChange }: { onOpenModalChange: (fn: ()
                         {!editando ? (
                             <div className="space-y-2">
                                 <Label>Laboratorio *</Label>
-                                <Popover open={openLabPopover} onOpenChange={setOpenLabPopover}>
+                                <Popover open={openLabPopover} onOpenChange={setOpenLabPopover} modal>
                                     <PopoverTrigger asChild>
                                         <Button variant="outline" role="combobox"
                                                 className={cn("justify-between w-full font-normal h-10 bg-white", errors.id_linea_ge && "border-red-500")}>
@@ -880,7 +880,7 @@ function VendedoresSection({ onOpenModalChange }: { onOpenModalChange: (fn: () =
                         {!editando ? (
                             <div className="space-y-2">
                                 <Label>Vendedor *</Label>
-                                <Popover open={openVendPopover} onOpenChange={setOpenVendPopover}>
+                                <Popover open={openVendPopover} onOpenChange={setOpenVendPopover} modal>
                                     <PopoverTrigger asChild>
                                         <Button variant="outline" role="combobox"
                                                 className={cn("justify-between w-full font-normal h-10 bg-white", errors.cod_vendedor && "border-red-500")}>
@@ -1288,7 +1288,7 @@ function ItemsSection({ onOpenModalChange }: { onOpenModalChange: (fn: () => voi
                         {!editando ? (
                             <div className="space-y-4 overflow-hidden min-w-0">
                                 <Label className="text-sm font-medium">Buscar Producto *</Label>
-                                <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
+                                <Popover open={popoverOpen} onOpenChange={setPopoverOpen} modal>
                                     <PopoverTrigger asChild>
                                         <Button
                                             variant="outline"
