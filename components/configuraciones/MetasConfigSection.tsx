@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea"
 import {
     Edit, Trash2, RefreshCw, Save, AlertCircle, Calendar, Factory,
     Users, Pill, ChevronRight, CheckCircle, XCircle, ChevronDown, Check,
-    X, Search, Package
+    X, Search, Package, Lock, Unlock
 } from "lucide-react"
 import {
     Dialog, DialogContent, DialogDescription, DialogFooter,
@@ -61,7 +61,6 @@ const LAB_EXCEL_COLUMNS: MetaColumn[] = [
     { header: "Código", key: "cod", width: 14, prefill: (l) => l.Codigo_Linea },
     { header: "Laboratorio", key: "nombre", width: 34, prefill: (l) => l.Descripcion },
     { header: "Meta Monto S/", key: "meta_monto", width: 16, required: true },
-    { header: "Meta Clientes", key: "meta_clientes", width: 16 },
     { header: "Observación", key: "observacion", width: 30 },
 ]
 
@@ -362,7 +361,7 @@ function LaboratoriosSection({ onOpenModalChange }: { onOpenModalChange: (fn: ()
     const [errors, setErrors] = useState<Record<string, string>>({})
     const { user } = useAuth()
 
-    const [form, setForm] = useState({ id_linea_ge: '', lab_nombre: '', meta_monto: '', meta_clientes: '', observacion: '' })
+    const [form, setForm] = useState({ id_linea_ge: '', lab_nombre: '', meta_monto: '', observacion: '' })
 
     const [catLaboratorios, setCatLaboratorios] = useState<any[]>([])
     const [loadingLabs, setLoadingLabs] = useState(false)
@@ -405,7 +404,7 @@ function LaboratoriosSection({ onOpenModalChange }: { onOpenModalChange: (fn: ()
     const abrirModalNuevo = useCallback(() => {
         if (!selectedCiclo) return
         setEditando(null)
-        setForm({ id_linea_ge: '', lab_nombre: '', meta_monto: '', meta_clientes: '', observacion: '' })
+        setForm({ id_linea_ge: '', lab_nombre: '', meta_monto: '', observacion: '' })
         setErrors({})
         setIsModalOpen(true)
     }, [selectedCiclo])
@@ -418,7 +417,6 @@ function LaboratoriosSection({ onOpenModalChange }: { onOpenModalChange: (fn: ()
             id_linea_ge: String(item.id_linea_ge),
             lab_nombre: item.linea_desc || `Lab #${item.id_linea_ge}`,
             meta_monto: String(item.meta_monto),
-            meta_clientes: String(item.meta_clientes),
             observacion: item.observacion || ''
         })
         setErrors({})
@@ -438,7 +436,6 @@ function LaboratoriosSection({ onOpenModalChange }: { onOpenModalChange: (fn: ()
                 id_ciclo: Number(selectedCiclo),
                 id_linea_ge: Number(form.id_linea_ge),
                 meta_monto: Number(form.meta_monto),
-                meta_clientes: Number(form.meta_clientes) || 0,
                 observacion: form.observacion,
                 usuario: user?.nombreCompleto || 'WEB'
             }
@@ -493,7 +490,6 @@ function LaboratoriosSection({ onOpenModalChange }: { onOpenModalChange: (fn: ()
                         rowToItem={(r) => ({
                             id_linea_ge: Number(r.cod),
                             meta_monto: Number(r.meta_monto) || 0,
-                            meta_clientes: Number(r.meta_clientes) || 0,
                             observacion: r.observacion || '',
                         })}
                         submit={async (items) => {
@@ -525,14 +521,10 @@ function LaboratoriosSection({ onOpenModalChange }: { onOpenModalChange: (fn: ()
                                         {item.total_vendedores || 0} vendedor{(item.total_vendedores || 0) === 1 ? '' : 'es'}
                                     </Badge>
                                 </div>
-                                <div className="grid grid-cols-2 gap-2 my-3">
+                                <div className="grid grid-cols-1 gap-2 my-3">
                                     <div className="bg-slate-50 p-2 rounded-md">
                                         <p className="text-[10px] text-slate-400 uppercase font-semibold">Meta S/</p>
                                         <p className="text-sm font-bold text-slate-800">{fmtMoney(item.meta_monto)}</p>
-                                    </div>
-                                    <div className="bg-slate-50 p-2 rounded-md">
-                                        <p className="text-[10px] text-slate-400 uppercase font-semibold">Meta Clientes</p>
-                                        <p className="text-sm font-bold text-slate-800">{item.meta_clientes}</p>
                                     </div>
                                 </div>
                                 {item.meta_distribuida !== undefined && (
@@ -633,18 +625,11 @@ function LaboratoriosSection({ onOpenModalChange }: { onOpenModalChange: (fn: ()
                             </div>
                         )}
 
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <Label>Meta Monto (S/) *</Label>
-                                <Input type="number" step="0.01" value={form.meta_monto}
-                                       onChange={e => setForm({ ...form, meta_monto: e.target.value })}
-                                       placeholder="25000.00" className={errors.meta_monto ? "border-red-500" : ""} />
-                            </div>
-                            <div className="space-y-2">
-                                <Label>Meta Clientes</Label>
-                                <Input type="number" value={form.meta_clientes}
-                                       onChange={e => setForm({ ...form, meta_clientes: e.target.value })} placeholder="120" />
-                            </div>
+                        <div className="space-y-2">
+                            <Label>Meta Monto (S/) *</Label>
+                            <Input type="number" step="0.01" value={form.meta_monto}
+                                   onChange={e => setForm({ ...form, meta_monto: e.target.value })}
+                                   placeholder="25000.00" className={errors.meta_monto ? "border-red-500" : ""} />
                         </div>
                         <div className="space-y-2">
                             <Label>Observación</Label>
@@ -703,6 +688,12 @@ function VendedoresSection({ onOpenModalChange }: { onOpenModalChange: (fn: () =
     const [catVendedores, setCatVendedores] = useState<any[]>([])
     const [loadingVends, setLoadingVends] = useState(false)
     const [openVendPopover, setOpenVendPopover] = useState(false)
+    // Meta Clientes se autocompleta con el total del vendedor y queda bloqueado (candado para editar)
+    const [metaClientesLocked, setMetaClientesLocked] = useState(true)
+
+    useEffect(() => {
+        if (isModalOpen) setMetaClientesLocked(true)
+    }, [isModalOpen])
 
     useEffect(() => {
         MetasService.listarCiclos().then(res => {
@@ -925,8 +916,10 @@ function VendedoresSection({ onOpenModalChange }: { onOpenModalChange: (fn: () =
                                                                     setForm(prev => ({
                                                                         ...prev,
                                                                         cod_vendedor: codigo,
-                                                                        nombre_vendedor: nombre
+                                                                        nombre_vendedor: nombre,
+                                                                        meta_clientes: vend.totalClientes != null ? String(vend.totalClientes) : prev.meta_clientes
                                                                     }))
+                                                                    setMetaClientesLocked(true)
                                                                     setOpenVendPopover(false)
                                                                 }}
                                                             >
@@ -964,8 +957,20 @@ function VendedoresSection({ onOpenModalChange }: { onOpenModalChange: (fn: () =
                             </div>
                             <div className="space-y-2">
                                 <Label>Meta Clientes</Label>
-                                <Input type="number" value={form.meta_clientes}
-                                       onChange={e => setForm({ ...form, meta_clientes: e.target.value })} />
+                                <div className="relative">
+                                    <Input type="number" value={form.meta_clientes}
+                                           disabled={metaClientesLocked}
+                                           onChange={e => setForm({ ...form, meta_clientes: e.target.value })}
+                                           className={`pr-9 ${metaClientesLocked ? 'bg-slate-50' : ''}`} />
+                                    <button
+                                        type="button"
+                                        onClick={() => setMetaClientesLocked(v => !v)}
+                                        title={metaClientesLocked ? 'Desbloquear para editar' : 'Bloquear'}
+                                        className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700"
+                                    >
+                                        {metaClientesLocked ? <Lock className="h-4 w-4" /> : <Unlock className="h-4 w-4" />}
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>

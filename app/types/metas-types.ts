@@ -102,7 +102,6 @@ export interface IMetaLaboratorioForm {
     id_ciclo: number;
     id_linea_ge: number;
     meta_monto: number;
-    meta_clientes: number;
     observacion: string;
     usuario: string;
 }
