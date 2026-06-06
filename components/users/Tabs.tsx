@@ -117,7 +117,7 @@ export const RepresentantesTab = ({ representantes, vendedores, laboratorios, is
                     <table className="min-w-full divide-y divide-gray-200">
                         <thead className="bg-gray-50">
                         <tr>
-                            {['Código', 'Nombre', 'Vendedores', 'Laboratorios', 'Estado', 'Acciones'].map(h =>
+                            {['Código', 'Nombre', 'Vendedores', 'Laboratorios', 'Asignado a vendedor', 'Estado', 'Acciones'].map(h =>
                                 <th key={h} className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">{h}</th>
                             )}
                         </tr>
@@ -142,6 +142,18 @@ export const RepresentantesTab = ({ representantes, vendedores, laboratorios, is
                                         ))}
                                         {(!r.LaboratoriosAsociados || r.LaboratoriosAsociados.length === 0) && <span className="text-gray-400 text-xs">Ninguno</span>}
                                     </div>
+                                </td>
+                                <td className="p-4 text-sm">
+                                    {(() => {
+                                        const codRel = r.VendedorRelacion ?? r.vendedorRelacion;
+                                        if (!codRel) return <span className="text-gray-400 text-xs uppercase">Sin relación</span>;
+                                        const vend = (vendedores || []).find((v: any) => v.codigo === codRel);
+                                        return (
+                                            <span className="bg-emerald-100 text-emerald-800 text-[10px] px-2 py-0.5 rounded-full whitespace-nowrap">
+                                                {vend ? `${vend.nombres} ${vend.apellidos}` : codRel}
+                                            </span>
+                                        );
+                                    })()}
                                 </td>
                                 <td className="p-4 text-sm">{r.Activo ? <span className="text-green-800 bg-green-100 px-2 rounded-full text-xs">Activo</span> : <span className="text-red-800 bg-red-100 px-2 rounded-full text-xs">Inactivo</span>}</td>
                                 <td className="p-4 text-sm"><Button variant="ghost" size="icon" onClick={() => setSelected(r)}><Edit className="h-4 w-4 text-blue-600"/></Button></td>

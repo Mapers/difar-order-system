@@ -22,6 +22,7 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const [user, setUser] = useState<User | null>(null);
     const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+    const [pendingRoleSelection, setPendingRoleSelection] = useState<boolean>(false);
     const [errors, setErrors] = useState<string[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const router = useRouter();
@@ -31,6 +32,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const clearAuthState = useCallback(() => {
         setUser(null);
         setIsAuthenticated(false);
+        setPendingRoleSelection(false);
         localStorage.removeItem('token');
         localStorage.removeItem('invoice');
     }, []);
@@ -119,8 +121,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 const tokenResult = decodeToken(tokenRef.current);
                 setUser(tokenResult.user);
                 setIsAuthenticated(true);
+                const u = tokenResult.user;
+                if (u?.idRepresentante && u?.vendedorRelacion?.idVendedor) {
+                    setPendingRoleSelection(true);
+                }
                 return resCheck;
-            } 
+            }
         } catch (error: any) {
             if (error.response) {
                 clearAuthState();
@@ -132,6 +138,34 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 handleError(message);
                 throw new Error(message)
             }
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const ingresarComoVendedor = async (): Promise<boolean> => {
+        try {
+            setLoading(true);
+            const currentToken = localStorage.getItem('token') || tokenRef.current;
+            if (!currentToken) return false;
+            const res = await AuthService.ingresarComoVendedor(currentToken);
+            if (res && res.success && res.data) {
+                const newToken = res.data;
+                const tokenResult = decodeToken(newToken);
+                if (tokenResult.isValid && tokenResult.user) {
+                    localStorage.setItem('token', newToken);
+                    tokenRef.current = newToken;
+                    setUser(tokenResult.user);
+                    setIsAuthenticated(true);
+                    setPendingRoleSelection(false);
+                    return true;
+                }
+            }
+            handleError(res?.message || 'No se pudo ingresar como vendedor');
+            return false;
+        } catch (error: any) {
+            handleError(error.response?.data?.message || 'Error al ingresar como vendedor');
+            return false;
         } finally {
             setLoading(false);
         }
@@ -229,6 +263,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 signup,
                 sendDni,
                 signin,
+                ingresarComoVendedor,
+                pendingRoleSelection,
+                clearPendingRoleSelection: () => setPendingRoleSelection(false),
                 logout,
                 isAuthenticated,
                 errors,

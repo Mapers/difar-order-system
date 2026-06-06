@@ -283,6 +283,11 @@ export const RepresentanteModal = ({ isOpen, onClose, initialData, vendedores, l
     });
     const [selectedLabs, setSelectedLabs] = useState<number[]>([]);
     const [selectedVends, setSelectedVends] = useState<number[]>([]); // Nuevo estado para vendedores
+    const [vendedorRelacion, setVendedorRelacion] = useState<string>(''); // Codigo del vendedor relacionado (opcional)
+    const [vendedoresActualizados, setVendedoresActualizados] = useState<any[]>([]); // Lista de vendedores refrescada al abrir
+
+    const SIN_RELACION = '__sin_relacion__';
+    const listaVendedores = vendedoresActualizados.length ? vendedoresActualizados : (vendedores || []);
 
     useEffect(() => {
         if (initialData) {
@@ -294,12 +299,33 @@ export const RepresentanteModal = ({ isOpen, onClose, initialData, vendedores, l
             });
             setSelectedLabs(initialData.LaboratoriosAsociados?.map((l:any) => l.id) || []);
             setSelectedVends(initialData.VendedoresAsociados?.map((v:any) => v.id) || []);
+            setVendedorRelacion(initialData.VendedorRelacion || '');
         } else {
             setForm({ idRepresentante: 0, CodRepres: '', NombreRepres: '', Activo: 1 });
             setSelectedLabs([]);
             setSelectedVends([]);
+            setVendedorRelacion('');
         }
     }, [initialData, isOpen]);
+
+    // Refresca la lista de vendedores cada vez que se abre el modal (crear o editar)
+    useEffect(() => {
+        if (!isOpen) return;
+        (async () => {
+            try {
+                const res = await apiClient.get('/usuarios/listar/vendedores');
+                const mapped = (res.data.data.data || []).map((v: any) => ({
+                    idVendedor: v.idVendedor,
+                    codigo: v.Codigo_Vend,
+                    nombres: v.Nombres,
+                    apellidos: v.Apellidos,
+                }));
+                setVendedoresActualizados(mapped);
+            } catch (e) {
+                setVendedoresActualizados(vendedores || []);
+            }
+        })();
+    }, [isOpen]);
 
     const toggleLab = (id: number) => {
         setSelectedLabs(prev => prev.includes(id) ? prev.filter(l => l !== id) : [...prev, id]);
@@ -317,6 +343,7 @@ export const RepresentanteModal = ({ isOpen, onClose, initialData, vendedores, l
                 NombreRepres: form.NombreRepres,
                 vendedoresIds: selectedVends,
                 laboratoriosIds: selectedLabs,
+                vendedorRelacion: vendedorRelacion || null,
                 Activo: form.Activo
             };
             await apiClient.post('/usuarios/representantes/upsert', payload);
@@ -344,6 +371,24 @@ export const RepresentanteModal = ({ isOpen, onClose, initialData, vendedores, l
                             <label className="text-sm font-medium">Nombre *</label>
                             <Input placeholder="Nombre del Representante" value={form.NombreRepres} onChange={(e) => setForm({...form, NombreRepres: e.target.value})} />
                         </div>
+                    </div>
+
+                    <div className="space-y-1">
+                        <label className="text-sm font-medium">Vendedor Relación <span className="text-gray-400 font-normal">(opcional)</span></label>
+                        <Select
+                            value={vendedorRelacion || SIN_RELACION}
+                            onValueChange={(v) => setVendedorRelacion(v === SIN_RELACION ? '' : v)}
+                        >
+                            <SelectTrigger><SelectValue placeholder="Sin relación" /></SelectTrigger>
+                            <SelectContent className="max-h-60">
+                                <SelectItem value={SIN_RELACION}>Sin relación</SelectItem>
+                                {listaVendedores.map((vend: any) => (
+                                    <SelectItem key={vend.idVendedor} value={vend.codigo}>
+                                        {vend.codigo} - {vend.nombres} {vend.apellidos}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
                     </div>
 
                     <div className="space-y-1 border rounded-md p-3">

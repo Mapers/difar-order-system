@@ -9,7 +9,7 @@ import { useAuth } from "@/context/authContext";
 export default function Home() {
   const [loading, setLoading] = useState(true);
   const { resetInactivityTimer } = useInactivityContext();
-  const { isAuthenticated, loading: authLoading } = useAuth();
+  const { isAuthenticated, loading: authLoading, pendingRoleSelection } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
@@ -17,10 +17,10 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    if (!authLoading && isAuthenticated) {
+    if (!authLoading && isAuthenticated && !pendingRoleSelection) {
       router.push("/dashboard");
     }
-  }, [isAuthenticated, authLoading, router]);
+  }, [isAuthenticated, authLoading, pendingRoleSelection, router]);
 
   // Reiniciar el timer cuando haya actividad
   useEffect(() => {

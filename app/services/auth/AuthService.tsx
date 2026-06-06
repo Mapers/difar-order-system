@@ -43,6 +43,20 @@ export class AuthService {
     return response.data
   };
 
+  /**
+   * Re-emite un token de vendedor a partir del Vendedor Relación del representante.
+   * @param token token actual del representante
+   * @returns respuesta con el nuevo token en data
+   */
+  static async ingresarComoVendedor(token: string) {
+    const response = await apiClient.post(
+      `auth/ingresar-como-vendedor`,
+      { token },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    return response.data
+  };
+
 
   /**
    * 

@@ -28,11 +28,18 @@ export interface JwtPayload {
         codRepres: string;
         idRepresentante: string;
         vendedores: VendedorRelacionado[];
+        vendedorRelacion?: VendedorRelacionUnico | null;
         edicion_pedido: boolean;
     },
     menus: Menu[]
     iat: number;
     exp: number;
+}
+
+export interface VendedorRelacionUnico {
+    idVendedor: number;
+    codigo: string;
+    nombreCompleto: string;
 }
 
 export interface Menu {
@@ -59,7 +66,9 @@ export interface User {
     rolDescripcion: string;
     menus: Menu[];
     codRepres: string;
+    idRepresentante?: string | null;
     vendedores: VendedorRelacionado[];
+    vendedorRelacion?: VendedorRelacionUnico | null;
     edicion_pedido: boolean;
 }
 
@@ -75,6 +84,9 @@ export interface AuthContextType {
     signup: (user: UserRegisterDTO) => Promise<any>;
     sendDni: (user: UserLoginDTO) => Promise<any>;
     signin: (smsCheck: SmsCheck) => Promise<any>;
+    ingresarComoVendedor: () => Promise<boolean>;
+    pendingRoleSelection: boolean;
+    clearPendingRoleSelection: () => void;
     logout: () => Promise<void>;
     isAuthenticated: boolean;
     errors: string[];

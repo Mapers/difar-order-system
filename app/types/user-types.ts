@@ -54,5 +54,6 @@ export interface Representante {
     IdVendedor: number | null;
     VendedorNombres: string;
     VendedorApellidos: string;
+    VendedorRelacion: string | null;
     LaboratoriosAsociados: { id: number; nombre: string }[];
 }

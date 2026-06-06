@@ -9,18 +9,23 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Label } from "@/components/ui/label"
 import { ShoppingCart, Lock, User, ArrowRight } from "lucide-react"
 import { useAuth } from "@/context/authContext"
-import { SmsCheck, SmsSend, UserLoginDTO } from "@/app/services/auth/types"
+import { SmsCheck, SmsSend, UserLoginDTO, VendedorRelacionUnico } from "@/app/services/auth/types"
 import { AuthService } from "@/app/services/auth/AuthService"
+import { decodeToken } from "@/app/utils/tokenUtils"
+import { RoleEntryModal } from "@/components/auth/RoleEntryModal"
 import Image from "next/image"
 import { toast } from "@/app/hooks/useToast"
 
 export function LoginForm() {
-  const { signin, sendDni, errors } = useAuth();
+  const { signin, sendDni, ingresarComoVendedor, clearPendingRoleSelection, errors } = useAuth();
   const router = useRouter()
   const [dni, setDni] = useState("")
   const [verificationCode, setVerificationCode] = useState(["", "", "", "", "", ""])
   const [showVerification, setShowVerification] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [showRoleModal, setShowRoleModal] = useState(false)
+  const [roleLoading, setRoleLoading] = useState(false)
+  const [vendedorRelacion, setVendedorRelacion] = useState<VendedorRelacionUnico | null>(null)
 
   // useEffect(() => {
   //   // Si el usuario viene del onboarding, mostrar un mensaje de bienvenida
@@ -68,7 +73,14 @@ export function LoginForm() {
       const response = await signin(smsCheck)
 
       if (response && response?.success) {
-        router.push("/dashboard")
+        const token = localStorage.getItem("token")
+        const { user } = decodeToken(token)
+        if (user?.idRepresentante && user?.vendedorRelacion?.idVendedor) {
+          setVendedorRelacion(user.vendedorRelacion)
+          setShowRoleModal(true)
+        } else {
+          router.push("/dashboard")
+        }
       }
       if (!response?.success) {
         toast({ title: "Validación Código", description: response.message, variant: "warning" })
@@ -81,6 +93,24 @@ export function LoginForm() {
     finally {
 
       setLoading(false);
+    }
+  }
+
+  const handleEntrarComoRepresentante = () => {
+    setShowRoleModal(false)
+    clearPendingRoleSelection()
+    router.push("/dashboard")
+  }
+
+  const handleEntrarComoVendedor = async () => {
+    setRoleLoading(true)
+    const ok = await ingresarComoVendedor()
+    setRoleLoading(false)
+    if (ok) {
+      setShowRoleModal(false)
+      router.push("/dashboard")
+    } else {
+      toast({ title: "Ingreso como vendedor", description: "No se pudo ingresar como vendedor.", variant: "warning" })
     }
   }
 
@@ -98,6 +128,7 @@ export function LoginForm() {
   }
 
   return (
+    <>
     <div className="w-full max-w-md mx-auto">
       <div className="text-center mb-6">
         <div className="inline-flex items-center justify-center w-60 h-24 mb-2 relative">
@@ -214,6 +245,15 @@ export function LoginForm() {
         </CardFooter>
       </Card>
     </div>
+
+    <RoleEntryModal
+      open={showRoleModal}
+      vendedorRelacion={vendedorRelacion}
+      loading={roleLoading}
+      onSelectRepresentante={handleEntrarComoRepresentante}
+      onSelectVendedor={handleEntrarComoVendedor}
+    />
+    </>
   )
 }
 
