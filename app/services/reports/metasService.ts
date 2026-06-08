@@ -143,6 +143,11 @@ export class MetasService {
         return response.data;
     }
 
+    static async obtenerDisponibleMeta(idMetaLabVend: number): Promise<any> {
+        const response = await apiClient.get(`/metas/disponible/item/${idMetaLabVend}`);
+        return response.data;
+    }
+
     // Auxiliares
     static async obtenerPrecioArticulo(codArticulo: string, tipoPrecio?: string): Promise<any> {
         const params = tipoPrecio ? `&tipo_precio=${tipoPrecio}` : '';

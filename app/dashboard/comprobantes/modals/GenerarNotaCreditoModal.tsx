@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog"
-import { FileDiff, ArrowRight, ArrowLeft, FileText, Loader2, CheckCircle, Package, Minus, Plus } from "lucide-react"
+import { FileDiff, ArrowRight, ArrowLeft, FileText, Loader2, CheckCircle, Package, Minus, Plus, Percent } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent } from "@/components/ui/card"
@@ -49,7 +49,7 @@ export function GenerarNotaCreditoModal({
     const auth = useAuth()
     const [step, setStep] = useState(1)
     const [selectedComprobante, setSelectedComprobante] = useState<Comprobante | null>(null)
-    const [tipoNC, setTipoNC] = useState<'total' | 'parcial' | null>(null)
+    const [tipoNC, setTipoNC] = useState<'total' | 'parcial' | 'descuento' | null>(null)
     const [itemsSeleccionados, setItemsSeleccionados] = useState<ItemSeleccionado[]>([])
     const [detallesPedido, setDetallesPedido] = useState<DetallePedido[]>([])
     const [loadingDetalles, setLoadingDetalles] = useState(false)
@@ -119,7 +119,7 @@ export function GenerarNotaCreditoModal({
         if (selectedComprobante) setStep(2)
     }
 
-    const handleSelectTipo = async (tipo: 'total' | 'parcial') => {
+    const handleSelectTipo = async (tipo: 'total' | 'parcial' | 'descuento') => {
         setTipoNC(tipo)
         if (tipo === 'parcial' && selectedComprobante?.nroPedido) {
             await fetchDetallesPedido(selectedComprobante.nroPedido)
@@ -174,7 +174,7 @@ export function GenerarNotaCreditoModal({
 
     const getDialogSize = () => {
         if (step === 1) return "max-w-5xl h-[700px]"
-        if (step === 2) return "max-w-lg"
+        if (step === 2) return "max-w-3xl"
         if (step === 3 && tipoNC === 'parcial') return "max-w-3xl"
         return "max-w-4xl"
     }
@@ -189,6 +189,7 @@ export function GenerarNotaCreditoModal({
                         {step === 2 && "Tipo de Nota de Crédito"}
                         {step === 3 && tipoNC === 'total' && `NC Total — ${selectedComprobante?.serie}-${selectedComprobante?.numero}`}
                         {step === 3 && tipoNC === 'parcial' && `NC Parcial — ${selectedComprobante?.serie}-${selectedComprobante?.numero}`}
+                        {step === 3 && tipoNC === 'descuento' && `NC Descuento — ${selectedComprobante?.serie}-${selectedComprobante?.numero}`}
                     </DialogTitle>
                     {step === 1 && (
                         <DialogDescription>
@@ -244,15 +245,14 @@ export function GenerarNotaCreditoModal({
                                                     </Badge>
                                                     <div className="flex items-center gap-2">
                                                         <span className="text-[10px] text-gray-500">
-                                                            {format(parseISO(item.fecha_envio), "dd/MM/yyyy")}
+                                                            {format(parseISO(item?.fecha_envio || ''), "dd/MM/yyyy")}
                                                         </span>
                                                         {selectedComprobante?.idComprobanteCab === item.idComprobanteCab && (
                                                             <CheckCircle className="h-4 w-4 text-blue-600" />
                                                         )}
                                                     </div>
                                                 </div>
-                                                <h4 className="font-semibold text-xs truncate mb-1"
-                                                    title={item.cliente_denominacion}>
+                                                <h4 className="font-semibold text-xs truncate mb-1">
                                                     {item.cliente_denominacion}
                                                 </h4>
                                                 <div className="flex justify-between items-center mt-2 text-xs text-gray-500">
@@ -294,7 +294,7 @@ export function GenerarNotaCreditoModal({
                             </span> — {selectedComprobante.cliente_denominacion}
                         </p>
 
-                        <div className="grid grid-cols-2 gap-4 px-4">
+                        <div className="grid grid-cols-3 gap-4 px-4">
                             <button
                                 onClick={() => handleSelectTipo('total')}
                                 className="flex flex-col items-center gap-3 p-6 rounded-xl border-2 border-gray-200 hover:border-blue-500 hover:bg-blue-50 transition-all group"
@@ -328,6 +328,21 @@ export function GenerarNotaCreditoModal({
                                     </p>
                                 </div>
                             </button>
+
+                            <button
+                                onClick={() => handleSelectTipo('descuento')}
+                                className="flex flex-col items-center gap-3 p-6 rounded-xl border-2 border-gray-200 hover:border-amber-500 hover:bg-amber-50 transition-all group"
+                            >
+                                <div className="p-4 bg-amber-100 rounded-full group-hover:bg-amber-200 transition-colors">
+                                    <Percent className="h-8 w-8 text-amber-600" />
+                                </div>
+                                <div className="text-center">
+                                    <p className="font-semibold text-gray-800">Descuento Global</p>
+                                    <p className="text-xs text-gray-500 mt-1">
+                                        Aplica un descuento al valor del comprobante, sin devolver productos
+                                    </p>
+                                </div>
+                            </button>
                         </div>
 
                         <DialogFooter>
@@ -349,6 +364,25 @@ export function GenerarNotaCreditoModal({
                         <div className="flex-1 p-1">
                             <NotaCreditoForm
                                 comprobante={selectedComprobante}
+                                onClose={() => onOpenChange(false)}
+                                onSuccess={handleSuccess}
+                            />
+                        </div>
+                    </>
+                )}
+
+                {step === 3 && tipoNC === 'descuento' && selectedComprobante && (
+                    <>
+                        <div className="flex items-center mb-2 px-1">
+                            <Button variant="ghost" size="sm" onClick={handleBack}
+                                    className="text-gray-500 hover:text-blue-600 pl-0">
+                                <ArrowLeft className="mr-1 h-4 w-4" /> Atrás
+                            </Button>
+                        </div>
+                        <div className="flex-1 p-1">
+                            <NotaCreditoForm
+                                comprobante={selectedComprobante}
+                                modoDescuento
                                 onClose={() => onOpenChange(false)}
                                 onSuccess={handleSuccess}
                             />

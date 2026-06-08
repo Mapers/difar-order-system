@@ -34,6 +34,9 @@ import {useAuth} from "@/context/authContext";
 import apiClient from "@/app/api/client";
 import { MetaExcelButtons } from "@/components/configuraciones/metas/MetaExcelButtons";
 import { MetaColumn } from "@/components/configuraciones/metas/metaExcel";
+import ProductSearchDialog from "@/components/tomar-pedido/product-step/ProductSearchDialog";
+import { IProduct } from "@/app/types/order/product-interface";
+import { IMoneda } from "@/app/types/order/client-interface";
 
 interface MetasConfigSectionProps {
     onOpenModalChange: (fn: () => void) => void;
@@ -56,6 +59,17 @@ const MESES_CORTO = ['', 'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago',
 const fmtMoney = (n: number) => "S/ " + Number(n).toLocaleString("es-PE", { minimumFractionDigits: 2 })
 
 const TIPO_PRECIO_OPTS = ['PRECIO_LISTA', 'PRECIO_CREDITO', 'PRECIO_CONTADO']
+
+// Opciones de precio del producto para los radios (solo las que tienen precio > 0)
+const buildPriceOptions = (product: any) => {
+    if (!product) return []
+    return [
+        { key: 'contado',   label: 'Contado',      value: Number(product.PUContado || 0), tipo: 'PRECIO_CONTADO' },
+        { key: 'credito',   label: 'Crédito',      value: Number(product.PUCredito || 0), tipo: 'PRECIO_CREDITO' },
+        { key: 'bonifCont', label: 'Bonif. Cont.', value: Number(product.PUPorMayor || 0), tipo: 'PRECIO_CONTADO' },
+        { key: 'bonifCred', label: 'Bonif. Cred.', value: Number(product.PUPorMenor || 0), tipo: 'PRECIO_CREDITO' },
+    ].filter(o => o.value > 0)
+}
 
 const LAB_EXCEL_COLUMNS: MetaColumn[] = [
     { header: "Código", key: "cod", width: 14, prefill: (l) => l.Codigo_Linea },
@@ -1028,6 +1042,10 @@ function ItemsSection({ onOpenModalChange }: { onOpenModalChange: (fn: () => voi
     const [productSearchQuery, setProductSearchQuery] = useState("")
     const [popoverOpen, setPopoverOpen] = useState(false)
     const [buscandoPrecio, setBuscandoPrecio] = useState(false)
+    const [selectedProductData, setSelectedProductData] = useState<any>(null)
+    const [selectedPriceKey, setSelectedPriceKey] = useState('')
+    const [disponibilidad, setDisponibilidad] = useState<{ meta_vendedor: number; suma_items_vendedor: number; meta_lab: number; suma_items_lab: number } | null>(null)
+    const [validacionError, setValidacionError] = useState<string | null>(null)
     const { user } = useAuth()
 
     useEffect(() => {
@@ -1088,11 +1106,33 @@ function ItemsSection({ onOpenModalChange }: { onOpenModalChange: (fn: () => voi
         }
     }, [isModalOpen, editando])
 
-    const filteredAllProducts = allProducts.filter(product =>
-        product.NombreItem?.toLowerCase().includes(productSearchQuery.toLowerCase()) ||
-        product.Codigo_Art?.toLowerCase().includes(productSearchQuery.toLowerCase()) ||
-        String(product?.Presentacion)?.toLowerCase().includes(productSearchQuery.toLowerCase())
-    )
+    useEffect(() => {
+        if (!isModalOpen || !selectedVend) return
+        let cancel = false
+        setValidacionError(null)
+        setDisponibilidad(null)
+        MetasService.obtenerDisponibleMeta(Number(selectedVend))
+            .then(res => {
+                if (cancel) return
+                setDisponibilidad(res?.data?.data || res?.data || null)
+            })
+            .catch(() => { if (!cancel) setValidacionError("No se pudo validar el tope") })
+        return () => { cancel = true }
+    }, [isModalOpen, selectedVend])
+
+    const labActual = labs.find(l => String(l.id_meta_lab) === selectedLab)
+
+    const filteredAllProducts = allProducts.filter(product => {
+        const coincideLab = !labActual ||
+            String(product?.id_linea_ge ?? '').trim() === String(labActual.id_linea_ge ?? '').trim()
+        if (!coincideLab) return false
+
+        const coincideTexto =
+            product.NombreItem?.toLowerCase().includes(productSearchQuery.toLowerCase()) ||
+            product.Codigo_Art?.toLowerCase().includes(productSearchQuery.toLowerCase()) ||
+            String(product?.Presentacion)?.toLowerCase().includes(productSearchQuery.toLowerCase())
+        return coincideTexto
+    })
 
     const buscarPrecioAutomatico = async (codArticulo: string) => {
         setBuscandoPrecio(true)
@@ -1114,6 +1154,8 @@ function ItemsSection({ onOpenModalChange }: { onOpenModalChange: (fn: () => voi
         setEditando(null)
         setForm({ cod_articulo: '', nombre_articulo: '', presentacion: '', tipo_precio_ref: 'PRECIO_LISTA', precio_ref: '', meta_cantidad: '' })
         setProductSearchQuery("")
+        setSelectedProductData(null)
+        setSelectedPriceKey('')
         setErrors({})
         setIsModalOpen(true)
     }, [selectedVend])
@@ -1121,29 +1163,39 @@ function ItemsSection({ onOpenModalChange }: { onOpenModalChange: (fn: () => voi
     useEffect(() => { onOpenModalChange(abrirModalNuevo) }, [onOpenModalChange, abrirModalNuevo])
 
     const handleProductSelect = (product: any) => {
-        const precioContado = Number(product.PUContado || 0)
-        const precioCredito = Number(product.PUCredito || 0)
+        const opts = buildPriceOptions(product)
+        const first = opts[0]
 
+        setSelectedProductData(product)
+        setSelectedPriceKey(first ? first.key : '')
         setForm(prev => ({
             ...prev,
             cod_articulo: product.Codigo_Art,
             nombre_articulo: product.NombreItem,
             presentacion: product.Presentacion || '',
-            precio_ref: precioCredito > 0 ? String(precioCredito) : precioContado > 0 ? String(precioContado) : ''
+            precio_ref: first ? String(first.value) : '',
+            tipo_precio_ref: first ? first.tipo : prev.tipo_precio_ref,
         }))
         setPopoverOpen(false)
-
-        if (!precioCredito && !precioContado) {
-            buscarPrecioAutomatico(product.Codigo_Art)
-        }
     }
+
+    const metaActualItem = editando ? Number(editando.meta_monto || 0) : 0
+    const nuevoMonto = (Number(form.precio_ref) || 0) * (Number(form.meta_cantidad) || 0)
+    const dispVend = disponibilidad ? Number(disponibilidad.meta_vendedor) - (Number(disponibilidad.suma_items_vendedor) - metaActualItem) : null
+    const dispLab  = disponibilidad ? Number(disponibilidad.meta_lab) - (Number(disponibilidad.suma_items_lab) - metaActualItem) : null
+    const metasBaseInvalidas = !!disponibilidad && (Number(disponibilidad.meta_vendedor) <= 0 || Number(disponibilidad.meta_lab) <= 0)
+    const excedeVend = dispVend !== null && nuevoMonto > dispVend
+    const excedeLab  = dispLab !== null && nuevoMonto > dispLab
+    const bloqueaPorTope = metasBaseInvalidas || excedeVend || excedeLab
 
     const handleGuardar = async () => {
         const newErrors: Record<string, string> = {}
         if (!form.cod_articulo) newErrors.cod_articulo = "Debe seleccionar un producto"
+        if (!editando && !form.precio_ref) newErrors.precio_ref = "Selecciona un precio"
         if (!form.meta_cantidad) newErrors.meta_cantidad = "Requerido"
         setErrors(newErrors)
         if (Object.keys(newErrors).length > 0) return
+        if (bloqueaPorTope) return
 
         setLoadingSave(true)
         try {
@@ -1174,6 +1226,7 @@ function ItemsSection({ onOpenModalChange }: { onOpenModalChange: (fn: () => voi
         finally { setLoadingSave(false) }
     }
 
+    const priceOptions = buildPriceOptions(selectedProductData)
     const metaCalculada = Number(form.precio_ref) * Number(form.meta_cantidad)
 
     return (
@@ -1259,6 +1312,9 @@ function ItemsSection({ onOpenModalChange }: { onOpenModalChange: (fn: () => voi
                                                 precio_ref: String(item.precio_ref),
                                                 meta_cantidad: String(item.meta_cantidad)
                                             })
+                                            setSelectedProductData(null)
+                                            setSelectedPriceKey('')
+                                            setErrors({})
                                             setIsModalOpen(true)
                                         }}><Edit className="h-3 w-3 text-slate-500" /></Button>
                                         <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => { setItemToDelete(item); setIsDeleteModalOpen(true) }}>
@@ -1288,92 +1344,40 @@ function ItemsSection({ onOpenModalChange }: { onOpenModalChange: (fn: () => voi
                         {!editando ? (
                             <div className="space-y-4 overflow-hidden min-w-0">
                                 <Label className="text-sm font-medium">Buscar Producto *</Label>
-                                <Popover open={popoverOpen} onOpenChange={setPopoverOpen} modal>
-                                    <PopoverTrigger asChild>
-                                        <Button
-                                            variant="outline"
-                                            role="combobox"
-                                            aria-expanded={popoverOpen}
-                                            className={cn(
-                                                "w-full max-w-full justify-between h-12 px-3 text-left font-normal text-sm",
-                                                errors.cod_articulo && "border-red-500"
-                                            )}
-                                        >
-                                            {form.cod_articulo ? (
-                                                <div className="flex flex-col items-start overflow-hidden" style={{ maxWidth: 'calc(100% - 28px)' }}>
-                                                    <span className="truncate w-full text-sm font-medium">
-                                                        {form.nombre_articulo.substring(0, 50)}...
-                                                    </span>
-                                                    <span className="text-xs text-gray-500 truncate w-full">
-                                                        {form.cod_articulo}
-                                                    </span>
-                                                </div>
-                                            ) : (
-                                                <span className="text-gray-500 truncate">Buscar por código, nombre o laboratorio...</span>
-                                            )}
-                                            <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                        </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="p-0 w-[450px] max-w-[90vw]" align="start" side="bottom">
-                                        <Command shouldFilter={false}>
-                                            <CommandInput
-                                                placeholder="Buscar por código, nombre o laboratorio..."
-                                                value={productSearchQuery}
-                                                onValueChange={setProductSearchQuery}
-                                                className="text-sm h-11"
-                                            />
-                                            <CommandList className="max-h-[50vh]">
-                                                <CommandEmpty className="py-6 text-center">
-                                                    {productsLoading ? "Buscando productos..." : "No se encontraron productos."}
-                                                </CommandEmpty>
-                                                <CommandGroup heading="Resultados" className="overflow-y-auto">
-                                                    {filteredAllProducts.map((product) => (
-                                                        <CommandItem
-                                                            key={product.Codigo_Art}
-                                                            value={product.Codigo_Art}
-                                                            onSelect={() => handleProductSelect(product)}
-                                                            className="py-2 sm:py-3"
-                                                        >
-                                                            <div className="flex items-start gap-2 w-full min-w-0">
-                                                                <div className="bg-blue-100 p-1.5 sm:p-2 rounded-md shrink-0 mt-0.5">
-                                                                    <Package className="h-3 w-3 sm:h-4 sm:w-4 text-blue-600" />
-                                                                </div>
-                                                                <div className="flex flex-col flex-1 min-w-0">
-                                                                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start w-full gap-1 sm:gap-2">
-                                                                        <span className="font-medium text-sm break-words flex-1">
-                                                                            {product.NombreItem}
-                                                                        </span>
-                                                                        <div className="flex flex-wrap gap-1 shrink-0">
-                                                                            <Badge variant="outline" className="bg-green-50 text-green-700 text-xs">
-                                                                                Stock: {product.Stock}
-                                                                            </Badge>
-                                                                        </div>
-                                                                    </div>
-                                                                    <div className="flex flex-col xs:flex-row xs:justify-between xs:items-center w-full mt-1 gap-1">
-                                                                        <span className="text-xs text-gray-500 break-words">
-                                                                            <span className="font-medium">Código:</span> {product.Codigo_Art}
-                                                                        </span>
-                                                                        <span className="text-xs text-gray-500 break-words">
-                                                                            <span className="font-medium">Lab:</span> {product.Presentacion}
-                                                                        </span>
-                                                                    </div>
-                                                                    <div className="flex flex-col xs:flex-row xs:justify-between mt-2 text-xs gap-1">
-                                                                        <span className="text-green-600 whitespace-nowrap">
-                                                                            Contado: S/.{Number(product.PUContado).toFixed(2)}
-                                                                        </span>
-                                                                        <span className="text-blue-600 whitespace-nowrap">
-                                                                            Crédito: S/.{Number(product.PUCredito).toFixed(2)}
-                                                                        </span>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        </CommandItem>
-                                                    ))}
-                                                </CommandGroup>
-                                            </CommandList>
-                                        </Command>
-                                    </PopoverContent>
-                                </Popover>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    role="combobox"
+                                    onClick={() => setPopoverOpen(true)}
+                                    className={cn(
+                                        "w-full max-w-full justify-between h-12 px-3 text-left font-normal text-sm",
+                                        errors.cod_articulo && "border-red-500"
+                                    )}
+                                >
+                                    {form.cod_articulo ? (
+                                        <div className="flex flex-col items-start overflow-hidden" style={{ maxWidth: 'calc(100% - 28px)' }}>
+                                            <span className="truncate w-full text-sm font-medium">
+                                                {form.nombre_articulo}
+                                            </span>
+                                            <span className="text-xs text-gray-500 truncate w-full">
+                                                {form.cod_articulo}
+                                            </span>
+                                        </div>
+                                    ) : (
+                                        <span className="text-gray-500 truncate">Buscar por código, nombre o laboratorio...</span>
+                                    )}
+                                    <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                </Button>
+
+                                <ProductSearchDialog
+                                    open={popoverOpen}
+                                    onOpenChange={setPopoverOpen}
+                                    searchQuery={productSearchQuery}
+                                    onSearchQueryChange={setProductSearchQuery}
+                                    filteredProducts={filteredAllProducts as IProduct[]}
+                                    onProductSelect={handleProductSelect}
+                                    currency={{ value: "PEN", label: "Soles" } as IMoneda}
+                                />
                                 {errors.cod_articulo && <p className="text-xs text-red-500">{errors.cod_articulo}</p>}
                             </div>
                         ) : (
@@ -1383,42 +1387,53 @@ function ItemsSection({ onOpenModalChange }: { onOpenModalChange: (fn: () => voi
                             </div>
                         )}
 
-                        <div className="space-y-2">
-                            <Label>Tipo Precio Ref</Label>
-                            <Select value={form.tipo_precio_ref} onValueChange={val => setForm({ ...form, tipo_precio_ref: val })}>
-                                <SelectTrigger className="bg-white"><SelectValue /></SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="PRECIO_LISTA">Precio Lista</SelectItem>
-                                    <SelectItem value="PRECIO_CREDITO">Precio Crédito</SelectItem>
-                                    <SelectItem value="PRECIO_CONTADO">Precio Contado</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4">
+                        {!editando ? (
                             <div className="space-y-2">
-                                <Label>Precio Ref (S/)</Label>
-                                <div className="relative">
-                                    <Input type="number" step="0.01" value={form.precio_ref}
-                                           onChange={e => setForm({ ...form, precio_ref: e.target.value })}
-                                           placeholder="0 = automático"
-                                           disabled={buscandoPrecio}
-                                    />
-                                    {buscandoPrecio && (
-                                        <RefreshCw className="absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 animate-spin text-blue-500" />
-                                    )}
-                                </div>
-                                {!form.precio_ref && !buscandoPrecio && (
-                                    <p className="text-[10px] text-amber-600">⚠ Se buscará en preciosxtipo al guardar</p>
+                                <Label>Precio de referencia *</Label>
+                                {!form.cod_articulo ? (
+                                    <p className="text-xs text-gray-400">Selecciona un producto para ver sus precios.</p>
+                                ) : priceOptions.length === 0 ? (
+                                    <p className="text-xs text-amber-600">Este producto no tiene precios disponibles.</p>
+                                ) : (
+                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                                        {priceOptions.map(opt => (
+                                            <button
+                                                key={opt.key}
+                                                type="button"
+                                                onClick={() => {
+                                                    setSelectedPriceKey(opt.key)
+                                                    setForm(prev => ({ ...prev, precio_ref: String(opt.value), tipo_precio_ref: opt.tipo }))
+                                                    setErrors(prev => ({ ...prev, precio_ref: '' }))
+                                                }}
+                                                className={cn(
+                                                    "relative rounded-xl p-2 text-center border-2 transition-all",
+                                                    selectedPriceKey === opt.key
+                                                        ? "border-blue-500 bg-blue-50"
+                                                        : "border-gray-200 bg-gray-50 hover:border-blue-300"
+                                                )}
+                                            >
+                                                {selectedPriceKey === opt.key && <Check className="absolute top-1 right-1 h-3 w-3 text-blue-600" />}
+                                                <div className="text-[10px] font-medium text-gray-500 mb-0.5">{opt.label}</div>
+                                                <div className="text-sm font-bold text-blue-700">S/ {opt.value.toFixed(2)}</div>
+                                            </button>
+                                        ))}
+                                    </div>
                                 )}
+                                {errors.precio_ref && <p className="text-xs text-red-500">{errors.precio_ref}</p>}
                             </div>
+                        ) : (
                             <div className="space-y-2">
-                                <Label>Meta Cantidad *</Label>
-                                <Input type="number" value={form.meta_cantidad}
-                                       onChange={e => setForm({ ...form, meta_cantidad: e.target.value })}
-                                       className={errors.meta_cantidad ? "border-red-500" : ""} />
-                                {errors.meta_cantidad && <p className="text-xs text-red-500">{errors.meta_cantidad}</p>}
+                                <Label>Precio de referencia</Label>
+                                <Input value={fmtMoney(Number(form.precio_ref))} disabled className="bg-slate-50" />
                             </div>
+                        )}
+
+                        <div className="space-y-2">
+                            <Label>Meta Cantidad *</Label>
+                            <Input type="number" value={form.meta_cantidad}
+                                   onChange={e => setForm({ ...form, meta_cantidad: e.target.value })}
+                                   className={errors.meta_cantidad ? "border-red-500" : ""} />
+                            {errors.meta_cantidad && <p className="text-xs text-red-500">{errors.meta_cantidad}</p>}
                         </div>
 
                         {form.precio_ref && form.meta_cantidad && metaCalculada > 0 && (
@@ -1432,11 +1447,39 @@ function ItemsSection({ onOpenModalChange }: { onOpenModalChange: (fn: () => voi
                                 <p className="text-lg font-bold text-blue-700">{fmtMoney(metaCalculada)}</p>
                             </div>
                         )}
+
+                        {validacionError && (
+                            <p className="text-xs text-amber-600">⚠ {validacionError} (se permitirá guardar)</p>
+                        )}
+
+                        {disponibilidad && (
+                            <div className="rounded-lg border p-3 text-xs space-y-1">
+                                {metasBaseInvalidas ? (
+                                    <p className="text-red-600 font-medium">Define primero la meta del vendedor y del laboratorio.</p>
+                                ) : (
+                                    <>
+                                        <div className={`flex justify-between ${excedeVend ? 'text-red-600 font-semibold' : 'text-slate-600'}`}>
+                                            <span>Disponible vendedor:</span>
+                                            <span>{fmtMoney(Number(dispVend))}</span>
+                                        </div>
+                                        <div className={`flex justify-between ${excedeLab ? 'text-red-600 font-semibold' : 'text-slate-600'}`}>
+                                            <span>Disponible laboratorio:</span>
+                                            <span>{fmtMoney(Number(dispLab))}</span>
+                                        </div>
+                                        {(excedeVend || excedeLab) && (
+                                            <p className="text-red-600 font-medium pt-1">
+                                                Esta meta ({fmtMoney(nuevoMonto)}) excede el tope de {excedeVend ? 'vendedor' : 'laboratorio'}.
+                                            </p>
+                                        )}
+                                    </>
+                                )}
+                            </div>
+                        )}
                     </div>
 
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setIsModalOpen(false)}>Cancelar</Button>
-                        <Button onClick={handleGuardar} disabled={loadingSave}>
+                        <Button onClick={handleGuardar} disabled={loadingSave || bloqueaPorTope}>
                             {loadingSave && <RefreshCw className="h-4 w-4 mr-2 animate-spin" />}
                             <Save className="h-4 w-4 mr-2" /> Guardar
                         </Button>

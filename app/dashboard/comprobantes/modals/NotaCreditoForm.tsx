@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Comprobante } from "@/app/types/order/order-interface"
@@ -26,6 +27,7 @@ interface NotaCreditoFormProps {
     onClose:         () => void
     onSuccess:       () => void
     itemsParciales?: ItemParcial[]
+    modoDescuento?:  boolean
 }
 
 interface FormErrors {
@@ -33,16 +35,19 @@ interface FormErrors {
     motivo?:        string
     idOperacion?:   string
     observaciones?: string
+    montoDescuento?: string
 }
 
 export function NotaCreditoForm({
-                                    comprobante, onClose, onSuccess, itemsParciales
+                                    comprobante, onClose, onSuccess, itemsParciales, modoDescuento
                                 }: NotaCreditoFormProps) {
-    const esParcial = !!itemsParciales && itemsParciales.length > 0
+    const esParcial   = !!itemsParciales && itemsParciales.length > 0
+    const esDescuento = !!modoDescuento
 
     const [loading,          setLoading]          = useState(false)
     const [observaciones,    setObservaciones]    = useState("")
-    const [motivo,           setMotivo]           = useState(esParcial ? "06" : "01")
+    const [montoDescuento,   setMontoDescuento]   = useState("")
+    const [motivo,           setMotivo]           = useState(esDescuento ? "04" : esParcial ? "06" : "01")
     const [tiposComprobante, setTiposComprobante] = useState<Sequential[]>([])
     const [selectedSerie,    setSelectedSerie]    = useState("")
     const [operaciones,      setOperaciones]      = useState<any[]>([])
@@ -98,12 +103,24 @@ export function NotaCreditoForm({
 
     const validate = (): boolean => {
         const newErrors: FormErrors = {}
-        if (!selectedSerie)              newErrors.selectedSerie = "Seleccione una serie"
-        if (!motivo)                     newErrors.motivo        = "Seleccione el motivo"
-        if (!idOperacion)                newErrors.idOperacion   = "Seleccione el tipo de operación"
+        if (!selectedSerie) newErrors.selectedSerie = "Seleccione una serie"
+
+        if (esDescuento) {
+            const monto     = Number(montoDescuento)
+            const totalComp = Number(comprobante.total)
+            if (!montoDescuento || isNaN(monto) || monto <= 0)
+                newErrors.montoDescuento = "Ingrese un monto válido mayor a 0"
+            else if (monto > totalComp)
+                newErrors.montoDescuento = `El descuento no puede superar el total (${totalComp.toFixed(2)})`
+        } else {
+            if (!motivo)      newErrors.motivo      = "Seleccione el motivo"
+            if (!idOperacion) newErrors.idOperacion = "Seleccione el tipo de operación"
+        }
+
         if (!observaciones.trim())       newErrors.observaciones = "Las observaciones son obligatorias"
         else if (observaciones.trim().length < 5)
             newErrors.observaciones = "Mínimo 5 caracteres"
+
         setErrors(newErrors)
         return Object.keys(newErrors).length === 0
     }
@@ -129,6 +146,10 @@ export function NotaCreditoForm({
                     cod_item:  i.cod_item,
                     cantidad:  i.cantidad,
                 }))
+            }
+
+            if (esDescuento) {
+                body.montoDescuento = Number(montoDescuento)
             }
 
             const response = await apiClient.post(`/pedidos/generateNotaCredito`, body)
@@ -226,11 +247,11 @@ export function NotaCreditoForm({
 
                 <Card>
                     <CardHeader className="py-3"
-                                style={{ background: esParcial ? '#f0fdf4' : '#eff6ff' }}>
+                                style={{ background: esDescuento ? '#fffbeb' : esParcial ? '#f0fdf4' : '#eff6ff' }}>
                         <CardTitle className="text-sm font-medium flex items-center gap-2"
-                                   style={{ color: esParcial ? '#15803d' : '#1d4ed8' }}>
+                                   style={{ color: esDescuento ? '#b45309' : esParcial ? '#15803d' : '#1d4ed8' }}>
                             <FileDiff className="h-4 w-4" />
-                            {esParcial ? 'NC Parcial — Datos' : 'NC Total — Datos'}
+                            {esDescuento ? 'NC Descuento Global — Datos' : esParcial ? 'NC Parcial — Datos' : 'NC Total — Datos'}
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="pt-4 space-y-4">
@@ -258,47 +279,75 @@ export function NotaCreditoForm({
                             <FieldError field="selectedSerie" />
                         </div>
 
-                        <div className="space-y-1">
-                            <Label className="text-xs font-semibold uppercase text-gray-500">
-                                Motivo SUNAT <span className="text-red-500">*</span>
-                            </Label>
-                            <Select value={motivo}
-                                    onValueChange={(v) => { setMotivo(v); clearError('motivo') }}>
-                                <SelectTrigger className={`bg-white ${errors.motivo ? 'border-red-400' : ''}`}>
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {motivos.map(m => (
-                                        <SelectItem key={m.code} value={m.code}>
-                                            <span className="font-mono text-gray-500 mr-2">{m.code}</span>
-                                            {m.label}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                            <FieldError field="motivo" />
-                        </div>
+                        {esDescuento ? (
+                            <div className="space-y-1">
+                                <Label className="text-xs font-semibold uppercase text-gray-500">
+                                    Monto del descuento <span className="text-red-500">*</span>
+                                </Label>
+                                <div className="relative">
+                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-500">
+                                        {comprobante.moneda === 1 ? 'S/' : '$'}
+                                    </span>
+                                    <Input
+                                        type="number"
+                                        min={0}
+                                        step="0.01"
+                                        placeholder="0.00"
+                                        value={montoDescuento}
+                                        onChange={(e) => { setMontoDescuento(e.target.value); clearError('montoDescuento') }}
+                                        className={`bg-white pl-9 ${errors.montoDescuento ? 'border-red-400' : ''}`}
+                                    />
+                                </div>
+                                <p className="text-[11px] text-gray-400">
+                                    Monto total con IGV incluido (máx. {Number(comprobante.total).toFixed(2)})
+                                </p>
+                                <FieldError field="montoDescuento" />
+                            </div>
+                        ) : (
+                            <>
+                                <div className="space-y-1">
+                                    <Label className="text-xs font-semibold uppercase text-gray-500">
+                                        Motivo SUNAT <span className="text-red-500">*</span>
+                                    </Label>
+                                    <Select value={motivo}
+                                            onValueChange={(v) => { setMotivo(v); clearError('motivo') }}>
+                                        <SelectTrigger className={`bg-white ${errors.motivo ? 'border-red-400' : ''}`}>
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {motivos.map(m => (
+                                                <SelectItem key={m.code} value={m.code}>
+                                                    <span className="font-mono text-gray-500 mr-2">{m.code}</span>
+                                                    {m.label}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <FieldError field="motivo" />
+                                </div>
 
-                        <div className="space-y-1">
-                            <Label className="text-xs font-semibold uppercase text-gray-500">
-                                Tipo operación <span className="text-red-500">*</span>
-                            </Label>
-                            <Select value={idOperacion}
-                                    onValueChange={(v) => { setIdOperacion(v); clearError('idOperacion') }}>
-                                <SelectTrigger className={`bg-white ${errors.idOperacion ? 'border-red-400' : ''}`}>
-                                    <SelectValue placeholder="Seleccione operación" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {operaciones.map(op => (
-                                        <SelectItem key={op.Codigo_Op} value={op.Codigo_Op}>
-                                            <span className="font-mono text-gray-500 mr-2">{op.Operacion}</span>
-                                            {op.descripcion}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                            <FieldError field="idOperacion" />
-                        </div>
+                                <div className="space-y-1">
+                                    <Label className="text-xs font-semibold uppercase text-gray-500">
+                                        Tipo operación <span className="text-red-500">*</span>
+                                    </Label>
+                                    <Select value={idOperacion}
+                                            onValueChange={(v) => { setIdOperacion(v); clearError('idOperacion') }}>
+                                        <SelectTrigger className={`bg-white ${errors.idOperacion ? 'border-red-400' : ''}`}>
+                                            <SelectValue placeholder="Seleccione operación" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {operaciones.map(op => (
+                                                <SelectItem key={op.Codigo_Op} value={op.Codigo_Op}>
+                                                    <span className="font-mono text-gray-500 mr-2">{op.Operacion}</span>
+                                                    {op.descripcion}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <FieldError field="idOperacion" />
+                                </div>
+                            </>
+                        )}
                     </CardContent>
                 </Card>
             </div>
@@ -324,13 +373,13 @@ export function NotaCreditoForm({
                 <Button
                     onClick={handleSubmit}
                     disabled={loading || !selectedSerie}
-                    className={esParcial ? "bg-green-600 hover:bg-green-700" : "bg-blue-600 hover:bg-blue-700"}
+                    className={esDescuento ? "bg-amber-600 hover:bg-amber-700" : esParcial ? "bg-green-600 hover:bg-green-700" : "bg-blue-600 hover:bg-blue-700"}
                 >
                     {loading
                         ? <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         : <Save className="mr-2 h-4 w-4" />
                     }
-                    {esParcial ? 'Emitir NC Parcial' : 'Emitir NC Total'}
+                    {esDescuento ? 'Emitir NC Descuento' : esParcial ? 'Emitir NC Parcial' : 'Emitir NC Total'}
                 </Button>
             </div>
         </div>
