@@ -1,11 +1,12 @@
 'use client'
 
-import { useEffect, useMemo } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
 import { IVendedorDashboard, IItemDashboard } from "@/app/types/metas-types"
 import {fmtMoney, getInitials, getLabColor, getStatusColor} from "@/app/utils/metas-helpers";
 import StatusChip from "@/components/reporte/metas/StatusChip";
+import ClientesAtendidosModal from "@/components/reporte/metas/ClientesAtendidosModal";
 import ProgressBar from "@/components/reporte/metas/ProgressBar";
 
 interface VendedorDetailModalProps {
@@ -17,6 +18,8 @@ interface VendedorDetailModalProps {
 
 export default function VendedorDetailModal({ open, onClose, vendedor, allItems }: VendedorDetailModalProps) {
     if (!vendedor) return null;
+
+    const [clientesOpen, setClientesOpen] = useState(false);
 
     const avPct = Number(vendedor.pct_avance_monto || 0);
     const [c1] = getStatusColor(avPct);
@@ -45,7 +48,8 @@ export default function VendedorDetailModal({ open, onClose, vendedor, allItems 
     const [cobColor] = getStatusColor(cobPct);
 
     return (
-        <Dialog open={open} onOpenChange={onClose}>
+        <>
+            <Dialog open={open} onOpenChange={onClose}>
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col p-0">
                 <div className="p-5 pb-4 border-b border-slate-200">
                     <div className="flex items-center justify-between gap-3">
@@ -82,7 +86,8 @@ export default function VendedorDetailModal({ open, onClose, vendedor, allItems 
                         <ProgressBar pct={avPct} height="h-1" className="mt-1.5" />
                     </div>
 
-                    <div className="bg-white rounded-lg p-3 border border-slate-200">
+                    <button type="button" onClick={() => setClientesOpen(true)}
+                            className="bg-white rounded-lg p-3 border border-slate-200 text-left hover:border-sky-300 hover:shadow-sm transition-all cursor-pointer">
                         <p className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Cobertura Clientes</p>
                         <p className="text-lg font-bold mt-0.5" style={{ color: cobColor }}>
                             {cobPct}%
@@ -91,7 +96,8 @@ export default function VendedorDetailModal({ open, onClose, vendedor, allItems 
                             {Number(vendedor.clientes_atendidos)} atendidos / meta {Number(vendedor.meta_clientes)}
                         </p>
                         <ProgressBar pct={cobPct} height="h-1" className="mt-1.5" />
-                    </div>
+                        <p className="text-[9px] text-sky-600 font-semibold mt-1">Ver clientes →</p>
+                    </button>
 
                     <div className="bg-white rounded-lg p-3 border border-slate-200">
                         <p className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Unidades Totales</p>
@@ -199,6 +205,14 @@ export default function VendedorDetailModal({ open, onClose, vendedor, allItems 
                     )}
                 </div>
             </DialogContent>
-        </Dialog>
+            </Dialog>
+
+            <ClientesAtendidosModal
+                open={clientesOpen}
+                onClose={() => setClientesOpen(false)}
+                idMetaLabVend={vendedor.id_meta_lab_vend}
+                nombreVendedor={vendedor.nombre_vendedor || vendedor.cod_vendedor}
+            />
+        </>
     );
 }

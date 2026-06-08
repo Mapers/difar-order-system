@@ -159,4 +159,9 @@ export class MetasService {
         const response = await apiClient.get(`/metas/articulos/por-laboratorio`);
         return response.data;
     }
+
+    static async listarClientesAtendidos(idMetaLabVend: number): Promise<any> {
+        const response = await apiClient.get(`/metas/dashboard/clientes-vendedor/${idMetaLabVend}`);
+        return response.data;
+    }
 }
