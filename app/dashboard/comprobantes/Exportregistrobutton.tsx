@@ -113,10 +113,23 @@ function calcIGV(total: string | null): number {
     return isNaN(t) ? 0 : t - t / 1.18
 }
 
+function sanitizeText(text: any): string {
+    const str = (text === null || text === undefined) ? '' : String(text)
+    return str
+        // tabuladores y saltos de línea -> espacio
+        .replace(/[\t\v\f\r\n]/g, ' ')
+        // resto de caracteres de control no codificables en WinAnsi -> se eliminan
+        // eslint-disable-next-line no-control-regex
+        .replace(/[\x00-\x1F\x7F]/g, "")
+        // colapsar espacios repetidos
+        .replace(/ {2,}/g, ' ')
+        .trim()
+}
+
 function splitTextIntoLines(
     text: any, maxWidth: number, font: any, fontSize: number
 ): string[] {
-    const str = (text === null || text === undefined) ? '' : String(text)
+    const str = sanitizeText(text)
     if (!str) return ['']
     const words = str.split(' ')
     const lines: string[] = []

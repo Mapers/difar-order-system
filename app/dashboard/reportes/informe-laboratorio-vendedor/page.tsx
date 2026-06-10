@@ -11,6 +11,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
 import { Calendar } from "@/components/ui/calendar"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Switch } from "@/components/ui/switch"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { cn } from "@/lib/utils"
@@ -35,6 +36,7 @@ export default function LabSellerReportPage() {
     const [selectedLabs, setSelectedLabs] = useState<number[]>([]);
     const [selectedVends, setSelectedVends] = useState<string[]>([]);
     const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+    const [excluirSerie0800, setExcluirSerie0800] = useState(false);
 
     const [openLab, setOpenLab] = useState(false);
     const [openVend, setOpenVend] = useState(false);
@@ -94,7 +96,8 @@ export default function LabSellerReportPage() {
                 laboratorios: selectedLabs.length > 0 ? selectedLabs : [],
                 vendedores: vendorsToQuery,
                 anio: anioSeleccionado,
-                mes: mesSeleccionado
+                mes: mesSeleccionado,
+                excluir: excluirSerie0800
             };
 
             const response = await apiClient.post('/reportes/informe-laboratorio-vendedor', payload);
@@ -221,94 +224,53 @@ export default function LabSellerReportPage() {
             </div>
 
             <Card className="shadow-md">
-                <CardHeader className="bg-slate-50 border-b border-slate-200 p-4">
-                    <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-start">
-                        <div className={`flex flex-col gap-2 ${isManagerOrAdmin ? 'md:col-span-3' : 'md:col-span-4'}`}>
-                            <label className="text-sm font-semibold flex items-center gap-2 text-slate-700">
-                                <CalendarIcon className="w-4 h-4 "/> Periodo (Mes y Año)
-                            </label>
-                            <Popover>
-                                <PopoverTrigger asChild>
-                                    <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal bg-white h-10", !selectedDate && "text-muted-foreground")}>
-                                        <CalendarIcon className="mr-2 h-4 w-4 opacity-50" />
-                                        {selectedDate ? format(selectedDate, "MMMM yyyy", { locale: es }).replace(/^\w/, (c) => c.toUpperCase()) : <span>Seleccionar mes</span>}
-                                    </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0 z-50" align="start">
-                                    <Calendar mode="single" selected={selectedDate} onSelect={(date) => date && setSelectedDate(date)} initialFocus locale={es} />
-                                </PopoverContent>
-                            </Popover>
-                        </div>
-
-                        <div className={`flex flex-col gap-2 ${isManagerOrAdmin ? 'md:col-span-3' : 'md:col-span-4'}`}>
-                            <label className="text-sm font-semibold flex items-center gap-2 text-slate-700">
-                                <FlaskConical className="w-4 h-4 "/> Laboratorios
-                            </label>
-                            <Popover open={openLab} onOpenChange={setOpenLab}>
-                                <PopoverTrigger asChild>
-                                    <Button variant="outline" role="combobox" className="justify-between w-full h-auto min-h-10 px-3 py-2 bg-white">
-                                        <div className="flex flex-wrap gap-1 items-center">
-                                            {selectedLabs.length > 0 ? <span className="text-sm font-semibold text-blue-700">{selectedLabs.length} seleccionado(s)</span> : <span className="text-muted-foreground text-sm font-normal">Todos...</span>}
-                                        </div>
-                                        <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                    </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-[300px] p-0 z-50" align="start">
-                                    <Command>
-                                        <CommandInput placeholder="Buscar laboratorio..." />
-                                        <CommandList>
-                                            <CommandEmpty>No se encontró laboratorio.</CommandEmpty>
-                                            <CommandGroup>
-                                                {catLaboratorios.map((lab) => (
-                                                    <CommandItem key={lab.IdLineaGe} onSelect={() => toggleLab(lab.IdLineaGe)}>
-                                                        <Check className={cn("mr-2 h-4 w-4", selectedLabs.includes(lab.IdLineaGe) ? "opacity-100" : "opacity-0")}/>
-                                                        {lab.Descripcion}
-                                                    </CommandItem>
-                                                ))}
-                                            </CommandGroup>
-                                        </CommandList>
-                                    </Command>
-                                </PopoverContent>
-                            </Popover>
-                            {selectedLabs.length > 0 && (
-                                <div className="flex flex-wrap gap-1.5 mt-1">
-                                    {selectedLabs.map(id => {
-                                        const found = catLaboratorios.find(l => l.IdLineaGe === id);
-                                        return found ? (
-                                            <Badge key={id} variant="secondary" className="text-[10px] md:text-xs px-2 py-0.5 font-medium bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200">
-                                                {found.Descripcion} <X className="ml-1.5 h-3 w-3 cursor-pointer hover:text-red-500 hover:bg-red-100 rounded-full" onClick={() => toggleLab(id)} />
-                                            </Badge>
-                                        ) : null;
-                                    })}
-                                    <span className="text-xs text-slate-500 cursor-pointer hover:text-slate-800 hover:underline pt-1 ml-1 font-medium" onClick={() => setSelectedLabs([])}>Limpiar</span>
-                                </div>
-                            )}
-                        </div>
-
-                        {isManagerOrAdmin && (
-                            <div className="md:col-span-3 flex flex-col gap-2">
+                <CardHeader className="bg-slate-50 border-b border-slate-200 p-4 md:p-5">
+                    <div className="flex flex-col gap-4">
+                        {/* Fila de filtros */}
+                        <div className={cn(
+                            "grid grid-cols-1 gap-4 sm:grid-cols-2",
+                            isManagerOrAdmin && "lg:grid-cols-3"
+                        )}>
+                            {/* Periodo */}
+                            <div className="flex flex-col gap-1.5 min-w-0">
                                 <label className="text-sm font-semibold flex items-center gap-2 text-slate-700">
-                                    <Users className="w-4 h-4"/> Vendedores
+                                    <CalendarIcon className="w-4 h-4 shrink-0"/> Periodo (Mes y Año)
                                 </label>
-                                <Popover open={openVend} onOpenChange={setOpenVend}>
+                                <Popover>
                                     <PopoverTrigger asChild>
-                                        <Button variant="outline" role="combobox" className="justify-between w-full h-auto min-h-10 px-3 py-2 bg-white">
-                                            <div className="flex flex-wrap gap-1 items-center">
-                                                {selectedVends.length > 0 ? <span className="text-sm font-semibold text-orange-700">{selectedVends.length} seleccionado(s)</span> : <span className="text-muted-foreground text-sm font-normal">Todos...</span>}
-                                            </div>
+                                        <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal bg-white h-10", !selectedDate && "text-muted-foreground")}>
+                                            <CalendarIcon className="mr-2 h-4 w-4 opacity-50 shrink-0" />
+                                            <span className="truncate">{selectedDate ? format(selectedDate, "MMMM yyyy", { locale: es }).replace(/^\w/, (c) => c.toUpperCase()) : "Seleccionar mes"}</span>
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-0 z-50" align="start">
+                                        <Calendar mode="single" selected={selectedDate} onSelect={(date) => date && setSelectedDate(date)} initialFocus locale={es} />
+                                    </PopoverContent>
+                                </Popover>
+                            </div>
+
+                            {/* Laboratorios */}
+                            <div className="flex flex-col gap-1.5 min-w-0">
+                                <label className="text-sm font-semibold flex items-center gap-2 text-slate-700">
+                                    <FlaskConical className="w-4 h-4 shrink-0"/> Laboratorios
+                                </label>
+                                <Popover open={openLab} onOpenChange={setOpenLab}>
+                                    <PopoverTrigger asChild>
+                                        <Button variant="outline" role="combobox" className="justify-between w-full h-10 px-3 bg-white font-normal">
+                                            {selectedLabs.length > 0 ? <span className="text-sm font-semibold text-blue-700 truncate">{selectedLabs.length} seleccionado(s)</span> : <span className="text-muted-foreground text-sm">Todos...</span>}
                                             <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                         </Button>
                                     </PopoverTrigger>
-                                    <PopoverContent className="w-[300px] p-0 z-50" align="start">
+                                    <PopoverContent className="w-[--radix-popover-trigger-width] min-w-[260px] p-0 z-50" align="start">
                                         <Command>
-                                            <CommandInput placeholder="Buscar vendedor..." />
+                                            <CommandInput placeholder="Buscar laboratorio..." />
                                             <CommandList>
-                                                <CommandEmpty>No se encontró vendedor.</CommandEmpty>
+                                                <CommandEmpty>No se encontró laboratorio.</CommandEmpty>
                                                 <CommandGroup>
-                                                    {catVendedores.map((vend) => (
-                                                        <CommandItem key={vend.Codigo_Vend || vend.codigo} onSelect={() => toggleVend(vend.Codigo_Vend || vend.codigo)}>
-                                                            <Check className={cn("mr-2 h-4 w-4", selectedVends.includes(vend.Codigo_Vend || vend.codigo) ? "opacity-100" : "opacity-0")}/>
-                                                            {vend.Nombres || vend.nombres} {vend.Apellidos || vend.apellidos}
+                                                    {catLaboratorios.map((lab) => (
+                                                        <CommandItem key={lab.IdLineaGe} onSelect={() => toggleLab(lab.IdLineaGe)}>
+                                                            <Check className={cn("mr-2 h-4 w-4", selectedLabs.includes(lab.IdLineaGe) ? "opacity-100" : "opacity-0")}/>
+                                                            {lab.Descripcion}
                                                         </CommandItem>
                                                     ))}
                                                 </CommandGroup>
@@ -316,26 +278,86 @@ export default function LabSellerReportPage() {
                                         </Command>
                                     </PopoverContent>
                                 </Popover>
-                                {selectedVends.length > 0 && (
-                                    <div className="flex flex-wrap gap-1.5 mt-1">
-                                        {selectedVends.map(cod => {
-                                            const found = catVendedores.find(v => (v.Codigo_Vend || v.codigo) === cod);
+                                {selectedLabs.length > 0 && (
+                                    <div className="flex flex-wrap gap-1.5">
+                                        {selectedLabs.map(id => {
+                                            const found = catLaboratorios.find(l => l.IdLineaGe === id);
                                             return found ? (
-                                                <Badge key={cod} variant="secondary" className="text-[10px] md:text-xs px-2 py-0.5 font-medium bg-orange-50 text-orange-700 hover:bg-orange-100 border border-orange-200">
-                                                    {found.Nombres || found.nombres} <X className="ml-1.5 h-3 w-3 cursor-pointer hover:text-red-500 hover:bg-red-100 rounded-full" onClick={() => toggleVend(cod)} />
+                                                <Badge key={id} variant="secondary" className="max-w-full text-[10px] md:text-xs px-2 py-0.5 font-medium bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200">
+                                                    <span className="truncate">{found.Descripcion}</span> <X className="ml-1.5 h-3 w-3 shrink-0 cursor-pointer hover:text-red-500 hover:bg-red-100 rounded-full" onClick={() => toggleLab(id)} />
                                                 </Badge>
                                             ) : null;
                                         })}
-                                        <span className="text-xs text-slate-500 cursor-pointer hover:text-slate-800 hover:underline pt-1 ml-1 font-medium" onClick={() => setSelectedVends([])}>Limpiar</span>
+                                        <span className="text-xs text-slate-500 cursor-pointer hover:text-slate-800 hover:underline self-center ml-1 font-medium" onClick={() => setSelectedLabs([])}>Limpiar</span>
                                     </div>
                                 )}
                             </div>
-                        )}
-                        <div className={`flex flex-col sm:flex-row gap-3 pt-6 md:justify-end ${isManagerOrAdmin ? 'md:col-span-3' : 'md:col-span-4'}`}>
-                            <Button onClick={handleSearch} disabled={loading} className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto shadow-sm h-10">
-                                <Search className="mr-2 h-4 w-4" /> Buscar
-                            </Button>
-                            <ExportLabSellerPdf data={data} disabled={loading || data.length === 0} />
+
+                            {/* Vendedores (solo admin) */}
+                            {isManagerOrAdmin && (
+                                <div className="flex flex-col gap-1.5 min-w-0">
+                                    <label className="text-sm font-semibold flex items-center gap-2 text-slate-700">
+                                        <Users className="w-4 h-4 shrink-0"/> Vendedores
+                                    </label>
+                                    <Popover open={openVend} onOpenChange={setOpenVend}>
+                                        <PopoverTrigger asChild>
+                                            <Button variant="outline" role="combobox" className="justify-between w-full h-10 px-3 bg-white font-normal">
+                                                {selectedVends.length > 0 ? <span className="text-sm font-semibold text-orange-700 truncate">{selectedVends.length} seleccionado(s)</span> : <span className="text-muted-foreground text-sm">Todos...</span>}
+                                                <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-[--radix-popover-trigger-width] min-w-[260px] p-0 z-50" align="start">
+                                            <Command>
+                                                <CommandInput placeholder="Buscar vendedor..." />
+                                                <CommandList>
+                                                    <CommandEmpty>No se encontró vendedor.</CommandEmpty>
+                                                    <CommandGroup>
+                                                        {catVendedores.map((vend) => (
+                                                            <CommandItem key={vend.Codigo_Vend || vend.codigo} onSelect={() => toggleVend(vend.Codigo_Vend || vend.codigo)}>
+                                                                <Check className={cn("mr-2 h-4 w-4", selectedVends.includes(vend.Codigo_Vend || vend.codigo) ? "opacity-100" : "opacity-0")}/>
+                                                                {vend.Nombres || vend.nombres} {vend.Apellidos || vend.apellidos}
+                                                            </CommandItem>
+                                                        ))}
+                                                    </CommandGroup>
+                                                </CommandList>
+                                            </Command>
+                                        </PopoverContent>
+                                    </Popover>
+                                    {selectedVends.length > 0 && (
+                                        <div className="flex flex-wrap gap-1.5">
+                                            {selectedVends.map(cod => {
+                                                const found = catVendedores.find(v => (v.Codigo_Vend || v.codigo) === cod);
+                                                return found ? (
+                                                    <Badge key={cod} variant="secondary" className="max-w-full text-[10px] md:text-xs px-2 py-0.5 font-medium bg-orange-50 text-orange-700 hover:bg-orange-100 border border-orange-200">
+                                                        <span className="truncate">{found.Nombres || found.nombres}</span> <X className="ml-1.5 h-3 w-3 shrink-0 cursor-pointer hover:text-red-500 hover:bg-red-100 rounded-full" onClick={() => toggleVend(cod)} />
+                                                    </Badge>
+                                                ) : null;
+                                            })}
+                                            <span className="text-xs text-slate-500 cursor-pointer hover:text-slate-800 hover:underline self-center ml-1 font-medium" onClick={() => setSelectedVends([])}>Limpiar</span>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Pie: opciones + acciones */}
+                        <div className="flex flex-col gap-3 border-t border-slate-200 pt-4 sm:flex-row sm:items-center sm:justify-between">
+                            <div className="flex items-center gap-2.5">
+                                <Switch
+                                    id="excluir-serie-0800"
+                                    checked={excluirSerie0800}
+                                    onCheckedChange={setExcluirSerie0800}
+                                />
+                                <label htmlFor="excluir-serie-0800" className="text-sm font-medium text-slate-700 cursor-pointer select-none">
+                                    Excluir serie 0800
+                                </label>
+                            </div>
+                            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                                <Button onClick={handleSearch} disabled={loading} className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto shadow-sm h-10">
+                                    <Search className="mr-2 h-4 w-4" /> Buscar
+                                </Button>
+                                <ExportLabSellerPdf data={data} disabled={loading || data.length === 0} />
+                            </div>
                         </div>
                     </div>
                 </CardHeader>
