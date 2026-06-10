@@ -580,9 +580,9 @@ export const Remision = ({ pedido, detalles, onOpenChange, fetchGuiasRemision }:
       });
       onOpenChange(false);
       fetchGuiasRemision();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error al generar guía:", error);
-      const message =  error?.response?.data?.message ? error?.response?.data?.message.split('|')[0] : "Ocurrió un error al generar la guía"
+      const message = error?.response?.data?.message || "Ocurrió un error al generar la guía"
       toast({
         title: "Error",
         description: message || "Ocurrió un error al generar la guía",
