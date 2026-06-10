@@ -786,6 +786,13 @@ export function useOrderPage() {
         fetchConditions()
     }, [search.condition])
 
+    // Al cargar las monedas, setear automáticamente la primera si aún no hay una elegida
+    useEffect(() => {
+        if (monedas.length > 0) {
+            setCurrency(prev => prev ?? monedas[0])
+        }
+    }, [])
+
     useEffect(() => {
         const fetchProducts = async () => {
             if (!selectedAlmacen) return
