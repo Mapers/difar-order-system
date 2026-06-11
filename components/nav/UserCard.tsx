@@ -2,12 +2,31 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { User } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { User, Loader2 } from "lucide-react";
 import { useAuth } from "@/context/authContext";
+import { Switch } from "@/components/ui/switch";
+import { cn } from "@/lib/utils";
 
 /** Cabecera compartida del sidebar: logo + tarjeta con datos del usuario. */
 export function UserCard() {
-  const { user } = useAuth();
+  const { user, ingresarComoVendedor, ingresarComoRepresentante, switchingRole } = useAuth();
+  const router = useRouter();
+
+  // Modo activo según el token
+  const esVendedorSimulado = !!user?.simuladoPorRepresentante;
+  const esRepresentante = !!user?.idRepresentante;
+  // Solo se puede alternar si hay contraparte
+  const puedeAlternar =
+    (esRepresentante && !!user?.vendedorRelacion?.idVendedor) || esVendedorSimulado;
+
+  const handleToggle = async (haciaVendedor: boolean) => {
+    if (switchingRole) return;
+    const ok = haciaVendedor
+      ? await ingresarComoVendedor()
+      : await ingresarComoRepresentante();
+    if (ok) router.push("/dashboard");
+  };
 
   return (
     <div className="flex flex-col items-center border-b px-4 pt-4 pb-2 gap-2">
@@ -44,6 +63,38 @@ export function UserCard() {
             </div>
           </div>
         </div>
+
+        {puedeAlternar && (
+          <div className="mt-2 border-t border-blue-100 pt-2">
+            <div className="flex items-center justify-center gap-2">
+              <span
+                className={cn(
+                  "text-[11px] font-medium transition-colors",
+                  !esVendedorSimulado ? "text-blue-700" : "text-gray-400"
+                )}
+              >
+                Representante
+              </span>
+              <Switch
+                checked={esVendedorSimulado}
+                disabled={switchingRole}
+                onCheckedChange={(v) => handleToggle(v)}
+                aria-label="Cambiar entre representante y vendedor"
+              />
+              <span
+                className={cn(
+                  "text-[11px] font-medium transition-colors",
+                  esVendedorSimulado ? "text-green-700" : "text-gray-400"
+                )}
+              >
+                Vendedor
+              </span>
+              {switchingRole && (
+                <Loader2 className="h-3.5 w-3.5 animate-spin text-gray-400" />
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

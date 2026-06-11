@@ -23,6 +23,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const [user, setUser] = useState<User | null>(null);
     const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
     const [pendingRoleSelection, setPendingRoleSelection] = useState<boolean>(false);
+    const [switchingRole, setSwitchingRole] = useState<boolean>(false);
     const [errors, setErrors] = useState<string[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const router = useRouter();
@@ -146,6 +147,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const ingresarComoVendedor = async (): Promise<boolean> => {
         try {
             setLoading(true);
+            setSwitchingRole(true);
             const currentToken = localStorage.getItem('token') || tokenRef.current;
             if (!currentToken) return false;
             const res = await AuthService.ingresarComoVendedor(currentToken);
@@ -168,6 +170,34 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             return false;
         } finally {
             setLoading(false);
+            setSwitchingRole(false);
+        }
+    };
+
+    const ingresarComoRepresentante = async (): Promise<boolean> => {
+        try {
+            setSwitchingRole(true);
+            const currentToken = localStorage.getItem('token') || tokenRef.current;
+            if (!currentToken) return false;
+            const res = await AuthService.ingresarComoRepresentante(currentToken);
+            if (res && res.success && res.data) {
+                const newToken = res.data;
+                const tokenResult = decodeToken(newToken);
+                if (tokenResult.isValid && tokenResult.user) {
+                    localStorage.setItem('token', newToken);
+                    tokenRef.current = newToken;
+                    setUser(tokenResult.user);
+                    setIsAuthenticated(true);
+                    return true;
+                }
+            }
+            handleError(res?.message || 'No se pudo ingresar como representante');
+            return false;
+        } catch (error: any) {
+            handleError(error.response?.data?.message || 'Error al ingresar como representante');
+            return false;
+        } finally {
+            setSwitchingRole(false);
         }
     };
 
@@ -264,6 +294,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 sendDni,
                 signin,
                 ingresarComoVendedor,
+                ingresarComoRepresentante,
+                switchingRole,
                 pendingRoleSelection,
                 clearPendingRoleSelection: () => setPendingRoleSelection(false),
                 logout,

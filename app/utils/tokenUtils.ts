@@ -48,7 +48,8 @@ export const decodeToken = (token: string | null | undefined): TokenDecodeResult
             vendedores: decoded.usuario.vendedores,
             vendedorRelacion: decoded.usuario.vendedorRelacion ?? null,
             idVendedor: decoded.usuario.idVendedor,
-            edicion_pedido: decoded.usuario.edicion_pedido
+            edicion_pedido: decoded.usuario.edicion_pedido,
+            simuladoPorRepresentante: decoded.usuario.simuladoPorRepresentante ?? null
         }
         return {
             isValid: true,

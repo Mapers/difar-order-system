@@ -30,6 +30,7 @@ export interface JwtPayload {
         vendedores: VendedorRelacionado[];
         vendedorRelacion?: VendedorRelacionUnico | null;
         edicion_pedido: boolean;
+        simuladoPorRepresentante?: number | string | null;
     },
     menus: Menu[]
     iat: number;
@@ -70,6 +71,8 @@ export interface User {
     vendedores: VendedorRelacionado[];
     vendedorRelacion?: VendedorRelacionUnico | null;
     edicion_pedido: boolean;
+    /** idRepresentante de origen cuando es un vendedor simulado por un representante */
+    simuladoPorRepresentante?: number | string | null;
 }
 
 export interface UserRegisterDTO {
@@ -85,6 +88,8 @@ export interface AuthContextType {
     sendDni: (user: UserLoginDTO) => Promise<any>;
     signin: (smsCheck: SmsCheck) => Promise<any>;
     ingresarComoVendedor: () => Promise<boolean>;
+    ingresarComoRepresentante: () => Promise<boolean>;
+    switchingRole: boolean;
     pendingRoleSelection: boolean;
     clearPendingRoleSelection: () => void;
     logout: () => Promise<void>;

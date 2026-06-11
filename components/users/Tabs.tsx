@@ -2,13 +2,14 @@
 import { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Edit, ChevronDown, ChevronUp, Check, X } from 'lucide-react';
-import {EditUsuarioWebModal, VendedorModal, UsuarioGeneralModal, RepresentanteModal} from './Modals';
+import { Edit, ChevronDown, ChevronUp, Check, X, Trash2 } from 'lucide-react';
+import {EditUsuarioWebModal, DeleteUsuarioWebModal, VendedorModal, UsuarioGeneralModal, RepresentanteModal} from './Modals';
 import {Laboratorio, Representante, Rol, Usuario, UsuarioNoWeb, Vendedor} from "@/app/types/user-types";
 
 export const UsuariosWebTab = ({ usuarios, roles, isMobile, onRefresh }: { usuarios: Usuario[], roles: Rol[], isMobile: boolean, onRefresh: () => void }) => {
     const [expanded, setExpanded] = useState<Record<number, boolean>>({});
     const [selected, setSelected] = useState<Usuario | null>(null);
+    const [toDelete, setToDelete] = useState<Usuario | null>(null);
 
     const toggle = (id: number) => setExpanded(prev => ({ ...prev, [id]: !prev[id] }));
 
@@ -23,7 +24,12 @@ export const UsuariosWebTab = ({ usuarios, roles, isMobile, onRefresh }: { usuar
                                 <Button variant="ghost" size="icon" onClick={() => toggle(u.id_usuario)}>{expanded[u.id_usuario] ? <ChevronUp/> : <ChevronDown/>}</Button>
                             </div>
                             <div className="text-sm my-2">Tel: {u.telefono} <br/> Rol: {u.nombre_rol}</div>
-                            {expanded[u.id_usuario] && <Button className="w-full mt-2" onClick={() => setSelected(u)}><Edit className="h-4 w-4 mr-2"/>Editar</Button>}
+                            {expanded[u.id_usuario] && (
+                                <div className="flex gap-2 mt-2">
+                                    <Button className="flex-1" onClick={() => setSelected(u)}><Edit className="h-4 w-4 mr-2"/>Editar</Button>
+                                    <Button variant="destructive" className="flex-1" onClick={() => setToDelete(u)}><Trash2 className="h-4 w-4 mr-2"/>Eliminar</Button>
+                                </div>
+                            )}
                         </CardContent></Card>
                     ))}
                 </div>
@@ -37,13 +43,19 @@ export const UsuariosWebTab = ({ usuarios, roles, isMobile, onRefresh }: { usuar
                         <tr key={u.id_usuario}>
                             <td className="p-4 text-sm">{u.nombre_completo}</td><td className="p-4 text-sm">{u.dni}</td><td className="p-4 text-sm">{u.telefono}</td><td className="p-4 text-sm">{u.nombre_rol}</td>
                             <td className="p-4 text-sm">{u.activo ? <span className="text-green-800 bg-green-100 px-2 rounded-full text-xs">Activo</span> : <span className="text-red-800 bg-red-100 px-2 rounded-full text-xs">Inactivo</span>}</td>
-                            <td className="p-4 text-sm"><Button variant="ghost" size="icon" onClick={() => setSelected(u)}><Edit className="h-4 w-4 text-blue-600"/></Button></td>
+                            <td className="p-4 text-sm">
+                                <div className="flex items-center gap-1">
+                                    <Button variant="ghost" size="icon" onClick={() => setSelected(u)}><Edit className="h-4 w-4 text-blue-600"/></Button>
+                                    <Button variant="ghost" size="icon" onClick={() => setToDelete(u)}><Trash2 className="h-4 w-4 text-red-600"/></Button>
+                                </div>
+                            </td>
                         </tr>
                     ))}
                     </tbody>
                 </table>
             )}
             <EditUsuarioWebModal isOpen={!!selected} onClose={() => setSelected(null)} usuario={selected} roles={roles} onSuccess={onRefresh} />
+            <DeleteUsuarioWebModal isOpen={!!toDelete} onClose={() => setToDelete(null)} usuario={toDelete} onSuccess={onRefresh} />
         </CardContent></Card>
     );
 };

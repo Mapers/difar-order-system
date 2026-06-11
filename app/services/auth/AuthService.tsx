@@ -57,6 +57,20 @@ export class AuthService {
     return response.data
   };
 
+  /**
+   * Re-emite un token de representante a partir del representante de origen.
+   * @param token token actual (vendedor simulado o representante)
+   * @returns respuesta con el nuevo token en data
+   */
+  static async ingresarComoRepresentante(token: string) {
+    const response = await apiClient.post(
+      `auth/ingresar-como-representante`,
+      { token },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    return response.data
+  };
+
 
   /**
    * 

@@ -193,6 +193,47 @@ export const EditUsuarioWebModal = ({ isOpen, onClose, usuario, roles, onSuccess
     );
 };
 
+export const DeleteUsuarioWebModal = ({ isOpen, onClose, usuario, onSuccess }: any) => {
+    const { toast } = useToast();
+    const [loading, setLoading] = useState(false);
+
+    const handleDelete = async () => {
+        if (!usuario) return;
+        setLoading(true);
+        try {
+            await apiClient.delete(`/usuarios/delete/${usuario.id}`);
+            toast({ title: 'Éxito', description: 'Usuario eliminado correctamente' });
+            onSuccess();
+            onClose();
+        } catch (error: any) {
+            toast({ title: 'Error', description: error.response?.data?.message || 'No se pudo eliminar', variant: 'destructive' });
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <Dialog open={isOpen} onOpenChange={onClose}>
+            <DialogContent className="max-w-md">
+                <DialogHeader><DialogTitle>Eliminar Usuario</DialogTitle></DialogHeader>
+                <div className="space-y-2">
+                    <p className="text-sm text-gray-600">
+                        ¿Estás seguro de eliminar al usuario{' '}
+                        <span className="font-semibold text-gray-900">{usuario?.nombre_completo}</span>?
+                        Esta acción no se puede deshacer.
+                    </p>
+                </div>
+                <DialogFooter>
+                    <Button variant="outline" onClick={onClose} disabled={loading}>Cancelar</Button>
+                    <Button variant="destructive" onClick={handleDelete} disabled={loading}>
+                        {loading ? 'Eliminando...' : 'Eliminar'}
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+};
+
 export const VendedorModal = ({ isOpen, onClose, initialData, onSuccess }: any) => {
     const { toast } = useToast();
     const [form, setForm] = useState({ codigo: '', nombres: '', apellidos: '', DNI: '', telefono: '', comisionVend: 0, comisionCobranza: 0, empRegistro: '20481321892', activo: 1 });
