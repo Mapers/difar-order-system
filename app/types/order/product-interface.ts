@@ -78,6 +78,7 @@ export interface IProduct {
   afecto_igv: number;
   tipo_afectacion_igv: string;
   tipo_afectacion_descripcion: string;
+  tieneSustitutos: number;
 }
 
 // Interfaz order item
