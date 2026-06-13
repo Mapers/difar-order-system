@@ -3,7 +3,7 @@
 import { useState, useCallback } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import {FileText, Plus, Truck, Settings, CreditCard, Target, FlaskConical, Hash, Landmark, MessageCircle} from "lucide-react"
+import {FileText, Plus, Truck, Settings, CreditCard, Target, FlaskConical, Hash, Landmark, MessageCircle, Pill} from "lucide-react" // Se agregó Pill
 import AppConfigSection from "@/components/configuraciones/AppConfigSection";
 import SequentialSection from "@/components/configuraciones/SequentialSection";
 import ClientConditionsSection from "@/components/configuraciones/ClientConditionsSection";
@@ -11,6 +11,7 @@ import MetasConfigSection from "@/components/configuraciones/MetasConfigSection"
 import LaboratoriosSection from "@/components/configuraciones/Laboratoriossection";
 import CreditLineSection from "@/components/configuraciones/CreditLineSection";
 import WhatsappSection from "@/components/configuraciones/WhatsappSection";
+import SustitutosSection from "@/components/configuraciones/SustitutosSection";
 
 const sections = [
     {
@@ -56,6 +57,13 @@ const sections = [
         color: 'sky',
     },
     {
+        id: "sustitutos",
+        title: "Productos Sustitutos",
+        description: "Gestión de equivalencias y sustitutos para dispensación",
+        icon: Pill,
+        color: "indigo"
+    },
+    {
         id: "configuraciones",
         title: "Ajustes del Sistema",
         description: "Variables y llaves de configuración global",
@@ -86,6 +94,7 @@ const iconColorMap: Record<string, string> = {
     metas: "text-sky-600",
     configuraciones: "text-orange-600",
     laboratorios: 'text-sky-600',
+    sustitutos: 'text-indigo-600',
     lineas_credito: "text-amber-600",
     whatsapp: "text-green-600",
 }
@@ -98,6 +107,7 @@ const activeBgMap: Record<string, string> = {
     metas: "bg-sky-50 border-sky-500 text-sky-700",
     configuraciones: "bg-orange-50 border-orange-500 text-orange-700",
     laboratorios: 'bg-sky-50 border-sky-500 text-sky-700',
+    sustitutos: 'bg-indigo-50 border-indigo-500 text-indigo-700',
     lineas_credito: "bg-amber-50 border-amber-500 text-amber-700",
     whatsapp: "bg-green-50 border-green-500 text-green-700",
 }
@@ -110,6 +120,7 @@ const activeIconBg: Record<string, string> = {
     metas: "bg-sky-100 text-sky-600",
     configuraciones: "bg-orange-100 text-orange-600",
     laboratorios: 'bg-sky-100 text-sky-600',
+    sustitutos: 'bg-indigo-100 text-indigo-600',
     lineas_credito: "bg-amber-100 text-amber-600",
     whatsapp: "bg-green-100 text-green-600",
 }
@@ -180,22 +191,24 @@ export default function ConfiguracionesPage() {
                                         ? "Configura las variables de entorno de la base de datos."
                                         : activeSection === "lineas_credito"
                                             ? "Gestiona las líneas de crédito asignadas a cada cliente."
-                                        : activeSection === "metas"
-                                            ? "Administra ciclos, metas por laboratorio, vendedor y producto."
-                                            : activeSection === "condiciones_cliente"
-                                                ? "Asigna condiciones de pago a cliente-cobranza específicos."
-                                                : activeSection === "otros_correlativos"
-                                                    ? "Configura la numeración para otros documentos internos."
-                                                    : activeSection === "whatsapp"
-                                                        ? "Registra los números de WhatsApp que recibirán notificaciones de ventas."
-                                                        : `Configura la numeración para ${activeSection === "secuenciales" ? "facturas y boletas" : "guías de remisión"}`}
+                                            : activeSection === "metas"
+                                                ? "Administra ciclos, metas por laboratorio, vendedor y producto."
+                                                : activeSection === "condiciones_cliente"
+                                                    ? "Asigna condiciones de pago a cliente-cobranza específicos."
+                                                    : activeSection === "otros_correlativos"
+                                                        ? "Configura la numeración para otros documentos internos."
+                                                        : activeSection === "sustitutos"
+                                                            ? "Administra los productos equivalentes o sustitutos para dispensación."
+                                                            : activeSection === "whatsapp"
+                                                                ? "Registra los números de WhatsApp que recibirán notificaciones de ventas."
+                                                                : `Configura la numeración para ${activeSection === "secuenciales" ? "facturas y boletas" : "guías de remisión"}`}
                                 </CardDescription>
                             </div>
                             {activeSection !== 'lineas_credito' && <Button
-                                onClick={() => openModalFn && openModalFn()}
-                                className="flex items-center gap-2 w-full sm:w-auto"
+                              onClick={() => openModalFn && openModalFn()}
+                              className="flex items-center gap-2 w-full sm:w-auto"
                             >
-                                <Plus className="h-4 w-4"/> Nuevo Registro
+                              <Plus className="h-4 w-4"/> Nuevo Registro
                             </Button>}
                         </CardHeader>
 
@@ -212,6 +225,8 @@ export default function ConfiguracionesPage() {
                                 <LaboratoriosSection onOpenModalChange={handleSetOpenModalFn} />
                             ) : activeSection === 'whatsapp' ? (
                                 <WhatsappSection onOpenModalChange={handleSetOpenModalFn} />
+                            ) : activeSection === 'sustitutos' ? (
+                                <SustitutosSection onOpenModalChange={handleSetOpenModalFn} />
                             ) : (
                                 <SequentialSection
                                     key={activeSection}

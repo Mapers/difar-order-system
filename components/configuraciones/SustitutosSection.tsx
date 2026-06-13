@@ -1,16 +1,16 @@
 'use client'
 
-import { useState, useEffect } from "react"
+import React, { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
+import { Card, CardContent } from "@/components/ui/card"
 import {
-    Search, Plus, Edit, Trash2, Eye, X, ArrowUp, ArrowDown, PackageSearch, Pill
+    Search, Plus, Edit, Trash2, Eye, X, ArrowUp, ArrowDown, PackageSearch
 } from "lucide-react"
 import {
     Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle
@@ -56,7 +56,11 @@ interface GrupoSustituto {
     }[];
 }
 
-export default function SubstituteManagementPage() {
+interface SustitutosSectionProps {
+    onOpenModalChange: (fn: () => void) => void;
+}
+
+export default function SustitutosSection({ onOpenModalChange }: SustitutosSectionProps) {
     const { user } = useAuth();
     const [allProducts, setAllProducts] = useState<IProduct[]>([])
     const [grupos, setGrupos] = useState<GrupoSustituto[]>([])
@@ -64,9 +68,11 @@ export default function SubstituteManagementPage() {
     const [loadingSave, setLoadingSave] = useState(false)
     const [activeTab, setActiveTab] = useState("ver")
 
+    // Filtros
     const [searchQuery, setSearchQuery] = useState("")
     const [productSearchQuery, setProductSearchQuery] = useState("")
 
+    // Formulario / Modales
     const [editingId, setEditingId] = useState<number | null>(null)
     const [selMain, setSelMain] = useState<IProduct | null>(null)
     const [selSubs, setSelSubs] = useState<IProduct[]>([])
@@ -81,6 +87,16 @@ export default function SubstituteManagementPage() {
     const [deletingId, setDeletingId] = useState<number | null>(null)
 
     const defaultCurrency = { id: 1, value: 'PEN', label: 'Soles' }
+
+    // Conectar el botón "Nuevo Registro" del padre para que abra la pestaña "Matricular"
+    useEffect(() => {
+        if (onOpenModalChange) {
+            onOpenModalChange(() => {
+                resetForm();
+                setActiveTab("matricular");
+            });
+        }
+    }, [onOpenModalChange]);
 
     const fetchAllProducts = async () => {
         try {
@@ -163,7 +179,6 @@ export default function SubstituteManagementPage() {
         setIsActivo(grupo.activo)
         setEditingId(grupo.id)
         setActiveTab("matricular")
-        window.scrollTo({ top: 0, behavior: 'smooth' })
     }
 
     const handleSaveGroup = async () => {
@@ -217,54 +232,41 @@ export default function SubstituteManagementPage() {
     }
 
     return (
-        <div className="grid gap-6">
-            <div className="flex flex-col gap-2">
-                <h1 className="text-3xl font-bold tracking-tight text-gray-900">Gestión de Sustitutos</h1>
-                <p className="text-gray-500">Matricula y administra los productos equivalentes o sustitutos para dispensación</p>
-            </div>
-
+        <div className="space-y-4">
             <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); if(v==='matricular') resetForm() }} className="w-full">
-                <TabsList className="grid w-full grid-cols-2 lg:w-[400px]">
+                <TabsList className="grid w-full grid-cols-2 lg:w-[400px] mb-4">
                     <TabsTrigger value="ver"><Eye className="h-4 w-4 mr-2"/> Visualizar Grupos</TabsTrigger>
-                    <TabsTrigger value="matricular"><Plus className="h-4 w-4 mr-2"/> Matricular</TabsTrigger>
+                    <TabsTrigger value="matricular"><Plus className="h-4 w-4 mr-2"/> {editingId ? 'Editando' : 'Matricular'}</TabsTrigger>
                 </TabsList>
 
-                <TabsContent value="ver" className="space-y-4 mt-4">
-                    <Card className="shadow-sm">
-                        <CardHeader className="bg-blue-50/50 border-b pb-4">
-                            <CardTitle className="text-lg flex items-center gap-2 text-blue-700">
-                                <Search className="h-5 w-5"/> Filtros de Búsqueda
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="pt-6">
-                            <div className="flex flex-col sm:flex-row gap-4">
-                                <div className="relative flex-1">
-                                    <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-500" />
-                                    <Input
-                                        placeholder="Buscar por código o nombre del principal..."
-                                        className="pl-9"
-                                        value={searchQuery}
-                                        onChange={(e) => setSearchQuery(e.target.value)}
-                                    />
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
+                {/* ════════════ VISTA: VISUALIZAR ════════════ */}
+                <TabsContent value="ver" className="space-y-4">
+                    <div className="flex flex-col sm:flex-row gap-4 bg-gray-50/50 p-4 rounded-lg border">
+                        <div className="relative flex-1">
+                            <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-500" />
+                            <Input
+                                placeholder="Buscar por código o nombre del principal..."
+                                className="pl-9 bg-white"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                            />
+                        </div>
+                    </div>
 
-                    <div className="flex justify-between items-center text-sm text-gray-500 mt-2">
+                    <div className="flex justify-between items-center text-sm text-gray-500">
                         <span>Mostrando {filteredGrupos.length} grupos registrados</span>
                     </div>
 
                     {loading ? (
-                        <div className="text-center py-12"><div className="animate-spin h-8 w-8 border-4 border-blue-600 border-t-transparent rounded-full mx-auto"></div></div>
+                        <div className="text-center py-12"><div className="animate-spin h-8 w-8 border-4 border-indigo-600 border-t-transparent rounded-full mx-auto"></div></div>
                     ) : filteredGrupos.length === 0 ? (
-                        <div className="text-center py-12 bg-white rounded-xl border border-dashed">
+                        <div className="text-center py-12 bg-gray-50 rounded-xl border border-dashed">
                             <PackageSearch className="h-12 w-12 text-gray-300 mx-auto mb-3" />
                             <h3 className="text-lg font-medium text-gray-900">Sin resultados</h3>
                             <p className="text-gray-500">No se encontraron grupos de sustitutos activos.</p>
                         </div>
                     ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-4">
                             {filteredGrupos.map((grupo) => {
                                 const pMain = getProdByCode(grupo.cod_principal)
                                 if (!pMain) return null
@@ -274,7 +276,7 @@ export default function SubstituteManagementPage() {
                                         <CardContent className="p-5">
                                             <div className="flex justify-between items-start mb-2">
                                                 <div>
-                                                    <span className="font-bold text-blue-600 text-sm">{pMain.Codigo_Art}</span>
+                                                    <span className="font-bold text-indigo-600 text-sm">{pMain.Codigo_Art}</span>
                                                     <div className="text-[11px] font-medium text-gray-500 mt-0.5 tracking-wider uppercase">{pMain.Laboratorio}</div>
                                                 </div>
                                                 <Badge variant={grupo.activo ? "default" : "secondary"} className={`ml-2 text-[10px] ${grupo.activo ? 'bg-green-100 text-green-700' : ''}`}>
@@ -290,7 +292,7 @@ export default function SubstituteManagementPage() {
                                                 <div className="text-[11px] font-bold text-gray-400 uppercase mb-2 tracking-wider">Sustitutos ({grupo.sustitutos.length})</div>
                                                 <div className="flex flex-wrap gap-1.5">
                                                     {grupo.sustitutos.sort((a,b)=>a.prioridad - b.prioridad).map((sub, idx) => (
-                                                        <Badge key={idx} variant="outline" className="bg-blue-50/50 text-blue-700 border-blue-200 text-xs font-medium">
+                                                        <Badge key={idx} variant="outline" className="bg-indigo-50/50 text-indigo-700 border-indigo-200 text-xs font-medium">
                                                             {idx + 1}. {sub.NombreItem}
                                                         </Badge>
                                                     ))}
@@ -316,147 +318,135 @@ export default function SubstituteManagementPage() {
                     )}
                 </TabsContent>
 
-                <TabsContent value="matricular" className="mt-4">
-                    <Card className="shadow-sm">
-                        <CardHeader className="bg-blue-50/50 border-b">
-                            <CardTitle className="text-lg flex items-center gap-2 text-blue-700">
-                                <Pill className="h-5 w-5"/>
-                                {editingId ? "Editar Grupo de Sustitutos" : "Matricular Nuevos Sustitutos"}
-                            </CardTitle>
-                            <CardDescription>
-                                Selecciona un producto de marca/principal y enlaza sus equivalentes genéricos o sustitutos por prioridad.
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent className="pt-6 space-y-6">
+                {/* ════════════ VISTA: MATRICULAR ════════════ */}
+                <TabsContent value="matricular" className="space-y-6">
+                    <div className="space-y-3">
+                        <Label className="text-sm font-semibold">Producto Principal (A sustituir)</Label>
+                        <Button
+                            type="button" variant="outline" onClick={() => setIsMainDialogOpen(true)}
+                            className="w-full justify-start h-auto min-h-11 sm:min-h-12 px-3 py-2 text-left font-normal text-sm bg-gray-50 border-gray-200 hover:bg-white hover:border-indigo-400 overflow-hidden max-w-full"
+                        >
+                            <Search className="mr-2 h-4 w-4 shrink-0 text-gray-400" />
+                            {selMain ? (
+                                <div className="flex flex-col items-start overflow-hidden w-0 flex-1">
+                                    <span className="font-semibold text-gray-900 truncate w-full leading-tight text-sm">
+                                        {selMain.NombreItem}
+                                    </span>
+                                    <span className="text-xs text-gray-500 truncate w-full leading-tight mt-0.5">
+                                        {selMain.Codigo_Art} | {selMain.Laboratorio} | Stock: {selMain.Stock}
+                                    </span>
+                                </div>
+                            ) : (
+                                <span className="truncate text-gray-400 font-normal text-xs sm:text-sm">
+                                    Buscar producto principal...
+                                </span>
+                            )}
+                        </Button>
 
-                            <div className="space-y-3">
-                                <Label className="text-sm font-semibold">Producto Principal (A sustituir)</Label>
-                                <Button
-                                    type="button" variant="outline" onClick={() => setIsMainDialogOpen(true)}
-                                    className="w-full justify-start h-auto min-h-11 sm:min-h-12 px-3 py-2 text-left font-normal text-sm bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-white hover:border-blue-400 overflow-hidden max-w-full"
-                                >
-                                    <Search className="mr-2 h-4 w-4 shrink-0 text-gray-400" />
-                                    {selMain ? (
-                                        <div className="flex flex-col items-start overflow-hidden w-0 flex-1">
-                                            <span className="font-semibold text-gray-900 truncate w-full leading-tight text-sm">
-                                                {selMain.NombreItem}
-                                            </span>
-                                            <span className="text-xs text-gray-500 truncate w-full leading-tight mt-0.5">
-                                                {selMain.Codigo_Art} | {selMain.Laboratorio} | Stock: {selMain.Stock}
-                                            </span>
-                                        </div>
-                                    ) : (
-                                        <span className="truncate text-gray-400 font-normal text-xs sm:text-sm">
-                                            Buscar producto principal...
-                                        </span>
-                                    )}
-                                </Button>
+                        <ProductSearchDialog
+                            open={isMainDialogOpen} onOpenChange={setIsMainDialogOpen}
+                            searchQuery={productSearchQuery} onSearchQueryChange={setProductSearchQuery}
+                            filteredProducts={filteredAllProducts as any}
+                            onProductSelect={(p: any) => {
+                                setSelMain(p);
+                                setIsMainDialogOpen(false);
+                                setProductSearchQuery("");
+                            }}
+                            currency={defaultCurrency as any}
+                        />
+                    </div>
 
-                                <ProductSearchDialog
-                                    open={isMainDialogOpen} onOpenChange={setIsMainDialogOpen}
-                                    searchQuery={productSearchQuery} onSearchQueryChange={setProductSearchQuery}
-                                    filteredProducts={filteredAllProducts as any}
-                                    onProductSelect={(p: any) => {
-                                        setSelMain(p);
-                                        setIsMainDialogOpen(false);
-                                        setProductSearchQuery("");
-                                    }}
-                                    currency={defaultCurrency as any}
-                                />
+                    <div className="space-y-3 pt-2 border-t">
+                        <Label className="text-sm font-semibold flex items-center gap-2">Agregar Productos Sustitutos</Label>
+                        <Button
+                            type="button" variant="outline" onClick={() => setIsSubDialogOpen(true)}
+                            className="w-full justify-start h-11 px-3 text-left font-normal text-sm bg-white border-dashed border-2 border-gray-300 hover:border-indigo-400 hover:bg-indigo-50 text-gray-500 transition-colors"
+                        >
+                            <Plus className="mr-2 h-4 w-4 shrink-0" />
+                            Buscar sustituto para agregar...
+                        </Button>
+
+                        <ProductSearchDialog
+                            open={isSubDialogOpen} onOpenChange={setIsSubDialogOpen}
+                            searchQuery={productSearchQuery} onSearchQueryChange={setProductSearchQuery}
+                            filteredProducts={filteredAllProducts.filter(p => p.Codigo_Art !== selMain?.Codigo_Art && !selSubs.find(s => s.Codigo_Art === p.Codigo_Art)) as any}
+                            onProductSelect={(p: any) => {
+                                setSelSubs([...selSubs, p]);
+                                setIsSubDialogOpen(false);
+                                setProductSearchQuery("");
+                            }}
+                            currency={defaultCurrency as any}
+                        />
+                    </div>
+
+                    <div className="space-y-3">
+                        {selSubs.length === 0 ? (
+                            <div className="text-center py-6 bg-gray-50 border border-dashed rounded-lg text-sm text-gray-500">
+                                No se han agregado sustitutos. El orden en la lista define la prioridad sugerida en mostrador.
                             </div>
-
-                            <div className="space-y-3 pt-2 border-t">
-                                <Label className="text-sm font-semibold flex items-center gap-2">Agregar Productos Sustitutos</Label>
-                                <Button
-                                    type="button" variant="outline" onClick={() => setIsSubDialogOpen(true)}
-                                    className="w-full justify-start h-11 px-3 text-left font-normal text-sm bg-white border-dashed border-2 border-gray-300 hover:border-blue-400 hover:bg-blue-50 text-gray-500 transition-colors"
-                                >
-                                    <Plus className="mr-2 h-4 w-4 shrink-0" />
-                                    Buscar sustituto para agregar...
-                                </Button>
-
-                                <ProductSearchDialog
-                                    open={isSubDialogOpen} onOpenChange={setIsSubDialogOpen}
-                                    searchQuery={productSearchQuery} onSearchQueryChange={setProductSearchQuery}
-                                    filteredProducts={filteredAllProducts.filter(p => p.Codigo_Art !== selMain?.Codigo_Art && !selSubs.find(s => s.Codigo_Art === p.Codigo_Art)) as any}
-                                    onProductSelect={(p: any) => {
-                                        setSelSubs([...selSubs, p]);
-                                        setIsSubDialogOpen(false);
-                                        setProductSearchQuery("");
-                                    }}
-                                    currency={defaultCurrency as any}
-                                />
-                            </div>
-
-                            <div className="space-y-3">
-                                {selSubs.length === 0 ? (
-                                    <div className="text-center py-6 bg-gray-50 border border-dashed rounded-lg text-sm text-gray-500">
-                                        No se han agregado sustitutos. El orden en la lista define la prioridad sugerida en mostrador.
-                                    </div>
-                                ) : (
-                                    <div className="space-y-2">
-                                        {selSubs.map((sub, idx) => (
-                                            <div key={sub.Codigo_Art} className="flex items-center justify-between p-3 bg-white border rounded-lg hover:border-blue-300 transition-colors">
-                                                <div className="flex items-center gap-3 flex-1 min-w-0">
-                                                    <div className="bg-blue-100 text-blue-700 font-bold h-8 w-8 rounded-full flex items-center justify-center text-xs shrink-0">
-                                                        #{idx + 1}
-                                                    </div>
-                                                    <div className="flex-1 min-w-0">
-                                                        <div className="font-semibold text-sm truncate">{sub.NombreItem}</div>
-                                                        <div className="text-xs text-gray-500 flex gap-2">
-                                                            <span>{sub.Codigo_Art}</span>
-                                                            <span className="font-medium text-green-600">S/ {Number(sub.PUContado).toFixed(2)}</span>
-                                                            <span className="font-medium text-amber-600">Stk: {sub.Stock}</span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <div className="flex items-center gap-1 shrink-0 ml-2">
-                                                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0" disabled={idx === 0} onClick={() => handleMoveSub(idx, -1)}>
-                                                        <ArrowUp className="h-4 w-4 text-gray-500"/>
-                                                    </Button>
-                                                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0" disabled={idx === selSubs.length - 1} onClick={() => handleMoveSub(idx, 1)}>
-                                                        <ArrowDown className="h-4 w-4 text-gray-500"/>
-                                                    </Button>
-                                                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600" onClick={() => handleRemoveSub(idx)}>
-                                                        <X className="h-4 w-4"/>
-                                                    </Button>
+                        ) : (
+                            <div className="space-y-2">
+                                {selSubs.map((sub, idx) => (
+                                    <div key={sub.Codigo_Art} className="flex items-center justify-between p-3 bg-white border rounded-lg hover:border-indigo-300 transition-colors">
+                                        <div className="flex items-center gap-3 flex-1 min-w-0">
+                                            <div className="bg-indigo-100 text-indigo-700 font-bold h-8 w-8 rounded-full flex items-center justify-center text-xs shrink-0">
+                                                #{idx + 1}
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <div className="font-semibold text-sm truncate">{sub.NombreItem}</div>
+                                                <div className="text-xs text-gray-500 flex gap-2">
+                                                    <span>{sub.Codigo_Art}</span>
+                                                    <span className="font-medium text-green-600">S/ {Number(sub.PUContado).toFixed(2)}</span>
+                                                    <span className="font-medium text-amber-600">Stk: {sub.Stock}</span>
                                                 </div>
                                             </div>
-                                        ))}
+                                        </div>
+                                        <div className="flex items-center gap-1 shrink-0 ml-2">
+                                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0" disabled={idx === 0} onClick={() => handleMoveSub(idx, -1)}>
+                                                <ArrowUp className="h-4 w-4 text-gray-500"/>
+                                            </Button>
+                                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0" disabled={idx === selSubs.length - 1} onClick={() => handleMoveSub(idx, 1)}>
+                                                <ArrowDown className="h-4 w-4 text-gray-500"/>
+                                            </Button>
+                                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600" onClick={() => handleRemoveSub(idx)}>
+                                                <X className="h-4 w-4"/>
+                                            </Button>
+                                        </div>
                                     </div>
-                                )}
+                                ))}
                             </div>
+                        )}
+                    </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t">
-                                <div className="space-y-2">
-                                    <Label>Observaciones (Opcional)</Label>
-                                    <Textarea
-                                        placeholder="Ej: Mismo principio activo, diferente concentración..."
-                                        value={observacion}
-                                        onChange={(e) => setObservacion(e.target.value)}
-                                        className="h-20 resize-none"
-                                    />
-                                </div>
-                                <div className="space-y-4">
-                                    <Label>Estado del Grupo</Label>
-                                    <div className="flex items-center space-x-2">
-                                        <Switch checked={isActivo} onCheckedChange={setIsActivo} id="activo" />
-                                        <Label htmlFor="activo" className="font-normal cursor-pointer">Grupo Activo para dispensación</Label>
-                                    </div>
-                                </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t">
+                        <div className="space-y-2">
+                            <Label>Observaciones (Opcional)</Label>
+                            <Textarea
+                                placeholder="Ej: Mismo principio activo, diferente concentración..."
+                                value={observacion}
+                                onChange={(e) => setObservacion(e.target.value)}
+                                className="h-20 resize-none"
+                            />
+                        </div>
+                        <div className="space-y-4">
+                            <Label>Estado del Grupo</Label>
+                            <div className="flex items-center space-x-2">
+                                <Switch checked={isActivo} onCheckedChange={setIsActivo} id="activo" />
+                                <Label htmlFor="activo" className="font-normal cursor-pointer">Grupo Activo para dispensación</Label>
                             </div>
+                        </div>
+                    </div>
 
-                            <div className="flex justify-end gap-3 pt-6">
-                                <Button variant="outline" onClick={() => {resetForm(); setActiveTab("ver")}}>Cancelar</Button>
-                                <Button className="bg-blue-600 hover:bg-blue-700" onClick={handleSaveGroup} disabled={!selMain || selSubs.length === 0 || loadingSave}>
-                                    {loadingSave ? "Guardando..." : "Guardar Grupo"}
-                                </Button>
-                            </div>
-                        </CardContent>
-                    </Card>
+                    <div className="flex justify-end gap-3 pt-4">
+                        <Button variant="outline" onClick={() => {resetForm(); setActiveTab("ver")}}>Cancelar</Button>
+                        <Button className="bg-indigo-600 hover:bg-indigo-700 text-white" onClick={handleSaveGroup} disabled={!selMain || selSubs.length === 0 || loadingSave}>
+                            {loadingSave ? "Guardando..." : "Guardar Grupo"}
+                        </Button>
+                    </div>
                 </TabsContent>
             </Tabs>
 
+            {/* Modal Detalle */}
             <Dialog open={isViewModalOpen} onOpenChange={setIsViewModalOpen}>
                 <DialogContent className="sm:max-w-xl">
                     <DialogHeader>
@@ -476,7 +466,7 @@ export default function SubstituteManagementPage() {
                                             {viewingGroup.activo ? 'ACTIVO' : 'INACTIVO'}
                                         </Badge>
                                     </div>
-                                    <div className="font-semibold text-lg text-blue-700">
+                                    <div className="font-semibold text-lg text-indigo-700">
                                         {pMain?.NombreItem}
                                     </div>
                                     <div className="text-sm text-gray-500 mb-2">
@@ -505,7 +495,7 @@ export default function SubstituteManagementPage() {
                                         <div key={sub.cod_sustituto} className="p-3 border rounded-md bg-white">
                                             <div className="flex justify-between items-start mb-1">
                                                 <div className="flex items-center gap-2">
-                                                    <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100">Prioridad {sub.prioridad}</Badge>
+                                                    <Badge className="bg-indigo-100 text-indigo-800 hover:bg-indigo-100">Prioridad {sub.prioridad}</Badge>
                                                     <span className="font-medium text-sm text-gray-900">{sub.NombreItem}</span>
                                                 </div>
                                             </div>
@@ -540,6 +530,7 @@ export default function SubstituteManagementPage() {
                 </DialogContent>
             </Dialog>
 
+            {/* Modal Eliminar */}
             <Dialog open={deletingId !== null} onOpenChange={(open) => !open && setDeletingId(null)}>
                 <DialogContent className="sm:max-w-md">
                     <DialogHeader>
