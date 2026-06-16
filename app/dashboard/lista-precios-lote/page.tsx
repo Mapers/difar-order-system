@@ -16,7 +16,7 @@ import {CreateProductModal} from "@/components/lista-precios-lote/CreateProductM
 import {QuickPriceEditModal} from "@/components/lista-precios-lote/QuickPriceEditModal";
 
 export default function PricePage() {
-  const { user, isAuthenticated, isAdmin } = useAuth();
+  const { user, isAuthenticated, isAdmin, hasRole } = useAuth();
   const { laboratoriesRepres, loadingLab } = useLaboratoriesData();
 
   const [currentDateTime, setCurrentDateTime] = useState({ date: "", time: "" });
@@ -64,6 +64,7 @@ export default function PricePage() {
               laboratories={laboratoriesRepres}
               excludeNoStock={listData.excludeNoStock} setExcludeNoStock={listData.setExcludeNoStock}
               lowStock={listData.lowStock} setLowStock={listData.setLowStock}
+              isGerente={hasRole('gerente')}
               selectedPrinciple={listData.selectedPrinciple}
               setSelectedPrinciple={listData.setSelectedPrinciple}
               uniquePrinciples={listData.uniquePrinciples}

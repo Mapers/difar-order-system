@@ -15,6 +15,7 @@ export const PriceFilters = ({
                                  laboratories,
                                  excludeNoStock, setExcludeNoStock,
                                  lowStock, setLowStock,
+                                 isGerente,
                                  selectedPrinciple, setSelectedPrinciple, uniquePrinciples
                              }: any) => {
     const [openPrinciple, setOpenPrinciple] = useState(false);
@@ -106,7 +107,7 @@ export const PriceFilters = ({
                                 Excluir sin stock
                             </label>
                         </div>
-                        {selectedLabs.length === 1 && (
+                        {isGerente && selectedLabs.length === 1 && (
                             <div className="flex items-center space-x-2 pt-1">
                                 <input
                                     type="checkbox"
