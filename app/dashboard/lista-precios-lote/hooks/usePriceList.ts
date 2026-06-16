@@ -8,6 +8,7 @@ export function usePriceList(isAuthenticated: boolean, user: User | null, isAdmi
     const [searchTerm, setSearchTerm] = useState("");
     const [selectedLabs, setSelectedLabs] = useState<number[]>([]);
     const [excludeNoStock, setExcludeNoStock] = useState(false);
+    const [lowStock, setLowStock] = useState(false);
     const [selectedPrinciple, setSelectedPrinciple] = useState<string>("");
 
     const [listPricesLots, setListPricesLots] = useState<PrecioLote[]>([]);
@@ -69,6 +70,10 @@ export function usePriceList(isAuthenticated: boolean, user: User | null, isAdmi
             filtered = filtered.filter(item => Number(item.kardex_saldoCant) > 0);
         }
 
+        if (lowStock && selectedLabs.length === 1) {
+            filtered = filtered.filter(item => Number(item.kardex_saldoCant) < 10);
+        }
+
         if (searchTerm) {
             const lowerSearch = searchTerm.toLowerCase();
             filtered = filtered.filter(priceLot =>
@@ -84,7 +89,7 @@ export function usePriceList(isAuthenticated: boolean, user: User | null, isAdmi
 
         setFilteredPricesLot(filtered);
         setCurrentPage(1);
-    }, [searchTerm, listPricesLots, excludeNoStock, selectedPrinciple]);
+    }, [searchTerm, listPricesLots, excludeNoStock, lowStock, selectedLabs, selectedPrinciple]);
 
     const totalPages = Math.ceil(filteredPricesLot.length / itemsPerPage) || 1;
     const paginatedData = filteredPricesLot.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
@@ -100,6 +105,7 @@ export function usePriceList(isAuthenticated: boolean, user: User | null, isAdmi
         searchTerm, setSearchTerm,
         selectedLabs, setSelectedLabs,
         excludeNoStock, setExcludeNoStock,
+        lowStock, setLowStock,
         selectedPrinciple, setSelectedPrinciple, uniquePrinciples,
         loading, filteredPricesLot, paginatedData,
         currentPage, setCurrentPage, totalPages,
