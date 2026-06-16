@@ -7,6 +7,7 @@ import { useLaboratoriesData } from "./hooks/useLaboratoriesData";
 import { usePriceList } from "./hooks/usePriceList";
 import { useProductModals } from "./hooks/useProductModals";
 import ExportPdfButton from "@/app/dashboard/lista-precios-lote/export-pdf-button";
+import ExportExcelButton from "@/app/dashboard/lista-precios-lote/export-excel-button";
 import {PriceFilters} from "@/components/lista-precios-lote/PriceFilters";
 import {PriceTable} from "@/components/lista-precios-lote/PriceTable";
 import {PriceModals} from "@/components/lista-precios-lote/PriceModals";
@@ -79,6 +80,7 @@ export default function PricePage() {
                 </CardDescription>
               </div>
               <div className="flex items-center gap-3">
+                <ExportExcelButton payload={listData.exportPayload} />
                 <ExportPdfButton payload={listData.exportPayload} />
                 <div className="text-sm text-gray-500 text-right hidden sm:block">
                   {currentDateTime.date} | {currentDateTime.time}
