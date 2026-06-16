@@ -622,7 +622,7 @@ export function useOrderPage() {
                 horaPedido:          moment(new Date()).format('HH:mm'),
                 notaPedido:          note,
                 idAlmacen:           selectedAlmacen?.IdAlmacen || null,
-                vendedorNombre:      `${seller?.nombres} ${seller?.apellidos}`,
+                vendedorNombre:      isAdmin() ? `${seller?.nombres} ${seller?.apellidos}` : `${user?.nombreCompleto}`,
                 almacen:             selectedAlmacen?.Descripcion || ''
             }
 
