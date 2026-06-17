@@ -110,6 +110,7 @@ export function usePriceList(isAuthenticated: boolean, user: User | null, isAdmi
         loading, filteredPricesLot, paginatedData,
         currentPage, setCurrentPage, totalPages,
         itemsPerPage, setItemsPerPage,
-        exportPayload: getExportPayload()
+        exportPayload: getExportPayload(),
+        exportFilters: { excludeNoStock, lowStock, selectedLabsCount: selectedLabs.length, searchTerm, selectedPrinciple }
     };
 }

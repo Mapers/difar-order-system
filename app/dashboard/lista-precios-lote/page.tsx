@@ -82,8 +82,8 @@ export default function PricePage() {
                 </CardDescription>
               </div>
               <div className="flex items-center gap-3">
-                <ExportExcelButton payload={listData.exportPayload} />
-                <ExportPdfButton payload={listData.exportPayload} />
+                <ExportExcelButton payload={listData.exportPayload} filters={listData.exportFilters} />
+                <ExportPdfButton payload={listData.exportPayload} filters={listData.exportFilters} />
                 <div className="text-sm text-gray-500 text-right hidden sm:block">
                   {currentDateTime.date} | {currentDateTime.time}
                 </div>

@@ -56,8 +56,20 @@ function parseEscalas(raw: string): string {
     }).join('\n')
 }
 
-const ExportExcelButton = ({ payload }: { payload: any }) => {
+const ExportExcelButton = ({ payload, filters }: { payload: any; filters?: any }) => {
     const [loading, setLoading] = useState(false)
+
+    const applyFilters = (items: any[]) => {
+        let result = items
+        if (filters?.excludeNoStock) result = result.filter(i => Number(i.kardex_saldoCant) > 0)
+        if (filters?.lowStock && filters?.selectedLabsCount === 1) result = result.filter(i => Number(i.kardex_saldoCant) < 10)
+        if (filters?.selectedPrinciple) result = result.filter(i => i.prod_principio === filters.selectedPrinciple)
+        if (filters?.searchTerm) {
+            const q = filters.searchTerm.toLowerCase()
+            result = result.filter(i => i.prod_codigo?.toLowerCase().includes(q) || i.prod_descripcion?.toLowerCase().includes(q) || i.prod_principio?.toLowerCase().includes(q))
+        }
+        return result
+    }
 
     const exportExcel = async () => {
         if (loading) return
@@ -65,7 +77,7 @@ const ExportExcelButton = ({ payload }: { payload: any }) => {
 
         try {
             const response = await PriceService.getPricesAll(payload)
-            const data = response.data || []
+            const data = applyFilters(response.data || [])
 
             const workbook = new ExcelJS.Workbook()
             workbook.creator = 'DROGUERÍA DIFAR'

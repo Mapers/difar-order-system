@@ -13,8 +13,20 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
-const ExportPdfButton = ({ payload }: { payload: any }) => {
+const ExportPdfButton = ({ payload, filters }: { payload: any; filters?: any }) => {
   const [loading, setLoading] = useState(false)
+
+  const applyFilters = (items: any[]) => {
+    let result = items
+    if (filters?.excludeNoStock) result = result.filter(i => Number(i.kardex_saldoCant) > 0)
+    if (filters?.lowStock && filters?.selectedLabsCount === 1) result = result.filter(i => Number(i.kardex_saldoCant) < 10)
+    if (filters?.selectedPrinciple) result = result.filter(i => i.prod_principio === filters.selectedPrinciple)
+    if (filters?.searchTerm) {
+      const q = filters.searchTerm.toLowerCase()
+      result = result.filter(i => i.prod_codigo?.toLowerCase().includes(q) || i.prod_descripcion?.toLowerCase().includes(q) || i.prod_principio?.toLowerCase().includes(q))
+    }
+    return result
+  }
 
   const splitTextIntoLines = (text: string, maxWidth: number, font: any, fontSize: number) => {
     if (!text) return [''];
@@ -85,7 +97,7 @@ const ExportPdfButton = ({ payload }: { payload: any }) => {
 
     try {
       const response = await PriceService.getPricesAll(payload);
-      const data = response.data || [];
+      const data = applyFilters(response.data || []);
 
       const pdfDoc = await PDFDocument.create()
       const font = await pdfDoc.embedFont(StandardFonts.Helvetica)
