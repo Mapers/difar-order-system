@@ -55,6 +55,7 @@ function useDebounce(value: string, delay: number = 500) {
 
 export default function ComprobantesPage() {
   const [comprobantes, setComprobantes] = useState<Comprobante[]>([])
+  const [totales, setTotales] = useState({ totalFacturas: 0, totalBoletas: 0, totalNotasCredito: 0 })
   const [pedidosPendientes, setPedidosPendientes] = useState<Pedido[]>([])
   const [guiasRemision, setGuiasRemision] = useState<GuiaRemision[]>([])
 
@@ -179,6 +180,12 @@ export default function ComprobantesPage() {
         signal: controller.signal
       })
       setComprobantes(response.data.data.data)
+
+      try {
+        const totalesRes = await apiClient.get(`/pedidos/totales?${params.toString()}`, { signal: controller.signal })
+        if (totalesRes.data?.data) setTotales(totalesRes.data.data)
+      } catch { /* ignore totales errors */ }
+
       setLoadingComprobantes(false)
     } catch (error: any) {
       if (error?.name === 'CanceledError' || error?.code === 'ERR_CANCELED') return
@@ -800,7 +807,7 @@ export default function ComprobantesPage() {
                 onCorregirDescripcion={handleCorregirDescripcion}
                 onModificarCuotas={handleModificarCuotas}
             />
-            <ComprobantesStats comprobantes={comprobantes} />
+            <ComprobantesStats totales={totales} />
           </TabsContent>
 
           {/* ── TAB: NOTAS DE CRÉDITO ── */}
