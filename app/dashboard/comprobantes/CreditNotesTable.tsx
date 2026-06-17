@@ -192,7 +192,7 @@ export function CreditNotesTable({
                                                 </span>
                                                 ) : (
                                                     <div className="flex gap-2">
-                                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50" onClick={() => nota.enlace && onViewPdf(nota.enlace)} disabled={!nota.enlace} title="Ver PDF">
+                                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50" onClick={() => { if (nota.enlace) onViewPdf(nota.enlace); else if (nota.enlace_pdf) onViewPdf(`data:application/pdf;base64,${nota.enlace_pdf}`); }} disabled={!nota.enlace && !nota.enlace_pdf} title="Ver PDF">
                                                             <Eye className="h-4 w-4" />
                                                         </Button>
 
