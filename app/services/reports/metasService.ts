@@ -76,8 +76,8 @@ export class MetasService {
     }
 
     // CRUD Vendedores
-    static async listarMetasVend(idMetaLab: number): Promise<any> {
-        const response = await apiClient.get(`/metas/vendedores?id_meta_lab=${idMetaLab}`);
+    static async listarMetasVend(idCiclo: number, idLineaGe: number): Promise<any> {
+        const response = await apiClient.get(`/metas/vendedores?id_ciclo=${idCiclo}&id_linea_ge=${idLineaGe}`);
         return response.data;
     }
 

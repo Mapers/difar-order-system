@@ -39,7 +39,7 @@ import { IProduct } from "@/app/types/order/product-interface";
 import { IMoneda } from "@/app/types/order/client-interface";
 
 interface MetasConfigSectionProps {
-    onOpenModalChange: (fn: () => void) => void;
+    onOpenModalChange: (fn: (() => void) | null) => void;
 }
 
 type SubTab = 'ciclos' | 'laboratorios' | 'vendedores' | 'items';
@@ -362,7 +362,7 @@ function CiclosSection({ onOpenModalChange }: { onOpenModalChange: (fn: () => vo
    LABORATORIOS SECTION
    ═══════════════════════════════════════════════ */
 
-function LaboratoriosSection({ onOpenModalChange }: { onOpenModalChange: (fn: () => void) => void }) {
+function LaboratoriosSection({ onOpenModalChange }: { onOpenModalChange: (fn: (() => void) | null) => void }) {
     const [ciclos, setCiclos] = useState<ICiclo[]>([])
     const [selectedCiclo, setSelectedCiclo] = useState<string>('')
     const [data, setData] = useState<IMetaLaboratorio[]>([])
@@ -423,7 +423,7 @@ function LaboratoriosSection({ onOpenModalChange }: { onOpenModalChange: (fn: ()
         setIsModalOpen(true)
     }, [selectedCiclo])
 
-    useEffect(() => { onOpenModalChange(abrirModalNuevo) }, [onOpenModalChange, abrirModalNuevo])
+    useEffect(() => { onOpenModalChange(null) }, [onOpenModalChange])
 
     const abrirEditar = (item: IMetaLaboratorio) => {
         setEditando(item)
@@ -490,33 +490,6 @@ function LaboratoriosSection({ onOpenModalChange }: { onOpenModalChange: (fn: ()
                     </SelectContent>
                 </Select>
                 {data.length > 0 && <Badge variant="outline" className="text-xs">{data.length} labs</Badge>}
-                <div className="ml-auto flex gap-2">
-                    <MetaExcelButtons
-                        fileBaseName="metas-laboratorios"
-                        sheetName="Laboratorios"
-                        columns={LAB_EXCEL_COLUMNS}
-                        disabled={!selectedCiclo}
-                        disabledHint="Selecciona un ciclo primero"
-                        loadEntities={async () => {
-                            const res = await apiClient.get('/price/laboratories')
-                            return res.data?.data || []
-                        }}
-                        rowToItem={(r) => ({
-                            id_linea_ge: Number(r.cod),
-                            meta_monto: Number(r.meta_monto) || 0,
-                            observacion: r.observacion || '',
-                        })}
-                        submit={async (items) => {
-                            const body = await MetasService.crearMetasLabBulk({
-                                id_ciclo: Number(selectedCiclo),
-                                usuario: user?.nombreCompleto || 'WEB',
-                                items,
-                            })
-                            return body?.data ?? body
-                        }}
-                        onDone={fetchData}
-                    />
-                </div>
             </div>
 
             {loading ? (
@@ -524,12 +497,11 @@ function LaboratoriosSection({ onOpenModalChange }: { onOpenModalChange: (fn: ()
             ) : data.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                     {data.map((item: IMetaLaboratorio) => (
-                        <Card key={item.id_meta_lab} className="overflow-hidden">
+                        <Card key={item.id_linea_ge} className="overflow-hidden">
                             <CardContent className="p-4">
                                 <div className="flex justify-between items-start mb-2">
                                     <div>
                                         <h3 className="font-bold text-sm text-gray-900">{item.linea_desc || `Lab #${item.id_linea_ge}`}</h3>
-                                        <p className="text-xs text-gray-500">{item.observacion || 'Sin observación'}</p>
                                     </div>
                                     <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700">
                                         {item.total_vendedores || 0} vendedor{(item.total_vendedores || 0) === 1 ? '' : 'es'}
@@ -548,15 +520,6 @@ function LaboratoriosSection({ onOpenModalChange }: { onOpenModalChange: (fn: ()
                                           <span className="text-amber-600 font-semibold ml-1">⚠ Diferencia</span>}
                                     </div>
                                 )}
-                                <div className="flex gap-2">
-                                    <Button variant="outline" size="sm" onClick={() => abrirEditar(item)} className="flex-1 text-xs">
-                                        <Edit className="h-3 w-3 mr-1" /> Editar
-                                    </Button>
-                                    <Button variant="outline" size="sm" onClick={() => { setItemToDelete(item); setIsDeleteModalOpen(true) }}
-                                            className="text-red-600 border-red-200 hover:bg-red-50 text-xs flex-1">
-                                        <Trash2 className="h-3 w-3 mr-1" /> Eliminar
-                                    </Button>
-                                </div>
                             </CardContent>
                         </Card>
                     ))}
@@ -683,7 +646,7 @@ function LaboratoriosSection({ onOpenModalChange }: { onOpenModalChange: (fn: ()
    VENDEDORES SECTION
    ═══════════════════════════════════════════════ */
 
-function VendedoresSection({ onOpenModalChange }: { onOpenModalChange: (fn: () => void) => void }) {
+function VendedoresSection({ onOpenModalChange }: { onOpenModalChange: (fn: (() => void) | null) => void }) {
     const [ciclos, setCiclos] = useState<ICiclo[]>([])
     const [selectedCiclo, setSelectedCiclo] = useState('')
     const [labs, setLabs] = useState<IMetaLaboratorio[]>([])
@@ -723,7 +686,7 @@ function VendedoresSection({ onOpenModalChange }: { onOpenModalChange: (fn: () =
         MetasService.listarMetasLab(Number(selectedCiclo)).then(res => {
             const list: IMetaLaboratorio[] = res?.data?.data || res?.data || []
             setLabs(list)
-            if (list.length > 0) setSelectedLab(String(list[0].id_meta_lab))
+            if (list.length > 0) setSelectedLab(String(list[0].id_linea_ge))
         }).catch(console.error)
     }, [selectedCiclo])
 
@@ -742,14 +705,14 @@ function VendedoresSection({ onOpenModalChange }: { onOpenModalChange: (fn: () =
     }, [isModalOpen, editando])
 
     const fetchData = useCallback(async () => {
-        if (!selectedLab) return
+        if (!selectedLab || !selectedCiclo) return
         setLoading(true)
         try {
-            const res = await MetasService.listarMetasVend(Number(selectedLab))
+            const res = await MetasService.listarMetasVend(Number(selectedCiclo), Number(selectedLab))
             setData(res?.data?.data || res?.data || [])
         } catch (e) { console.error(e) }
         finally { setLoading(false) }
-    }, [selectedLab])
+    }, [selectedLab, selectedCiclo])
 
     useEffect(() => { fetchData() }, [fetchData])
 
@@ -761,7 +724,7 @@ function VendedoresSection({ onOpenModalChange }: { onOpenModalChange: (fn: () =
         setIsModalOpen(true)
     }, [selectedLab])
 
-    useEffect(() => { onOpenModalChange(abrirModalNuevo) }, [onOpenModalChange, abrirModalNuevo])
+    useEffect(() => { onOpenModalChange(null) }, [onOpenModalChange])
 
     const handleGuardar = async () => {
         const newErrors: Record<string, string> = {}
@@ -810,41 +773,14 @@ function VendedoresSection({ onOpenModalChange }: { onOpenModalChange: (fn: () =
                 <Label className="text-xs font-semibold text-slate-500">Lab:</Label>
                 <Select value={selectedLab} onValueChange={setSelectedLab}>
                     <SelectTrigger className="w-[180px] h-9 text-sm bg-white"><SelectValue placeholder="Laboratorio" /></SelectTrigger>
-                    <SelectContent>{labs.map(l => <SelectItem key={l.id_meta_lab} value={String(l.id_meta_lab)}>{l.linea_desc || `Lab #${l.id_linea_ge}`}</SelectItem>)}</SelectContent>
+                    <SelectContent>{labs.map(l => <SelectItem key={l.id_linea_ge} value={String(l.id_linea_ge)}>{l.linea_desc || `Lab #${l.id_linea_ge}`}</SelectItem>)}</SelectContent>
                 </Select>
-                <div className="ml-auto flex gap-2">
-                    <MetaExcelButtons
-                        fileBaseName="metas-vendedores"
-                        sheetName="Vendedores"
-                        columns={VEND_EXCEL_COLUMNS}
-                        disabled={!selectedLab}
-                        disabledHint="Selecciona un ciclo y laboratorio primero"
-                        loadEntities={async () => {
-                            const res = await apiClient.get('/usuarios/listar/vendedores')
-                            return res.data?.data?.data || res.data?.data || []
-                        }}
-                        rowToItem={(r) => ({
-                            cod_vendedor: r.cod,
-                            meta_monto: Number(r.meta_monto) || 0,
-                            meta_clientes: Number(r.meta_clientes) || 0,
-                        })}
-                        submit={async (items) => {
-                            const body = await MetasService.crearMetasVendBulk({
-                                id_meta_lab: Number(selectedLab),
-                                usuario: user?.nombreCompleto || 'WEB',
-                                items,
-                            })
-                            return body?.data ?? body
-                        }}
-                        onDone={fetchData}
-                    />
-                </div>
             </div>
 
             {loading ? <Skeleton className="h-40" /> : data.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                     {data.map((item: IMetaVendedor) => (
-                        <Card key={item.id_meta_lab_vend}>
+                        <Card key={item.cod_vendedor}>
                             <CardContent className="p-4">
                                 <div className="flex justify-between items-start mb-2">
                                     <div>
@@ -861,22 +797,6 @@ function VendedoresSection({ onOpenModalChange }: { onOpenModalChange: (fn: () =
                                         <p className="text-[10px] text-slate-400 uppercase font-semibold">Meta Clientes</p>
                                         <p className="text-sm font-bold">{item.meta_clientes}</p>
                                     </div>
-                                </div>
-                                <div className="flex gap-2">
-                                    <Button variant="outline" size="sm" onClick={() => {
-                                        setEditando(item)
-                                        setForm({
-                                            cod_vendedor: item.cod_vendedor,
-                                            nombre_vendedor: item.vendedor || item.cod_vendedor,
-                                            meta_monto: String(item.meta_monto),
-                                            meta_clientes: String(item.meta_clientes)
-                                        })
-                                        setIsModalOpen(true)
-                                    }} className="flex-1 text-xs"><Edit className="h-3 w-3 mr-1" /> Editar</Button>
-                                    <Button variant="outline" size="sm" onClick={() => { setItemToDelete(item); setIsDeleteModalOpen(true) }}
-                                            className="text-red-600 border-red-200 hover:bg-red-50 text-xs flex-1">
-                                        <Trash2 className="h-3 w-3 mr-1" /> Eliminar
-                                    </Button>
                                 </div>
                             </CardContent>
                         </Card>
@@ -1062,28 +982,31 @@ function ItemsSection({ onOpenModalChange }: { onOpenModalChange: (fn: () => voi
         MetasService.listarMetasLab(Number(selectedCiclo)).then(res => {
             const list: IMetaLaboratorio[] = res?.data?.data || res?.data || []
             setLabs(list)
-            if (list.length > 0) setSelectedLab(String(list[0].id_meta_lab))
+            if (list.length > 0) setSelectedLab(String(list[0].id_linea_ge))
         }).catch(console.error)
     }, [selectedCiclo])
 
     useEffect(() => {
-        if (!selectedLab) return
-        MetasService.listarMetasVend(Number(selectedLab)).then(res => {
+        if (!selectedLab || !selectedCiclo) return
+        MetasService.listarMetasVend(Number(selectedCiclo), Number(selectedLab)).then(res => {
             const list: IMetaVendedor[] = res?.data?.data || res?.data || []
             setVendedores(list)
-            if (list.length > 0) setSelectedVend(String(list[0].id_meta_lab_vend))
+            if (list.length > 0) setSelectedVend(String(list[0].cod_vendedor))
         }).catch(console.error)
-    }, [selectedLab])
+    }, [selectedLab, selectedCiclo])
 
     const fetchData = useCallback(async () => {
         if (!selectedVend) return
+        const vend = vendedores.find(v => String(v.cod_vendedor) === selectedVend)
+        const idMetaLabVend = vend?.id_meta_lab_vend
+        if (!idMetaLabVend) return
         setLoading(true)
         try {
-            const res = await MetasService.listarMetasItem(Number(selectedVend))
+            const res = await MetasService.listarMetasItem(Number(idMetaLabVend))
             setData(res?.data?.data || res?.data || [])
         } catch (e) { console.error(e) }
         finally { setLoading(false) }
-    }, [selectedVend])
+    }, [selectedVend, vendedores])
 
     useEffect(() => { fetchData() }, [fetchData])
 
@@ -1241,13 +1164,13 @@ function ItemsSection({ onOpenModalChange }: { onOpenModalChange: (fn: () => voi
                 <Label className="text-xs font-semibold text-slate-500">Lab:</Label>
                 <Select value={selectedLab} onValueChange={setSelectedLab}>
                     <SelectTrigger className="w-[130px] h-8 text-xs bg-white"><SelectValue /></SelectTrigger>
-                    <SelectContent>{labs.map(l => <SelectItem key={l.id_meta_lab} value={String(l.id_meta_lab)}>{l.linea_desc}</SelectItem>)}</SelectContent>
+                    <SelectContent>{labs.map(l => <SelectItem key={l.id_linea_ge} value={String(l.id_linea_ge)}>{l.linea_desc}</SelectItem>)}</SelectContent>
                 </Select>
                 <ChevronRight className="h-3.5 w-3.5 text-slate-300" />
                 <Label className="text-xs font-semibold text-slate-500">Vendedor:</Label>
                 <Select value={selectedVend} onValueChange={setSelectedVend}>
                     <SelectTrigger className="w-[130px] h-8 text-xs bg-white"><SelectValue /></SelectTrigger>
-                    <SelectContent>{vendedores.map(v => <SelectItem key={v.id_meta_lab_vend} value={String(v.id_meta_lab_vend)}>{v.vendedor}</SelectItem>)}</SelectContent>
+                    <SelectContent>{vendedores.map(v => <SelectItem key={v.cod_vendedor} value={String(v.cod_vendedor)}>{v.vendedor}</SelectItem>)}</SelectContent>
                 </Select>
                 <div className="ml-auto flex gap-2">
                     <MetaExcelButtons

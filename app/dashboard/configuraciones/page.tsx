@@ -129,8 +129,8 @@ export default function ConfiguracionesPage() {
     const [activeSection, setActiveSection] = useState("secuenciales")
     const [openModalFn, setOpenModalFn] = useState<(() => void) | null>(null)
 
-    const handleSetOpenModalFn = useCallback((fn: () => void) => {
-        setOpenModalFn(() => fn)
+    const handleSetOpenModalFn = useCallback((fn: (() => void) | null) => {
+        setOpenModalFn(fn ? () => fn : null)
     }, [])
 
     const currentSectionData = sections.find(s => s.id === activeSection)
@@ -204,12 +204,14 @@ export default function ConfiguracionesPage() {
                                                                 : `Configura la numeración para ${activeSection === "secuenciales" ? "facturas y boletas" : "guías de remisión"}`}
                                 </CardDescription>
                             </div>
-                            {activeSection !== 'lineas_credito' && <Button
-                              onClick={() => openModalFn && openModalFn()}
-                              className="flex items-center gap-2 w-full sm:w-auto"
-                            >
-                              <Plus className="h-4 w-4"/> Nuevo Registro
-                            </Button>}
+                            {activeSection !== 'lineas_credito' && openModalFn !== null && (
+                              <Button
+                                onClick={() => openModalFn()}
+                                className="flex items-center gap-2 w-full sm:w-auto"
+                              >
+                                <Plus className="h-4 w-4"/> Nuevo Registro
+                              </Button>
+                            )}
                         </CardHeader>
 
                         <CardContent>
