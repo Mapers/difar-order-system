@@ -55,6 +55,28 @@ export interface IItemDashboard {
     nombre_lab?: string;
 }
 
+export interface IVendedorResumenDashboard {
+    cod_vendedor: string;
+    nombre_vendedor: string;
+    total_labs: number;
+    venta_total: number;
+    cuota_total: number;
+    pct_avance_global: number;
+    labs_en_meta: number;
+    labs_riesgo: number;
+    labs_bajo: number;
+}
+
+export interface IVendedorLabDetalle {
+    cod_vendedor: string;
+    nombre_vendedor: string;
+    id_lab: number;
+    nombre_lab: string;
+    meta_monto: number;
+    venta_real: number;
+    pct_lab: number;
+}
+
 export type FilterStatus = 'todos' | 'verde' | 'amarillo' | 'rojo';
 export type SortMode = 'pct' | 'venta' | 'nombre';
 export type ItemSortMode = 'contribucion' | 'avance' | 'unidades';

@@ -18,6 +18,16 @@ export class MetasService {
         return response.data;
     }
 
+    static async getResumenVendedorLabs(idCiclo: number): Promise<any> {
+        const response = await apiClient.get(`/metas/dashboard/resumen-vendedor-labs?id_ciclo=${idCiclo}`);
+        return response.data;
+    }
+
+    static async getDetalleVendedorPorLab(idCiclo: number, codVendedor: string): Promise<any> {
+        const response = await apiClient.get(`/metas/dashboard/detalle-vendedor-labs?id_ciclo=${idCiclo}&cod_vendedor=${codVendedor}`);
+        return response.data;
+    }
+
     static async getDashboardLaboratorios(idCiclo: number): Promise<any> {
         const response = await apiClient.get(`/metas/dashboard/laboratorios?id_ciclo=${idCiclo}`);
         return response.data;

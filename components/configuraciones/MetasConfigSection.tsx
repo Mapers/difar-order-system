@@ -25,6 +25,8 @@ import {
     IMetaItem, IMetaItemForm
 } from "@/app/types/metas-types"
 import {MetasService} from "@/app/services/reports/metasService";
+import { IVendedorResumenDashboard, IVendedorLabDetalle } from "@/app/types/metas-types";
+import VendedorLabsConfigModal from "@/components/configuraciones/metas/VendedorLabsConfigModal";
 import {formatSafeDate} from "@/app/utils/date";
 import {Popover, PopoverContent, PopoverTrigger} from "@/components/ui/popover";
 import {Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList} from "@/components/ui/command";
@@ -647,30 +649,17 @@ function LaboratoriosSection({ onOpenModalChange }: { onOpenModalChange: (fn: ((
    ═══════════════════════════════════════════════ */
 
 function VendedoresSection({ onOpenModalChange }: { onOpenModalChange: (fn: (() => void) | null) => void }) {
-    const [ciclos, setCiclos] = useState<ICiclo[]>([])
+    const [ciclos, setCiclos]           = useState<ICiclo[]>([])
     const [selectedCiclo, setSelectedCiclo] = useState('')
-    const [labs, setLabs] = useState<IMetaLaboratorio[]>([])
-    const [selectedLab, setSelectedLab] = useState('')
-    const [data, setData] = useState<IMetaVendedor[]>([])
-    const [loading, setLoading] = useState(false)
-    const [loadingSave, setLoadingSave] = useState(false)
-    const [isModalOpen, setIsModalOpen] = useState(false)
-    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
-    const [editando, setEditando] = useState<IMetaVendedor | null>(null)
-    const [itemToDelete, setItemToDelete] = useState<IMetaVendedor | null>(null)
-    const [errors, setErrors] = useState<Record<string, string>>({})
-    const [form, setForm] = useState({ cod_vendedor: '', nombre_vendedor: '', meta_monto: '', meta_clientes: '' })
-    const { user } = useAuth()
+    const [resumen, setResumen]         = useState<IVendedorResumenDashboard[]>([])
+    const [loading, setLoading]         = useState(false)
 
-    const [catVendedores, setCatVendedores] = useState<any[]>([])
-    const [loadingVends, setLoadingVends] = useState(false)
-    const [openVendPopover, setOpenVendPopover] = useState(false)
-    // Meta Clientes se autocompleta con el total del vendedor y queda bloqueado (candado para editar)
-    const [metaClientesLocked, setMetaClientesLocked] = useState(true)
+    // Modal de labs
+    const [modalVend, setModalVend]     = useState<IVendedorResumenDashboard | null>(null)
+    const [labsDetalle, setLabsDetalle] = useState<IVendedorLabDetalle[]>([])
+    const [loadingDetalle, setLoadingDetalle] = useState(false)
 
-    useEffect(() => {
-        if (isModalOpen) setMetaClientesLocked(true)
-    }, [isModalOpen])
+    useEffect(() => { onOpenModalChange(null) }, [onOpenModalChange])
 
     useEffect(() => {
         MetasService.listarCiclos().then(res => {
@@ -681,257 +670,131 @@ function VendedoresSection({ onOpenModalChange }: { onOpenModalChange: (fn: (() 
         }).catch(console.error)
     }, [])
 
-    useEffect(() => {
+    const fetchResumen = useCallback(async () => {
         if (!selectedCiclo) return
-        MetasService.listarMetasLab(Number(selectedCiclo)).then(res => {
-            const list: IMetaLaboratorio[] = res?.data?.data || res?.data || []
-            setLabs(list)
-            if (list.length > 0) setSelectedLab(String(list[0].id_linea_ge))
-        }).catch(console.error)
-    }, [selectedCiclo])
-
-    useEffect(() => {
-        if (!isModalOpen || editando) return
-        const cargarVendedores = async () => {
-            setLoadingVends(true)
-            try {
-                const res = await apiClient.get('/usuarios/listar/vendedores')
-                const vendsList = res.data?.data?.data || res.data?.data || []
-                setCatVendedores(vendsList)
-            } catch (e) { console.error("Error cargando vendedores:", e) }
-            finally { setLoadingVends(false) }
-        }
-        cargarVendedores()
-    }, [isModalOpen, editando])
-
-    const fetchData = useCallback(async () => {
-        if (!selectedLab || !selectedCiclo) return
         setLoading(true)
         try {
-            const res = await MetasService.listarMetasVend(Number(selectedCiclo), Number(selectedLab))
-            setData(res?.data?.data || res?.data || [])
+            const res = await MetasService.getResumenVendedorLabs(Number(selectedCiclo))
+            setResumen(res?.data?.data || res?.data || [])
         } catch (e) { console.error(e) }
         finally { setLoading(false) }
-    }, [selectedLab, selectedCiclo])
+    }, [selectedCiclo])
 
-    useEffect(() => { fetchData() }, [fetchData])
+    useEffect(() => { fetchResumen() }, [fetchResumen])
 
-    const abrirModalNuevo = useCallback(() => {
-        if (!selectedLab) return
-        setEditando(null)
-        setForm({ cod_vendedor: '', nombre_vendedor: '', meta_monto: '', meta_clientes: '' })
-        setErrors({})
-        setIsModalOpen(true)
-    }, [selectedLab])
-
-    useEffect(() => { onOpenModalChange(null) }, [onOpenModalChange])
-
-    const handleGuardar = async () => {
-        const newErrors: Record<string, string> = {}
-        if (!form.cod_vendedor) newErrors.cod_vendedor = "Debe seleccionar un vendedor"
-        if (!form.meta_monto) newErrors.meta_monto = "Requerido"
-        setErrors(newErrors)
-        if (Object.keys(newErrors).length > 0) return
-
-        setLoadingSave(true)
+    const abrirModalVendedor = async (vend: IVendedorResumenDashboard) => {
+        setModalVend(vend)
+        setLabsDetalle([])
+        setLoadingDetalle(true)
         try {
-            const payload: IMetaVendedorForm = {
-                id_meta_lab: Number(selectedLab),
-                cod_vendedor: form.cod_vendedor,
-                meta_monto: Number(form.meta_monto),
-                meta_clientes: Number(form.meta_clientes) || 0,
-                usuario: user?.nombreCompleto || 'WEB'
-            }
-            if (editando) await MetasService.actualizarMetaVend(editando.id_meta_lab_vend, payload)
-            else await MetasService.crearMetaVend(payload)
-            setIsModalOpen(false)
-            fetchData()
+            const res = await MetasService.getDetalleVendedorPorLab(Number(selectedCiclo), vend.cod_vendedor)
+            setLabsDetalle(res?.data?.data || [])
         } catch (e) { console.error(e) }
-        finally { setLoadingSave(false) }
-    }
-
-    const handleEliminar = async () => {
-        if (!itemToDelete) return
-        setLoadingSave(true)
-        try {
-            await MetasService.eliminarMetaVend(itemToDelete.id_meta_lab_vend)
-            setIsDeleteModalOpen(false)
-            fetchData()
-        } catch (e) { console.error(e) }
-        finally { setLoadingSave(false) }
+        finally { setLoadingDetalle(false) }
     }
 
     return (
         <>
-            <div className="flex items-center gap-3 mb-4 p-3 bg-slate-50 rounded-lg border border-slate-200 flex-wrap">
-                <Label className="text-xs font-semibold text-slate-500">Ciclo:</Label>
+            {/* Selector de ciclo */}
+            <div className="flex items-center gap-3 mb-4 p-3 bg-slate-50 rounded-lg border border-slate-200">
+                <Label className="text-xs font-semibold text-slate-500 whitespace-nowrap">Ciclo:</Label>
                 <Select value={selectedCiclo} onValueChange={setSelectedCiclo}>
-                    <SelectTrigger className="w-[180px] h-9 text-sm bg-white"><SelectValue placeholder="Ciclo" /></SelectTrigger>
-                    <SelectContent>{ciclos.map(c => <SelectItem key={c.id_ciclo} value={String(c.id_ciclo)}>{MESES_CORTO[c.mes]} {c.anio}</SelectItem>)}</SelectContent>
+                    <SelectTrigger className="w-[220px] h-9 text-sm bg-white">
+                        <SelectValue placeholder="Seleccionar ciclo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {ciclos.map(c => (
+                            <SelectItem key={c.id_ciclo} value={String(c.id_ciclo)}>
+                                {MESES_CORTO[c.mes]} {c.anio}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
                 </Select>
-                <ChevronRight className="h-4 w-4 text-slate-300" />
-                <Label className="text-xs font-semibold text-slate-500">Lab:</Label>
-                <Select value={selectedLab} onValueChange={setSelectedLab}>
-                    <SelectTrigger className="w-[180px] h-9 text-sm bg-white"><SelectValue placeholder="Laboratorio" /></SelectTrigger>
-                    <SelectContent>{labs.map(l => <SelectItem key={l.id_linea_ge} value={String(l.id_linea_ge)}>{l.linea_desc || `Lab #${l.id_linea_ge}`}</SelectItem>)}</SelectContent>
-                </Select>
+                {resumen.length > 0 && (
+                    <Badge variant="outline" className="text-xs">{resumen.length} vendedores</Badge>
+                )}
             </div>
 
-            {loading ? <Skeleton className="h-40" /> : data.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                    {data.map((item: IMetaVendedor) => (
-                        <Card key={item.cod_vendedor}>
-                            <CardContent className="p-4">
-                                <div className="flex justify-between items-start mb-2">
-                                    <div>
-                                        <h3 className="font-bold text-sm text-gray-900">{item.vendedor || item.cod_vendedor}</h3>
-                                        <p className="text-xs text-gray-500">Cod: {item.cod_vendedor} · {item.total_items || 0} producto{(item.total_items || 0) === 1 ? '' : 's'}</p>
-                                    </div>
-                                </div>
-                                <div className="grid grid-cols-2 gap-2 my-3">
-                                    <div className="bg-slate-50 p-2 rounded-md">
-                                        <p className="text-[10px] text-slate-400 uppercase font-semibold">Meta S/</p>
-                                        <p className="text-sm font-bold">{fmtMoney(item.meta_monto)}</p>
-                                    </div>
-                                    <div className="bg-slate-50 p-2 rounded-md">
-                                        <p className="text-[10px] text-slate-400 uppercase font-semibold">Meta Clientes</p>
-                                        <p className="text-sm font-bold">{item.meta_clientes}</p>
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    ))}
+            {/* Grid de cards */}
+            {loading ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-36" />)}
+                </div>
+            ) : resumen.length === 0 ? (
+                <div className="text-center py-8">
+                    <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900">No hay vendedores con metas asignadas</h3>
                 </div>
             ) : (
-                <div className="text-center py-8"><Users className="h-12 w-12 text-gray-400 mx-auto mb-4" /><h3 className="text-lg font-medium text-gray-900">No hay vendedores asignados</h3></div>
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                    {resumen.map((v) => {
+                        const pct       = Number(v.pct_avance_global || 0)
+                        const enMeta    = Number(v.labs_en_meta  || 0)
+                        const riesgo    = Number(v.labs_riesgo   || 0)
+                        const bajo      = Number(v.labs_bajo     || 0)
+                        const totalLabs = Number(v.total_labs    || 0)
+
+                        return (
+                            <Card key={v.cod_vendedor} className="overflow-hidden">
+                                <CardContent className="p-4">
+                                    <div className="flex justify-between items-start mb-2">
+                                        <div>
+                                            <h3 className="font-bold text-sm text-gray-900">{v.nombre_vendedor || v.cod_vendedor}</h3>
+                                            <p className="text-xs text-gray-500">Cód: {v.cod_vendedor}</p>
+                                        </div>
+                                        <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700">
+                                            {totalLabs} lab{totalLabs !== 1 ? 's' : ''}
+                                        </Badge>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-2 my-3">
+                                        <div className="bg-slate-50 p-2 rounded-md">
+                                            <p className="text-[10px] text-slate-400 uppercase font-semibold">Venta S/</p>
+                                            <p className="text-sm font-bold text-slate-800">{fmtMoney(Number(v.venta_total))}</p>
+                                        </div>
+                                        <div className="bg-slate-50 p-2 rounded-md">
+                                            <p className="text-[10px] text-slate-400 uppercase font-semibold">Cuota S/</p>
+                                            <p className="text-sm font-bold text-slate-800">{fmtMoney(Number(v.cuota_total))}</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="text-[10px] text-slate-400 mb-3">
+                                        Avance global: <span className="font-semibold text-slate-700">{pct}%</span>
+                                        {' · '}
+                                        <span className="text-emerald-600 font-semibold">✓ {enMeta}</span>
+                                        {' '}
+                                        <span className="text-amber-500 font-semibold">⚠ {riesgo}</span>
+                                        {' '}
+                                        <span className="text-red-500 font-semibold">✗ {bajo}</span>
+                                    </div>
+
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="w-full h-8 text-xs"
+                                        onClick={() => abrirModalVendedor(v)}
+                                    >
+                                        Ver laboratorios →
+                                    </Button>
+                                </CardContent>
+                            </Card>
+                        )
+                    })}
+                </div>
             )}
 
-            <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-                <DialogContent className="max-w-lg">
-                    <DialogHeader><DialogTitle>{editando ? 'Editar' : 'Nuevo'} Vendedor</DialogTitle></DialogHeader>
-                    <div className="space-y-4">
-
-                        {!editando ? (
-                            <div className="space-y-2">
-                                <Label>Vendedor *</Label>
-                                <Popover open={openVendPopover} onOpenChange={setOpenVendPopover} modal>
-                                    <PopoverTrigger asChild>
-                                        <Button variant="outline" role="combobox"
-                                                className={cn("justify-between w-full font-normal h-10 bg-white", errors.cod_vendedor && "border-red-500")}>
-                                            <span className="truncate">
-                                                {form.cod_vendedor
-                                                    ? `${form.nombre_vendedor} (${form.cod_vendedor})`
-                                                    : "Buscar vendedor..."}
-                                            </span>
-                                            <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                        </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
-                                        <Command>
-                                            <CommandInput placeholder="Buscar por nombre o código..." />
-                                            <CommandList>
-                                                {loadingVends && (
-                                                    <div className="p-4 text-sm text-center text-muted-foreground">
-                                                        <RefreshCw className="h-4 w-4 animate-spin inline mr-2" />Cargando vendedores...
-                                                    </div>
-                                                )}
-                                                {!loadingVends && catVendedores.length === 0 && (
-                                                    <CommandEmpty>No se encontraron vendedores.</CommandEmpty>
-                                                )}
-                                                <CommandGroup>
-                                                    {catVendedores.map((vend: any) => {
-                                                        const codigo = vend.Codigo_Vend || vend.codigo
-                                                        const nombre = `${vend.Nombres || vend.nombres || ''} ${vend.Apellidos || vend.apellidos || ''}`.trim()
-                                                        return (
-                                                            <CommandItem
-                                                                key={codigo}
-                                                                value={`${codigo} ${nombre}`}
-                                                                onSelect={() => {
-                                                                    setForm(prev => ({
-                                                                        ...prev,
-                                                                        cod_vendedor: codigo,
-                                                                        nombre_vendedor: nombre,
-                                                                        meta_clientes: vend.totalClientes != null ? String(vend.totalClientes) : prev.meta_clientes
-                                                                    }))
-                                                                    setMetaClientesLocked(true)
-                                                                    setOpenVendPopover(false)
-                                                                }}
-                                                            >
-                                                                <Check className={cn("mr-2 h-4 w-4",
-                                                                    form.cod_vendedor === codigo ? "opacity-100" : "opacity-0"
-                                                                )} />
-                                                                <div className="flex flex-col">
-                                                                    <span className="text-sm font-medium">{nombre}</span>
-                                                                    <span className="text-[10px] text-slate-400">Código: {codigo}</span>
-                                                                </div>
-                                                            </CommandItem>
-                                                        )
-                                                    })}
-                                                </CommandGroup>
-                                            </CommandList>
-                                        </Command>
-                                    </PopoverContent>
-                                </Popover>
-                                {errors.cod_vendedor && <p className="text-xs text-red-500">{errors.cod_vendedor}</p>}
-                            </div>
-                        ) : (
-                            <div className="space-y-2">
-                                <Label>Vendedor</Label>
-                                <Input value={`${form.nombre_vendedor} (${form.cod_vendedor})`} disabled className="bg-slate-50" />
-                            </div>
-                        )}
-
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <Label>Meta Monto S/ *</Label>
-                                <Input type="number" step="0.01" value={form.meta_monto}
-                                       onChange={e => setForm({ ...form, meta_monto: e.target.value })}
-                                       className={errors.meta_monto ? "border-red-500" : ""} />
-                                {errors.meta_monto && <p className="text-xs text-red-500">{errors.meta_monto}</p>}
-                            </div>
-                            <div className="space-y-2">
-                                <Label>Meta Clientes</Label>
-                                <div className="relative">
-                                    <Input type="number" value={form.meta_clientes}
-                                           disabled={metaClientesLocked}
-                                           onChange={e => setForm({ ...form, meta_clientes: e.target.value })}
-                                           className={`pr-9 ${metaClientesLocked ? 'bg-slate-50' : ''}`} />
-                                    <button
-                                        type="button"
-                                        onClick={() => setMetaClientesLocked(v => !v)}
-                                        title={metaClientesLocked ? 'Desbloquear para editar' : 'Bloquear'}
-                                        className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700"
-                                    >
-                                        {metaClientesLocked ? <Lock className="h-4 w-4" /> : <Unlock className="h-4 w-4" />}
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <DialogFooter>
-                        <Button variant="outline" onClick={() => setIsModalOpen(false)}>Cancelar</Button>
-                        <Button onClick={handleGuardar} disabled={loadingSave}>
-                            {loadingSave && <RefreshCw className="h-4 w-4 mr-2 animate-spin" />}
-                            <Save className="h-4 w-4 mr-2" /> Guardar
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
-
-            <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
-                <DialogContent className="max-w-lg">
-                    <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2"><AlertCircle className="h-5 w-5 text-red-600" /> Eliminar Vendedor</DialogTitle>
-                        <DialogDescription>Se eliminarán los productos asignados a este vendedor.</DialogDescription>
-                    </DialogHeader>
-                    <DialogFooter className="gap-2">
-                        <Button variant="outline" onClick={() => setIsDeleteModalOpen(false)}>Cancelar</Button>
-                        <Button onClick={handleEliminar} className="bg-red-600 hover:bg-red-700" disabled={loadingSave}>
-                            <Trash2 className="h-4 w-4 mr-2" /> Eliminar
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+            {/* Modal de laboratorios del vendedor */}
+            {modalVend && (
+                <VendedorLabsConfigModal
+                    open={!!modalVend}
+                    onClose={() => setModalVend(null)}
+                    codVendedor={modalVend.cod_vendedor}
+                    nombreVendedor={modalVend.nombre_vendedor}
+                    totalLabs={Number(modalVend.total_labs)}
+                    labsDelVendedor={labsDetalle}
+                    loading={loadingDetalle}
+                />
+            )}
         </>
     )
 }
