@@ -858,20 +858,24 @@ function ItemsSection({ onOpenModalChange }: { onOpenModalChange: (fn: () => voi
         }).catch(console.error)
     }, [selectedLab, selectedCiclo])
 
-    const fetchData = useCallback(async () => {
-        if (!selectedVend) return
-        const vend = vendedores.find(v => String(v.cod_vendedor) === selectedVend)
-        const idMetaLabVend = vend?.id_meta_lab_vend
-        if (!idMetaLabVend) return
+    const cargarItems = (cod: string) => {
+        if (!selectedCiclo || !selectedLab || !cod) return
         setLoading(true)
-        try {
-            const res = await MetasService.listarMetasItem(Number(idMetaLabVend))
-            setData(res?.data?.data || res?.data || [])
-        } catch (e) { console.error(e) }
-        finally { setLoading(false) }
-    }, [selectedVend, vendedores])
+        MetasService.listarMetasItemPorVend(Number(selectedCiclo), Number(selectedLab), cod)
+            .then(res => setData(res?.data?.data || res?.data || []))
+            .catch(console.error)
+            .finally(() => setLoading(false))
+    }
 
-    useEffect(() => { fetchData() }, [fetchData])
+    const fetchData = useCallback(() => {
+        cargarItems(selectedVend)
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [selectedVend, selectedCiclo, selectedLab])
+
+    useEffect(() => {
+        if (selectedVend && selectedCiclo && selectedLab) cargarItems(selectedVend)
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [selectedVend, selectedCiclo, selectedLab])
 
     const fetchAllProducts = async () => {
         try {
@@ -892,32 +896,19 @@ function ItemsSection({ onOpenModalChange }: { onOpenModalChange: (fn: () => voi
         }
     }, [isModalOpen, editando])
 
-    useEffect(() => {
-        if (!isModalOpen || !selectedVend) return
-        let cancel = false
-        setValidacionError(null)
-        setDisponibilidad(null)
-        MetasService.obtenerDisponibleMeta(Number(selectedVend))
-            .then(res => {
-                if (cancel) return
-                setDisponibilidad(res?.data?.data || res?.data || null)
-            })
-            .catch(() => { if (!cancel) setValidacionError("No se pudo validar el tope") })
-        return () => { cancel = true }
-    }, [isModalOpen, selectedVend])
+    // disponibilidad deshabilitada: el modelo ya no usa id_meta_lab_vend
 
-    const labActual = labs.find(l => String(l.id_meta_lab) === selectedLab)
+    const labActual = labs.find(l => String(l.id_linea_ge) === selectedLab)
 
     const filteredAllProducts = allProducts.filter(product => {
         const coincideLab = !labActual ||
-            String(product?.id_linea_ge ?? '').trim() === String(labActual.id_linea_ge ?? '').trim()
+            String(product?.id_linea_ge ?? '').trim() === String(labActual.Codigo_Linea ?? '').trim()
         if (!coincideLab) return false
-
-        const coincideTexto =
-            product.NombreItem?.toLowerCase().includes(productSearchQuery.toLowerCase()) ||
-            product.Codigo_Art?.toLowerCase().includes(productSearchQuery.toLowerCase()) ||
-            String(product?.Presentacion)?.toLowerCase().includes(productSearchQuery.toLowerCase())
-        return coincideTexto
+        if (!productSearchQuery) return true
+        const q = productSearchQuery.toLowerCase()
+        return product.NombreItem?.toLowerCase().includes(q) ||
+            product.Codigo_Art?.toLowerCase().includes(q) ||
+            String(product?.Presentacion)?.toLowerCase().includes(q)
     })
 
     const buscarPrecioAutomatico = async (codArticulo: string) => {
@@ -986,7 +977,9 @@ function ItemsSection({ onOpenModalChange }: { onOpenModalChange: (fn: () => voi
         setLoadingSave(true)
         try {
             const payload: IMetaItemForm = {
-                id_meta_lab_vend: Number(selectedVend),
+                id_ciclo: Number(selectedCiclo),
+                id_linea_ge: Number(selectedLab),
+                cod_vendedor: selectedVend,
                 cod_articulo: form.cod_articulo,
                 tipo_precio_ref: form.tipo_precio_ref,
                 precio_ref: Number(form.precio_ref) || 0,
@@ -1044,7 +1037,11 @@ function ItemsSection({ onOpenModalChange }: { onOpenModalChange: (fn: () => voi
                         disabledHint="Selecciona ciclo, laboratorio y vendedor primero"
                         loadEntities={async () => {
                             const res = await getProductsRequest()
-                            return res.data?.data?.data || []
+                            const products = res.data?.data?.data || []
+                            if (!labActual) return products
+                            return products.filter((p: any) =>
+                                String(p?.id_linea_ge ?? '').trim() === String(labActual.Codigo_Linea ?? '').trim()
+                            )
                         }}
                         rowToItem={(r) => ({
                             cod_articulo: r.cod,
@@ -1054,7 +1051,9 @@ function ItemsSection({ onOpenModalChange }: { onOpenModalChange: (fn: () => voi
                         })}
                         submit={async (items) => {
                             const body = await MetasService.crearMetasItemBulk({
-                                id_meta_lab_vend: Number(selectedVend),
+                                id_ciclo: Number(selectedCiclo),
+                                id_linea_ge: Number(selectedLab),
+                                cod_vendedor: selectedVend,
                                 usuario: user?.nombreCompleto || 'WEB',
                                 items,
                             })

@@ -110,6 +110,7 @@ export interface IMetaLaboratorio {
     id_meta_lab: number;
     id_ciclo: number;
     id_linea_ge: number;
+    Codigo_Linea?: string;
     meta_monto: number;
     meta_clientes: number;
     observacion: string | null;
@@ -151,7 +152,9 @@ export interface IMetaVendedorForm {
 
 export interface IMetaItem {
     id_meta_item: number;
-    id_meta_lab_vend: number;
+    id_ciclo: number;
+    id_linea_ge: number;
+    cod_vendedor: string;
     cod_articulo: string;
     tipo_precio_ref: string;
     precio_ref: number;
@@ -162,7 +165,9 @@ export interface IMetaItem {
 }
 
 export interface IMetaItemForm {
-    id_meta_lab_vend: number;
+    id_ciclo: number;
+    id_linea_ge: number;
+    cod_vendedor: string;
     cod_articulo: string;
     tipo_precio_ref: string;
     precio_ref: number;

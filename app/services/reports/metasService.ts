@@ -117,6 +117,11 @@ export class MetasService {
         return response.data;
     }
 
+    static async listarMetasItemPorVend(idCiclo: number, idLineaGe: number, codVendedor: string): Promise<any> {
+        const response = await apiClient.get(`/metas/items/por-vendedor?id_ciclo=${idCiclo}&id_linea_ge=${idLineaGe}&cod_vendedor=${codVendedor}`);
+        return response.data;
+    }
+
     static async crearMetaItem(data: any): Promise<any> {
         const response = await apiClient.post(`/metas/items`, data);
         return response.data;
@@ -166,7 +171,7 @@ export class MetasService {
     }
 
     static async listarArticulosPorLab(idLineaGe: number): Promise<any> {
-        const response = await apiClient.get(`/metas/articulos/por-laboratorio`);
+        const response = await apiClient.get(`/metas/articulos/por-laboratorio?id_linea_ge=${idLineaGe}`);
         return response.data;
     }
 
