@@ -80,16 +80,16 @@ export default function ComprobantesPage() {
   const [filters, setFilters] = useState({
     tipo: "|-1",
     estado: 4,
-    fechaDesde: format(today, 'yyyy-MM-dd'),
-    fechaHasta: format(tomorrow, 'yyyy-MM-dd')
+    fechaDesde: '',
+    fechaHasta: ''
   })
   const [filtersGuias, setFiltersGuias] = useState({
     fechaDesde: format(today, 'yyyy-MM-dd'),
     fechaHasta: format(tomorrow, 'yyyy-MM-dd')
   })
   const [filtersNotas, setFiltersNotas] = useState({
-    fechaDesde: format(today, 'yyyy-MM-dd'),
-    fechaHasta: format(tomorrow, 'yyyy-MM-dd')
+    fechaDesde: '',
+    fechaHasta: ''
   })
 
   const [showGuiasModal, setShowGuiasModal] = useState(false)
@@ -196,14 +196,23 @@ export default function ComprobantesPage() {
   }, [filters, searchComprobantes, auth.user?.idRol, auth.user?.codigo])
 
   const fetchNotasCredito = useCallback(async () => {
+    const tieneFechas = filtersNotas.fechaDesde && filtersNotas.fechaHasta
+    const tieneTexto = searchNotas.length > 3
+    if (!tieneFechas && !tieneTexto) {
+      setNotasCredito([])
+      return
+    }
+
     try {
       setLoadingNotas(true)
       const params = new URLSearchParams()
       if (auth.isVendedor()) params.append('vendedor', auth.user?.codigo || '')
       if (auth.isRepresentante()) params.append('representante', auth.user?.codRepres || '')
-      if (filtersNotas.fechaDesde) params.append('fechaDesde', filtersNotas.fechaDesde)
-      if (filtersNotas.fechaHasta) params.append('fechaHasta', filtersNotas.fechaHasta)
-      if (searchNotas) params.append('busqueda', searchNotas)
+      if (tieneFechas) {
+        params.append('fechaDesde', filtersNotas.fechaDesde)
+        params.append('fechaHasta', filtersNotas.fechaHasta)
+      }
+      if (tieneTexto) params.append('busqueda', searchNotas)
 
       const response = await apiClient.get(`/pedidos/ncEmitidos?${params.toString()}`)
       setNotasCredito(response.data.data.data)
@@ -250,9 +259,8 @@ export default function ComprobantesPage() {
 
   // Carga inicial (una sola vez al montar). Las búsquedas posteriores NO son
   // reactivas: se disparan manualmente con el botón "Buscar" de cada pestaña.
+  // Facturas/boletas y notas no cargan al inicio: el usuario elige fechas o texto primero.
   useEffect(() => {
-    fetchComprobantes()
-    fetchNotasCredito()
     if (filtersGuias.fechaDesde && filtersGuias.fechaHasta) fetchGuiasRemision()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])

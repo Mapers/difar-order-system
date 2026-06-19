@@ -7,10 +7,13 @@ import { toast } from "@/app/hooks/useToast";
 interface ExportPdfProps {
     data: any;
     dateCorte?: Date;
+    mes?: number;
+    anio?: number;
     disabled?: boolean;
 }
 
-export const ExportSaldoCobrarPdf: React.FC<ExportPdfProps> = ({ data, dateCorte, disabled = false }) => {
+export const ExportSaldoCobrarPdf: React.FC<ExportPdfProps> = ({ data, dateCorte, mes, anio, disabled = false }) => {
+    const PDF_MONTHS = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
     const [loading, setLoading] = useState(false);
 
     const formatMoney = (amount: number) => {
@@ -135,9 +138,11 @@ export const ExportSaldoCobrarPdf: React.FC<ExportPdfProps> = ({ data, dateCorte
                 currentPage.drawText(`DOCUMENTO: ${cliente.RUC}`, { x: margin + 350, y: yPosition - 15, size: 8, font: boldFont });
                 currentPage.drawText(`DIRECCIÓN: ${direccionCorta}`, { x: margin + 10, y: yPosition - 30, size: 8, font });
 
-                // Mostramos la fecha de corte seleccionada
-                const fCorte = dateCorte ? dateCorte.toLocaleDateString('es-PE') : new Date().toLocaleDateString('es-PE');
-                currentPage.drawText(`FECHA CORTE: ${fCorte}`, { x: margin + 10, y: yPosition - 45, size: 8, font: boldFont, color: rgb(0.8, 0.1, 0.1) });
+                const fCorteLabel = (mes && anio) ? 'MES:' : 'FECHA CORTE:';
+                const fCorte = (mes && anio)
+                    ? `${PDF_MONTHS[mes - 1]} ${anio}`
+                    : (dateCorte ? dateCorte.toLocaleDateString('es-PE') : new Date().toLocaleDateString('es-PE'));
+                currentPage.drawText(`${fCorteLabel} ${fCorte}`, { x: margin + 10, y: yPosition - 45, size: 8, font: boldFont, color: rgb(0.8, 0.1, 0.1) });
                 currentPage.drawText(`TELÉFONO: ${cliente.Telefono || '-'}`, { x: margin + 350, y: yPosition - 45, size: 8, font });
 
                 yPosition -= 65;

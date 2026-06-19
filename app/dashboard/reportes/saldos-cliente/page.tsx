@@ -18,6 +18,7 @@ import apiClient from "@/app/api/client"
 
 import { ExportSaldoCobrarPdf } from "@/components/reporte/exportSaldoCobrarPdf"
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 interface IAutocompleteClient {
     RUC: string;
@@ -33,6 +34,14 @@ export default function SaldoCobrarClientePage() {
     const [loading, setLoading] = useState(false);
     const [data, setData] = useState<any>(null);
     const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+
+    type SearchMode = 'fecha' | 'mes'
+    const [searchMode, setSearchMode] = useState<SearchMode>('fecha')
+    const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1)
+    const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear())
+    const MONTHS = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
+    const currentYear = new Date().getFullYear()
+    const YEARS = [currentYear - 2, currentYear - 1, currentYear, currentYear + 1]
 
     const [selectedClientRuc, setSelectedClientRuc] = useState<string>("");
     const [selectedClientName, setSelectedClientName] = useState<string>("");
@@ -108,14 +117,19 @@ export default function SaldoCobrarClientePage() {
     const handleSearch = async () => {
         setLoading(true);
         try {
-            const formattedDate = format(selectedDate, 'yyyy-MM-dd');
-
-            const response = await apiClient.post('/reportes/saldo-por-cobrar-cliente', {
+            const body: Record<string, any> = {
                 doc_cliente: selectedClientRuc || null,
-                fecha: formattedDate,
                 idZona: selectedZone || null,
                 codVendedor: selectedSeller || null
-            });
+            };
+            if (searchMode === 'fecha') {
+                body.fecha = format(selectedDate, 'yyyy-MM-dd');
+            } else {
+                body.mes = selectedMonth;
+                body.anio = selectedYear;
+            }
+
+            const response = await apiClient.post('/reportes/saldo-por-cobrar-cliente', body);
 
             let reportData = response.data?.data;
 
@@ -251,7 +265,7 @@ export default function SaldoCobrarClientePage() {
                             </Popover>
                         </div>
 
-                        <div className="flex flex-col gap-1 md:col-span-3">
+                        <div className={`flex flex-col gap-1 ${isManagerOrAdmin ? 'md:col-span-2' : 'md:col-span-3'}`}>
                             <div className="flex items-center gap-1.5 mb-1">
                                 <MapPin className="w-4 h-4 text-muted-foreground" />
                                 <Label>Zonas (Opcional)</Label>
@@ -327,29 +341,74 @@ export default function SaldoCobrarClientePage() {
                             </div>
                         )}
 
-                        <div className={`flex flex-col gap-1 ${isManagerOrAdmin ? 'md:col-span-2' : 'md:col-span-5'}`}>
-                            <div className="flex items-center gap-1.5 mb-1">
-                                <CalendarIcon className="w-4 h-4 text-muted-foreground" />
-                                <Label>Fecha Corte</Label>
+                        <div className={`flex flex-col gap-1 ${isManagerOrAdmin ? 'md:col-span-3' : 'md:col-span-5'}`}>
+                            <div className="flex items-center justify-between mb-1">
+                                <div className="flex items-center gap-1.5">
+                                    <CalendarIcon className="w-4 h-4 text-muted-foreground" />
+                                    <Label>{searchMode === 'fecha' ? 'Fecha Corte' : 'Mes / Año'}</Label>
+                                </div>
+                                <div className="flex rounded-md overflow-hidden border border-slate-200 text-xs">
+                                    <button
+                                        type="button"
+                                        className={`px-2 py-0.5 transition-colors ${searchMode === 'fecha' ? 'bg-blue-600 text-white' : 'bg-white text-slate-600 hover:bg-slate-50'}`}
+                                        onClick={() => setSearchMode('fecha')}
+                                    >Corte</button>
+                                    <button
+                                        type="button"
+                                        className={`px-2 py-0.5 transition-colors border-l border-slate-200 ${searchMode === 'mes' ? 'bg-blue-600 text-white' : 'bg-white text-slate-600 hover:bg-slate-50'}`}
+                                        onClick={() => setSearchMode('mes')}
+                                    >Mes</button>
+                                </div>
                             </div>
-                            <Popover>
-                                <PopoverTrigger asChild>
-                                    <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal bg-white h-10", !selectedDate && "text-muted-foreground")}>
-                                        <CalendarIcon className="mr-2 h-4 w-4 opacity-50" />
-                                        {selectedDate ? format(selectedDate, "dd/MM/yyyy", { locale: es }) : <span>Seleccionar</span>}
-                                    </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0 z-50" align="start">
-                                    <Calendar mode="single" selected={selectedDate} onSelect={(date) => date && setSelectedDate(date)} initialFocus locale={es} />
-                                </PopoverContent>
-                            </Popover>
+                            {searchMode === 'fecha' ? (
+                                <Popover>
+                                    <PopoverTrigger asChild>
+                                        <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal bg-white h-10", !selectedDate && "text-muted-foreground")}>
+                                            <CalendarIcon className="mr-2 h-4 w-4 opacity-50" />
+                                            {selectedDate ? format(selectedDate, "dd/MM/yyyy", { locale: es }) : <span>Seleccionar</span>}
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-0 z-50" align="start">
+                                        <Calendar mode="single" selected={selectedDate} onSelect={(date) => date && setSelectedDate(date)} initialFocus locale={es} />
+                                    </PopoverContent>
+                                </Popover>
+                            ) : (
+                                <div className="flex gap-2">
+                                    <Select value={String(selectedMonth)} onValueChange={(v) => setSelectedMonth(Number(v))}>
+                                        <SelectTrigger className="h-10 bg-white flex-1">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {MONTHS.map((name, i) => (
+                                                <SelectItem key={i + 1} value={String(i + 1)}>{name}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <Select value={String(selectedYear)} onValueChange={(v) => setSelectedYear(Number(v))}>
+                                        <SelectTrigger className="h-10 bg-white w-[80px]">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {YEARS.map(y => (
+                                                <SelectItem key={y} value={String(y)}>{y}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            )}
                         </div>
 
                         <div className="flex flex-col sm:flex-row gap-3 md:col-span-12 md:justify-end mt-2">
                             <Button onClick={handleSearch} disabled={loading} className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto shadow-sm h-10">
                                 <Search className="mr-2 h-4 w-4" /> Buscar
                             </Button>
-                            <ExportSaldoCobrarPdf data={data} dateCorte={selectedDate} disabled={loading || !data} />
+                            <ExportSaldoCobrarPdf
+                                data={data}
+                                dateCorte={searchMode === 'fecha' ? selectedDate : undefined}
+                                mes={searchMode === 'mes' ? selectedMonth : undefined}
+                                anio={searchMode === 'mes' ? selectedYear : undefined}
+                                disabled={loading || !data}
+                            />
                         </div>
                     </div>
                 </CardHeader>
