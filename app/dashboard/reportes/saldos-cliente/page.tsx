@@ -182,10 +182,10 @@ export default function SaldoCobrarClientePage() {
     const formatDateToDDMMYYYY = (dateString: string): string => {
         if (!dateString) return '-';
         try {
-            const date = new Date(dateString);
-            if (isNaN(date.getTime())) return dateString;
-            return format(date, 'dd/MM/yyyy');
-        } catch (error) { return dateString; }
+            const [y, m, d] = dateString.split('T')[0].split('-');
+            if (y && m && d) return `${d}/${m}/${y}`;
+            return dateString;
+        } catch { return dateString; }
     };
 
     return (
@@ -349,7 +349,7 @@ export default function SaldoCobrarClientePage() {
                             <Button onClick={handleSearch} disabled={loading} className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto shadow-sm h-10">
                                 <Search className="mr-2 h-4 w-4" /> Buscar
                             </Button>
-                            <ExportSaldoCobrarPdf data={data} disabled={loading || !data} />
+                            <ExportSaldoCobrarPdf data={data} dateCorte={selectedDate} disabled={loading || !data} />
                         </div>
                     </div>
                 </CardHeader>
