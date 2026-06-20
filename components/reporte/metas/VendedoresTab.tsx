@@ -163,7 +163,7 @@ export default function VendedoresTab({
                     const pendiente = Number(v.monto_pendiente || 0);
                     return (
                         <Card
-                            key={v.id_meta_lab_vend}
+                            key={v.cod_vendedor + '-' + (v.nombre_lab || '')}
                             className="shadow-sm cursor-pointer active:scale-[0.99] transition-transform"
                             onClick={() => onVendedorClick?.(v)}
                             style={{ borderLeft: `4px solid ${color}` }}
@@ -255,7 +255,7 @@ export default function VendedoresTab({
                                 const color = getLabColor(i);
                                 return (
                                     <tr
-                                        key={v.id_meta_lab_vend}
+                                        key={v.cod_vendedor + '-' + (v.nombre_lab || '')}
                                         className="border-b border-slate-50 hover:bg-slate-50 cursor-pointer transition-colors"
                                         onClick={() => onVendedorClick?.(v)}
                                     >

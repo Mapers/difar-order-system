@@ -39,7 +39,7 @@ export default function ItemsPorLabTab({ laboratorios, items }: ItemsPorLabTabPr
     const labGroups = useMemo(() => {
         const groups = laboratorios.map(lab => {
             const labItems = items
-                .filter(i => i.id_meta_lab === lab.id_meta_lab)
+                .filter(i => i.id_linea_ge === lab.id_linea_ge)
                 .map(item => ({
                     ...item,
                     avPct: Number(item.pct_avance_monto || 0),
@@ -117,7 +117,7 @@ export default function ItemsPorLabTab({ laboratorios, items }: ItemsPorLabTabPr
 
             <div className="space-y-3">
                 {labGroups.map((group, gIdx) => {
-                    const isOpen = openLabs.has(group.id_meta_lab);
+                    const isOpen = openLabs.has(group.id_linea_ge);
                     const [c1] = getStatusColor(group.pct);
                     const color = getLabColor(gIdx);
 
@@ -128,11 +128,11 @@ export default function ItemsPorLabTab({ laboratorios, items }: ItemsPorLabTabPr
                     });
 
                     return (
-                        <Card key={group.id_meta_lab} className="shadow-sm overflow-hidden">
+                        <Card key={group.id_linea_ge} className="shadow-sm overflow-hidden">
                             <div
                                 className="flex items-center justify-between p-3.5 cursor-pointer hover:bg-slate-50 transition-colors"
                                 style={{ borderLeft: `4px solid ${color}` }}
-                                onClick={() => toggleLab(group.id_meta_lab)}
+                                onClick={() => toggleLab(group.id_linea_ge)}
                             >
                                 <div className="flex items-center gap-2">
                                     {isOpen

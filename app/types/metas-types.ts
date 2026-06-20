@@ -8,7 +8,6 @@ export interface ICiclo {
 }
 
 export interface ILabDashboard {
-    id_meta_lab: number;
     id_linea_ge: number;
     nombre_lab?: string;
     meta_monto: number;
@@ -22,11 +21,10 @@ export interface ILabDashboard {
 }
 
 export interface IVendedorDashboard {
-    id_meta_lab_vend: number;
-    id_meta_lab: number;
-    nombre_lab: string;
+    id_linea_ge: number;
     cod_vendedor: string;
     nombre_vendedor?: string;
+    nombre_lab: string;
     meta_monto: number;
     meta_clientes: number;
     venta_real: number;
@@ -39,8 +37,9 @@ export interface IVendedorDashboard {
 
 export interface IItemDashboard {
     id_meta_item: number;
-    id_meta_lab_vend: number;
-    id_meta_lab: number;
+    id_ciclo: number;
+    id_linea_ge: number;
+    cod_vendedor: string;
     cod_articulo: string;
     nombre_articulo?: string;
     precio_ref_meta: number;

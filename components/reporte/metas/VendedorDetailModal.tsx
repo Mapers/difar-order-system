@@ -1,13 +1,12 @@
 'use client'
 
-import { useEffect, useMemo, useState } from "react"
+import { useMemo } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
 import { IVendedorDashboard, IItemDashboard } from "@/app/types/metas-types"
-import {fmtMoney, getInitials, getLabColor, getStatusColor} from "@/app/utils/metas-helpers";
-import StatusChip from "@/components/reporte/metas/StatusChip";
-import ClientesAtendidosModal from "@/components/reporte/metas/ClientesAtendidosModal";
-import ProgressBar from "@/components/reporte/metas/ProgressBar";
+import { fmtMoney, getInitials, getLabColor, getStatusColor } from "@/app/utils/metas-helpers"
+import StatusChip from "@/components/reporte/metas/StatusChip"
+import ProgressBar from "@/components/reporte/metas/ProgressBar"
 
 interface VendedorDetailModalProps {
     open: boolean;
@@ -19,15 +18,13 @@ interface VendedorDetailModalProps {
 export default function VendedorDetailModal({ open, onClose, vendedor, allItems }: VendedorDetailModalProps) {
     if (!vendedor) return null;
 
-    const [clientesOpen, setClientesOpen] = useState(false);
-
     const avPct = Number(vendedor.pct_avance_monto || 0);
     const [c1] = getStatusColor(avPct);
     const color = getLabColor(0);
 
     const vendItems = useMemo(() => {
         return allItems
-            .filter(i => i.id_meta_lab_vend === vendedor.id_meta_lab_vend)
+            .filter(i => i.cod_vendedor === vendedor.cod_vendedor && i.id_linea_ge === vendedor.id_linea_ge)
             .map(item => ({
                 ...item,
                 avPct: Number(item.pct_avance_monto || 0),
@@ -48,8 +45,7 @@ export default function VendedorDetailModal({ open, onClose, vendedor, allItems 
     const [cobColor] = getStatusColor(cobPct);
 
     return (
-        <>
-            <Dialog open={open} onOpenChange={onClose}>
+        <Dialog open={open} onOpenChange={onClose}>
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col p-0">
                 <div className="p-5 pb-4 border-b border-slate-200">
                     <div className="flex items-center justify-between gap-3">
@@ -66,7 +62,14 @@ export default function VendedorDetailModal({ open, onClose, vendedor, allItems 
                                     <Badge variant="outline" className="text-[10px] bg-sky-50 text-sky-700 border-sky-200">
                                         Cod: {vendedor.cod_vendedor}
                                     </Badge>
-                                    <span className="text-[10px] text-slate-400">{vendItems.length} ítem{vendItems.length === 1 ? '' : 's'} asignado{vendItems.length === 1 ? '' : 's'}</span>
+                                    {vendedor.nombre_lab && (
+                                        <Badge variant="outline" className="text-[10px] bg-slate-50 text-slate-600 border-slate-200">
+                                            {vendedor.nombre_lab}
+                                        </Badge>
+                                    )}
+                                    <span className="text-[10px] text-slate-400">
+                                        {vendItems.length} ítem{vendItems.length === 1 ? '' : 's'} asignado{vendItems.length === 1 ? '' : 's'}
+                                    </span>
                                 </div>
                             </div>
                         </div>
@@ -86,8 +89,7 @@ export default function VendedorDetailModal({ open, onClose, vendedor, allItems 
                         <ProgressBar pct={avPct} height="h-1" className="mt-1.5" />
                     </div>
 
-                    <button type="button" onClick={() => setClientesOpen(true)}
-                            className="bg-white rounded-lg p-3 border border-slate-200 text-left hover:border-sky-300 hover:shadow-sm transition-all cursor-pointer">
+                    <div className="bg-white rounded-lg p-3 border border-slate-200">
                         <p className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Cobertura Clientes</p>
                         <p className="text-lg font-bold mt-0.5" style={{ color: cobColor }}>
                             {cobPct}%
@@ -96,8 +98,7 @@ export default function VendedorDetailModal({ open, onClose, vendedor, allItems 
                             {Number(vendedor.clientes_atendidos)} atendidos / meta {Number(vendedor.meta_clientes)}
                         </p>
                         <ProgressBar pct={cobPct} height="h-1" className="mt-1.5" />
-                        <p className="text-[9px] text-sky-600 font-semibold mt-1">Ver clientes →</p>
-                    </button>
+                    </div>
 
                     <div className="bg-white rounded-lg p-3 border border-slate-200">
                         <p className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Unidades Totales</p>
@@ -121,10 +122,10 @@ export default function VendedorDetailModal({ open, onClose, vendedor, allItems 
 
                     {vendItems.length === 0 ? (
                         <div className="text-center text-slate-400 text-sm py-8">
-                            No hay ítems asignados a este vendedor
+                            No hay ítems asignados a este vendedor en este laboratorio
                         </div>
                     ) : (
-                        vendItems.map((item, idx) => {
+                        vendItems.map((item) => {
                             const [sc1] = getStatusColor(item.avPct);
                             const [uc1] = getStatusColor(item.uPct);
                             const contribColor = item.contrib >= 25 ? "#0284c7" : item.contrib >= 15 ? "#d97706" : "#94a3b8";
@@ -138,11 +139,6 @@ export default function VendedorDetailModal({ open, onClose, vendedor, allItems 
                                             {item.nombre_articulo || item.cod_articulo}
                                         </p>
                                         <div className="flex items-center gap-2 mt-0.5">
-                                            {item.nombre_lab && (
-                                                <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-sky-50 text-sky-600 font-semibold">
-                                                    {item.nombre_lab}
-                                                </span>
-                                            )}
                                             <span className="text-[9px] text-slate-400">
                                                 P.ref: {fmtMoney(Number(item.precio_ref_meta))}
                                             </span>
@@ -205,14 +201,6 @@ export default function VendedorDetailModal({ open, onClose, vendedor, allItems 
                     )}
                 </div>
             </DialogContent>
-            </Dialog>
-
-            <ClientesAtendidosModal
-                open={clientesOpen}
-                onClose={() => setClientesOpen(false)}
-                idMetaLabVend={vendedor.id_meta_lab_vend}
-                nombreVendedor={vendedor.nombre_vendedor || vendedor.cod_vendedor}
-            />
-        </>
+        </Dialog>
     );
 }

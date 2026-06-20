@@ -125,7 +125,7 @@ export default function ResumenTab({ data, kpis, onVendedorClick, isVendedorView
                                     const [c1] = getStatusColor(av);
                                     const color = getLabColor(i);
                                     return (
-                                        <div key={lab.id_meta_lab} className="flex flex-col gap-1.5 p-2.5 bg-slate-50 rounded-lg">
+                                        <div key={lab.id_linea_ge} className="flex flex-col gap-1.5 p-2.5 bg-slate-50 rounded-lg">
                                             <div className="flex justify-between items-center">
                                                 <div className="flex items-center gap-2">
                                                     <div className="w-6 h-6 rounded-md flex items-center justify-center text-[10px] font-bold shrink-0"
@@ -166,7 +166,7 @@ export default function ResumenTab({ data, kpis, onVendedorClick, isVendedorView
                                         const av = Number(v.pct_avance_monto || 0);
                                         const [c1] = getStatusColor(av);
                                         return (
-                                            <div key={v.id_meta_lab_vend}
+                                            <div key={v.cod_vendedor + (v.nombre_lab || '') + 't3'}
                                                  className={`flex items-center gap-3 p-2.5 rounded-lg cursor-pointer hover:opacity-90 transition-opacity ${medalBg[i]}`}
                                                  onClick={() => onVendedorClick?.(v)}
                                             >
@@ -208,7 +208,7 @@ export default function ResumenTab({ data, kpis, onVendedorClick, isVendedorView
                                             const [c1] = getStatusColor(av);
                                             const falta = Number(v.monto_pendiente || 0);
                                             return (
-                                                <div key={v.id_meta_lab_vend}
+                                                <div key={v.cod_vendedor + (v.nombre_lab || '') + 'b'}
                                                      className="flex items-center gap-2 p-2 bg-slate-50 rounded-lg cursor-pointer hover:bg-slate-100 transition-colors"
                                                      onClick={() => onVendedorClick?.(v)}
                                                 >

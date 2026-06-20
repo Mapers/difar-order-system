@@ -81,7 +81,7 @@ export default function LaboratoriosTab({
                     const av = Number(lab.pct_avance_monto || 0);
                     return (
                         <KpiCard
-                            key={lab.id_meta_lab}
+                            key={lab.id_linea_ge}
                             label={lab.nombre_lab || `Lab ${lab.id_linea_ge}`}
                             value={`${av}%`}
                             subtitle={`${fmtMoney(Number(lab.venta_real))} de ${fmtMoney(Number(lab.meta_monto))}`}
@@ -157,7 +157,7 @@ export default function LaboratoriosTab({
                     const pendiente = Number(l.monto_pendiente || 0);
                     return (
                         <Card
-                            key={l.id_meta_lab}
+                            key={l.id_linea_ge}
                             className="shadow-sm overflow-hidden"
                             style={{ borderLeft: `4px solid ${color}` }}
                         >
@@ -235,7 +235,7 @@ export default function LaboratoriosTab({
                                 const [c1] = getStatusColor(l.pct);
                                 const color = getLabColor(i);
                                 return (
-                                    <tr key={l.id_meta_lab} className="border-b border-slate-50 hover:bg-slate-50 transition-colors">
+                                    <tr key={l.id_linea_ge} className="border-b border-slate-50 hover:bg-slate-50 transition-colors">
                                         <td className="px-3 py-2.5">
                                             <div className="flex items-center gap-2">
                                                 <div

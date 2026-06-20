@@ -428,7 +428,7 @@ export default function VendedorDashboardView({ data, kpis }: VendedorDashboardV
     const itemsByLab = useMemo(() => {
         const map: Record<number, typeof enrichedItems> = {}
         for (const item of enrichedItems) {
-            const key = Number(item.id_meta_lab)
+            const key = Number(item.id_linea_ge)
             if (!map[key]) map[key] = []
             map[key].push(item)
         }
@@ -525,7 +525,7 @@ export default function VendedorDashboardView({ data, kpis }: VendedorDashboardV
                                 const [c1]  = getStatusColor(av)
                                 const color = getLabColor(i)
                                 return (
-                                    <div key={lab.id_meta_lab} className="flex flex-col gap-1.5 p-2.5 bg-slate-50 rounded-lg">
+                                    <div key={lab.id_linea_ge} className="flex flex-col gap-1.5 p-2.5 bg-slate-50 rounded-lg">
                                         <div className="flex justify-between items-center">
                                             <div className="flex items-center gap-2">
                                                 <div className="w-6 h-6 rounded-md flex items-center justify-center text-[10px] font-bold shrink-0"
@@ -574,9 +574,9 @@ export default function VendedorDashboardView({ data, kpis }: VendedorDashboardV
                     <div className="space-y-3">
                         {labsSorted.map((lab, i) => (
                             <LabCard
-                                key={lab.id_meta_lab}
+                                key={lab.id_linea_ge}
                                 lab={lab}
-                                labItems={itemsByLab[Number(lab.id_meta_lab)] || []}
+                                labItems={itemsByLab[Number(lab.id_linea_ge)] || []}
                                 colorIdx={i}
                                 defaultOpen={i === 0}
                                 onOpenModal={handleOpenModal}
