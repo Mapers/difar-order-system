@@ -10,6 +10,7 @@ import {
 } from "lucide-react"
 import { IClient, ICondicion, IMoneda } from "@/app/types/order/client-interface"
 import { ISelectedProduct } from "@/app/types/order/product-interface"
+import { IItemDashboard } from "@/app/types/metas-types"
 import { ProductoConLotes } from "@/app/types/order/order-interface"
 import SelectedProductsTable from "@/components/tomar-pedido/Selectedproductstable";
 import { calcularTotal, getCurrencySymbol } from "@/app/utils/order-helpers"
@@ -30,12 +31,14 @@ interface SummaryStepProps {
     isLoadingSave: boolean
     handleSaveDraft: () => void,
     onConfirmOrder: () => void
+    metasMap?: Map<string, IItemDashboard> | null
 }
 
 export default function SummaryStep({
                                         selectedClient, contactoPedido, nameZone, condition, currency,
                                         selectedProducts, productosConLotes, note, onNoteChange,
-                                        onRemoveItem, onPrev, isLoadingSave, handleSaveDraft, onConfirmOrder
+                                        onRemoveItem, onPrev, isLoadingSave, handleSaveDraft, onConfirmOrder,
+                                        metasMap,
                                     }: SummaryStepProps) {
     const [confirmOpen, setConfirmOpen] = useState(false)
     const sym = getCurrencySymbol(currency?.value)
@@ -146,6 +149,7 @@ export default function SummaryStep({
                                 currencyValue={currency?.value}
                                 onRemoveItem={onRemoveItem}
                                 showActions={true}
+                                metasMap={metasMap}
                             />
                         </div>
                     </div>

@@ -7,6 +7,8 @@ import { LaboratorioModal } from "@/components/tomar-pedido/laboratorio-modal"
 import AlternativeProductsModal from "@/components/tomar-pedido/AlternativeProductsModal"
 import { useLaboratoriesData } from "@/app/dashboard/lista-precios-lote/hooks/useLaboratoriesData"
 import {useOrderPage} from "@/app/hooks/useOrder";
+import { useAuth } from "@/context/authContext"
+import { useMetasItems } from "@/app/hooks/useMetasItems"
 import ClientStep from "@/components/tomar-pedido/Clientstep";
 import ProductStep from "@/components/tomar-pedido/Productstep";
 import LotesModal from "@/components/tomar-pedido/Lotesmodal";
@@ -29,6 +31,12 @@ const steps = [
 export default function OrderPage() {
   const { laboratories } = useLaboratoriesData()
   const order = useOrderPage()
+  const { user, isVendedor } = useAuth()
+
+  const codVendedor = order.isAdmin()
+      ? (order.seller?.codigo ?? null)
+      : (user?.codigo ?? null)
+  const metasMap = useMetasItems(codVendedor)
 
   const { savedDrafts, saveDraft, deleteDraft } = useOrderDrafts()
   const [showDraftsDialog, setShowDraftsDialog] = useState(false)
@@ -157,6 +165,7 @@ export default function OrderPage() {
                   onUpdateProducts={order.setSelectedProducts}
                   onClearAll={order.clear}
                   handleSaveDraft={handleSaveDraft}
+                  metasMap={metasMap}
               />
           )}
 
@@ -176,6 +185,7 @@ export default function OrderPage() {
                   onPrev={order.prevStep}
                   handleSaveDraft={handleSaveDraft}
                   onConfirmOrder={order.handleSaveOrder}
+                  metasMap={metasMap}
               />
           )}
         </form>

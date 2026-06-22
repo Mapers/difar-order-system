@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { TableCell, TableRow, TableFooter } from "@/components/ui/table"
 import { Trash, Package, Pencil } from "lucide-react"
 import { ISelectedProduct } from "@/app/types/order/product-interface"
+import { IItemDashboard } from "@/app/types/metas-types"
 import { format, parseISO } from "date-fns"
 import { ProductoConLotes } from "@/app/types/order/order-interface"
 import { getCurrencySymbol, parseLoteString } from "@/app/utils/order-helpers"
@@ -19,6 +20,24 @@ interface SelectedProductsTableProps {
     onChangeLote?: (items: ISelectedProduct[], index: number) => void
     onEditClick?: (index: number) => void
     showActions?: boolean
+    metasMap?: Map<string, IItemDashboard> | null
+}
+
+function MetaBar({ codArticulo, metasMap }: { codArticulo: string; metasMap: Map<string, IItemDashboard> | null | undefined }) {
+    if (!metasMap) return null
+    const meta = metasMap.get(codArticulo)
+    if (!meta) return null
+    const pct = Math.min(Number(meta.pct_avance_monto || 0), 100)
+    const color = pct >= 80 ? '#059669' : pct >= 50 ? '#d97706' : '#dc2626'
+    return (
+        <div className="flex items-center gap-1.5 mt-1 w-full">
+            <div className="flex-1 bg-slate-100 rounded-full h-1 overflow-hidden">
+                <div className="h-1 rounded-full transition-all" style={{ width: `${pct}%`, background: color }} />
+            </div>
+            <span className="text-[9px] font-bold shrink-0" style={{ color }}>{Number(meta.pct_avance_monto || 0)}%</span>
+            <span className="text-[9px] text-slate-400 shrink-0">meta</span>
+        </div>
+    )
 }
 
 const IgvBadge = ({ product }: { product: ISelectedProduct["product"] }) => {
@@ -65,6 +84,7 @@ const productNameWithIgv = (item: ISelectedProduct) => {
 export default function SelectedProductsTable({
                                                   selectedProducts, productosConLotes, currencyValue,
                                                   onRemoveItem, onChangeLote, onEditClick, showActions = true,
+                                                  metasMap,
                                               }: SelectedProductsTableProps) {
     const sym = getCurrencySymbol(currencyValue)
 
@@ -148,6 +168,7 @@ export default function SelectedProductsTable({
                                         <div className="flex items-start flex-wrap gap-1">
                                             {renderBadges(item)}
                                             <span className="w-full">{productNameWithIgv(item)}</span>
+                                            <MetaBar codArticulo={item.product.Codigo_Art} metasMap={metasMap} />
                                         </div>
                                     </td>
                                     <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{item.product.Descripcion}</td>
@@ -246,6 +267,7 @@ export default function SelectedProductsTable({
                                         )}
                                         <p className="text-xs text-gray-500 mt-1">Cód: {item.product.Codigo_Art}</p>
                                         <p className="text-xs text-gray-500 line-clamp-1">{item.product.Descripcion}</p>
+                                        <MetaBar codArticulo={item.product.Codigo_Art} metasMap={metasMap} />
                                     </div>
                                 </div>
 

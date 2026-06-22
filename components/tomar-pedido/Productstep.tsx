@@ -5,6 +5,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Label } from "@/components/ui/label"
 import {ShoppingCart, ArrowRight, ArrowLeft, Search, Building, Minus, Plus, Trash, Package, Save} from "lucide-react"
 import { IProduct, ISelectedProduct } from "@/app/types/order/product-interface"
+import { IItemDashboard } from "@/app/types/metas-types"
 import { IMoneda } from "@/app/types/order/client-interface"
 import { PriceType, ProductoConLotes } from "@/app/types/order/order-interface"
 import ModalLoader from "@/components/modal/modalLoader"
@@ -50,6 +51,7 @@ interface ProductStepProps {
     isStepValid: boolean
     onUpdateProducts?: (products: ISelectedProduct[]) => void;
     handleSaveDraft: () => void
+    metasMap?: Map<string, IItemDashboard> | null
 }
 
 export default function ProductStep({
@@ -59,7 +61,8 @@ export default function ProductStep({
                                         onQuantityChange, onAddProduct, loadingProducts, isLoading, modalLoader,
                                         onIsLoadingChange, laboratories, selectedLaboratorio, onLaboratorioChange,
                                         selectedProducts, productosConLotes, onRemoveItem, onChangeLote,
-                                        onClearAll, onNext, onPrev, isStepValid, onUpdateProducts, handleSaveDraft
+                                        onClearAll, onNext, onPrev, isStepValid, onUpdateProducts, handleSaveDraft,
+                                        metasMap,
                                     }: ProductStepProps) {
     const [labModalSearchOpen, setLabModalSearchOpen] = useState(false)
     const [showClearAllDialog, setShowClearAllDialog] = useState(false)
@@ -281,6 +284,7 @@ export default function ProductStep({
                             selectedProducts={selectedProducts} productosConLotes={productosConLotes}
                             currencyValue={currency?.value} onRemoveItem={onRemoveItem}
                             onChangeLote={onChangeLote} onEditClick={handleEditClick}
+                            metasMap={metasMap}
                         />
                     </CardContent>
                     <CardFooter className="flex justify-between border-t bg-gray-50 py-4 gap-2 px-3 sm:px-6">
