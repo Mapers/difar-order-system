@@ -169,6 +169,7 @@ export default function MetasDashboardPage() {
                         onClose={() => setVendModalOpen(false)}
                         vendedor={selectedVendedor}
                         allItems={dashboardData.items}
+                        ciclo={selectedCiclo}
                     />
                 </>
             )}

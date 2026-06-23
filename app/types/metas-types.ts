@@ -1,12 +1,3 @@
-export interface ICiclo {
-    id_ciclo: number;
-    anio: number;
-    mes: number;
-    fecha_inicio: string;
-    fecha_fin: string;
-    estado: 'ABIERTO' | 'CERRADO';
-}
-
 export interface ILabDashboard {
     id_linea_ge: number;
     nombre_lab?: string;
@@ -191,6 +182,32 @@ export interface IValidacionVend {
     suma_items: number;
     diferencia: number;
     estado_validacion: 'OK' | 'INCONSISTENTE';
+}
+
+export type EstadoVisita = 'VISITADO_CON_PEDIDO' | 'VISITADO_SIN_PEDIDO' | 'PENDIENTE' | 'PROGRAMADO';
+
+export interface IClienteVisita {
+    cod_cliente: string;
+    NombreComercial: string;
+    Nombre: string;
+    estado_visita: EstadoVisita;
+    hora_visita: string | null;
+    monto_pedido: number;
+    comentario: string | null;
+}
+
+export interface IDiaVisitas {
+    fecha: string;
+    nombre_dia: string;
+    clientes: IClienteVisita[];
+}
+
+export interface IVisitasSemana {
+    tiene_rutas: boolean;
+    asignados: number;
+    visitados: number;
+    pct: number;
+    detalle: IDiaVisitas[];
 }
 
 export interface IArticuloPrecio {

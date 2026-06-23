@@ -1,21 +1,31 @@
 'use client'
 
-import { useMemo } from "react"
+import { useMemo, useState } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
-import { IVendedorDashboard, IItemDashboard } from "@/app/types/metas-types"
+import { IVendedorDashboard, IItemDashboard, ICiclo } from "@/app/types/metas-types"
 import { fmtMoney, getInitials, getLabColor, getStatusColor } from "@/app/utils/metas-helpers"
 import StatusChip from "@/components/reporte/metas/StatusChip"
 import ProgressBar from "@/components/reporte/metas/ProgressBar"
+import VisitasSemanaCard from "@/components/reporte/metas/VisitasSemanaCard"
+import VisitasDetallePanel from "@/components/reporte/metas/VisitasDetallePanel"
+import { useVisitasSemana } from "@/app/hooks/useVisitasSemana"
 
 interface VendedorDetailModalProps {
     open: boolean;
     onClose: () => void;
     vendedor: IVendedorDashboard | null;
     allItems: IItemDashboard[];
+    ciclo: ICiclo | null;
 }
 
-export default function VendedorDetailModal({ open, onClose, vendedor, allItems }: VendedorDetailModalProps) {
+export default function VendedorDetailModal({ open, onClose, vendedor, allItems, ciclo }: VendedorDetailModalProps) {
+    const [visitasPanelOpen, setVisitasPanelOpen] = useState(false);
+    const { data: visitasData, loading: visitasLoading, semana } = useVisitasSemana(
+        open ? (vendedor?.cod_vendedor ?? null) : null,
+        ciclo
+    );
+
     if (!vendedor) return null;
 
     const avPct = Number(vendedor.pct_avance_monto || 0);
@@ -45,6 +55,7 @@ export default function VendedorDetailModal({ open, onClose, vendedor, allItems 
     const [cobColor] = getStatusColor(cobPct);
 
     return (
+        <>
         <Dialog open={open} onOpenChange={onClose}>
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col p-0">
                 <div className="p-5 pb-4 border-b border-slate-200">
@@ -77,7 +88,7 @@ export default function VendedorDetailModal({ open, onClose, vendedor, allItems 
                     </div>
                 </div>
 
-                <div className="grid grid-cols-3 gap-3 p-4 bg-slate-50 border-b border-slate-200">
+                <div className={`grid gap-3 p-4 bg-slate-50 border-b border-slate-200 ${visitasData?.tiene_rutas ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-3'}`}>
                     <div className="bg-white rounded-lg p-3 border border-slate-200">
                         <p className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Venta Total</p>
                         <p className="text-lg font-bold mt-0.5" style={{ color: c1 }}>
@@ -109,6 +120,14 @@ export default function VendedorDetailModal({ open, onClose, vendedor, allItems 
                             {vendItems.length} producto{vendItems.length === 1 ? '' : 's'} · meta {totalMetaCant.toLocaleString()} uds
                         </p>
                     </div>
+
+                    {(visitasLoading || visitasData?.tiene_rutas) && (
+                        <VisitasSemanaCard
+                            data={visitasData ?? { tiene_rutas: false, asignados: 0, visitados: 0, pct: 0, detalle: [] }}
+                            loading={visitasLoading}
+                            onClick={() => setVisitasPanelOpen(true)}
+                        />
+                    )}
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-4 space-y-2">
@@ -202,5 +221,17 @@ export default function VendedorDetailModal({ open, onClose, vendedor, allItems 
                 </div>
             </DialogContent>
         </Dialog>
+
+        {visitasData?.tiene_rutas && semana && (
+            <VisitasDetallePanel
+                open={visitasPanelOpen}
+                onClose={() => setVisitasPanelOpen(false)}
+                nombreVendedor={vendedor.nombre_vendedor || vendedor.cod_vendedor}
+                semanaLabel={semana.label}
+                data={visitasData}
+                esCicloActivo={ciclo?.estado === 'ABIERTO'}
+            />
+        )}
+        </>
     );
 }

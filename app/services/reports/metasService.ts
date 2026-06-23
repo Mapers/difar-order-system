@@ -179,4 +179,11 @@ export class MetasService {
         const response = await apiClient.get(`/metas/dashboard/clientes-vendedor/${idMetaLabVend}`);
         return response.data;
     }
+
+    static async getVisitasSemana(codVendedor: string, fechaInicio: string, fechaFin: string): Promise<any> {
+        const response = await apiClient.get(
+            `/rutas/visitas-semana?cod_vendedor=${codVendedor}&fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}`
+        );
+        return response.data;
+    }
 }
