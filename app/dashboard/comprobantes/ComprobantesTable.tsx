@@ -195,6 +195,7 @@ export function ComprobantesTable({
                                 <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha</th>
                                 <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tipo</th>
                                 <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Serie/Número</th>
+                                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Vendedor</th>
                                 <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cliente</th>
                                 <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Documento</th>
                                 <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total</th>
@@ -214,6 +215,7 @@ export function ComprobantesTable({
                                         </td>
                                         <td className="p-4 text-sm">{getTipoComprobante(comprobante.serie)}</td>
                                         <td className="p-4 font-medium text-sm">{comprobante.serie}-{comprobante.numero}</td>
+                                        <td className="p-4 text-sm">{comprobante.Vendedor ?? '—'}</td>
                                         <td className="p-4">
                                             <div className="font-medium text-sm">
                                                 {comprobante.cliente_denominacion ?? '—'}
@@ -296,7 +298,7 @@ export function ComprobantesTable({
                                     </tr>
                                 ))
                             ) : (
-                                <tr><td colSpan={8} className="text-center py-8 text-gray-500">No se encontraron comprobantes</td></tr>
+                                <tr><td colSpan={9} className="text-center py-8 text-gray-500">No se encontraron comprobantes</td></tr>
                             )}
                             </tbody>
                         </table>
@@ -338,6 +340,9 @@ export function ComprobantesTable({
                                     {(comprobante.tipo_comprobante !== null && !esLibre(comprobante)) && (
                                         <>
                                             <div className="border-t pt-3 w-full overflow-hidden">
+                                                {comprobante.Vendedor && (
+                                                    <p className="text-xs text-gray-500 mb-0.5">Vend: {comprobante.Vendedor}</p>
+                                                )}
                                                 <p className="font-medium text-gray-900 break-words line-clamp-2"
                                                    title={comprobante.cliente_denominacion ?? ''}>
                                                     {comprobante.cliente_denominacion ?? '—'}

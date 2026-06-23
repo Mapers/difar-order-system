@@ -150,6 +150,7 @@ export function CreditNotesTable({
                                 <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha Emisión</th>
                                 <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tipo</th>
                                 <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Serie/Número</th>
+                                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Vendedor</th>
                                 <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cliente</th>
                                 <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Documento</th>
                                 <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total</th>
@@ -172,6 +173,7 @@ export function CreditNotesTable({
                                                 </div>
                                             </td>
                                             <td className="p-4 font-medium text-sm">{nota.serie}-{nota.numero}</td>
+                                            <td className="p-4 text-sm">{nota.Vendedor ?? '—'}</td>
                                             <td className="p-4">
                                                 <div className={`font-medium text-sm`}>
                                                     {nota.cliente_denominacion}
@@ -237,7 +239,7 @@ export function CreditNotesTable({
                                     )
                                 })
                             ) : (
-                                <tr><td colSpan={8} className="text-center py-8 text-gray-500">No se encontraron notas de crédito</td></tr>
+                                <tr><td colSpan={9} className="text-center py-8 text-gray-500">No se encontraron notas de crédito</td></tr>
                             )}
                             </tbody>
                         </table>
@@ -278,6 +280,9 @@ export function CreditNotesTable({
                                             </div>
                                         </div>
                                         <div className="border-t pt-3">
+                                            {nota.Vendedor && (
+                                                <p className="text-xs text-gray-500 mb-0.5">Vend: {nota.Vendedor}</p>
+                                            )}
                                             <p className={`font-medium truncate ${noUtilizado ? 'italic text-amber-700' : 'text-gray-900'}`}>
                                                 {nota.cliente_denominacion}
                                             </p>
