@@ -16,30 +16,32 @@ interface ClienteAtendido {
 interface ClientesAtendidosModalProps {
     open: boolean;
     onClose: () => void;
-    idMetaLabVend: number | null;
+    codVendedor: string;
+    idCiclo: number;
+    idLineaGe: number;
     nombreVendedor?: string;
 }
 
-export default function ClientesAtendidosModal({ open, onClose, idMetaLabVend, nombreVendedor }: ClientesAtendidosModalProps) {
+export default function ClientesAtendidosModal({ open, onClose, codVendedor, idCiclo, idLineaGe, nombreVendedor }: ClientesAtendidosModalProps) {
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
     const [clientes, setClientes] = useState<ClienteAtendido[]>([])
 
     useEffect(() => {
-        if (!open || !idMetaLabVend) return
+        if (!open || !codVendedor || !idCiclo || !idLineaGe) return
         let cancel = false
         setLoading(true)
         setError(null)
-        MetasService.listarClientesAtendidos(idMetaLabVend)
+        MetasService.listarClientesAtendidosDirecto(codVendedor, idCiclo, idLineaGe)
             .then(res => {
                 if (cancel) return
-                const list: ClienteAtendido[] = res?.data?.data || res?.data || []
+                const list: ClienteAtendido[] = res?.data?.data || []
                 setClientes(Array.isArray(list) ? list : [])
             })
             .catch(() => { if (!cancel) setError("No se pudieron cargar los clientes") })
             .finally(() => { if (!cancel) setLoading(false) })
         return () => { cancel = true }
-    }, [open, idMetaLabVend])
+    }, [open, codVendedor, idCiclo, idLineaGe])
 
     const totalMonto = clientes.reduce((s, c) => s + Number(c.monto_vendido || 0), 0)
 

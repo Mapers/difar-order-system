@@ -13,6 +13,7 @@ export interface ILabDashboard {
 
 export interface IVendedorDashboard {
     id_linea_ge: number;
+    id_meta_lab_vend?: number;
     cod_vendedor: string;
     nombre_vendedor?: string;
     nombre_lab: string;

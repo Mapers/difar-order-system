@@ -9,6 +9,7 @@ import StatusChip from "@/components/reporte/metas/StatusChip"
 import ProgressBar from "@/components/reporte/metas/ProgressBar"
 import VisitasSemanaCard from "@/components/reporte/metas/VisitasSemanaCard"
 import VisitasDetallePanel from "@/components/reporte/metas/VisitasDetallePanel"
+import ClientesAtendidosModal from "@/components/reporte/metas/ClientesAtendidosModal"
 import { useVisitasSemana } from "@/app/hooks/useVisitasSemana"
 
 interface VendedorDetailModalProps {
@@ -21,18 +22,14 @@ interface VendedorDetailModalProps {
 
 export default function VendedorDetailModal({ open, onClose, vendedor, allItems, ciclo }: VendedorDetailModalProps) {
     const [visitasPanelOpen, setVisitasPanelOpen] = useState(false);
+    const [clientesOpen, setClientesOpen] = useState(false);
     const { data: visitasData, loading: visitasLoading, semana } = useVisitasSemana(
         open ? (vendedor?.cod_vendedor ?? null) : null,
         ciclo
     );
 
-    if (!vendedor) return null;
-
-    const avPct = Number(vendedor.pct_avance_monto || 0);
-    const [c1] = getStatusColor(avPct);
-    const color = getLabColor(0);
-
     const vendItems = useMemo(() => {
+        if (!vendedor) return [];
         return allItems
             .filter(i => i.cod_vendedor === vendedor.cod_vendedor && i.id_linea_ge === vendedor.id_linea_ge)
             .map(item => ({
@@ -45,6 +42,12 @@ export default function VendedorDetailModal({ open, onClose, vendedor, allItems,
             }))
             .sort((a, b) => b.contrib - a.contrib);
     }, [vendedor, allItems]);
+
+    if (!vendedor) return null;
+
+    const avPct = Number(vendedor.pct_avance_monto || 0);
+    const [c1] = getStatusColor(avPct);
+    const color = getLabColor(0);
 
     const totalUnidades = vendItems.reduce((s, i) => s + Number(i.u_vendidas || 0), 0);
     const totalMetaCant = vendItems.reduce((s, i) => s + Number(i.meta_cantidad || 0), 0);
@@ -100,7 +103,8 @@ export default function VendedorDetailModal({ open, onClose, vendedor, allItems,
                         <ProgressBar pct={avPct} height="h-1" className="mt-1.5" />
                     </div>
 
-                    <div className="bg-white rounded-lg p-3 border border-slate-200">
+                    <button type="button" onClick={() => setClientesOpen(true)}
+                            className="bg-white rounded-lg p-3 border border-slate-200 text-left hover:border-sky-300 hover:shadow-sm transition-all cursor-pointer">
                         <p className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Cobertura Clientes</p>
                         <p className="text-lg font-bold mt-0.5" style={{ color: cobColor }}>
                             {cobPct}%
@@ -109,7 +113,8 @@ export default function VendedorDetailModal({ open, onClose, vendedor, allItems,
                             {Number(vendedor.clientes_atendidos)} atendidos / meta {Number(vendedor.meta_clientes)}
                         </p>
                         <ProgressBar pct={cobPct} height="h-1" className="mt-1.5" />
-                    </div>
+                        <p className="text-[9px] text-sky-600 font-semibold mt-1">Ver clientes →</p>
+                    </button>
 
                     <div className="bg-white rounded-lg p-3 border border-slate-200">
                         <p className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Unidades Totales</p>
@@ -230,6 +235,17 @@ export default function VendedorDetailModal({ open, onClose, vendedor, allItems,
                 semanaLabel={semana.label}
                 data={visitasData}
                 esCicloActivo={ciclo?.estado === 'ABIERTO'}
+            />
+        )}
+
+        {ciclo && (
+            <ClientesAtendidosModal
+                open={clientesOpen}
+                onClose={() => setClientesOpen(false)}
+                codVendedor={vendedor.cod_vendedor}
+                idCiclo={ciclo.id_ciclo}
+                idLineaGe={vendedor.id_linea_ge}
+                nombreVendedor={vendedor.nombre_vendedor || vendedor.cod_vendedor}
             />
         )}
         </>

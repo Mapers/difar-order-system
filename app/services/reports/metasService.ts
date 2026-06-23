@@ -180,6 +180,13 @@ export class MetasService {
         return response.data;
     }
 
+    static async listarClientesAtendidosDirecto(codVendedor: string, idCiclo: number, idLineaGe: number): Promise<any> {
+        const response = await apiClient.get(
+            `/metas/dashboard/clientes-atendidos?cod_vendedor=${codVendedor}&id_ciclo=${idCiclo}&id_linea_ge=${idLineaGe}`
+        );
+        return response.data;
+    }
+
     static async getVisitasSemana(codVendedor: string, fechaInicio: string, fechaFin: string): Promise<any> {
         const response = await apiClient.get(
             `/rutas/visitas-semana?cod_vendedor=${codVendedor}&fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}`
