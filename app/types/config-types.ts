@@ -22,12 +22,17 @@ export interface AppConfig {
     est_config: string
 }
 
+export type TipoFiltroWhatsapp = 'TODOS' | 'ZONA' | 'CLIENTE'
+
 export interface WhatsappConfig {
     id_whatsapp: number
     numero: string
     nombre: string
     descripcion?: string
     est_whatsapp: string
+    tipo_filtro?: TipoFiltroWhatsapp
+    clientes_filtro?: string[]
+    zonas_filtro?: string[]
 }
 
 export const DOCUMENT_TYPES = [

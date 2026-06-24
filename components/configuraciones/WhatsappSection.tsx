@@ -7,16 +7,34 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Edit, RefreshCw, Save, MessageCircle, PowerOff, Power } from "lucide-react"
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
+import { Edit, RefreshCw, Save, MessageCircle, PowerOff, Power, Users, MapPin, Globe } from "lucide-react"
 import {
     Dialog, DialogContent, DialogDescription, DialogFooter,
     DialogHeader, DialogTitle
 } from "@/components/ui/dialog"
 import apiClient from "@/app/api/client"
-import { WhatsappConfig } from "@/app/types/config-types"
+import { WhatsappConfig, TipoFiltroWhatsapp } from "@/app/types/config-types"
+import { ClientService } from "@/app/services/client/ClientService"
+import { toast } from "@/app/hooks/useToast"
+import MultiSelectFilter, { OptionItem } from "@/components/configuraciones/MultiSelectFilter"
 
 interface WhatsappSectionProps {
     onOpenModalChange: (fn: () => void) => void
+}
+
+// Normaliza un valor entrante (array, string JSON o null) a array de strings.
+const toArr = (v: unknown): string[] => {
+    if (Array.isArray(v)) return v.map(String)
+    if (typeof v === "string" && v.trim()) {
+        try {
+            const p = JSON.parse(v)
+            return Array.isArray(p) ? p.map(String) : []
+        } catch {
+            return []
+        }
+    }
+    return []
 }
 
 export default function WhatsappSection({ onOpenModalChange }: WhatsappSectionProps) {
@@ -27,6 +45,17 @@ export default function WhatsappSection({ onOpenModalChange }: WhatsappSectionPr
     const [editando, setEditando] = useState<WhatsappConfig | null>(null)
     const [form, setForm] = useState({ numero: "", nombre: "", descripcion: "" })
     const [errors, setErrors] = useState<Record<string, string>>({})
+
+    // Filtro de destinatarios
+    const [tipoFiltro, setTipoFiltro] = useState<TipoFiltroWhatsapp>("TODOS")
+    const [clientesSel, setClientesSel] = useState<string[]>([])
+    const [zonasSel, setZonasSel] = useState<string[]>([])
+
+    // Opciones (se cargan una sola vez, al abrir el modal)
+    const [zonaOptions, setZonaOptions] = useState<OptionItem[]>([])
+    const [clienteOptions, setClienteOptions] = useState<OptionItem[]>([])
+    const [optsLoaded, setOptsLoaded] = useState(false)
+    const [loadingOpts, setLoadingOpts] = useState(false)
 
     const fetchItems = async () => {
         setLoading(true)
@@ -42,20 +71,56 @@ export default function WhatsappSection({ onOpenModalChange }: WhatsappSectionPr
 
     useEffect(() => { fetchItems() }, [])
 
+    const cargarOpciones = useCallback(async () => {
+        if (optsLoaded) return
+        setLoadingOpts(true)
+        try {
+            const [zRes, cRes] = await Promise.all([
+                ClientService.getZones(),
+                ClientService.getAllClientsByCodVendedor(null, "1", null),
+            ])
+            const zonas: OptionItem[] = (zRes?.data || [])
+                .map((z: any) => ({ value: String(z.IdZona ?? ""), label: z.NombreZona || String(z.IdZona ?? "") }))
+                .filter((z: OptionItem) => z.value)
+            const clientes: OptionItem[] = (cRes?.data || [])
+                .map((c: any) => {
+                    const codigo = String(c.codigo ?? c.Codigo ?? "")
+                    const nombre = c.cliente_nombre ?? c.razonSocial ?? c.Nombre ?? c.nombre ?? "Sin nombre"
+                    return { value: codigo, label: `${nombre} (${codigo})` }
+                })
+                .filter((c: OptionItem) => c.value)
+            setZonaOptions(zonas)
+            setClienteOptions(clientes)
+            setOptsLoaded(true)
+        } catch {
+            toast({ title: "Error", description: "No se pudieron cargar zonas/clientes.", variant: "destructive" })
+        } finally {
+            setLoadingOpts(false)
+        }
+    }, [optsLoaded])
+
     const abrirModalNuevo = useCallback(() => {
         setEditando(null)
         setForm({ numero: "", nombre: "", descripcion: "" })
+        setTipoFiltro("TODOS")
+        setClientesSel([])
+        setZonasSel([])
         setErrors({})
         setIsModalOpen(true)
-    }, [])
+        cargarOpciones()
+    }, [cargarOpciones])
 
     useEffect(() => { onOpenModalChange(abrirModalNuevo) }, [onOpenModalChange, abrirModalNuevo])
 
     const abrirModalEditar = (item: WhatsappConfig) => {
         setEditando(item)
         setForm({ numero: item.numero, nombre: item.nombre, descripcion: item.descripcion || "" })
+        setTipoFiltro((item.tipo_filtro as TipoFiltroWhatsapp) || "TODOS")
+        setClientesSel(toArr(item.clientes_filtro))
+        setZonasSel(toArr(item.zonas_filtro))
         setErrors({})
         setIsModalOpen(true)
+        cargarOpciones()
     }
 
     const handleGuardar = async () => {
@@ -63,20 +128,34 @@ export default function WhatsappSection({ onOpenModalChange }: WhatsappSectionPr
         if (!form.numero.trim()) newErrors.numero = "Requerido"
         else if (!/^\d{9,15}$/.test(form.numero.replace(/\s/g, ""))) newErrors.numero = "Número inválido (9-15 dígitos)"
         if (!form.nombre.trim()) newErrors.nombre = "Requerido"
+        if (tipoFiltro === "ZONA" && zonasSel.length === 0) newErrors.filtro = "Selecciona al menos una zona"
+        if (tipoFiltro === "CLIENTE" && clientesSel.length === 0) newErrors.filtro = "Selecciona al menos un cliente"
         setErrors(newErrors)
         if (Object.keys(newErrors).length > 0) return
+
+        const payload = {
+            numero: form.numero,
+            nombre: form.nombre,
+            descripcion: form.descripcion,
+            tipo_filtro: tipoFiltro,
+            clientes_filtro: tipoFiltro === "CLIENTE" ? clientesSel : [],
+            zonas_filtro: tipoFiltro === "ZONA" ? zonasSel : [],
+        }
 
         setLoadingSave(true)
         try {
             if (editando) {
-                await apiClient.put(`/admin/actualizar/whatsapp-config/${editando.id_whatsapp}`, form)
+                await apiClient.put(`/admin/actualizar/whatsapp-config/${editando.id_whatsapp}`, payload)
+                toast({ title: "✓ Actualizado", description: "Número actualizado correctamente." })
             } else {
-                await apiClient.post("/admin/crear/whatsapp-config", form)
+                await apiClient.post("/admin/crear/whatsapp-config", payload)
+                toast({ title: "✓ Registrado", description: "Número registrado correctamente." })
             }
             setIsModalOpen(false)
             fetchItems()
-        } catch {
-            // handled silently
+        } catch (error: any) {
+            const msg = error?.response?.data?.message || "No se pudo guardar el número."
+            toast({ title: "Error", description: msg, variant: "destructive" })
         } finally {
             setLoadingSave(false)
         }
@@ -87,8 +166,30 @@ export default function WhatsappSection({ onOpenModalChange }: WhatsappSectionPr
             await apiClient.put(`/admin/toggle/whatsapp-config/${item.id_whatsapp}`)
             fetchItems()
         } catch {
-            // handled silently
+            toast({ title: "Error", description: "No se pudo cambiar el estado.", variant: "destructive" })
         }
+    }
+
+    const renderFiltroBadge = (item: WhatsappConfig) => {
+        if (item.tipo_filtro === "ZONA") {
+            return (
+                <Badge variant="outline" className="text-xs gap-1">
+                    <MapPin className="h-3 w-3" /> Zonas: {toArr(item.zonas_filtro).length}
+                </Badge>
+            )
+        }
+        if (item.tipo_filtro === "CLIENTE") {
+            return (
+                <Badge variant="outline" className="text-xs gap-1">
+                    <Users className="h-3 w-3" /> Clientes: {toArr(item.clientes_filtro).length}
+                </Badge>
+            )
+        }
+        return (
+            <Badge variant="outline" className="text-xs gap-1">
+                <Globe className="h-3 w-3" /> Todas las ventas
+            </Badge>
+        )
     }
 
     if (loading) {
@@ -123,6 +224,8 @@ export default function WhatsappSection({ onOpenModalChange }: WhatsappSectionPr
                                         {item.est_whatsapp === "A" ? "Activo" : "Inactivo"}
                                     </Badge>
                                 </div>
+
+                                <div className="mb-3">{renderFiltroBadge(item)}</div>
 
                                 {item.descripcion && (
                                     <p className="text-xs text-gray-500 mb-3 bg-gray-50 rounded p-2">{item.descripcion}</p>
@@ -171,14 +274,14 @@ export default function WhatsappSection({ onOpenModalChange }: WhatsappSectionPr
                             <Label htmlFor="numero">Número *</Label>
                             <Input
                                 id="numero"
-                                placeholder="Ej: 51987654321"
+                                placeholder="Ej: 987654321"
                                 value={form.numero}
                                 onChange={(e) => setForm({ ...form, numero: e.target.value.replace(/\D/g, "") })}
                                 className={errors.numero ? "border-red-500" : ""}
                                 maxLength={15}
                             />
                             {errors.numero && <p className="text-xs text-red-500">{errors.numero}</p>}
-                            <p className="text-xs text-gray-400">Incluye código de país sin el +51. Ej: 987654321</p>
+                            <p className="text-xs text-gray-400">Ingresa el número sin el código de país (+51). Ej: 987654321</p>
                         </div>
 
                         <div className="space-y-2">
@@ -203,6 +306,48 @@ export default function WhatsappSection({ onOpenModalChange }: WhatsappSectionPr
                                 onChange={(e) => setForm({ ...form, descripcion: e.target.value })}
                                 maxLength={200}
                             />
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label>¿Qué notificaciones recibe?</Label>
+                            <Tabs value={tipoFiltro} onValueChange={(v) => setTipoFiltro(v as TipoFiltroWhatsapp)}>
+                                <TabsList className="grid w-full grid-cols-3">
+                                    <TabsTrigger value="TODOS" className="text-xs">Todos</TabsTrigger>
+                                    <TabsTrigger value="ZONA" className="text-xs">Zonas</TabsTrigger>
+                                    <TabsTrigger value="CLIENTE" className="text-xs">Clientes</TabsTrigger>
+                                </TabsList>
+
+                                <TabsContent value="TODOS" className="pt-2">
+                                    <p className="text-xs text-gray-500">Recibirá la notificación de todas las ventas.</p>
+                                </TabsContent>
+
+                                <TabsContent value="ZONA" className="pt-2 space-y-1">
+                                    <MultiSelectFilter
+                                        options={zonaOptions}
+                                        selected={zonasSel}
+                                        onChange={setZonasSel}
+                                        placeholder="Seleccionar zonas..."
+                                        searchPlaceholder="Buscar zona..."
+                                        emptyText="No se encontraron zonas"
+                                        loading={loadingOpts}
+                                    />
+                                    <p className="text-xs text-gray-400">Solo recibirá ventas de las zonas seleccionadas.</p>
+                                </TabsContent>
+
+                                <TabsContent value="CLIENTE" className="pt-2 space-y-1">
+                                    <MultiSelectFilter
+                                        options={clienteOptions}
+                                        selected={clientesSel}
+                                        onChange={setClientesSel}
+                                        placeholder="Seleccionar clientes..."
+                                        searchPlaceholder="Buscar cliente o documento..."
+                                        emptyText="No se encontraron clientes"
+                                        loading={loadingOpts}
+                                    />
+                                    <p className="text-xs text-gray-400">Solo recibirá ventas de los clientes seleccionados.</p>
+                                </TabsContent>
+                            </Tabs>
+                            {errors.filtro && <p className="text-xs text-red-500">{errors.filtro}</p>}
                         </div>
                     </div>
 
