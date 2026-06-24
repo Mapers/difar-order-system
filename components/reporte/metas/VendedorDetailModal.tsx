@@ -91,7 +91,7 @@ export default function VendedorDetailModal({ open, onClose, vendedor, allItems,
                     </div>
                 </div>
 
-                <div className={`grid gap-3 p-4 bg-slate-50 border-b border-slate-200 ${visitasData?.tiene_rutas ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-3'}`}>
+                <div className={`grid gap-3 p-4 bg-slate-50 border-b border-slate-200 ${(visitasLoading || visitasData?.tiene_rutas) ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-3'}`}>
                     <div className="bg-white rounded-lg p-3 border border-slate-200">
                         <p className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Venta Total</p>
                         <p className="text-lg font-bold mt-0.5" style={{ color: c1 }}>
