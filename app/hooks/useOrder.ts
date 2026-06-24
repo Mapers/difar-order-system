@@ -603,6 +603,7 @@ export function useOrderPage() {
                     isEdit:           item.isEdit      ? 'S' : 'N',
                     isAuthorize:      item.isAuthorize ? 'S' : 'N',
                     tipo_afectacion_igv: item.product.tipo_afectacion_igv ?? '10',
+                    descItemPedido:     item.product.NombreItem || ''
                 }))
 
             const basePedido = {
