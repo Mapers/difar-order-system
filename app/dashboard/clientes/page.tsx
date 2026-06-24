@@ -307,7 +307,7 @@ export default function ClientsPage() {
                     </Popover>
                   </div>
 
-                  {isRepresentante() && (
+                  {(isRepresentante() || isAdmin()) && (
                     <div className="sm:w-56 space-y-2">
                       <Label className="text-sm font-medium">Vendedor</Label>
                       <Popover open={openVendedor} onOpenChange={setOpenVendedor}>
