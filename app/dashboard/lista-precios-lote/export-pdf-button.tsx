@@ -19,7 +19,8 @@ const ExportPdfButton = ({ payload, filters }: { payload: any; filters?: any }) 
   const applyFilters = (items: any[]) => {
     // Siempre se omiten los productos con stock <= 0
     let result = items.filter(i => Number(i.kardex_saldoCant) > 0)
-    if (filters?.lowStock && filters?.selectedLabsCount === 1) result = result.filter(i => Number(i.kardex_saldoCant) < 10)
+    const lowThreshold = Number(filters?.lowStockThreshold);
+    if (lowThreshold > 0 && filters?.selectedLabsCount === 1) result = result.filter(i => Number(i.kardex_saldoCant) < lowThreshold)
     if (filters?.selectedPrinciple) result = result.filter(i => i.prod_principio === filters.selectedPrinciple)
     if (filters?.searchTerm) {
       const q = filters.searchTerm.toLowerCase()

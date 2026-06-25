@@ -14,8 +14,9 @@ export const PriceFilters = ({
                                  selectedLabs, setSelectedLabs,
                                  laboratories,
                                  excludeNoStock, setExcludeNoStock,
-                                 lowStock, setLowStock,
+                                 lowStockThreshold, setLowStockThreshold,
                                  isGerente,
+                                 isAdmin,
                                  selectedPrinciple, setSelectedPrinciple, uniquePrinciples
                              }: any) => {
     const [openPrinciple, setOpenPrinciple] = useState(false);
@@ -107,18 +108,20 @@ export const PriceFilters = ({
                                 Excluir sin stock
                             </label>
                         </div>
-                        {isGerente && selectedLabs.length === 1 && (
-                            <div className="flex items-center space-x-2 pt-1">
-                                <input
-                                    type="checkbox"
-                                    id="lowStock"
-                                    checked={lowStock}
-                                    onChange={(e) => setLowStock(e.target.checked)}
-                                    className="h-4 w-4 rounded border-orange-300 text-orange-500 focus:ring-orange-400 cursor-pointer accent-orange-500"
-                                />
-                                <label htmlFor="lowStock" className="text-sm font-medium text-orange-600 cursor-pointer">
-                                    Stock escaso (&lt;10)
+                        {(isGerente || isAdmin) && (
+                            <div className="flex items-center gap-2 pt-1">
+                                <label htmlFor="lowStockThreshold" className="text-sm font-medium text-orange-600 whitespace-nowrap">
+                                    Stock escaso (&lt;)
                                 </label>
+                                <Input
+                                    id="lowStockThreshold"
+                                    type="number"
+                                    min={1}
+                                    placeholder="Ej: 10"
+                                    value={lowStockThreshold}
+                                    onChange={(e) => setLowStockThreshold(e.target.value)}
+                                    className="h-8 w-24 text-sm border-orange-300 focus:ring-orange-400 text-orange-700"
+                                />
                             </div>
                         )}
                     </div>

@@ -63,8 +63,9 @@ export default function PricePage() {
               selectedLabs={listData.selectedLabs} setSelectedLabs={listData.setSelectedLabs}
               laboratories={laboratoriesRepres}
               excludeNoStock={listData.excludeNoStock} setExcludeNoStock={listData.setExcludeNoStock}
-              lowStock={listData.lowStock} setLowStock={listData.setLowStock}
+              lowStockThreshold={listData.lowStockThreshold} setLowStockThreshold={listData.setLowStockThreshold}
               isGerente={hasRole('gerente')}
+              isAdmin={isAdmin()}
               selectedPrinciple={listData.selectedPrinciple}
               setSelectedPrinciple={listData.setSelectedPrinciple}
               uniquePrinciples={listData.uniquePrinciples}

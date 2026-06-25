@@ -74,24 +74,22 @@ export function PendientesList({ pedidos, loading, onInvoice, onDelete, onViewDe
                                             <span className="hidden sm:inline">Facturar Ahora</span>
                                             <span className="sm:hidden">Facturar</span>
                                         </Button> :
-                                        <>
-                                            <Button onClick={() => onInvoice(pedido)} variant="outline" size="sm" className="text-red-700 border-red-300 hover:bg-red-200 text-xs">
-                                                <RefreshCw className="h-4 w-4" />
-                                                <span className="hidden sm:inline">Reintentar Factura</span>
-                                                <span className="sm:hidden">Reintentar</span>
-                                            </Button>
-                                            <Button
-                                                onClick={() => onDelete(pedido)}
-                                                variant="outline"
-                                                size="sm"
-                                                className="text-red-700 border-red-300 hover:bg-red-100 text-xs"
-                                            >
-                                                <Trash2 className="h-4 w-4" />
-                                                <span className="hidden sm:inline">Eliminar</span>
-                                                <span className="sm:hidden">Eliminar</span>
-                                            </Button>
-                                        </>
+                                        <Button onClick={() => onInvoice(pedido)} variant="outline" size="sm" className="text-red-700 border-red-300 hover:bg-red-200 text-xs">
+                                            <RefreshCw className="h-4 w-4" />
+                                            <span className="hidden sm:inline">Reintentar Factura</span>
+                                            <span className="sm:hidden">Reintentar</span>
+                                        </Button>
                                     }
+                                    <Button
+                                        onClick={() => onDelete(pedido)}
+                                        variant="outline"
+                                        size="sm"
+                                        className="text-red-700 border-red-300 hover:bg-red-100 text-xs"
+                                    >
+                                        <Trash2 className="h-4 w-4" />
+                                        <span className="hidden sm:inline">Eliminar</span>
+                                        <span className="sm:hidden">Eliminar</span>
+                                    </Button>
                                     <Button className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto" size="sm"
                                             onClick={() => onViewDetail(pedido.nroPedido)}>
                                         <Eye className="h-4 w-4" />

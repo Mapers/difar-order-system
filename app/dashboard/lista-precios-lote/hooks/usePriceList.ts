@@ -8,7 +8,7 @@ export function usePriceList(isAuthenticated: boolean, user: User | null, isAdmi
     const [searchTerm, setSearchTerm] = useState("");
     const [selectedLabs, setSelectedLabs] = useState<number[]>([]);
     const [excludeNoStock, setExcludeNoStock] = useState(false);
-    const [lowStock, setLowStock] = useState(false);
+    const [lowStockThreshold, setLowStockThreshold] = useState("");
     const [selectedPrinciple, setSelectedPrinciple] = useState<string>("");
 
     const [listPricesLots, setListPricesLots] = useState<PrecioLote[]>([]);
@@ -70,8 +70,9 @@ export function usePriceList(isAuthenticated: boolean, user: User | null, isAdmi
             filtered = filtered.filter(item => Number(item.kardex_saldoCant) > 0);
         }
 
-        if (lowStock && selectedLabs.length === 1) {
-            filtered = filtered.filter(item => Number(item.kardex_saldoCant) < 10);
+        const threshold = Number(lowStockThreshold);
+        if (threshold > 0) {
+            filtered = filtered.filter(item => Number(item.kardex_saldoCant) < threshold);
         }
 
         if (searchTerm) {
@@ -89,7 +90,7 @@ export function usePriceList(isAuthenticated: boolean, user: User | null, isAdmi
 
         setFilteredPricesLot(filtered);
         setCurrentPage(1);
-    }, [searchTerm, listPricesLots, excludeNoStock, lowStock, selectedLabs, selectedPrinciple]);
+    }, [searchTerm, listPricesLots, excludeNoStock, lowStockThreshold, selectedLabs, selectedPrinciple]);
 
     const totalPages = Math.ceil(filteredPricesLot.length / itemsPerPage) || 1;
     const paginatedData = filteredPricesLot.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
@@ -105,12 +106,12 @@ export function usePriceList(isAuthenticated: boolean, user: User | null, isAdmi
         searchTerm, setSearchTerm,
         selectedLabs, setSelectedLabs,
         excludeNoStock, setExcludeNoStock,
-        lowStock, setLowStock,
+        lowStockThreshold, setLowStockThreshold,
         selectedPrinciple, setSelectedPrinciple, uniquePrinciples,
         loading, filteredPricesLot, paginatedData,
         currentPage, setCurrentPage, totalPages,
         itemsPerPage, setItemsPerPage,
         exportPayload: getExportPayload(),
-        exportFilters: { excludeNoStock, lowStock, selectedLabsCount: selectedLabs.length, searchTerm, selectedPrinciple }
+        exportFilters: { excludeNoStock, lowStockThreshold, selectedLabsCount: selectedLabs.length, searchTerm, selectedPrinciple }
     };
 }
