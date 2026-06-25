@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { BarChart3, RefreshCw, Users, Factory, Pill } from "lucide-react"
+import { BarChart3, RefreshCw, Users, Factory, Pill, LockKeyhole } from "lucide-react"
 
 import { IVendedorDashboard } from "@/app/types/metas-types"
 import { useMetasDashboard } from "@/app/hooks/useMetasDashboard"
@@ -102,6 +102,17 @@ export default function MetasDashboardPage() {
                     </Button>
                 </div>
             </div>
+
+            {/* Banner ciclo cerrado */}
+            {selectedCiclo?.estado === 'CERRADO' && (
+                <div className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-amber-800">
+                    <LockKeyhole className="h-4 w-4 mt-0.5 shrink-0 text-amber-600" />
+                    <div className="text-sm">
+                        <span className="font-semibold">Ciclo cerrado — </span>
+                        los datos mostrados son históricos y no reflejan actividad en curso.
+                    </div>
+                </div>
+            )}
 
             {loadingDashboard ? (
                 <div className="flex flex-col items-center justify-center py-16">
