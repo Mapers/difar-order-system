@@ -5,12 +5,14 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { User, Loader2 } from "lucide-react";
 import { useAuth } from "@/context/authContext";
+import { useSidebar } from "@/context/sidebarContext";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 
 /** Cabecera compartida del sidebar: logo + tarjeta con datos del usuario. */
 export function UserCard() {
   const { user, ingresarComoVendedor, ingresarComoRepresentante, switchingRole } = useAuth();
+  const { collapsed } = useSidebar();
   const router = useRouter();
 
   // Modo activo según el token
@@ -27,6 +29,18 @@ export function UserCard() {
       : await ingresarComoRepresentante();
     if (ok) router.push("/dashboard");
   };
+
+  if (collapsed) {
+    return (
+      <div className="flex flex-col items-center border-b px-2 pt-3 pb-2 gap-2">
+        <Link href="/dashboard">
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-blue-100 to-indigo-200 shadow-inner">
+            <User className="h-5 w-5 text-blue-700" />
+          </div>
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col items-center border-b px-4 pt-4 pb-2 gap-2">

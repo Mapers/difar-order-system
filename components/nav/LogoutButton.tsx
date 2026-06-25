@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useSidebar } from "@/context/sidebarContext";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   Dialog,
   DialogContent,
@@ -20,6 +22,7 @@ interface LogoutButtonProps {
 /** Botón "Cerrar sesión" + diálogo de confirmación, compartido por ambos navs. */
 export function LogoutButton({ onBeforeOpen }: LogoutButtonProps) {
   const { logout } = useAuth();
+  const { collapsed } = useSidebar();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   const handleLogoutClick = () => {
@@ -43,14 +46,32 @@ export function LogoutButton({ onBeforeOpen }: LogoutButtonProps) {
   return (
     <>
       <div className="border-t p-4 shrink-0">
-        <Button
-          variant="outline"
-          className="w-full justify-start gap-2 text-red-600 hover:bg-red-50 hover:text-red-700"
-          onClick={handleLogoutClick}
-        >
-          <LogOut className="h-4 w-4" />
-          Cerrar sesión
-        </Button>
+        {collapsed ? (
+          <TooltipProvider delayDuration={100}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="w-full text-red-600 hover:bg-red-50 hover:text-red-700"
+                  onClick={handleLogoutClick}
+                >
+                  <LogOut className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="right">Cerrar sesión</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        ) : (
+          <Button
+            variant="outline"
+            className="w-full justify-start gap-2 text-red-600 hover:bg-red-50 hover:text-red-700"
+            onClick={handleLogoutClick}
+          >
+            <LogOut className="h-4 w-4" />
+            Cerrar sesión
+          </Button>
+        )}
       </div>
 
       <Dialog open={showLogoutConfirm} onOpenChange={setShowLogoutConfirm}>

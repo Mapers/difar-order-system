@@ -5,8 +5,10 @@ import { useState } from "react";
 import { usePathname } from "next/navigation";
 import { ChevronDown } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { useMenuItems } from "@/hooks/useMenuItems";
+import { useSidebar } from "@/context/sidebarContext";
 
 interface NavMenuProps {
   /** Se llama tras navegar (móvil lo usa para cerrar el drawer). */
@@ -18,9 +20,47 @@ export function NavMenu({ onNavigate }: NavMenuProps) {
   const pathname = usePathname();
   const menuItems = useMenuItems();
   const [openItem, setOpenItem] = useState<string | null>(null);
+  const { collapsed } = useSidebar();
 
   const toggleItem = (title: string) =>
     setOpenItem((prev) => (prev === title ? null : title));
+
+  if (collapsed) {
+    return (
+      <TooltipProvider delayDuration={100}>
+        <ScrollArea className="flex-1">
+          <nav className="flex flex-col items-center gap-1 py-4">
+            {menuItems.map((item) => {
+              const isActive = item.children
+                ? pathname.startsWith(item.href)
+                : pathname === item.href;
+              const href = item.children ? item.children[0]?.href ?? item.href : item.href;
+
+              return (
+                <Tooltip key={item.id}>
+                  <TooltipTrigger asChild>
+                    <Link
+                      href={href}
+                      onClick={onNavigate}
+                      className={cn(
+                        "flex h-10 w-10 items-center justify-center rounded-lg transition-all hover:bg-blue-100",
+                        isActive
+                          ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md"
+                          : "text-gray-500 hover:text-blue-700",
+                      )}
+                    >
+                      <item.icon className="h-5 w-5" />
+                    </Link>
+                  </TooltipTrigger>
+                  <TooltipContent side="right">{item.title}</TooltipContent>
+                </Tooltip>
+              );
+            })}
+          </nav>
+        </ScrollArea>
+      </TooltipProvider>
+    );
+  }
 
   return (
     <ScrollArea className="flex-1">
