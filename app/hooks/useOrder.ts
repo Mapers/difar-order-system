@@ -585,7 +585,7 @@ export function useOrderPage() {
         }
     }
 
-    const handleSaveOrder = async () => {
+    const handleSaveOrder = async (onSuccess?: () => void) => {
         if (isLoadingSave) return
         try {
             setIsLoadingSave(true)
@@ -662,6 +662,7 @@ export function useOrderPage() {
                 })
 
                 if (response.status === 201) {
+                    onSuccess?.()
                     router.push("/dashboard/mis-pedidos")
                 }
             } else {
@@ -673,6 +674,7 @@ export function useOrderPage() {
                 })
 
                 if (response.status === 201) {
+                    onSuccess?.()
                     router.push("/dashboard/mis-pedidos")
                 }
             }
@@ -843,7 +845,7 @@ export function useOrderPage() {
         productosConLotes,
         note,
         editedClientData,
-        getOrderStateForDraft
+        selectedAlmacen,
     });
 
     const loadStateFromDraft = (draft: any) => {

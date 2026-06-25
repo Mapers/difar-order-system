@@ -40,23 +40,40 @@ export default function OrderPage() {
 
   const { savedDrafts, saveDraft, deleteDraft } = useOrderDrafts()
   const [showDraftsDialog, setShowDraftsDialog] = useState(false)
+  const [activeDraftId, setActiveDraftId] = useState<string | null>(null)
 
-  const handleSaveDraft = () => {
+  const handleSaveDraft = async () => {
     const currentState = order.getOrderStateForDraft()
-    saveDraft(currentState)
-    toast({
-      title: "Borrador guardado",
-      description: "El pedido se ha guardado en tus pendientes.",
-      variant: "success",
-    })
+    const ok = await saveDraft(currentState)
+    if (ok) {
+      toast({
+        title: "Borrador guardado",
+        description: "El pedido se ha guardado en tus pendientes.",
+        variant: "success",
+      })
+    } else {
+      toast({
+        title: "Error al guardar",
+        description: "No se pudo guardar el borrador. Verifica tu sesión.",
+        variant: "error",
+      })
+    }
   }
 
   const handleApplyDraft = (draft: OrderDraft) => {
     order.loadStateFromDraft(draft)
+    setActiveDraftId(draft.id)
     setShowDraftsDialog(false)
     toast({
       title: "Borrador cargado",
       description: "Se han restaurado los datos del pedido.",
+    })
+  }
+
+  const handleSaveOrderWithCleanup = (extraAction?: () => void) => {
+    order.handleSaveOrder(() => {
+      if (activeDraftId) deleteDraft(activeDraftId)
+      extraAction?.()
     })
   }
 
@@ -184,7 +201,7 @@ export default function OrderPage() {
                   onRemoveItem={order.handleRemoveItem}
                   onPrev={order.prevStep}
                   handleSaveDraft={handleSaveDraft}
-                  onConfirmOrder={order.handleSaveOrder}
+                  onConfirmOrder={() => handleSaveOrderWithCleanup()}
                   metasMap={metasMap}
               />
           )}
@@ -214,11 +231,8 @@ export default function OrderPage() {
         <ClientDataConfirmModal
             open={order.showClientDataConfirmModal}
             onOpenChange={order.setShowClientDataConfirmModal}
-            onSaveOrder={order.handleSaveOrder}
-            onSaveOrderAndUpdateClient={() => {
-              order.handleSaveOrder()
-              order.updateClientData()
-            }}
+            onSaveOrder={() => handleSaveOrderWithCleanup()}
+            onSaveOrderAndUpdateClient={() => handleSaveOrderWithCleanup(order.updateClientData)}
         />
 
         <ProductDetailsModal

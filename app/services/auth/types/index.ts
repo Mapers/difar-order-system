@@ -17,6 +17,7 @@ export interface SmsCheck {
 export interface JwtPayload {
     usuario: {
         idVendedor: number,
+        idUsuarioWeb: number,
         usuario: string,
         codigo: string,
         telefono: string,
@@ -60,6 +61,7 @@ export interface VendedorRelacionado {
 
 export interface User {
     idVendedor: number,
+    idUsuarioWeb: number,
     codigo: string,
     telefono: string,
     nombreCompleto: string,

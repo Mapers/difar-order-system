@@ -80,16 +80,16 @@ export default function ComprobantesPage() {
   const [filters, setFilters] = useState({
     tipo: "|-1",
     estado: 4,
-    fechaDesde: '',
-    fechaHasta: ''
+    fechaDesde: format(today, 'yyyy-MM-dd'),
+    fechaHasta: format(today, 'yyyy-MM-dd')
   })
   const [filtersGuias, setFiltersGuias] = useState({
     fechaDesde: format(today, 'yyyy-MM-dd'),
     fechaHasta: format(tomorrow, 'yyyy-MM-dd')
   })
   const [filtersNotas, setFiltersNotas] = useState({
-    fechaDesde: '',
-    fechaHasta: ''
+    fechaDesde: format(today, 'yyyy-MM-dd'),
+    fechaHasta: format(today, 'yyyy-MM-dd')
   })
 
   const [showGuiasModal, setShowGuiasModal] = useState(false)
