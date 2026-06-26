@@ -78,6 +78,7 @@ export function InvoiceModal({
     const [descuentoActivo,  setDescuentoActivo]  = useState(false)
     const [descuentoMonto,   setDescuentoMonto]   = useState<string>("")
     const [descuentoError,   setDescuentoError]   = useState<string>("")
+    const [tipoDocError,     setTipoDocError]     = useState<string>("")
 
     const valorDescuento = descuentoActivo ? Number(descuentoMonto) || 0 : 0
 
@@ -190,6 +191,10 @@ export function InvoiceModal({
     }, [open, selectedOrder?.nroPedido])
 
     const handleInitialConfirm = () => {
+        if (tipoSunat === '1' && selectedOrder?.RUC?.length !== 8) {
+            setTipoDocError("El cliente tiene RUC (11 dígitos). Para tipo documento DNI el cliente debe tener exactamente 8 dígitos.")
+            return
+        }
         if (fleteActivo && (!fleteMonto || Number(fleteMonto) <= 0)) {
             setFleteError("Ingrese un monto válido para el flete")
             return
@@ -198,6 +203,7 @@ export function InvoiceModal({
             setDescuentoError("Ingrese un monto válido para el descuento")
             return
         }
+        setTipoDocError("")
         setFleteError("")
         setDescuentoError("")
         setShowContactModal(true)
@@ -307,10 +313,12 @@ export function InvoiceModal({
                                     <Label className="text-sm font-medium mb-2 block">Tipo Doc.</Label>
                                     <Select
                                         value={tipoSunat}
-                                        onValueChange={setTipoSunat}
+                                        onValueChange={(v) => { setTipoSunat(v); setTipoDocError("") }}
                                         disabled={isProcessing || loadingPreviewData}
                                     >
-                                        <SelectTrigger><SelectValue placeholder="Seleccionar tipo documento" /></SelectTrigger>
+                                        <SelectTrigger className={tipoDocError ? 'border-red-400' : ''}>
+                                            <SelectValue placeholder="Seleccionar tipo documento" />
+                                        </SelectTrigger>
                                         <SelectContent>
                                             {tipoDocsSunat.map((trans) => (
                                                 <SelectItem key={trans.codigo} value={trans.codigo}>
@@ -319,6 +327,7 @@ export function InvoiceModal({
                                             ))}
                                         </SelectContent>
                                     </Select>
+                                    {tipoDocError && <p className="text-xs text-red-500 mt-1">{tipoDocError}</p>}
                                 </div>
                                 <div>
                                     <Label className="text-sm font-medium mb-2 block">Almacén Afectado</Label>
