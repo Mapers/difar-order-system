@@ -25,6 +25,10 @@ export interface IVendedorDashboard {
     pct_cobertura_clientes: number;
     monto_pendiente: number;
     items?: IItemDashboard[];
+    // Presentes solo cuando la fila es un vendedor agrupado (todos sus labs sumados)
+    labs?: IVendedorDashboard[];
+    esAgrupado?: boolean;
+    total_labs?: number;
 }
 
 export interface IItemDashboard {

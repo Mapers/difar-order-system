@@ -5,7 +5,7 @@ import KpiCard from "@/components/reporte/metas/KpiCard"
 import ProgressBar from "@/components/reporte/metas/ProgressBar"
 import StatusChip from "@/components/reporte/metas/StatusChip"
 import { IDashboardData, IVendedorDashboard } from "@/app/types/metas-types"
-import { fmtMoney, getStatusColor, getInitials, getLabColor } from "@/app/utils/metas-helpers"
+import { fmtMoney, getStatusColor, getInitials, getLabColor, agruparVendedores } from "@/app/utils/metas-helpers"
 import { MedalIcon } from "lucide-react"
 
 interface ResumenTabProps {
@@ -19,16 +19,19 @@ export default function ResumenTab({ data, kpis, onVendedorClick, isVendedorView
     const labs  = data.laboratorios || [];
     const vends = data.vendedores   || [];
 
+    // Vendedores agrupados (una sola fila por vendedor, sus labs sumados)
+    const vendsAgrupados = agruparVendedores(vends);
+
     const labsAlert = [...labs]
         .filter(l => Number(l.pct_avance_monto) < 80)
         .sort((a, b) => Number(a.pct_avance_monto) - Number(b.pct_avance_monto))
         .slice(0, 5);
 
-    const top3 = [...vends]
+    const top3 = [...vendsAgrupados]
         .sort((a, b) => Number(b.pct_avance_monto) - Number(a.pct_avance_monto))
         .slice(0, 3);
 
-    const vendBajos = [...vends]
+    const vendBajos = [...vendsAgrupados]
         .filter(v => Number(v.pct_avance_monto) < 80)
         .sort((a, b) => Number(a.pct_avance_monto) - Number(b.pct_avance_monto));
 
@@ -166,7 +169,7 @@ export default function ResumenTab({ data, kpis, onVendedorClick, isVendedorView
                                         const av = Number(v.pct_avance_monto || 0);
                                         const [c1] = getStatusColor(av);
                                         return (
-                                            <div key={v.cod_vendedor + (v.nombre_lab || '') + 't3'}
+                                            <div key={v.cod_vendedor + 't3'}
                                                  className={`flex items-center gap-3 p-2.5 rounded-lg cursor-pointer hover:opacity-90 transition-opacity ${medalBg[i]}`}
                                                  onClick={() => onVendedorClick?.(v)}
                                             >
@@ -208,7 +211,7 @@ export default function ResumenTab({ data, kpis, onVendedorClick, isVendedorView
                                             const [c1] = getStatusColor(av);
                                             const falta = Number(v.monto_pendiente || 0);
                                             return (
-                                                <div key={v.cod_vendedor + (v.nombre_lab || '') + 'b'}
+                                                <div key={v.cod_vendedor + 'b'}
                                                      className="flex items-center gap-2 p-2 bg-slate-50 rounded-lg cursor-pointer hover:bg-slate-100 transition-colors"
                                                      onClick={() => onVendedorClick?.(v)}
                                                 >

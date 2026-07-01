@@ -31,7 +31,7 @@ export default function VendedorDetailModal({ open, onClose, vendedor, allItems,
     const vendItems = useMemo(() => {
         if (!vendedor) return [];
         return allItems
-            .filter(i => i.cod_vendedor === vendedor.cod_vendedor && i.id_linea_ge === vendedor.id_linea_ge)
+            .filter(i => i.cod_vendedor === vendedor.cod_vendedor && (vendedor.esAgrupado || i.id_linea_ge === vendedor.id_linea_ge))
             .map(item => ({
                 ...item,
                 avPct: Number(item.pct_avance_monto || 0),
@@ -76,11 +76,15 @@ export default function VendedorDetailModal({ open, onClose, vendedor, allItems,
                                     <Badge variant="outline" className="text-[10px] bg-sky-50 text-sky-700 border-sky-200">
                                         Cod: {vendedor.cod_vendedor}
                                     </Badge>
-                                    {vendedor.nombre_lab && (
+                                    {vendedor.esAgrupado ? (
+                                        <Badge variant="outline" className="text-[10px] bg-slate-50 text-slate-600 border-slate-200">
+                                            {vendedor.labs?.length ?? 0} laboratorio{(vendedor.labs?.length ?? 0) === 1 ? '' : 's'}
+                                        </Badge>
+                                    ) : vendedor.nombre_lab ? (
                                         <Badge variant="outline" className="text-[10px] bg-slate-50 text-slate-600 border-slate-200">
                                             {vendedor.nombre_lab}
                                         </Badge>
-                                    )}
+                                    ) : null}
                                     <span className="text-[10px] text-slate-400">
                                         {vendItems.length} ítem{vendItems.length === 1 ? '' : 's'} asignado{vendItems.length === 1 ? '' : 's'}
                                     </span>
@@ -103,8 +107,10 @@ export default function VendedorDetailModal({ open, onClose, vendedor, allItems,
                         <ProgressBar pct={avPct} height="h-1" className="mt-1.5" />
                     </div>
 
-                    <button type="button" onClick={() => setClientesOpen(true)}
-                            className="bg-white rounded-lg p-3 border border-slate-200 text-left hover:border-sky-300 hover:shadow-sm transition-all cursor-pointer">
+                    <button type="button"
+                            onClick={() => { if (!vendedor.esAgrupado) setClientesOpen(true) }}
+                            disabled={vendedor.esAgrupado}
+                            className={`bg-white rounded-lg p-3 border border-slate-200 text-left transition-all ${vendedor.esAgrupado ? 'cursor-default' : 'hover:border-sky-300 hover:shadow-sm cursor-pointer'}`}>
                         <p className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Cobertura Clientes</p>
                         <p className="text-lg font-bold mt-0.5" style={{ color: cobColor }}>
                             {cobPct}%
@@ -113,7 +119,9 @@ export default function VendedorDetailModal({ open, onClose, vendedor, allItems,
                             {Number(vendedor.clientes_atendidos)} atendidos / meta {Number(vendedor.meta_clientes)}
                         </p>
                         <ProgressBar pct={cobPct} height="h-1" className="mt-1.5" />
-                        <p className="text-[9px] text-sky-600 font-semibold mt-1">Ver clientes →</p>
+                        {!vendedor.esAgrupado && (
+                            <p className="text-[9px] text-sky-600 font-semibold mt-1">Ver clientes →</p>
+                        )}
                     </button>
 
                     <div className="bg-white rounded-lg p-3 border border-slate-200">
