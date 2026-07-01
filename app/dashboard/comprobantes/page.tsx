@@ -259,9 +259,9 @@ export default function ComprobantesPage() {
 
   // Carga inicial (una sola vez al montar). Las búsquedas posteriores NO son
   // reactivas: se disparan manualmente con el botón "Buscar" de cada pestaña.
-  // Facturas/boletas y notas no cargan al inicio: el usuario elige fechas o texto primero.
   useEffect(() => {
     if (filtersGuias.fechaDesde && filtersGuias.fechaHasta) fetchGuiasRemision()
+    fetchComprobantes()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
