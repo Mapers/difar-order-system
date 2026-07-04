@@ -25,6 +25,7 @@ interface CreditNotesTableProps {
     notas: Comprobante[]
     loading: boolean
     tiposComprobante: Sequential[]
+    isAdmin: boolean
     onViewPdf: (url: string) => void
     onCancel: (nota: Comprobante) => void
     onSendEmail: (nota: Comprobante) => void
@@ -36,6 +37,7 @@ export function CreditNotesTable({
                                      notas,
                                      loading,
                                      tiposComprobante,
+                                     isAdmin,
                                      onViewPdf,
                                      onCancel,
                                      onSendEmail,
@@ -210,19 +212,22 @@ export function CreditNotesTable({
                                                                     <FileJson className="mr-2 h-4 w-4 text-gray-500" /> JSON Respuesta
                                                                 </DropdownMenuItem>
 
-                                                                <DropdownMenuSeparator />
+                                                                {isAdmin && (
+                                                                    <>
+                                                                        <DropdownMenuSeparator />
+                                                                        <DropdownMenuItem onClick={() => onSendEmail(nota)}>
+                                                                            <Mail className="mr-2 h-4 w-4 text-blue-500" /> Enviar por Correo
+                                                                        </DropdownMenuItem>
+                                                                        <DropdownMenuItem onClick={() => onSendWhatsApp(nota)}>
+                                                                            <MessageCircle className="mr-2 h-4 w-4 text-green-500" /> Enviar por WhatsApp
+                                                                        </DropdownMenuItem>
+                                                                        <DropdownMenuItem onClick={() => onCheckStatus(nota)}>
+                                                                            <Activity className="mr-2 h-4 w-4 text-orange-500" /> Ver Estado SUNAT
+                                                                        </DropdownMenuItem>
+                                                                    </>
+                                                                )}
 
-                                                                <DropdownMenuItem onClick={() => onSendEmail(nota)}>
-                                                                    <Mail className="mr-2 h-4 w-4 text-blue-500" /> Enviar por Correo
-                                                                </DropdownMenuItem>
-                                                                <DropdownMenuItem onClick={() => onSendWhatsApp(nota)}>
-                                                                    <MessageCircle className="mr-2 h-4 w-4 text-green-500" /> Enviar por WhatsApp
-                                                                </DropdownMenuItem>
-                                                                <DropdownMenuItem onClick={() => onCheckStatus(nota)}>
-                                                                    <Activity className="mr-2 h-4 w-4 text-orange-500" /> Ver Estado SUNAT
-                                                                </DropdownMenuItem>
-
-                                                                {!nota.anulado && (
+                                                                {isAdmin && !nota.anulado && (
                                                                     <>
                                                                         <DropdownMenuSeparator />
                                                                         <DropdownMenuItem className="text-red-600" onClick={() => onCancel(nota)}>
@@ -312,19 +317,22 @@ export function CreditNotesTable({
                                                             <FileJson className="mr-2 h-4 w-4 text-gray-500" /> JSON Respuesta
                                                         </DropdownMenuItem>
 
-                                                        <DropdownMenuSeparator />
+                                                        {isAdmin && (
+                                                            <>
+                                                                <DropdownMenuSeparator />
+                                                                <DropdownMenuItem onClick={() => onSendEmail(nota)}>
+                                                                    <Mail className="mr-2 h-4 w-4 text-blue-500" /> Enviar por Correo
+                                                                </DropdownMenuItem>
+                                                                <DropdownMenuItem onClick={() => onSendWhatsApp(nota)}>
+                                                                    <MessageCircle className="mr-2 h-4 w-4 text-green-500" /> Enviar por WhatsApp
+                                                                </DropdownMenuItem>
+                                                                <DropdownMenuItem onClick={() => onCheckStatus(nota)}>
+                                                                    <Activity className="mr-2 h-4 w-4 text-orange-500" /> Ver Estado SUNAT
+                                                                </DropdownMenuItem>
+                                                            </>
+                                                        )}
 
-                                                        <DropdownMenuItem onClick={() => onSendEmail(nota)}>
-                                                            <Mail className="mr-2 h-4 w-4 text-blue-500" /> Enviar por Correo
-                                                        </DropdownMenuItem>
-                                                        <DropdownMenuItem onClick={() => onSendWhatsApp(nota)}>
-                                                            <MessageCircle className="mr-2 h-4 w-4 text-green-500" /> Enviar por WhatsApp
-                                                        </DropdownMenuItem>
-                                                        <DropdownMenuItem onClick={() => onCheckStatus(nota)}>
-                                                            <Activity className="mr-2 h-4 w-4 text-orange-500" /> Ver Estado SUNAT
-                                                        </DropdownMenuItem>
-
-                                                        {!nota.anulado && (
+                                                        {isAdmin && !nota.anulado && (
                                                             <>
                                                                 <DropdownMenuSeparator />
                                                                 <DropdownMenuItem className="text-red-600" onClick={() => onCancel(nota)}>

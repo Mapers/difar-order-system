@@ -144,6 +144,7 @@ export default function ComprobantesPage() {
   }
 
   const auth = useAuth()
+  const isAdmin = !(auth.isVendedor() || auth.isRepresentante())
 
   const abortControllerRef = useRef<AbortController | null>(null)
 
@@ -807,6 +808,7 @@ export default function ComprobantesPage() {
                 comprobantes={comprobantes}
                 loading={loadingComprobantes}
                 tiposComprobante={tiposComprobante}
+                isAdmin={isAdmin}
                 onViewPdf={handleViewPdf}
                 onCancel={handleCancelInvoice}
                 onSendEmail={handleEmailCompr}
@@ -848,9 +850,11 @@ export default function ComprobantesPage() {
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <ResultCounter count={notasCredito.length} label="Notas de crédito recuperadas" />
                     <div className="flex flex-wrap items-center gap-2">
-                    <Button onClick={() => setShowNotaCreditoModal(true)} variant="outline">
-                      <FileDiff className="mr-2 h-4 w-4" /> Generar Nota de Crédito
-                    </Button>
+                    {isAdmin && (
+                      <Button onClick={() => setShowNotaCreditoModal(true)} variant="outline">
+                        <FileDiff className="mr-2 h-4 w-4" /> Generar Nota de Crédito
+                      </Button>
+                    )}
                     {notasCredito.length > 0 && <ExportRegistroButton type="notas" data={notasCredito} tiposComprobante={tiposComprobante}/>}
                     <Button onClick={fetchNotasCredito} disabled={loadingNotas} className="flex items-center gap-2">
                       {loadingNotas ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />} Buscar
@@ -865,6 +869,7 @@ export default function ComprobantesPage() {
                 notas={notasCredito}
                 loading={loadingNotas}
                 tiposComprobante={tiposComprobante}
+                isAdmin={isAdmin}
                 onViewPdf={handleViewPdf}
                 onCancel={handleCancelInvoice}
                 onSendEmail={handleEmailCompr}
@@ -903,9 +908,11 @@ export default function ComprobantesPage() {
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <ResultCounter count={guiasRemision.length} label="Guías recuperadas" />
                     <div className="flex flex-wrap items-center gap-2">
-                    <Button onClick={() => { setSelectedOrder(null); setShowGuiasModal(true) }} variant="outline">
-                      <Truck className="mr-2 h-4 w-4" /> Generar Guías
-                    </Button>
+                    {isAdmin && (
+                      <Button onClick={() => { setSelectedOrder(null); setShowGuiasModal(true) }} variant="outline">
+                        <Truck className="mr-2 h-4 w-4" /> Generar Guías
+                      </Button>
+                    )}
                     {guiasRemision.length > 0 && <ExportRegistroButton type="guias" guias={guiasRemision}/>}
                     <Button onClick={fetchGuiasRemision} disabled={loadingGuias} className="flex items-center gap-2">
                       {loadingGuias ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />} Buscar
@@ -919,6 +926,7 @@ export default function ComprobantesPage() {
             <GuiasList
                 guias={guiasRemision}
                 loading={loadingGuias}
+                isAdmin={isAdmin}
                 onViewPdf={handleViewPdfGuia}
                 onViewPdfInvoice={handleViewPdf}
                 onErrorView={handleOpenErrorModal}

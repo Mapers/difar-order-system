@@ -19,6 +19,7 @@ import {RelatedComprobanteModal} from "@/app/dashboard/comprobantes/modals/Relat
 interface GuiasListProps {
     guias: GuiaRemision[]
     loading: boolean
+    isAdmin: boolean
     onViewPdf: (base64: string) => void
     onErrorView: (guia: GuiaRemision) => void
     onSendEmail: (guia: GuiaRemision) => void
@@ -28,7 +29,7 @@ interface GuiasListProps {
 }
 
 export function GuiasList({
-                              guias, loading, onViewPdf, onErrorView,
+                              guias, loading, isAdmin, onViewPdf, onErrorView,
                               onSendEmail, onSendWhatsApp, onCheckStatus, onViewPdfInvoice
 }: GuiasListProps) {
     const [showJsonModal, setShowJsonModal] = useState(false)
@@ -165,16 +166,20 @@ export function GuiasList({
                                                             <DropdownMenuItem onClick={() => handleViewJson('JSON Respuesta (Response)', guia.raw_response!)}>
                                                                 <FileJson className="mr-2 h-4 w-4 text-gray-500" /> JSON Respuesta
                                                             </DropdownMenuItem>
-                                                            <DropdownMenuSeparator />
-                                                            <DropdownMenuItem onClick={() => onSendEmail(guia)}>
-                                                                <Mail className="mr-2 h-4 w-4 text-blue-500" /> Enviar por Correo
-                                                            </DropdownMenuItem>
-                                                            <DropdownMenuItem onClick={() => onSendWhatsApp(guia)}>
-                                                                <MessageCircle className="mr-2 h-4 w-4 text-green-500" /> Enviar por WhatsApp
-                                                            </DropdownMenuItem>
-                                                            <DropdownMenuItem onClick={() => onCheckStatus(guia)}>
-                                                                <Activity className="mr-2 h-4 w-4 text-orange-500" /> Ver Estado SUNAT
-                                                            </DropdownMenuItem>
+                                                            {isAdmin && (
+                                                                <>
+                                                                    <DropdownMenuSeparator />
+                                                                    <DropdownMenuItem onClick={() => onSendEmail(guia)}>
+                                                                        <Mail className="mr-2 h-4 w-4 text-blue-500" /> Enviar por Correo
+                                                                    </DropdownMenuItem>
+                                                                    <DropdownMenuItem onClick={() => onSendWhatsApp(guia)}>
+                                                                        <MessageCircle className="mr-2 h-4 w-4 text-green-500" /> Enviar por WhatsApp
+                                                                    </DropdownMenuItem>
+                                                                    <DropdownMenuItem onClick={() => onCheckStatus(guia)}>
+                                                                        <Activity className="mr-2 h-4 w-4 text-orange-500" /> Ver Estado SUNAT
+                                                                    </DropdownMenuItem>
+                                                                </>
+                                                            )}
                                                         </DropdownMenuContent>
                                                     </DropdownMenu>
                                                 </div>
@@ -266,16 +271,20 @@ export function GuiasList({
                                                         <DropdownMenuItem onClick={() => handleViewJson('JSON Respuesta', guia.raw_response!)}>
                                                             <FileJson className="mr-2 h-4 w-4 text-gray-500" /> JSON Respuesta
                                                         </DropdownMenuItem>
-                                                        <DropdownMenuSeparator />
-                                                        <DropdownMenuItem onClick={() => onSendEmail(guia)}>
-                                                            <Mail className="mr-2 h-4 w-4 text-blue-500" /> Enviar por Correo
-                                                        </DropdownMenuItem>
-                                                        <DropdownMenuItem onClick={() => onSendWhatsApp(guia)}>
-                                                            <MessageCircle className="mr-2 h-4 w-4 text-green-500" /> Enviar por WhatsApp
-                                                        </DropdownMenuItem>
-                                                        <DropdownMenuItem onClick={() => onCheckStatus(guia)}>
-                                                            <Activity className="mr-2 h-4 w-4 text-orange-500" /> Ver Estado SUNAT
-                                                        </DropdownMenuItem>
+                                                        {isAdmin && (
+                                                            <>
+                                                                <DropdownMenuSeparator />
+                                                                <DropdownMenuItem onClick={() => onSendEmail(guia)}>
+                                                                    <Mail className="mr-2 h-4 w-4 text-blue-500" /> Enviar por Correo
+                                                                </DropdownMenuItem>
+                                                                <DropdownMenuItem onClick={() => onSendWhatsApp(guia)}>
+                                                                    <MessageCircle className="mr-2 h-4 w-4 text-green-500" /> Enviar por WhatsApp
+                                                                </DropdownMenuItem>
+                                                                <DropdownMenuItem onClick={() => onCheckStatus(guia)}>
+                                                                    <Activity className="mr-2 h-4 w-4 text-orange-500" /> Ver Estado SUNAT
+                                                                </DropdownMenuItem>
+                                                            </>
+                                                        )}
                                                     </DropdownMenuContent>
                                                 </DropdownMenu>
                                             </div>

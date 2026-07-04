@@ -16,6 +16,7 @@ interface ComprobantesTableProps {
     comprobantes: Comprobante[]
     loading: boolean
     tiposComprobante: Sequential[]
+    isAdmin: boolean
     onViewPdf: (url: string) => void
     onCancel: (comprobante: Comprobante) => void
     onSendEmail: (comprobante: Comprobante) => void
@@ -26,7 +27,7 @@ interface ComprobantesTableProps {
 }
 
 export function ComprobantesTable({
-                                      comprobantes, loading, tiposComprobante, onViewPdf, onCancel,
+                                      comprobantes, loading, tiposComprobante, isAdmin, onViewPdf, onCancel,
                                       onSendEmail, onSendWhatsApp, onCheckStatus, onCorregirDescripcion,
                                       onModificarCuotas
                                   }: ComprobantesTableProps) {
@@ -259,19 +260,22 @@ export function ComprobantesTable({
                                                             <DropdownMenuItem onClick={() => handleViewJson('JSON Respuesta (Response)', comprobante.raw_response!)}>
                                                                 <FileJson className="mr-2 h-4 w-4 text-gray-500" /> JSON Respuesta
                                                             </DropdownMenuItem>
-                                                            <DropdownMenuSeparator />
-                                                            <DropdownMenuItem onClick={() => onSendEmail(comprobante)}>
-                                                                <Mail className="mr-2 h-4 w-4 text-blue-500" /> Enviar por Correo
-                                                            </DropdownMenuItem>
-                                                            <DropdownMenuItem onClick={() => onSendWhatsApp(comprobante)}>
-                                                                <MessageCircle className="mr-2 h-4 w-4 text-green-500" /> Enviar por WhatsApp
-                                                            </DropdownMenuItem>
-                                                            <DropdownMenuItem onClick={() => onCheckStatus(comprobante)}>
-                                                                <Activity className="mr-2 h-4 w-4 text-orange-500" /> Ver Estado SUNAT
-                                                            </DropdownMenuItem>
-                                                            <DropdownMenuSeparator />
+                                                            {isAdmin && (
+                                                                <>
+                                                                    <DropdownMenuSeparator />
+                                                                    <DropdownMenuItem onClick={() => onSendEmail(comprobante)}>
+                                                                        <Mail className="mr-2 h-4 w-4 text-blue-500" /> Enviar por Correo
+                                                                    </DropdownMenuItem>
+                                                                    <DropdownMenuItem onClick={() => onSendWhatsApp(comprobante)}>
+                                                                        <MessageCircle className="mr-2 h-4 w-4 text-green-500" /> Enviar por WhatsApp
+                                                                    </DropdownMenuItem>
+                                                                    <DropdownMenuItem onClick={() => onCheckStatus(comprobante)}>
+                                                                        <Activity className="mr-2 h-4 w-4 text-orange-500" /> Ver Estado SUNAT
+                                                                    </DropdownMenuItem>
+                                                                </>
+                                                            )}
 
-                                                            {(!comprobante.anulado && comprobante.tipoNC === 'sin_nc') && (
+                                                            {isAdmin && (!comprobante.anulado && comprobante.tipoNC === 'sin_nc') && (
                                                                 <>
                                                                     <DropdownMenuSeparator />
                                                                     <DropdownMenuItem onClick={() => onCorregirDescripcion(comprobante)}>
@@ -285,7 +289,7 @@ export function ComprobantesTable({
                                                                 </>
                                                             )}
 
-                                                            {(!comprobante.anulado && comprobante.tipoNC === 'sin_nc') && (
+                                                            {isAdmin && (!comprobante.anulado && comprobante.tipoNC === 'sin_nc') && (
                                                                 <DropdownMenuItem className="text-red-600" onClick={() => onCancel(comprobante)}>
                                                                     <XCircle className="mr-2 h-4 w-4" /> Anular Comprobante
                                                                 </DropdownMenuItem>
@@ -381,21 +385,27 @@ export function ComprobantesTable({
                                                         <DropdownMenuItem onClick={() => handleViewJson('JSON Respuesta', comprobante.raw_response!)}>
                                                             <FileJson className="mr-2 h-4 w-4 text-gray-500" /> JSON Respuesta
                                                         </DropdownMenuItem>
-                                                        <DropdownMenuSeparator />
-                                                        <DropdownMenuItem onClick={() => onSendEmail(comprobante)}>
-                                                            <Mail className="mr-2 h-4 w-4 text-blue-500" /> Enviar por Correo
-                                                        </DropdownMenuItem>
-                                                        <DropdownMenuItem onClick={() => onSendWhatsApp(comprobante)}>
-                                                            <MessageCircle className="mr-2 h-4 w-4 text-green-500" /> Enviar por WhatsApp
-                                                        </DropdownMenuItem>
-                                                        <DropdownMenuItem onClick={() => onCheckStatus(comprobante)}>
-                                                            <Activity className="mr-2 h-4 w-4 text-orange-500" /> Ver Estado SUNAT
-                                                        </DropdownMenuItem>
-                                                        <DropdownMenuSeparator />
-                                                        {(!comprobante.anulado && comprobante.tipoNC === 'sin_nc') && (
-                                                            <DropdownMenuItem className="text-red-600" onClick={() => onCancel(comprobante)}>
-                                                                <XCircle className="mr-2 h-4 w-4" /> Anular
-                                                            </DropdownMenuItem>
+                                                        {isAdmin && (
+                                                            <>
+                                                                <DropdownMenuSeparator />
+                                                                <DropdownMenuItem onClick={() => onSendEmail(comprobante)}>
+                                                                    <Mail className="mr-2 h-4 w-4 text-blue-500" /> Enviar por Correo
+                                                                </DropdownMenuItem>
+                                                                <DropdownMenuItem onClick={() => onSendWhatsApp(comprobante)}>
+                                                                    <MessageCircle className="mr-2 h-4 w-4 text-green-500" /> Enviar por WhatsApp
+                                                                </DropdownMenuItem>
+                                                                <DropdownMenuItem onClick={() => onCheckStatus(comprobante)}>
+                                                                    <Activity className="mr-2 h-4 w-4 text-orange-500" /> Ver Estado SUNAT
+                                                                </DropdownMenuItem>
+                                                            </>
+                                                        )}
+                                                        {isAdmin && (!comprobante.anulado && comprobante.tipoNC === 'sin_nc') && (
+                                                            <>
+                                                                <DropdownMenuSeparator />
+                                                                <DropdownMenuItem className="text-red-600" onClick={() => onCancel(comprobante)}>
+                                                                    <XCircle className="mr-2 h-4 w-4" /> Anular
+                                                                </DropdownMenuItem>
+                                                            </>
                                                         )}
                                                     </DropdownMenuContent>
                                                 </DropdownMenu>
