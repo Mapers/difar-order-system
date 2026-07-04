@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import {
     Eye, MoreHorizontal, XCircle, Loader2, FileJson, Code,
-    AlertCircle, Info, Truck, MessageCircle, Mail, Activity, Lock, PenLine, CalendarClock
+    AlertCircle, Info, Truck, MessageCircle, Mail, Activity, Lock, PenLine, CalendarClock, ArrowLeftRight
 } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
@@ -24,12 +24,13 @@ interface ComprobantesTableProps {
     onCheckStatus: (comprobante: Comprobante) => void
     onCorregirDescripcion: (comprobante: Comprobante) => void
     onModificarCuotas: (comprobante: Comprobante) => void
+    onTransferirVendedor: (comprobante: Comprobante) => void
 }
 
 export function ComprobantesTable({
                                       comprobantes, loading, tiposComprobante, isAdmin, onViewPdf, onCancel,
                                       onSendEmail, onSendWhatsApp, onCheckStatus, onCorregirDescripcion,
-                                      onModificarCuotas
+                                      onModificarCuotas, onTransferirVendedor
                                   }: ComprobantesTableProps) {
     const [showJsonModal,    setShowJsonModal]    = useState(false)
     const [jsonContent,      setJsonContent]      = useState("")
@@ -275,6 +276,15 @@ export function ComprobantesTable({
                                                                 </>
                                                             )}
 
+                                                            {isAdmin && !comprobante.anulado && (
+                                                                <>
+                                                                    <DropdownMenuSeparator />
+                                                                    <DropdownMenuItem onClick={() => onTransferirVendedor(comprobante)}>
+                                                                        <ArrowLeftRight className="mr-2 h-4 w-4 text-indigo-500" /> Transferir Vendedor
+                                                                    </DropdownMenuItem>
+                                                                </>
+                                                            )}
+
                                                             {isAdmin && (!comprobante.anulado && comprobante.tipoNC === 'sin_nc') && (
                                                                 <>
                                                                     <DropdownMenuSeparator />
@@ -396,6 +406,14 @@ export function ComprobantesTable({
                                                                 </DropdownMenuItem>
                                                                 <DropdownMenuItem onClick={() => onCheckStatus(comprobante)}>
                                                                     <Activity className="mr-2 h-4 w-4 text-orange-500" /> Ver Estado SUNAT
+                                                                </DropdownMenuItem>
+                                                            </>
+                                                        )}
+                                                        {isAdmin && !comprobante.anulado && (
+                                                            <>
+                                                                <DropdownMenuSeparator />
+                                                                <DropdownMenuItem onClick={() => onTransferirVendedor(comprobante)}>
+                                                                    <ArrowLeftRight className="mr-2 h-4 w-4 text-indigo-500" /> Transferir Vendedor
                                                                 </DropdownMenuItem>
                                                             </>
                                                         )}

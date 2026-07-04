@@ -25,6 +25,7 @@ import {ComprobantesStats} from "@/app/dashboard/comprobantes/ComprobantesStats"
 import {GuiasList} from "@/app/dashboard/comprobantes/GuiasList";
 import {InvoiceModal} from "@/app/dashboard/comprobantes/modals/InvoiceModal";
 import {CancelModal} from "@/app/dashboard/comprobantes/modals/CancelModal";
+import {TransferirVendedorModal} from "@/app/dashboard/comprobantes/modals/TransferirVendedorModal";
 import {PdfViewerModal} from "@/app/dashboard/comprobantes/modals/PdfViewerModal";
 import {ErrorModal} from "@/app/dashboard/comprobantes/modals/ErrorModal";
 import {GenerarGuiasModal} from "@/app/dashboard/comprobantes/modals/generar-guias-modal";
@@ -103,6 +104,10 @@ export default function ComprobantesPage() {
   const [isCancelling, setIsCancelling] = useState(false)
   const [comprobanteToCancel, setComprobanteToCancel] = useState<Comprobante | null>(null)
   const [showCancelModal, setShowCancelModal] = useState(false)
+
+  const [isTransferringVendedor, setIsTransferringVendedor] = useState(false)
+  const [comprobanteToTransfer, setComprobanteToTransfer] = useState<Comprobante | null>(null)
+  const [showTransferVendedorModal, setShowTransferVendedorModal] = useState(false)
 
   const [showPdfModal, setShowPdfModal] = useState(false)
   const [currentPdfUrl, setCurrentPdfUrl] = useState("")
@@ -400,6 +405,38 @@ export default function ComprobantesPage() {
       toast({ title: "Error", description: "Error de servidor al anular", variant: "destructive" })
     } finally {
       setIsCancelling(false)
+    }
+  }
+
+  const handleTransferirVendedor = (comprobante: Comprobante) => {
+    setComprobanteToTransfer(comprobante)
+    setShowTransferVendedorModal(true)
+  }
+
+  const confirmTransferirVendedor = async (nuevoCodVendedor: string) => {
+    if (!comprobanteToTransfer) return
+    setIsTransferringVendedor(true)
+    try {
+      const response = await apiClient.post('/pedidos/transferirVendedor', {
+        nroPedido: comprobanteToTransfer.nroPedido,
+        serie: comprobanteToTransfer.serie,
+        numero: comprobanteToTransfer.numero,
+        tipoComprobante: comprobanteToTransfer.tipo_comprobante,
+        nuevoCodVendedor,
+      })
+
+      if (response.data.success) {
+        toast({ title: "Éxito", description: "Vendedor transferido correctamente", variant: "default" })
+        fetchComprobantes()
+        setShowTransferVendedorModal(false)
+      } else {
+        toast({ title: "Error", description: response.data.message || "No se pudo transferir el vendedor", variant: "destructive" })
+      }
+    } catch (error) {
+      console.error(error)
+      toast({ title: "Error", description: "Error de servidor al transferir el vendedor", variant: "destructive" })
+    } finally {
+      setIsTransferringVendedor(false)
     }
   }
 
@@ -816,6 +853,7 @@ export default function ComprobantesPage() {
                 onCheckStatus={handleStatusCompr}
                 onCorregirDescripcion={handleCorregirDescripcion}
                 onModificarCuotas={handleModificarCuotas}
+                onTransferirVendedor={handleTransferirVendedor}
             />
             <ComprobantesStats totales={totales} />
           </TabsContent>
@@ -953,6 +991,13 @@ export default function ComprobantesPage() {
             tiposComprobante={tiposComprobante}
             isCancelling={isCancelling}
             onConfirm={confirmCancelInvoice}
+        />
+        <TransferirVendedorModal
+            open={showTransferVendedorModal}
+            onOpenChange={setShowTransferVendedorModal}
+            comprobante={comprobanteToTransfer}
+            isProcessing={isTransferringVendedor}
+            onConfirm={confirmTransferirVendedor}
         />
         <PdfViewerModal open={showPdfModal} onOpenChange={setShowPdfModal} pdfUrl={currentPdfUrl} />
         <ErrorModal open={showErrorModal} onOpenChange={setShowErrorModal} guia={selectedGuiaError} />
