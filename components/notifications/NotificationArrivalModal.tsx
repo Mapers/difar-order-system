@@ -153,19 +153,19 @@ function StockBajoArrivalBody({
     <>
       <DialogHeader>
         <div className="flex items-center gap-2">
-          <div className="rounded-full bg-red-100 p-2">
+          <div className="shrink-0 rounded-full bg-red-100 p-2">
             <AlertTriangle className="h-6 w-6 text-red-600" />
           </div>
-          <div>
+          <div className="min-w-0 flex-1">
             <DialogTitle className="text-lg">Stock bajo</DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="truncate">
               {notification.payload?.titulo || "Hay productos por debajo del stock mínimo"}
             </DialogDescription>
           </div>
         </div>
       </DialogHeader>
 
-      <div className="rounded-lg border">
+      <div className="overflow-hidden rounded-lg border">
         <StockBajoCard notification={notification} onClose={onClose} />
       </div>
 
