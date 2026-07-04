@@ -415,6 +415,7 @@ export default function OrderDetailView({
                                             title="Buscar cliente"
                                             placeholder="RUC, DNI o nombre..."
                                             searchValue={clientSearchQuery || ""}
+                                            pageSize={30}
                                             onSearchChange={(val) => setClientSearchQuery?.(val)}
                                             onClearSearch={() => setClientSearchQuery?.("")}
                                             items={clientsFiltered}

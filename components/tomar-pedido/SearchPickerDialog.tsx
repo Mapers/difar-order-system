@@ -1,6 +1,6 @@
 'use client'
 
-import React from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { Search, X } from 'lucide-react'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -17,6 +17,11 @@ interface SearchPickerDialogProps<T> {
 
     items: T[]
     loading?: boolean
+    /** Cuando se pasa, solo se renderiza este número de filas al inicio y se
+     * amplía de a `pageSize` más cada vez que el usuario llega al final del
+     * scroll (vía IntersectionObserver). Si se omite, se renderiza `items`
+     * completo, igual que antes — es opt-in por consumidor. */
+    pageSize?: number
 
     emptyMessage?: string
     emptySubMessage?: string
@@ -43,6 +48,7 @@ export default function SearchPickerDialog<T>({
                                                   onClearSearch,
                                                   items,
                                                   loading = false,
+                                                  pageSize,
                                                   emptyMessage = 'No se encontraron resultados',
                                                   emptySubMessage,
                                                   idleMessage = 'Escribe para buscar',
@@ -55,6 +61,29 @@ export default function SearchPickerDialog<T>({
                                                   heightClassName = 'sm:h-[75vh]',
                                                   searchTransform = (value) => value,
                                               }: SearchPickerDialogProps<T>) {
+    const [visibleCount, setVisibleCount] = useState(pageSize ?? items.length)
+    const observerRef = useRef<IntersectionObserver | null>(null)
+
+    useEffect(() => {
+        setVisibleCount(pageSize ?? items.length)
+    }, [searchValue, pageSize])
+
+    // Callback ref (no useRef+useEffect): se ejecuta cada vez que el div
+    // centinela se monta o desmonta, incluyendo cuando reaparece tras haber
+    // sido removido (p.ej. tras cargar todo y luego cambiar la búsqueda).
+    const sentinelRef = useCallback((node: HTMLDivElement | null) => {
+        observerRef.current?.disconnect()
+        if (!node || !pageSize) return
+        observerRef.current = new IntersectionObserver((entries) => {
+            if (entries[0]?.isIntersecting) {
+                setVisibleCount((prev) => Math.min(prev + pageSize, items.length))
+            }
+        })
+        observerRef.current.observe(node)
+    }, [pageSize, items.length])
+
+    const visibleItems = pageSize ? items.slice(0, visibleCount) : items
+
     const handleClose = () => {
         onOpenChange(false)
         onClearSearch?.()
@@ -142,7 +171,7 @@ export default function SearchPickerDialog<T>({
                         </div>
                     ) : (
                         <div className="divide-y divide-gray-100 dark:divide-gray-800">
-                            {items.map((item, index) => {
+                            {visibleItems.map((item, index) => {
                                 const disabled = isItemDisabled?.(item) ?? false
                                 return (
                                     <div
@@ -181,6 +210,14 @@ export default function SearchPickerDialog<T>({
                                     </div>
                                 )
                             })}
+                            {pageSize && visibleCount < items.length && (
+                                <div
+                                    ref={sentinelRef}
+                                    className="py-4 text-center text-xs text-gray-400 dark:text-gray-500"
+                                >
+                                    Cargando más…
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>

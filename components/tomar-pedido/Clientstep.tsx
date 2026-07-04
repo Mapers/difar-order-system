@@ -10,6 +10,7 @@ import {
     MapPin,
     ArrowRight,
     Save,
+    Loader2,
 } from 'lucide-react'
 
 import ContactInfo from '@/components/cliente/contactInfo'
@@ -142,12 +143,24 @@ export default function ClientStep({
                             type="button"
                             variant="outline"
                             onClick={() => setClientModalOpen(true)}
-                            className="w-full justify-start h-11 px-3 text-left font-normal text-sm bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-white dark:hover:bg-gray-700 hover:border-blue-400 dark:hover:border-blue-500 transition-all duration-200 dark:text-gray-100 overflow-hidden"
+                            disabled={loadingClients}
+                            className="w-full justify-start h-11 px-3 text-left font-normal text-sm bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-white dark:hover:bg-gray-700 hover:border-blue-400 dark:hover:border-blue-500 transition-all duration-200 dark:text-gray-100 overflow-hidden disabled:opacity-60 disabled:cursor-not-allowed"
                         >
-                            <Search className="mr-2 h-4 w-4 shrink-0 text-gray-400" />
-                            <span className="truncate text-gray-400 dark:text-gray-500 font-normal">
-                Buscar por RUC, DNI o nombre...
-              </span>
+                            {loadingClients ? (
+                                <>
+                                    <Loader2 className="mr-2 h-4 w-4 shrink-0 text-gray-400 animate-spin" />
+                                    <span className="truncate text-gray-400 dark:text-gray-500 font-normal">
+                        Cargando clientes...
+                      </span>
+                                </>
+                            ) : (
+                                <>
+                                    <Search className="mr-2 h-4 w-4 shrink-0 text-gray-400" />
+                                    <span className="truncate text-gray-400 dark:text-gray-500 font-normal">
+                        Buscar por RUC, DNI o nombre...
+                      </span>
+                                </>
+                            )}
                         </Button>
 
                         <SearchPickerDialog<IClient>
@@ -156,6 +169,7 @@ export default function ClientStep({
                             title="Buscar cliente"
                             placeholder="RUC, DNI o nombre del cliente..."
                             searchValue={search.client}
+                            pageSize={30}
                             onSearchChange={(value) =>
                                 setSearch((prev) => ({ ...prev, client: value }))
                             }
