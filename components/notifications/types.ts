@@ -2,7 +2,8 @@ export type NotificationKind =
   | "newOrder"
   | "newApprove"
   | "transferApproval"
-  | "transferResolved";
+  | "transferResolved"
+  | "stockBajo";
 
 export type NotificationStatus = "pending" | "approved" | "rejected";
 

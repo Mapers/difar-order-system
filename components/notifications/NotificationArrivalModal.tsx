@@ -1,6 +1,6 @@
 "use client";
 
-import { ShoppingCart, User, Calendar, ArrowLeftRight } from "lucide-react";
+import { ShoppingCart, User, Calendar, ArrowLeftRight, AlertTriangle } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -15,6 +15,7 @@ import { useNotifications } from "@/app/providers/notification-provider";
 import type { AppNotification } from "./types";
 import { TransferApprovalCard } from "./cards/TransferApprovalCard";
 import { TransferResolvedCard } from "./cards/TransferResolvedCard";
+import { StockBajoCard } from "./cards/StockBajoCard";
 import { formatNotifDate, formatOrderNumber } from "./cards/shared";
 
 function OrderArrivalBody({
@@ -141,6 +142,42 @@ function TransferResolvedArrivalBody({
   );
 }
 
+function StockBajoArrivalBody({
+  notification,
+  onClose,
+}: {
+  notification: AppNotification;
+  onClose: () => void;
+}) {
+  return (
+    <>
+      <DialogHeader>
+        <div className="flex items-center gap-2">
+          <div className="rounded-full bg-red-100 p-2">
+            <AlertTriangle className="h-6 w-6 text-red-600" />
+          </div>
+          <div>
+            <DialogTitle className="text-lg">Stock bajo</DialogTitle>
+            <DialogDescription>
+              {notification.payload?.titulo || "Hay productos por debajo del stock mínimo"}
+            </DialogDescription>
+          </div>
+        </div>
+      </DialogHeader>
+
+      <div className="rounded-lg border">
+        <StockBajoCard notification={notification} onClose={onClose} />
+      </div>
+
+      <div className="flex gap-3 pt-2">
+        <Button variant="outline" className="flex-1" onClick={onClose}>
+          Cerrar
+        </Button>
+      </div>
+    </>
+  );
+}
+
 export function NotificationArrivalModal() {
   const { latestArrival, dismissArrival } = useNotifications();
 
@@ -155,6 +192,10 @@ export function NotificationArrivalModal() {
       case "transferResolved":
         return (
           <TransferResolvedArrivalBody notification={latestArrival} onClose={dismissArrival} />
+        );
+      case "stockBajo":
+        return (
+          <StockBajoArrivalBody notification={latestArrival} onClose={dismissArrival} />
         );
       default:
         return <OrderArrivalBody notification={latestArrival} onClose={dismissArrival} />;

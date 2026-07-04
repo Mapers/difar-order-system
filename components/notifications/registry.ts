@@ -1,4 +1,4 @@
-import { ShoppingCart, CheckCircle2, ArrowLeftRight } from "lucide-react";
+import { ShoppingCart, CheckCircle2, ArrowLeftRight, AlertTriangle } from "lucide-react";
 import type { User } from "@/app/services/auth/types";
 import type { NotificationKind } from "./types";
 
@@ -66,6 +66,17 @@ export const NOTIFICATION_TYPES: NotificationTypeConfig[] = [
     persisted: true,
     shouldReceive: ({ user }, payload) =>
       !!user?.codigo && payload?.destinatario_codigo === user.codigo,
+  },
+  {
+    kind: "stockBajo",
+    socketEvent: "notification:stockBajo",
+    title: "Stock bajo",
+    icon: AlertTriangle,
+    actionable: false,
+    showArrivalModal: true,
+    playSound: true,
+    persisted: true,
+    shouldReceive: ({ isAdmin }) => isAdmin(),
   },
 ];
 

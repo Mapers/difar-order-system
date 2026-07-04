@@ -29,13 +29,20 @@ function MetaBar({ codArticulo, metasMap }: { codArticulo: string; metasMap: Map
     if (!meta) return null
     const pct = Math.min(Number(meta.pct_avance_monto || 0), 100)
     const color = pct >= 80 ? '#059669' : pct >= 50 ? '#d97706' : '#dc2626'
+    const cumplida = pct >= 100
     return (
         <div className="flex items-center gap-1.5 mt-1 w-full">
             <div className="flex-1 bg-slate-100 rounded-full h-1 overflow-hidden">
                 <div className="h-1 rounded-full transition-all" style={{ width: `${pct}%`, background: color }} />
             </div>
-            <span className="text-[9px] font-bold shrink-0" style={{ color }}>{Number(meta.pct_avance_monto || 0)}%</span>
-            <span className="text-[9px] text-slate-400 shrink-0">meta</span>
+            {cumplida ? (
+                <span className="text-[9px] font-bold shrink-0" style={{ color }}>Meta cumplida</span>
+            ) : (
+                <>
+                    <span className="text-[9px] font-bold shrink-0" style={{ color }}>{pct}%</span>
+                    <span className="text-[9px] text-slate-400 shrink-0">meta</span>
+                </>
+            )}
         </div>
     )
 }
