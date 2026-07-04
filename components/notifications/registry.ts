@@ -74,7 +74,7 @@ export const NOTIFICATION_TYPES: NotificationTypeConfig[] = [
     icon: AlertTriangle,
     actionable: false,
     showArrivalModal: true,
-    playSound: true,
+    playSound: false,
     persisted: true,
     shouldReceive: ({ isAdmin }) => isAdmin(),
   },
