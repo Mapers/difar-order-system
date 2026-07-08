@@ -26,6 +26,7 @@ import {GuiasList} from "@/app/dashboard/comprobantes/GuiasList";
 import {InvoiceModal} from "@/app/dashboard/comprobantes/modals/InvoiceModal";
 import {CancelModal} from "@/app/dashboard/comprobantes/modals/CancelModal";
 import {TransferirVendedorModal} from "@/app/dashboard/comprobantes/modals/TransferirVendedorModal";
+import {TransferirAlmacenModal} from "@/app/dashboard/comprobantes/modals/TransferirAlmacenModal";
 import {PdfViewerModal} from "@/app/dashboard/comprobantes/modals/PdfViewerModal";
 import {ErrorModal} from "@/app/dashboard/comprobantes/modals/ErrorModal";
 import {GenerarGuiasModal} from "@/app/dashboard/comprobantes/modals/generar-guias-modal";
@@ -108,6 +109,9 @@ export default function ComprobantesPage() {
   const [isTransferringVendedor, setIsTransferringVendedor] = useState(false)
   const [comprobanteToTransfer, setComprobanteToTransfer] = useState<Comprobante | null>(null)
   const [showTransferVendedorModal, setShowTransferVendedorModal] = useState(false)
+  const [isTransferringAlmacen, setIsTransferringAlmacen] = useState(false)
+  const [comprobanteToTransferAlmacen, setComprobanteToTransferAlmacen] = useState<Comprobante | null>(null)
+  const [showTransferAlmacenModal, setShowTransferAlmacenModal] = useState(false)
 
   const [showPdfModal, setShowPdfModal] = useState(false)
   const [currentPdfUrl, setCurrentPdfUrl] = useState("")
@@ -437,6 +441,38 @@ export default function ComprobantesPage() {
       toast({ title: "Error", description: "Error de servidor al transferir el vendedor", variant: "destructive" })
     } finally {
       setIsTransferringVendedor(false)
+    }
+  }
+
+  const handleTransferirAlmacen = (comprobante: Comprobante) => {
+    setComprobanteToTransferAlmacen(comprobante)
+    setShowTransferAlmacenModal(true)
+  }
+
+  const confirmTransferirAlmacen = async (nuevoIdAlmacen: number) => {
+    if (!comprobanteToTransferAlmacen) return
+    setIsTransferringAlmacen(true)
+    try {
+      const response = await apiClient.post('/pedidos/transferirAlmacen', {
+        nroPedido: comprobanteToTransferAlmacen.nroPedido,
+        serie: comprobanteToTransferAlmacen.serie,
+        numero: comprobanteToTransferAlmacen.numero,
+        tipoComprobante: comprobanteToTransferAlmacen.tipo_comprobante,
+        nuevoIdAlmacen,
+      })
+
+      if (response.data.success) {
+        toast({ title: "Éxito", description: "Almacén transferido correctamente", variant: "default" })
+        fetchComprobantes()
+        setShowTransferAlmacenModal(false)
+      } else {
+        toast({ title: "Error", description: response.data.message || "No se pudo transferir el almacén", variant: "destructive" })
+      }
+    } catch (error) {
+      console.error(error)
+      toast({ title: "Error", description: "Error de servidor al transferir el almacén", variant: "destructive" })
+    } finally {
+      setIsTransferringAlmacen(false)
     }
   }
 
@@ -854,6 +890,7 @@ export default function ComprobantesPage() {
                 onCorregirDescripcion={handleCorregirDescripcion}
                 onModificarCuotas={handleModificarCuotas}
                 onTransferirVendedor={handleTransferirVendedor}
+                onTransferirAlmacen={handleTransferirAlmacen}
             />
             <ComprobantesStats totales={totales} />
           </TabsContent>
@@ -998,6 +1035,13 @@ export default function ComprobantesPage() {
             comprobante={comprobanteToTransfer}
             isProcessing={isTransferringVendedor}
             onConfirm={confirmTransferirVendedor}
+        />
+        <TransferirAlmacenModal
+            open={showTransferAlmacenModal}
+            onOpenChange={setShowTransferAlmacenModal}
+            comprobante={comprobanteToTransferAlmacen}
+            isProcessing={isTransferringAlmacen}
+            onConfirm={confirmTransferirAlmacen}
         />
         <PdfViewerModal open={showPdfModal} onOpenChange={setShowPdfModal} pdfUrl={currentPdfUrl} />
         <ErrorModal open={showErrorModal} onOpenChange={setShowErrorModal} guia={selectedGuiaError} />

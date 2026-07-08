@@ -19,6 +19,7 @@ import { getProductsRequest, getProductsLabRequest } from "@/app/api/products"
 import { useLaboratoriesData } from "@/app/dashboard/lista-precios-lote/hooks/useLaboratoriesData"
 
 import { ExportItemKardexPdf, KardexItemData } from "@/components/reporte/ExportItemKardexPdf"
+import { DocumentoPdfLink } from "@/components/reporte/DocumentoPdfLink"
 
 interface Producto {
     IdArticulo: number;
@@ -336,7 +337,9 @@ export default function ItemKardexReportPage() {
                                                 {row.Fecha_Mvto ? row.Fecha_Mvto.split('-').reverse().join('/') : '-'}
                                             </td>
                                             <td className="px-4 py-3 text-xs">{row.Abreviatura || '-'}</td>
-                                            <td className="px-4 py-3 font-mono text-xs whitespace-nowrap">{row.SerieNumero || '-'}</td>
+                                            <td className="px-4 py-3 font-mono text-xs whitespace-nowrap">
+                                                <DocumentoPdfLink numeroComprobante={row.SerieNumero} />
+                                            </td>
                                             <td className="px-4 py-3 text-xs max-w-[200px] truncate" title={row.OPERACION}>{row.OPERACION || '-'}</td>
                                             <td className="px-4 py-3 text-xs max-w-[150px] truncate" title={row.formula_ab || ''}>{row.formula_ab || '-'}</td>
                                             <td className="px-4 py-3 text-right font-semibold text-emerald-700">
@@ -380,7 +383,9 @@ export default function ItemKardexReportPage() {
                                                 </span>
                                                 <div className="flex items-center gap-2 mt-1">
                                                     <Badge variant="outline" className="text-[10px] bg-slate-50">{row.Abreviatura || '-'}</Badge>
-                                                    <span className="text-xs font-mono text-slate-500">{row.SerieNumero}</span>
+                                                    <span className="text-xs font-mono text-slate-500">
+                                                        <DocumentoPdfLink numeroComprobante={row.SerieNumero} />
+                                                    </span>
                                                 </div>
                                             </div>
                                             <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100">

@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import {
     Eye, MoreHorizontal, XCircle, Loader2, FileJson, Code,
-    AlertCircle, Info, Truck, MessageCircle, Mail, Activity, Lock, PenLine, CalendarClock, ArrowLeftRight
+    AlertCircle, Info, Truck, MessageCircle, Mail, Activity, Lock, PenLine, CalendarClock, ArrowLeftRight, Warehouse
 } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
@@ -25,12 +25,13 @@ interface ComprobantesTableProps {
     onCorregirDescripcion: (comprobante: Comprobante) => void
     onModificarCuotas: (comprobante: Comprobante) => void
     onTransferirVendedor: (comprobante: Comprobante) => void
+    onTransferirAlmacen: (comprobante: Comprobante) => void
 }
 
 export function ComprobantesTable({
                                       comprobantes, loading, tiposComprobante, isAdmin, onViewPdf, onCancel,
                                       onSendEmail, onSendWhatsApp, onCheckStatus, onCorregirDescripcion,
-                                      onModificarCuotas, onTransferirVendedor
+                                      onModificarCuotas, onTransferirVendedor, onTransferirAlmacen
                                   }: ComprobantesTableProps) {
     const [showJsonModal,    setShowJsonModal]    = useState(false)
     const [jsonContent,      setJsonContent]      = useState("")
@@ -197,6 +198,7 @@ export function ComprobantesTable({
                                 <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha</th>
                                 <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tipo</th>
                                 <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Serie/Número</th>
+                                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Almacén</th>
                                 <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Vendedor</th>
                                 <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cliente</th>
                                 <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Documento</th>
@@ -217,6 +219,7 @@ export function ComprobantesTable({
                                         </td>
                                         <td className="p-4 text-sm">{getTipoComprobante(comprobante.serie)}</td>
                                         <td className="p-4 font-medium text-sm">{comprobante.serie}-{comprobante.numero}</td>
+                                        <td className="p-4 text-sm">{comprobante.Almacen ?? '—'}</td>
                                         <td className="p-4 text-sm">{comprobante.Vendedor ?? '—'}</td>
                                         <td className="p-4">
                                             <div className="font-medium text-sm">
@@ -282,6 +285,9 @@ export function ComprobantesTable({
                                                                     <DropdownMenuItem onClick={() => onTransferirVendedor(comprobante)}>
                                                                         <ArrowLeftRight className="mr-2 h-4 w-4 text-indigo-500" /> Transferir Vendedor
                                                                     </DropdownMenuItem>
+                                                                    <DropdownMenuItem onClick={() => onTransferirAlmacen(comprobante)}>
+                                                                        <Warehouse className="mr-2 h-4 w-4 text-indigo-500" /> Transferir Almacén
+                                                                    </DropdownMenuItem>
                                                                 </>
                                                             )}
 
@@ -312,7 +318,7 @@ export function ComprobantesTable({
                                     </tr>
                                 ))
                             ) : (
-                                <tr><td colSpan={9} className="text-center py-8 text-gray-500">No se encontraron comprobantes</td></tr>
+                                <tr><td colSpan={10} className="text-center py-8 text-gray-500">No se encontraron comprobantes</td></tr>
                             )}
                             </tbody>
                         </table>
@@ -354,6 +360,9 @@ export function ComprobantesTable({
                                     {(comprobante.tipo_comprobante !== null && !esLibre(comprobante)) && (
                                         <>
                                             <div className="border-t pt-3 w-full overflow-hidden">
+                                                {comprobante.Almacen && (
+                                                    <p className="text-xs text-gray-500 mb-0.5">Almacén: {comprobante.Almacen}</p>
+                                                )}
                                                 {comprobante.Vendedor && (
                                                     <p className="text-xs text-gray-500 mb-0.5">Vend: {comprobante.Vendedor}</p>
                                                 )}
@@ -414,6 +423,9 @@ export function ComprobantesTable({
                                                                 <DropdownMenuSeparator />
                                                                 <DropdownMenuItem onClick={() => onTransferirVendedor(comprobante)}>
                                                                     <ArrowLeftRight className="mr-2 h-4 w-4 text-indigo-500" /> Transferir Vendedor
+                                                                </DropdownMenuItem>
+                                                                <DropdownMenuItem onClick={() => onTransferirAlmacen(comprobante)}>
+                                                                    <Warehouse className="mr-2 h-4 w-4 text-indigo-500" /> Transferir Almacén
                                                                 </DropdownMenuItem>
                                                             </>
                                                         )}

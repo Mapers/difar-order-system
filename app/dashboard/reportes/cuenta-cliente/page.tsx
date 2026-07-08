@@ -17,6 +17,7 @@ import { useAuth } from "@/context/authContext"
 import { searchClientsRequest, estadoCuentaClienteRequest } from "@/app/api/reports"
 
 import { ExportEstadoCuentaPdf } from "@/components/reporte/exportEstadoCuentaPdf"
+import { DocumentoPdfLink } from "@/components/reporte/DocumentoPdfLink"
 
 interface IAutocompleteClient {
     RUC: string;
@@ -217,7 +218,9 @@ export default function EstadoCuentaClientePage() {
                                     <div key={dIdx} className="border border-slate-300 rounded-lg overflow-hidden shadow-sm bg-white">
                                         <div className="bg-slate-200 text-slate-800 p-3 flex flex-col sm:flex-row sm:items-center gap-4 text-xs md:text-sm">
                                             <div className="font-bold border-r border-slate-400 pr-4">Documento: {doc.Abreviatura}</div>
-                                            <div className="font-bold border-r border-slate-400 pr-4">{doc.SerieNumero}</div>
+                                            <div className="font-bold border-r border-slate-400 pr-4">
+                                                <DocumentoPdfLink numeroComprobante={doc.SerieNumero} />
+                                            </div>
                                             <div className="border-r border-slate-400 pr-4">Emisión: <span className="font-semibold">{formatDateToDDMMYYYY(doc.Emision)}</span></div>
                                             <div>Vencimiento: <span className="font-semibold">{formatDateToDDMMYYYY(doc.Vencimiento)}</span></div>
                                         </div>

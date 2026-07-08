@@ -14,6 +14,7 @@ import { FileText, RefreshCcw, Download, FlaskConical, Activity } from "lucide-r
 import { cn } from "@/lib/utils"
 import * as XLSX from 'xlsx'
 import { ExportLibroPsicotropicosPdf } from "@/components/reporte/exportLibroPsicotropicosPdf"
+import { DocumentoPdfLink } from "@/components/reporte/DocumentoPdfLink"
 
 const MAX_FOLIO = 8
 
@@ -26,6 +27,7 @@ interface Producto {
     forma: string
     lista: string
     unidad: string
+    laboratorio: string
     saldoIni: number
 }
 
@@ -144,6 +146,19 @@ export default function PsicotropicosPage() {
         if (!data) return []
         return data.productos.filter(p => visiblesSet.has(p.id)).slice(0, MAX_FOLIO)
     }, [data, visiblesSet])
+
+    const productosPorLaboratorio = useMemo(() => {
+        if (!data) return [] as { laboratorio: string; productos: Producto[] }[]
+        const map = new Map<string, Producto[]>()
+        data.productos.forEach(p => {
+            const key = p.laboratorio || 'Sin Laboratorio'
+            if (!map.has(key)) map.set(key, [])
+            map.get(key)!.push(p)
+        })
+        return Array.from(map.entries())
+            .map(([laboratorio, productos]) => ({ laboratorio, productos }))
+            .sort((a, b) => a.laboratorio.localeCompare(b.laboratorio))
+    }, [data])
 
     const kardexProd = data?.productos.find(p => p.id === kardexProdId) ?? null
 
@@ -611,7 +626,7 @@ export default function PsicotropicosPage() {
                                             >
                                                 <td className="px-3 py-2 text-xs text-slate-600">{m.fecha}</td>
                                                 <td className="px-3 py-2 font-mono text-xs font-semibold text-blue-900">
-                                                    {m.serie}-{m.corr}
+                                                    <DocumentoPdfLink numeroComprobante={m.serie && m.corr ? `${m.serie}-${m.corr}` : null} />
                                                 </td>
                                                 <td className="px-3 py-2 text-xs text-slate-600">{m.estab}</td>
                                                 <td className="px-3 py-2 text-right font-mono font-semibold text-emerald-700 tabular-nums text-xs">
@@ -648,44 +663,16 @@ export default function PsicotropicosPage() {
 
                     <div className="flex-1 overflow-y-auto px-5 py-4">
                         {data && (
-                            <div className="border border-slate-200 rounded-lg overflow-hidden">
-                                <table className="w-full text-sm">
-                                    <thead className="text-[10px] text-white uppercase bg-slate-800">
-                                        <tr>
-                                            <th className="px-3 py-2.5 text-left font-semibold">Sustancia</th>
-                                            <th className="px-3 py-2.5 text-left font-semibold">Clasificación</th>
-                                            <th className="px-3 py-2.5 text-center font-semibold">Unidad</th>
-                                            <th className="px-3 py-2.5 text-right font-semibold">Saldo actual</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-slate-100">
-                                        {data.productos.map((p, idx) => {
-                                            const s = saldoActual(p.id)
-                                            const low = s <= 5
-                                            return (
-                                                <tr
-                                                    key={p.id}
-                                                    className={cn(
-                                                        "hover:bg-slate-50 transition-colors",
-                                                        idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/40'
-                                                    )}
-                                                >
-                                                    <td className="px-3 py-2 text-sm">
-                                                        <strong>{p.dci}</strong>{' '}{p.conc}
-                                                    </td>
-                                                    <td className="px-3 py-2 text-xs text-slate-600">{p.lista}</td>
-                                                    <td className="px-3 py-2 text-center text-xs">{p.unidad}</td>
-                                                    <td className={cn(
-                                                        "px-3 py-2 text-right font-mono font-bold tabular-nums text-xs",
-                                                        low ? "text-red-700 bg-red-50" : "text-slate-800"
-                                                    )}>
-                                                        {fmt(s)}
-                                                    </td>
-                                                </tr>
-                                            )
-                                        })}
-                                    </tbody>
-                                </table>
+                            <div className="space-y-3">
+                                {productosPorLaboratorio.map(grupo => (
+                                    <LaboratorioGroup
+                                        key={grupo.laboratorio}
+                                        laboratorio={grupo.laboratorio}
+                                        productos={grupo.productos}
+                                        saldoActual={saldoActual}
+                                        fmt={fmt}
+                                    />
+                                ))}
                             </div>
                         )}
                         <p className="text-xs text-slate-400 mt-3 leading-relaxed">
@@ -700,6 +687,80 @@ export default function PsicotropicosPage() {
 }
 
 // ── Sub-components ────────────────────────────────────────────────────────────
+
+function LaboratorioGroup({
+    laboratorio, productos, saldoActual, fmt
+}: {
+    laboratorio: string
+    productos: Producto[]
+    saldoActual: (id: string) => number
+    fmt: (n: number) => string
+}) {
+    const [expanded, setExpanded] = useState(true)
+
+    return (
+        <div className="border border-slate-200 rounded-lg overflow-hidden">
+            <button
+                type="button"
+                onClick={() => setExpanded(e => !e)}
+                className="w-full flex items-center justify-between px-3 py-2.5 bg-slate-800 hover:bg-slate-700 text-white transition-colors"
+            >
+                <span className="text-xs font-bold uppercase tracking-wide truncate">{laboratorio}</span>
+                <span className="flex items-center gap-2 shrink-0">
+                    <span className="text-[10px] font-semibold bg-white/10 rounded-full px-2 py-0.5">
+                        {productos.length}
+                    </span>
+                    <svg
+                        className={cn("w-4 h-4 transition-transform duration-200", expanded && "rotate-180")}
+                        fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"
+                    >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                </span>
+            </button>
+
+            {expanded && (
+                <table className="w-full text-sm">
+                    <thead className="text-[10px] text-slate-500 uppercase bg-slate-50 border-b border-slate-200">
+                        <tr>
+                            <th className="px-3 py-2 text-left font-semibold">Sustancia</th>
+                            <th className="px-3 py-2 text-left font-semibold">Clasificación</th>
+                            <th className="px-3 py-2 text-center font-semibold">Unidad</th>
+                            <th className="px-3 py-2 text-right font-semibold">Saldo actual</th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                        {productos.map((p, idx) => {
+                            const s = saldoActual(p.id)
+                            const low = s <= 5
+                            return (
+                                <tr
+                                    key={p.id}
+                                    className={cn(
+                                        "hover:bg-slate-50 transition-colors",
+                                        idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/40'
+                                    )}
+                                >
+                                    <td className="px-3 py-2 text-sm">
+                                        <strong>{p.dci}</strong>{' '}{p.conc}
+                                    </td>
+                                    <td className="px-3 py-2 text-xs text-slate-600">{p.lista}</td>
+                                    <td className="px-3 py-2 text-center text-xs">{p.unidad}</td>
+                                    <td className={cn(
+                                        "px-3 py-2 text-right font-mono font-bold tabular-nums text-xs",
+                                        low ? "text-red-700 bg-red-50" : "text-slate-800"
+                                    )}>
+                                        {fmt(s)}
+                                    </td>
+                                </tr>
+                            )
+                        })}
+                    </tbody>
+                </table>
+            )}
+        </div>
+    )
+}
 
 function DiarioView({
     movs, totalMovs, productos, prodDiario, mapaSaldos
@@ -783,7 +844,9 @@ function DiarioView({
                                     <td className="px-3 py-2 text-center text-xs text-slate-500 tabular-nums border-r border-slate-100">{mes}</td>
                                     <td className="px-3 py-2 text-center text-xs text-slate-500 tabular-nums border-r border-slate-100">{dia}</td>
                                     <td className="px-3 py-2 border-r border-slate-100">
-                                        <span className="font-mono text-xs font-semibold text-blue-900">{m.serie}-{m.corr}</span>
+                                        <span className="font-mono text-xs font-semibold text-blue-900">
+                                            <DocumentoPdfLink numeroComprobante={m.serie && m.corr ? `${m.serie}-${m.corr}` : null} />
+                                        </span>
                                         <span className="text-xs text-slate-500 ml-1">/ {m.estab}</span>
                                     </td>
                                     <td className="px-3 py-2 border-r border-slate-100">
@@ -821,7 +884,9 @@ function DiarioView({
                         <div key={m.id} className="bg-white border border-slate-200 rounded-lg shadow-sm p-3 space-y-2">
                             <div className="flex justify-between items-start gap-2">
                                 <div className="min-w-0">
-                                    <span className="font-mono text-sm font-bold text-blue-900">{m.serie}-{m.corr}</span>
+                                    <span className="font-mono text-sm font-bold text-blue-900">
+                                        <DocumentoPdfLink numeroComprobante={m.serie && m.corr ? `${m.serie}-${m.corr}` : null} />
+                                    </span>
                                     <p className="text-xs text-slate-500 mt-0.5 truncate">{m.fecha} · {m.estab}</p>
                                 </div>
                                 <Badge className={cn(
@@ -985,7 +1050,9 @@ function FolioView({
                                         {dia}
                                     </td>
                                     <td className={cn("px-3 py-1.5 sticky left-[80px] border-r border-slate-300 shadow-[3px_0_6px_rgba(0,0,0,.06)] group-hover:bg-blue-50/40", bgRow)}>
-                                        <span className="font-mono text-xs font-semibold text-blue-900 whitespace-nowrap">{m.serie}-{m.corr}</span>
+                                        <span className="font-mono text-xs font-semibold text-blue-900 whitespace-nowrap">
+                                            <DocumentoPdfLink numeroComprobante={m.serie && m.corr ? `${m.serie}-${m.corr}` : null} />
+                                        </span>
                                         <span className="block text-[11px] text-slate-400 truncate max-w-[190px]" title={m.estab}>{m.estab}</span>
                                     </td>
                                     {prodsVisibles.map(p => (

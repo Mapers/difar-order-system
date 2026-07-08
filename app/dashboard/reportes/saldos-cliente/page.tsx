@@ -17,6 +17,7 @@ import { searchClientsRequest, fetchAvailableZones } from "@/app/api/reports"
 import apiClient from "@/app/api/client"
 
 import { ExportSaldoCobrarPdf } from "@/components/reporte/exportSaldoCobrarPdf"
+import { DocumentoPdfLink } from "@/components/reporte/DocumentoPdfLink"
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
@@ -468,7 +469,9 @@ export default function SaldoCobrarClientePage() {
                                                                 <td className="px-3 py-2 whitespace-nowrap">{formatDateToDDMMYYYY(doc.Fecha_Emision)}</td>
                                                                 <td className="px-3 py-2 whitespace-nowrap text-red-600 font-medium">{formatDateToDDMMYYYY(doc.Fecha_Vcto)}</td>
                                                                 <td className="px-3 py-2 font-medium">{doc.TipoDocumento}</td>
-                                                                <td className="px-3 py-2 font-mono font-semibold">{doc.SerieDoc}-{doc.NumeroDoc}</td>
+                                                                <td className="px-3 py-2 font-mono font-semibold">
+                                                                    <DocumentoPdfLink numeroComprobante={doc.SerieDoc && doc.NumeroDoc ? `${doc.SerieDoc}-${doc.NumeroDoc}` : null} />
+                                                                </td>
                                                                 <td className="px-3 py-2 text-center font-bold">{doc.Moneda}</td>
                                                                 <td className="px-3 py-2 text-right">{formatMoney(doc.SumaProvision)}</td>
                                                                 <td className="px-3 py-2 text-right">{formatMoney(doc.SumaAmortizacion)}</td>
@@ -493,7 +496,9 @@ export default function SaldoCobrarClientePage() {
                                                             <div className="flex justify-between items-start border-b border-slate-100 pb-2">
                                                                 <div>
                                                                     <span className="text-[10px] uppercase font-bold text-slate-400">{doc.TipoDocumento}</span>
-                                                                    <p className="font-mono font-bold text-sm text-slate-800">{doc.SerieDoc}-{doc.NumeroDoc}</p>
+                                                                    <p className="font-mono font-bold text-sm text-slate-800">
+                                                                        <DocumentoPdfLink numeroComprobante={doc.SerieDoc && doc.NumeroDoc ? `${doc.SerieDoc}-${doc.NumeroDoc}` : null} />
+                                                                    </p>
                                                                 </div>
                                                                 <Badge variant="outline" className="font-bold">{doc.Moneda}</Badge>
                                                             </div>
