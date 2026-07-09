@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { ChevronDown, ChevronRight, Search } from "lucide-react"
 import { ILabDashboard, IItemDashboard, FilterStatus, ItemSortMode } from "@/app/types/metas-types"
-import { fmtMoney, getStatusColor, getLabColor, calcPct } from "@/app/utils/metas-helpers"
+import { fmtMoney, getStatusColor, getLabColor, capPct } from "@/app/utils/metas-helpers"
 import ProgressBar from "@/components/reporte/metas/ProgressBar"
 import StatusChip from "@/components/reporte/metas/StatusChip"
 import MiniDonut from "@/components/reporte/metas/MiniDonut"
@@ -21,7 +21,7 @@ interface ItemsPorLabTabProps {
 export default function ItemsPorLabTab({ laboratorios, items }: ItemsPorLabTabProps) {
     const [search, setSearch] = useState("");
     const [filter, setFilter] = useState<FilterStatus>("todos");
-    const [sort, setSort] = useState<ItemSortMode>("contribucion");
+    const [sort, setSort] = useState<ItemSortMode>("avance");
     const [openLabs, setOpenLabs] = useState<Set<number>>(new Set());
     const [modalItem, setModalItem] = useState<ItemWithComputed | null>(null);
     const [modalType, setModalType] = useState<ItemModalType>('unidades');
@@ -146,7 +146,7 @@ export default function ItemsPorLabTab({ laboratorios, items }: ItemsPorLabTabPr
                                 <div className="flex items-center gap-3">
                                     <div className="hidden sm:flex flex-col items-end gap-0.5">
                                         <span className="text-[10px] text-muted-foreground">Avance S/</span>
-                                        <span className="text-xs font-bold" style={{ color: c1 }}>{group.pct}%</span>
+                                        <span className="text-xs font-bold" style={{ color: c1 }}>{capPct(group.pct)}%</span>
                                     </div>
                                     <div className="w-24 hidden sm:block">
                                         <ProgressBar pct={group.pct} height="h-1.5" />
@@ -189,11 +189,11 @@ export default function ItemsPorLabTab({ laboratorios, items }: ItemsPorLabTabPr
                                                         </div>
                                                         <div>
                                                             <p className="text-[9px] text-muted-foreground uppercase">Contrib.</p>
-                                                            <p className="text-xs font-bold" style={{ color }}>{item.contrib}%</p>
+                                                            <p className="text-xs font-bold" style={{ color }}>{capPct(item.contrib)}%</p>
                                                         </div>
                                                         <div>
                                                             <p className="text-[9px] text-muted-foreground uppercase">Avance S/</p>
-                                                            <p className="text-xs font-bold" style={{ color: sc1 }}>{item.avPct}%</p>
+                                                            <p className="text-xs font-bold" style={{ color: sc1 }}>{capPct(item.avPct)}%</p>
                                                         </div>
                                                     </div>
 
@@ -244,7 +244,7 @@ export default function ItemsPorLabTab({ laboratorios, items }: ItemsPorLabTabPr
                                                     <ProgressBar pct={group.pct} height="h-2" />
                                                     <div className="flex justify-between mt-1">
                                                         <span className="text-[10px] text-muted-foreground">{sortedItems.length} ítems · 100% contrib.</span>
-                                                        <span className="text-[10px] font-bold" style={{ color }}>{group.pct}% avance</span>
+                                                        <span className="text-[10px] font-bold" style={{ color }}>{capPct(group.pct)}% avance</span>
                                                     </div>
                                                 </div>
                                             </div>
@@ -301,7 +301,7 @@ export default function ItemsPorLabTab({ laboratorios, items }: ItemsPorLabTabPr
                                                         </p>
                                                     </div>
                                                     <div className="text-center">
-                                                        <p className="text-sm font-bold" style={{ color }}>{item.contrib}%</p>
+                                                        <p className="text-sm font-bold" style={{ color }}>{capPct(item.contrib)}%</p>
                                                         <p className="text-[9px] text-muted-foreground">del lab</p>
                                                     </div>
                                                     <div
@@ -326,9 +326,9 @@ export default function ItemsPorLabTab({ laboratorios, items }: ItemsPorLabTabPr
                                             <span className="text-[11px] text-muted-foreground font-semibold">TOTAL · {sortedItems.length} ítems</span>
                                             <span className="text-right text-xs font-bold" style={{ color }}>{fmtMoney(Number(group.venta_real))}</span>
                                             <span className="text-right text-xs text-muted-foreground">{fmtMoney(Number(group.meta_monto))}</span>
-                                            <span className="text-center text-[11px] text-muted-foreground font-semibold">{group.pct}% cumpl.</span>
+                                            <span className="text-center text-[11px] text-muted-foreground font-semibold">{capPct(group.pct)}% cumpl.</span>
                                             <span className="text-center text-xs font-bold text-muted-foreground">100%</span>
-                                            <span className="text-center text-xs font-bold" style={{ color }}>{group.pct}%</span>
+                                            <span className="text-center text-xs font-bold" style={{ color }}>{capPct(group.pct)}%</span>
                                             <span className="text-center"><StatusChip pct={group.pct} /></span>
                                         </div>
                                     </div>

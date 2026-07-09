@@ -9,7 +9,7 @@ import MiniDonut from "@/components/reporte/metas/MiniDonut"
 import MiniGauge from "@/components/reporte/metas/MiniGauge"
 import ItemDetailModal, { ItemWithComputed, ItemModalType } from "@/components/reporte/metas/ItemDetailModal"
 import { IDashboardData, IItemDashboard, ILabDashboard } from "@/app/types/metas-types"
-import { fmtMoney, getStatusColor, getInitials, getLabColor } from "@/app/utils/metas-helpers"
+import { fmtMoney, getStatusColor, getInitials, getLabColor, capPct } from "@/app/utils/metas-helpers"
 import { ChevronDown, ChevronRight, Package } from "lucide-react"
 
 interface VendedorDashboardViewProps {
@@ -60,7 +60,7 @@ function LabBarChart({ items, totalVenta }: {
                         <span className="text-[10px] font-semibold shrink-0 w-20 text-right" style={{ color: c1 }}>
                             {fmtMoney(Number(item.venta_real))}
                         </span>
-                        <span className="text-[9px] text-muted-foreground shrink-0 w-8 text-right">{contrib}%</span>
+                        <span className="text-[9px] text-muted-foreground shrink-0 w-8 text-right">{capPct(contrib)}%</span>
                     </div>
                 )
             })}
@@ -97,7 +97,7 @@ function LabCard({
             : 0,
     }))
 
-    const sortedItems = [...enrichedLabItems].sort((a, b) => Number(b.venta_real) - Number(a.venta_real))
+    const sortedItems = [...enrichedLabItems].sort((a, b) => b.avPct - a.avPct)
 
     return (
         <Card className="shadow-sm overflow-hidden" style={{ borderLeft: `4px solid ${color}` }}>
@@ -124,7 +124,7 @@ function LabCard({
                             <div className="relative hidden sm:block" style={{ width: 48, height: 48 }}>
                                 <DonutChart pct={av} color={c1} size={48} />
                                 <div className="absolute inset-0 flex items-center justify-center">
-                                    <span className="text-[9px] font-bold" style={{ color: c1 }}>{av}%</span>
+                                    <span className="text-[9px] font-bold" style={{ color: c1 }}>{capPct(av)}%</span>
                                 </div>
                             </div>
                             <StatusChip pct={av} />
@@ -248,7 +248,7 @@ function LabCard({
                                             </div>
 
                                             <div className="text-center">
-                                                <p className="text-sm font-bold" style={{ color }}>{item.contrib}%</p>
+                                                <p className="text-sm font-bold" style={{ color }}>{capPct(item.contrib)}%</p>
                                                 <p className="text-[9px] text-muted-foreground">del lab</p>
                                             </div>
 
@@ -281,10 +281,10 @@ function LabCard({
                                         {fmtMoney(totalMeta)}
                                     </span>
                                     <span className="text-center text-[11px] text-muted-foreground font-semibold">
-                                        {av}% cumpl.
+                                        {capPct(av)}% cumpl.
                                     </span>
                                     <span className="text-center text-xs font-bold text-muted-foreground">100%</span>
-                                    <span className="text-center text-xs font-bold" style={{ color: c1 }}>{av}%</span>
+                                    <span className="text-center text-xs font-bold" style={{ color: c1 }}>{capPct(av)}%</span>
                                     <span className="text-center"><StatusChip pct={av} /></span>
                                 </div>
                             </div>
@@ -323,11 +323,11 @@ function LabCard({
                                                 </div>
                                                 <div>
                                                     <p className="text-[9px] text-muted-foreground uppercase">Contrib.</p>
-                                                    <p className="text-xs font-bold" style={{ color }}>{item.contrib}%</p>
+                                                    <p className="text-xs font-bold" style={{ color }}>{capPct(item.contrib)}%</p>
                                                 </div>
                                                 <div>
                                                     <p className="text-[9px] text-muted-foreground uppercase">Avance S/</p>
-                                                    <p className="text-xs font-bold" style={{ color: sc1 }}>{item.avPct}%</p>
+                                                    <p className="text-xs font-bold" style={{ color: sc1 }}>{capPct(item.avPct)}%</p>
                                                 </div>
                                             </div>
 
@@ -381,7 +381,7 @@ function LabCard({
                                                     {sortedItems.length} ítems · 100% contrib.
                                                 </span>
                                                 <span className="text-[10px] font-bold" style={{ color }}>
-                                                    {av}% avance
+                                                    {capPct(av)}% avance
                                                 </span>
                                             </div>
                                         </div>
@@ -450,7 +450,7 @@ export default function VendedorDashboardView({ data, kpis }: VendedorDashboardV
             <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
                 <KpiCard
                     label="Mi Avance S/"
-                    value={`${kpis.avanceGlobal}%`}
+                    value={`${capPct(kpis.avanceGlobal)}%`}
                     subtitle={`${fmtMoney(kpis.totalVendido)} de ${fmtMoney(kpis.totalCuota)}`}
                     accentColor="#0284c7"
                     delta="Ciclo activo"
@@ -458,7 +458,7 @@ export default function VendedorDashboardView({ data, kpis }: VendedorDashboardV
                 />
                 <KpiCard
                     label="Cobertura Clientes"
-                    value={`${cobPct}%`}
+                    value={`${capPct(cobPct)}%`}
                     subtitle={`${kpis.clientesAtendidos} de ${kpis.totalClientes} clientes`}
                     useSemaphore pct={cobPct}
                     delta={cobPct >= 80 ? "✓ Buena cobertura" : "⚠ Mejorar cobertura"}
@@ -466,7 +466,7 @@ export default function VendedorDashboardView({ data, kpis }: VendedorDashboardV
                 />
                 <KpiCard
                     label="Unidades Vendidas"
-                    value={`${kpis.pctUnidades}%`}
+                    value={`${capPct(kpis.pctUnidades)}%`}
                     subtitle={`${kpis.totalUndVendidas.toLocaleString()} de ${kpis.totalMetaCantidad.toLocaleString()} uds`}
                     useSemaphore pct={kpis.pctUnidades}
                     delta={kpis.pctUnidades >= 80 ? "✓ En meta" : "⚠ Bajo meta"}
@@ -542,7 +542,7 @@ export default function VendedorDashboardView({ data, kpis }: VendedorDashboardV
                                                 </div>
                                             </div>
                                             <div className="flex items-center gap-2">
-                                                <span className="text-sm font-bold" style={{ color: c1 }}>{av}%</span>
+                                                <span className="text-sm font-bold" style={{ color: c1 }}>{capPct(av)}%</span>
                                                 <StatusChip pct={av} />
                                             </div>
                                         </div>

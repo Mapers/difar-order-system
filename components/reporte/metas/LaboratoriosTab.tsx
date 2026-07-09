@@ -10,7 +10,7 @@ import KpiCard from "@/components/reporte/metas/KpiCard"
 import ProgressBar from "@/components/reporte/metas/ProgressBar"
 import StatusChip from "@/components/reporte/metas/StatusChip"
 import { ILabDashboard } from "@/app/types/metas-types"
-import { fmtMoney, getStatusColor, getInitials, getLabColor } from "@/app/utils/metas-helpers"
+import { fmtMoney, getStatusColor, getInitials, getLabColor, capPct } from "@/app/utils/metas-helpers"
 import { FilterStatus, SortMode } from "@/app/types/metas-types"
 
 interface LaboratoriosTabProps {
@@ -83,7 +83,7 @@ export default function LaboratoriosTab({
                         <KpiCard
                             key={lab.id_linea_ge}
                             label={lab.nombre_lab || `Lab ${lab.id_linea_ge}`}
-                            value={`${av}%`}
+                            value={`${capPct(av)}%`}
                             subtitle={`${fmtMoney(Number(lab.venta_real))} de ${fmtMoney(Number(lab.meta_monto))}`}
                             accentColor={getLabColor(i)}
                             delta={av >= 80 ? "↑ En meta" : "⚠ En riesgo"}
@@ -180,7 +180,7 @@ export default function LaboratoriosTab({
                                 <div className="space-y-1">
                                     <div className="flex justify-between items-center">
                                         <span className="text-[11px] text-muted-foreground">Avance</span>
-                                        <span className="text-sm font-bold" style={{ color: c1 }}>{l.pct}%</span>
+                                        <span className="text-sm font-bold" style={{ color: c1 }}>{capPct(l.pct)}%</span>
                                     </div>
                                     <ProgressBar pct={l.pct} height="h-2" />
                                 </div>
@@ -250,7 +250,7 @@ export default function LaboratoriosTab({
                                         <td className="px-3 py-2.5 text-muted-foreground">{Number(l.clientes_atendidos)}/{Number(l.meta_clientes)}</td>
                                         <td className="px-3 py-2.5 font-semibold">{fmtMoney(Number(l.venta_real))}</td>
                                         <td className="px-3 py-2.5 text-muted-foreground">{fmtMoney(Number(l.meta_monto))}</td>
-                                        <td className="px-3 py-2.5 font-bold" style={{ color: c1 }}>{l.pct}%</td>
+                                        <td className="px-3 py-2.5 font-bold" style={{ color: c1 }}>{capPct(l.pct)}%</td>
                                         <td className="px-3 py-2.5"><ProgressBar pct={l.pct} height="h-1.5" /></td>
                                         <td className="px-3 py-2.5"><StatusChip pct={l.pct} /></td>
                                     </tr>

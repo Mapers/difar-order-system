@@ -2,7 +2,7 @@
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { IItemDashboard } from "@/app/types/metas-types"
-import { fmtMoney, getStatusColor } from "@/app/utils/metas-helpers"
+import { fmtMoney, getStatusColor, capPct } from "@/app/utils/metas-helpers"
 import MiniDonut from "./MiniDonut"
 import MiniGauge from "./MiniGauge"
 import ProgressBar from "./ProgressBar"
@@ -40,7 +40,7 @@ export default function ItemDetailModal({ item, type, labColor, open, onClose }:
                 {type === 'unidades' ? (
                     <div className="flex flex-col items-center gap-4 py-2">
                         <MiniDonut pct={item.uPct} size={120} strokeWidth={12} />
-                        <p className="text-2xl font-bold" style={{ color: uColor }}>{item.uPct}%</p>
+                        <p className="text-2xl font-bold" style={{ color: uColor }}>{capPct(item.uPct)}%</p>
                         <div className="w-full space-y-2.5">
                             <div className="flex justify-between items-center py-2 border-b border-border">
                                 <span className="text-sm text-muted-foreground">Unidades vendidas</span>
@@ -63,7 +63,7 @@ export default function ItemDetailModal({ item, type, labColor, open, onClose }:
                 ) : (
                     <div className="flex flex-col items-center gap-4 py-2">
                         <MiniGauge pct={item.avPct} width={140} height={85} />
-                        <p className="text-2xl font-bold" style={{ color: avColor }}>{item.avPct}%</p>
+                        <p className="text-2xl font-bold" style={{ color: avColor }}>{capPct(item.avPct)}%</p>
                         <div className="w-full space-y-2.5">
                             <div className="flex justify-between items-center py-2 border-b border-border">
                                 <span className="text-sm text-muted-foreground">Venta real</span>

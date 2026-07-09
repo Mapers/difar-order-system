@@ -1,4 +1,4 @@
-import {getStatusColor} from "@/app/utils/metas-helpers";
+import {capPct, getStatusColor} from "@/app/utils/metas-helpers";
 
 interface MiniGaugeProps {
     pct: number;
@@ -8,7 +8,7 @@ interface MiniGaugeProps {
 
 export default function MiniGauge({ pct, width = 64, height = 38 }: MiniGaugeProps) {
     const [c1] = getStatusColor(pct);
-    const safePct = Math.min(pct, 100);
+    const safePct = capPct(pct);
 
     const cx = 30, cy = 30, r = 22;
     const semiCirc = Math.PI * r;
@@ -22,7 +22,7 @@ export default function MiniGauge({ pct, width = 64, height = 38 }: MiniGaugePro
     const needleY = cy - r * Math.sin(angle);
 
     return (
-        <div className="flex flex-col items-center gap-0.5">
+        <div className="flex flex-col items-center gap-0.5 max-w-full overflow-hidden">
             <svg width={width} height={height} viewBox="-2 4 64 32" style={{ overflow: 'visible' }}>
                 <circle cx={cx} cy={cy} r={r} fill="none" stroke="#fee2e2" strokeWidth="7"
                         strokeDasharray={`${zoneRed.toFixed(2)} ${(semiCirc * 2 - zoneRed).toFixed(2)}`}
@@ -48,7 +48,7 @@ export default function MiniGauge({ pct, width = 64, height = 38 }: MiniGaugePro
                       stroke="#1e293b" strokeWidth="1.8" strokeLinecap="round" />
                 <circle cx={cx} cy={cy} r="2.5" fill="#1e293b" />
             </svg>
-            <span className="text-[11px] font-bold leading-none" style={{ color: c1 }}>{pct}%</span>
+            <span className="text-[11px] font-bold leading-none whitespace-nowrap" style={{ color: c1 }}>{safePct}%</span>
         </div>
     );
 }

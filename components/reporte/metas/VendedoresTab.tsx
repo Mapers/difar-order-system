@@ -9,7 +9,7 @@ import { Search, ChevronDown, ChevronRight } from "lucide-react"
 import ProgressBar from "@/components/reporte/metas/ProgressBar"
 import StatusChip from "@/components/reporte/metas/StatusChip"
 import { IVendedorDashboard } from "@/app/types/metas-types"
-import { fmtMoney, getStatusColor, getInitials, getLabColor, agruparVendedores } from "@/app/utils/metas-helpers"
+import { fmtMoney, getStatusColor, getInitials, getLabColor, agruparVendedores, capPct } from "@/app/utils/metas-helpers"
 import { FilterStatus, SortMode } from "@/app/types/metas-types"
 
 interface VendedoresTabProps {
@@ -213,7 +213,7 @@ export default function VendedoresTab({
                                     <div className="space-y-1">
                                         <div className="flex justify-between items-center">
                                             <span className="text-[11px] text-muted-foreground">Avance</span>
-                                            <span className="text-sm font-bold" style={{ color: c1 }}>{v.pct}%</span>
+                                            <span className="text-sm font-bold" style={{ color: c1 }}>{capPct(v.pct)}%</span>
                                         </div>
                                         <ProgressBar pct={v.pct} height="h-2" />
                                     </div>
@@ -272,7 +272,7 @@ export default function VendedoresTab({
                                                     </div>
                                                     <ProgressBar pct={lpct} height="h-1" className="mt-1" />
                                                 </div>
-                                                <span className="text-xs font-bold shrink-0" style={{ color: lc1 }}>{lpct}%</span>
+                                                <span className="text-xs font-bold shrink-0" style={{ color: lc1 }}>{capPct(lpct)}%</span>
                                             </button>
                                         );
                                     })}
@@ -342,7 +342,7 @@ export default function VendedoresTab({
                                             <td className="px-3 py-2.5 text-muted-foreground">
                                                 {Number(v.clientes_atendidos || 0)}/{Number(v.meta_clientes || 0)}
                                             </td>
-                                            <td className="px-3 py-2.5 font-bold" style={{ color: c1 }}>{v.pct}%</td>
+                                            <td className="px-3 py-2.5 font-bold" style={{ color: c1 }}>{capPct(v.pct)}%</td>
                                             <td className="px-3 py-2.5">
                                                 <ProgressBar pct={v.pct} height="h-1.5" />
                                             </td>
@@ -373,7 +373,7 @@ export default function VendedoresTab({
                                                     <td className="px-3 py-2 font-semibold text-muted-foreground">{fmtMoney(Number(lab.venta_real))}</td>
                                                     <td className="px-3 py-2 text-muted-foreground">{fmtMoney(Number(lab.meta_monto))}</td>
                                                     <td className="px-3 py-2 text-muted-foreground/50">—</td>
-                                                    <td className="px-3 py-2 font-bold" style={{ color: lc1 }}>{lpct}%</td>
+                                                    <td className="px-3 py-2 font-bold" style={{ color: lc1 }}>{capPct(lpct)}%</td>
                                                     <td className="px-3 py-2">
                                                         <ProgressBar pct={lpct} height="h-1.5" />
                                                     </td>

@@ -46,12 +46,15 @@ export function agruparVendedores(vends: IVendedorDashboard[]): IVendedorDashboa
         const meta = Number(g.meta_monto);
         g.pct_avance_monto = meta > 0 ? Math.round(Number(g.venta_real) / meta * 100) : 0;
         g.total_labs = g.labs!.length;
-        g.labs!.sort((a, b) => Number(b.meta_monto) - Number(a.meta_monto));
+        g.labs!.sort((a, b) => Number(b.pct_avance_monto) - Number(a.pct_avance_monto));
     }
     return list;
 }
 
-export const calcPct = (value: number, total: number) => total > 0 ? Math.min(Math.round((value / total) * 100), 999) : 0;
+export const calcPct = (value: number, total: number) => total > 0 ? Math.min(Math.round((value / total) * 100), 100) : 0;
+
+/** Topa un porcentaje de avance a 100% para mostrar en UI (barras, donas, velocímetros y su texto). */
+export const capPct = (pct: number): number => Math.max(0, Math.min(Math.round(Number(pct) || 0), 100));
 
 export const getStatusColor = (pct: number): [string, string] => {
     if (pct >= 80) return ["#059669", "#34d399"];

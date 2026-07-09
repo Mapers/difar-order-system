@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Badge } from "@/components/ui/badge"
 import { CheckCircle, X, Clock, ShoppingBag } from "lucide-react"
 import { IDiaVisitas, IVisitasSemana, EstadoVisita } from "@/app/types/metas-types"
-import { fmtMoney, getStatusChip } from "@/app/utils/metas-helpers"
+import { fmtMoney, getStatusChip, capPct } from "@/app/utils/metas-helpers"
 
 interface Props {
     open: boolean;
@@ -85,7 +85,7 @@ export default function VisitasDetallePanel({ open, onClose, nombreVendedor, sem
                     <p className="text-[11px] text-muted-foreground mt-0.5">Semana {semanaLabel}</p>
                     <div className="flex items-center gap-2 mt-1.5">
                         <span className="text-xs text-muted-foreground font-medium">
-                            Visitas: {data.visitados}/{data.asignados} · {data.pct}% cumplimiento
+                            Visitas: {data.visitados}/{data.asignados} · {capPct(data.pct)}% cumplimiento
                         </span>
                         <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-full ${chip.className}`}>
                             {chip.label}

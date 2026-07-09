@@ -1,6 +1,6 @@
 import { MapPin } from "lucide-react"
 import { IVisitasSemana } from "@/app/types/metas-types"
-import { getStatusColor, getStatusChip } from "@/app/utils/metas-helpers"
+import { getStatusColor, getStatusChip, capPct } from "@/app/utils/metas-helpers"
 import ProgressBar from "./ProgressBar"
 
 interface Props {
@@ -38,7 +38,7 @@ export default function VisitasSemanaCard({ data, loading, onClick }: Props) {
             <p className="text-lg font-bold mt-0.5" style={{ color }}>
                 {data.visitados} / {data.asignados}
             </p>
-            <p className="text-[10px] text-muted-foreground mt-0.5">{pct}% cumplimiento</p>
+            <p className="text-[10px] text-muted-foreground mt-0.5">{capPct(pct)}% cumplimiento</p>
             <ProgressBar pct={pct} height="h-1" className="mt-1.5" />
             <span className={`inline-block mt-1.5 text-[9px] font-semibold px-1.5 py-0.5 rounded-full ${chip.className}`}>
                 {chip.label}

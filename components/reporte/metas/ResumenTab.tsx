@@ -5,7 +5,7 @@ import KpiCard from "@/components/reporte/metas/KpiCard"
 import ProgressBar from "@/components/reporte/metas/ProgressBar"
 import StatusChip from "@/components/reporte/metas/StatusChip"
 import { IDashboardData, IVendedorDashboard } from "@/app/types/metas-types"
-import { fmtMoney, getStatusColor, getInitials, getLabColor, agruparVendedores } from "@/app/utils/metas-helpers"
+import { fmtMoney, getStatusColor, getInitials, getLabColor, agruparVendedores, capPct } from "@/app/utils/metas-helpers"
 import { MedalIcon } from "lucide-react"
 
 interface ResumenTabProps {
@@ -47,7 +47,7 @@ export default function ResumenTab({ data, kpis, onVendedorClick, isVendedorView
             <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
                 <KpiCard
                     label="Avance Global S/"
-                    value={`${kpis.avanceGlobal}%`}
+                    value={`${capPct(kpis.avanceGlobal)}%`}
                     subtitle={`${fmtMoney(kpis.totalVendido)} de ${fmtMoney(kpis.totalCuota)}`}
                     accentColor="#0284c7"
                     delta="Ciclo activo"
@@ -55,7 +55,7 @@ export default function ResumenTab({ data, kpis, onVendedorClick, isVendedorView
                 />
                 <KpiCard
                     label="Cobertura Clientes"
-                    value={`${kpis.pctCobertura}%`}
+                    value={`${capPct(kpis.pctCobertura)}%`}
                     subtitle={`${kpis.clientesAtendidos} de ${kpis.totalClientes} clientes`}
                     useSemaphore pct={kpis.pctCobertura}
                     delta={kpis.pctCobertura >= 80 ? "✓ Buena cobertura" : "⚠ Mejorar cobertura"}
@@ -63,7 +63,7 @@ export default function ResumenTab({ data, kpis, onVendedorClick, isVendedorView
                 />
                 <KpiCard
                     label="Cumplimiento Unidades"
-                    value={`${kpis.pctUnidades}%`}
+                    value={`${capPct(kpis.pctUnidades)}%`}
                     subtitle={`${kpis.totalUndVendidas.toLocaleString()} de ${kpis.totalMetaCantidad.toLocaleString()} uds`}
                     useSemaphore pct={kpis.pctUnidades}
                     delta={kpis.pctUnidades >= 80 ? "✓ En meta" : "⚠ Bajo meta"}
@@ -141,7 +141,7 @@ export default function ResumenTab({ data, kpis, onVendedorClick, isVendedorView
                                                     </div>
                                                 </div>
                                                 <div className="flex items-center gap-2">
-                                                    <span className="text-sm font-bold" style={{ color: c1 }}>{av}%</span>
+                                                    <span className="text-sm font-bold" style={{ color: c1 }}>{capPct(av)}%</span>
                                                     <StatusChip pct={av} />
                                                 </div>
                                             </div>
@@ -181,7 +181,7 @@ export default function ResumenTab({ data, kpis, onVendedorClick, isVendedorView
                                                 <div className="flex-1 min-w-0">
                                                     <div className="flex justify-between items-center">
                                                         <span className="text-xs font-bold text-slate-800 truncate">{v.nombre_vendedor || v.cod_vendedor}</span>
-                                                        <span className="text-sm font-bold shrink-0" style={{ color: c1 }}>{av}%</span>
+                                                        <span className="text-sm font-bold shrink-0" style={{ color: c1 }}>{capPct(av)}%</span>
                                                     </div>
                                                     <div className="flex justify-between mt-0.5">
                                                         <span className="text-[10px] text-slate-400">{fmtMoney(Number(v.venta_real))}</span>
@@ -222,7 +222,7 @@ export default function ResumenTab({ data, kpis, onVendedorClick, isVendedorView
                                                     <div className="flex-1 min-w-0">
                                                         <div className="flex justify-between">
                                                             <span className="text-xs font-semibold truncate">{v.nombre_vendedor || v.cod_vendedor}</span>
-                                                            <span className="text-xs font-bold shrink-0" style={{ color: c1 }}>{av}%</span>
+                                                            <span className="text-xs font-bold shrink-0" style={{ color: c1 }}>{capPct(av)}%</span>
                                                         </div>
                                                         <ProgressBar pct={av} height="h-1" className="mt-1" />
                                                         <div className="flex justify-between mt-0.5">

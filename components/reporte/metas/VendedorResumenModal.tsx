@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
 import { IVendedorResumenDashboard, IVendedorLabDetalle } from "@/app/types/metas-types"
-import { fmtMoney, getInitials, getLabColor, getStatusColor } from "@/app/utils/metas-helpers"
+import { fmtMoney, getInitials, getLabColor, getStatusColor, capPct } from "@/app/utils/metas-helpers"
 import StatusChip from "@/components/reporte/metas/StatusChip"
 import ProgressBar from "@/components/reporte/metas/ProgressBar"
 import { MetasService } from "@/app/services/reports/metasService"
@@ -70,7 +70,7 @@ export default function VendedorResumenModal({ open, onClose, vendedor, idCiclo 
                             {fmtMoney(Number(vendedor.venta_total))}
                         </p>
                         <p className="text-[10px] text-muted-foreground mt-0.5">
-                            Cuota {fmtMoney(Number(vendedor.cuota_total))} · {pct}%
+                            Cuota {fmtMoney(Number(vendedor.cuota_total))} · {capPct(pct)}%
                         </p>
                         <ProgressBar pct={pct} height="h-1" className="mt-1.5" />
                     </div>
@@ -126,13 +126,13 @@ export default function VendedorResumenModal({ open, onClose, vendedor, idCiclo 
                                         </div>
                                         <div className="text-right">
                                             <p className="text-xs font-semibold">{fmtMoney(Number(lab.venta_real))}</p>
-                                            <ProgressBar pct={Math.min(labPct, 100)} height="h-[3px]" className="mt-0.5" />
+                                            <ProgressBar pct={labPct} height="h-[3px]" className="mt-0.5" />
                                         </div>
                                         <div className="text-right text-[11px] text-muted-foreground">
                                             {fmtMoney(Number(lab.meta_monto))}
                                         </div>
                                         <div className="text-center">
-                                            <p className="text-sm font-bold" style={{ color: lc }}>{labPct}%</p>
+                                            <p className="text-sm font-bold" style={{ color: lc }}>{capPct(labPct)}%</p>
                                         </div>
                                     </div>
                                 );

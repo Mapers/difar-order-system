@@ -4,7 +4,7 @@ import { useMemo, useState } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
 import { IVendedorDashboard, IItemDashboard, ICiclo } from "@/app/types/metas-types"
-import { fmtMoney, getInitials, getLabColor, getStatusColor } from "@/app/utils/metas-helpers"
+import { fmtMoney, getInitials, getLabColor, getStatusColor, capPct } from "@/app/utils/metas-helpers"
 import StatusChip from "@/components/reporte/metas/StatusChip"
 import ProgressBar from "@/components/reporte/metas/ProgressBar"
 import VisitasSemanaCard from "@/components/reporte/metas/VisitasSemanaCard"
@@ -40,7 +40,7 @@ export default function VendedorDetailModal({ open, onClose, vendedor, allItems,
                     ? Math.round(Number(item.venta_real) / Number(vendedor.venta_real) * 100)
                     : 0
             }))
-            .sort((a, b) => b.contrib - a.contrib);
+            .sort((a, b) => b.avPct - a.avPct);
     }, [vendedor, allItems]);
 
     if (!vendedor) return null;
@@ -102,7 +102,7 @@ export default function VendedorDetailModal({ open, onClose, vendedor, allItems,
                             {fmtMoney(Number(vendedor.venta_real))}
                         </p>
                         <p className="text-[10px] text-muted-foreground mt-0.5">
-                            Meta {fmtMoney(Number(vendedor.meta_monto))} · avance {avPct}%
+                            Meta {fmtMoney(Number(vendedor.meta_monto))} · avance {capPct(avPct)}%
                         </p>
                         <ProgressBar pct={avPct} height="h-1" className="mt-1.5" />
                     </div>
@@ -113,7 +113,7 @@ export default function VendedorDetailModal({ open, onClose, vendedor, allItems,
                             className={`bg-background rounded-lg p-3 border border-border text-left transition-all ${vendedor.esAgrupado ? 'cursor-default' : 'hover:border-sky-300 hover:shadow-sm cursor-pointer'}`}>
                         <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Cobertura Clientes</p>
                         <p className="text-lg font-bold mt-0.5" style={{ color: cobColor }}>
-                            {cobPct}%
+                            {capPct(cobPct)}%
                         </p>
                         <p className="text-[10px] text-muted-foreground mt-0.5">
                             {Number(vendedor.clientes_atendidos)} atendidos / meta {Number(vendedor.meta_clientes)}
@@ -200,14 +200,14 @@ export default function VendedorDetailModal({ open, onClose, vendedor, allItems,
                                                 />
                                             </svg>
                                             <div className="absolute inset-0 flex items-center justify-center">
-                                                <span className="text-[8px] font-bold" style={{ color: uc1 }}>{item.uPct}%</span>
+                                                <span className="text-[8px] font-bold" style={{ color: uc1 }}>{capPct(item.uPct)}%</span>
                                             </div>
                                         </div>
                                         <p className="text-[9px] text-muted-foreground">{Number(item.u_vendidas).toLocaleString()}</p>
                                     </div>
 
                                     <div className="text-center">
-                                        <p className="text-sm font-bold" style={{ color: contribColor }}>{item.contrib}%</p>
+                                        <p className="text-sm font-bold" style={{ color: contribColor }}>{capPct(item.contrib)}%</p>
                                     </div>
                                 </div>
                             );
