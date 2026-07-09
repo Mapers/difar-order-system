@@ -123,7 +123,7 @@ const TabDireccionTecnica: React.FC<DireccionTecnicaProps> = ({
 
     return (
         <TabsContent value="direccion-tecnica" className="space-y-6 mt-6">
-            <h4 className="font-medium text-gray-900 flex items-center gap-2">
+            <h4 className="font-medium text-foreground flex items-center gap-2">
                 <FileText className="h-4 w-4 text-green-600" />
                 Documentación Obligatoria
             </h4>

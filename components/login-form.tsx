@@ -140,7 +140,7 @@ export function LoginForm() {
             sizes="130px"
           />
         </div>
-        <p className="text-gray-500 mt-2">Sistema de Gestión de Pedidos</p>
+        <p className="text-muted-foreground mt-2">Sistema de Gestión de Pedidos</p>
       </div>
 
       <Card className="w-full border-0 shadow-xl bg-white/90 backdrop-blur-sm">
@@ -158,11 +158,11 @@ export function LoginForm() {
             <form onSubmit={handleDniSubmit}>
               <div className="grid gap-4">
                 <div className="grid gap-2">
-                  <Label htmlFor="dni" className="text-gray-700">
+                  <Label htmlFor="dni" className="text-foreground">
                     DNI
                   </Label>
                   <div className="relative">
-                    <User className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+                    <User className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
                     <Input
                       id="dni"
                       placeholder="Ingrese su DNI"
@@ -171,7 +171,7 @@ export function LoginForm() {
                       required
                       maxLength={8}
                       pattern="[0-9]{8}"
-                      className="pl-10 text-center text-lg h-12 bg-white border-gray-200 focus:border-blue-500 focus:ring-blue-500"
+                      className="pl-10 text-center text-lg h-12 bg-background border-border focus:border-blue-500 focus:ring-blue-500"
                     />
                   </div>
                 </div>
@@ -198,7 +198,7 @@ export function LoginForm() {
             <form onSubmit={handleVerificationSubmit}>
               <div className="grid gap-4">
                 <div className="grid gap-2">
-                  <Label htmlFor="verification-code" className="text-gray-700 text-center">
+                  <Label htmlFor="verification-code" className="text-foreground text-center">
                     Código de verificación
                   </Label>
                   <div className="flex justify-center gap-2 mt-2">
@@ -212,12 +212,12 @@ export function LoginForm() {
                         maxLength={1}
                         value={digit}
                         onChange={(e) => handleCodeChange(index, e.target.value)}
-                        className="w-12 h-14 text-center text-lg font-bold bg-white border-gray-200 focus:border-blue-500 focus:ring-blue-500"
+                        className="w-12 h-14 text-center text-lg font-bold bg-background border-border focus:border-blue-500 focus:ring-blue-500"
                         autoFocus={index === 0}
                       />
                     ))}
                   </div>
-                  <p className="text-xs text-center text-gray-500 mt-2">Se ha enviado un código a su dispositivo</p>
+                  <p className="text-xs text-center text-muted-foreground mt-2">Se ha enviado un código a su dispositivo</p>
                 </div>
                 <Button
                   type="submit"
@@ -241,7 +241,7 @@ export function LoginForm() {
           )}
         </CardContent>
         <CardFooter className="flex justify-center pb-6">
-          <p className="text-sm text-gray-500">Sistema seguro de gestión de pedidos</p>
+          <p className="text-sm text-muted-foreground">Sistema seguro de gestión de pedidos</p>
         </CardFooter>
       </Card>
     </div>

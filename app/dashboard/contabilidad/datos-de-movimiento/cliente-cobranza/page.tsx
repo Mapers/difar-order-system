@@ -250,14 +250,14 @@ export default function ClienteCobranzaPage() {
     return (
         <div className="grid gap-6 p-4 md:p-6">
             <div className="flex flex-col gap-2">
-                <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-gray-900">Cliente Cobranza</h1>
-                <p className="text-sm md:text-base text-gray-500">Registro de amortizaciones y pagos de clientes.</p>
+                <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">Cliente Cobranza</h1>
+                <p className="text-sm md:text-base text-muted-foreground">Registro de amortizaciones y pagos de clientes.</p>
             </div>
 
             <Card className="shadow-md">
-                <CardHeader className="bg-slate-50 border-b border-slate-200 p-4">
+                <CardHeader className="bg-muted border-b border-border p-4">
                     <div className="flex items-center gap-2">
-                        <span className="text-sm font-semibold text-slate-700">
+                        <span className="text-sm font-semibold text-foreground">
                             {isEditing ? 'Editar Amortización' : 'Nueva Amortización'}
                         </span>
                         {isEditing && (
@@ -266,7 +266,7 @@ export default function ClienteCobranzaPage() {
                             </span>
                         )}
                         {isEditing && (
-                            <Button variant="ghost" size="sm" className="gap-1.5 text-slate-400 ml-auto" onClick={resetForm}>
+                            <Button variant="ghost" size="sm" className="gap-1.5 text-muted-foreground ml-auto" onClick={resetForm}>
                                 <X className="h-4 w-4" /> Limpiar
                             </Button>
                         )}
@@ -461,10 +461,10 @@ export default function ClienteCobranzaPage() {
                             rows={3}
                             maxLength={500}
                         />
-                        <p className="text-xs text-gray-400 text-right">{form.Observaciones.length}/500</p>
+                        <p className="text-xs text-muted-foreground text-right">{form.Observaciones.length}/500</p>
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-200">
+                    <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-border">
                         <Button
                             variant="outline"
                             size="sm"

@@ -34,7 +34,7 @@ export default function ItemDetailModal({ item, type, labColor, open, onClose }:
                     <DialogTitle className="text-sm font-bold leading-snug">
                         {item.nombre_articulo || item.cod_articulo}
                     </DialogTitle>
-                    <p className="text-xs text-slate-400">{item.cod_articulo}{item.nombre_lab ? ` · ${item.nombre_lab}` : ''}</p>
+                    <p className="text-xs text-muted-foreground">{item.cod_articulo}{item.nombre_lab ? ` · ${item.nombre_lab}` : ''}</p>
                 </DialogHeader>
 
                 {type === 'unidades' ? (
@@ -42,16 +42,16 @@ export default function ItemDetailModal({ item, type, labColor, open, onClose }:
                         <MiniDonut pct={item.uPct} size={120} strokeWidth={12} />
                         <p className="text-2xl font-bold" style={{ color: uColor }}>{item.uPct}%</p>
                         <div className="w-full space-y-2.5">
-                            <div className="flex justify-between items-center py-2 border-b border-slate-100">
-                                <span className="text-sm text-slate-500">Unidades vendidas</span>
-                                <span className="text-sm font-bold text-slate-800">{Number(item.u_vendidas).toLocaleString()} uds</span>
+                            <div className="flex justify-between items-center py-2 border-b border-border">
+                                <span className="text-sm text-muted-foreground">Unidades vendidas</span>
+                                <span className="text-sm font-bold text-foreground">{Number(item.u_vendidas).toLocaleString()} uds</span>
                             </div>
-                            <div className="flex justify-between items-center py-2 border-b border-slate-100">
-                                <span className="text-sm text-slate-500">Meta de unidades</span>
-                                <span className="text-sm font-bold text-slate-800">{Number(item.meta_cantidad).toLocaleString()} uds</span>
+                            <div className="flex justify-between items-center py-2 border-b border-border">
+                                <span className="text-sm text-muted-foreground">Meta de unidades</span>
+                                <span className="text-sm font-bold text-foreground">{Number(item.meta_cantidad).toLocaleString()} uds</span>
                             </div>
                             <div className="flex justify-between items-center py-2">
-                                <span className="text-sm text-slate-500">Por vender para la meta</span>
+                                <span className="text-sm text-muted-foreground">Por vender para la meta</span>
                                 <span className="text-sm font-bold" style={{ color: uColor }}>
                                     {unidadesFaltantes > 0 ? `${unidadesFaltantes.toLocaleString()} uds` : '✓ Alcanzado'}
                                 </span>
@@ -65,16 +65,16 @@ export default function ItemDetailModal({ item, type, labColor, open, onClose }:
                         <MiniGauge pct={item.avPct} width={140} height={85} />
                         <p className="text-2xl font-bold" style={{ color: avColor }}>{item.avPct}%</p>
                         <div className="w-full space-y-2.5">
-                            <div className="flex justify-between items-center py-2 border-b border-slate-100">
-                                <span className="text-sm text-slate-500">Venta real</span>
-                                <span className="text-sm font-bold text-slate-800">{fmtMoney(Number(item.venta_real))}</span>
+                            <div className="flex justify-between items-center py-2 border-b border-border">
+                                <span className="text-sm text-muted-foreground">Venta real</span>
+                                <span className="text-sm font-bold text-foreground">{fmtMoney(Number(item.venta_real))}</span>
                             </div>
-                            <div className="flex justify-between items-center py-2 border-b border-slate-100">
-                                <span className="text-sm text-slate-500">Meta de venta</span>
-                                <span className="text-sm font-bold text-slate-800">{fmtMoney(Number(item.meta_monto))}</span>
+                            <div className="flex justify-between items-center py-2 border-b border-border">
+                                <span className="text-sm text-muted-foreground">Meta de venta</span>
+                                <span className="text-sm font-bold text-foreground">{fmtMoney(Number(item.meta_monto))}</span>
                             </div>
                             <div className="flex justify-between items-center py-2">
-                                <span className="text-sm text-slate-500">Por vender para la meta</span>
+                                <span className="text-sm text-muted-foreground">Por vender para la meta</span>
                                 <span className="text-sm font-bold" style={{ color: avColor }}>
                                     {montoFaltante > 0 ? fmtMoney(montoFaltante) : '✓ Alcanzado'}
                                 </span>

@@ -95,24 +95,24 @@ export function GuiasList({
     return (
         <>
             <div className="hidden lg:block">
-                <Card className="bg-white shadow-sm">
+                <Card className="bg-background shadow-sm">
                     <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-200">
-                            <thead className="bg-gray-50">
+                        <table className="min-w-full divide-y divide-border">
+                            <thead className="bg-muted">
                             <tr>
-                                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha</th>
-                                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Guía</th>
-                                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cliente</th>
-                                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Documento</th>
-                                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estado</th>
-                                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Acciones</th>
+                                <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Fecha</th>
+                                <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Guía</th>
+                                <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Cliente</th>
+                                <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Documento</th>
+                                <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Estado</th>
+                                <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Acciones</th>
                             </tr>
                             </thead>
-                            <tbody className="bg-white divide-y divide-gray-200">
+                            <tbody className="bg-background divide-y divide-border">
                             {guias.length > 0 ? (
                                 guias.map((guia) => (
                                     <tr key={guia.idGuiaRemCab ?? `${guia.serie}-${Number(guia.numero)}`}
-                                        className={`hover:bg-gray-50 ${!guia.idGuiaRemCab ? 'opacity-60' : ''}`}>
+                                        className={`hover:bg-muted ${!guia.idGuiaRemCab ? 'opacity-60' : ''}`}>
                                         <td className="p-4 text-sm">
                                             {guia.fecha_emision
                                                 ? format(parseISO(guia.fecha_emision), "dd/MM/yyyy")
@@ -125,7 +125,7 @@ export function GuiasList({
                                         <td className="p-4 text-sm">{guia.cliente_num_doc ?? '—'}</td>
                                         <td className="p-4">
                                             {!guia.idGuiaRemCab ? (
-                                                <Badge variant="outline" className="text-slate-500 border-slate-300">
+                                                <Badge variant="outline" className="text-muted-foreground border-border">
                                                     No utilizado
                                                 </Badge>
                                             ) : guia.sunat_responsecode !== '0' ? (
@@ -161,10 +161,10 @@ export function GuiasList({
                                                         </DropdownMenuTrigger>
                                                         <DropdownMenuContent align="end" className="w-56">
                                                             <DropdownMenuItem onClick={() => handleViewJson('JSON Solicitud (Request)', guia.raw_request!)}>
-                                                                <Code className="mr-2 h-4 w-4 text-gray-500" /> JSON Solicitud
+                                                                <Code className="mr-2 h-4 w-4 text-muted-foreground" /> JSON Solicitud
                                                             </DropdownMenuItem>
                                                             <DropdownMenuItem onClick={() => handleViewJson('JSON Respuesta (Response)', guia.raw_response!)}>
-                                                                <FileJson className="mr-2 h-4 w-4 text-gray-500" /> JSON Respuesta
+                                                                <FileJson className="mr-2 h-4 w-4 text-muted-foreground" /> JSON Respuesta
                                                             </DropdownMenuItem>
                                                             {isAdmin && (
                                                                 <>
@@ -188,7 +188,7 @@ export function GuiasList({
                                     </tr>
                                 ))
                             ) : (
-                                <tr><td colSpan={6} className="text-center py-8 text-gray-500">No se encontraron guías de remisión</td></tr>
+                                <tr><td colSpan={6} className="text-center py-8 text-muted-foreground">No se encontraron guías de remisión</td></tr>
                             )}
                             </tbody>
                         </table>
@@ -200,21 +200,21 @@ export function GuiasList({
                 {guias.length > 0 ? (
                     guias.map((guia) => (
                         <Card key={guia.idGuiaRemCab ?? `${guia.serie}-${Number(guia.numero)}`}
-                              className={`border ${!guia.idGuiaRemCab ? 'border-slate-200 opacity-60' : 'border-gray-200'}`}>
+                              className={`border border-border ${!guia.idGuiaRemCab ? 'opacity-60' : ''}`}>
                             <CardContent className="p-4">
                                 <div className="space-y-3">
                                     <div className="flex justify-between items-start">
                                         <div>
                                             <div className="flex items-center gap-2 mb-1">
-                                                <span className="font-semibold text-gray-900">
+                                                <span className="font-semibold text-card-foreground">
                                                     {guia.serie}-{Number(guia.numero)}
                                                 </span>
                                                 {!guia.idGuiaRemCab
-                                                    ? <Badge variant="outline" className="text-slate-500 border-slate-300">No utilizado</Badge>
+                                                    ? <Badge variant="outline" className="text-muted-foreground border-border">No utilizado</Badge>
                                                     : getEstadoBadge(guia)
                                                 }
                                             </div>
-                                            <p className="text-sm text-gray-600">
+                                            <p className="text-sm text-muted-foreground">
                                                 {guia.fecha_emision
                                                     ? format(parseISO(guia.fecha_emision), "dd/MM/yyyy")
                                                     : '—'}
@@ -225,10 +225,10 @@ export function GuiasList({
                                     {guia.idGuiaRemCab && (
                                         <>
                                             <div className="border-t pt-3">
-                                                <p className="font-medium text-gray-900 truncate">
+                                                <p className="font-medium text-card-foreground truncate">
                                                     {guia.cliente_denominacion ?? '—'}
                                                 </p>
-                                                <p className="text-sm text-gray-600">
+                                                <p className="text-sm text-muted-foreground">
                                                     {guia.cliente_num_doc ?? '—'}
                                                 </p>
                                             </div>
@@ -266,10 +266,10 @@ export function GuiasList({
                                                     </DropdownMenuTrigger>
                                                     <DropdownMenuContent align="end" className="w-56">
                                                         <DropdownMenuItem onClick={() => handleViewJson('JSON Solicitud', guia.raw_request!)}>
-                                                            <Code className="mr-2 h-4 w-4 text-gray-500" /> JSON Solicitud
+                                                            <Code className="mr-2 h-4 w-4 text-muted-foreground" /> JSON Solicitud
                                                         </DropdownMenuItem>
                                                         <DropdownMenuItem onClick={() => handleViewJson('JSON Respuesta', guia.raw_response!)}>
-                                                            <FileJson className="mr-2 h-4 w-4 text-gray-500" /> JSON Respuesta
+                                                            <FileJson className="mr-2 h-4 w-4 text-muted-foreground" /> JSON Respuesta
                                                         </DropdownMenuItem>
                                                         {isAdmin && (
                                                             <>
@@ -295,7 +295,7 @@ export function GuiasList({
                         </Card>
                     ))
                 ) : (
-                    <div className="text-center py-8 text-gray-500">No se encontraron guías de remisión</div>
+                    <div className="text-center py-8 text-muted-foreground">No se encontraron guías de remisión</div>
                 )}
             </div>
 

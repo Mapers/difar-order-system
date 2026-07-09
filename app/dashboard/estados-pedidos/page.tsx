@@ -378,7 +378,7 @@ export default function OrderStatusManagementPage() {
     const StateIcon = stateInfo?.icon || Clock
 
     return (
-        <tr key={order.idPedidocab} className={`border-b hover:bg-gray-50 ${esGrupo ? 'bg-amber-50/30' : ''}`}>
+        <tr key={order.idPedidocab} className={`border-b hover:bg-muted ${esGrupo ? 'bg-amber-50/30' : ''}`}>
           <td className="p-4 font-medium text-sm">
             <div className="flex items-center gap-1.5">
               {esGrupo && <Link2 className="h-3.5 w-3.5 text-amber-500 shrink-0" />}
@@ -388,7 +388,7 @@ export default function OrderStatusManagementPage() {
           <td className="p-4">
             <div>
               <div className="font-medium text-sm">{order.nombreCliente}</div>
-              <div className="text-xs text-gray-500">{order.codigoCliente || 'N/A'}</div>
+              <div className="text-xs text-muted-foreground">{order.codigoCliente || 'N/A'}</div>
             </div>
           </td>
           <td className="p-4 text-sm">{format(parseISO(order.fechaPedido), "dd/MM/yyyy")} {order.horaPedido}</td>
@@ -438,7 +438,7 @@ export default function OrderStatusManagementPage() {
     const StateIcon = stateInfo?.icon || Clock
 
     return (
-        <Card key={order.idPedidocab} className={`border ${esGrupo ? 'border-amber-200 rounded-none border-x-amber-200' : 'border-gray-200'}`}>
+        <Card key={order.idPedidocab} className={`border ${esGrupo ? 'border-amber-200 rounded-none border-x-amber-200' : 'border-border'}`}>
           <CardContent className="p-4">
             <div className="flex justify-between items-start mb-3">
               <div>
@@ -446,7 +446,7 @@ export default function OrderStatusManagementPage() {
                   {esGrupo && <Link2 className="h-3.5 w-3.5 text-amber-500" />}
                   <h3 className="font-bold text-blue-600 text-sm">{order.nroPedido}</h3>
                 </div>
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-muted-foreground">
                   {format(parseISO(order.fechaPedido), "dd/MM/yyyy")} {order.horaPedido}
                 </p>
               </div>
@@ -466,17 +466,17 @@ export default function OrderStatusManagementPage() {
             <div className="space-y-2 mb-3">
               <div>
                 <p className="font-medium text-sm truncate">{order.nombreCliente}</p>
-                <p className="text-xs text-gray-500">{order.codigoCliente || 'N/A'}</p>
+                <p className="text-xs text-muted-foreground">{order.codigoCliente || 'N/A'}</p>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-xs text-gray-500">Total:</span>
+                <span className="text-xs text-muted-foreground">Total:</span>
                 <span className="font-bold text-sm">
                                 {order.monedaPedido === "PEN" ? "S/ " : "$ "}
                   {Number(order.totalPedido).toFixed(2)}
                             </span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-xs text-gray-500">Vendedor:</span>
+                <span className="text-xs text-muted-foreground">Vendedor:</span>
                 <span className="text-xs">{order.nombreVendedor || 'N/A'}</span>
               </div>
             </div>
@@ -508,18 +508,18 @@ export default function OrderStatusManagementPage() {
   return (
       <div className="grid gap-6">
         <div className="flex flex-col gap-2">
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900">Gestión de Estados de Pedidos</h1>
-          <p className="text-gray-500">Controla y gestiona el flujo de estados de todos los pedidos del sistema</p>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">Gestión de Estados de Pedidos</h1>
+          <p className="text-muted-foreground">Controla y gestiona el flujo de estados de todos los pedidos del sistema</p>
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-9 gap-2 sm:gap-4">
           <Card onClick={() => handleCardClick(-1)}
-                className={`cursor-pointer transition-all duration-200 border-2 ${filters.estado === -1 ? 'border-gray-800 ring-2 ring-gray-400 ring-offset-2 scale-105' : 'border-transparent hover:border-gray-300 hover:scale-105 opacity-80 hover:opacity-100'}`}>
+                className={`cursor-pointer transition-all duration-200 border-2 ${filters.estado === -1 ? 'border-foreground ring-2 ring-ring ring-offset-2 scale-105' : 'border-transparent hover:border-border hover:scale-105 opacity-80 hover:opacity-100'}`}>
             <CardContent className="p-2 sm:p-4 text-center">
-              <div className="inline-flex items-center justify-center w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-gray-800 text-white mb-1 sm:mb-2">
+              <div className="inline-flex items-center justify-center w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-primary text-primary-foreground mb-1 sm:mb-2">
                 <Layers className="h-3 w-3 sm:h-4 sm:w-4" />
               </div>
-              <div className="text-xs font-bold text-gray-600 mt-1">TODOS</div>
+              <div className="text-xs font-bold text-muted-foreground mt-1">TODOS</div>
             </CardContent>
           </Card>
           {ORDER_STATES.filter(item => item.id !== -1 && item.id !== -2).map((state) => {
@@ -532,7 +532,7 @@ export default function OrderStatusManagementPage() {
                     <div className={`inline-flex items-center justify-center w-6 h-6 sm:w-8 sm:h-8 rounded-full ${state.color} mb-1 sm:mb-2`}>
                       <Icon className="h-3 w-3 sm:h-4 sm:w-4" />
                     </div>
-                    <div className={`text-xs font-bold truncate ${isSelected ? 'text-gray-900' : 'text-gray-500'}`}>{state.name}</div>
+                    <div className={`text-xs font-bold truncate ${isSelected ? 'text-foreground' : 'text-muted-foreground'}`}>{state.name}</div>
                   </CardContent>
                 </Card>
             )
@@ -540,7 +540,7 @@ export default function OrderStatusManagementPage() {
         </div>
 
         <Card className="shadow-md">
-          <CardHeader className="flex flex-col sm:flex-row justify-between gap-4 sm:items-center border-b bg-gray-50">
+          <CardHeader className="flex flex-col sm:flex-row justify-between gap-4 sm:items-center border-b bg-muted">
             <CardTitle className="text-xl font-semibold text-teal-700">
               {filters.estado === -1 ? "Todos los Pedidos" : `Pedidos en estado: ${ORDER_STATES.find(s => s.id === filters.estado)?.name || 'Desconocido'}`}
             </CardTitle>
@@ -548,9 +548,9 @@ export default function OrderStatusManagementPage() {
           <CardContent className="p-0">
             <div className="p-4">
               <div className="relative w-full md:w-1/2">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input type="search" placeholder="Buscar por Id, RUC, cliente, vendedor..."
-                       className="pl-8 bg-white w-full" value={searchQuery}
+                       className="pl-8 bg-background w-full" value={searchQuery}
                        onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1) }} />
               </div>
             </div>
@@ -567,7 +567,7 @@ export default function OrderStatusManagementPage() {
             <div className="hidden lg:block overflow-x-auto">
               <table className="w-full border-collapse">
                 <thead>
-                <tr className="border-b bg-gray-50">
+                <tr className="border-b bg-muted">
                   <th className="text-left p-4 font-medium text-sm">ID Pedido</th>
                   <th className="text-left p-4 font-medium text-sm">Cliente</th>
                   <th className="text-left p-4 font-medium text-sm">Fecha</th>
@@ -613,7 +613,7 @@ export default function OrderStatusManagementPage() {
                     })
                 ) : (
                     <tr>
-                      <td colSpan={7} className="text-center py-8 text-gray-500">
+                      <td colSpan={7} className="text-center py-8 text-muted-foreground">
                         No se encontraron pedidos en estado: <b>{ORDER_STATES.find(s => s.id === filters.estado)?.name || 'Seleccionado'}</b>
                       </td>
                     </tr>
@@ -625,7 +625,7 @@ export default function OrderStatusManagementPage() {
             <div className="lg:hidden space-y-3 p-4">
               {loading ? (
                   Array.from({ length: 3 }).map((_, i) => (
-                      <Card key={i} className="border border-gray-200">
+                      <Card key={i} className="border border-border">
                         <CardContent className="p-4 space-y-3">
                           <Skeleton className="h-5 w-24" />
                           <Skeleton className="h-4 w-full" />
@@ -658,7 +658,7 @@ export default function OrderStatusManagementPage() {
                     return renderMobileCard(pedidos[0], false)
                   })
               ) : (
-                  <div className="text-center py-8 text-gray-500">No se encontraron pedidos</div>
+                  <div className="text-center py-8 text-muted-foreground">No se encontraron pedidos</div>
               )}
             </div>
           </CardContent>
@@ -673,13 +673,13 @@ export default function OrderStatusManagementPage() {
               {ORDER_STATES.filter(item => item.id !== -1 && item.id !== -2).map((state) => {
                 const Icon = state.icon
                 return (
-                    <div key={state.id} className="flex items-start gap-2 p-2 rounded-lg bg-gray-50">
+                    <div key={state.id} className="flex items-start gap-2 p-2 rounded-lg bg-muted">
                       <div className={`inline-flex items-center justify-center w-5 h-5 sm:w-6 sm:h-6 rounded-full ${state.color} flex-shrink-0`}>
                         <Icon className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="font-medium text-xs sm:text-sm truncate">{state.id}. {state.name}</div>
-                        <div className="text-xs text-gray-600 line-clamp-2 hidden sm:block">{state.description}</div>
+                        <div className="text-xs text-muted-foreground line-clamp-2 hidden sm:block">{state.description}</div>
                         <div className="text-xs font-medium text-blue-600 mt-1">📄 {state.documents}</div>
                       </div>
                     </div>

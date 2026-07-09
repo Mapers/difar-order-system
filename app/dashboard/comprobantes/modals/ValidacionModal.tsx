@@ -198,7 +198,7 @@ function comparar(sistemaData: FilaSistema[], archivoData: FilaArchivo[]): Resul
 function SummaryCard({ label, value, variant }: { label: string; value: number; variant: 'blue' | 'slate' | 'orange' | 'red' | 'green' }) {
     const colors = {
         blue  : 'border-blue-200 bg-blue-50 text-blue-700',
-        slate : 'border-slate-200 bg-slate-50 text-slate-700',
+        slate : 'border-border bg-muted text-foreground',
         orange: 'border-orange-200 bg-orange-50 text-orange-700',
         red   : 'border-red-200 bg-red-50 text-red-700',
         green : 'border-green-200 bg-green-50 text-green-700',
@@ -223,7 +223,7 @@ function CollapsibleSection({ title, badge, children, defaultOpen = true }: {
             <button
                 type="button"
                 onClick={() => setOpen(o => !o)}
-                className="w-full flex items-center justify-between px-4 py-2.5 bg-gray-50 hover:bg-gray-100 transition-colors text-sm font-medium text-gray-700"
+                className="w-full flex items-center justify-between px-4 py-2.5 bg-muted hover:bg-accent transition-colors text-sm font-medium text-foreground"
             >
                 <span className="flex items-center gap-2">
                     {title}
@@ -237,7 +237,10 @@ function CollapsibleSection({ title, badge, children, defaultOpen = true }: {
 }
 
 const TH = ({ children }: { children: React.ReactNode }) => (
-    <th className="px-3 py-2 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">{children}</th>
+    // Static slate tone (not a theme token): this header sits on a static, non-dark-aware
+    // colored `<thead>` (bg-orange-50 / bg-red-50) that never changes with the theme, so the
+    // text must stay a fixed readable shade instead of reacting to dark mode.
+    <th className="px-3 py-2 text-left text-[11px] font-semibold text-slate-500 uppercase tracking-wide whitespace-nowrap">{children}</th>
 )
 const TD = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
     <td className={`px-3 py-1.5 text-xs ${className}`}>{children}</td>
@@ -313,15 +316,15 @@ export function ValidacionModal({ open, onOpenChange, data }: ValidacionModalPro
 
                     {/* ── Form ──────────────────────────────────────────── */}
                     <div className="space-y-1">
-                        <Label className="text-xs text-gray-500">Archivo de ventas SUNAT (.xlsx / .csv / .txt)</Label>
+                        <Label className="text-xs text-muted-foreground">Archivo de ventas SUNAT (.xlsx / .csv / .txt)</Label>
                         <div
                             onDragOver={e => e.preventDefault()}
                             onDrop={handleDrop}
                             onClick={() => fileInputRef.current?.click()}
-                            className="border-2 border-dashed border-gray-200 rounded-lg px-4 py-4 cursor-pointer hover:border-blue-400 hover:bg-blue-50/30 transition-colors flex items-center gap-3"
+                            className="border-2 border-dashed border-border rounded-lg px-4 py-4 cursor-pointer hover:border-blue-400 hover:bg-blue-50/30 transition-colors flex items-center gap-3"
                         >
-                            <Upload className="h-5 w-5 text-gray-400 shrink-0" />
-                            <span className="text-sm text-gray-500 truncate">
+                            <Upload className="h-5 w-5 text-muted-foreground shrink-0" />
+                            <span className="text-sm text-muted-foreground truncate">
                                 {file
                                     ? <span className="text-blue-700 font-medium">{file.name}</span>
                                     : 'Arrastra el archivo o haz clic para seleccionar'
@@ -398,9 +401,9 @@ export function ValidacionModal({ open, onOpenChange, data }: ValidacionModalPro
                                                 <TH>Total</TH>
                                             </tr>
                                         </thead>
-                                        <tbody className="divide-y divide-gray-100">
+                                        <tbody className="divide-y divide-border">
                                             {resultado.soloEnSistema.map((f, i) => (
-                                                <tr key={f.key} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50/60'}>
+                                                <tr key={f.key} className={i % 2 === 0 ? 'bg-background' : 'bg-muted/60'}>
                                                     <TD>{f.serie}</TD>
                                                     <TD>{f.numero}</TD>
                                                     <TD>{f.tipoDoc}</TD>
@@ -431,12 +434,12 @@ export function ValidacionModal({ open, onOpenChange, data }: ValidacionModalPro
                                                 <TH>Diferencia</TH>
                                             </tr>
                                         </thead>
-                                        <tbody className="divide-y divide-gray-100">
+                                        <tbody className="divide-y divide-border">
                                             {resultado.diferencias.map((d, i) => (
-                                                <tr key={`${d.key}-${d.campo}`} className={i % 2 === 0 ? 'bg-white' : 'bg-red-50/30'}>
+                                                <tr key={`${d.key}-${d.campo}`} className={i % 2 === 0 ? 'bg-background' : 'bg-red-50/30'}>
                                                     <TD>{d.serie}</TD>
                                                     <TD>{d.numero}</TD>
-                                                    <TD className="font-medium text-gray-700">{d.campo}</TD>
+                                                    <TD className="font-medium text-foreground">{d.campo}</TD>
                                                     <TD className="text-right tabular-nums">{d.sistemaValor.toFixed(2)}</TD>
                                                     <TD className="text-right tabular-nums">{d.archivoValor.toFixed(2)}</TD>
                                                     <TD className={`text-right tabular-nums font-semibold ${d.diferencia > 0 ? 'text-orange-600' : 'text-red-600'}`}>

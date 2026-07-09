@@ -251,10 +251,10 @@ export function GuiaTransportista({
         <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-orange-500 to-red-500 rounded-2xl mb-4 shadow-lg">
           <Truck className="h-8 w-8 text-white" />
         </div>
-        <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent mb-2">
+        <h1 className="text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent mb-2">
           Guía de Transportista Electrónica
         </h1>
-        <p className="text-gray-600">Complete los datos requeridos para generar la guía</p>
+        <p className="text-muted-foreground">Complete los datos requeridos para generar la guía</p>
       </div>
 
       {/* Sección principal en 2 columnas */}
@@ -563,7 +563,7 @@ export function GuiaTransportista({
                 </div>
 
                 {vehiculosSecundarios.map((vehiculo, index) => (
-                  <div key={index} className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 bg-gray-50 rounded">
+                  <div key={index} className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 bg-muted rounded">
                     <div className="space-y-2">
                       <Label>Placa</Label>
                       <Input
@@ -686,7 +686,7 @@ export function GuiaTransportista({
                 </div>
 
                 {conductoresSecundarios.map((conductor, index) => (
-                  <div key={index} className="space-y-4 p-4 bg-gray-50 rounded">
+                  <div key={index} className="space-y-4 p-4 bg-muted rounded">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label>Tipo de documento</Label>
@@ -844,28 +844,28 @@ export function GuiaTransportista({
         </CardHeader>
         <CardContent className="p-6">
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+            <table className="min-w-full divide-y divide-border">
+              <thead className="bg-muted">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Código</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Descripción</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cantidad</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Unidad</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Código</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Descripción</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Cantidad</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Unidad</th>
               </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-background divide-y divide-border">
               {productos.map((producto, index) => (
                 <tr key={index}>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-foreground">
                     {producto.codigoitemPedido}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-foreground">
                     {producto.productoNombre}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-foreground">
                     {producto.cantPedido}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-foreground">
                     <Select
                       value={producto.productoUnidad}
                       onValueChange={(value) => {

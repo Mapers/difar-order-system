@@ -66,8 +66,8 @@ export default function ProcesarNotaCreditoPage() {
     return (
         <div className="grid gap-6">
             <div className="flex flex-col gap-2">
-                <h1 className="text-3xl font-bold tracking-tight text-gray-900">Procesar Nota de Crédito</h1>
-                <p className="text-gray-500">Registra el asiento contable que aplica una nota de crédito contra un comprobante.</p>
+                <h1 className="text-3xl font-bold tracking-tight text-foreground">Procesar Nota de Crédito</h1>
+                <p className="text-muted-foreground">Registra el asiento contable que aplica una nota de crédito contra un comprobante.</p>
             </div>
 
             <CabeceraAsientoForm

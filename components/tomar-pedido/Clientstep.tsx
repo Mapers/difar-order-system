@@ -89,8 +89,8 @@ export default function ClientStep({
     const [sellerModalOpen, setSellerModalOpen] = useState(false)
 
     return (
-        <Card className="shadow-md bg-white">
-            <CardHeader className="border-b bg-gray-50 dark:bg-gray-800/50 dark:border-gray-800">
+        <Card className="shadow-md bg-background">
+            <CardHeader className="border-b bg-muted">
                 <div className="flex items-center gap-2">
                     <div className="p-1.5 bg-blue-100 dark:bg-blue-900/40 rounded-md">
                         <User className="h-4 w-4 text-blue-600 dark:text-blue-400" />
@@ -125,7 +125,7 @@ export default function ClientStep({
                                 size="sm"
                                 variant="outline"
                                 onClick={() => onClientSelect(null)}
-                                className="h-7 px-3 text-xs text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-700 hover:bg-blue-100 dark:hover:bg-blue-900/40 bg-white dark:bg-transparent"
+                                className="h-7 px-3 text-xs text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-700 hover:bg-blue-100 dark:hover:bg-blue-900/40 bg-background dark:bg-transparent"
                             >
                                 Cambiar cliente
                             </Button>
@@ -135,7 +135,7 @@ export default function ClientStep({
 
                 {!selectedClient && (
                     <div className="space-y-2">
-                        <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        <Label className="text-sm font-medium text-muted-foreground">
                             Buscar cliente
                         </Label>
 
@@ -144,19 +144,19 @@ export default function ClientStep({
                             variant="outline"
                             onClick={() => setClientModalOpen(true)}
                             disabled={loadingClients}
-                            className="w-full justify-start h-11 px-3 text-left font-normal text-sm bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-white dark:hover:bg-gray-700 hover:border-blue-400 dark:hover:border-blue-500 transition-all duration-200 dark:text-gray-100 overflow-hidden disabled:opacity-60 disabled:cursor-not-allowed"
+                            className="w-full justify-start h-11 px-3 text-left font-normal text-sm bg-muted border-border hover:bg-background hover:border-blue-400 dark:hover:border-blue-500 transition-all duration-200 overflow-hidden disabled:opacity-60 disabled:cursor-not-allowed"
                         >
                             {loadingClients ? (
                                 <>
-                                    <Loader2 className="mr-2 h-4 w-4 shrink-0 text-gray-400 animate-spin" />
-                                    <span className="truncate text-gray-400 dark:text-gray-500 font-normal">
+                                    <Loader2 className="mr-2 h-4 w-4 shrink-0 text-muted-foreground animate-spin" />
+                                    <span className="truncate text-muted-foreground font-normal">
                         Cargando clientes...
                       </span>
                                 </>
                             ) : (
                                 <>
-                                    <Search className="mr-2 h-4 w-4 shrink-0 text-gray-400" />
-                                    <span className="truncate text-gray-400 dark:text-gray-500 font-normal">
+                                    <Search className="mr-2 h-4 w-4 shrink-0 text-muted-foreground" />
+                                    <span className="truncate text-muted-foreground font-normal">
                         Buscar por RUC, DNI o nombre...
                       </span>
                                 </>
@@ -197,20 +197,20 @@ export default function ClientStep({
                                     </div>
 
                                     <div className="flex flex-col flex-1 min-w-0 gap-0.5">
-                    <span className="font-semibold text-sm text-gray-900 dark:text-gray-100 line-clamp-1 leading-tight">
+                    <span className="font-semibold text-sm text-foreground line-clamp-1 leading-tight">
                       {c.Nombre}
                     </span>
 
                                         {c.NombreComercial && (
-                                            <span className="text-xs text-gray-500 dark:text-gray-400 line-clamp-1">
+                                            <span className="text-xs text-muted-foreground line-clamp-1">
                         {c.NombreComercial}
                       </span>
                                         )}
 
                                         <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-0.5">
                                             {c.RUC && (
-                                                <span className="text-xs text-gray-500 dark:text-gray-400">
-                          <span className="font-medium text-gray-600 dark:text-gray-300">
+                                                <span className="text-xs text-muted-foreground">
+                          <span className="font-medium text-muted-foreground">
                             RUC:
                           </span>{' '}
                                                     {c.RUC}
@@ -218,7 +218,7 @@ export default function ClientStep({
                                             )}
 
                                             {c.Dirección && (
-                                                <span className="text-xs text-gray-400 dark:text-gray-500 line-clamp-1 flex items-center gap-1">
+                                                <span className="text-xs text-muted-foreground line-clamp-1 flex items-center gap-1">
                           <MapPin className="h-3 w-3 shrink-0" />
                                                     {c.Dirección}
                         </span>
@@ -233,7 +233,7 @@ export default function ClientStep({
 
                 {selectedClient && isAdmin && (
                     <div className="space-y-1.5">
-                        <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        <Label className="text-sm font-medium text-muted-foreground">
                             Vendedor
                         </Label>
 
@@ -263,7 +263,7 @@ export default function ClientStep({
                                             onSellerSelect(null)
                                             onSellerSearch('')
                                         }}
-                                        className="h-7 px-3 text-xs text-indigo-600 dark:text-indigo-400 border-indigo-200 dark:border-indigo-700 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 bg-white dark:bg-transparent"
+                                        className="h-7 px-3 text-xs text-indigo-600 dark:text-indigo-400 border-indigo-200 dark:border-indigo-700 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 bg-background dark:bg-transparent"
                                     >
                                         Cambiar vendedor
                                     </Button>
@@ -274,10 +274,10 @@ export default function ClientStep({
                                 type="button"
                                 variant="outline"
                                 onClick={() => setSellerModalOpen(true)}
-                                className="w-full justify-start h-11 px-3 text-left font-normal text-sm bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-white dark:hover:bg-gray-700 hover:border-indigo-400 dark:hover:border-indigo-500 transition-all duration-200 dark:text-gray-100"
+                                className="w-full justify-start h-11 px-3 text-left font-normal text-sm bg-muted border-border hover:bg-background hover:border-indigo-400 dark:hover:border-indigo-500 transition-all duration-200"
                             >
-                                <Search className="mr-2 h-4 w-4 shrink-0 text-gray-400" />
-                                <span className="truncate text-gray-400 dark:text-gray-500 font-normal">
+                                <Search className="mr-2 h-4 w-4 shrink-0 text-muted-foreground" />
+                                <span className="truncate text-muted-foreground font-normal">
                   Buscar vendedor...
                 </span>
                             </Button>
@@ -306,7 +306,7 @@ export default function ClientStep({
                                     </div>
 
                                     <div className="flex-1 min-w-0">
-                                        <p className="font-semibold text-sm text-gray-900 dark:text-gray-100 truncate">
+                                        <p className="font-semibold text-sm text-foreground truncate">
                                             {s.nombres} {s.apellidos}
                                         </p>
                                         <p className="text-xs text-indigo-600 dark:text-indigo-400 font-mono">
@@ -354,7 +354,7 @@ export default function ClientStep({
                 )}
             </CardContent>
 
-            <CardFooter className="flex justify-between border-t bg-gray-50 py-4 gap-2 px-3 sm:px-6">
+            <CardFooter className="flex justify-between border-t bg-muted py-4 gap-2 px-3 sm:px-6">
                 <Button
                     type="button"
                     onClick={handleSaveDraft}

@@ -39,8 +39,8 @@ export function PendientesList({ pedidos, loading, onInvoice, onDelete, onViewDe
         return (
             <div className="text-center py-8">
                 <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">¡Excelente!</h3>
-                <p className="text-gray-600">No hay pedidos pendientes por facturar</p>
+                <h3 className="text-lg font-medium text-foreground mb-2">¡Excelente!</h3>
+                <p className="text-muted-foreground">No hay pedidos pendientes por facturar</p>
             </div>
         )
     }
@@ -53,7 +53,7 @@ export function PendientesList({ pedidos, loading, onInvoice, onDelete, onViewDe
                         <div className="flex flex-col gap-4">
                             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                                 <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                                    <h3 className="text-base sm:text-lg font-semibold text-gray-900">{pedido.nroPedido}</h3>
+                                    <h3 className="text-base sm:text-lg font-semibold text-orange-900">{pedido.nroPedido}</h3>
                                     {pedido.errorObservaciones ? (
                                         <Badge className="bg-red-100 text-red-800 text-xs w-fit">
                                             <AlertTriangle className="h-3 w-3 mr-1" />
@@ -115,36 +115,36 @@ export function PendientesList({ pedidos, loading, onInvoice, onDelete, onViewDe
 
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 text-xs sm:text-sm">
                                 <div className="flex items-center gap-2">
-                                    <Calendar className="h-3 w-3 sm:h-4 sm:w-4 text-gray-500 flex-shrink-0" />
-                                    <span className="text-gray-600">Fecha:</span>
+                                    <Calendar className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
+                                    <span className="text-muted-foreground">Fecha:</span>
                                     <span className="font-medium">{format(parseISO(pedido.fechaPedido), "dd/MM/yyyy")}</span>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    <User className="h-3 w-3 sm:h-4 sm:w-4 text-gray-500 flex-shrink-0" />
-                                    <span className="text-gray-600">Cliente:</span>
+                                    <User className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
+                                    <span className="text-muted-foreground">Cliente:</span>
                                     <span className="font-medium truncate">{pedido.nombreCliente}</span>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    <Wallet className="h-3 w-3 sm:h-4 sm:w-4 text-gray-500 flex-shrink-0" />
-                                    <span className="text-gray-600">Total:</span>
+                                    <Wallet className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
+                                    <span className="text-muted-foreground">Total:</span>
                                     <span className="font-bold text-green-600">{pedido.monedaPedido === 'PEN' ? 'S/ ' : '$ '} {Number(pedido.totalPedido).toFixed(2)}</span>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    <Package className="h-3 w-3 sm:h-4 sm:w-4 text-gray-500 flex-shrink-0" />
-                                    <span className="text-gray-600">Productos:</span>
+                                    <Package className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
+                                    <span className="text-muted-foreground">Productos:</span>
                                     {pedido.cantidadPedidos}
                                 </div>
                             </div>
 
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 text-xs sm:text-sm">
                                 <div className="flex items-center gap-2">
-                                    <Receipt className="h-3 w-3 sm:h-4 sm:w-4 text-gray-500 flex-shrink-0" />
-                                    <span className="text-gray-600">Documento:</span>
+                                    <Receipt className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
+                                    <span className="text-muted-foreground">Documento:</span>
                                     <span className="font-medium">{pedido.codigoCliente}</span>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    <Clock className="h-3 w-3 sm:h-4 sm:w-4 text-gray-500 flex-shrink-0" />
-                                    <span className="text-gray-600">Condición:</span>
+                                    <Clock className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
+                                    <span className="text-muted-foreground">Condición:</span>
                                     <span className="font-medium">{pedido.condicionPedido}</span>
                                 </div>
                             </div>

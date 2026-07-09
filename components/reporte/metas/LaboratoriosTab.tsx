@@ -97,12 +97,12 @@ export default function LaboratoriosTab({
                 <CardContent className="p-4 space-y-3">
                     <div className="flex flex-col sm:flex-row gap-2">
                         <div className="relative flex-1">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                             <Input
                                 placeholder="Buscar laboratorio..."
                                 value={search}
                                 onChange={e => setSearch(e.target.value)}
-                                className="pl-10 bg-slate-50"
+                                className="pl-10 bg-muted"
                             />
                         </div>
                         {showSelector && (
@@ -110,7 +110,7 @@ export default function LaboratoriosTab({
                                 value={selectorValue || "__all__"}
                                 onValueChange={v => onSelectorChange?.(v === "__all__" ? "" : v)}
                             >
-                                <SelectTrigger className="h-10 text-sm bg-white sm:w-[220px]">
+                                <SelectTrigger className="h-10 text-sm bg-background sm:w-[220px]">
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -124,33 +124,33 @@ export default function LaboratoriosTab({
                     </div>
                     <div className="flex flex-wrap items-center justify-between gap-2">
                         <div className="flex items-center gap-1.5 flex-wrap">
-                            <span className="text-[11px] text-slate-400">Filtrar:</span>
+                            <span className="text-[11px] text-muted-foreground">Filtrar:</span>
                             {filterBtns.map(btn => (
                                 <Button key={btn.key} variant="outline" size="sm"
-                                        className={`text-[11px] h-7 px-3 ${filter === btn.key ? btn.activeClass : "text-slate-500"}`}
+                                        className={`text-[11px] h-7 px-3 ${filter === btn.key ? btn.activeClass : "text-muted-foreground"}`}
                                         onClick={() => setFilter(btn.key)}>
                                     {btn.label}
                                 </Button>
                             ))}
                         </div>
                         <div className="flex items-center gap-1.5 flex-wrap">
-                            <span className="text-[11px] text-slate-400">Ordenar:</span>
+                            <span className="text-[11px] text-muted-foreground">Ordenar:</span>
                             {sortBtns.map(btn => (
                                 <Button key={btn.key} variant="outline" size="sm"
-                                        className={`text-[11px] h-7 px-3 ${sort === btn.key ? "bg-sky-600 text-white border-sky-600" : "text-slate-500"}`}
+                                        className={`text-[11px] h-7 px-3 ${sort === btn.key ? "bg-sky-600 text-white border-sky-600" : "text-muted-foreground"}`}
                                         onClick={() => setSort(btn.key)}>
                                     {btn.label}
                                 </Button>
                             ))}
                         </div>
                     </div>
-                    <p className="text-[11px] text-slate-400">{filtered.length} de {laboratorios.length} laboratorios</p>
+                    <p className="text-[11px] text-muted-foreground">{filtered.length} de {laboratorios.length} laboratorios</p>
                 </CardContent>
             </Card>
 
             <div className="lg:hidden space-y-3">
                 {filtered.length === 0 ? (
-                    <Card><CardContent className="py-8 text-center text-slate-400 text-sm">Sin resultados</CardContent></Card>
+                    <Card><CardContent className="py-8 text-center text-muted-foreground text-sm">Sin resultados</CardContent></Card>
                 ) : filtered.map((l, i) => {
                     const [c1] = getStatusColor(l.pct);
                     const color = getLabColor(i);
@@ -179,29 +179,29 @@ export default function LaboratoriosTab({
 
                                 <div className="space-y-1">
                                     <div className="flex justify-between items-center">
-                                        <span className="text-[11px] text-slate-500">Avance</span>
+                                        <span className="text-[11px] text-muted-foreground">Avance</span>
                                         <span className="text-sm font-bold" style={{ color: c1 }}>{l.pct}%</span>
                                     </div>
                                     <ProgressBar pct={l.pct} height="h-2" />
                                 </div>
 
-                                <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-100">
+                                <div className="grid grid-cols-2 gap-2 pt-1 border-t border-border">
                                     <div>
-                                        <p className="text-[10px] text-slate-400 uppercase tracking-wide">Venta</p>
-                                        <p className="text-sm font-bold text-slate-800">{fmtMoney(Number(l.venta_real))}</p>
+                                        <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Venta</p>
+                                        <p className="text-sm font-bold text-card-foreground">{fmtMoney(Number(l.venta_real))}</p>
                                     </div>
                                     <div>
-                                        <p className="text-[10px] text-slate-400 uppercase tracking-wide">Cuota</p>
-                                        <p className="text-sm font-semibold text-slate-500">{fmtMoney(Number(l.meta_monto))}</p>
+                                        <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Cuota</p>
+                                        <p className="text-sm font-semibold text-muted-foreground">{fmtMoney(Number(l.meta_monto))}</p>
                                     </div>
                                     <div>
-                                        <p className="text-[10px] text-slate-400 uppercase tracking-wide">Clientes</p>
-                                        <p className="text-sm font-semibold text-slate-700">
+                                        <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Clientes</p>
+                                        <p className="text-sm font-semibold text-card-foreground">
                                             {Number(l.clientes_atendidos)}/{Number(l.meta_clientes)}
                                         </p>
                                     </div>
                                     <div>
-                                        <p className="text-[10px] text-slate-400 uppercase tracking-wide">Pendiente</p>
+                                        <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Pendiente</p>
                                         <p className="text-sm font-semibold" style={{ color: c1 }}>
                                             {pendiente > 0 ? fmtMoney(pendiente) : "✓ Logrado"}
                                         </p>
@@ -218,24 +218,24 @@ export default function LaboratoriosTab({
                     <div className="overflow-x-auto">
                         <table className="w-full text-xs min-w-[560px]">
                             <thead>
-                            <tr className="border-b border-slate-200 bg-slate-50">
-                                <th className="text-left px-3 py-2.5 text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Laboratorio</th>
-                                <th className="text-left px-3 py-2.5 text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Clientes</th>
-                                <th className="text-left px-3 py-2.5 text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Venta S/</th>
-                                <th className="text-left px-3 py-2.5 text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Cuota S/</th>
-                                <th className="text-left px-3 py-2.5 text-[10px] uppercase tracking-wider text-slate-400 font-semibold">%</th>
-                                <th className="text-left px-3 py-2.5 text-[10px] uppercase tracking-wider text-slate-400 font-semibold min-w-[130px]">Avance</th>
-                                <th className="text-left px-3 py-2.5 text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Estado</th>
+                            <tr className="border-b border-border bg-muted">
+                                <th className="text-left px-3 py-2.5 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Laboratorio</th>
+                                <th className="text-left px-3 py-2.5 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Clientes</th>
+                                <th className="text-left px-3 py-2.5 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Venta S/</th>
+                                <th className="text-left px-3 py-2.5 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Cuota S/</th>
+                                <th className="text-left px-3 py-2.5 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">%</th>
+                                <th className="text-left px-3 py-2.5 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold min-w-[130px]">Avance</th>
+                                <th className="text-left px-3 py-2.5 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Estado</th>
                             </tr>
                             </thead>
                             <tbody>
                             {filtered.length === 0 ? (
-                                <tr><td colSpan={7} className="text-center text-slate-400 py-8">Sin resultados</td></tr>
+                                <tr><td colSpan={7} className="text-center text-muted-foreground py-8">Sin resultados</td></tr>
                             ) : filtered.map((l, i) => {
                                 const [c1] = getStatusColor(l.pct);
                                 const color = getLabColor(i);
                                 return (
-                                    <tr key={l.id_linea_ge} className="border-b border-slate-50 hover:bg-slate-50 transition-colors">
+                                    <tr key={l.id_linea_ge} className="border-b border-border hover:bg-muted transition-colors">
                                         <td className="px-3 py-2.5">
                                             <div className="flex items-center gap-2">
                                                 <div
@@ -247,9 +247,9 @@ export default function LaboratoriosTab({
                                                 <b style={{ color }}>{l.nombre_lab || `Lab ${l.id_linea_ge}`}</b>
                                             </div>
                                         </td>
-                                        <td className="px-3 py-2.5 text-slate-400">{Number(l.clientes_atendidos)}/{Number(l.meta_clientes)}</td>
+                                        <td className="px-3 py-2.5 text-muted-foreground">{Number(l.clientes_atendidos)}/{Number(l.meta_clientes)}</td>
                                         <td className="px-3 py-2.5 font-semibold">{fmtMoney(Number(l.venta_real))}</td>
-                                        <td className="px-3 py-2.5 text-slate-400">{fmtMoney(Number(l.meta_monto))}</td>
+                                        <td className="px-3 py-2.5 text-muted-foreground">{fmtMoney(Number(l.meta_monto))}</td>
                                         <td className="px-3 py-2.5 font-bold" style={{ color: c1 }}>{l.pct}%</td>
                                         <td className="px-3 py-2.5"><ProgressBar pct={l.pct} height="h-1.5" /></td>
                                         <td className="px-3 py-2.5"><StatusChip pct={l.pct} /></td>

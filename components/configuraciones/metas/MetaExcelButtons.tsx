@@ -131,7 +131,7 @@ export function MetaExcelButtons({
               {summary.errores.length > 0 && (
                 <div className="text-red-600">
                   <p>❌ Con error: <b>{summary.errores.length}</b></p>
-                  <div className="mt-1 max-h-40 overflow-y-auto rounded border bg-slate-50 p-2 text-xs text-slate-700">
+                  <div className="mt-1 max-h-40 overflow-y-auto rounded border bg-muted p-2 text-xs text-foreground">
                     {summary.errores.map((er, i) => (
                       <p key={i}>Fila {er.fila}: {er.motivo}</p>
                     ))}
@@ -139,7 +139,7 @@ export function MetaExcelButtons({
                 </div>
               )}
               {summary.creados === 0 && summary.omitidas === 0 && summary.errores.length === 0 && (
-                <p className="text-slate-500">No se encontraron filas para importar.</p>
+                <p className="text-muted-foreground">No se encontraron filas para importar.</p>
               )}
             </div>
           )}

@@ -309,7 +309,7 @@ export const ExportExpiredBalancesPdf: React.FC<ExportPdfProps> = ({ data, disab
     };
 
     return (
-        <Button variant="outline" className="bg-white shadow-sm hover:bg-slate-50 border-slate-200" onClick={generatePdf} disabled={loading || disabled}>
+        <Button variant="outline" className="bg-background shadow-sm hover:bg-muted border-border" onClick={generatePdf} disabled={loading || disabled}>
             {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
             {loading ? "Generando PDF..." : "Exportar PDF"}
         </Button>

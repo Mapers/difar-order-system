@@ -144,23 +144,23 @@ export function CreditNotesTable({
     return (
         <>
             <div className="hidden lg:block">
-                <Card className="bg-white shadow-sm">
+                <Card className="bg-background shadow-sm">
                     <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-200">
-                            <thead className="bg-gray-50">
+                        <table className="min-w-full divide-y divide-border">
+                            <thead className="bg-muted">
                             <tr>
-                                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha Emisión</th>
-                                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tipo</th>
-                                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Serie/Número</th>
-                                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Vendedor</th>
-                                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cliente</th>
-                                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Documento</th>
-                                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total</th>
-                                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estado</th>
-                                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Acciones</th>
+                                <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Fecha Emisión</th>
+                                <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Tipo</th>
+                                <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Serie/Número</th>
+                                <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Vendedor</th>
+                                <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Cliente</th>
+                                <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Documento</th>
+                                <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Total</th>
+                                <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Estado</th>
+                                <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Acciones</th>
                             </tr>
                             </thead>
-                            <tbody className="bg-white divide-y divide-gray-200">
+                            <tbody className="bg-background divide-y divide-border">
                             {notas.length > 0 ? (
                                 notas.map((nota) => {
                                     const noUtilizado = esNoUtilizado(nota)
@@ -184,14 +184,14 @@ export function CreditNotesTable({
                                             <td className="p-4 text-sm">{nota.cliente_numdoc ?? "—"}</td>
                                             <td className="p-4 font-medium text-sm text-red-600">
                                                 {noUtilizado
-                                                    ? <span className="text-gray-400">—</span>
+                                                    ? <span className="text-muted-foreground">—</span>
                                                     : <>{nota.moneda === 1 ? 'S/ ' : '$ '} -{Number(nota.total ?? 0).toFixed(2)}</>
                                                 }
                                             </td>
                                             <td className="p-4">{getEstadoBadge(nota)}</td>
                                             <td className="p-4">
                                                 {noUtilizado ? (
-                                                    <span className="text-xs text-gray-400 flex items-center gap-1">
+                                                    <span className="text-xs text-muted-foreground flex items-center gap-1">
                                                     <Ban className="h-3 w-3" /> Sin acciones
                                                 </span>
                                                 ) : (
@@ -206,10 +206,10 @@ export function CreditNotesTable({
                                                             </DropdownMenuTrigger>
                                                             <DropdownMenuContent align="end" className="w-56">
                                                                 <DropdownMenuItem onClick={() => handleViewJson('JSON Solicitud (Request)', nota.raw_request)}>
-                                                                    <Code className="mr-2 h-4 w-4 text-gray-500" /> JSON Solicitud
+                                                                    <Code className="mr-2 h-4 w-4 text-muted-foreground" /> JSON Solicitud
                                                                 </DropdownMenuItem>
                                                                 <DropdownMenuItem onClick={() => handleViewJson('JSON Respuesta (Response)', nota.raw_response)}>
-                                                                    <FileJson className="mr-2 h-4 w-4 text-gray-500" /> JSON Respuesta
+                                                                    <FileJson className="mr-2 h-4 w-4 text-muted-foreground" /> JSON Respuesta
                                                                 </DropdownMenuItem>
 
                                                                 {isAdmin && (
@@ -244,7 +244,7 @@ export function CreditNotesTable({
                                     )
                                 })
                             ) : (
-                                <tr><td colSpan={9} className="text-center py-8 text-gray-500">No se encontraron notas de crédito</td></tr>
+                                <tr><td colSpan={9} className="text-center py-8 text-muted-foreground">No se encontraron notas de crédito</td></tr>
                             )}
                             </tbody>
                         </table>
@@ -266,10 +266,10 @@ export function CreditNotesTable({
                                             <div>
                                                 <div className="flex items-center gap-2 mb-1">
                                                     <FileDiff className={`h-4 w-4 ${noUtilizado ? 'text-amber-500' : 'text-blue-500'}`} />
-                                                    <span className="font-semibold text-gray-900">{nota.serie}-{nota.numero}</span>
+                                                    <span className="font-semibold text-card-foreground">{nota.serie}-{nota.numero}</span>
                                                     {getEstadoBadge(nota)}
                                                 </div>
-                                                <p className="text-sm text-gray-600">{formatFecha(nota.fecha_envio)}</p>
+                                                <p className="text-sm text-muted-foreground">{formatFecha(nota.fecha_envio)}</p>
                                             </div>
                                             <div className="text-right">
                                                 {noUtilizado ? (
@@ -279,19 +279,19 @@ export function CreditNotesTable({
                                                         <p className="text-lg font-bold text-red-600">
                                                             {nota.moneda === 1 ? 'S/ ' : '$ '} -{Number(nota.total ?? 0).toFixed(2)}
                                                         </p>
-                                                        <p className="text-xs text-gray-500">Total Devuelto</p>
+                                                        <p className="text-xs text-muted-foreground">Total Devuelto</p>
                                                     </>
                                                 )}
                                             </div>
                                         </div>
                                         <div className="border-t pt-3">
                                             {nota.Vendedor && (
-                                                <p className="text-xs text-gray-500 mb-0.5">Vend: {nota.Vendedor}</p>
+                                                <p className="text-xs text-muted-foreground mb-0.5">Vend: {nota.Vendedor}</p>
                                             )}
-                                            <p className={`font-medium truncate ${noUtilizado ? 'italic text-amber-700' : 'text-gray-900'}`}>
+                                            <p className={`font-medium truncate ${noUtilizado ? 'italic text-amber-700' : 'text-card-foreground'}`}>
                                                 {nota.cliente_denominacion}
                                             </p>
-                                            <p className="text-sm text-gray-600">{nota.cliente_numdoc ?? "—"}</p>
+                                            <p className="text-sm text-muted-foreground">{nota.cliente_numdoc ?? "—"}</p>
                                         </div>
 
                                         {!noUtilizado && (
@@ -311,10 +311,10 @@ export function CreditNotesTable({
                                                             </DropdownMenuItem>
                                                         )}
                                                         <DropdownMenuItem onClick={() => handleViewJson('JSON Solicitud (Request)', nota.raw_request)}>
-                                                            <Code className="mr-2 h-4 w-4 text-gray-500" /> JSON Solicitud
+                                                            <Code className="mr-2 h-4 w-4 text-muted-foreground" /> JSON Solicitud
                                                         </DropdownMenuItem>
                                                         <DropdownMenuItem onClick={() => handleViewJson('JSON Respuesta (Response)', nota.raw_response)}>
-                                                            <FileJson className="mr-2 h-4 w-4 text-gray-500" /> JSON Respuesta
+                                                            <FileJson className="mr-2 h-4 w-4 text-muted-foreground" /> JSON Respuesta
                                                         </DropdownMenuItem>
 
                                                         {isAdmin && (
@@ -350,7 +350,7 @@ export function CreditNotesTable({
                         )
                     })
                 ) : (
-                    <div className="text-center py-8 text-gray-500">No se encontraron notas de crédito</div>
+                    <div className="text-center py-8 text-muted-foreground">No se encontraron notas de crédito</div>
                 )}
             </div>
 

@@ -34,9 +34,9 @@ export const UsuariosWebTab = ({ usuarios, roles, isMobile, onRefresh }: { usuar
                     ))}
                 </div>
             ) : (
-                <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50"><tr>
-                        {['Nombre', 'Documento', 'Celular', 'Rol', 'Estado', 'Acciones'].map(h => <th key={h} className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">{h}</th>)}
+                <table className="min-w-full divide-y divide-border">
+                    <thead className="bg-muted"><tr>
+                        {['Nombre', 'Documento', 'Celular', 'Rol', 'Estado', 'Acciones'].map(h => <th key={h} className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase">{h}</th>)}
                     </tr></thead>
                     <tbody>
                     {usuarios.map(u => (
@@ -79,9 +79,9 @@ export const VendedoresTab = ({ vendedores, isMobile, onRefresh }: { vendedores:
                     ))}
                 </div>
             ) : (
-                <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50"><tr>
-                        {['Código', 'Nombre', 'DNI', 'Teléfono', 'Estado', 'Acciones'].map(h => <th key={h} className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">{h}</th>)}
+                <table className="min-w-full divide-y divide-border">
+                    <thead className="bg-muted"><tr>
+                        {['Código', 'Nombre', 'DNI', 'Teléfono', 'Estado', 'Acciones'].map(h => <th key={h} className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase">{h}</th>)}
                     </tr></thead>
                     <tbody>
                     {vendedores.map(v => (
@@ -103,8 +103,8 @@ export const UsuariosGeneralesTab = ({ usuarios, isMobile, onRefresh }: { usuari
     const [selected, setSelected] = useState<UsuarioNoWeb | null>(null);
     return (
         <Card><CardContent className="p-0">
-            <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50"><tr>{['Nombre', 'Emp. Registro', 'Observación', 'Acciones'].map(h => <th key={h} className="px-3 py-3 text-left text-xs text-gray-500 uppercase">{h}</th>)}</tr></thead>
+            <table className="min-w-full divide-y divide-border">
+                <thead className="bg-muted"><tr>{['Nombre', 'Emp. Registro', 'Observación', 'Acciones'].map(h => <th key={h} className="px-3 py-3 text-left text-xs text-muted-foreground uppercase">{h}</th>)}</tr></thead>
                 <tbody>
                 {usuarios.map(u => (
                     <tr key={u.IdUsuarios}>
@@ -126,11 +126,11 @@ export const RepresentantesTab = ({ representantes, vendedores, laboratorios, is
         <Card>
             <CardContent className="p-0">
                 <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50">
+                    <table className="min-w-full divide-y divide-border">
+                        <thead className="bg-muted">
                         <tr>
                             {['Código', 'Nombre', 'Vendedores', 'Laboratorios', 'Asignado a vendedor', 'Estado', 'Acciones'].map(h =>
-                                <th key={h} className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">{h}</th>
+                                <th key={h} className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase">{h}</th>
                             )}
                         </tr>
                         </thead>
@@ -152,13 +152,13 @@ export const RepresentantesTab = ({ representantes, vendedores, laboratorios, is
                                         {r.LaboratoriosAsociados?.map((lab: any, idx: number) => (
                                             <span key={idx} className="bg-blue-100 text-blue-800 text-[10px] px-2 py-0.5 rounded-full whitespace-nowrap">{lab.nombre}</span>
                                         ))}
-                                        {(!r.LaboratoriosAsociados || r.LaboratoriosAsociados.length === 0) && <span className="text-gray-400 text-xs">Ninguno</span>}
+                                        {(!r.LaboratoriosAsociados || r.LaboratoriosAsociados.length === 0) && <span className="text-muted-foreground text-xs">Ninguno</span>}
                                     </div>
                                 </td>
                                 <td className="p-4 text-sm">
                                     {(() => {
                                         const codRel = r.VendedorRelacion ?? r.vendedorRelacion;
-                                        if (!codRel) return <span className="text-gray-400 text-xs uppercase">Sin relación</span>;
+                                        if (!codRel) return <span className="text-muted-foreground text-xs uppercase">Sin relación</span>;
                                         const vend = (vendedores || []).find((v: any) => v.codigo === codRel);
                                         return (
                                             <span className="bg-emerald-100 text-emerald-800 text-[10px] px-2 py-0.5 rounded-full whitespace-nowrap">

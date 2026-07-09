@@ -75,10 +75,10 @@ const ModalBonification: React.FC<ModalBonificationProps> = ({
                   <Gift className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-600" />
                 </div>
                 <div>
-                  <h4 className="font-medium text-gray-900 text-sm sm:text-base">
+                  <h4 className="font-medium text-yellow-900 text-sm sm:text-base">
                     ¡Este producto tiene bonificaciones disponibles!
                   </h4>
-                  <p className="text-xs sm:text-sm text-gray-600 mt-1">
+                  <p className="text-xs sm:text-sm text-yellow-900 mt-1">
                     Por la compra de{" "}
                     <span className="font-medium">{currentBonification.cantidadSolicitada} unidades</span> de{" "}
                     <span className="font-medium">{currentBonification.nombreProductoSolicitado}</span> puedes obtener
@@ -89,22 +89,22 @@ const ModalBonification: React.FC<ModalBonificationProps> = ({
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4 sm:mb-6">
               <div className="space-y-2">
-                <Label className="text-xs text-gray-500">Producto Solicitado</Label>
-                <div className="bg-gray-50 p-3 rounded-md">
+                <Label className="text-xs text-muted-foreground">Producto Solicitado</Label>
+                <div className="bg-muted p-3 rounded-md">
                   <p className="font-medium text-sm">{currentBonification.nombreProductoSolicitado}</p>
-                  <p className="text-xs text-gray-500">Código: {currentBonification.productoSolicitado}</p>
+                  <p className="text-xs text-muted-foreground">Código: {currentBonification.productoSolicitado}</p>
                 </div>
               </div>
               <div className="space-y-2">
-                <Label className="text-xs text-gray-500">Cantidad Solicitada</Label>
-                <div className="bg-gray-50 p-3 rounded-md">
+                <Label className="text-xs text-muted-foreground">Cantidad Solicitada</Label>
+                <div className="bg-muted p-3 rounded-md">
                   <p className="font-medium text-sm">{currentBonification.cantidadSolicitada} unidades</p>
                 </div>
               </div>
             </div>
             <Separator className="mb-4 sm:mb-6" />
             <div className="space-y-4">
-              <h4 className="font-medium text-gray-900 flex items-center gap-2 text-sm sm:text-base">
+              <h4 className="font-medium text-foreground flex items-center gap-2 text-sm sm:text-base">
                 <Gift className="h-4 w-4 text-yellow-600" />
                 Selecciona las bonificaciones que deseas aplicar:
               </h4>
@@ -114,7 +114,7 @@ const ModalBonification: React.FC<ModalBonificationProps> = ({
                     key={bonificacion.ProductoBonificado}
                     className={`border rounded-lg p-3 sm:p-4 cursor-pointer transition-all ${selectedBonifications.includes(bonificacion.id)
                       ? "border-yellow-500 bg-yellow-50"
-                      : "border-gray-200 hover:border-gray-300"
+                      : "border-border hover:border-border"
                       }`}
                     onClick={() => toggleBonificationSelection(bonificacion.ProductoBonificado)}
                   >
@@ -124,31 +124,31 @@ const ModalBonification: React.FC<ModalBonificationProps> = ({
                           type="checkbox"
                           checked={selectedBonifications.includes(bonificacion.ProductoBonificado)}
                           onChange={() => toggleBonificationSelection(bonificacion.ProductoBonificado)}
-                          className="h-4 w-4 text-yellow-600 focus:ring-yellow-500 border-gray-300 rounded"
+                          className="h-4 w-4 text-yellow-600 focus:ring-yellow-500 border-border rounded"
                         />
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-2 gap-2">
-                          <h5 className="font-medium text-gray-900 text-sm">Bonificación #{index + 1}</h5>
+                          <h5 className={`font-medium text-sm ${selectedBonifications.includes(bonificacion.id) ? "text-yellow-900" : "text-foreground"}`}>Bonificación #{index + 1}</h5>
                           <Badge variant="outline" className="bg-green-50 text-green-700 text-xs w-fit">
                             {Number(bonificacion.TotalBonificados)} unidades gratis
                           </Badge>
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-3">
                           <div>
-                            <Label className="text-xs text-gray-500">Producto Bonificado</Label>
-                            <p className="font-medium text-xs sm:text-sm">{bonificacion.NombreItem}</p>
+                            <Label className={`text-xs ${selectedBonifications.includes(bonificacion.id) ? "text-yellow-900" : "text-muted-foreground"}`}>Producto Bonificado</Label>
+                            <p className={`font-medium text-xs sm:text-sm ${selectedBonifications.includes(bonificacion.id) ? "text-yellow-900" : ""}`}>{bonificacion.NombreItem}</p>
                           </div>
                           <div>
-                            <Label className="text-xs text-gray-500">Presentación</Label>
-                            <p className="font-medium text-xs sm:text-sm">{bonificacion.Presentacion}</p>
+                            <Label className={`text-xs ${selectedBonifications.includes(bonificacion.id) ? "text-yellow-900" : "text-muted-foreground"}`}>Presentación</Label>
+                            <p className={`font-medium text-xs sm:text-sm ${selectedBonifications.includes(bonificacion.id) ? "text-yellow-900" : ""}`}>{bonificacion.Presentacion}</p>
                           </div>
                           <div>
-                            <Label className="text-xs text-gray-500">Principio Activo</Label>
-                            <p className="font-medium text-xs sm:text-sm">{bonificacion.PrincipioActivo}</p>
+                            <Label className={`text-xs ${selectedBonifications.includes(bonificacion.id) ? "text-yellow-900" : "text-muted-foreground"}`}>Principio Activo</Label>
+                            <p className={`font-medium text-xs sm:text-sm ${selectedBonifications.includes(bonificacion.id) ? "text-yellow-900" : ""}`}>{bonificacion.PrincipioActivo}</p>
                           </div>
                           <div>
-                            <Label className="text-xs text-gray-500">Precio</Label>
+                            <Label className={`text-xs ${selectedBonifications.includes(bonificacion.id) ? "text-yellow-900" : "text-muted-foreground"}`}>Precio</Label>
                             <p className="font-medium text-xs sm:text-sm text-green-600">
                               {`${currency?.value === "PEN" ? "S/." : "$"} ${bonificacion.PrecioBonificado}`}
                             </p>
@@ -157,16 +157,16 @@ const ModalBonification: React.FC<ModalBonificationProps> = ({
                         <div className="bg-blue-50 p-3 rounded-md">
                           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 text-xs sm:text-sm">
                             <div>
-                              <Label className="text-xs text-gray-500">Condición</Label>
-                              <p className="font-medium">{`Por cada ${bonificacion.condicion} unidades compradas`}</p>
+                              <Label className="text-xs text-blue-900">Condición</Label>
+                              <p className="font-medium text-blue-900">{`Por cada ${bonificacion.condicion} unidades compradas`}</p>
                             </div>
                             <div>
-                              <Label className="text-xs text-gray-500">Cantidad por Unidad</Label>
-                              <p className="font-medium">{Number(bonificacion.CantidadBonificadaPorUnidad)}</p>
+                              <Label className="text-xs text-blue-900">Cantidad por Unidad</Label>
+                              <p className="font-medium text-blue-900">{Number(bonificacion.CantidadBonificadaPorUnidad)}</p>
                             </div>
                             <div>
-                              <Label className="text-xs text-gray-500">Veces que Bonifica</Label>
-                              <p className="font-medium">{bonificacion.VecesBonifica}</p>
+                              <Label className="text-xs text-blue-900">Veces que Bonifica</Label>
+                              <p className="font-medium text-blue-900">{bonificacion.VecesBonifica}</p>
                             </div>
                           </div>
                         </div>
@@ -191,7 +191,7 @@ const ModalBonification: React.FC<ModalBonificationProps> = ({
                           key={bonificationId}
                           className="flex justify-between items-center text-xs sm:text-sm"
                         >
-                          <span className="truncate flex-1 mr-2">
+                          <span className="truncate flex-1 mr-2 text-green-900">
                             {bonificacion.NombreItem}
                           </span>
                           <Badge

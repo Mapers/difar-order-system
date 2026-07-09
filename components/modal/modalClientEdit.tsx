@@ -203,7 +203,7 @@ const ModalClientEdit: React.FC<ModalVerificationProps> = ({ open, onOpenChange,
             <div className="space-y-6">
               {/* Información básica */}
               <div className="space-y-4">
-                <h4 className="font-medium text-gray-900 flex items-center gap-2">
+                <h4 className="font-medium text-foreground flex items-center gap-2">
                   <User className="h-4 w-4 text-blue-600" />
                   Información Básica del Cliente
                 </h4>
@@ -270,7 +270,7 @@ const ModalClientEdit: React.FC<ModalVerificationProps> = ({ open, onOpenChange,
                       id="tipoDocIdent"
                       value={formData.tipoDocIdent}
                       onChange={(e) => handleInputChange("tipoDocIdent", e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                      className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-background"
                       required
                     >
                       <option value="">Seleccionar tipo</option>
@@ -403,7 +403,7 @@ const ModalClientEdit: React.FC<ModalVerificationProps> = ({ open, onOpenChange,
 
               {/* Información de ubicación */}
               <div className="space-y-4">
-                <h4 className="font-medium text-gray-900 flex items-center gap-2">
+                <h4 className="font-medium text-foreground flex items-center gap-2">
                   <MapPin className="h-4 w-4 text-purple-600" />
                   Información de Ubicación
                 </h4>
@@ -566,7 +566,7 @@ const ModalClientEdit: React.FC<ModalVerificationProps> = ({ open, onOpenChange,
 
               {/* Información del sistema */}
               <div className="space-y-4">
-                <h4 className="font-medium text-gray-900 flex items-center gap-2">
+                <h4 className="font-medium text-foreground flex items-center gap-2">
                   <Calendar className="h-4 w-4 text-orange-600" />
                   Información del Sistema
                 </h4>

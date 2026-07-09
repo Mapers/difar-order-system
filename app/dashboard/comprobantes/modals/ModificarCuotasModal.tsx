@@ -87,11 +87,11 @@ export function ModificarCuotasModal({
 
                         <div className="grid grid-cols-1 gap-3">
                             <div className="space-y-1">
-                                <Label className="text-xs font-semibold uppercase text-gray-500">
+                                <Label className="text-xs font-semibold uppercase text-muted-foreground">
                                     Serie NC <span className="text-red-500">*</span>
                                 </Label>
                                 <Select value={selectedSerie} onValueChange={setSelectedSerie}>
-                                    <SelectTrigger className="bg-white">
+                                    <SelectTrigger className="bg-background">
                                         <SelectValue placeholder="Seleccionar serie" />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -106,7 +106,7 @@ export function ModificarCuotasModal({
                         </div>
 
                         <div className="space-y-2">
-                            <Label className="text-xs font-semibold uppercase text-gray-500">
+                            <Label className="text-xs font-semibold uppercase text-muted-foreground">
                                 Nuevas Cuotas <span className="text-red-500">*</span>
                             </Label>
                             <div className="border rounded-md p-3 space-y-2">
@@ -114,13 +114,13 @@ export function ModificarCuotasModal({
                                     <div>
                                         {cuotas.length > 0 ? (
                                             <div className="text-sm space-y-0.5">
-                                                <p className="font-medium text-gray-800">
+                                                <p className="font-medium text-foreground">
                                                     {cuotas.length} cuota(s) configurada(s)
                                                 </p>
-                                                <p className="text-xs text-gray-500">
+                                                <p className="text-xs text-muted-foreground">
                                                     Último vencimiento: {cuotas[cuotas.length - 1].fecha}
                                                 </p>
-                                                <div className="text-xs text-gray-500 max-h-16 overflow-y-auto mt-1">
+                                                <div className="text-xs text-muted-foreground max-h-16 overflow-y-auto mt-1">
                                                     {cuotas.map((c, i) => (
                                                         <div key={i} className="flex justify-between w-48">
                                                             <span>Cuota {i + 1} ({c.fecha}):</span>
@@ -130,7 +130,7 @@ export function ModificarCuotasModal({
                                                 </div>
                                             </div>
                                         ) : (
-                                            <p className="text-sm text-gray-500">
+                                            <p className="text-sm text-muted-foreground">
                                                 No hay cuotas configuradas aún
                                             </p>
                                         )}
@@ -149,7 +149,7 @@ export function ModificarCuotasModal({
                         </div>
 
                         <div className="space-y-1">
-                            <Label className="text-xs font-semibold uppercase text-gray-500">
+                            <Label className="text-xs font-semibold uppercase text-muted-foreground">
                                 Observaciones / Sustento <span className="text-red-500">*</span>
                             </Label>
                             <Textarea

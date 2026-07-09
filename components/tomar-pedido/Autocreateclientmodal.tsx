@@ -22,7 +22,7 @@ export default function AutoCreateClientModal({ open, onOpenChange, documentNumb
                         <Bot className="h-5 w-5" /> Auto-Completar desde SUNAT/RENIEC
                     </DialogTitle>
                     <DialogDescription className="pt-2">
-                        El documento <strong className="text-gray-900">{documentNumber}</strong> no está registrado en el sistema.
+                        El documento <strong className="text-foreground">{documentNumber}</strong> no está registrado en el sistema.
                         <br /><br />
                         ¿Deseas buscarlo en línea y registrarlo automáticamente?
                     </DialogDescription>

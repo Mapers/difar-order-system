@@ -111,7 +111,7 @@ export const PriceModals = ({ modals, user, isAdmin }: any) => {
                             <div className="grid grid-cols-2 gap-4">
                                 {(Number(prices.data?.precio_bonif_cont) > 0 || prices.isEditing) && (
                                     <div className="space-y-1">
-                                        <Label className="text-xs text-gray-500">Bonificación Contado</Label>
+                                        <Label className="text-xs text-muted-foreground">Bonificación Contado</Label>
                                         {prices.isEditing ? (
                                             <Input
                                                 value={prices.editForms.bonifCont}
@@ -129,7 +129,7 @@ export const PriceModals = ({ modals, user, isAdmin }: any) => {
                                 )}
                                 {(Number(prices.data?.precio_bonif_cred) > 0 || prices.isEditing) && (
                                     <div className="space-y-1">
-                                        <Label className="text-xs text-gray-500">Bonificación Crédito</Label>
+                                        <Label className="text-xs text-muted-foreground">Bonificación Crédito</Label>
                                         {prices.isEditing ? (
                                             <Input
                                                 value={prices.editForms.bonifCred}
@@ -149,15 +149,15 @@ export const PriceModals = ({ modals, user, isAdmin }: any) => {
                         </div>
 
                         <div className="border-t pt-4 space-y-4">
-                            <h4 className="text-sm font-semibold text-gray-700">Afectación IGV</h4>
+                            <h4 className="text-sm font-semibold text-foreground">Afectación IGV</h4>
 
                             {prices.isEditing ? (
-                                <div className="space-y-4 p-4 bg-gray-50 rounded-lg border">
+                                <div className="space-y-4 p-4 bg-muted rounded-lg border">
 
                                     <div className="flex items-center justify-between">
                                         <div>
                                             <Label className="text-sm font-medium">Afecto a IGV</Label>
-                                            <p className="text-xs text-gray-500 mt-0.5">
+                                            <p className="text-xs text-muted-foreground mt-0.5">
                                                 {prices.editForms.afectoIgv
                                                     ? 'El producto paga IGV (18%)'
                                                     : 'El producto NO paga IGV'}
@@ -209,7 +209,7 @@ export const PriceModals = ({ modals, user, isAdmin }: any) => {
                                             <div className="space-y-1">
                                                 <Label className="text-sm font-medium">
                                                     Motivo
-                                                    <span className="text-gray-400 font-normal ml-1">(opcional)</span>
+                                                    <span className="text-muted-foreground font-normal ml-1">(opcional)</span>
                                                 </Label>
                                                 <Input
                                                     value={prices.editForms.motivoIgv}
@@ -220,7 +220,7 @@ export const PriceModals = ({ modals, user, isAdmin }: any) => {
                                                     placeholder="Ej: Medicamento esencial DS 027-2023"
                                                     maxLength={200}
                                                 />
-                                                <p className="text-xs text-gray-400 text-right">
+                                                <p className="text-xs text-muted-foreground text-right">
                                                     {prices.editForms.motivoIgv?.length ?? 0}/200
                                                 </p>
                                             </div>
@@ -229,17 +229,17 @@ export const PriceModals = ({ modals, user, isAdmin }: any) => {
                                 </div>
                             ) : (
                                 /* Vista de solo lectura */
-                                <div className="flex items-start gap-4 p-3 bg-gray-50 rounded-lg border">
+                                <div className="flex items-start gap-4 p-3 bg-muted rounded-lg border">
                                     <div className="flex-1 space-y-1">
                                         <div className="flex items-center gap-2">
-                                            <span className="text-sm text-gray-500">Estado IGV:</span>
+                                            <span className="text-sm text-muted-foreground">Estado IGV:</span>
                                             <IgvBadge
                                                 tipo={prices.data?.tipo_afectacion_igv ?? '10'}
                                                 afecto={prices.data?.afecto_igv ?? 1}
                                             />
                                         </div>
                                         {prices.data?.igv_motivo && (
-                                            <p className="text-xs text-gray-500 mt-1">
+                                            <p className="text-xs text-muted-foreground mt-1">
                                                 <span className="font-medium">Motivo:</span> {prices.data.igv_motivo}
                                             </p>
                                         )}
@@ -277,7 +277,7 @@ export const PriceModals = ({ modals, user, isAdmin }: any) => {
                                 ) : (
                                     <div className="space-y-2">
                                         {prices.escalas.map((escala: any) => (
-                                            <div key={escala.id} className="flex justify-between items-center p-2 bg-gray-50 rounded">
+                                            <div key={escala.id} className="flex justify-between items-center p-2 bg-muted rounded">
                                                 <span className="text-sm">{escala.desde} - {escala.hasta} unidades</span>
                                                 <span className="text-sm font-mono font-semibold">S/ {escala.precio.toFixed(2)}</span>
                                             </div>
@@ -297,13 +297,13 @@ export const PriceModals = ({ modals, user, isAdmin }: any) => {
                                 ) : (
                                     <div className="space-y-3">
                                         {prices.bonificaciones.map((bonificacion: any) => (
-                                            <div key={bonificacion.id} className="p-3 bg-gray-50 rounded border">
+                                            <div key={bonificacion.id} className="p-3 bg-muted rounded border">
                                                 <div className="flex justify-between items-start mb-2">
                                                     <span className="text-sm font-medium">
                                                         Compra {bonificacion.compra}, lleva {bonificacion.lleva}
                                                     </span>
                                                 </div>
-                                                <p className="text-xs text-gray-600 mb-1">{bonificacion.descripcion}</p>
+                                                <p className="text-xs text-muted-foreground mb-1">{bonificacion.descripcion}</p>
                                                 {!bonificacion.esMismoProducto && bonificacion.descripcionProducto && (
                                                     <p className="text-xs text-blue-600">Producto: {bonificacion.descripcionProducto}</p>
                                                 )}
@@ -331,7 +331,7 @@ export const PriceModals = ({ modals, user, isAdmin }: any) => {
                         </div>
                     ) : (
                         <Table>
-                            <TableHeader className="bg-gray-100">
+                            <TableHeader className="bg-muted">
                                 <TableRow>
                                     <TableHead>Fecha</TableHead>
                                     <TableHead>Operación</TableHead>

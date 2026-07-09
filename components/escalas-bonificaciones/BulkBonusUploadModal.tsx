@@ -196,14 +196,14 @@ export const BulkBonusUploadModal = ({ onUploadSuccess, user }: { onUploadSucces
                                 className={`mt-4 border-2 border-dashed rounded-lg p-8 flex flex-col items-center justify-center cursor-pointer transition-colors ${
                                     isDragging
                                         ? "border-yellow-500 bg-yellow-100"
-                                        : "border-gray-300 bg-white hover:border-yellow-400 hover:bg-gray-50"
+                                        : "border-border bg-background hover:border-yellow-400 hover:bg-muted"
                                 }`}
                             >
-                                <UploadCloud className={`h-10 w-10 mb-3 ${isDragging ? "text-yellow-500" : "text-gray-400"}`} />
-                                <p className="text-sm font-medium text-gray-700">
+                                <UploadCloud className={`h-10 w-10 mb-3 ${isDragging ? "text-yellow-500" : "text-muted-foreground"}`} />
+                                <p className="text-sm font-medium text-foreground">
                                     {isDragging ? "Suelta el archivo aquí..." : "Haz clic o arrastra tu archivo aquí"}
                                 </p>
-                                <p className="text-xs text-gray-400 mt-1">Soporta Excel (.xlsx, .xls) y CSV</p>
+                                <p className="text-xs text-muted-foreground mt-1">Soporta Excel (.xlsx, .xls) y CSV</p>
 
                                 <input
                                     type="file"
@@ -214,14 +214,14 @@ export const BulkBonusUploadModal = ({ onUploadSuccess, user }: { onUploadSucces
                                 />
                             </div>
                         ) : (
-                            <div className="mt-4 flex items-center justify-between bg-white border border-yellow-200 p-3 rounded-lg shadow-sm">
+                            <div className="mt-4 flex items-center justify-between bg-background border border-yellow-200 p-3 rounded-lg shadow-sm">
                                 <div className="flex items-center gap-3">
                                     <div className="bg-yellow-100 p-2 rounded-md">
                                         <FileSpreadsheet className="h-5 w-5 text-yellow-700" />
                                     </div>
                                     <div>
-                                        <p className="text-sm font-semibold text-gray-800">{fileName}</p>
-                                        <p className="text-xs text-gray-500">Archivo cargado y listo para procesar</p>
+                                        <p className="text-sm font-semibold text-foreground">{fileName}</p>
+                                        <p className="text-xs text-muted-foreground">Archivo cargado y listo para procesar</p>
                                     </div>
                                 </div>
                                 <Button
@@ -229,7 +229,7 @@ export const BulkBonusUploadModal = ({ onUploadSuccess, user }: { onUploadSucces
                                     size="sm"
                                     onClick={resetState}
                                     disabled={isUploading}
-                                    className="text-gray-500 hover:text-red-600 hover:bg-red-50"
+                                    className="text-muted-foreground hover:text-red-600 hover:bg-red-50"
                                 >
                                     <X className="h-4 w-4 mr-1" /> Remover
                                 </Button>
@@ -248,39 +248,39 @@ export const BulkBonusUploadModal = ({ onUploadSuccess, user }: { onUploadSucces
 
                     {dataPreview.length > 0 && (
                         <div className="border rounded-md shadow-sm">
-                            <div className="bg-gray-50 px-4 py-3 flex justify-between items-center border-b">
-                                <span className="text-sm font-semibold text-gray-700">
+                            <div className="bg-muted px-4 py-3 flex justify-between items-center border-b">
+                                <span className="text-sm font-semibold text-foreground">
                                     Previsualización <Badge variant="secondary" className="ml-2">{dataPreview.length} registros</Badge>
                                 </span>
                             </div>
                             <div className="max-h-64 overflow-y-auto">
                                 <Table>
-                                    <TableHeader className="sticky top-0 bg-white shadow-sm z-10">
+                                    <TableHeader className="sticky top-0 bg-background shadow-sm z-10">
                                         <TableRow>
-                                            <TableHead className="w-[40px] bg-white">#</TableHead>
-                                            <TableHead className="bg-white">COD ARTICULO</TableHead>
-                                            <TableHead className="bg-white">COMPRA</TableHead>
-                                            <TableHead className="bg-white">LLEVA</TableHead>
-                                            <TableHead className="bg-white">DESCRIPCIÓN</TableHead>
-                                            <TableHead className="bg-white">COD BONIF</TableHead>
+                                            <TableHead className="w-[40px] bg-background">#</TableHead>
+                                            <TableHead className="bg-background">COD ARTICULO</TableHead>
+                                            <TableHead className="bg-background">COMPRA</TableHead>
+                                            <TableHead className="bg-background">LLEVA</TableHead>
+                                            <TableHead className="bg-background">DESCRIPCIÓN</TableHead>
+                                            <TableHead className="bg-background">COD BONIF</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
                                         {dataPreview.slice(0, 50).map((row, idx) => (
                                             <TableRow key={idx}>
-                                                <TableCell className="text-xs text-gray-400">{idx + 1}</TableCell>
+                                                <TableCell className="text-xs text-muted-foreground">{idx + 1}</TableCell>
                                                 <TableCell className="font-mono text-xs font-medium">{row["COD ARTICULO"]}</TableCell>
                                                 <TableCell className="text-sm">{row["COMPRA"]}</TableCell>
                                                 <TableCell className="text-sm">{row["LLEVA"]}</TableCell>
                                                 <TableCell className="text-xs truncate max-w-[150px]" title={row["DESCRIPCION"]}>{row["DESCRIPCION"]}</TableCell>
-                                                <TableCell className="font-mono text-xs text-gray-500">{row["COD BONIFICADO"] || "Mismo prod."}</TableCell>
+                                                <TableCell className="font-mono text-xs text-muted-foreground">{row["COD BONIFICADO"] || "Mismo prod."}</TableCell>
                                             </TableRow>
                                         ))}
                                     </TableBody>
                                 </Table>
                             </div>
                             {dataPreview.length > 50 && (
-                                <div className="text-center text-xs text-gray-500 py-3 bg-gray-50 border-t">
+                                <div className="text-center text-xs text-muted-foreground py-3 bg-muted border-t">
                                     Mostrando solo los primeros 50 registros...
                                 </div>
                             )}
@@ -289,18 +289,18 @@ export const BulkBonusUploadModal = ({ onUploadSuccess, user }: { onUploadSucces
 
                     <div className="flex flex-col gap-4 pt-4 border-t mt-4">
                         {isUploading && (
-                            <div className="space-y-2 bg-gray-50 p-4 rounded-md border border-gray-100">
-                                <div className="flex justify-between text-sm font-medium text-gray-700">
+                            <div className="space-y-2 bg-muted p-4 rounded-md border border-border">
+                                <div className="flex justify-between text-sm font-medium text-foreground">
                                     <span>Subiendo registros...</span>
                                     <span>{progress.total > 0 ? Math.round((progress.current / progress.total) * 100) : 0}%</span>
                                 </div>
-                                <div className="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
+                                <div className="w-full bg-secondary rounded-full h-2.5 overflow-hidden">
                                     <div
                                         className="bg-yellow-500 h-2.5 rounded-full transition-all duration-300 ease-out"
                                         style={{ width: `${progress.total > 0 ? (progress.current / progress.total) * 100 : 0}%` }}
                                     ></div>
                                 </div>
-                                <p className="text-xs text-gray-500 text-right">{progress.current} de {progress.total} procesados</p>
+                                <p className="text-xs text-muted-foreground text-right">{progress.current} de {progress.total} procesados</p>
                             </div>
                         )}
                         <div className="flex justify-end gap-3">

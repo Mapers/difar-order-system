@@ -155,11 +155,11 @@ export function CorregirDescripcionModal({
 
                     <div className="grid grid-cols-1 gap-3">
                         <div className="space-y-1">
-                            <Label className="text-xs font-semibold uppercase text-gray-500">
+                            <Label className="text-xs font-semibold uppercase text-muted-foreground">
                                 Serie NC <span className="text-red-500">*</span>
                             </Label>
                             <Select value={selectedSerie} onValueChange={setSelectedSerie}>
-                                <SelectTrigger className="bg-white">
+                                <SelectTrigger className="bg-background">
                                     <SelectValue placeholder="Seleccionar serie" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -174,7 +174,7 @@ export function CorregirDescripcionModal({
                     </div>
 
                     <div className="space-y-2">
-                        <Label className="text-xs font-semibold uppercase text-gray-500">
+                        <Label className="text-xs font-semibold uppercase text-muted-foreground">
                             Seleccioná los ítems a corregir <span className="text-red-500">*</span>
                         </Label>
 
@@ -183,7 +183,7 @@ export function CorregirDescripcionModal({
                                 <Loader2 className="h-6 w-6 animate-spin text-blue-500" />
                             </div>
                         ) : items.length === 0 ? (
-                            <div className="text-center py-4 text-gray-500 text-sm border rounded-md">
+                            <div className="text-center py-4 text-muted-foreground text-sm border rounded-md">
                                 No se encontraron ítems
                             </div>
                         ) : (
@@ -194,7 +194,7 @@ export function CorregirDescripcionModal({
                                         className={`p-3 rounded-lg border transition-all cursor-pointer ${
                                             item.seleccionado
                                                 ? 'border-blue-400 bg-blue-50'
-                                                : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                                                : 'border-border hover:border-muted-foreground/30 hover:bg-muted'
                                         }`}
                                         onClick={() => toggleItem(index)}
                                     >
@@ -211,10 +211,10 @@ export function CorregirDescripcionModal({
                                                 onClick={e => e.stopPropagation()}
                                             >
                                                 <div>
-                                                    <p className="text-xs text-gray-500">
+                                                    <p className={`text-xs ${item.seleccionado ? 'text-blue-700' : 'text-muted-foreground'}`}>
                                                         Cód: {item.cod_item} · Cant: {item.cantidad}
                                                     </p>
-                                                    <p className="text-sm font-medium text-gray-800">
+                                                    <p className={`text-sm font-medium ${item.seleccionado ? 'text-blue-900' : 'text-foreground'}`}>
                                                         {item.descripcion_actual}
                                                     </p>
                                                 </div>
@@ -253,7 +253,7 @@ export function CorregirDescripcionModal({
                     </div>
 
                     <div className="space-y-1">
-                        <Label className="text-xs font-semibold uppercase text-gray-500">
+                        <Label className="text-xs font-semibold uppercase text-muted-foreground">
                             Observaciones / Sustento <span className="text-red-500">*</span>
                         </Label>
                         <Textarea

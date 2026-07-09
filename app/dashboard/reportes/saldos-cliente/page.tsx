@@ -206,12 +206,12 @@ export default function SaldoCobrarClientePage() {
     return (
         <div className="grid gap-6 p-4 md:p-6">
             <div className="flex flex-col gap-2">
-                <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-gray-900">Saldo de Documentos por Cobrar</h1>
-                <p className="text-sm md:text-base text-gray-500">Consulta los saldos pendientes agrupados por vendedor y zona.</p>
+                <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">Saldo de Documentos por Cobrar</h1>
+                <p className="text-sm md:text-base text-muted-foreground">Consulta los saldos pendientes agrupados por vendedor y zona.</p>
             </div>
 
             <Card className="shadow-md">
-                <CardHeader className="bg-slate-50 border-b border-slate-200 p-4">
+                <CardHeader className="bg-muted border-b border-border p-4">
                     <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
 
                         <div className="flex flex-col gap-1 md:col-span-4 relative">
@@ -222,7 +222,7 @@ export default function SaldoCobrarClientePage() {
                             <Popover open={openClientAutocomplete} onOpenChange={setOpenClientAutocomplete}>
                                 <div className="relative w-full">
                                     <PopoverTrigger asChild>
-                                        <Button variant="outline" role="combobox" className={cn("w-full justify-between h-10 font-normal overflow-hidden", selectedClientName && "pr-8 bg-white")}>
+                                        <Button variant="outline" role="combobox" className={cn("w-full justify-between h-10 font-normal overflow-hidden", selectedClientName && "pr-8 bg-background")}>
                                             <span className="truncate">
                                                 {selectedClientName ? `${selectedClientRuc} - ${selectedClientName}` : "Todos los cliente-cobranza..."}
                                             </span>
@@ -231,7 +231,7 @@ export default function SaldoCobrarClientePage() {
                                     </PopoverTrigger>
                                     {selectedClientName && (
                                         <div
-                                            className="absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer p-1 text-gray-500 hover:text-red-500 hover:bg-red-50 rounded-md z-10"
+                                            className="absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer p-1 text-muted-foreground hover:text-red-500 hover:bg-red-50 rounded-md z-10"
                                             onClick={(e) => { e.preventDefault(); e.stopPropagation(); setSelectedClientRuc(""); setSelectedClientName(""); setSearchQuery(""); }}
                                         >
                                             <X className="h-4 w-4" />
@@ -273,7 +273,7 @@ export default function SaldoCobrarClientePage() {
                             </div>
                             <Popover open={openZone} onOpenChange={setOpenZone}>
                                 <PopoverTrigger asChild>
-                                    <Button variant="outline" role="combobox" className="justify-between w-full h-10 font-normal bg-white">
+                                    <Button variant="outline" role="combobox" className="justify-between w-full h-10 font-normal bg-background">
                                         <span className="truncate">
                                             {selectedZone ? zones.find(z => z.IdZona === selectedZone)?.NombreZona : "Todas las zonas..."}
                                         </span>
@@ -311,7 +311,7 @@ export default function SaldoCobrarClientePage() {
                                 </div>
                                 <Popover open={openSeller} onOpenChange={setOpenSeller}>
                                     <PopoverTrigger asChild>
-                                        <Button variant="outline" role="combobox" className="justify-between w-full h-10 font-normal bg-white">
+                                        <Button variant="outline" role="combobox" className="justify-between w-full h-10 font-normal bg-background">
                                             <span className="truncate">
                                                 {selectedSeller ? sellers.find(s => s.codigo === selectedSeller)?.nombres : "Todos los vendedores..."}
                                             </span>
@@ -348,15 +348,15 @@ export default function SaldoCobrarClientePage() {
                                     <CalendarIcon className="w-4 h-4 text-muted-foreground" />
                                     <Label>{searchMode === 'fecha' ? 'Fecha Corte' : 'Mes / Año'}</Label>
                                 </div>
-                                <div className="flex rounded-md overflow-hidden border border-slate-200 text-xs">
+                                <div className="flex rounded-md overflow-hidden border border-border text-xs">
                                     <button
                                         type="button"
-                                        className={`px-2 py-0.5 transition-colors ${searchMode === 'fecha' ? 'bg-blue-600 text-white' : 'bg-white text-slate-600 hover:bg-slate-50'}`}
+                                        className={`px-2 py-0.5 transition-colors ${searchMode === 'fecha' ? 'bg-blue-600 text-white' : 'bg-background text-muted-foreground hover:bg-muted'}`}
                                         onClick={() => setSearchMode('fecha')}
                                     >Corte</button>
                                     <button
                                         type="button"
-                                        className={`px-2 py-0.5 transition-colors border-l border-slate-200 ${searchMode === 'mes' ? 'bg-blue-600 text-white' : 'bg-white text-slate-600 hover:bg-slate-50'}`}
+                                        className={`px-2 py-0.5 transition-colors border-l border-border ${searchMode === 'mes' ? 'bg-blue-600 text-white' : 'bg-background text-muted-foreground hover:bg-muted'}`}
                                         onClick={() => setSearchMode('mes')}
                                     >Mes</button>
                                 </div>
@@ -364,7 +364,7 @@ export default function SaldoCobrarClientePage() {
                             {searchMode === 'fecha' ? (
                                 <Popover>
                                     <PopoverTrigger asChild>
-                                        <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal bg-white h-10", !selectedDate && "text-muted-foreground")}>
+                                        <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal bg-background h-10", !selectedDate && "text-muted-foreground")}>
                                             <CalendarIcon className="mr-2 h-4 w-4 opacity-50" />
                                             {selectedDate ? format(selectedDate, "dd/MM/yyyy", { locale: es }) : <span>Seleccionar</span>}
                                         </Button>
@@ -376,7 +376,7 @@ export default function SaldoCobrarClientePage() {
                             ) : (
                                 <div className="flex gap-2">
                                     <Select value={String(selectedMonth)} onValueChange={(v) => setSelectedMonth(Number(v))}>
-                                        <SelectTrigger className="h-10 bg-white flex-1">
+                                        <SelectTrigger className="h-10 bg-background flex-1">
                                             <SelectValue />
                                         </SelectTrigger>
                                         <SelectContent>
@@ -386,7 +386,7 @@ export default function SaldoCobrarClientePage() {
                                         </SelectContent>
                                     </Select>
                                     <Select value={String(selectedYear)} onValueChange={(v) => setSelectedYear(Number(v))}>
-                                        <SelectTrigger className="h-10 bg-white w-[80px]">
+                                        <SelectTrigger className="h-10 bg-background w-[80px]">
                                             <SelectValue />
                                         </SelectTrigger>
                                         <SelectContent>
@@ -414,31 +414,31 @@ export default function SaldoCobrarClientePage() {
                     </div>
                 </CardHeader>
 
-                <CardContent className="p-4 md:p-6 bg-slate-50">
+                <CardContent className="p-4 md:p-6 bg-muted">
                     {loading ? (
                         <div className="flex flex-col items-center justify-center py-16">
                             <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mb-4"></div>
-                            <p className="text-slate-500 font-medium">Buscando documentos, por favor espera...</p>
+                            <p className="text-muted-foreground font-medium">Buscando documentos, por favor espera...</p>
                         </div>
                     ) : data ? (
                         <div className="space-y-8">
 
                             {data.Clientes.map((cliente: any, cIdx: number) => (
                                 <div key={cIdx} className="space-y-4">
-                                    <div className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="bg-background p-4 rounded-lg border border-border shadow-sm grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div>
-                                            <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">{cliente.Cliente}</h2>
-                                            <p className="text-sm text-slate-600 mt-1"><span className="font-semibold">RUC:</span> {cliente.RUC}</p>
-                                            <p className="text-sm text-slate-600 flex items-center gap-1 mt-1">{cliente.NombreComercial}</p>
+                                            <h2 className="text-lg font-bold text-foreground flex items-center gap-2">{cliente.Cliente}</h2>
+                                            <p className="text-sm text-muted-foreground mt-1"><span className="font-semibold">RUC:</span> {cliente.RUC}</p>
+                                            <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">{cliente.NombreComercial}</p>
                                         </div>
                                         <div className="md:text-right space-y-1">
-                                            <p className="text-sm text-slate-600 flex items-center md:justify-end gap-1">{cliente.Direccion}</p>
-                                            <p className="text-sm text-slate-600 flex items-center md:justify-end gap-1">{cliente.Telefono || 'N/A'}</p>
+                                            <p className="text-sm text-muted-foreground flex items-center md:justify-end gap-1">{cliente.Direccion}</p>
+                                            <p className="text-sm text-muted-foreground flex items-center md:justify-end gap-1">{cliente.Telefono || 'N/A'}</p>
                                         </div>
                                     </div>
 
                                     {cliente.vendedores.map((vend: any, vIdx: number) => (
-                                        <div key={vIdx} className="border border-slate-300 rounded-lg overflow-hidden shadow-sm bg-white ml-0 md:ml-4">
+                                        <div key={vIdx} className="border border-border rounded-lg overflow-hidden shadow-sm bg-background ml-0 md:ml-4">
                                             <div className="bg-slate-800 text-white p-3 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
                                                 <span className="font-bold text-sm md:text-base">Vendedor: {vend.Vendedor}</span>
                                                 <span className="text-xs bg-slate-700 px-3 py-1 rounded-full font-medium border border-slate-600 w-fit">
@@ -447,8 +447,8 @@ export default function SaldoCobrarClientePage() {
                                             </div>
 
                                             <div className="hidden md:block overflow-x-auto">
-                                                <table className="w-full text-xs text-left text-slate-600">
-                                                    <thead className="text-[10px] md:text-xs text-slate-500 uppercase bg-slate-100 border-b border-slate-200">
+                                                <table className="w-full text-xs text-left text-muted-foreground">
+                                                    <thead className="text-[10px] md:text-xs text-muted-foreground uppercase bg-muted border-b border-border">
                                                     <tr>
                                                         <th className="px-3 py-3 font-bold whitespace-nowrap">Emisión</th>
                                                         <th className="px-3 py-3 font-bold whitespace-nowrap">Vencimiento</th>
@@ -461,11 +461,11 @@ export default function SaldoCobrarClientePage() {
                                                         <th className="px-3 py-3 font-bold text-right text-green-700">Saldo US$</th>
                                                     </tr>
                                                     </thead>
-                                                    <tbody className="divide-y divide-slate-100">
+                                                    <tbody className="divide-y divide-border">
                                                     {vend.documentos.map((doc: any, dIdx: number) => {
                                                         const isSoles = doc.Tipo_Moneda === 'NSO' || doc.Moneda === 'S/.';
                                                         return (
-                                                            <tr key={dIdx} className="hover:bg-slate-50 transition-colors">
+                                                            <tr key={dIdx} className="hover:bg-muted transition-colors">
                                                                 <td className="px-3 py-2 whitespace-nowrap">{formatDateToDDMMYYYY(doc.Fecha_Emision)}</td>
                                                                 <td className="px-3 py-2 whitespace-nowrap text-red-600 font-medium">{formatDateToDDMMYYYY(doc.Fecha_Vcto)}</td>
                                                                 <td className="px-3 py-2 font-medium">{doc.TipoDocumento}</td>
@@ -488,15 +488,15 @@ export default function SaldoCobrarClientePage() {
                                                 </table>
                                             </div>
 
-                                            <div className="grid grid-cols-1 gap-3 p-3 md:hidden bg-slate-50">
+                                            <div className="grid grid-cols-1 gap-3 p-3 md:hidden bg-muted">
                                                 {vend.documentos.map((doc: any, dIdx: number) => {
                                                     const isSoles = doc.Tipo_Moneda === 'NSO' || doc.Moneda === 'S/.';
                                                     return (
-                                                        <div key={dIdx} className="bg-white border border-slate-200 rounded-lg p-3 shadow-sm flex flex-col gap-3">
-                                                            <div className="flex justify-between items-start border-b border-slate-100 pb-2">
+                                                        <div key={dIdx} className="bg-background border border-border rounded-lg p-3 shadow-sm flex flex-col gap-3">
+                                                            <div className="flex justify-between items-start border-b border-border pb-2">
                                                                 <div>
-                                                                    <span className="text-[10px] uppercase font-bold text-slate-400">{doc.TipoDocumento}</span>
-                                                                    <p className="font-mono font-bold text-sm text-slate-800">
+                                                                    <span className="text-[10px] uppercase font-bold text-muted-foreground">{doc.TipoDocumento}</span>
+                                                                    <p className="font-mono font-bold text-sm text-foreground">
                                                                         <DocumentoPdfLink numeroComprobante={doc.SerieDoc && doc.NumeroDoc ? `${doc.SerieDoc}-${doc.NumeroDoc}` : null} />
                                                                     </p>
                                                                 </div>
@@ -505,25 +505,25 @@ export default function SaldoCobrarClientePage() {
 
                                                             <div className="grid grid-cols-2 gap-2 text-xs">
                                                                 <div>
-                                                                    <span className="text-slate-500">Emisión:</span>
-                                                                    <p className="font-medium text-slate-700">{formatDateToDDMMYYYY(doc.Fecha_Emision)}</p>
+                                                                    <span className="text-muted-foreground">Emisión:</span>
+                                                                    <p className="font-medium text-foreground">{formatDateToDDMMYYYY(doc.Fecha_Emision)}</p>
                                                                 </div>
                                                                 <div>
-                                                                    <span className="text-slate-500">Vcto:</span>
+                                                                    <span className="text-muted-foreground">Vcto:</span>
                                                                     <p className="font-medium text-red-600">{formatDateToDDMMYYYY(doc.Fecha_Vcto)}</p>
                                                                 </div>
                                                                 <div>
-                                                                    <span className="text-slate-500">Prov:</span>
+                                                                    <span className="text-muted-foreground">Prov:</span>
                                                                     <p className="font-medium">{formatMoney(doc.SumaProvision)}</p>
                                                                 </div>
                                                                 <div>
-                                                                    <span className="text-slate-500">Amort:</span>
+                                                                    <span className="text-muted-foreground">Amort:</span>
                                                                     <p className="font-medium">{formatMoney(doc.SumaAmortizacion)}</p>
                                                                 </div>
                                                             </div>
 
-                                                            <div className="flex justify-between items-center pt-2 border-t border-slate-100">
-                                                                <span className="text-xs font-bold uppercase text-slate-500">Saldo Final:</span>
+                                                            <div className="flex justify-between items-center pt-2 border-t border-border">
+                                                                <span className="text-xs font-bold uppercase text-muted-foreground">Saldo Final:</span>
                                                                 <span className={cn("text-base font-bold", isSoles ? "text-blue-700" : "text-green-700")}>
                                                                     {doc.Moneda} {formatMoney(doc.Saldo)}
                                                                 </span>
@@ -537,8 +537,8 @@ export default function SaldoCobrarClientePage() {
                                 </div>
                             ))}
 
-                            <div className="bg-white border border-blue-200 p-4 rounded-lg flex flex-col sm:flex-row justify-between items-center shadow-md mt-6 sticky bottom-4">
-                                <span className="text-sm font-bold uppercase tracking-wider text-slate-700 mb-2 sm:mb-0">Deuda Total Global</span>
+                            <div className="bg-background border border-blue-200 p-4 rounded-lg flex flex-col sm:flex-row justify-between items-center shadow-md mt-6 sticky bottom-4">
+                                <span className="text-sm font-bold uppercase tracking-wider text-foreground mb-2 sm:mb-0">Deuda Total Global</span>
                                 <div className="flex gap-4 sm:gap-6 w-full sm:w-auto justify-between sm:justify-end">
                                     <div className="text-center sm:text-right bg-blue-50 p-2 rounded-md sm:bg-transparent sm:p-0 flex-1 sm:flex-none border border-blue-100 sm:border-none">
                                         <p className="text-xs text-blue-600 font-semibold uppercase">Total Soles</p>
@@ -552,8 +552,8 @@ export default function SaldoCobrarClientePage() {
                             </div>
                         </div>
                     ) : (
-                        <div className="flex flex-col items-center justify-center py-16 bg-white rounded-lg border-2 border-dashed border-slate-200">
-                            <p className="text-slate-500 font-medium text-center px-4">
+                        <div className="flex flex-col items-center justify-center py-16 bg-background rounded-lg border-2 border-dashed border-border">
+                            <p className="text-muted-foreground font-medium text-center px-4">
                                 Utiliza los filtros para buscar el saldo por cobrar.
                             </p>
                         </div>

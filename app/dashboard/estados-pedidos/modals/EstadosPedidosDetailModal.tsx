@@ -252,15 +252,15 @@ export function EstadosPedidosDetailModal({ open, onOpenChange, nroPedido }: Est
   const addProductSlot = (
     <div className="space-y-6 pt-2">
       <div className="space-y-2">
-        <Label className="text-sm font-medium text-gray-700">Producto</Label>
+        <Label className="text-sm font-medium text-foreground">Producto</Label>
         <Button type="button" variant="outline" onClick={() => setOpenProdSearch(true)}
-                className="w-full justify-start h-auto min-h-12 px-3 py-2 text-left font-normal text-sm bg-gray-50 hover:bg-white border-gray-200 hover:border-blue-400 overflow-hidden">
+                className="w-full justify-start h-auto min-h-12 px-3 py-2 text-left font-normal text-sm bg-muted hover:bg-background border-border hover:border-blue-400 overflow-hidden">
           {selectedProduct
             ? <div className="flex flex-col items-start overflow-hidden w-0 flex-1">
-                <span className="font-semibold text-gray-900 truncate w-full text-sm">{selectedProduct.NombreItem}</span>
-                <span className="text-xs text-gray-500 truncate w-full">{selectedProduct.Codigo_Art} | {selectedProduct.Descripcion}</span>
+                <span className="font-semibold text-foreground truncate w-full text-sm">{selectedProduct.NombreItem}</span>
+                <span className="text-xs text-muted-foreground truncate w-full">{selectedProduct.Codigo_Art} | {selectedProduct.Descripcion}</span>
               </div>
-            : <span className="text-gray-400 text-sm">Buscar por código, nombre o laboratorio...</span>
+            : <span className="text-muted-foreground text-sm">Buscar por código, nombre o laboratorio...</span>
           }
         </Button>
         <ProductSearchDialog open={openProdSearch} onOpenChange={setOpenProdSearch}
@@ -279,12 +279,12 @@ export function EstadosPedidosDetailModal({ open, onOpenChange, nroPedido }: Est
       {selectedProduct && (
         <div className="flex gap-2 items-end">
           <div className="flex-1 space-y-1.5">
-            <Label className="text-sm font-medium text-gray-700">
-              Cant. <span className="text-[10px] font-normal text-gray-400">Stock: {selectedProduct.Stock}</span>
+            <Label className="text-sm font-medium text-foreground">
+              Cant. <span className="text-[10px] font-normal text-muted-foreground">Stock: {selectedProduct.Stock}</span>
             </Label>
-            <div className="flex items-center h-11 rounded-lg border overflow-hidden bg-gray-50 border-gray-200">
+            <div className="flex items-center h-11 rounded-lg border overflow-hidden bg-muted border-border">
               <button type="button" onClick={() => setQuantity(Math.max(1, Number(quantity) - 1))}
-                      className="h-full px-4 flex items-center text-gray-500 hover:bg-gray-100">
+                      className="h-full px-4 flex items-center text-muted-foreground hover:bg-muted">
                 <Minus className="h-3.5 w-3.5" />
               </button>
               <Input type="number" min="1" value={quantity}
@@ -293,7 +293,7 @@ export function EstadosPedidosDetailModal({ open, onOpenChange, nroPedido }: Est
                      className="w-16 border-0 bg-transparent text-center font-semibold focus-visible:ring-0 px-0 rounded-none shadow-none" />
               <button type="button" disabled={Number(quantity) >= selectedProduct.Stock}
                       onClick={() => setQuantity(Math.min(Number(quantity) + 1, selectedProduct.Stock))}
-                      className="h-full px-4 flex items-center text-gray-500 hover:text-blue-600 disabled:text-gray-300">
+                      className="h-full px-4 flex items-center text-muted-foreground hover:text-blue-600 disabled:text-muted-foreground">
                 <Plus className="h-3.5 w-3.5" />
               </button>
             </div>

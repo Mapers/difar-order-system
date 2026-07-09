@@ -182,7 +182,7 @@ export default function RolesPage() {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
             <h1 className="text-2xl font-bold">Gestión de Roles</h1>
-            <p className="text-sm text-gray-500">Administra los roles y permisos del sistema</p>
+            <p className="text-sm text-muted-foreground">Administra los roles y permisos del sistema</p>
           </div>
 
           <Button className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700" onClick={() => handleOpenRoleModal()}>
@@ -195,7 +195,7 @@ export default function RolesPage() {
           <CardContent className="p-0">
             {loading ? (
                 <div className="flex justify-center items-center h-64">
-                  <p className="text-gray-500">Cargando roles...</p>
+                  <p className="text-muted-foreground">Cargando roles...</p>
                 </div>
             ) : (
                 <div className="overflow-x-auto">
@@ -266,7 +266,7 @@ export default function RolesPage() {
                         id="activo"
                         checked={roleFormData.activo}
                         onChange={(e) => setRoleFormData({...roleFormData, activo: e.target.checked})}
-                        className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        className="h-4 w-4 rounded border-border text-blue-600 focus:ring-blue-500"
                     />
                     <Label htmlFor="activo" className="font-normal cursor-pointer">
                       Rol activo
@@ -313,14 +313,14 @@ export default function RolesPage() {
               {menus.filter(menu => menu.id_padre === null).map(menuPadre => (
                   <div key={menuPadre.id} className="border rounded-lg overflow-hidden">
                     <div
-                        className="flex items-center justify-between p-3 bg-gray-50 hover:bg-gray-100 cursor-pointer"
+                        className="flex items-center justify-between p-3 bg-muted hover:bg-muted cursor-pointer"
                         onClick={() => toggleMenu(menuPadre.id)}
                     >
                       <div className="flex items-center space-x-3">
                         {menuPadre.hijos.length > 0 && (expandedMenus.includes(menuPadre.id) ? (
-                            <ChevronDown className="h-4 w-4 text-gray-500" />
+                            <ChevronDown className="h-4 w-4 text-muted-foreground" />
                         ) : (
-                            <ChevronRight className="h-4 w-4 text-gray-500" />
+                            <ChevronRight className="h-4 w-4 text-muted-foreground" />
                         ))}
                         <span className="font-medium">{menuPadre.nombre}</span>
                       </div>
@@ -329,20 +329,20 @@ export default function RolesPage() {
                           checked={menuPadre.habilitado}
                           onChange={() => toggleHabilitado(menuPadre.id)}
                           onClick={(e) => e.stopPropagation()}
-                          className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                          className="h-4 w-4 rounded border-border text-blue-600 focus:ring-blue-500"
                       />
                     </div>
 
                     {expandedMenus.includes(menuPadre.id) && menuPadre.hijos.length > 0 && (
-                        <div className="divide-y bg-white">
+                        <div className="divide-y bg-background">
                           {menuPadre.hijos.map(menuHijo => (
-                              <div key={menuHijo.id} className="flex items-center justify-between p-3 pl-10 hover:bg-gray-50">
-                                <span className="text-sm text-gray-600">{menuHijo.nombre}</span>
+                              <div key={menuHijo.id} className="flex items-center justify-between p-3 pl-10 hover:bg-muted">
+                                <span className="text-sm text-muted-foreground">{menuHijo.nombre}</span>
                                 <input
                                     type="checkbox"
                                     checked={menuHijo.habilitado}
                                     onChange={() => toggleHabilitado(menuHijo.id)}
-                                    className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                    className="h-4 w-4 rounded border-border text-blue-600 focus:ring-blue-500"
                                 />
                               </div>
                           ))}

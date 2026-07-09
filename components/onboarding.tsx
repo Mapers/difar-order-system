@@ -50,7 +50,7 @@ export function Onboarding() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-white">
+    <div className="flex min-h-screen flex-col bg-background">
       {/* Contenido del paso actual */}
       <div className="flex flex-1 flex-col items-center justify-center px-4 py-12">
         <div className={`mb-12 flex h-48 w-48 items-center justify-center rounded-full ${steps[currentStep].color}/10`}>
@@ -60,12 +60,12 @@ export function Onboarding() {
           })()}
         </div>
 
-        <h1 className="mb-6 text-center text-3xl font-bold text-gray-900">{steps[currentStep].title}</h1>
-        <p className="max-w-md text-center text-lg text-gray-600">{steps[currentStep].description}</p>
+        <h1 className="mb-6 text-center text-3xl font-bold text-foreground">{steps[currentStep].title}</h1>
+        <p className="max-w-md text-center text-lg text-muted-foreground">{steps[currentStep].description}</p>
       </div>
 
       {/* Indicadores y botones */}
-      <div className="border-t border-gray-100 bg-white p-4">
+      <div className="border-t border-border bg-background p-4">
         <div className="mx-auto flex max-w-md items-center justify-between">
           <Button variant="ghost" onClick={completeOnboarding}>
             Omitir
@@ -76,7 +76,7 @@ export function Onboarding() {
               <div
                 key={index}
                 className={`h-2 w-2 rounded-full transition-colors ${
-                  index === currentStep ? "bg-blue-500" : "bg-gray-200"
+                  index === currentStep ? "bg-blue-500" : "bg-muted"
                 }`}
               />
             ))}

@@ -40,11 +40,11 @@ function EstadoBadge({ estado }: { estado: ISolicitudCliente['estado'] }) {
 function RegistroCard({ registro }: { registro: IRegistroDigemid }) {
     const [expanded, setExpanded] = useState(false)
     return (
-        <div className="border border-slate-200 rounded-lg overflow-hidden">
-            <div className="bg-slate-50 px-4 py-3 flex items-start justify-between gap-2">
+        <div className="border border-border rounded-lg overflow-hidden">
+            <div className="bg-muted px-4 py-3 flex items-start justify-between gap-2">
                 <div className="space-y-0.5">
-                    <p className="font-bold text-sm text-slate-800">{registro.nombreComercial}</p>
-                    <p className="text-xs text-slate-500">{registro.razonSocial}</p>
+                    <p className="font-bold text-sm text-foreground">{registro.nombreComercial}</p>
+                    <p className="text-xs text-muted-foreground">{registro.razonSocial}</p>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                     <Badge variant="outline" className="text-xs">{registro.categoria}</Badge>
@@ -55,15 +55,15 @@ function RegistroCard({ registro }: { registro: IRegistroDigemid }) {
             </div>
 
             <div className="px-4 py-3 space-y-2 text-sm">
-                <div className="flex items-start gap-2 text-slate-600">
-                    <MapPin className="h-4 w-4 mt-0.5 shrink-0 text-slate-400" />
+                <div className="flex items-start gap-2 text-muted-foreground">
+                    <MapPin className="h-4 w-4 mt-0.5 shrink-0 text-muted-foreground" />
                     <span>{registro.direccion}</span>
                 </div>
-                <div className="flex items-center gap-2 text-slate-600">
-                    <Building className="h-4 w-4 shrink-0 text-slate-400" />
+                <div className="flex items-center gap-2 text-muted-foreground">
+                    <Building className="h-4 w-4 shrink-0 text-muted-foreground" />
                     <span>{registro.ubigeo}</span>
                 </div>
-                <div className="flex items-center gap-2 text-xs text-slate-500">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
                     <span className="font-medium">Nro. Registro:</span>
                     <span>{registro.nroRegistro}</span>
                     <span className="mx-1">·</span>
@@ -84,24 +84,24 @@ function RegistroCard({ registro }: { registro: IRegistroDigemid }) {
                     </div>
 
                     {expanded && (
-                        <div className="border-t border-slate-200 px-4 py-3 space-y-4 bg-slate-50/50">
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-slate-700">
-                                <div><span className="font-semibold text-slate-500 block">Lugar de registro</span>{registro.detalle.lugarRegistro || '-'}</div>
-                                <div><span className="font-semibold text-slate-500 block">Fecha inicio</span>{registro.detalle.fechaInicio || '-'}</div>
-                                <div><span className="font-semibold text-slate-500 block">Horario</span>{registro.detalle.horario || '-'}</div>
-                                <div><span className="font-semibold text-slate-500 block">Empadronado</span>{registro.empadronado || '-'}</div>
+                        <div className="border-t border-border px-4 py-3 space-y-4 bg-muted/50">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-foreground">
+                                <div><span className="font-semibold text-muted-foreground block">Lugar de registro</span>{registro.detalle.lugarRegistro || '-'}</div>
+                                <div><span className="font-semibold text-muted-foreground block">Fecha inicio</span>{registro.detalle.fechaInicio || '-'}</div>
+                                <div><span className="font-semibold text-muted-foreground block">Horario</span>{registro.detalle.horario || '-'}</div>
+                                <div><span className="font-semibold text-muted-foreground block">Empadronado</span>{registro.empadronado || '-'}</div>
                             </div>
 
                             {registro.detalle.representantes?.length > 0 && (
                                 <div>
-                                    <p className="text-xs font-semibold text-slate-600 flex items-center gap-1 mb-2">
+                                    <p className="text-xs font-semibold text-muted-foreground flex items-center gap-1 mb-2">
                                         <User className="h-3 w-3" /> Representantes
                                     </p>
                                     <div className="space-y-1">
                                         {registro.detalle.representantes.map((rep, i) => (
-                                            <div key={i} className="text-xs text-slate-700 bg-white border border-slate-100 rounded px-3 py-2 flex flex-wrap gap-x-4">
+                                            <div key={i} className="text-xs text-foreground bg-background border border-border rounded px-3 py-2 flex flex-wrap gap-x-4">
                                                 {Object.entries(rep).map(([k, v]) => (
-                                                    <span key={k}><span className="text-slate-400">{k}:</span> {v}</span>
+                                                    <span key={k}><span className="text-muted-foreground">{k}:</span> {v}</span>
                                                 ))}
                                             </div>
                                         ))}
@@ -111,14 +111,14 @@ function RegistroCard({ registro }: { registro: IRegistroDigemid }) {
 
                             {registro.detalle.personal?.length > 0 && (
                                 <div>
-                                    <p className="text-xs font-semibold text-slate-600 flex items-center gap-1 mb-2">
+                                    <p className="text-xs font-semibold text-muted-foreground flex items-center gap-1 mb-2">
                                         <Users className="h-3 w-3" /> Personal
                                     </p>
                                     <div className="space-y-1">
                                         {registro.detalle.personal.map((p, i) => (
-                                            <div key={i} className="text-xs text-slate-700 bg-white border border-slate-100 rounded px-3 py-2 flex flex-wrap gap-x-4">
+                                            <div key={i} className="text-xs text-foreground bg-background border border-border rounded px-3 py-2 flex flex-wrap gap-x-4">
                                                 {Object.entries(p).map(([k, v]) => (
-                                                    <span key={k}><span className="text-slate-400">{k}:</span> {v}</span>
+                                                    <span key={k}><span className="text-muted-foreground">{k}:</span> {v}</span>
                                                 ))}
                                             </div>
                                         ))}
@@ -168,19 +168,19 @@ function DetalleSolicitudModal({
                     <DialogTitle className="flex items-center gap-2">
                         <Briefcase className="h-5 w-5 text-blue-600" />
                         Resultado de Solicitud
-                        <span className="font-mono text-base text-slate-500">— RUC: {solicitud.ruc}</span>
+                        <span className="font-mono text-base text-muted-foreground">— RUC: {solicitud.ruc}</span>
                     </DialogTitle>
                 </DialogHeader>
 
                 <div className="flex-1 overflow-y-auto pr-1 space-y-3 py-2">
                     {!resultado || resultado.total === 0 ? (
-                        <div className="text-center py-10 text-slate-500 text-sm">
+                        <div className="text-center py-10 text-muted-foreground text-sm">
                             No se encontraron registros para este RUC en DIGEMID.
                         </div>
                     ) : (
                         <>
-                            <p className="text-sm text-slate-500">
-                                Se encontraron <span className="font-semibold text-slate-700">{resultado.total}</span> registro{resultado.total !== 1 ? 's' : ''}.
+                            <p className="text-sm text-muted-foreground">
+                                Se encontraron <span className="font-semibold text-foreground">{resultado.total}</span> registro{resultado.total !== 1 ? 's' : ''}.
                             </p>
                             {resultado.registros.map((reg, i) => (
                                 <RegistroCard key={reg.idRegistro ?? i} registro={reg} />
@@ -259,7 +259,7 @@ export default function SolicitudesTab() {
     return (
         <div className="space-y-4">
             <div className="flex items-center justify-between">
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-muted-foreground">
                     {solicitudes.length} solicitud{solicitudes.length !== 1 ? 'es' : ''} registrada{solicitudes.length !== 1 ? 's' : ''}
                 </p>
                 <Button variant="outline" size="sm" onClick={cargarSolicitudes} disabled={loading}>
@@ -268,10 +268,10 @@ export default function SolicitudesTab() {
                 </Button>
             </div>
 
-            <div className="rounded-lg border bg-white shadow-sm overflow-hidden">
+            <div className="rounded-lg border bg-background shadow-sm overflow-hidden">
                 <div className="overflow-x-auto">
                     <Table>
-                        <TableHeader className="bg-gray-50">
+                        <TableHeader className="bg-muted">
                             <TableRow>
                                 <TableHead className="font-semibold whitespace-nowrap px-4">RUC</TableHead>
                                 <TableHead className="font-semibold whitespace-nowrap px-4">Solicitado por</TableHead>
@@ -286,17 +286,17 @@ export default function SolicitudesTab() {
                                     <TableRow key={i}>
                                         {Array.from({ length: 5 }).map((_, j) => (
                                             <TableCell key={j} className="px-4">
-                                                <div className="h-4 bg-gray-100 rounded animate-pulse w-24" />
+                                                <div className="h-4 bg-muted rounded animate-pulse w-24" />
                                             </TableCell>
                                         ))}
                                     </TableRow>
                                 ))
                             ) : solicitudes.length > 0 ? (
                                 solicitudes.map((sol) => (
-                                    <TableRow key={sol.id} className="hover:bg-gray-50 transition-colors">
+                                    <TableRow key={sol.id} className="hover:bg-muted transition-colors">
                                         <TableCell className="font-mono font-semibold text-sm px-4">{sol.ruc}</TableCell>
-                                        <TableCell className="text-sm px-4 text-gray-600">{sol.solicitadoPor || '-'}</TableCell>
-                                        <TableCell className="text-sm px-4 text-gray-600 whitespace-nowrap">{formatFecha(sol.fechaSolicitud)}</TableCell>
+                                        <TableCell className="text-sm px-4 text-muted-foreground">{sol.solicitadoPor || '-'}</TableCell>
+                                        <TableCell className="text-sm px-4 text-muted-foreground whitespace-nowrap">{formatFecha(sol.fechaSolicitud)}</TableCell>
                                         <TableCell className="px-4"><EstadoBadge estado={sol.estado} /></TableCell>
                                         <TableCell className="text-right px-4">
                                             {(sol.estado === 'completado' || sol.estado === 'aprobado' || sol.estado === 'rechazado') && (
@@ -314,7 +314,7 @@ export default function SolicitudesTab() {
                                 ))
                             ) : (
                                 <TableRow>
-                                    <TableCell colSpan={5} className="text-center py-12 text-gray-500">
+                                    <TableCell colSpan={5} className="text-center py-12 text-muted-foreground">
                                         No hay solicitudes registradas.
                                     </TableCell>
                                 </TableRow>

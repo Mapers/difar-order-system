@@ -116,12 +116,12 @@ export default function SeccionAdmin({
                 {[
                     { label: 'Planillas hoy',   value: resumenDia?.total_planillas ?? '—', color: 'text-sky-700',     bg: 'bg-sky-50 border-sky-200' },
                     { label: 'Total cobrado',   value: fmtMoney(resumenDia?.total_cobrado), color: 'text-emerald-700', bg: 'bg-emerald-50 border-emerald-200' },
-                    { label: 'Validadas',       value: resumenDia?.validadas ?? '—',        color: 'text-slate-700',   bg: 'bg-slate-50 border-slate-200' },
+                    { label: 'Validadas',       value: resumenDia?.validadas ?? '—',        color: 'text-foreground',   bg: 'bg-muted border-border' },
                     { label: 'Con observación', value: resumenDia?.rechazadas ?? '—',       color: 'text-red-700',     bg: 'bg-red-50 border-red-200' },
                 ].map(c => (
                     <Card key={c.label} className={`shadow-sm border ${c.bg}`}>
                         <CardContent className="p-4">
-                            <p className="text-[11px] text-slate-500 uppercase font-semibold tracking-wider">{c.label}</p>
+                            <p className="text-[11px] text-muted-foreground uppercase font-semibold tracking-wider">{c.label}</p>
                             <p className={`font-mono text-2xl font-bold mt-1 ${c.color}`}>{c.value}</p>
                         </CardContent>
                     </Card>
@@ -132,17 +132,17 @@ export default function SeccionAdmin({
                 <CardContent className="p-4 space-y-3">
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                         <div className="relative sm:col-span-2 lg:col-span-1">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                             <Input
                                 placeholder="Vendedor, zona, N° planilla..."
                                 value={busqueda}
                                 onChange={e => setBusqueda(e.target.value)}
-                                className="pl-9 bg-slate-50"
+                                className="pl-9 bg-muted"
                                 onKeyDown={e => e.key === 'Enter' && handleBuscar()}
                             />
                         </div>
                         <Select value={filtroEstado} onValueChange={setFiltroEstado}>
-                            <SelectTrigger className="bg-slate-50"><SelectValue /></SelectTrigger>
+                            <SelectTrigger className="bg-muted"><SelectValue /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">Todos los estados</SelectItem>
                                 <SelectItem value="enviado">Enviado — pendiente</SelectItem>
@@ -155,18 +155,18 @@ export default function SeccionAdmin({
                             type="date"
                             value={fechaDesde}
                             onChange={e => setFechaDesde(e.target.value)}
-                            className="bg-slate-50"
+                            className="bg-muted"
                         />
                         <Input
                             type="date"
                             value={fechaHasta}
                             onChange={e => setFechaHasta(e.target.value)}
-                            className="bg-slate-50"
+                            className="bg-muted"
                         />
                     </div>
 
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                        <p className="text-[11px] text-slate-400">
+                        <p className="text-[11px] text-muted-foreground">
                             {planillasAdmin.length} planilla{planillasAdmin.length !== 1 ? 's' : ''} encontrada{planillasAdmin.length !== 1 ? 's' : ''}
                         </p>
                         <div className="flex gap-2 w-full sm:w-auto">
@@ -201,7 +201,7 @@ export default function SeccionAdmin({
                 <Card>
                     <CardContent className="py-12 text-center">
                         <div className="text-3xl mb-3 opacity-40">📋</div>
-                        <p className="text-slate-400">No se encontraron planillas.</p>
+                        <p className="text-muted-foreground">No se encontraron planillas.</p>
                     </CardContent>
                 </Card>
             ) : planillasAdmin.map(planilla => {
@@ -213,7 +213,7 @@ export default function SeccionAdmin({
                 return (
                     <Card key={planilla.id_planilla} className={`shadow-sm overflow-hidden border-l-4 ${colorBorde(planilla.estado)}`}>
                         <div
-                            className="flex items-center justify-between p-3.5 cursor-pointer hover:bg-slate-50 transition-colors"
+                            className="flex items-center justify-between p-3.5 cursor-pointer hover:bg-muted transition-colors"
                             onClick={() => toggleRow(planilla)}
                         >
                             <div className="flex items-center gap-3 min-w-0">
@@ -222,16 +222,16 @@ export default function SeccionAdmin({
                                 </div>
                                 <div className="min-w-0">
                                     <div className="flex items-center gap-2 flex-wrap">
-                                        <p className="text-sm font-bold font-mono text-slate-800">
+                                        <p className="text-sm font-bold font-mono text-card-foreground">
                                             {planilla.numero_planilla}
                                         </p>
                                         <EstadoPill estado={planilla.estado} />
                                     </div>
                                     <div className="mt-0.5 space-y-0.5 sm:space-y-0">
-                                        <p className="text-[11px] text-slate-500 font-medium truncate">
+                                        <p className="text-[11px] text-muted-foreground font-medium truncate">
                                             {planilla.nombre_vendedor}
                                         </p>
-                                        <p className="text-[11px] text-slate-400 truncate flex items-center gap-1">
+                                        <p className="text-[11px] text-muted-foreground truncate flex items-center gap-1">
                                             <MapPin className="h-3 w-3 shrink-0" />
                                             <span className="truncate">{planilla.zona}</span>
                                             <span className="shrink-0">· {fmtRel(planilla.fecha_envio)}</span>
@@ -258,28 +258,28 @@ export default function SeccionAdmin({
                                 )}
 
                                 <div className="text-right hidden xs:block">
-                                    <p className="font-mono font-semibold text-slate-800 text-sm">
+                                    <p className="font-mono font-semibold text-card-foreground text-sm">
                                         {fmtMoney(planilla.total_cobrado ?? dets.reduce((s, r) => s + Number(r.importe_cobrado), 0))}
                                     </p>
-                                    <p className="text-[10px] text-slate-400">
+                                    <p className="text-[10px] text-muted-foreground">
                                         {planilla.total_registros ?? dets.length} reg.
                                     </p>
                                 </div>
 
                                 {isLoading
-                                    ? <Loader2 className="h-4 w-4 text-slate-400 animate-spin shrink-0" />
+                                    ? <Loader2 className="h-4 w-4 text-muted-foreground animate-spin shrink-0" />
                                     : isOpen
-                                        ? <ChevronDown className="h-4 w-4 text-slate-400 shrink-0 transition-transform" />
-                                        : <ChevronRight className="h-4 w-4 text-slate-400 shrink-0 transition-transform" />
+                                        ? <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0 transition-transform" />
+                                        : <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 transition-transform" />
                                 }
                             </div>
                         </div>
 
-                        <div className="px-3.5 pb-2 flex items-center justify-between xs:hidden border-t border-slate-50 bg-slate-50/50">
-                            <p className="text-[10px] text-slate-400">
+                        <div className="px-3.5 pb-2 flex items-center justify-between xs:hidden border-t border-border bg-muted/50">
+                            <p className="text-[10px] text-muted-foreground">
                                 {planilla.total_registros ?? dets.length} registros
                             </p>
-                            <p className="font-mono font-semibold text-slate-800 text-sm">
+                            <p className="font-mono font-semibold text-card-foreground text-sm">
                                 {fmtMoney(planilla.total_cobrado ?? dets.reduce((s, r) => s + Number(r.importe_cobrado), 0))}
                             </p>
                         </div>

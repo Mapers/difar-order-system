@@ -130,7 +130,7 @@ export function SeleccionarDocumentoModal({
 
                 <div className="px-6 py-3 border-b shrink-0">
                     <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input
                             placeholder="Buscar por tipo, serie o número..."
                             value={search}
@@ -141,9 +141,9 @@ export function SeleccionarDocumentoModal({
                     </div>
                 </div>
 
-                <ScrollArea className="flex-1 px-6 py-4 bg-gray-50/60">
+                <ScrollArea className="flex-1 px-6 py-4 bg-muted/60">
                     {loading ? (
-                        <div className="flex flex-col items-center justify-center h-48 gap-3 text-slate-400">
+                        <div className="flex flex-col items-center justify-center h-48 gap-3 text-muted-foreground">
                             <Loader2 className="h-8 w-8 animate-spin" />
                             <p className="text-sm">Cargando documentos...</p>
                         </div>
@@ -154,12 +154,12 @@ export function SeleccionarDocumentoModal({
                             <Button size="sm" variant="outline" onClick={fetchDocs}>Reintentar</Button>
                         </div>
                     ) : !codCliente ? (
-                        <div className="flex flex-col items-center justify-center h-48 gap-2 text-slate-400">
+                        <div className="flex flex-col items-center justify-center h-48 gap-2 text-muted-foreground">
                             <FileText className="h-8 w-8 opacity-40" />
                             <p className="text-sm">Selecciona primero un cliente.</p>
                         </div>
                     ) : filtered.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center h-48 gap-2 text-slate-400">
+                        <div className="flex flex-col items-center justify-center h-48 gap-2 text-muted-foreground">
                             <FileText className="h-8 w-8 opacity-40" />
                             <p className="text-sm">
                                 {search ? 'Sin resultados para esa búsqueda.' : 'El cliente no tiene documentos en kardex.'}
@@ -176,16 +176,16 @@ export function SeleccionarDocumentoModal({
                                         className={`cursor-pointer transition-all hover:border-sky-400 hover:shadow-sm
                                             ${isSelected
                                             ? 'border-sky-600 ring-1 ring-sky-600 bg-sky-50'
-                                            : 'border-gray-200 bg-white'
+                                            : 'border-border bg-background'
                                         }`}
                                     >
                                         <CardContent className="p-4 space-y-2">
                                             <div className="flex items-start justify-between gap-2">
                                                 <div className="flex items-center gap-1.5 flex-wrap">
-                                                    <Badge variant="outline" className="font-mono text-xs bg-white">
+                                                    <Badge variant="outline" className="font-mono text-xs bg-background">
                                                         {doc.Abre_Doc || doc.Tipo_Doc}
                                                     </Badge>
-                                                    <span className="font-mono font-semibold text-sm text-slate-800">
+                                                    <span className={`font-mono font-semibold text-sm ${isSelected ? 'text-slate-800' : 'text-foreground'}`}>
                                                         {doc.SerieDoc}-{doc.NumeroDoc}
                                                     </span>
                                                 </div>
@@ -194,7 +194,7 @@ export function SeleccionarDocumentoModal({
                                                 )}
                                             </div>
 
-                                            <div className="flex flex-wrap gap-3 text-xs text-slate-500">
+                                            <div className={`flex flex-wrap gap-3 text-xs ${isSelected ? 'text-slate-500' : 'text-muted-foreground'}`}>
                                                 <span className="flex items-center gap-1">
                                                     <Calendar className="h-3 w-3" />
                                                     Emisión: {fmtFecha(doc.Fecha_Emision)}
@@ -233,8 +233,8 @@ export function SeleccionarDocumentoModal({
                     )}
                 </ScrollArea>
 
-                <div className="px-6 py-4 border-t shrink-0 flex items-center justify-between gap-4 bg-white">
-                    <p className="text-xs text-slate-400">
+                <div className="px-6 py-4 border-t shrink-0 flex items-center justify-between gap-4 bg-background">
+                    <p className="text-xs text-muted-foreground">
                         {filtered.length} documento{filtered.length !== 1 ? 's' : ''}
                         {soloVigentes && ' con saldo pendiente'}
                     </p>

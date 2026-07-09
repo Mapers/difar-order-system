@@ -54,8 +54,8 @@ export const ORDER_STATES = [
     description: "Pedido registrado, sin validación ni asignación de stock.",
     documents: "Ninguno",
     icon: Clock,
-    color: "bg-gray-100 text-gray-800",
-    borderColor: "border-gray-300",
+    color: "bg-muted text-foreground",
+    borderColor: "border-border",
   },
   {
     id: 2,
@@ -356,40 +356,40 @@ export default function MyOrdersPage() {
   return (
     <div className="grid gap-6">
       <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold tracking-tight text-gray-900">Mis Pedidos</h1>
-        <p className="text-gray-500">Historial de pedidos enviados y su estado actual.</p>
+        <h1 className="text-3xl font-bold tracking-tight text-foreground">Mis Pedidos</h1>
+        <p className="text-muted-foreground">Historial de pedidos enviados y su estado actual.</p>
       </div>
 
       <Card className="shadow-md">
-        <CardHeader className="flex flex-col sm:flex-row justify-between gap-4 sm:items-center border-b bg-gray-50">
+        <CardHeader className="flex flex-col sm:flex-row justify-between gap-4 sm:items-center border-b bg-muted">
           <CardTitle className="text-xl font-semibold text-teal-700">Filtros de Búsqueda</CardTitle>
         </CardHeader>
         <CardContent className="p-0">
           <form onSubmit={handleFilterSubmit} className="p-4 grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="fechaDesde" className="text-gray-700">Desde</Label>
+              <Label htmlFor="fechaDesde" className="text-muted-foreground">Desde</Label>
               <Input
                 id="fechaDesde"
                 type="date"
-                className="bg-white"
+                className="bg-background"
                 name="fechaDesde"
                 value={filters.fechaDesde}
                 onChange={handleFilterChange}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="fechaHasta" className="text-gray-700">Hasta</Label>
+              <Label htmlFor="fechaHasta" className="text-muted-foreground">Hasta</Label>
               <Input
                 id="fechaHasta"
                 type="date"
-                className="bg-white"
+                className="bg-background"
                 name="fechaHasta"
                 value={filters.fechaHasta}
                 onChange={handleFilterChange}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="cliente" className="text-gray-700">Cliente</Label>
+              <Label htmlFor="cliente" className="text-muted-foreground">Cliente</Label>
               <Combobox<IClient>
                 items={clientsFiltered}
                 value={filters.cliente}
@@ -418,7 +418,7 @@ export default function MyOrdersPage() {
         <div className="space-y-4">
         {loading ? (
             Array.from({ length: 5 }).map((_, index) => (
-                <Card key={index} className="bg-white shadow-sm">
+                <Card key={index} className="bg-background shadow-sm">
                   <CardContent className="p-4 sm:p-6">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                       <div className="flex-1 space-y-3">
@@ -466,12 +466,12 @@ export default function MyOrdersPage() {
                           const StateIcon  = stateInfo?.icon || Clock
 
                           return (
-                              <Card key={pedido.idPedidocab} className="bg-white shadow-none rounded-none border-0">
+                              <Card key={pedido.idPedidocab} className="bg-background shadow-none rounded-none border-0">
                                 <CardContent className="p-4 sm:p-5">
                                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                                     <div className="flex-1 space-y-2 min-w-0">
                                       <div className="flex flex-wrap items-center gap-2">
-                                        <h3 className="text-base font-semibold text-gray-900 shrink-0">
+                                        <h3 className="text-base font-semibold text-foreground shrink-0">
                                           Pedido #{pedido.nroPedido}
                                         </h3>
                                         <Badge className={`${stateInfo?.color} flex items-center gap-1 text-xs shrink-0`}>
@@ -488,32 +488,32 @@ export default function MyOrdersPage() {
 
                                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 text-sm">
                                         <div className="flex items-center gap-2">
-                                          <Calendar className="h-4 w-4 text-gray-400 shrink-0" />
-                                          <span className="text-gray-500">Fecha:</span>
+                                          <Calendar className="h-4 w-4 text-muted-foreground shrink-0" />
+                                          <span className="text-muted-foreground">Fecha:</span>
                                           <span className="font-medium">{format(parseISO(pedido.fechaPedido), "dd/MM/yyyy")}</span>
                                         </div>
                                         <div className="flex items-center gap-2 min-w-0">
-                                          <User className="h-4 w-4 text-gray-400 shrink-0" />
-                                          <span className="text-gray-500 shrink-0">Cliente:</span>
+                                          <User className="h-4 w-4 text-muted-foreground shrink-0" />
+                                          <span className="text-muted-foreground shrink-0">Cliente:</span>
                                           <span className="font-medium truncate">{pedido.nombreCliente}</span>
                                         </div>
                                         <div className="flex items-center gap-2">
-                                          <Wallet className="h-4 w-4 text-gray-400 shrink-0" />
-                                          <span className="text-gray-500">Total:</span>
+                                          <Wallet className="h-4 w-4 text-muted-foreground shrink-0" />
+                                          <span className="text-muted-foreground">Total:</span>
                                           <span className="font-bold text-green-600">
                                                             {pedido.monedaPedido === "PEN" ? "S/ " : "$ "}
                                             {Number(pedido.totalPedido).toFixed(2)}
                                                         </span>
                                         </div>
                                         <div className="flex items-center gap-2">
-                                          <Package className="h-4 w-4 text-gray-400 shrink-0" />
-                                          <span className="text-gray-500">Condición:</span>
+                                          <Package className="h-4 w-4 text-muted-foreground shrink-0" />
+                                          <span className="text-muted-foreground">Condición:</span>
                                           <span className="font-medium">{pedido.condicionPedido}</span>
                                         </div>
                                         {auth.user?.idRol !== 1 && (
                                             <div className="flex items-center gap-2 min-w-0">
-                                              <UserSearch className="h-4 w-4 text-gray-400 shrink-0" />
-                                              <span className="text-gray-500 shrink-0">
+                                              <UserSearch className="h-4 w-4 text-muted-foreground shrink-0" />
+                                              <span className="text-muted-foreground shrink-0">
                                                                 {!!pedido.represPedido ? 'Representante' : 'Vendedor'}:
                                                             </span>
                                               <span className="font-medium uppercase truncate">
@@ -548,12 +548,12 @@ export default function MyOrdersPage() {
               const StateIcon = stateInfo?.icon || Clock
 
               return (
-                  <Card key={pedido.idPedidocab} className="bg-white shadow-sm hover:shadow-md transition-shadow">
+                  <Card key={pedido.idPedidocab} className="bg-background shadow-sm hover:shadow-md transition-shadow">
                     <CardContent className="p-4 sm:p-6">
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                         <div className="flex-1 space-y-3 min-w-0">
                           <div className="flex flex-wrap items-center gap-2">
-                            <h3 className="text-lg font-semibold text-gray-900 shrink-0">
+                            <h3 className="text-lg font-semibold text-foreground shrink-0">
                               Pedido #{pedido.nroPedido}
                             </h3>
                             <Badge className={`${stateInfo?.color} flex items-center gap-1 text-xs shrink-0`}>
@@ -565,32 +565,32 @@ export default function MyOrdersPage() {
 
                           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-sm">
                             <div className="flex items-center gap-2">
-                              <Calendar className="h-4 w-4 text-gray-500 shrink-0" />
-                              <span className="text-gray-600">Fecha:</span>
+                              <Calendar className="h-4 w-4 text-muted-foreground shrink-0" />
+                              <span className="text-muted-foreground">Fecha:</span>
                               <span className="font-medium">{format(parseISO(pedido.fechaPedido), "dd/MM/yyyy")}</span>
                             </div>
                             <div className="flex items-center gap-2 min-w-0">
-                              <User className="h-4 w-4 text-gray-500 shrink-0" />
-                              <span className="text-gray-600 shrink-0">Cliente:</span>
+                              <User className="h-4 w-4 text-muted-foreground shrink-0" />
+                              <span className="text-muted-foreground shrink-0">Cliente:</span>
                               <span className="font-medium truncate">{pedido.nombreCliente}</span>
                             </div>
                             <div className="flex items-center gap-2">
-                              <Wallet className="h-4 w-4 text-gray-500 shrink-0" />
-                              <span className="text-gray-600">Total:</span>
+                              <Wallet className="h-4 w-4 text-muted-foreground shrink-0" />
+                              <span className="text-muted-foreground">Total:</span>
                               <span className="font-bold text-green-600">
                                         {pedido.monedaPedido === "PEN" ? "S/ " : "$ "}
                                 {Number(pedido.totalPedido).toFixed(2)}
                                     </span>
                             </div>
                             <div className="flex items-center gap-2">
-                              <Package className="h-4 w-4 text-gray-500 shrink-0" />
-                              <span className="text-gray-600">Condición:</span>
+                              <Package className="h-4 w-4 text-muted-foreground shrink-0" />
+                              <span className="text-muted-foreground">Condición:</span>
                               <span className="font-medium">{pedido.condicionPedido}</span>
                             </div>
                             {auth.user?.idRol !== 1 && (
                                 <div className="flex items-center gap-2 min-w-0">
-                                  <UserSearch className="h-4 w-4 text-gray-500 shrink-0" />
-                                  <span className="text-gray-600 shrink-0">
+                                  <UserSearch className="h-4 w-4 text-muted-foreground shrink-0" />
+                                  <span className="text-muted-foreground shrink-0">
                                             {!!pedido.represPedido ? 'Representante' : 'Vendedor'}:
                                         </span>
                                   <span className="font-medium uppercase truncate">
@@ -616,7 +616,7 @@ export default function MyOrdersPage() {
               )
             })
         ) : (
-            <div className="text-center py-8 text-gray-500">
+            <div className="text-center py-8 text-muted-foreground">
               {activeTab === 'historicos' ? 'No se encontraron pedidos históricos' : 'No se encontraron pedidos'}
             </div>
         )}
@@ -693,7 +693,7 @@ export function Combobox<T>({
           type="button"
           variant="ghost"
           size="icon"
-          className="h-9 w-9 shrink-0 text-gray-400 hover:text-gray-700"
+          className="h-9 w-9 shrink-0 text-muted-foreground hover:text-foreground"
           onClick={handleClear}
         >
           <X className="h-4 w-4" />

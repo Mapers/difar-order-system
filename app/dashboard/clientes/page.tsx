@@ -180,12 +180,12 @@ export default function ClientsPage() {
   return (
       <div className="grid gap-6 w-full min-w-0">
         <div className="flex flex-col gap-2">
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900">Clientes</h1>
-          <p className="text-gray-500">Sistema de evaluación y gestión de clientes DIFAR</p>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">Clientes</h1>
+          <p className="text-muted-foreground">Sistema de evaluación y gestión de clientes DIFAR</p>
         </div>
 
         <Card className="shadow-md min-w-0">
-          <CardHeader className="flex flex-col space-y-4 sm:space-y-0 sm:flex-row sm:items-center sm:justify-between gap-4 border-b bg-gray-50">
+          <CardHeader className="flex flex-col space-y-4 sm:space-y-0 sm:flex-row sm:items-center sm:justify-between gap-4 border-b bg-muted">
             <div className="space-y-1.5">
               <CardTitle className="text-xl font-semibold text-teal-700">
                 Listado de Clientes
@@ -222,7 +222,7 @@ export default function ClientsPage() {
                 </div>
             )}
 
-            <Card className="bg-white shadow-sm mb-6">
+            <Card className="bg-background shadow-sm mb-6">
               <CardHeader className="pb-4">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                   <CardTitle className="text-lg text-blue-600 flex items-center gap-2">
@@ -247,7 +247,7 @@ export default function ClientsPage() {
                       Buscar por código, cliente, provincia o dirección
                     </Label>
                     <div className="relative">
-                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                       <Input
                           id="search"
                           type="search"
@@ -267,7 +267,7 @@ export default function ClientsPage() {
                           <Button
                               variant="outline"
                               role="combobox"
-                              className={cn("w-full justify-between h-10 font-normal bg-white", selectedZona && "pr-8")}
+                              className={cn("w-full justify-between h-10 font-normal bg-background", selectedZona && "pr-8")}
                           >
                             <span className="truncate">
                               {selectedZona || "Todas las zonas"}
@@ -277,7 +277,7 @@ export default function ClientsPage() {
                         </PopoverTrigger>
                         {selectedZona && (
                             <div
-                                className="absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer p-1 text-gray-500 hover:text-red-500 hover:bg-red-50 rounded-md z-10"
+                                className="absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer p-1 text-muted-foreground hover:text-red-500 hover:bg-red-50 rounded-md z-10"
                                 onClick={(e) => { e.preventDefault(); e.stopPropagation(); setSelectedZona("") }}
                             >
                               <X className="h-4 w-4" />
@@ -316,7 +316,7 @@ export default function ClientsPage() {
                             <Button
                                 variant="outline"
                                 role="combobox"
-                                className={cn("w-full justify-between h-10 font-normal bg-white", selectedVendedor && "pr-8")}
+                                className={cn("w-full justify-between h-10 font-normal bg-background", selectedVendedor && "pr-8")}
                             >
                               <span className="truncate">
                                 {vendedorOptions.find(v => v.codigo === selectedVendedor)?.nombre || "Todos los vendedores"}
@@ -326,7 +326,7 @@ export default function ClientsPage() {
                           </PopoverTrigger>
                           {selectedVendedor && (
                               <div
-                                  className="absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer p-1 text-gray-500 hover:text-red-500 hover:bg-red-50 rounded-md z-10"
+                                  className="absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer p-1 text-muted-foreground hover:text-red-500 hover:bg-red-50 rounded-md z-10"
                                   onClick={(e) => { e.preventDefault(); e.stopPropagation(); setSelectedVendedor("") }}
                               >
                                 <X className="h-4 w-4" />
@@ -362,7 +362,7 @@ export default function ClientsPage() {
 
             <div className="space-y-4 w-full">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-muted-foreground">
                   Mostrando {paginatedData.length} de {filteredClients.length} cliente{filteredClients.length !== 1 ? "s" : ""}
                   <span className="hidden sm:inline"> (Página {currentPage} de {totalPages})</span>
                 </p>
@@ -380,7 +380,7 @@ export default function ClientsPage() {
                       const IconoEstado = estadoAprobacion.icon;
 
                       return (
-                          <Card key={cliente.codigoInterno} className="border border-gray-200 hover:shadow-md transition-shadow">
+                          <Card key={cliente.codigoInterno} className="border border-border hover:shadow-md transition-shadow">
                             <CardContent className="p-4">
                               <div className="space-y-4">
                                 <div className="flex items-start justify-between gap-2">
@@ -393,15 +393,15 @@ export default function ClientsPage() {
                                             {estadoAprobacion.estado}
                                           </Badge>
                                       ) : (
-                                          <Badge variant="outline" className="bg-gray-50 text-xs shrink-0">
+                                          <Badge variant="outline" className="bg-muted text-xs shrink-0">
                                             {cliente.situacion || 'Activo'}
                                           </Badge>
                                       )}
                                     </div>
-                                    <p className="font-medium text-gray-900 text-sm break-words line-clamp-2">
+                                    <p className="font-medium text-card-foreground text-sm break-words line-clamp-2">
                                       {cliente.razonSocial}
                                     </p>
-                                    <p className="text-xs text-gray-500 break-words line-clamp-1 mt-1">
+                                    <p className="text-xs text-muted-foreground break-words line-clamp-1 mt-1">
                                       {cliente.nombreComercial}
                                     </p>
                                   </div>
@@ -437,7 +437,7 @@ export default function ClientsPage() {
                                       </div>
                                       <div className="grid grid-cols-2 gap-3 text-xs">
                                         <div>
-                                          <Label className="text-xs text-gray-500">Fecha Evaluación</Label>
+                                          <Label className="text-xs text-muted-foreground">Fecha Evaluación</Label>
                                           <p className="font-medium break-words">{formatSafeDate(cliente.fechaEvaluacion)}</p>
                                         </div>
                                       </div>
@@ -457,28 +457,28 @@ export default function ClientsPage() {
                                         </div>
                                       </div>
 
-                                      <div className="bg-gray-50 rounded-md p-2 space-y-2">
+                                      <div className="bg-muted rounded-md p-2 space-y-2">
                                         <div className="flex items-start gap-2">
-                                          <Phone className="h-3 w-3 text-gray-500 mt-0.5 shrink-0" />
-                                          <span className="text-xs text-gray-700 break-words">{cliente.telefono || 'Sin teléfono'}</span>
+                                          <Phone className="h-3 w-3 text-muted-foreground mt-0.5 shrink-0" />
+                                          <span className="text-xs text-muted-foreground break-words">{cliente.telefono || 'Sin teléfono'}</span>
                                         </div>
                                         <div className="flex items-start gap-2">
-                                          <Mail className="h-3 w-3 text-gray-500 mt-0.5 shrink-0" />
-                                          <span className="text-xs text-gray-700 break-words">{cliente.correoElectronico || 'Sin correo'}</span>
+                                          <Mail className="h-3 w-3 text-muted-foreground mt-0.5 shrink-0" />
+                                          <span className="text-xs text-muted-foreground break-words">{cliente.correoElectronico || 'Sin correo'}</span>
                                         </div>
                                         <div className="flex items-start gap-2">
-                                          <MapPin className="h-3 w-3 text-gray-500 mt-0.5 shrink-0" />
-                                          <span className="text-xs text-gray-700 break-words">{cliente.direccion || 'Sin dirección'}</span>
+                                          <MapPin className="h-3 w-3 text-muted-foreground mt-0.5 shrink-0" />
+                                          <span className="text-xs text-muted-foreground break-words">{cliente.direccion || 'Sin dirección'}</span>
                                         </div>
                                       </div>
 
                                       <div className="grid grid-cols-2 gap-2 text-xs">
                                         <div className="border rounded-md p-2">
-                                          <span className="block text-gray-500 mb-1">Estado SUNAT</span>
+                                          <span className="block text-muted-foreground mb-1">Estado SUNAT</span>
                                           <span className="font-medium">{cliente.estadoSunat || '-'}</span>
                                         </div>
                                         <div className="border rounded-md p-2">
-                                          <span className="block text-gray-500 mb-1">Relación</span>
+                                          <span className="block text-muted-foreground mb-1">Relación</span>
                                           <span className="font-medium">{cliente.relacion || '-'}</span>
                                         </div>
                                       </div>
@@ -499,10 +499,10 @@ export default function ClientsPage() {
                       );
                     })
                 ) : (
-                    <div className="text-center py-12 border rounded-lg bg-gray-50">
-                      <User className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                      <h3 className="text-lg font-medium text-gray-900 mb-2">No hay clientes</h3>
-                      <p className="text-gray-500 mb-4 px-4 text-sm">
+                    <div className="text-center py-12 border rounded-lg bg-muted">
+                      <User className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                      <h3 className="text-lg font-medium text-foreground mb-2">No hay clientes</h3>
+                      <p className="text-muted-foreground mb-4 px-4 text-sm">
                         {searchTerm ? "No se encontraron cliente-cobranza que coincidan con tu búsqueda." : "Aún no hay cliente-cobranza en el sistema."}
                       </p>
                       <Button onClick={handleCreateNewEvaluation}>
@@ -513,10 +513,10 @@ export default function ClientsPage() {
               </div>
 
               {/* VISTA DESKTOP (TABLA RESPONSIVA) */}
-              <div className="hidden lg:block w-full max-w-full rounded-lg border bg-white shadow-sm overflow-hidden">
+              <div className="hidden lg:block w-full max-w-full rounded-lg border bg-background shadow-sm overflow-hidden">
                 <div className="w-full overflow-x-auto relative scrollbar-thin scrollbar-thumb-gray-300">
                   <Table className="w-full min-w-max">
-                    <TableHeader className="bg-gray-50">
+                    <TableHeader className="bg-muted">
                       <TableRow>
                         <TableHead className="font-semibold whitespace-nowrap px-4">Código</TableHead>
                         <TableHead className="font-semibold whitespace-nowrap px-4">Cliente / Razón Social</TableHead>
@@ -558,7 +558,7 @@ export default function ClientsPage() {
                               <TableHead className="font-semibold whitespace-nowrap px-4">Fecha Registro</TableHead>
                             </>
                         )}
-                        <TableHead className="font-semibold text-right whitespace-nowrap sticky right-0 bg-gray-50 z-10 px-4 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.05)]">Acciones</TableHead>
+                        <TableHead className="font-semibold text-right whitespace-nowrap sticky right-0 bg-muted z-10 px-4 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.05)]">Acciones</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -570,27 +570,27 @@ export default function ClientsPage() {
                             const IconoEstado = estadoAprobacion.icon;
 
                             return (
-                                <TableRow key={client.codigoInterno + index} className="border-b hover:bg-gray-50 transition-colors">
+                                <TableRow key={client.codigoInterno + index} className="border-b hover:bg-muted transition-colors">
                                   <TableCell className="font-bold text-blue-600 font-mono text-sm whitespace-nowrap px-4">
                                     {client.codigoInterno}
                                   </TableCell>
                                   <TableCell className="whitespace-nowrap px-4">
-                                    <div className="text-sm font-medium text-gray-900">{client.razonSocial || '-'}</div>
+                                    <div className="text-sm font-medium text-foreground">{client.razonSocial || '-'}</div>
                                   </TableCell>
                                   <TableCell className="whitespace-nowrap px-4">
-                                    <div className="text-sm text-gray-900">{client.numeroDocumento || '-'}</div>
-                                    <div className="text-xs text-gray-500">{client.tipoDocumento}</div>
+                                    <div className="text-sm text-foreground">{client.numeroDocumento || '-'}</div>
+                                    <div className="text-xs text-muted-foreground">{client.tipoDocumento}</div>
                                   </TableCell>
 
                                   {vistaTablaClientes === '1' ? (
                                       <>
                                         <TableCell className="whitespace-nowrap px-4">
-                                          <div className="text-sm text-gray-900">{ClientMethodsService.getCategoriaLabel(client.categoria)}</div>
-                                          <div className="text-xs text-gray-500">{formatSafeDate(client.fechaEvaluacion)}</div>
+                                          <div className="text-sm text-foreground">{ClientMethodsService.getCategoriaLabel(client.categoria)}</div>
+                                          <div className="text-xs text-muted-foreground">{formatSafeDate(client.fechaEvaluacion)}</div>
                                         </TableCell>
                                         <TableCell className="whitespace-nowrap px-4">
-                                          <div className="text-sm text-gray-900">{client.provincia || "Sin provincia"}</div>
-                                          <div className="text-xs text-gray-500">Zona: {client.zona}</div>
+                                          <div className="text-sm text-foreground">{client.provincia || "Sin provincia"}</div>
+                                          <div className="text-xs text-muted-foreground">Zona: {client.zona}</div>
                                         </TableCell>
                                         <TableCell className="whitespace-nowrap px-4">
                                           <Badge className={estadoAprobacion.color}>
@@ -632,7 +632,7 @@ export default function ClientsPage() {
                                       </>
                                   )}
 
-                                  <TableCell className="text-right whitespace-nowrap sticky right-0 bg-white z-10 px-4 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.05)] group-hover:bg-gray-50 transition-colors border-l border-gray-100">
+                                  <TableCell className="text-right whitespace-nowrap sticky right-0 bg-background z-10 px-4 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.05)] group-hover:bg-muted transition-colors border-l border-border">
                                     <div className="flex justify-end gap-2">
                                       <Button variant="outline" size="sm" onClick={() => handleView(client.codigoInterno)} className="bg-blue-50 text-blue-700 hover:bg-blue-100 text-xs">
                                         <Eye className="mr-1 h-3 w-3" /> Ver
@@ -647,7 +647,7 @@ export default function ClientsPage() {
                           })
                       ) : (
                           <TableRow>
-                            <TableCell colSpan={vistaTablaClientes === '1' ? 7 : 30} className="text-center py-8 text-gray-500">
+                            <TableCell colSpan={vistaTablaClientes === '1' ? 7 : 30} className="text-center py-8 text-muted-foreground">
                               {error ? 'Error al cargar los cliente-cobranza' : 'No se encontraron cliente-cobranza'}
                             </TableCell>
                           </TableRow>
@@ -658,18 +658,18 @@ export default function ClientsPage() {
               </div>
 
               {filteredClients.length > 0 && (
-                  <div className="border-t bg-gray-50 px-4 py-3 mt-6">
+                  <div className="border-t bg-muted px-4 py-3 mt-6">
                     <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                       <div className="flex flex-col xs:flex-row xs:items-center gap-3">
                         <div className="flex items-center gap-2">
-                          <Label htmlFor="itemsPerPage" className="text-sm text-gray-700 whitespace-nowrap">
+                          <Label htmlFor="itemsPerPage" className="text-sm text-muted-foreground whitespace-nowrap">
                             Mostrar:
                           </Label>
                           <select
                               id="itemsPerPage"
                               value={itemsPerPage}
                               onChange={handleItemsPerPageChange}
-                              className="border border-gray-300 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-20"
+                              className="border border-border rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-20"
                           >
                             <option value={10}>10</option>
                             <option value={20}>20</option>
@@ -677,7 +677,7 @@ export default function ClientsPage() {
                             <option value={100}>100</option>
                           </select>
                         </div>
-                        <div className="text-sm text-gray-700 whitespace-nowrap">
+                        <div className="text-sm text-muted-foreground whitespace-nowrap">
                           Página <span className="font-medium">{currentPage}</span> de <span className="font-medium">{totalPages}</span>
                         </div>
                       </div>
@@ -722,7 +722,7 @@ export default function ClientsPage() {
                             })}
 
                             {totalPages > 5 && currentPage < totalPages - 2 && (
-                                <span className="px-2 text-sm text-gray-500">...</span>
+                                <span className="px-2 text-sm text-muted-foreground">...</span>
                             )}
 
                             {totalPages > 5 && currentPage < totalPages - 1 && (
@@ -751,14 +751,14 @@ export default function ClientsPage() {
 
                         {totalPages > 5 && (
                             <div className="flex items-center gap-2 sm:hidden w-full justify-center">
-                              <Label htmlFor="pageSelect" className="text-sm text-gray-700 whitespace-nowrap">
+                              <Label htmlFor="pageSelect" className="text-sm text-muted-foreground whitespace-nowrap">
                                 Ir a:
                               </Label>
                               <select
                                   id="pageSelect"
                                   value={currentPage}
                                   onChange={(e) => goToPage(Number(e.target.value))}
-                                  className="border border-gray-300 rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                  className="border border-border rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                               >
                                 {Array.from({ length: totalPages }, (_, i) => (
                                     <option key={i + 1} value={i + 1}>

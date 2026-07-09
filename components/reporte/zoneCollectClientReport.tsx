@@ -25,7 +25,7 @@ const ZoneCollectClientReport: React.FC<ZoneSellerReportProps> = ({ zone, client
             <CollectClienteRow key={client.head.Nombre} client={client} invoices={client.boddy} />
           ))
         ) : (
-          <div className="text-center py-8 text-gray-500 text-sm sm:text-base">
+          <div className="text-center py-8 text-muted-foreground text-sm sm:text-base">
             No hay clientes en esta zona
           </div>
         )}

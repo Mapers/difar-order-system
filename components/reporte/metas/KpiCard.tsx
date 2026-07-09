@@ -22,11 +22,11 @@ export default function KpiCard({ label, value, subtitle, delta, deltaType = 'su
     };
 
     return (
-        <div className="relative overflow-hidden bg-white border border-slate-200 rounded-xl shadow-sm p-4">
+        <div className="relative overflow-hidden bg-background border border-border rounded-xl shadow-sm p-4">
             {/*<div className="absolute top-0 left-0 right-0 h-[3px]" style={{ background: color }} />*/}
-            <p className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold mb-1">{label}</p>
+            <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-1">{label}</p>
             <p className="text-2xl font-bold tracking-tight" style={{ color }}>{value}</p>
-            <p className="text-[11px] text-slate-400 mt-0.5">{subtitle}</p>
+            <p className="text-[11px] text-muted-foreground mt-0.5">{subtitle}</p>
             {delta && (
                 <span className={`inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full mt-1.5 ${deltaClasses[deltaType]}`}>
                     {delta}

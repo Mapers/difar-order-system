@@ -213,8 +213,8 @@ export default function WhatsappSection({ onOpenModalChange }: WhatsappSectionPr
                                             <MessageCircle className="h-4 w-4 text-green-600" />
                                         </div>
                                         <div>
-                                            <p className="font-semibold text-sm text-gray-900">{item.nombre}</p>
-                                            <p className="text-xs text-gray-500 font-mono">+51 {item.numero}</p>
+                                            <p className="font-semibold text-sm text-card-foreground">{item.nombre}</p>
+                                            <p className="text-xs text-muted-foreground font-mono">+51 {item.numero}</p>
                                         </div>
                                     </div>
                                     <Badge
@@ -228,7 +228,7 @@ export default function WhatsappSection({ onOpenModalChange }: WhatsappSectionPr
                                 <div className="mb-3">{renderFiltroBadge(item)}</div>
 
                                 {item.descripcion && (
-                                    <p className="text-xs text-gray-500 mb-3 bg-gray-50 rounded p-2">{item.descripcion}</p>
+                                    <p className="text-xs text-muted-foreground mb-3 bg-muted rounded p-2">{item.descripcion}</p>
                                 )}
 
                                 <div className="flex gap-2 mt-3">
@@ -256,9 +256,9 @@ export default function WhatsappSection({ onOpenModalChange }: WhatsappSectionPr
                 </div>
             ) : (
                 <div className="text-center py-8">
-                    <MessageCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">No hay números registrados</h3>
-                    <p className="text-sm text-gray-500">Registra un número de WhatsApp para recibir notificaciones de ventas.</p>
+                    <MessageCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-foreground mb-2">No hay números registrados</h3>
+                    <p className="text-sm text-muted-foreground">Registra un número de WhatsApp para recibir notificaciones de ventas.</p>
                 </div>
             )}
 
@@ -281,7 +281,7 @@ export default function WhatsappSection({ onOpenModalChange }: WhatsappSectionPr
                                 maxLength={15}
                             />
                             {errors.numero && <p className="text-xs text-red-500">{errors.numero}</p>}
-                            <p className="text-xs text-gray-400">Ingresa el número sin el código de país (+51). Ej: 987654321</p>
+                            <p className="text-xs text-muted-foreground">Ingresa el número sin el código de país (+51). Ej: 987654321</p>
                         </div>
 
                         <div className="space-y-2">
@@ -318,7 +318,7 @@ export default function WhatsappSection({ onOpenModalChange }: WhatsappSectionPr
                                 </TabsList>
 
                                 <TabsContent value="TODOS" className="pt-2">
-                                    <p className="text-xs text-gray-500">Recibirá la notificación de todas las ventas.</p>
+                                    <p className="text-xs text-muted-foreground">Recibirá la notificación de todas las ventas.</p>
                                 </TabsContent>
 
                                 <TabsContent value="ZONA" className="pt-2 space-y-1">
@@ -331,7 +331,7 @@ export default function WhatsappSection({ onOpenModalChange }: WhatsappSectionPr
                                         emptyText="No se encontraron zonas"
                                         loading={loadingOpts}
                                     />
-                                    <p className="text-xs text-gray-400">Solo recibirá ventas de las zonas seleccionadas.</p>
+                                    <p className="text-xs text-muted-foreground">Solo recibirá ventas de las zonas seleccionadas.</p>
                                 </TabsContent>
 
                                 <TabsContent value="CLIENTE" className="pt-2 space-y-1">
@@ -344,7 +344,7 @@ export default function WhatsappSection({ onOpenModalChange }: WhatsappSectionPr
                                         emptyText="No se encontraron clientes"
                                         loading={loadingOpts}
                                     />
-                                    <p className="text-xs text-gray-400">Solo recibirá ventas de los clientes seleccionados.</p>
+                                    <p className="text-xs text-muted-foreground">Solo recibirá ventas de los clientes seleccionados.</p>
                                 </TabsContent>
                             </Tabs>
                             {errors.filtro && <p className="text-xs text-red-500">{errors.filtro}</p>}

@@ -67,7 +67,7 @@ export default function SolicitarClienteModal({ open, onOpenChange, onSolicitudC
                             disabled={loading}
                             onKeyDown={(e) => e.key === "Enter" && handleEnviar()}
                         />
-                        {/*<p className="text-xs text-gray-500">*/}
+                        {/*<p className="text-xs text-muted-foreground">*/}
                         {/*    Se consultará la información del establecimiento en DIGEMID. El resultado puede demorar entre 4 y 5 minutos.*/}
                         {/*</p>*/}
                     </div>

@@ -110,16 +110,16 @@ export default function ModalMayor({ open, onClose, amortizacion }: Props) {
         <>
             <Dialog open={open} onOpenChange={v => { if (!v) onClose() }}>
                 <DialogContent className="max-w-[1020px] max-h-[90vh] flex flex-col p-0 gap-0">
-                    <DialogHeader className="px-5 pt-5 pb-3 border-b border-slate-200 flex-shrink-0">
+                    <DialogHeader className="px-5 pt-5 pb-3 border-b border-border flex-shrink-0">
                         <div className="flex items-center gap-3">
                             <div>
                                 <DialogTitle className="text-[15px]">Libro Mayor</DialogTitle>
-                                <DialogDescription className="text-xs text-slate-400 mt-0.5">{subtitle}</DialogDescription>
+                                <DialogDescription className="text-xs text-muted-foreground mt-0.5">{subtitle}</DialogDescription>
                             </div>
                         </div>
                     </DialogHeader>
 
-                    <div className="px-5 py-3 border-b border-slate-200 flex gap-2 flex-shrink-0">
+                    <div className="px-5 py-3 border-b border-border flex gap-2 flex-shrink-0">
                         <Input
                             className="text-xs h-8 flex-1"
                             placeholder="Buscar por cuenta, descripción, referencia..."
@@ -132,32 +132,32 @@ export default function ModalMayor({ open, onClose, amortizacion }: Props) {
                     <div className="flex-1 overflow-auto">
                         <table className="w-full text-xs border-collapse">
                             <thead>
-                            <tr className="bg-slate-50 sticky top-0 z-10">
-                                <th className="text-left py-2.5 px-3 font-semibold text-slate-500 uppercase text-[10px] tracking-wider border-b">Fecha</th>
-                                <th className="text-left py-2.5 px-3 font-semibold text-slate-500 uppercase text-[10px] tracking-wider border-b">Cuenta</th>
-                                <th className="text-left py-2.5 px-3 font-semibold text-slate-500 uppercase text-[10px] tracking-wider border-b">Descripción</th>
-                                <th className="text-left py-2.5 px-3 font-semibold text-slate-500 uppercase text-[10px] tracking-wider border-b">Ref. Doc.</th>
-                                <th className="text-left py-2.5 px-3 font-semibold text-slate-500 uppercase text-[10px] tracking-wider border-b">Cargo</th>
-                                <th className="text-left py-2.5 px-3 font-semibold text-slate-500 uppercase text-[10px] tracking-wider border-b">Abono</th>
-                                <th className="text-center py-2.5 px-3 font-semibold text-slate-500 uppercase text-[10px] tracking-wider border-b">Acciones</th>
+                            <tr className="bg-muted sticky top-0 z-10">
+                                <th className="text-left py-2.5 px-3 font-semibold text-muted-foreground uppercase text-[10px] tracking-wider border-b">Fecha</th>
+                                <th className="text-left py-2.5 px-3 font-semibold text-muted-foreground uppercase text-[10px] tracking-wider border-b">Cuenta</th>
+                                <th className="text-left py-2.5 px-3 font-semibold text-muted-foreground uppercase text-[10px] tracking-wider border-b">Descripción</th>
+                                <th className="text-left py-2.5 px-3 font-semibold text-muted-foreground uppercase text-[10px] tracking-wider border-b">Ref. Doc.</th>
+                                <th className="text-left py-2.5 px-3 font-semibold text-muted-foreground uppercase text-[10px] tracking-wider border-b">Cargo</th>
+                                <th className="text-left py-2.5 px-3 font-semibold text-muted-foreground uppercase text-[10px] tracking-wider border-b">Abono</th>
+                                <th className="text-center py-2.5 px-3 font-semibold text-muted-foreground uppercase text-[10px] tracking-wider border-b">Acciones</th>
                             </tr>
                             </thead>
                             <tbody>
                             {loading ? (
                                 <tr>
-                                    <td colSpan={7} className="text-center py-12 text-slate-400">
+                                    <td colSpan={7} className="text-center py-12 text-muted-foreground">
                                         <Loader2 className="h-6 w-6 animate-spin mx-auto mb-2" />
                                         Cargando asientos...
                                     </td>
                                 </tr>
                             ) : filtered.length === 0 ? (
                                 <tr>
-                                    <td colSpan={7} className="text-center py-12 text-slate-400">
+                                    <td colSpan={7} className="text-center py-12 text-muted-foreground">
                                         Sin asientos contables
                                     </td>
                                 </tr>
                             ) : filtered.map(r => (
-                                <tr key={r.IdLibroMayor} className="hover:bg-slate-50/60 border-b border-slate-100">
+                                <tr key={r.IdLibroMayor} className="hover:bg-muted/60 border-b border-border">
                                     <td className="py-2 px-3">{fmtFecha(r.Fecha)}</td>
                                     <td className="py-2 px-3 font-mono text-[11px] text-blue-600">{r.CtaContable}</td>
                                     <td className="py-2 px-3">{r.DescCuenta || r.Concepto}</td>
@@ -194,8 +194,8 @@ export default function ModalMayor({ open, onClose, amortizacion }: Props) {
                         </table>
                     </div>
 
-                    <div className="px-5 py-3 border-t border-slate-200 bg-slate-50 flex items-center justify-between flex-shrink-0 rounded-b-lg">
-                        <span className="text-xs text-slate-400">{filtered.length} asiento{filtered.length !== 1 ? 's' : ''}</span>
+                    <div className="px-5 py-3 border-t border-border bg-muted flex items-center justify-between flex-shrink-0 rounded-b-lg">
+                        <span className="text-xs text-muted-foreground">{filtered.length} asiento{filtered.length !== 1 ? 's' : ''}</span>
                         <Button variant="outline" size="sm" className="text-xs h-7" onClick={onClose}>Cerrar</Button>
                     </div>
                 </DialogContent>

@@ -112,7 +112,7 @@ export default function MetasConfigSection({ onOpenModalChange }: MetasConfigSec
                             className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold transition-all border ${
                                 isActive
                                     ? 'bg-blue-50 border-blue-300 text-blue-700'
-                                    : 'bg-white border-slate-200 text-slate-500 hover:border-blue-200 hover:text-blue-600'
+                                    : 'bg-background border-border text-muted-foreground hover:border-blue-200 hover:text-blue-600'
                             }`}
                         >
                             <Icon className="h-3.5 w-3.5" />
@@ -251,8 +251,8 @@ function CiclosSection({ onOpenModalChange }: { onOpenModalChange: (fn: () => vo
                             <CardContent className="p-4">
                                 <div className="flex justify-between items-start mb-3">
                                     <div>
-                                        <h3 className="font-bold text-base text-gray-900">{MESES[item.mes]} {item.anio}</h3>
-                                        <p className="text-xs text-gray-500 mt-0.5">
+                                        <h3 className="font-bold text-base text-card-foreground">{MESES[item.mes]} {item.anio}</h3>
+                                        <p className="text-xs text-muted-foreground mt-0.5">
                                             {formatSafeDate(item.fecha_inicio?.split('T')[0])} → {formatSafeDate(item.fecha_fin?.split('T')[0])}
                                         </p>
                                     </div>
@@ -282,9 +282,9 @@ function CiclosSection({ onOpenModalChange }: { onOpenModalChange: (fn: () => vo
                 </div>
             ) : (
                 <div className="text-center py-8">
-                    <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">No hay ciclos registrados</h3>
-                    <p className="text-sm text-gray-500">Crea un nuevo ciclo para comenzar a asignar metas</p>
+                    <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-foreground mb-2">No hay ciclos registrados</h3>
+                    <p className="text-sm text-muted-foreground">Crea un nuevo ciclo para comenzar a asignar metas</p>
                 </div>
             )}
 
@@ -479,10 +479,10 @@ function LaboratoriosSection({ onOpenModalChange }: { onOpenModalChange: (fn: ((
 
     return (
         <>
-            <div className="flex items-center gap-3 mb-4 p-3 bg-slate-50 rounded-lg border border-slate-200">
-                <Label className="text-xs font-semibold text-slate-500 whitespace-nowrap">Ciclo:</Label>
+            <div className="flex items-center gap-3 mb-4 p-3 bg-muted rounded-lg border border-border">
+                <Label className="text-xs font-semibold text-muted-foreground whitespace-nowrap">Ciclo:</Label>
                 <Select value={selectedCiclo} onValueChange={setSelectedCiclo}>
-                    <SelectTrigger className="w-[220px] h-9 text-sm bg-white"><SelectValue placeholder="Seleccionar ciclo" /></SelectTrigger>
+                    <SelectTrigger className="w-[220px] h-9 text-sm bg-background"><SelectValue placeholder="Seleccionar ciclo" /></SelectTrigger>
                     <SelectContent>
                         {ciclos.map(c => (
                             <SelectItem key={c.id_ciclo} value={String(c.id_ciclo)}>
@@ -503,20 +503,20 @@ function LaboratoriosSection({ onOpenModalChange }: { onOpenModalChange: (fn: ((
                             <CardContent className="p-4">
                                 <div className="flex justify-between items-start mb-2">
                                     <div>
-                                        <h3 className="font-bold text-sm text-gray-900">{item.linea_desc || `Lab #${item.id_linea_ge}`}</h3>
+                                        <h3 className="font-bold text-sm text-card-foreground">{item.linea_desc || `Lab #${item.id_linea_ge}`}</h3>
                                     </div>
                                     <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700">
                                         {item.total_vendedores || 0} vendedor{(item.total_vendedores || 0) === 1 ? '' : 'es'}
                                     </Badge>
                                 </div>
                                 <div className="grid grid-cols-1 gap-2 my-3">
-                                    <div className="bg-slate-50 p-2 rounded-md">
-                                        <p className="text-[10px] text-slate-400 uppercase font-semibold">Meta S/</p>
-                                        <p className="text-sm font-bold text-slate-800">{fmtMoney(item.meta_monto)}</p>
+                                    <div className="bg-muted p-2 rounded-md">
+                                        <p className="text-[10px] text-muted-foreground uppercase font-semibold">Meta S/</p>
+                                        <p className="text-sm font-bold text-foreground">{fmtMoney(item.meta_monto)}</p>
                                     </div>
                                 </div>
                                 {item.meta_distribuida !== undefined && (
-                                    <div className="text-[10px] text-slate-400 mb-2">
+                                    <div className="text-[10px] text-muted-foreground mb-2">
                                         Distribuido: {fmtMoney(item.meta_distribuida!)} de {fmtMoney(item.meta_monto)}
                                         {Number(item.meta_distribuida) !== Number(item.meta_monto) &&
                                           <span className="text-amber-600 font-semibold ml-1">⚠ Diferencia</span>}
@@ -528,8 +528,8 @@ function LaboratoriosSection({ onOpenModalChange }: { onOpenModalChange: (fn: ((
                 </div>
             ) : (
                 <div className="text-center py-8">
-                    <Factory className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">No hay metas de laboratorio</h3>
+                    <Factory className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-foreground mb-2">No hay metas de laboratorio</h3>
                 </div>
             )}
 
@@ -546,7 +546,7 @@ function LaboratoriosSection({ onOpenModalChange }: { onOpenModalChange: (fn: ((
                                 <Popover open={openLabPopover} onOpenChange={setOpenLabPopover} modal>
                                     <PopoverTrigger asChild>
                                         <Button variant="outline" role="combobox"
-                                                className={cn("justify-between w-full font-normal h-10 bg-white", errors.id_linea_ge && "border-red-500")}>
+                                                className={cn("justify-between w-full font-normal h-10 bg-background", errors.id_linea_ge && "border-red-500")}>
                                             <span className="truncate">
                                                 {form.id_linea_ge
                                                     ? form.lab_nombre
@@ -586,7 +586,7 @@ function LaboratoriosSection({ onOpenModalChange }: { onOpenModalChange: (fn: ((
                                                             )} />
                                                             <div className="flex flex-col">
                                                                 <span className="text-sm font-medium">{lab.Descripcion}</span>
-                                                                <span className="text-[10px] text-slate-400">Código: {lab.Codigo_Linea} · ID: {lab.IdLineaGe}</span>
+                                                                <span className="text-[10px] text-muted-foreground">Código: {lab.Codigo_Linea} · ID: {lab.IdLineaGe}</span>
                                                             </div>
                                                         </CommandItem>
                                                     ))}
@@ -600,7 +600,7 @@ function LaboratoriosSection({ onOpenModalChange }: { onOpenModalChange: (fn: ((
                         ) : (
                             <div className="space-y-2">
                                 <Label>Laboratorio</Label>
-                                <Input value={`${form.lab_nombre} (ID: ${form.id_linea_ge})`} disabled className="bg-slate-50" />
+                                <Input value={`${form.lab_nombre} (ID: ${form.id_linea_ge})`} disabled className="bg-muted" />
                             </div>
                         )}
 
@@ -696,10 +696,10 @@ function VendedoresSection({ onOpenModalChange }: { onOpenModalChange: (fn: (() 
     return (
         <>
             {/* Selector de ciclo */}
-            <div className="flex items-center gap-3 mb-4 p-3 bg-slate-50 rounded-lg border border-slate-200">
-                <Label className="text-xs font-semibold text-slate-500 whitespace-nowrap">Ciclo:</Label>
+            <div className="flex items-center gap-3 mb-4 p-3 bg-muted rounded-lg border border-border">
+                <Label className="text-xs font-semibold text-muted-foreground whitespace-nowrap">Ciclo:</Label>
                 <Select value={selectedCiclo} onValueChange={setSelectedCiclo}>
-                    <SelectTrigger className="w-[220px] h-9 text-sm bg-white">
+                    <SelectTrigger className="w-[220px] h-9 text-sm bg-background">
                         <SelectValue placeholder="Seleccionar ciclo" />
                     </SelectTrigger>
                     <SelectContent>
@@ -722,8 +722,8 @@ function VendedoresSection({ onOpenModalChange }: { onOpenModalChange: (fn: (() 
                 </div>
             ) : resumen.length === 0 ? (
                 <div className="text-center py-8">
-                    <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-gray-900">No hay vendedores con metas asignadas</h3>
+                    <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-foreground">No hay vendedores con metas asignadas</h3>
                 </div>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -739,8 +739,8 @@ function VendedoresSection({ onOpenModalChange }: { onOpenModalChange: (fn: (() 
                                 <CardContent className="p-4">
                                     <div className="flex justify-between items-start mb-2">
                                         <div>
-                                            <h3 className="font-bold text-sm text-gray-900">{v.nombre_vendedor || v.cod_vendedor}</h3>
-                                            <p className="text-xs text-gray-500">Cód: {v.cod_vendedor}</p>
+                                            <h3 className="font-bold text-sm text-card-foreground">{v.nombre_vendedor || v.cod_vendedor}</h3>
+                                            <p className="text-xs text-muted-foreground">Cód: {v.cod_vendedor}</p>
                                         </div>
                                         <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700">
                                             {totalLabs} lab{totalLabs !== 1 ? 's' : ''}
@@ -748,18 +748,18 @@ function VendedoresSection({ onOpenModalChange }: { onOpenModalChange: (fn: (() 
                                     </div>
 
                                     <div className="grid grid-cols-2 gap-2 my-3">
-                                        <div className="bg-slate-50 p-2 rounded-md">
-                                            <p className="text-[10px] text-slate-400 uppercase font-semibold">Venta S/</p>
-                                            <p className="text-sm font-bold text-slate-800">{fmtMoney(Number(v.venta_total))}</p>
+                                        <div className="bg-muted p-2 rounded-md">
+                                            <p className="text-[10px] text-muted-foreground uppercase font-semibold">Venta S/</p>
+                                            <p className="text-sm font-bold text-foreground">{fmtMoney(Number(v.venta_total))}</p>
                                         </div>
-                                        <div className="bg-slate-50 p-2 rounded-md">
-                                            <p className="text-[10px] text-slate-400 uppercase font-semibold">Cuota S/</p>
-                                            <p className="text-sm font-bold text-slate-800">{fmtMoney(Number(v.cuota_total))}</p>
+                                        <div className="bg-muted p-2 rounded-md">
+                                            <p className="text-[10px] text-muted-foreground uppercase font-semibold">Cuota S/</p>
+                                            <p className="text-sm font-bold text-foreground">{fmtMoney(Number(v.cuota_total))}</p>
                                         </div>
                                     </div>
 
-                                    <div className="text-[10px] text-slate-400 mb-3">
-                                        Avance global: <span className="font-semibold text-slate-700">{pct}%</span>
+                                    <div className="text-[10px] text-muted-foreground mb-3">
+                                        Avance global: <span className="font-semibold text-foreground">{pct}%</span>
                                         {' · '}
                                         <span className="text-emerald-600 font-semibold">✓ {enMeta}</span>
                                         {' '}
@@ -1010,22 +1010,22 @@ function ItemsSection({ onOpenModalChange }: { onOpenModalChange: (fn: () => voi
 
     return (
         <>
-            <div className="flex items-center gap-2 mb-4 p-3 bg-slate-50 rounded-lg border border-slate-200 flex-wrap">
-                <Label className="text-xs font-semibold text-slate-500">Ciclo:</Label>
+            <div className="flex items-center gap-2 mb-4 p-3 bg-muted rounded-lg border border-border flex-wrap">
+                <Label className="text-xs font-semibold text-muted-foreground">Ciclo:</Label>
                 <Select value={selectedCiclo} onValueChange={setSelectedCiclo}>
-                    <SelectTrigger className="w-[140px] h-8 text-xs bg-white"><SelectValue /></SelectTrigger>
+                    <SelectTrigger className="w-[140px] h-8 text-xs bg-background"><SelectValue /></SelectTrigger>
                     <SelectContent>{ciclos.map(c => <SelectItem key={c.id_ciclo} value={String(c.id_ciclo)}>{MESES_CORTO[c.mes]} {c.anio}</SelectItem>)}</SelectContent>
                 </Select>
-                <ChevronRight className="h-3.5 w-3.5 text-slate-300" />
-                <Label className="text-xs font-semibold text-slate-500">Lab:</Label>
+                <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
+                <Label className="text-xs font-semibold text-muted-foreground">Lab:</Label>
                 <Select value={selectedLab} onValueChange={setSelectedLab}>
-                    <SelectTrigger className="w-[130px] h-8 text-xs bg-white"><SelectValue /></SelectTrigger>
+                    <SelectTrigger className="w-[130px] h-8 text-xs bg-background"><SelectValue /></SelectTrigger>
                     <SelectContent>{labs.map(l => <SelectItem key={l.id_linea_ge} value={String(l.id_linea_ge)}>{l.linea_desc}</SelectItem>)}</SelectContent>
                 </Select>
-                <ChevronRight className="h-3.5 w-3.5 text-slate-300" />
-                <Label className="text-xs font-semibold text-slate-500">Vendedor:</Label>
+                <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
+                <Label className="text-xs font-semibold text-muted-foreground">Vendedor:</Label>
                 <Select value={selectedVend} onValueChange={setSelectedVend}>
-                    <SelectTrigger className="w-[130px] h-8 text-xs bg-white"><SelectValue /></SelectTrigger>
+                    <SelectTrigger className="w-[130px] h-8 text-xs bg-background"><SelectValue /></SelectTrigger>
                     <SelectContent>{vendedores.map(v => <SelectItem key={v.cod_vendedor} value={String(v.cod_vendedor)}>{v.vendedor}</SelectItem>)}</SelectContent>
                 </Select>
                 <div className="ml-auto flex gap-2">
@@ -1065,26 +1065,26 @@ function ItemsSection({ onOpenModalChange }: { onOpenModalChange: (fn: () => voi
             </div>
 
             {loading ? <Skeleton className="h-40" /> : data.length > 0 ? (
-                <div className="overflow-x-auto border border-slate-200 rounded-lg">
+                <div className="overflow-x-auto border border-border rounded-lg">
                     <table className="w-full text-xs">
                         <thead>
-                        <tr className="bg-slate-50 border-b border-slate-200">
-                            <th className="text-left px-3 py-2 font-semibold text-slate-500">Código</th>
-                            <th className="text-left px-3 py-2 font-semibold text-slate-500">Tipo Precio</th>
-                            <th className="text-right px-3 py-2 font-semibold text-slate-500">P.Ref</th>
-                            <th className="text-right px-3 py-2 font-semibold text-slate-500">Cantidad</th>
-                            <th className="text-right px-3 py-2 font-semibold text-slate-500">Meta S/</th>
-                            <th className="text-center px-3 py-2 font-semibold text-slate-500">Acciones</th>
+                        <tr className="bg-muted border-b border-border">
+                            <th className="text-left px-3 py-2 font-semibold text-muted-foreground">Código</th>
+                            <th className="text-left px-3 py-2 font-semibold text-muted-foreground">Tipo Precio</th>
+                            <th className="text-right px-3 py-2 font-semibold text-muted-foreground">P.Ref</th>
+                            <th className="text-right px-3 py-2 font-semibold text-muted-foreground">Cantidad</th>
+                            <th className="text-right px-3 py-2 font-semibold text-muted-foreground">Meta S/</th>
+                            <th className="text-center px-3 py-2 font-semibold text-muted-foreground">Acciones</th>
                         </tr>
                         </thead>
                         <tbody>
                         {data.map((item: IMetaItem) => (
-                            <tr key={item.id_meta_item} className="border-b border-slate-100 hover:bg-slate-50">
-                                <td className="px-3 py-2 font-semibold text-slate-800">{item.cod_articulo}</td>
-                                <td className="px-3 py-2 text-slate-500">{item.tipo_precio_ref}</td>
-                                <td className="px-3 py-2 text-right text-slate-600">{fmtMoney(item.precio_ref)}</td>
-                                <td className="px-3 py-2 text-right text-slate-600">{Number(item.meta_cantidad).toLocaleString()}</td>
-                                <td className="px-3 py-2 text-right font-bold text-slate-800">{fmtMoney(item.meta_monto)}</td>
+                            <tr key={item.id_meta_item} className="border-b border-border hover:bg-muted">
+                                <td className="px-3 py-2 font-semibold text-foreground">{item.cod_articulo}</td>
+                                <td className="px-3 py-2 text-muted-foreground">{item.tipo_precio_ref}</td>
+                                <td className="px-3 py-2 text-right text-muted-foreground">{fmtMoney(item.precio_ref)}</td>
+                                <td className="px-3 py-2 text-right text-muted-foreground">{Number(item.meta_cantidad).toLocaleString()}</td>
+                                <td className="px-3 py-2 text-right font-bold text-foreground">{fmtMoney(item.meta_monto)}</td>
                                 <td className="px-3 py-2 text-center">
                                     <div className="flex gap-1 justify-center">
                                         <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => {
@@ -1101,7 +1101,7 @@ function ItemsSection({ onOpenModalChange }: { onOpenModalChange: (fn: () => voi
                                             setSelectedPriceKey('')
                                             setErrors({})
                                             setIsModalOpen(true)
-                                        }}><Edit className="h-3 w-3 text-slate-500" /></Button>
+                                        }}><Edit className="h-3 w-3 text-muted-foreground" /></Button>
                                         <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => { setItemToDelete(item); setIsDeleteModalOpen(true) }}>
                                             <Trash2 className="h-3 w-3 text-red-500" />
                                         </Button>
@@ -1114,8 +1114,8 @@ function ItemsSection({ onOpenModalChange }: { onOpenModalChange: (fn: () => voi
                 </div>
             ) : (
                 <div className="text-center py-8">
-                    <Pill className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-gray-900">No hay productos asignados</h3>
+                    <Pill className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-foreground">No hay productos asignados</h3>
                 </div>
             )}
 
@@ -1144,12 +1144,12 @@ function ItemsSection({ onOpenModalChange }: { onOpenModalChange: (fn: () => voi
                                             <span className="truncate w-full text-sm font-medium">
                                                 {form.nombre_articulo}
                                             </span>
-                                            <span className="text-xs text-gray-500 truncate w-full">
+                                            <span className="text-xs text-muted-foreground truncate w-full">
                                                 {form.cod_articulo}
                                             </span>
                                         </div>
                                     ) : (
-                                        <span className="text-gray-500 truncate">Buscar por código, nombre o laboratorio...</span>
+                                        <span className="text-muted-foreground truncate">Buscar por código, nombre o laboratorio...</span>
                                     )}
                                     <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                 </Button>
@@ -1168,7 +1168,7 @@ function ItemsSection({ onOpenModalChange }: { onOpenModalChange: (fn: () => voi
                         ) : (
                             <div className="space-y-2">
                                 <Label>Código Artículo</Label>
-                                <Input value={form.cod_articulo} disabled className="bg-slate-50" />
+                                <Input value={form.cod_articulo} disabled className="bg-muted" />
                             </div>
                         )}
 
@@ -1176,7 +1176,7 @@ function ItemsSection({ onOpenModalChange }: { onOpenModalChange: (fn: () => voi
                             <div className="space-y-2">
                                 <Label>Precio de referencia *</Label>
                                 {!form.cod_articulo ? (
-                                    <p className="text-xs text-gray-400">Selecciona un producto para ver sus precios.</p>
+                                    <p className="text-xs text-muted-foreground">Selecciona un producto para ver sus precios.</p>
                                 ) : priceOptions.length === 0 ? (
                                     <p className="text-xs text-amber-600">Este producto no tiene precios disponibles.</p>
                                 ) : (
@@ -1194,12 +1194,18 @@ function ItemsSection({ onOpenModalChange }: { onOpenModalChange: (fn: () => voi
                                                     "relative rounded-xl p-2 text-center border-2 transition-all",
                                                     selectedPriceKey === opt.key
                                                         ? "border-blue-500 bg-blue-50"
-                                                        : "border-gray-200 bg-gray-50 hover:border-blue-300"
+                                                        : "border-border bg-muted hover:border-blue-300"
                                                 )}
                                             >
                                                 {selectedPriceKey === opt.key && <Check className="absolute top-1 right-1 h-3 w-3 text-blue-600" />}
-                                                <div className="text-[10px] font-medium text-gray-500 mb-0.5">{opt.label}</div>
-                                                <div className="text-sm font-bold text-blue-700">S/ {opt.value.toFixed(2)}</div>
+                                                <div className={cn(
+                                                    "text-[10px] font-medium mb-0.5",
+                                                    selectedPriceKey === opt.key ? "text-blue-600" : "text-muted-foreground"
+                                                )}>{opt.label}</div>
+                                                <div className={cn(
+                                                    "text-sm font-bold",
+                                                    selectedPriceKey === opt.key ? "text-blue-700" : "text-foreground"
+                                                )}>S/ {opt.value.toFixed(2)}</div>
                                             </button>
                                         ))}
                                     </div>
@@ -1209,7 +1215,7 @@ function ItemsSection({ onOpenModalChange }: { onOpenModalChange: (fn: () => voi
                         ) : (
                             <div className="space-y-2">
                                 <Label>Precio de referencia</Label>
-                                <Input value={fmtMoney(Number(form.precio_ref))} disabled className="bg-slate-50" />
+                                <Input value={fmtMoney(Number(form.precio_ref))} disabled className="bg-muted" />
                             </div>
                         )}
 
@@ -1243,11 +1249,11 @@ function ItemsSection({ onOpenModalChange }: { onOpenModalChange: (fn: () => voi
                                     <p className="text-red-600 font-medium">Define primero la meta del vendedor y del laboratorio.</p>
                                 ) : (
                                     <>
-                                        <div className={`flex justify-between ${excedeVend ? 'text-red-600 font-semibold' : 'text-slate-600'}`}>
+                                        <div className={`flex justify-between ${excedeVend ? 'text-red-600 font-semibold' : 'text-muted-foreground'}`}>
                                             <span>Disponible vendedor:</span>
                                             <span>{fmtMoney(Number(dispVend))}</span>
                                         </div>
-                                        <div className={`flex justify-between ${excedeLab ? 'text-red-600 font-semibold' : 'text-slate-600'}`}>
+                                        <div className={`flex justify-between ${excedeLab ? 'text-red-600 font-semibold' : 'text-muted-foreground'}`}>
                                             <span>Disponible laboratorio:</span>
                                             <span>{fmtMoney(Number(dispLab))}</span>
                                         </div>

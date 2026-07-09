@@ -42,7 +42,7 @@ export default function AlternativeProductsModal({
                         <AlertCircle className="h-5 w-5" />
                         Producto sin stock
                     </DialogTitle>
-                    <DialogDescription className="text-gray-700 mt-2">
+                    <DialogDescription className="text-foreground mt-2">
                         El producto <strong>{originalProduct.NombreItem}</strong> (Código: {originalProduct.Codigo_Art}) no tiene stock en este momento.
                         {originalProduct.principioActivo && (
                             <span> Su principio activo es <strong className="text-blue-600">{originalProduct.principioActivo}</strong>.</span>
@@ -51,7 +51,7 @@ export default function AlternativeProductsModal({
                 </DialogHeader>
 
                 <div className="mt-4 space-y-4">
-                    <h4 className="font-semibold text-gray-900">
+                    <h4 className="font-semibold text-foreground">
                         {alternatives.length > 0
                             ? "Alternativas disponibles con el mismo Principio Activo:"
                             : "No se encontraron alternativas con stock para este principio activo."}
@@ -60,7 +60,7 @@ export default function AlternativeProductsModal({
                     {alternatives.length > 0 && (
                         <div className="border rounded-md overflow-x-auto">
                             <Table>
-                                <TableHeader className="bg-gray-50">
+                                <TableHeader className="bg-muted">
                                     <TableRow>
                                         <TableHead>Producto</TableHead>
                                         <TableHead>Laboratorio</TableHead>
@@ -75,7 +75,7 @@ export default function AlternativeProductsModal({
                                             <TableCell className="font-medium">
                                                 <div className="flex flex-col">
                                                     <span>{alt.NombreItem}</span>
-                                                    <span className="text-xs text-gray-500">{alt.Codigo_Art} | {alt.presentacion}</span>
+                                                    <span className="text-xs text-muted-foreground">{alt.Codigo_Art} | {alt.presentacion}</span>
                                                 </div>
                                             </TableCell>
                                             <TableCell className="text-sm">{alt.Descripcion}</TableCell>
@@ -109,7 +109,7 @@ export default function AlternativeProductsModal({
                     {/*<Button*/}
                     {/*    variant="outline"*/}
                     {/*    onClick={() => onProceedWithOriginal(originalProduct)}*/}
-                    {/*    className="text-gray-500"*/}
+                    {/*    className="text-muted-foreground"*/}
                     {/*>*/}
                     {/*    Continuar sin stock (Backorder)*/}
                     {/*</Button>*/}

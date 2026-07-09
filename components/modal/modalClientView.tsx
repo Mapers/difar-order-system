@@ -58,7 +58,7 @@ const ModalClientView: React.FC<ModalVerificationProps> = ({ open, onOpenChange,
 
   return (
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="w-[95vw] max-w-4xl max-h-[90vh] overflow-y-auto mx-2 bg-slate-50">
+        <DialogContent className="w-[95vw] max-w-4xl max-h-[90vh] overflow-y-auto mx-2 bg-muted">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-blue-800 text-xl">
               <Eye className="h-6 w-6 text-blue-600" />
@@ -70,24 +70,24 @@ const ModalClientView: React.FC<ModalVerificationProps> = ({ open, onOpenChange,
             {loading ? (
                 <div className="flex flex-col items-center justify-center py-20">
                   <Loader2 className="h-8 w-8 animate-spin text-blue-600 mb-4" />
-                  <p className="text-slate-500 font-medium">Cargando información del cliente...</p>
+                  <p className="text-muted-foreground font-medium">Cargando información del cliente...</p>
                 </div>
             ) : !clientData ? (
-                <div className="py-10 text-center text-slate-500">
+                <div className="py-10 text-center text-muted-foreground">
                   <p>No se encontró información para este cliente.</p>
                 </div>
             ) : (
                 <div className="space-y-6">
 
                   {/* CABECERA (ESTADO Y NOMBRE) */}
-                  <div className="bg-white p-6 rounded-lg border border-slate-200 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                  <div className="bg-background p-6 rounded-lg border border-border shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                     <div>
-                      <h2 className="text-2xl font-bold text-slate-800">{clientData.razon_social || '-'}</h2>
-                      <p className="text-slate-500 font-medium mt-1">{clientData.tipo_descripcion || clientData.tipo_abreviado}</p>
+                      <h2 className="text-2xl font-bold text-foreground">{clientData.razon_social || '-'}</h2>
+                      <p className="text-muted-foreground font-medium mt-1">{clientData.tipo_descripcion || clientData.tipo_abreviado}</p>
                     </div>
                     <div className="flex flex-col items-end gap-2">
                       {renderEstadoBadge(clientData.estado)}
-                      <span className="text-xs text-slate-400 font-mono">Cód: {clientData.codigo}</span>
+                      <span className="text-xs text-muted-foreground font-mono">Cód: {clientData.codigo}</span>
                     </div>
                   </div>
 
@@ -102,24 +102,24 @@ const ModalClientView: React.FC<ModalVerificationProps> = ({ open, onOpenChange,
                       <CardContent className="space-y-4 pt-4">
                         <div className="grid grid-cols-2 gap-4">
                           <div>
-                            <Label className="text-xs text-slate-500 uppercase tracking-wider">Número Documento</Label>
-                            <p className="font-semibold text-slate-800 font-mono">{clientData.documento_numero || '-'}</p>
+                            <Label className="text-xs text-muted-foreground uppercase tracking-wider">Número Documento</Label>
+                            <p className="font-semibold text-card-foreground font-mono">{clientData.documento_numero || '-'}</p>
                           </div>
                           <div>
-                            <Label className="text-xs text-slate-500 uppercase tracking-wider">Tipo Documento</Label>
-                            <p className="font-medium text-slate-800">{clientData.tipo_abreviado || '-'}</p>
+                            <Label className="text-xs text-muted-foreground uppercase tracking-wider">Tipo Documento</Label>
+                            <p className="font-medium text-card-foreground">{clientData.tipo_abreviado || '-'}</p>
                           </div>
                           <div className="col-span-2">
-                            <Label className="text-xs text-slate-500 uppercase tracking-wider">Nombre Comercial</Label>
-                            <p className="font-medium text-slate-800">{clientData.nombre_comercial || '-'}</p>
+                            <Label className="text-xs text-muted-foreground uppercase tracking-wider">Nombre Comercial</Label>
+                            <p className="font-medium text-card-foreground">{clientData.nombre_comercial || '-'}</p>
                           </div>
                           <div>
-                            <Label className="text-xs text-slate-500 uppercase tracking-wider">Vendedor Asignado</Label>
-                            <p className="font-medium text-slate-800 font-mono">{clientData.nombre_vendedor || '-'}</p>
+                            <Label className="text-xs text-muted-foreground uppercase tracking-wider">Vendedor Asignado</Label>
+                            <p className="font-medium text-card-foreground font-mono">{clientData.nombre_vendedor || '-'}</p>
                           </div>
                           <div>
-                            <Label className="text-xs text-slate-500 uppercase tracking-wider">Categoría</Label>
-                            <p className="font-medium text-slate-800">{clientData.categoria_cliente || '-'}</p>
+                            <Label className="text-xs text-muted-foreground uppercase tracking-wider">Categoría</Label>
+                            <p className="font-medium text-card-foreground">{clientData.categoria_cliente || '-'}</p>
                           </div>
                         </div>
                       </CardContent>
@@ -135,29 +135,29 @@ const ModalClientView: React.FC<ModalVerificationProps> = ({ open, onOpenChange,
                       <CardContent className="space-y-4 pt-4">
                         <div className="grid grid-cols-2 gap-4">
                           <div className="col-span-2">
-                            <Label className="text-xs text-slate-500 uppercase tracking-wider">Dirección Fiscal</Label>
-                            <p className="font-medium text-slate-800">{clientData.direccion || '-'}</p>
+                            <Label className="text-xs text-muted-foreground uppercase tracking-wider">Dirección Fiscal</Label>
+                            <p className="font-medium text-card-foreground">{clientData.direccion || '-'}</p>
                           </div>
                           <div>
-                            <Label className="text-xs text-slate-500 uppercase tracking-wider">Distrito</Label>
-                            <p className="font-medium text-slate-800">{clientData.distrito || '-'}</p>
+                            <Label className="text-xs text-muted-foreground uppercase tracking-wider">Distrito</Label>
+                            <p className="font-medium text-card-foreground">{clientData.distrito || '-'}</p>
                           </div>
                           <div>
-                            <Label className="text-xs text-slate-500 uppercase tracking-wider">Provincia</Label>
-                            <p className="font-medium text-slate-800">{clientData.provincia || '-'}</p>
+                            <Label className="text-xs text-muted-foreground uppercase tracking-wider">Provincia</Label>
+                            <p className="font-medium text-card-foreground">{clientData.provincia || '-'}</p>
                           </div>
                           <div>
-                            <Label className="text-xs text-slate-500 uppercase tracking-wider">Zona Geográfica</Label>
-                            <p className="font-medium text-slate-800">{clientData.zona || '-'}</p>
+                            <Label className="text-xs text-muted-foreground uppercase tracking-wider">Zona Geográfica</Label>
+                            <p className="font-medium text-card-foreground">{clientData.zona || '-'}</p>
                           </div>
-                          <div className="col-span-2 grid grid-cols-2 gap-4 pt-2 border-t border-slate-100">
+                          <div className="col-span-2 grid grid-cols-2 gap-4 pt-2 border-t border-border">
                             <div>
-                              <Label className="text-xs text-slate-500 uppercase tracking-wider">Teléfono</Label>
-                              <p className="font-medium text-slate-800">{clientData.Telefono || '-'}</p>
+                              <Label className="text-xs text-muted-foreground uppercase tracking-wider">Teléfono</Label>
+                              <p className="font-medium text-card-foreground">{clientData.Telefono || '-'}</p>
                             </div>
                             <div>
-                              <Label className="text-xs text-slate-500 uppercase tracking-wider">Correo Electrónico</Label>
-                              <p className="font-medium text-slate-800">{clientData.email || '-'}</p>
+                              <Label className="text-xs text-muted-foreground uppercase tracking-wider">Correo Electrónico</Label>
+                              <p className="font-medium text-card-foreground">{clientData.email || '-'}</p>
                             </div>
                           </div>
                         </div>
@@ -174,26 +174,26 @@ const ModalClientView: React.FC<ModalVerificationProps> = ({ open, onOpenChange,
                       <CardContent className="pt-4">
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                           <div>
-                            <Label className="text-xs text-slate-500 uppercase tracking-wider">Representante Legal</Label>
+                            <Label className="text-xs text-muted-foreground uppercase tracking-wider">Representante Legal</Label>
                             <div className="flex items-center gap-2 mt-1">
-                              <Building className="h-4 w-4 text-slate-400" />
-                              <p className="font-medium text-slate-800">{clientData.representante_lega || '-'}</p>
+                              <Building className="h-4 w-4 text-muted-foreground" />
+                              <p className="font-medium text-card-foreground">{clientData.representante_lega || '-'}</p>
                             </div>
                           </div>
                           <div>
-                            <Label className="text-xs text-slate-500 uppercase tracking-wider">Fecha de Inicio</Label>
+                            <Label className="text-xs text-muted-foreground uppercase tracking-wider">Fecha de Inicio</Label>
                             <div className="flex items-center gap-2 mt-1">
-                              <Calendar className="h-4 w-4 text-slate-400" />
-                              <p className="font-medium text-slate-800">
+                              <Calendar className="h-4 w-4 text-muted-foreground" />
+                              <p className="font-medium text-card-foreground">
                                 {clientData.FECHA_INICIO ? moment(clientData.FECHA_INICIO).format('DD/MM/YYYY') : '-'}
                               </p>
                             </div>
                           </div>
                           <div>
-                            <Label className="text-xs text-slate-500 uppercase tracking-wider">Fecha de Registro (Sistema)</Label>
+                            <Label className="text-xs text-muted-foreground uppercase tracking-wider">Fecha de Registro (Sistema)</Label>
                             <div className="flex items-center gap-2 mt-1">
-                              <Clock className="h-4 w-4 text-slate-400" />
-                              <p className="font-medium text-slate-800">
+                              <Clock className="h-4 w-4 text-muted-foreground" />
+                              <p className="font-medium text-card-foreground">
                                 {clientData.FechaRegistros ? moment(clientData.FechaRegistros).format('DD/MM/YYYY HH:mm') : '-'}
                               </p>
                             </div>

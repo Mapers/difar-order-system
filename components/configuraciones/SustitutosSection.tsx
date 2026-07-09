@@ -241,29 +241,29 @@ export default function SustitutosSection({ onOpenModalChange }: SustitutosSecti
 
                 {/* ════════════ VISTA: VISUALIZAR ════════════ */}
                 <TabsContent value="ver" className="space-y-4">
-                    <div className="flex flex-col sm:flex-row gap-4 bg-gray-50/50 p-4 rounded-lg border">
+                    <div className="flex flex-col sm:flex-row gap-4 bg-muted/50 p-4 rounded-lg border">
                         <div className="relative flex-1">
-                            <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-500" />
+                            <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                             <Input
                                 placeholder="Buscar por código o nombre del principal..."
-                                className="pl-9 bg-white"
+                                className="pl-9 bg-background"
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                             />
                         </div>
                     </div>
 
-                    <div className="flex justify-between items-center text-sm text-gray-500">
+                    <div className="flex justify-between items-center text-sm text-muted-foreground">
                         <span>Mostrando {filteredGrupos.length} grupos registrados</span>
                     </div>
 
                     {loading ? (
                         <div className="text-center py-12"><div className="animate-spin h-8 w-8 border-4 border-indigo-600 border-t-transparent rounded-full mx-auto"></div></div>
                     ) : filteredGrupos.length === 0 ? (
-                        <div className="text-center py-12 bg-gray-50 rounded-xl border border-dashed">
-                            <PackageSearch className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-                            <h3 className="text-lg font-medium text-gray-900">Sin resultados</h3>
-                            <p className="text-gray-500">No se encontraron grupos de sustitutos activos.</p>
+                        <div className="text-center py-12 bg-muted rounded-xl border border-dashed">
+                            <PackageSearch className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+                            <h3 className="text-lg font-medium text-foreground">Sin resultados</h3>
+                            <p className="text-muted-foreground">No se encontraron grupos de sustitutos activos.</p>
                         </div>
                     ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-4">
@@ -272,24 +272,24 @@ export default function SustitutosSection({ onOpenModalChange }: SustitutosSecti
                                 if (!pMain) return null
 
                                 return (
-                                    <Card key={grupo.id} className="border-gray-200 hover:shadow-md transition-shadow">
+                                    <Card key={grupo.id} className="border-border hover:shadow-md transition-shadow">
                                         <CardContent className="p-5">
                                             <div className="flex justify-between items-start mb-2">
                                                 <div>
                                                     <span className="font-bold text-indigo-600 text-sm">{pMain.Codigo_Art}</span>
-                                                    <div className="text-[11px] font-medium text-gray-500 mt-0.5 tracking-wider uppercase">{pMain.Laboratorio}</div>
+                                                    <div className="text-[11px] font-medium text-muted-foreground mt-0.5 tracking-wider uppercase">{pMain.Laboratorio}</div>
                                                 </div>
                                                 <Badge variant={grupo.activo ? "default" : "secondary"} className={`ml-2 text-[10px] ${grupo.activo ? 'bg-green-100 text-green-700' : ''}`}>
                                                     {grupo.activo ? 'ACTIVO' : 'INACTIVO'}
                                                 </Badge>
                                             </div>
 
-                                            <h3 className="font-semibold text-gray-900 mt-3 leading-tight">{pMain.NombreItem}</h3>
-                                            <p className="text-xs text-gray-500 mt-1">{pMain.PrincipioActivo}</p>
-                                            <p className="text-xs font-medium text-gray-600 mt-1 mb-3">Presentación: {pMain.Presentacion}</p>
+                                            <h3 className="font-semibold text-card-foreground mt-3 leading-tight">{pMain.NombreItem}</h3>
+                                            <p className="text-xs text-muted-foreground mt-1">{pMain.PrincipioActivo}</p>
+                                            <p className="text-xs font-medium text-muted-foreground mt-1 mb-3">Presentación: {pMain.Presentacion}</p>
 
-                                            <div className="border-t border-gray-100 pt-3 mt-2">
-                                                <div className="text-[11px] font-bold text-gray-400 uppercase mb-2 tracking-wider">Sustitutos ({grupo.sustitutos.length})</div>
+                                            <div className="border-t border-border pt-3 mt-2">
+                                                <div className="text-[11px] font-bold text-muted-foreground uppercase mb-2 tracking-wider">Sustitutos ({grupo.sustitutos.length})</div>
                                                 <div className="flex flex-wrap gap-1.5">
                                                     {grupo.sustitutos.sort((a,b)=>a.prioridad - b.prioridad).map((sub, idx) => (
                                                         <Badge key={idx} variant="outline" className="bg-indigo-50/50 text-indigo-700 border-indigo-200 text-xs font-medium">
@@ -324,20 +324,20 @@ export default function SustitutosSection({ onOpenModalChange }: SustitutosSecti
                         <Label className="text-sm font-semibold">Producto Principal (A sustituir)</Label>
                         <Button
                             type="button" variant="outline" onClick={() => setIsMainDialogOpen(true)}
-                            className="w-full justify-start h-auto min-h-11 sm:min-h-12 px-3 py-2 text-left font-normal text-sm bg-gray-50 border-gray-200 hover:bg-white hover:border-indigo-400 overflow-hidden max-w-full"
+                            className="w-full justify-start h-auto min-h-11 sm:min-h-12 px-3 py-2 text-left font-normal text-sm bg-muted border-border hover:bg-background hover:border-indigo-400 overflow-hidden max-w-full"
                         >
-                            <Search className="mr-2 h-4 w-4 shrink-0 text-gray-400" />
+                            <Search className="mr-2 h-4 w-4 shrink-0 text-muted-foreground" />
                             {selMain ? (
                                 <div className="flex flex-col items-start overflow-hidden w-0 flex-1">
-                                    <span className="font-semibold text-gray-900 truncate w-full leading-tight text-sm">
+                                    <span className="font-semibold text-foreground truncate w-full leading-tight text-sm">
                                         {selMain.NombreItem}
                                     </span>
-                                    <span className="text-xs text-gray-500 truncate w-full leading-tight mt-0.5">
+                                    <span className="text-xs text-muted-foreground truncate w-full leading-tight mt-0.5">
                                         {selMain.Codigo_Art} | {selMain.Laboratorio} | Stock: {selMain.Stock}
                                     </span>
                                 </div>
                             ) : (
-                                <span className="truncate text-gray-400 font-normal text-xs sm:text-sm">
+                                <span className="truncate text-muted-foreground font-normal text-xs sm:text-sm">
                                     Buscar producto principal...
                                 </span>
                             )}
@@ -360,7 +360,7 @@ export default function SustitutosSection({ onOpenModalChange }: SustitutosSecti
                         <Label className="text-sm font-semibold flex items-center gap-2">Agregar Productos Sustitutos</Label>
                         <Button
                             type="button" variant="outline" onClick={() => setIsSubDialogOpen(true)}
-                            className="w-full justify-start h-11 px-3 text-left font-normal text-sm bg-white border-dashed border-2 border-gray-300 hover:border-indigo-400 hover:bg-indigo-50 text-gray-500 transition-colors"
+                            className="w-full justify-start h-11 px-3 text-left font-normal text-sm bg-background border-dashed border-2 border-border hover:border-indigo-400 hover:bg-indigo-50 hover:text-indigo-900 text-muted-foreground transition-colors"
                         >
                             <Plus className="mr-2 h-4 w-4 shrink-0" />
                             Buscar sustituto para agregar...
@@ -381,20 +381,20 @@ export default function SustitutosSection({ onOpenModalChange }: SustitutosSecti
 
                     <div className="space-y-3">
                         {selSubs.length === 0 ? (
-                            <div className="text-center py-6 bg-gray-50 border border-dashed rounded-lg text-sm text-gray-500">
+                            <div className="text-center py-6 bg-muted border border-dashed rounded-lg text-sm text-muted-foreground">
                                 No se han agregado sustitutos. El orden en la lista define la prioridad sugerida en mostrador.
                             </div>
                         ) : (
                             <div className="space-y-2">
                                 {selSubs.map((sub, idx) => (
-                                    <div key={sub.Codigo_Art} className="flex items-center justify-between p-3 bg-white border rounded-lg hover:border-indigo-300 transition-colors">
+                                    <div key={sub.Codigo_Art} className="flex items-center justify-between p-3 bg-background border rounded-lg hover:border-indigo-300 transition-colors">
                                         <div className="flex items-center gap-3 flex-1 min-w-0">
                                             <div className="bg-indigo-100 text-indigo-700 font-bold h-8 w-8 rounded-full flex items-center justify-center text-xs shrink-0">
                                                 #{idx + 1}
                                             </div>
                                             <div className="flex-1 min-w-0">
                                                 <div className="font-semibold text-sm truncate">{sub.NombreItem}</div>
-                                                <div className="text-xs text-gray-500 flex gap-2">
+                                                <div className="text-xs text-muted-foreground flex gap-2">
                                                     <span>{sub.Codigo_Art}</span>
                                                     <span className="font-medium text-green-600">S/ {Number(sub.PUContado).toFixed(2)}</span>
                                                     <span className="font-medium text-amber-600">Stk: {sub.Stock}</span>
@@ -403,10 +403,10 @@ export default function SustitutosSection({ onOpenModalChange }: SustitutosSecti
                                         </div>
                                         <div className="flex items-center gap-1 shrink-0 ml-2">
                                             <Button variant="ghost" size="sm" className="h-8 w-8 p-0" disabled={idx === 0} onClick={() => handleMoveSub(idx, -1)}>
-                                                <ArrowUp className="h-4 w-4 text-gray-500"/>
+                                                <ArrowUp className="h-4 w-4 text-muted-foreground"/>
                                             </Button>
                                             <Button variant="ghost" size="sm" className="h-8 w-8 p-0" disabled={idx === selSubs.length - 1} onClick={() => handleMoveSub(idx, 1)}>
-                                                <ArrowDown className="h-4 w-4 text-gray-500"/>
+                                                <ArrowDown className="h-4 w-4 text-muted-foreground"/>
                                             </Button>
                                             <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600" onClick={() => handleRemoveSub(idx)}>
                                                 <X className="h-4 w-4"/>
@@ -457,57 +457,57 @@ export default function SustitutosSection({ onOpenModalChange }: SustitutosSecti
                         const pMain = getProdByCode(viewingGroup.cod_principal)
                         return (
                             <div className="space-y-4">
-                                <div className="bg-gray-50 p-4 rounded-lg border">
+                                <div className="bg-muted p-4 rounded-lg border">
                                     <div className="flex justify-between items-start mb-1">
-                                        <div className="text-[11px] font-bold text-gray-500 uppercase tracking-wide">
+                                        <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wide">
                                             {pMain?.Laboratorio || 'SIN LAB'}
                                         </div>
-                                        <Badge variant="outline" className={`text-[10px] ${viewingGroup.activo ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
+                                        <Badge variant="outline" className={`text-[10px] ${viewingGroup.activo ? 'bg-green-100 text-green-700' : 'bg-muted text-muted-foreground'}`}>
                                             {viewingGroup.activo ? 'ACTIVO' : 'INACTIVO'}
                                         </Badge>
                                     </div>
                                     <div className="font-semibold text-lg text-indigo-700">
                                         {pMain?.NombreItem}
                                     </div>
-                                    <div className="text-sm text-gray-500 mb-2">
+                                    <div className="text-sm text-muted-foreground mb-2">
                                         {pMain?.PrincipioActivo}
                                     </div>
-                                    <div className="flex items-center justify-between text-sm text-gray-600">
+                                    <div className="flex items-center justify-between text-sm text-muted-foreground">
                                         <div>Presentación: <span className="font-semibold">{pMain?.Presentacion}</span></div>
-                                        <Badge variant="secondary" className="bg-white border text-gray-700">Stock: {pMain?.Stock}</Badge>
+                                        <Badge variant="secondary" className="bg-background border text-foreground">Stock: {pMain?.Stock}</Badge>
                                     </div>
 
-                                    <div className="flex gap-6 mt-3 pt-3 border-t border-gray-200">
+                                    <div className="flex gap-6 mt-3 pt-3 border-t border-border">
                                         <div>
-                                            <div className="text-[11px] text-gray-500 font-semibold mb-0.5 uppercase">P. Contado</div>
-                                            <div className="font-mono font-medium text-gray-900 text-base">S/ {Number(pMain?.PUContado || 0).toFixed(2)}</div>
+                                            <div className="text-[11px] text-muted-foreground font-semibold mb-0.5 uppercase">P. Contado</div>
+                                            <div className="font-mono font-medium text-foreground text-base">S/ {Number(pMain?.PUContado || 0).toFixed(2)}</div>
                                         </div>
                                         <div>
-                                            <div className="text-[11px] text-gray-500 font-semibold mb-0.5 uppercase">P. Crédito</div>
-                                            <div className="font-mono font-medium text-gray-900 text-base">S/ {Number(pMain?.PUCredito || 0).toFixed(2)}</div>
+                                            <div className="text-[11px] text-muted-foreground font-semibold mb-0.5 uppercase">P. Crédito</div>
+                                            <div className="font-mono font-medium text-foreground text-base">S/ {Number(pMain?.PUCredito || 0).toFixed(2)}</div>
                                         </div>
                                     </div>
                                 </div>
 
                                 <div className="space-y-2 mt-4">
-                                    <div className="text-[11px] font-bold text-gray-500 uppercase tracking-wide mb-2">Sustitutos por prioridad ({viewingGroup.sustitutos.length})</div>
+                                    <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wide mb-2">Sustitutos por prioridad ({viewingGroup.sustitutos.length})</div>
                                     {viewingGroup.sustitutos.sort((a,b)=> a.prioridad - b.prioridad).map((sub) => (
-                                        <div key={sub.cod_sustituto} className="p-3 border rounded-md bg-white">
+                                        <div key={sub.cod_sustituto} className="p-3 border rounded-md bg-background">
                                             <div className="flex justify-between items-start mb-1">
                                                 <div className="flex items-center gap-2">
                                                     <Badge className="bg-indigo-100 text-indigo-800 hover:bg-indigo-100">Prioridad {sub.prioridad}</Badge>
-                                                    <span className="font-medium text-sm text-gray-900">{sub.NombreItem}</span>
+                                                    <span className="font-medium text-sm text-foreground">{sub.NombreItem}</span>
                                                 </div>
                                             </div>
-                                            <div className="text-xs text-gray-500 mb-2 mt-1">
+                                            <div className="text-xs text-muted-foreground mb-2 mt-1">
                                                 {sub.Laboratorio} — {sub.PrincipioActivo}
                                             </div>
-                                            <div className="flex justify-between items-center text-xs text-gray-600 mt-2">
-                                                <div>Pres: <span className="font-medium text-gray-800">{sub.Presentacion}</span></div>
+                                            <div className="flex justify-between items-center text-xs text-muted-foreground mt-2">
+                                                <div>Pres: <span className="font-medium text-foreground">{sub.Presentacion}</span></div>
                                                 <div className="flex items-center gap-3">
                                                     <span className="text-amber-600 font-semibold">Stk: {sub.Stock}</span>
-                                                    <span>Con: <span className="font-mono font-medium text-gray-800">S/ {Number(sub.PUContado).toFixed(2)}</span></span>
-                                                    <span>Cré: <span className="font-mono font-medium text-gray-800">S/ {Number(sub.PUCredito).toFixed(2)}</span></span>
+                                                    <span>Con: <span className="font-mono font-medium text-foreground">S/ {Number(sub.PUContado).toFixed(2)}</span></span>
+                                                    <span>Cré: <span className="font-mono font-medium text-foreground">S/ {Number(sub.PUCredito).toFixed(2)}</span></span>
                                                 </div>
                                             </div>
                                         </div>
@@ -515,14 +515,14 @@ export default function SustitutosSection({ onOpenModalChange }: SustitutosSecti
                                 </div>
 
                                 {viewingGroup.observacion && (
-                                    <div className="text-sm text-gray-700 italic bg-amber-50 p-3 rounded border border-amber-100 mt-4">
+                                    <div className="text-sm text-amber-900 italic bg-amber-50 p-3 rounded border border-amber-100 mt-4">
                                         <span className="font-semibold not-italic text-amber-800 mr-1">Observación:</span> {viewingGroup.observacion}
                                     </div>
                                 )}
 
-                                <div className="flex justify-between items-center text-[11px] text-gray-400 mt-6 pt-4 border-t">
-                                    <span>Registrado por: <span className="font-semibold text-gray-500">{viewingGroup.usu_creacion}</span></span>
-                                    <span>Fecha: <span className="font-semibold text-gray-500">{new Date(viewingGroup.fec_creacion).toLocaleDateString()}</span></span>
+                                <div className="flex justify-between items-center text-[11px] text-muted-foreground mt-6 pt-4 border-t">
+                                    <span>Registrado por: <span className="font-semibold text-muted-foreground">{viewingGroup.usu_creacion}</span></span>
+                                    <span>Fecha: <span className="font-semibold text-muted-foreground">{new Date(viewingGroup.fec_creacion).toLocaleDateString()}</span></span>
                                 </div>
                             </div>
                         )

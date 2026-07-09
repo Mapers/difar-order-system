@@ -51,7 +51,7 @@ export default function MultiSelectFilter({
     return (
         <div className="relative">
             <div
-                className="min-h-10 border border-gray-300 rounded-md p-2 bg-white cursor-pointer"
+                className="min-h-10 border border-border rounded-md p-2 bg-background cursor-pointer"
                 onClick={() => setIsOpen(!isOpen)}
             >
                 <div className="flex flex-wrap gap-1 pr-6">
@@ -63,20 +63,20 @@ export default function MultiSelectFilter({
                                     e.stopPropagation()
                                     remove(v)
                                 }}
-                                className="ml-1 hover:bg-gray-300 rounded-full p-0.5"
+                                className="ml-1 hover:bg-muted rounded-full p-0.5"
                             >
                                 <X className="w-3 h-3" />
                             </button>
                         </Badge>
                     ))}
-                    {selected.length === 0 && <span className="text-gray-500 text-sm">{placeholder}</span>}
+                    {selected.length === 0 && <span className="text-muted-foreground text-sm">{placeholder}</span>}
                 </div>
-                <ChevronDown className="absolute right-2 top-3 w-4 h-4 text-gray-400" />
+                <ChevronDown className="absolute right-2 top-3 w-4 h-4 text-muted-foreground" />
             </div>
 
             {isOpen && (
-                <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
-                    <div className="p-2 border-b sticky top-0 bg-white">
+                <div className="absolute z-50 w-full mt-1 bg-background border border-border rounded-md shadow-lg max-h-60 overflow-auto">
+                    <div className="p-2 border-b sticky top-0 bg-background">
                         <Input
                             placeholder={searchPlaceholder}
                             value={searchTerm}
@@ -86,15 +86,15 @@ export default function MultiSelectFilter({
                     </div>
                     <div className="py-1">
                         {loading ? (
-                            <div className="px-3 py-2 text-gray-500 text-sm">Cargando...</div>
+                            <div className="px-3 py-2 text-muted-foreground text-sm">Cargando...</div>
                         ) : filtered.length === 0 ? (
-                            <div className="px-3 py-2 text-gray-500 text-sm">{emptyText}</div>
+                            <div className="px-3 py-2 text-muted-foreground text-sm">{emptyText}</div>
                         ) : (
                             <>
                                 {filtered.slice(0, MAX_VISIBLE).map((o) => (
                                     <div
                                         key={o.value}
-                                        className="px-3 py-2 hover:bg-gray-100 cursor-pointer flex items-center gap-2 text-sm"
+                                        className="px-3 py-2 hover:bg-muted cursor-pointer flex items-center gap-2 text-sm"
                                         onClick={() => toggle(o.value)}
                                     >
                                         <input
@@ -107,7 +107,7 @@ export default function MultiSelectFilter({
                                     </div>
                                 ))}
                                 {filtered.length > MAX_VISIBLE && (
-                                    <div className="px-3 py-2 text-gray-400 text-xs">
+                                    <div className="px-3 py-2 text-muted-foreground text-xs">
                                         Mostrando {MAX_VISIBLE} de {filtered.length}. Refina la búsqueda…
                                     </div>
                                 )}

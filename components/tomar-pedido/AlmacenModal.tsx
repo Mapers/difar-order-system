@@ -25,7 +25,7 @@ export default function AlmacenModal({
                     </DialogTitle>
                 </DialogHeader>
                 <div className="space-y-2 py-2">
-                    <p className="text-sm text-gray-500">
+                    <p className="text-sm text-muted-foreground">
                         Seleccioná el almacén desde el cual se tomará el pedido.
                     </p>
 
@@ -41,20 +41,24 @@ export default function AlmacenModal({
                             <button
                                 key={alm.IdAlmacen}
                                 onClick={() => onSelectAlmacen(alm)}
-                                className={`w-full flex items-center gap-3 p-3 rounded-lg border text-left transition-all hover:border-blue-400 hover:bg-blue-50 ${
+                                className={`group w-full flex items-center gap-3 p-3 rounded-lg border text-left transition-all hover:border-blue-400 hover:bg-blue-50 ${
                                     selectedAlmacen?.IdAlmacen === alm.IdAlmacen
                                         ? 'border-blue-600 bg-blue-50 ring-1 ring-blue-600'
-                                        : 'border-gray-200'
+                                        : 'border-border'
                                 }`}
                             >
                                 <div className="p-2 bg-blue-100 rounded-md shrink-0">
                                     <Building2 className="h-4 w-4 text-blue-600" />
                                 </div>
                                 <div>
-                                    <p className="font-semibold text-sm text-gray-800">
+                                    <p className={`font-semibold text-sm group-hover:text-blue-900 ${
+                                        selectedAlmacen?.IdAlmacen === alm.IdAlmacen ? 'text-blue-900' : 'text-foreground'
+                                    }`}>
                                         {alm.Codigo_Alm} - {alm.Descripcion}
                                     </p>
-                                    <p className="text-xs text-gray-500">ID: {alm.IdAlmacen}</p>
+                                    <p className={`text-xs group-hover:text-blue-900 ${
+                                        selectedAlmacen?.IdAlmacen === alm.IdAlmacen ? 'text-blue-700' : 'text-muted-foreground'
+                                    }`}>ID: {alm.IdAlmacen}</p>
                                 </div>
                             </button>
                         ))}

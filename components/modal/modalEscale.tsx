@@ -80,10 +80,10 @@ const ModalEscale: React.FC<ModalVerificationProps> = ({
                   <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-purple-600" />
                 </div>
                 <div>
-                  <h4 className="font-medium text-gray-900 text-sm sm:text-base">
+                  <h4 className="font-medium text-purple-900 text-sm sm:text-base">
                     ¡Este producto tiene escalas de precios!
                   </h4>
-                  <p className="text-xs sm:text-sm text-gray-600 mt-1">
+                  <p className="text-xs sm:text-sm text-purple-900 mt-1">
                     Para <span className="font-medium">{currentScales.cantidadSolicitada} unidades</span> de{" "}
                     <span className="font-medium">{currentScales.nombreProductoSolicitado}</span>, puedes obtener
                     mejores precios según la cantidad:
@@ -94,16 +94,16 @@ const ModalEscale: React.FC<ModalVerificationProps> = ({
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4 sm:mb-6">
               <div className="space-y-2">
-                <Label className="text-xs text-gray-500">Producto Solicitado</Label>
-                <div className="bg-gray-50 p-3 rounded-md">
+                <Label className="text-xs text-muted-foreground">Producto Solicitado</Label>
+                <div className="bg-muted p-3 rounded-md">
                   <p className="font-medium text-sm">{currentScales.nombreProductoSolicitado}</p>
-                  <p className="text-xs text-gray-500">Código: {currentScales.productoSolicitado}</p>
+                  <p className="text-xs text-muted-foreground">Código: {currentScales.productoSolicitado}</p>
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label className="text-xs text-gray-500">Cantidad Solicitada</Label>
-                <div className="bg-gray-50 p-3 rounded-md">
+                <Label className="text-xs text-muted-foreground">Cantidad Solicitada</Label>
+                <div className="bg-muted p-3 rounded-md">
                   <p className="font-medium text-sm">{currentScales.cantidadSolicitada} unidades</p>
                 </div>
               </div>
@@ -112,37 +112,42 @@ const ModalEscale: React.FC<ModalVerificationProps> = ({
             <Separator className="mb-4 sm:mb-6" />
 
             <div className="space-y-4">
-              <h4 className="font-medium text-gray-900 flex items-center gap-2 text-sm sm:text-base">
+              <h4 className="font-medium text-foreground flex items-center gap-2 text-sm sm:text-base">
                 <TrendingUp className="h-4 w-4 text-purple-600" />
                 Selecciona las escalas que deseas aplicar:
               </h4>
 
               {/* Desktop View - Table */}
-              <div className="hidden sm:block overflow-hidden border border-gray-200 rounded-lg">
+              <div className="hidden sm:block overflow-hidden border border-border rounded-lg">
                 <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
+                  <table className="min-w-full divide-y divide-border">
+                    <thead className="bg-muted">
                       <tr>
-                        <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                        <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">
                           Seleccionar
                         </th>
-                        <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                        <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">
                           Rango de Cantidad
                         </th>
-                        <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                        <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">
                           Precio Unitario
                         </th>
-                        <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                        <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">
                           Descuento
                         </th>
                       </tr>
                     </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
+                    <tbody className="bg-background divide-y divide-border">
                       {currentScales.escalas.map((escala: any, index: number) => {
                         const isApplicable =
                           currentScales.cantidadSolicitada >= escala.minimo &&
                           currentScales.cantidadSolicitada <= escala.maximo
                         const isRecommended = escala.IdArticulo === currentScales.escalaAplicable?.IdArticulo
+                        const rowAccentTextClass = selectedScales === escala.IdArticulo
+                          ? "text-purple-900"
+                          : isApplicable
+                            ? "text-green-900"
+                            : ""
 
                         return (
                           <tr
@@ -151,7 +156,7 @@ const ModalEscale: React.FC<ModalVerificationProps> = ({
                               ? "bg-purple-50 border-purple-200"
                               : isApplicable
                                 ? "bg-green-50 hover:bg-green-100"
-                                : "hover:bg-gray-50"
+                                : "hover:bg-muted"
                               } ${!isApplicable ? "opacity-60" : ""}`}
                             onClick={() => toggleEscalaSelection(escala.IdArticulo)}
                           >
@@ -162,7 +167,7 @@ const ModalEscale: React.FC<ModalVerificationProps> = ({
                                   name="escala"
                                   checked={selectedScales === escala.IdArticulo}
                                   onChange={() => toggleEscalaSelection(escala.IdArticulo)}
-                                  className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300"
+                                  className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-border"
                                   disabled={!isApplicable}
                                 />
                                 {isRecommended && (
@@ -172,12 +177,12 @@ const ModalEscale: React.FC<ModalVerificationProps> = ({
                                 )}
                               </div>
                             </td>
-                            <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
+                            <td className={`px-4 py-3 whitespace-nowrap text-sm font-medium ${rowAccentTextClass || "text-foreground"}`}>
                               {escala.Descripcion}
                             </td>
-                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                            <td className={`px-4 py-3 whitespace-nowrap text-sm ${rowAccentTextClass || "text-foreground"}`}>
                               <div className="flex flex-col">
-                                <span className="line-through text-gray-400 text-xs">
+                                <span className={`line-through text-xs ${rowAccentTextClass || "text-muted-foreground"}`}>
                                   {`${currency?.value === "PEN" ? "S/." : "$"} ${escala.precio_contado_actual}`}
                                 </span>
                                 <span className={`font-medium ${escala.descuento > 0 ? "text-purple-600" : ""}`}>
@@ -185,13 +190,13 @@ const ModalEscale: React.FC<ModalVerificationProps> = ({
                                 </span>
                               </div>
                             </td>
-                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                            <td className={`px-4 py-3 whitespace-nowrap text-sm ${rowAccentTextClass || "text-foreground"}`}>
                               {Number(escala.porcentaje_descuento) > 0 ? (
                                 <Badge variant="outline" className="bg-purple-50 text-purple-700">
                                   {Number(escala?.porcentaje_descuento).toFixed(2)}%
                                 </Badge>
                               ) : (
-                                <span className="text-gray-400">-</span>
+                                <span className={rowAccentTextClass || "text-muted-foreground"}>-</span>
                               )}
                             </td>
                           </tr>
@@ -218,11 +223,11 @@ const ModalEscale: React.FC<ModalVerificationProps> = ({
                         className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 text-xs sm:text-sm">
                         <div>
                           <Label className="text-xs text-purple-600">Rango</Label>
-                          <p className="font-medium">{escala?.Descripcion}</p>
+                          <p className="font-medium text-purple-900">{escala?.Descripcion}</p>
                         </div>
                         <div>
                           <Label className="text-xs text-purple-600">Precio Unitario</Label>
-                          <p className="font-medium">{`${currency} ${escala?.precio_escala}`}</p>
+                          <p className="font-medium text-purple-900">{`${currency} ${escala?.precio_escala}`}</p>
                         </div>
                         <div>
                           <Label className="text-xs text-purple-600">Total a Pagar</Label>

@@ -94,7 +94,7 @@ export const CreateProductModal = ({ laboratories, user, onProductCreated }: any
 
                 <div className="space-y-8 py-4">
                     <section>
-                        <h3 className="text-sm font-bold text-gray-500 uppercase mb-3">1. Datos Generales</h3>
+                        <h3 className="text-sm font-bold text-muted-foreground uppercase mb-3">1. Datos Generales</h3>
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                             <div className="space-y-1"><Label>Código Art. *</Label><Input value={product.Codigo_Art} onChange={e=>setProduct({...product, Codigo_Art: e.target.value})} maxLength={9}/></div>
                             <div className="space-y-1 md:col-span-2"><Label>Nombre del Ítem *</Label><Input value={product.NombreItem} onChange={e=>setProduct({...product, NombreItem: e.target.value})}/></div>
@@ -113,7 +113,7 @@ export const CreateProductModal = ({ laboratories, user, onProductCreated }: any
                     </section>
 
                     <section className="border-t pt-4">
-                        <h3 className="text-sm font-bold text-gray-500 uppercase mb-3">2. Precios Base</h3>
+                        <h3 className="text-sm font-bold text-muted-foreground uppercase mb-3">2. Precios Base</h3>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                             <div className="space-y-1"><Label>PU Contado</Label><Input type="number" placeholder="0.00" value={prices.PUContado} onChange={e=>setPrices({...prices, PUContado: e.target.value})}/></div>
                             <div className="space-y-1"><Label>PU Crédito</Label><Input type="number" placeholder="0.00" value={prices.PUCredito} onChange={e=>setPrices({...prices, PUCredito: e.target.value})}/></div>
@@ -124,7 +124,7 @@ export const CreateProductModal = ({ laboratories, user, onProductCreated }: any
 
                     <section className="border-t pt-4">
                         <div className="flex justify-between items-center mb-3">
-                            <h3 className="text-sm font-bold text-gray-500 uppercase">3. Escalas de Precio</h3>
+                            <h3 className="text-sm font-bold text-muted-foreground uppercase">3. Escalas de Precio</h3>
                             <Button size="sm" variant="outline" onClick={() => setEscalas([...escalas, { desde: "", hasta: "", precio: "" }])}>
                                 <Plus className="h-4 w-4 mr-1" /> Añadir Escala
                             </Button>
@@ -138,20 +138,20 @@ export const CreateProductModal = ({ laboratories, user, onProductCreated }: any
                                     <Button variant="destructive" size="icon" onClick={() => setEscalas(escalas.filter((_, idx) => idx !== i))}><Trash className="h-4 w-4"/></Button>
                                 </div>
                             ))}
-                            {escalas.length === 0 && <p className="text-xs text-gray-400">No hay escalas definidas.</p>}
+                            {escalas.length === 0 && <p className="text-xs text-muted-foreground">No hay escalas definidas.</p>}
                         </div>
                     </section>
 
                     <section className="border-t pt-4">
                         <div className="flex justify-between items-center mb-3">
-                            <h3 className="text-sm font-bold text-gray-500 uppercase">4. Bonificaciones</h3>
+                            <h3 className="text-sm font-bold text-muted-foreground uppercase">4. Bonificaciones</h3>
                             <Button size="sm" variant="outline" onClick={() => setBonos([...bonos, { compra: "", lleva: "", descripcion: "", esMismoProducto: true, productoBonificado: "", descripcionProducto: "" }])}>
                                 <Plus className="h-4 w-4 mr-1" /> Añadir Bonificación
                             </Button>
                         </div>
                         <div className="space-y-4">
                             {bonos.map((bono, i) => (
-                                <div key={i} className="p-3 bg-gray-50 rounded-md border space-y-3 relative">
+                                <div key={i} className="p-3 bg-muted rounded-md border space-y-3 relative">
                                     <Button variant="ghost" size="icon" className="absolute top-2 right-2 text-red-500" onClick={() => setBonos(bonos.filter((_, idx) => idx !== i))}><Trash className="h-4 w-4"/></Button>
 
                                     <div className="grid grid-cols-2 gap-4 pr-8">
@@ -162,7 +162,7 @@ export const CreateProductModal = ({ laboratories, user, onProductCreated }: any
                                     <div className="space-y-1"><Label className="text-xs">Descripción de Promo</Label><Input placeholder="Ej. Por 10 Cajas lleva 2 gratis" value={bono.descripcion} onChange={e => { const v = [...bonos]; v[i].descripcion = e.target.value; setBonos(v); }}/></div>
 
                                     <div className="flex items-center space-x-2 pt-2">
-                                        <input type="checkbox" checked={bono.esMismoProducto} onChange={(e) => { const v = [...bonos]; v[i].esMismoProducto = e.target.checked; setBonos(v); }} className="h-4 w-4 rounded border-gray-300" />
+                                        <input type="checkbox" checked={bono.esMismoProducto} onChange={(e) => { const v = [...bonos]; v[i].esMismoProducto = e.target.checked; setBonos(v); }} className="h-4 w-4 rounded border-border" />
                                         <Label className="text-sm">Bonifica el mismo producto</Label>
                                     </div>
 
@@ -174,7 +174,7 @@ export const CreateProductModal = ({ laboratories, user, onProductCreated }: any
                                     )}
                                 </div>
                             ))}
-                            {bonos.length === 0 && <p className="text-xs text-gray-400">No hay bonificaciones definidas.</p>}
+                            {bonos.length === 0 && <p className="text-xs text-muted-foreground">No hay bonificaciones definidas.</p>}
                         </div>
                     </section>
                 </div>

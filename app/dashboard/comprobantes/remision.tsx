@@ -151,21 +151,21 @@ const UbigeoSearchInput = ({
           />
           {loading && (
               <div className="absolute right-3 top-2.5">
-                <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
+                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
               </div>
           )}
         </div>
 
         {showResults && results.length > 0 && (
-            <div className="absolute z-50 w-full bg-white border border-t-0 border-gray-200 rounded-b-md shadow-lg max-h-60 overflow-y-auto">
+            <div className="absolute z-50 w-full bg-background border border-t-0 border-border rounded-b-md shadow-lg max-h-60 overflow-y-auto">
               {results.map((item) => (
                   <div
                       key={item.id}
-                      className="px-4 py-2 hover:bg-blue-50 cursor-pointer text-sm border-b last:border-b-0 border-gray-100"
+                      className="px-4 py-2 hover:bg-blue-50 cursor-pointer text-sm border-b last:border-b-0 border-border"
                       onClick={() => handleSelect(item)}
                   >
                     <span className="font-bold text-blue-600 mr-2">{item.id}</span>
-                    <span className="text-gray-700">{item.texto_mostrar}</span>
+                    <span className="text-muted-foreground">{item.texto_mostrar}</span>
                   </div>
               ))}
             </div>
@@ -254,27 +254,27 @@ const TransportistaSearchInput = ({
               placeholder="Buscar por RUC o Nombre..."
               className={results.length > 0 && showResults ? "rounded-b-none border-blue-500 ring-1 ring-blue-500" : ""}
           />
-          <div className="absolute right-3 top-2.5 text-gray-400">
+          <div className="absolute right-3 top-2.5 text-muted-foreground">
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
           </div>
         </div>
 
         {showResults && results.length > 0 && (
-            <div className="absolute z-50 w-full bg-white border border-t-0 border-gray-200 rounded-b-md shadow-lg max-h-60 overflow-y-auto">
+            <div className="absolute z-50 w-full bg-background border border-t-0 border-border rounded-b-md shadow-lg max-h-60 overflow-y-auto">
               {results.map((item) => (
                   <div
                       key={item.IdEmpTransporte}
-                      className="px-4 py-2 hover:bg-blue-50 cursor-pointer text-sm border-b last:border-b-0 border-gray-100 flex flex-col"
+                      className="px-4 py-2 hover:bg-blue-50 cursor-pointer text-sm border-b last:border-b-0 border-border flex flex-col"
                       onClick={() => handleSelect(item)}
                   >
-                    <span className="font-bold text-gray-900">{item.nomempTransp}</span>
-                    <span className="text-gray-500 text-xs">RUC: {item.emptranspRUC}</span>
+                    <span className="font-bold text-foreground">{item.nomempTransp}</span>
+                    <span className="text-muted-foreground text-xs">RUC: {item.emptranspRUC}</span>
                   </div>
               ))}
             </div>
         )}
         {showResults && query.length >= 3 && !loading && results.length === 0 && (
-            <div className="absolute z-50 w-full bg-white border border-t-0 border-gray-200 rounded-b-md shadow-lg p-2 text-center text-sm text-gray-500">
+            <div className="absolute z-50 w-full bg-background border border-t-0 border-border rounded-b-md shadow-lg p-2 text-center text-sm text-muted-foreground">
               No se encontraron empresas
             </div>
         )}
@@ -599,10 +599,10 @@ export const Remision = ({ pedido, detalles, onOpenChange, fetchGuiasRemision }:
           <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-2xl mb-4 shadow-lg">
             <FileText className="h-8 w-8 text-white" />
           </div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent mb-2">
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent mb-2">
             Guía de Remisión Electrónica
           </h1>
-          <p className="text-gray-600">Complete los datos requeridos para generar la guía</p>
+          <p className="text-muted-foreground">Complete los datos requeridos para generar la guía</p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -621,7 +621,7 @@ export const Remision = ({ pedido, detalles, onOpenChange, fetchGuiasRemision }:
                     <Select
                         value={serie}
                         onChange={(value: string) => setSerie(value)}
-                        className="border border-gray-300 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-20"
+                        className="border border-border rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-20"
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Seleccione prefijo" />
@@ -1076,28 +1076,28 @@ export const Remision = ({ pedido, detalles, onOpenChange, fetchGuiasRemision }:
           </CardHeader>
           <CardContent className="p-6">
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+              <table className="min-w-full divide-y divide-border">
+                <thead className="bg-muted">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Código</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Descripción</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cantidad</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Unidad</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Código</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Descripción</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Cantidad</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Unidad</th>
                 </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody className="bg-background divide-y divide-border">
                 {productos.map((producto, index) => (
                     <tr key={index}>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-foreground">
                         {producto.codigoitemPedido}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-foreground">
                         {producto.productoNombre}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-foreground">
                         {producto.cantPedido}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-foreground">
                         <Select
                             value={producto.productoUnidad}
                             onValueChange={(value) => {

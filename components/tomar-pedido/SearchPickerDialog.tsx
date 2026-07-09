@@ -107,8 +107,8 @@ export default function SearchPickerDialog<T>({
             >
                 <DialogTitle className="sr-only">{title}</DialogTitle>
 
-                <div className="flex items-center gap-2 border-b border-gray-200 dark:border-gray-700 px-3 py-2.5 bg-white dark:bg-gray-900">
-                    <Search className="h-4 w-4 text-gray-400 shrink-0" />
+                <div className="flex items-center gap-2 border-b border-border px-3 py-2.5 bg-background">
+                    <Search className="h-4 w-4 text-muted-foreground shrink-0" />
 
                     <input
                         type="text"
@@ -116,7 +116,7 @@ export default function SearchPickerDialog<T>({
                         placeholder={placeholder}
                         value={searchValue}
                         onChange={(e) => onSearchChange(searchTransform(e.target.value))}
-                        className="flex-1 bg-transparent outline-none text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 h-9"
+                        className="flex-1 bg-transparent outline-none text-sm text-foreground placeholder-muted-foreground h-9"
                     />
 
                     {searchValue && (
@@ -126,7 +126,7 @@ export default function SearchPickerDialog<T>({
                                 onSearchChange('')
                                 onClearSearch?.()
                             }}
-                            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                            className="text-muted-foreground hover:text-foreground"
                         >
                             <X className="h-4 w-4" />
                         </button>
@@ -141,13 +141,13 @@ export default function SearchPickerDialog<T>({
                     </button>
                 </div>
 
-                <div className="flex-1 overflow-y-auto bg-white dark:bg-gray-900">
+                <div className="flex-1 overflow-y-auto bg-background">
                     {loading ? (
                         <div className="p-3 space-y-2">
                             {[1, 2, 3].map((i) => (
                                 <div
                                     key={i}
-                                    className="flex gap-3 px-3 py-2.5 rounded-lg border border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50"
+                                    className="flex gap-3 px-3 py-2.5 rounded-lg border border-border bg-muted/50"
                                 >
                                     <Skeleton className="h-8 w-8 rounded-full shrink-0" />
                                     <div className="flex-1 space-y-1.5">
@@ -159,18 +159,18 @@ export default function SearchPickerDialog<T>({
                         </div>
                     ) : items.length === 0 ? (
                         <div className="py-12 text-center">
-                            <Search className="h-10 w-10 text-gray-200 dark:text-gray-700 mx-auto mb-3" />
-                            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                            <Search className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+                            <p className="text-sm font-medium text-muted-foreground">
                                 {searchValue ? emptyMessage : idleMessage}
                             </p>
                             {searchValue && emptySubMessage && (
-                                <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                                <p className="text-xs text-muted-foreground mt-1">
                                     {emptySubMessage}
                                 </p>
                             )}
                         </div>
                     ) : (
-                        <div className="divide-y divide-gray-100 dark:divide-gray-800">
+                        <div className="divide-y divide-border">
                             {visibleItems.map((item, index) => {
                                 const disabled = isItemDisabled?.(item) ?? false
                                 return (
@@ -213,7 +213,7 @@ export default function SearchPickerDialog<T>({
                             {pageSize && visibleCount < items.length && (
                                 <div
                                     ref={sentinelRef}
-                                    className="py-4 text-center text-xs text-gray-400 dark:text-gray-500"
+                                    className="py-4 text-center text-xs text-muted-foreground"
                                 >
                                     Cargando más…
                                 </div>

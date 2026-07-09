@@ -355,7 +355,7 @@ export function RutaModal({
                                     clientesFiltrados.map((client) => {
                                         const zona = zones.find(z => z.IdZona === (client as any).zona)
                                         return (
-                                            <div key={client.Codigo} className="flex items-start gap-3 p-4 hover:bg-gray-50">
+                                            <div key={client.Codigo} className="flex items-start gap-3 p-4 hover:bg-muted">
                                                 <Checkbox
                                                     checked={farmaciasSeleccionadas.includes(client.Codigo)}
                                                     onCheckedChange={() => onSeleccionarFarmacia(client.Codigo)}
@@ -377,8 +377,8 @@ export function RutaModal({
                                                             <strong>Representante:</strong> {client.Nombre}
                                                         </div>
                                                     </div>
-                                                    <p className="text-sm text-gray-600 mb-2">{client.direccion}</p>
-                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs text-gray-500">
+                                                    <p className="text-sm text-muted-foreground mb-2">{client.direccion}</p>
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs text-muted-foreground">
                                                         <div>
                                                             <strong>Teléfono:</strong> {client.Telefono || '--- --- ---'}
                                                         </div>
@@ -407,11 +407,11 @@ export function RutaModal({
                                     })
                                 ) : (
                                     <div className="text-center py-8">
-                                        <MapPin className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                                        <h3 className="text-lg font-medium text-gray-900 mb-2">
+                                        <MapPin className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                                        <h3 className="text-lg font-medium text-foreground mb-2">
                                             {searchCliente ? "No se encontraron farmacias" : "No hay farmacias cargadas"}
                                         </h3>
-                                        <p className="text-gray-500">
+                                        <p className="text-muted-foreground">
                                             {searchCliente
                                                 ? "Intenta con otros términos de búsqueda"
                                                 : "Agrega zonas para ver las farmacias disponibles"
@@ -423,7 +423,7 @@ export function RutaModal({
 
                             {/* Contador de resultados */}
                             {searchCliente && clientesFiltrados.length > 0 && (
-                                <div className="text-sm text-gray-500 text-center">
+                                <div className="text-sm text-muted-foreground text-center">
                                     Mostrando {clientesFiltrados.length} de {clientsByZone.length} farmacias
                                 </div>
                             )}

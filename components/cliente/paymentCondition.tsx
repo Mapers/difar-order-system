@@ -35,7 +35,7 @@ const PaymentCondition: React.FC<ClientRowProps> = ({
   const [isCurrencyOpen, setIsCurrencyOpen] = useState(false);
 
   return (
-      <Card className="bg-white shadow-sm">
+      <Card className="bg-background shadow-sm">
         <CardHeader>
           <CardTitle className="text-xl text-green-600 flex items-center gap-2">
             <CreditCard className="w-5 h-5" />

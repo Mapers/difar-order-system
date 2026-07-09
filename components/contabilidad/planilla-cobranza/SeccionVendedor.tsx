@@ -395,7 +395,7 @@ export default function SeccionVendedor({
                 onSelect={handleDocumentoSelect}
             />
 
-            <div className="flex bg-white border border-slate-200 rounded-lg overflow-hidden shadow-sm">
+            <div className="flex bg-background border border-border rounded-lg overflow-hidden shadow-sm">
                 {[
                     { id: 'nueva', label: 'Nueva planilla' },
                     { id: 'mis',   label: 'Mis planillas', badge: rechazadas },
@@ -407,7 +407,7 @@ export default function SeccionVendedor({
                             whitespace-nowrap transition-all border-b-2
                             ${tab === t.id
                             ? 'text-sky-700 border-sky-600 bg-sky-50/50'
-                            : 'text-slate-500 border-transparent hover:text-sky-600'}`}
+                            : 'text-muted-foreground border-transparent hover:text-sky-600'}`}
                     >
                         {t.label}
                         {t.badge ? (
@@ -430,15 +430,15 @@ export default function SeccionVendedor({
                             <CardContent className="p-6 space-y-4">
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div className="flex flex-col gap-1.5">
-                                        <label className="text-[11px] font-semibold uppercase tracking-wider text-slate-600">
+                                        <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                                             Fecha de ruta <span className="text-red-500">*</span>
                                         </label>
                                         <Input type="date" value={fechaRuta} onChange={e => setFechaRuta(e.target.value)} />
                                     </div>
                                     <div className="flex flex-col gap-1.5">
                                         <div className="flex items-center gap-1.5">
-                                            <MapPin className="w-3.5 h-3.5 text-slate-500" />
-                                            <label className="text-[11px] font-semibold uppercase tracking-wider text-slate-600">
+                                            <MapPin className="w-3.5 h-3.5 text-muted-foreground" />
+                                            <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                                                 Zona <span className="text-red-500">*</span>
                                             </label>
                                         </div>
@@ -473,7 +473,7 @@ export default function SeccionVendedor({
 
                     {planillaActiva && (
                         <>
-                            <div className="bg-white border border-sky-200 rounded-xl p-4 flex flex-wrap items-center justify-between gap-3 shadow-sm">
+                            <div className="bg-background border border-sky-200 rounded-xl p-4 flex flex-wrap items-center justify-between gap-3 shadow-sm">
                                 <div className="flex items-center gap-3">
                                     <div className="w-11 h-11 rounded-xl bg-sky-600 flex items-center justify-center shrink-0">
                                         <FileText className="h-5 w-5 text-white" />
@@ -482,7 +482,7 @@ export default function SeccionVendedor({
                                         <p className="text-lg font-bold font-mono text-sky-700 tracking-wider">
                                             {planillaActiva.numero_planilla}
                                         </p>
-                                        <p className="text-xs text-slate-500 flex items-center gap-1">
+                                        <p className="text-xs text-muted-foreground flex items-center gap-1">
                                             <MapPin className="h-3 w-3" />
                                             {planillaActiva.zona} · {fmtFecha(planillaActiva.fecha_ruta)}
                                         </p>
@@ -491,7 +491,7 @@ export default function SeccionVendedor({
                                 <div className="flex items-center gap-3">
                                     <EstadoPill estado={planillaActiva.estado} size="md" />
                                     <div className="text-right">
-                                        <p className="text-[10px] uppercase text-slate-400 font-semibold">Total cobrado</p>
+                                        <p className="text-[10px] uppercase text-muted-foreground font-semibold">Total cobrado</p>
                                         <p className="font-mono font-bold text-emerald-600">
                                             {fmtMoney(detalle.reduce((s, r) => s + Number(r.importe_cobrado), 0))}
                                         </p>
@@ -499,18 +499,18 @@ export default function SeccionVendedor({
                                 </div>
                             </div>
 
-                            <div className="bg-white border border-slate-100 rounded-xl overflow-hidden shadow-sm">
-                                <div className="flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-blue-50 to-slate-50 border-b border-slate-100">
+                            <div className="bg-background border border-border rounded-xl overflow-hidden shadow-sm">
+                                <div className="flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-blue-50 to-slate-50 border-b border-border">
                                     <div className="w-7 h-7 rounded-lg bg-sky-100 flex items-center justify-center">
                                         <FileText className="h-3.5 w-3.5 text-sky-600" />
                                     </div>
                                     <p className="text-sm font-semibold text-sky-800">Datos del documento</p>
-                                    <span className="ml-auto text-[10px] text-slate-400 font-medium">Sección 1 de 2</span>
+                                    <span className="ml-auto text-[10px] text-muted-foreground font-medium">Sección 1 de 2</span>
                                 </div>
                                 <div className="p-5 space-y-4">
                                     <div className="grid grid-cols-1 md:grid-cols-6 gap-3">
                                         <div className="flex flex-col gap-1.5 md:col-span-5">
-                                            <label className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+                                            <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                                                 Buscar Cliente (Nombre o RUC/DNI) <span className="text-red-500">*</span>
                                             </label>
                                             <Combobox<IClient>
@@ -526,7 +526,7 @@ export default function SeccionVendedor({
                                             />
                                         </div>
                                         <div className="flex flex-col gap-1.5 md:col-span-1">
-                                            <label className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+                                            <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                                                 T/D <span className="text-red-500">*</span>
                                             </label>
                                             <Select value={formReg.tipo_documento} onValueChange={v => fc('tipo_documento', v)}>
@@ -542,7 +542,7 @@ export default function SeccionVendedor({
 
                                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 items-end">
                                         <div className="flex flex-col gap-1.5">
-                                            <label className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Serie</label>
+                                            <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Serie</label>
                                             <Input
                                                 placeholder="02"
                                                 value={formReg.serie}
@@ -552,7 +552,7 @@ export default function SeccionVendedor({
                                             />
                                         </div>
                                         <div className="flex flex-col gap-1.5">
-                                            <label className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">N° Documento</label>
+                                            <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">N° Documento</label>
                                             <Input
                                                 placeholder="10737"
                                                 value={formReg.numero_doc}
@@ -561,7 +561,7 @@ export default function SeccionVendedor({
                                             />
                                         </div>
                                         <div className="flex flex-col gap-1.5">
-                                            <label className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+                                            <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                                                 Importe S/. <span className="text-red-500">*</span>
                                             </label>
                                             <Input
@@ -573,7 +573,7 @@ export default function SeccionVendedor({
                                         </div>
 
                                         <div className="flex flex-col gap-1.5">
-                                            <label className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 invisible">
+                                            <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground invisible">
                                                 Buscar doc.
                                             </label>
                                             <Button
@@ -600,18 +600,18 @@ export default function SeccionVendedor({
                                 </div>
                             </div>
 
-                            <div className="bg-white border border-slate-100 rounded-xl overflow-hidden shadow-sm">
-                                <div className="flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-emerald-50 to-slate-50 border-b border-slate-100">
+                            <div className="bg-background border border-border rounded-xl overflow-hidden shadow-sm">
+                                <div className="flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-emerald-50 to-slate-50 border-b border-border">
                                     <div className="w-7 h-7 rounded-lg bg-emerald-100 flex items-center justify-center">
                                         <DollarSign className="h-3.5 w-3.5 text-emerald-600" />
                                     </div>
                                     <p className="text-sm font-semibold text-emerald-800">Liquidación de cobranza</p>
-                                    <span className="ml-auto text-[10px] text-slate-400 font-medium">Sección 2 de 2</span>
+                                    <span className="ml-auto text-[10px] text-muted-foreground font-medium">Sección 2 de 2</span>
                                 </div>
                                 <div className="p-5 space-y-4">
                                     <div className="grid grid-cols-2 gap-3">
                                         <div className="flex flex-col gap-1.5">
-                                            <label className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Recibo N°</label>
+                                            <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Recibo N°</label>
                                             <Input
                                                 placeholder="B/34752"
                                                 value={formReg.numero_recibo}
@@ -620,7 +620,7 @@ export default function SeccionVendedor({
                                             />
                                         </div>
                                         <div className="flex flex-col gap-1.5">
-                                            <label className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Importe cobrado S/.</label>
+                                            <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Importe cobrado S/.</label>
                                             <Input
                                                 type="number" step="0.01" min={0} placeholder="0.00"
                                                 value={formReg.importe_cobrado}
@@ -630,11 +630,11 @@ export default function SeccionVendedor({
                                         </div>
                                     </div>
 
-                                    <div className="border-t border-dashed border-slate-200 pt-3">
-                                        <p className="text-[10px] uppercase font-semibold text-slate-400 tracking-wider mb-3">Depósito bancario</p>
+                                    <div className="border-t border-dashed border-border pt-3">
+                                        <p className="text-[10px] uppercase font-semibold text-muted-foreground tracking-wider mb-3">Depósito bancario</p>
                                         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                                             <div className="flex flex-col gap-1.5">
-                                                <label className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Banco (C/B)</label>
+                                                <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Banco (C/B)</label>
                                                 <Select value={formReg.cod_banco} onValueChange={v => fc('cod_banco', v)}>
                                                     <SelectTrigger><SelectValue placeholder="— sin banco —" /></SelectTrigger>
                                                     <SelectContent>
@@ -647,11 +647,11 @@ export default function SeccionVendedor({
                                                 </Select>
                                             </div>
                                             <div className="flex flex-col gap-1.5">
-                                                <label className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Fecha depósito</label>
+                                                <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Fecha depósito</label>
                                                 <Input type="date" value={formReg.fecha_deposito} onChange={e => fc('fecha_deposito', e.target.value)} />
                                             </div>
                                             <div className="flex flex-col gap-1.5">
-                                                <label className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">N° Operación</label>
+                                                <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">N° Operación</label>
                                                 <Input
                                                     placeholder="14009921"
                                                     value={formReg.numero_operacion}
@@ -660,7 +660,7 @@ export default function SeccionVendedor({
                                                 />
                                             </div>
                                             <div className="flex flex-col gap-1.5">
-                                                <label className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">N° Cheque</label>
+                                                <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">N° Cheque</label>
                                                 <Input
                                                     placeholder="Opcional"
                                                     value={formReg.numero_cheque}
@@ -671,13 +671,13 @@ export default function SeccionVendedor({
                                         </div>
                                     </div>
 
-                                    <div className="border-t border-dashed border-slate-200 pt-3">
+                                    <div className="border-t border-dashed border-border pt-3">
                                         <div className="flex items-center justify-between mb-2">
-                                            <p className="text-[10px] uppercase font-semibold text-slate-400 tracking-wider flex items-center gap-1.5">
+                                            <p className="text-[10px] uppercase font-semibold text-muted-foreground tracking-wider flex items-center gap-1.5">
                                                 <Paperclip className="h-3 w-3" />
                                                 Vouchers / comprobantes de pago
                                             </p>
-                                            <span className="text-[10px] text-slate-400">
+                                            <span className="text-[10px] text-muted-foreground">
                                                 {vouchers.length}/{MAX_VOUCHERS}
                                             </span>
                                         </div>
@@ -689,7 +689,7 @@ export default function SeccionVendedor({
                                                     return (
                                                         <div
                                                             key={idx}
-                                                            className="relative group w-20 h-20 rounded-lg border border-slate-200 overflow-hidden bg-slate-50 flex items-center justify-center"
+                                                            className="relative group w-20 h-20 rounded-lg border border-border overflow-hidden bg-muted flex items-center justify-center"
                                                         >
                                                             {preview ? (
                                                                 <img
@@ -700,8 +700,8 @@ export default function SeccionVendedor({
                                                                 />
                                                             ) : (
                                                                 <div className="flex flex-col items-center gap-1 p-1">
-                                                                    <FileText className="h-6 w-6 text-slate-400" />
-                                                                    <span className="text-[9px] text-slate-400 truncate w-full text-center px-1">
+                                                                    <FileText className="h-6 w-6 text-muted-foreground" />
+                                                                    <span className="text-[9px] text-muted-foreground truncate w-full text-center px-1">
                                                                         {file.name}
                                                                     </span>
                                                                 </div>
@@ -733,9 +733,9 @@ export default function SeccionVendedor({
                                                 <button
                                                     type="button"
                                                     onClick={() => voucherInputRef.current?.click()}
-                                                    className="w-full h-14 border-2 border-dashed border-slate-300 rounded-lg
+                                                    className="w-full h-14 border-2 border-dashed border-border rounded-lg
                                                         flex items-center justify-center gap-2
-                                                        text-xs text-slate-400 hover:border-sky-400 hover:text-sky-600
+                                                        text-xs text-muted-foreground hover:border-sky-400 hover:text-sky-600
                                                         hover:bg-sky-50/50 transition-all"
                                                 >
                                                     <Upload className="h-4 w-4" />
@@ -756,10 +756,10 @@ export default function SeccionVendedor({
                                 </div>
                             </div>
 
-                            <div className="bg-white border border-slate-100 rounded-xl overflow-hidden shadow-sm">
-                                <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 bg-slate-50">
-                                    <span className="text-sm font-semibold text-slate-700">Registros ingresados</span>
-                                    <span className="text-xs text-slate-400 font-medium">
+                            <div className="bg-background border border-border rounded-xl overflow-hidden shadow-sm">
+                                <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted">
+                                    <span className="text-sm font-semibold text-foreground">Registros ingresados</span>
+                                    <span className="text-xs text-muted-foreground font-medium">
                                         {detalle.length} registro{detalle.length !== 1 ? 's' : ''}
                                     </span>
                                 </div>
@@ -773,23 +773,23 @@ export default function SeccionVendedor({
                                 </div>
                             </div>
 
-                            <div className="flex flex-wrap items-center justify-between gap-3 bg-white border border-slate-100 rounded-xl px-4 py-3 shadow-sm">
+                            <div className="flex flex-wrap items-center justify-between gap-3 bg-background border border-border rounded-xl px-4 py-3 shadow-sm">
                                 <div className="flex gap-5">
                                     <div>
-                                        <p className="text-[10px] uppercase text-slate-400 font-semibold tracking-wider">Total documentos</p>
+                                        <p className="text-[10px] uppercase text-muted-foreground font-semibold tracking-wider">Total documentos</p>
                                         <p className="font-mono font-semibold text-blue-800">
                                             {fmtMoney(detalle.reduce((s, r) => s + Number(r.importe), 0))}
                                         </p>
                                     </div>
                                     <div>
-                                        <p className="text-[10px] uppercase text-slate-400 font-semibold tracking-wider">Total cobrado</p>
+                                        <p className="text-[10px] uppercase text-muted-foreground font-semibold tracking-wider">Total cobrado</p>
                                         <p className="font-mono font-semibold text-emerald-600">
                                             {fmtMoney(detalle.reduce((s, r) => s + Number(r.importe_cobrado), 0))}
                                         </p>
                                     </div>
                                 </div>
                                 <div className="flex gap-2">
-                                    <Button variant="outline" size="sm" onClick={onLimpiar} className="text-slate-500">
+                                    <Button variant="outline" size="sm" onClick={onLimpiar} className="text-muted-foreground">
                                         Cancelar
                                     </Button>
                                     <Button
@@ -811,7 +811,7 @@ export default function SeccionVendedor({
             {tab === 'mis' && (
                 <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                        <p className="text-sm text-slate-500">
+                        <p className="text-sm text-muted-foreground">
                             {misPlanillas.length} planilla{misPlanillas.length !== 1 ? 's' : ''}
                         </p>
                         <Button
@@ -830,7 +830,7 @@ export default function SeccionVendedor({
                         <Card>
                             <CardContent className="py-12 text-center">
                                 <div className="text-3xl mb-3 opacity-40">📋</div>
-                                <p className="text-slate-400">Aún no tienes planillas enviadas.</p>
+                                <p className="text-muted-foreground">Aún no tienes planillas enviadas.</p>
                             </CardContent>
                         </Card>
                     ) : [...misPlanillas].reverse().map(planilla => {
@@ -853,7 +853,7 @@ export default function SeccionVendedor({
                         return (
                             <Card key={planilla.id_planilla} className={`shadow-sm overflow-hidden border-l-4 ${borderColor}`}>
                                 <div
-                                    className="flex items-center justify-between p-3.5 cursor-pointer hover:bg-slate-50 transition-colors"
+                                    className="flex items-center justify-between p-3.5 cursor-pointer hover:bg-muted transition-colors"
                                     onClick={() => toggleRow(planilla)}
                                 >
                                     <div className="flex items-center gap-3 min-w-0">
@@ -864,16 +864,16 @@ export default function SeccionVendedor({
                                         </div>
                                         <div className="min-w-0">
                                             <div className="flex items-center gap-2 flex-wrap">
-                                                <p className="text-sm font-bold font-mono text-slate-800">
+                                                <p className="text-sm font-bold font-mono text-card-foreground">
                                                     {planilla.numero_planilla}
                                                 </p>
-                                                <span className="text-[10px] text-slate-400">· {planilla.zona}</span>
+                                                <span className="text-[10px] text-muted-foreground">· {planilla.zona}</span>
                                                 <EstadoPill estado={planilla.estado} />
                                                 {planilla.estado === 'rechazado' && (
                                                     <span className="text-[9px] bg-red-500 text-white px-1.5 py-0.5 rounded font-bold animate-pulse">!</span>
                                                 )}
                                             </div>
-                                            <p className="text-[11px] text-slate-400 mt-0.5">
+                                            <p className="text-[11px] text-muted-foreground mt-0.5">
                                                 {fmtFecha(planilla.fecha_ruta)} · {fmtRel(planilla.fecha_envio)}
                                             </p>
                                         </div>
@@ -896,19 +896,19 @@ export default function SeccionVendedor({
                                             </Button>
                                         )}
                                         <div className="text-right">
-                                            <p className="font-mono font-semibold text-slate-800">
+                                            <p className="font-mono font-semibold text-card-foreground">
                                                 {fmtMoney(planilla.total_cobrado ?? tCbza)}
                                             </p>
-                                            <p className="text-[10px] text-slate-400">
+                                            <p className="text-[10px] text-muted-foreground">
                                                 {planilla.total_registros ?? (detalleCache[planilla.id_planilla]?.length ?? 0)} reg
                                                 {tDocs > 0 ? ` · doc ${fmtMoney(tDocs)}` : ''}
                                             </p>
                                         </div>
                                         {isLoading
-                                            ? <Loader2 className="h-4 w-4 text-slate-400 animate-spin shrink-0" />
+                                            ? <Loader2 className="h-4 w-4 text-muted-foreground animate-spin shrink-0" />
                                             : isOpen
-                                                ? <ChevronDown className="h-4 w-4 text-slate-400 shrink-0 transition-transform" />
-                                                : <ChevronRight className="h-4 w-4 text-slate-400 shrink-0 transition-transform" />
+                                                ? <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0 transition-transform" />
+                                                : <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 transition-transform" />
                                         }
                                     </div>
                                 </div>

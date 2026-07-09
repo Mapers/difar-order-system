@@ -60,7 +60,7 @@ export function NotificationBell() {
         </div>
 
         {notifications.length === 0 ? (
-          <div className="flex flex-col items-center justify-center gap-2 px-4 py-10 text-center text-gray-400">
+          <div className="flex flex-col items-center justify-center gap-2 px-4 py-10 text-center text-muted-foreground">
             <BellOff className="h-8 w-8" />
             <p className="text-sm">No tienes notificaciones</p>
           </div>
@@ -86,7 +86,7 @@ export function NotificationBell() {
                       type="button"
                       aria-label="Quitar notificación"
                       onClick={() => remove(notification.id)}
-                      className="absolute right-2 top-2 hidden rounded px-1 text-xs text-gray-400 hover:text-gray-700 group-hover:block"
+                      className="absolute right-2 top-2 hidden rounded px-1 text-xs text-muted-foreground hover:text-foreground group-hover:block"
                     >
                       ✕
                     </button>

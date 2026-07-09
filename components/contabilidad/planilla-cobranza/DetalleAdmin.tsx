@@ -132,7 +132,7 @@ export default function DetalleAdmin({
 
     return (
         <>
-            <div className="border-t border-slate-100 p-4 bg-[#FAFAF8] space-y-3 animate-in slide-in-from-top-2 duration-200">
+            <div className="border-t border-border p-4 bg-muted/40 space-y-3 animate-in slide-in-from-top-2 duration-200">
 
                 <div className="grid grid-cols-3 gap-2">
                     {[
@@ -140,9 +140,9 @@ export default function DetalleAdmin({
                         { label: 'Zona',    val: planilla.zona || '—' },
                         { label: 'Enviada', val: planilla.fecha_envio ? fmtHora(planilla.fecha_envio) : '—' },
                     ].map(item => (
-                        <div key={item.label} className="bg-white border border-slate-100 rounded-lg px-3 py-2">
-                            <p className="text-[10px] uppercase text-slate-400 tracking-wide">{item.label}</p>
-                            <p className="text-xs font-medium text-slate-700 mt-0.5">{item.val}</p>
+                        <div key={item.label} className="bg-background border border-border rounded-lg px-3 py-2">
+                            <p className="text-[10px] uppercase text-muted-foreground tracking-wide">{item.label}</p>
+                            <p className="text-xs font-medium text-foreground mt-0.5">{item.val}</p>
                         </div>
                     ))}
                 </div>
@@ -199,12 +199,12 @@ export default function DetalleAdmin({
                 )}
 
                 <div className="hidden lg:flex gap-2">
-                    <div className="flex-1 bg-white border border-slate-100 rounded-lg px-4 py-2">
-                        <p className="text-[10px] uppercase text-slate-400 tracking-wider">Total documentos</p>
+                    <div className="flex-1 bg-background border border-border rounded-lg px-4 py-2">
+                        <p className="text-[10px] uppercase text-muted-foreground tracking-wider">Total documentos</p>
                         <p className="font-mono text-base font-medium text-blue-800 mt-0.5">{fmtMoney(tDocs)}</p>
                     </div>
-                    <div className="flex-1 bg-white border border-slate-100 rounded-lg px-4 py-2">
-                        <p className="text-[10px] uppercase text-slate-400 tracking-wider">Total cobrado</p>
+                    <div className="flex-1 bg-background border border-border rounded-lg px-4 py-2">
+                        <p className="text-[10px] uppercase text-muted-foreground tracking-wider">Total cobrado</p>
                         <p className="font-mono text-base font-medium text-emerald-600 mt-0.5">{fmtMoney(tCbza)}</p>
                     </div>
                 </div>
@@ -212,7 +212,7 @@ export default function DetalleAdmin({
                 {!yaGestionada && (
                     <div className="space-y-3 pt-1">
                         <div className="space-y-1.5">
-                            <label className="text-[11px] font-semibold uppercase tracking-wider text-slate-600">
+                            <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                                 Observaciones (opcional)
                             </label>
                             <Textarea
@@ -254,22 +254,22 @@ export default function DetalleAdmin({
                             <AlertTriangle className="h-5 w-5 text-amber-500" />
                             Confirmar procesamiento
                         </DialogTitle>
-                        <DialogDescription className="text-sm text-slate-500 pt-1">
+                        <DialogDescription className="text-sm text-muted-foreground pt-1">
                             Se registrará esta amortización para
-                            la planilla <span className="font-mono font-semibold text-slate-700">{planilla.numero_planilla}</span>.
+                            la planilla <span className="font-mono font-semibold text-foreground">{planilla.numero_planilla}</span>.
                             Completa los campos requeridos antes de continuar.
                         </DialogDescription>
                     </DialogHeader>
 
                     <div className="space-y-4 py-2">
 
-                        <div className="bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 grid grid-cols-2 gap-2 text-xs">
+                        <div className="bg-muted border border-border rounded-lg px-4 py-3 grid grid-cols-2 gap-2 text-xs">
                             <div>
-                                <p className="text-slate-400 uppercase tracking-wider text-[10px]">Vendedor</p>
-                                <p className="font-medium text-slate-700 mt-0.5 truncate">{planilla.nombre_vendedor}</p>
+                                <p className="text-muted-foreground uppercase tracking-wider text-[10px]">Vendedor</p>
+                                <p className="font-medium text-foreground mt-0.5 truncate">{planilla.nombre_vendedor}</p>
                             </div>
                             <div>
-                                <p className="text-slate-400 uppercase tracking-wider text-[10px]">Total cobrado</p>
+                                <p className="text-muted-foreground uppercase tracking-wider text-[10px]">Total cobrado</p>
                                 <p className="font-mono font-semibold text-emerald-600 mt-0.5">{fmtMoney(tCbza)}</p>
                             </div>
                         </div>

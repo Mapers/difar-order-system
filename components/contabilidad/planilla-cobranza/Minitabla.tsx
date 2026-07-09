@@ -23,7 +23,7 @@ function CellInput({
             step={type === 'number' ? '0.01' : undefined}
             value={value}
             onChange={e => onChange(e.target.value)}
-            className={`text-xs border border-amber-200 rounded px-1.5 py-1 bg-white
+            className={`text-xs border border-amber-200 rounded px-1.5 py-1 bg-background
         focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-200
         ${className}`}
         />
@@ -37,7 +37,7 @@ export default function MiniTabla({
 
     if (registros.length === 0) {
         return (
-            <p className="text-center text-slate-400 text-sm py-8">
+            <p className="text-center text-muted-foreground text-sm py-8">
                 Aún no hay registros. Completa el formulario y presiona{' '}
                 <strong>Agregar registro</strong>.
             </p>
@@ -52,7 +52,7 @@ export default function MiniTabla({
 
     return (
         <>
-            <div className="hidden lg:block overflow-x-auto rounded-lg border border-slate-200">
+            <div className="hidden lg:block overflow-x-auto rounded-lg border border-border">
                 <table className="w-full text-[11.5px] min-w-[720px]">
                     <thead>
                     <tr className="bg-slate-800">
@@ -87,7 +87,7 @@ export default function MiniTabla({
                     </tr>
                     </thead>
 
-                    <tbody className="divide-y divide-slate-50">
+                    <tbody className="divide-y divide-border">
                     {registros.map((r, i) => (
                         <tr
                             key={r.id_detalle}
@@ -96,9 +96,9 @@ export default function MiniTabla({
                                 ? 'bg-amber-50/30 hover:bg-amber-50/60'
                                 : 'hover:bg-blue-50/30'}`}
                         >
-                            <td className="px-2 py-2 text-[10px] text-slate-400">{i + 1}</td>
+                            <td className="px-2 py-2 text-[10px] text-muted-foreground">{i + 1}</td>
 
-                            <td className="px-2 py-2 font-mono text-[10.5px] text-slate-600">
+                            <td className="px-2 py-2 font-mono text-[10.5px] text-muted-foreground">
                                 {editando
                                     ? <CellInput value={r.codigo_cliente ?? ''} onChange={v => change(r.id_detalle, 'codigo_cliente', v)} className="w-20" />
                                     : (r.codigo_cliente || '—')}
@@ -115,7 +115,7 @@ export default function MiniTabla({
                                     <select
                                         value={r.tipo_documento}
                                         onChange={e => change(r.id_detalle, 'tipo_documento', e.target.value)}
-                                        className="text-xs border border-amber-200 rounded px-1 py-1 bg-white focus:outline-none focus:border-amber-500"
+                                        className="text-xs border border-amber-200 rounded px-1 py-1 bg-background focus:outline-none focus:border-amber-500"
                                     >
                                         {tiposComprobante.map(t => (
                                             <option key={t.codigo} value={t.codigo}>{t.codigo}</option>
@@ -124,13 +124,13 @@ export default function MiniTabla({
                                 ) : (r.desc_tipo_documento || r.tipo_documento)}
                             </td>
 
-                            <td className="px-2 py-2 font-mono text-[10.5px] text-slate-600">
+                            <td className="px-2 py-2 font-mono text-[10.5px] text-muted-foreground">
                                 {editando
                                     ? <CellInput value={r.serie ?? ''} onChange={v => change(r.id_detalle, 'serie', v)} className="w-14" />
                                     : (r.serie || '—')}
                             </td>
 
-                            <td className="px-2 py-2 font-mono text-[10.5px] text-slate-600">
+                            <td className="px-2 py-2 font-mono text-[10.5px] text-muted-foreground">
                                 {editando
                                     ? <CellInput value={r.numero_doc ?? ''} onChange={v => change(r.id_detalle, 'numero_doc', v)} className="w-16" />
                                     : (r.numero_doc || '—')}
@@ -142,7 +142,7 @@ export default function MiniTabla({
                                     : fmtMoney(r.importe)}
                             </td>
 
-                            <td className="px-2 py-2 font-mono text-[10.5px] text-slate-600 border-l-2 border-blue-100">
+                            <td className="px-2 py-2 font-mono text-[10.5px] text-muted-foreground border-l-2 border-blue-100">
                                 {editando
                                     ? <CellInput value={r.numero_recibo ?? ''} onChange={v => change(r.id_detalle, 'numero_recibo', v)} className="w-20" />
                                     : (r.numero_recibo || '—')}
@@ -154,12 +154,12 @@ export default function MiniTabla({
                                     : Number(r.importe_cobrado) > 0 ? fmtMoney(r.importe_cobrado) : '—'}
                             </td>
 
-                            <td className="px-2 py-2 font-mono text-[10.5px] text-slate-600 text-center">
+                            <td className="px-2 py-2 font-mono text-[10.5px] text-muted-foreground text-center">
                                 {editando ? (
                                     <select
                                         value={r.cod_banco ?? ''}
                                         onChange={e => change(r.id_detalle, 'cod_banco', e.target.value)}
-                                        className="text-xs border border-amber-200 rounded px-1 py-1 bg-white focus:outline-none focus:border-amber-500"
+                                        className="text-xs border border-amber-200 rounded px-1 py-1 bg-background focus:outline-none focus:border-amber-500"
                                     >
                                         <option value="">—</option>
                                         {bancos.map(b => (
@@ -169,13 +169,13 @@ export default function MiniTabla({
                                 ) : (r.desc_banco || bancos.find(b => b.CodigoEntidadFinanciera === r.cod_banco)?.DescripcionEntidadFinanciera || '—')}
                             </td>
 
-                            <td className="px-2 py-2 font-mono text-[10.5px] text-slate-600 text-center">
+                            <td className="px-2 py-2 font-mono text-[10.5px] text-muted-foreground text-center">
                                 {editando
                                     ? <CellInput type="date" value={r.fecha_deposito ?? ''} onChange={v => change(r.id_detalle, 'fecha_deposito', v)} />
                                     : fmtFecha(r.fecha_deposito)}
                             </td>
 
-                            <td className="px-2 py-2 font-mono text-[10.5px] text-slate-600">
+                            <td className="px-2 py-2 font-mono text-[10.5px] text-muted-foreground">
                                 {editando
                                     ? <CellInput value={r.numero_operacion ?? ''} onChange={v => change(r.id_detalle, 'numero_operacion', v)} className="w-24" />
                                     : (r.numero_operacion || '—')}
@@ -201,8 +201,8 @@ export default function MiniTabla({
                     </tbody>
 
                     <tfoot>
-                    <tr className="bg-slate-50 border-t border-slate-200">
-                        <td colSpan={6} className="px-2 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+                    <tr className="bg-muted border-t border-border">
+                        <td colSpan={6} className="px-2 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                             Total
                         </td>
                         <td className="px-2 py-1.5 font-mono font-semibold text-blue-800 text-right">
@@ -223,7 +223,7 @@ export default function MiniTabla({
                     <div
                         key={r.id_detalle}
                         className={`rounded-xl overflow-hidden border shadow-sm
-              ${editando ? 'border-amber-200' : 'border-slate-200'}`}
+              ${editando ? 'border-amber-200' : 'border-border'}`}
                     >
                         <div className={`px-3 py-2.5 flex items-start justify-between
               ${editando ? 'bg-amber-600' : 'bg-slate-800'}`}>
@@ -260,21 +260,21 @@ export default function MiniTabla({
                             {editando ? (
                                 <div className="space-y-2">
                                     <div>
-                                        <p className="text-[9px] uppercase text-slate-400 mb-0.5">Código cliente</p>
-                                        <input className="w-full text-xs border border-amber-200 rounded-md px-2 py-1.5 bg-white focus:outline-none focus:border-amber-500"
+                                        <p className="text-[9px] uppercase text-muted-foreground mb-0.5">Código cliente</p>
+                                        <input className="w-full text-xs border border-amber-200 rounded-md px-2 py-1.5 bg-background focus:outline-none focus:border-amber-500"
                                                value={r.codigo_cliente ?? ''}
                                                onChange={e => change(r.id_detalle, 'codigo_cliente', e.target.value)} />
                                     </div>
                                     <div>
-                                        <p className="text-[9px] uppercase text-slate-400 mb-0.5">Nombre / Razón social</p>
-                                        <input className="w-full text-xs border border-amber-200 rounded-md px-2 py-1.5 bg-white focus:outline-none focus:border-amber-500"
+                                        <p className="text-[9px] uppercase text-muted-foreground mb-0.5">Nombre / Razón social</p>
+                                        <input className="w-full text-xs border border-amber-200 rounded-md px-2 py-1.5 bg-background focus:outline-none focus:border-amber-500"
                                                value={r.nombre_cliente}
                                                onChange={e => change(r.id_detalle, 'nombre_cliente', e.target.value)} />
                                     </div>
                                     <div className="grid grid-cols-3 gap-2">
                                         <div>
-                                            <p className="text-[9px] uppercase text-slate-400 mb-0.5">T/D</p>
-                                            <select className="w-full text-xs border border-amber-200 rounded-md px-1 py-1.5 bg-white focus:outline-none"
+                                            <p className="text-[9px] uppercase text-muted-foreground mb-0.5">T/D</p>
+                                            <select className="w-full text-xs border border-amber-200 rounded-md px-1 py-1.5 bg-background focus:outline-none"
                                                     value={r.tipo_documento}
                                                     onChange={e => change(r.id_detalle, 'tipo_documento', e.target.value)}>
                                                 {tiposComprobante.map(t => (
@@ -283,21 +283,21 @@ export default function MiniTabla({
                                             </select>
                                         </div>
                                         <div>
-                                            <p className="text-[9px] uppercase text-slate-400 mb-0.5">Serie</p>
-                                            <input className="w-full text-xs border border-amber-200 rounded-md px-2 py-1.5 bg-white focus:outline-none font-mono"
+                                            <p className="text-[9px] uppercase text-muted-foreground mb-0.5">Serie</p>
+                                            <input className="w-full text-xs border border-amber-200 rounded-md px-2 py-1.5 bg-background focus:outline-none font-mono"
                                                    value={r.serie ?? ''}
                                                    onChange={e => change(r.id_detalle, 'serie', e.target.value)} />
                                         </div>
                                         <div>
-                                            <p className="text-[9px] uppercase text-slate-400 mb-0.5">N° Doc</p>
-                                            <input className="w-full text-xs border border-amber-200 rounded-md px-2 py-1.5 bg-white focus:outline-none font-mono"
+                                            <p className="text-[9px] uppercase text-muted-foreground mb-0.5">N° Doc</p>
+                                            <input className="w-full text-xs border border-amber-200 rounded-md px-2 py-1.5 bg-background focus:outline-none font-mono"
                                                    value={r.numero_doc ?? ''}
                                                    onChange={e => change(r.id_detalle, 'numero_doc', e.target.value)} />
                                         </div>
                                     </div>
                                     <div>
-                                        <p className="text-[9px] uppercase text-slate-400 mb-0.5">Importe S/.</p>
-                                        <input type="number" step="0.01" className="w-full text-sm font-bold border border-amber-200 rounded-md px-2 py-1.5 bg-white focus:outline-none font-mono"
+                                        <p className="text-[9px] uppercase text-muted-foreground mb-0.5">Importe S/.</p>
+                                        <input type="number" step="0.01" className="w-full text-sm font-bold border border-amber-200 rounded-md px-2 py-1.5 bg-background focus:outline-none font-mono"
                                                value={r.importe}
                                                onChange={e => change(r.id_detalle, 'importe', e.target.value)} />
                                     </div>
@@ -306,20 +306,20 @@ export default function MiniTabla({
                                 <>
                                     <div className="grid grid-cols-3 gap-2 mb-2">
                                         <div>
-                                            <p className="text-[9px] uppercase text-slate-400">Tipo</p>
+                                            <p className="text-[9px] uppercase text-muted-foreground">Tipo</p>
                                             <p className="text-xs font-semibold font-mono">{r.desc_tipo_documento || r.tipo_documento}</p>
                                         </div>
                                         <div>
-                                            <p className="text-[9px] uppercase text-slate-400">Serie</p>
-                                            <p className="text-xs font-mono text-slate-600">{r.serie || '—'}</p>
+                                            <p className="text-[9px] uppercase text-muted-foreground">Serie</p>
+                                            <p className="text-xs font-mono text-muted-foreground">{r.serie || '—'}</p>
                                         </div>
                                         <div>
-                                            <p className="text-[9px] uppercase text-slate-400">N° Doc</p>
-                                            <p className="text-xs font-mono text-slate-600">{r.numero_doc || '—'}</p>
+                                            <p className="text-[9px] uppercase text-muted-foreground">N° Doc</p>
+                                            <p className="text-xs font-mono text-muted-foreground">{r.numero_doc || '—'}</p>
                                         </div>
                                     </div>
                                     <div>
-                                        <p className="text-[9px] uppercase text-slate-400">Importe</p>
+                                        <p className="text-[9px] uppercase text-muted-foreground">Importe</p>
                                         <p className="text-xl font-bold text-blue-800 font-mono">{fmtMoney(r.importe)}</p>
                                     </div>
                                 </>
@@ -335,19 +335,19 @@ export default function MiniTabla({
                                 <div className="grid grid-cols-2 gap-2">
                                     <div>
                                         <p className="text-[9px] uppercase text-slate-400 mb-0.5">Importe cobrado</p>
-                                        <input type="number" step="0.01" className="w-full text-xs border border-amber-200 rounded-md px-2 py-1.5 bg-white focus:outline-none font-mono"
+                                        <input type="number" step="0.01" className="w-full text-xs border border-amber-200 rounded-md px-2 py-1.5 bg-background focus:outline-none font-mono"
                                                value={r.importe_cobrado}
                                                onChange={e => change(r.id_detalle, 'importe_cobrado', e.target.value)} />
                                     </div>
                                     <div>
                                         <p className="text-[9px] uppercase text-slate-400 mb-0.5">Recibo N°</p>
-                                        <input className="w-full text-xs border border-amber-200 rounded-md px-2 py-1.5 bg-white focus:outline-none font-mono"
+                                        <input className="w-full text-xs border border-amber-200 rounded-md px-2 py-1.5 bg-background focus:outline-none font-mono"
                                                value={r.numero_recibo ?? ''}
                                                onChange={e => change(r.id_detalle, 'numero_recibo', e.target.value)} />
                                     </div>
                                     <div>
                                         <p className="text-[9px] uppercase text-slate-400 mb-0.5">Banco</p>
-                                        <select className="w-full text-xs border border-amber-200 rounded-md px-1 py-1.5 bg-white focus:outline-none"
+                                        <select className="w-full text-xs border border-amber-200 rounded-md px-1 py-1.5 bg-background focus:outline-none"
                                                 value={r.cod_banco ?? ''}
                                                 onChange={e => change(r.id_detalle, 'cod_banco', e.target.value)}>
                                             <option value="">— sin banco —</option>
@@ -358,13 +358,13 @@ export default function MiniTabla({
                                     </div>
                                     <div>
                                         <p className="text-[9px] uppercase text-slate-400 mb-0.5">Fecha depósito</p>
-                                        <input type="date" className="w-full text-xs border border-amber-200 rounded-md px-2 py-1.5 bg-white focus:outline-none"
+                                        <input type="date" className="w-full text-xs border border-amber-200 rounded-md px-2 py-1.5 bg-background focus:outline-none"
                                                value={r.fecha_deposito ?? ''}
                                                onChange={e => change(r.id_detalle, 'fecha_deposito', e.target.value)} />
                                     </div>
                                     <div className="col-span-2">
                                         <p className="text-[9px] uppercase text-slate-400 mb-0.5">N° Operación</p>
-                                        <input className="w-full text-xs border border-amber-200 rounded-md px-2 py-1.5 bg-white focus:outline-none font-mono"
+                                        <input className="w-full text-xs border border-amber-200 rounded-md px-2 py-1.5 bg-background focus:outline-none font-mono"
                                                value={r.numero_operacion ?? ''}
                                                onChange={e => change(r.id_detalle, 'numero_operacion', e.target.value)} />
                                     </div>
@@ -408,12 +408,12 @@ export default function MiniTabla({
                 ))}
 
                 <div className="grid grid-cols-2 gap-2">
-                    <div className="bg-white border border-slate-100 rounded-xl p-3 shadow-sm">
-                        <p className="text-[10px] uppercase font-bold tracking-wider text-slate-400 mb-1">Total documentos</p>
+                    <div className="bg-background border border-border rounded-xl p-3 shadow-sm">
+                        <p className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground mb-1">Total documentos</p>
                         <p className="font-mono text-lg font-semibold text-blue-800">{fmtMoney(tDocs)}</p>
                     </div>
-                    <div className="bg-white border border-slate-100 rounded-xl p-3 shadow-sm">
-                        <p className="text-[10px] uppercase font-bold tracking-wider text-slate-400 mb-1">Total cobrado</p>
+                    <div className="bg-background border border-border rounded-xl p-3 shadow-sm">
+                        <p className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground mb-1">Total cobrado</p>
                         <p className="font-mono text-lg font-semibold text-emerald-600">{fmtMoney(tCbza)}</p>
                     </div>
                 </div>

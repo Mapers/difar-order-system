@@ -740,8 +740,8 @@ export default function RutaSemanalPage() {
     return (
         <div className="grid gap-6">
             <div className="flex flex-col gap-2">
-                <h1 className="text-3xl font-bold tracking-tight text-gray-900">Rutas Semanales</h1>
-                <p className="text-gray-500">Gestión y seguimiento de rutas de venta semanales</p>
+                <h1 className="text-3xl font-bold tracking-tight text-foreground">Rutas Semanales</h1>
+                <p className="text-muted-foreground">Gestión y seguimiento de rutas de venta semanales</p>
             </div>
 
             <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
@@ -868,7 +868,7 @@ export default function RutaSemanalPage() {
                                                                 </div>
                                                             </div>
 
-                                                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-sm text-gray-600">
+                                                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-sm text-muted-foreground">
                                                                 <div className="flex items-start gap-2">
                                                                     <User className="h-4 w-4 mt-0.5 flex-shrink-0" />
                                                                     <div className="min-w-0">
@@ -930,7 +930,7 @@ export default function RutaSemanalPage() {
 
                                                         <div className="space-y-3">
                                                             {ruta.clientes.map((direccion) => (
-                                                                <div key={direccion.id} className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 p-3 bg-gray-50 rounded-lg">
+                                                                <div key={direccion.id} className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 p-3 bg-muted rounded-lg">
                                                                     <div className="flex-1 min-w-0">
                                                                         <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2">
                                                                             <span className="font-medium break-words">{direccion.NombreComercial}</span>
@@ -938,11 +938,11 @@ export default function RutaSemanalPage() {
                                                                                 {ruta.zonaNombre}
                                                                             </Badge>
                                                                         </div>
-                                                                        <p className="text-sm text-gray-600 flex items-start gap-2 mb-3">
+                                                                        <p className="text-sm text-muted-foreground flex items-start gap-2 mb-3">
                                                                             <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0" />
                                                                             <span className="break-words">{direccion.direccion}</span>
                                                                         </p>
-                                                                        <div className="flex flex-col sm:flex-row sm:items-center gap-3 text-xs text-gray-500">
+                                                                        <div className="flex flex-col sm:flex-row sm:items-center gap-3 text-xs text-muted-foreground">
                                                                             <div className="flex items-center gap-1">
                                                                                 <Locate className="h-3 w-3 text-blue-600 flex-shrink-0" />
                                                                                 <span>Coordenadas: {direccion.latitud.toFixed(4)}, {direccion.longitud.toFixed(4)}</span>
@@ -978,9 +978,9 @@ export default function RutaSemanalPage() {
                                     </div>
                                 ) : (
                                     <div className="text-center py-8">
-                                        <MapPin className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                                        <h3 className="text-lg font-medium text-gray-900 mb-2">No hay rutas configuradas</h3>
-                                        <p className="text-gray-500 mb-4">
+                                        <MapPin className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                                        <h3 className="text-lg font-medium text-foreground mb-2">No hay rutas configuradas</h3>
+                                        <p className="text-muted-foreground mb-4">
                                             Comienza creando la primera ruta para tus vendedores
                                         </p>
                                         <Button onClick={abrirModalNuevaRuta} className="w-full sm:w-auto">
@@ -1000,7 +1000,7 @@ export default function RutaSemanalPage() {
                             <CardContent className="pt-6">
                                 <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
                                     <div className="flex items-center gap-2">
-                                        <Filter className="h-4 w-4 text-gray-500" />
+                                        <Filter className="h-4 w-4 text-muted-foreground" />
                                         <span className="text-sm font-medium">Filtrar por vendedor:</span>
                                     </div>
                                     <Select value={selectedSeller} onValueChange={setSelectedSeller}>
@@ -1024,7 +1024,7 @@ export default function RutaSemanalPage() {
                             <CardContent className="pt-6">
                                 <div className="flex flex-col sm:flex-row gap-4 justify-end">
                                     <div className="flex items-center gap-2">
-                                        <Route className="h-4 w-4 text-gray-500" />
+                                        <Route className="h-4 w-4 text-muted-foreground" />
                                         <span className="text-sm font-medium">{visitasBySeller.length} Rutas Asignadas para usted</span>
                                     </div>
                                 </div>
@@ -1060,10 +1060,10 @@ export default function RutaSemanalPage() {
                                                         <div className={`text-2xl font-bold ${seller.estado === 'C' ? 'text-green-500' : 'text-orange-500'}`}>
                                                             {seller.completadas}/{seller.total}
                                                         </div>
-                                                        <div className="text-sm text-gray-500">Visitas completadas</div>
+                                                        <div className="text-sm text-muted-foreground">Visitas completadas</div>
                                                     </div>
                                                     <div className="w-12 h-12 relative flex-shrink-0">
-                                                        <div className="w-12 h-12 rounded-full border-4 border-gray-200"></div>
+                                                        <div className="w-12 h-12 rounded-full border-4 border-border"></div>
                                                         <div
                                                             className={`absolute top-0 left-0 w-12 h-12 rounded-full border-4 border-r-transparent transform -rotate-45 ${seller.estado === 'C' ? 'border-green-500' : 'border-orange-500'}`}
                                                             style={{ clipPath: `inset(0 ${100 - seller.porcentaje}% 0 0)` }}
@@ -1078,7 +1078,7 @@ export default function RutaSemanalPage() {
                                         <CardContent className="pt-6">
                                             <div className="space-y-4">
                                                 {seller.clientes.map((visita) => (
-                                                    <div key={visita.id} className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 p-4 bg-gray-50 rounded-lg">
+                                                    <div key={visita.id} className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 p-4 bg-muted rounded-lg">
                                                         <div className="flex-1 min-w-0">
                                                             <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-3">
                                                                 <div className="flex items-center gap-2">
@@ -1092,11 +1092,11 @@ export default function RutaSemanalPage() {
                                                                     </Badge>
                                                                 )}
                                                             </div>
-                                                            <p className="text-sm text-gray-600 flex items-start gap-2 mb-3">
+                                                            <p className="text-sm text-muted-foreground flex items-start gap-2 mb-3">
                                                                 <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0" />
                                                                 <span className="break-words">{visita.direccion}</span>
                                                             </p>
-                                                            <div className='flex flex-col sm:flex-row sm:items-center gap-3 text-xs text-gray-500'>
+                                                            <div className='flex flex-col sm:flex-row sm:items-center gap-3 text-xs text-muted-foreground'>
                                                                 <div className="flex items-center gap-1">
                                                                     <Locate className="h-3 w-3 text-blue-600 flex-shrink-0" />
                                                                     <span>Coordenadas: {visita.latitud.toFixed(4)}, {visita.longitud.toFixed(4)}</span>
@@ -1146,9 +1146,9 @@ export default function RutaSemanalPage() {
                         </div>
                     ) : (
                         <div className="text-center py-8">
-                            <MapPin className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                            <h3 className="text-lg font-medium text-gray-900 mb-2">No hay rutas asignadas</h3>
-                            <p className="text-gray-500">
+                            <MapPin className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                            <h3 className="text-lg font-medium text-foreground mb-2">No hay rutas asignadas</h3>
+                            <p className="text-muted-foreground">
                                 {selectedSeller === "all" ? "No hay rutas configuradas en el sistema" : "El vendedor seleccionado no tiene rutas asignadas"}
                             </p>
                         </div>
@@ -1257,7 +1257,7 @@ export default function RutaSemanalPage() {
                                                                 </div>
                                                             </div>
 
-                                                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-sm text-gray-600">
+                                                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-sm text-muted-foreground">
                                                                 <div className="flex items-start gap-2">
                                                                     <User className="h-4 w-4 mt-0.5 flex-shrink-0" />
                                                                     <div className="min-w-0">
@@ -1341,21 +1341,21 @@ export default function RutaSemanalPage() {
                                                                 <h4 className="font-medium mb-3 text-sm md:text-base">Información del Registro</h4>
                                                                 <div className="space-y-2 text-sm">
                                                                     <div className="flex items-start gap-2">
-                                                                        <User className="h-4 w-4 mt-0.5 text-gray-600 flex-shrink-0" />
+                                                                        <User className="h-4 w-4 mt-0.5 text-muted-foreground flex-shrink-0" />
                                                                         <div className="min-w-0">
                                                                             <span className="font-medium">Usuario Creación: </span>
                                                                             <span className="break-words">{historyItem.usu_crea}</span>
                                                                         </div>
                                                                     </div>
                                                                     <div className="flex items-start gap-2">
-                                                                        <User className="h-4 w-4 mt-0.5 text-gray-600 flex-shrink-0" />
+                                                                        <User className="h-4 w-4 mt-0.5 text-muted-foreground flex-shrink-0" />
                                                                         <div className="min-w-0">
                                                                             <span className="font-medium">Usuario Modificación: </span>
                                                                             <span className="break-words">{historyItem.usu_mod || '--'}</span>
                                                                         </div>
                                                                     </div>
                                                                     <div className="flex items-start gap-2">
-                                                                        <Target className="h-4 w-4 mt-0.5 text-gray-600 flex-shrink-0" />
+                                                                        <Target className="h-4 w-4 mt-0.5 text-muted-foreground flex-shrink-0" />
                                                                         <div>
                                                                             <span className="font-medium">ID Cliente Ruta: </span>
                                                                             <span>{historyItem.ruta_cliente_id || '--'}</span>
@@ -1366,9 +1366,9 @@ export default function RutaSemanalPage() {
                                                         </div>
 
                                                         {historyItem.comentario && (
-                                                            <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+                                                            <div className="mt-4 p-3 bg-muted rounded-lg">
                                                                 <h4 className="font-medium mb-2 text-sm md:text-base">Comentario de la Visita</h4>
-                                                                <p className="text-sm text-gray-700 break-words">{historyItem.comentario}</p>
+                                                                <p className="text-sm text-foreground break-words">{historyItem.comentario}</p>
                                                             </div>
                                                         )}
                                                     </div>
@@ -1378,9 +1378,9 @@ export default function RutaSemanalPage() {
                                     </div>
                                 ) : (
                                     <div className="text-center py-8">
-                                        <Clock className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                                        <h3 className="text-lg font-medium text-gray-900 mb-2">No hay historial de visitas</h3>
-                                        <p className="text-gray-500">
+                                        <Clock className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                                        <h3 className="text-lg font-medium text-foreground mb-2">No hay historial de visitas</h3>
+                                        <p className="text-muted-foreground">
                                             El historial aparecerá aquí una vez que se completen las visitas
                                         </p>
                                     </div>

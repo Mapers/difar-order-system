@@ -76,8 +76,8 @@ export default function CollectSellerPage() {
   return (
     <div className="grid gap-6">
       <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold tracking-tight text-gray-900">Consulta Cobrar Vendedor</h1>
-        <p className="text-gray-500">Gestiona la información de tus clientes.</p>
+        <h1 className="text-3xl font-bold tracking-tight text-foreground">Consulta Cobrar Vendedor</h1>
+        <p className="text-muted-foreground">Gestiona la información de tus clientes.</p>
       </div>
 
       <Card className="shadow-md">
@@ -89,8 +89,8 @@ export default function CollectSellerPage() {
               <Input
                 type="date"
                 placeholder="F000-0000"
-                // className={`pl-8 bg-white ${isEmpty ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
-                className={"pl-8 bg-white"}
+                // className={`pl-8 bg-background ${isEmpty ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
+                className={"pl-8 bg-background"}
                 value={date}
                 onChange={(e) => {
                   setDateCut(e.target.value)
@@ -108,9 +108,9 @@ export default function CollectSellerPage() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="rounded-md border bg-white">
+          <div className="rounded-md border bg-background">
             <Table>
-              <TableHeader className="bg-gray-50">
+              <TableHeader className="bg-muted">
                 <TableRow>
                   <TableHead>Código Arctículo</TableHead>
                   <TableHead>Línea De Descripción</TableHead>
@@ -150,7 +150,7 @@ export default function CollectSellerPage() {
                   ))
                 ) : dataSeller.length > 0 ? (
                   dataSeller.map((doc, index) => (
-                    <TableRow key={doc.Codigo_Art + index} className="hover:bg-gray-50">
+                    <TableRow key={doc.Codigo_Art + index} className="hover:bg-muted">
                       <TableCell className="font-medium">{doc.Codigo_Art || '-'}</TableCell>
                       <TableCell className="font-medium">{doc.DescripcionLinea}</TableCell>
                       <TableCell className="hidden md:table-cell">
@@ -187,7 +187,7 @@ export default function CollectSellerPage() {
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8 text-gray-500">
+                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                       No se encontraron clientes
                     </TableCell>
                   </TableRow>

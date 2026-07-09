@@ -383,7 +383,7 @@ export default function UsuariosPage() {
         <div className="flex justify-between items-start mb-3">
           <div>
             <h3 className="font-semibold">{usuario.nombre_completo}</h3>
-            <p className="text-sm text-gray-600">DNI: {usuario.dni}</p>
+            <p className="text-sm text-muted-foreground">DNI: {usuario.dni}</p>
           </div>
           <Button
             variant="ghost"
@@ -504,7 +504,7 @@ export default function UsuariosPage() {
                         type="checkbox"
                         checked={activo}
                         onChange={(e) => setActivo(e.target.checked)}
-                        className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        className="h-4 w-4 rounded border-border text-blue-600 focus:ring-blue-500"
                     />
                   </div>
 
@@ -514,7 +514,7 @@ export default function UsuariosPage() {
                         type="checkbox"
                         checked={edicionPedido}
                         onChange={(e) => setEdicionPedido(e.target.checked)}
-                        className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        className="h-4 w-4 rounded border-border text-blue-600 focus:ring-blue-500"
                     />
                   </div>
                 </div>
@@ -541,7 +541,7 @@ export default function UsuariosPage() {
         <div className="flex justify-between items-start mb-3">
           <div>
             <h3 className="font-semibold">{vendedor.nombres} {vendedor.apellidos}</h3>
-            <p className="text-sm text-gray-600">Código: {vendedor.codigo}</p>
+            <p className="text-sm text-muted-foreground">Código: {vendedor.codigo}</p>
           </div>
           <Button
             variant="ghost"
@@ -599,7 +599,7 @@ export default function UsuariosPage() {
         <div className="flex justify-between items-start mb-3">
           <div>
             <h3 className="font-semibold">{usuario.NombreUsuarios}</h3>
-            <p className="text-sm text-gray-600">Emp. Reg: {usuario.EmpRegistros}</p>
+            <p className="text-sm text-muted-foreground">Emp. Reg: {usuario.EmpRegistros}</p>
           </div>
           <Button
             variant="ghost"
@@ -638,7 +638,7 @@ export default function UsuariosPage() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold">Gestión de Usuarios</h1>
-          <p className="text-sm text-gray-500">Administra los usuarios con acceso al sistema</p>
+          <p className="text-sm text-muted-foreground">Administra los usuarios con acceso al sistema</p>
         </div>
 
         {activeTab === 'vendedores' && (
@@ -708,7 +708,7 @@ export default function UsuariosPage() {
                         <div>
                           <label className="block text-sm font-medium mb-1">Buscar Vendedor</label>
                           <div className="relative">
-                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400"/>
+                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground"/>
                             <Input
                                 placeholder="Buscar por nombre o DNI..."
                                 className="pl-10"
@@ -722,7 +722,7 @@ export default function UsuariosPage() {
                                 {vendedoresNoUsuarios.map((v) => (
                                     <div
                                         key={v.idVendedor}
-                                        className={`p-3 hover:bg-gray-50 cursor-pointer ${selectedVendedor?.idVendedor === v.idVendedor ? 'bg-blue-50' : ''}`}
+                                        className={`p-3 hover:bg-muted cursor-pointer ${selectedVendedor?.idVendedor === v.idVendedor ? 'bg-blue-50' : ''}`}
                                         onClick={() => {
                                           setSelectedVendedor(v)
                                           setDni(v.DNI)
@@ -732,7 +732,7 @@ export default function UsuariosPage() {
                                         }}
                                     >
                                       <p className="font-medium">{v.nombres} {v.apellidos}</p>
-                                      <p className="text-sm text-gray-600">DNI: {v.DNI} - Teléfono: {v.telefono}</p>
+                                      <p className="text-sm text-muted-foreground">DNI: {v.DNI} - Teléfono: {v.telefono}</p>
                                     </div>
                                 ))}
                               </div>
@@ -783,18 +783,18 @@ export default function UsuariosPage() {
                       <div>
                         <label className="block text-sm font-medium mb-1">Buscar Representante</label>
                         <div className="relative mb-2">
-                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400"/>
+                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"/>
                           <Input placeholder="Buscar..." className="pl-10" value={busquedaRepresentante} onChange={(e) => setBusquedaRepresentante(e.target.value)} />
                         </div>
                         <div className="border rounded-lg max-h-40 overflow-y-auto">
                           {representantesFiltrados.map((r: Representante) => (
-                              <div key={r.idRepresentante} className={`p-3 cursor-pointer ${selectedRepresentante?.idRepresentante === r.idRepresentante ? 'bg-blue-50' : 'hover:bg-gray-50'}`} onClick={() => {
+                              <div key={r.idRepresentante} className={`p-3 cursor-pointer ${selectedRepresentante?.idRepresentante === r.idRepresentante ? 'bg-blue-50' : 'hover:bg-muted'}`} onClick={() => {
                                 setSelectedRepresentante(r);
                                 setDni('');
                                 setTelefono('');
                               }}>
                                 <p className="font-medium">{r.NombreRepres}</p>
-                                <p className="text-sm text-gray-600">Cod: {r.CodRepres}</p>
+                                <p className="text-sm text-muted-foreground">Cod: {r.CodRepres}</p>
                               </div>
                           ))}
                         </div>
@@ -847,7 +847,7 @@ export default function UsuariosPage() {
                         <div>
                           <label className="block text-sm font-medium mb-1">Buscar Usuario</label>
                           <div className="relative">
-                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400"/>
+                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground"/>
                             <Input
                                 placeholder="Buscar por nombre usuario o empRegistro..."
                                 className="pl-10"
@@ -861,7 +861,7 @@ export default function UsuariosPage() {
                                 {usuariosNoWebBusqueda.map((v) => (
                                     <div
                                         key={v.IdUsuarios}
-                                        className={`p-3 hover:bg-gray-50 cursor-pointer ${selectedUsuarioNoWeb?.IdUsuarios === v.IdUsuarios ? 'bg-blue-50' : ''}`}
+                                        className={`p-3 hover:bg-muted cursor-pointer ${selectedUsuarioNoWeb?.IdUsuarios === v.IdUsuarios ? 'bg-blue-50' : ''}`}
                                         onClick={() => {
                                           setSelectedUsuarioNoWeb(v)
                                           setDni(v.ObsUsuario || '')
@@ -870,7 +870,7 @@ export default function UsuariosPage() {
                                         }}
                                     >
                                       <p className="font-medium">{v.NombreUsuarios}</p>
-                                      <p className="text-sm text-gray-600">CodEmp: {v.EmpRegistros} - Código: {v.ObsUsuario}</p>
+                                      <p className="text-sm text-muted-foreground">CodEmp: {v.EmpRegistros} - Código: {v.ObsUsuario}</p>
                                     </div>
                                 ))}
                               </div>
@@ -942,7 +942,7 @@ export default function UsuariosPage() {
                         type="checkbox"
                         checked={activo}
                         onChange={(e) => setActivo(e.target.checked)}
-                        className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        className="h-4 w-4 rounded border-border text-blue-600 focus:ring-blue-500"
                     />
                   </div>
 
@@ -952,7 +952,7 @@ export default function UsuariosPage() {
                         type="checkbox"
                         checked={edicionPedido}
                         onChange={(e) => setEdicionPedido(e.target.checked)}
-                        className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        className="h-4 w-4 rounded border-border text-blue-600 focus:ring-blue-500"
                     />
                   </div>
                 </div>
@@ -1025,15 +1025,15 @@ export default function UsuariosPage() {
                 </div>
               ) : (
                 <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
+                  <table className="min-w-full divide-y divide-border">
+                    <thead className="bg-muted">
                     <tr>
-                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre</th>
-                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Documento</th>
-                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Celular</th>
-                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rol</th>
-                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
-                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+                      <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Nombre</th>
+                      <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Documento</th>
+                      <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Celular</th>
+                      <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Rol</th>
+                      <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Estado</th>
+                      <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Acciones</th>
                     </tr>
                     </thead>
                     <tbody>
@@ -1147,7 +1147,7 @@ export default function UsuariosPage() {
                                       type="checkbox"
                                       checked={activo}
                                       onChange={(e) => setActivo(e.target.checked)}
-                                      className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                      className="h-4 w-4 rounded border-border text-blue-600 focus:ring-blue-500"
                                     />
                                   </div>
 
@@ -1157,7 +1157,7 @@ export default function UsuariosPage() {
                                       type="checkbox"
                                       checked={edicionPedido}
                                       onChange={(e) => setEdicionPedido(e.target.checked)}
-                                      className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                      className="h-4 w-4 rounded border-border text-blue-600 focus:ring-blue-500"
                                     />
                                   </div>
                                 </div>
@@ -1195,15 +1195,15 @@ export default function UsuariosPage() {
                 </div>
               ) : (
                 <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
+                  <table className="min-w-full divide-y divide-border">
                     <thead>
                       <tr>
-                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Código</th>
-                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre</th>
-                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">DNI</th>
-                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Teléfono</th>
-                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
-                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+                        <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Código</th>
+                        <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Nombre</th>
+                        <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">DNI</th>
+                        <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Teléfono</th>
+                        <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Estado</th>
+                        <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Acciones</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -1263,13 +1263,13 @@ export default function UsuariosPage() {
                 </div>
               ) : (
                 <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
+                  <table className="min-w-full divide-y divide-border">
                     <thead>
                       <tr>
-                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre</th>
-                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Emp. Registro</th>
-                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Observación</th>
-                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+                        <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Nombre</th>
+                        <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Emp. Registro</th>
+                        <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Observación</th>
+                        <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Acciones</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -1477,7 +1477,7 @@ export default function UsuariosPage() {
                   ? setEditingVendedor({...editingVendedor, activo: e.target.checked ? 1 : 0})
                   : setNewVendedor({...newVendedor, activo: e.target.checked ? 1 : 0})
                 }
-                className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                className="h-4 w-4 rounded border-border text-blue-600 focus:ring-blue-500"
               />
             </div>
           </div>

@@ -27,7 +27,7 @@ const InvoiceClientRow: React.FC<InvoiceProps> = ({ invoice }) => {
     };
 
     return (
-        <TableRow className="hover:bg-gray-50">
+        <TableRow className="hover:bg-muted">
             <TableCell className="font-medium">{formatDateToDDMMYYYY(invoice.Fecha_Emision)}</TableCell>
             <TableCell className="font-medium">{formatDateToDDMMYYYY(invoice.Fecha_Vcto)}</TableCell>
             <TableCell className="hidden md:table-cell">

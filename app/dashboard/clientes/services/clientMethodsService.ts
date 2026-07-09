@@ -18,7 +18,7 @@ export class ClientMethodsService {
             case ESTADO_APROBACION.PENDIENTE:
                 return { estado: "PENDIENTE", color: "bg-yellow-100 text-yellow-800", icon: AlertCircle };
             default:
-                return { estado: "DESCONOCIDO", color: "bg-gray-100 text-gray-800", icon: AlertCircle };
+                return { estado: "DESCONOCIDO", color: "bg-muted text-muted-foreground", icon: AlertCircle };
         }
     }
 
@@ -53,7 +53,7 @@ export class ClientMethodsService {
             case DOCUMENTO.CERTIFICACIONES:
                 return "bg-purple-50 border-purple-200"
             default:
-                return "bg-gray-50 border-gray-200"
+                return "bg-muted border-border"
         }
     }
 

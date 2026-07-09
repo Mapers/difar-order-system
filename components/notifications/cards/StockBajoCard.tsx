@@ -19,24 +19,24 @@ export function StockBajoCard({ notification }: NotifCardProps) {
         <AlertTriangle className="h-5 w-5 text-red-600" />
       </div>
       <div className="min-w-0 flex-1 pr-5">
-        <p className="truncate text-sm font-semibold text-gray-800">
+        <p className="truncate text-sm font-semibold text-foreground">
           {payload?.titulo || "Productos con stock bajo"}
         </p>
         {productos.length > 0 && (
-          <ul className="mt-1 list-none space-y-0.5 pl-0 text-xs text-gray-600">
+          <ul className="mt-1 list-none space-y-0.5 pl-0 text-xs text-muted-foreground">
             {productos.slice(0, 5).map((p) => (
               <li key={p.Codigo_Art} className="truncate">
                 • {p.Codigo_Art} - {p.NombreItem}: {p.Stock} unidades
               </li>
             ))}
             {productos.length > 5 && (
-              <li className="truncate text-gray-400">
+              <li className="truncate text-muted-foreground">
                 y {productos.length - 5} producto(s) más…
               </li>
             )}
           </ul>
         )}
-        <div className="mt-1 flex items-center gap-2 text-xs text-gray-400">
+        <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
           <Calendar className="h-3.5 w-3.5 shrink-0" />
           <span className="truncate">{formatNotifDate(receivedAt)}</span>
         </div>

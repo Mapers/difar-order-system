@@ -215,7 +215,7 @@ const FinancialZone: React.FC<ClientRowProps> = ({ client, nameZone, unidadTerri
             >
               <CreditCard className="w-6 h-6 text-yellow-600" />
               <div className="flex-1">
-                <Label className="text-sm font-medium text-gray-700">Línea de Crédito</Label>
+                <Label className="text-sm font-medium text-yellow-900">Línea de Crédito</Label>
                 <p className="text-xs text-yellow-600 mt-1">Click para ver detalles</p>
               </div>
               <ChevronDown className="w-4 h-4 text-yellow-600 rotate-[-90deg]" />
@@ -229,7 +229,7 @@ const FinancialZone: React.FC<ClientRowProps> = ({ client, nameZone, unidadTerri
                   <CreditCard className="w-5 h-5 text-red-500" />
                 </div>
                 <div>
-                  <DialogTitle className="text-base font-bold text-gray-900">
+                  <DialogTitle className="text-base font-bold text-foreground">
                     Línea de crédito
                   </DialogTitle>
                   <DialogDescription className="text-xs text-slate-400 uppercase tracking-wide mt-0.5">
@@ -357,8 +357,8 @@ const FinancialZone: React.FC<ClientRowProps> = ({ client, nameZone, unidadTerri
             <div className="flex items-center gap-3 p-4 bg-purple-50 rounded-lg border border-purple-200 cursor-pointer hover:bg-purple-100 transition-colors">
               <Map className="w-6 h-6 text-purple-600" />
               <div className="flex-1">
-                <Label className="text-sm font-medium text-gray-700">Zona</Label>
-                <p className="text-lg font-semibold text-gray-900">Zona: {nameZone || "No Definido"}</p>
+                <Label className="text-sm font-medium text-purple-900">Zona</Label>
+                <p className="text-lg font-semibold text-purple-900">Zona: {nameZone || "No Definido"}</p>
                 <p className="text-xs text-purple-600 mt-1">Click para ver detalles</p>
               </div>
               <ChevronDown className="w-4 h-4 text-purple-600 rotate-[-90deg]" />
@@ -377,16 +377,16 @@ const FinancialZone: React.FC<ClientRowProps> = ({ client, nameZone, unidadTerri
                   <div className="flex items-center gap-2 p-3 bg-purple-50 rounded-lg">
                     <Map className="w-4 h-4 text-purple-600" />
                     <div>
-                      <Label className="text-xs font-medium text-gray-600">ZONA</Label>
-                      <p className="text-sm font-semibold text-gray-900">{nameZone || 'No Definido'}</p>
+                      <Label className="text-xs font-medium text-purple-900">ZONA</Label>
+                      <p className="text-sm font-semibold text-purple-900">{nameZone || 'No Definido'}</p>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-2 p-3 bg-blue-50 rounded-lg">
                     <MapPin className="w-4 h-4 text-blue-600" />
                     <div>
-                      <Label className="text-xs font-medium text-gray-600">PROVINCIA</Label>
-                      <p className="text-sm font-semibold text-gray-900">{unidadTerritorio?.nombreProvincia}</p>
+                      <Label className="text-xs font-medium text-blue-900">PROVINCIA</Label>
+                      <p className="text-sm font-semibold text-blue-900">{unidadTerritorio?.nombreProvincia}</p>
                     </div>
                   </div>
                 </div>
@@ -395,16 +395,16 @@ const FinancialZone: React.FC<ClientRowProps> = ({ client, nameZone, unidadTerri
                   <div className="flex items-center gap-2 p-3 bg-green-50 rounded-lg">
                     <Navigation className="w-4 h-4 text-green-600" />
                     <div>
-                      <Label className="text-xs font-medium text-gray-600">ID DISTRITO</Label>
-                      <p className="text-sm font-semibold text-gray-900">{unidadTerritorio?.NombreDistrito}</p>
+                      <Label className="text-xs font-medium text-green-900">ID DISTRITO</Label>
+                      <p className="text-sm font-semibold text-green-900">{unidadTerritorio?.NombreDistrito}</p>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-2 p-3 bg-orange-50 rounded-lg">
                     <CreditCard className="w-4 h-4 text-orange-600" />
                     <div>
-                      <Label className="text-xs font-medium text-gray-600">DEPARTAMENTO</Label>
-                      <p className="text-sm font-semibold text-gray-900">
+                      <Label className="text-xs font-medium text-orange-900">DEPARTAMENTO</Label>
+                      <p className="text-sm font-semibold text-orange-900">
                         {unidadTerritorio?.nombreDepartamento}
                       </p>
                     </div>

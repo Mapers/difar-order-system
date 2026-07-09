@@ -119,8 +119,8 @@ export default function DocumentClientPage() {
   return (
       <div className="grid gap-6 p-4 md:p-6">
         <div className="flex flex-col gap-2">
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900">Consulta Documento Clientes</h1>
-          <p className="text-gray-500">Gestiona la información de tus clientes.</p>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">Consulta Documento Clientes</h1>
+          <p className="text-muted-foreground">Gestiona la información de tus clientes.</p>
         </div>
 
         <Card className="shadow-md">
@@ -142,7 +142,7 @@ export default function DocumentClientPage() {
             </div>
             <div className="flex flex-col sm:flex-row gap-4 sm:items-center w-full">
               <Select value={selectedDocumentCode} onValueChange={handleDocumentSelect} required>
-                <SelectTrigger className="bg-white w-full sm:w-60 h-10">
+                <SelectTrigger className="bg-background w-full sm:w-60 h-10">
                   <SelectValue placeholder="Seleccionar Documento" />
                 </SelectTrigger>
                 <SelectContent>
@@ -157,7 +157,7 @@ export default function DocumentClientPage() {
                           </SelectItem>
                       ))
                   ) : (
-                      <div className="p-4 text-sm text-gray-500">
+                      <div className="p-4 text-sm text-muted-foreground">
                         No se encontraron documentos
                       </div>
                   )}
@@ -168,7 +168,7 @@ export default function DocumentClientPage() {
                 <Input
                     type="search"
                     placeholder="Ej: F000-0000"
-                    className={`pl-4 bg-white h-10 ${isEmpty ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
+                    className={`pl-4 bg-background h-10 ${isEmpty ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
                     value={documentCode}
                     onChange={(e) => {
                       setDocumentCode(e.target.value)
@@ -189,7 +189,7 @@ export default function DocumentClientPage() {
           </CardHeader>
 
           <CardContent>
-            <div className="rounded-md border bg-white p-4">
+            <div className="rounded-md border bg-background p-4">
               {loadingZone ? (
                   <ZoneReportSkeleton />
               ) : dataZoneClient.length > 0 ? (
@@ -215,8 +215,8 @@ export default function DocumentClientPage() {
                     ))}
                   </Tabs>
               ) : (
-                  <div className="flex flex-col items-center justify-center py-16 bg-white rounded-lg border-2 border-dashed border-slate-200">
-                    <p className="text-slate-500 font-medium text-center px-4">
+                  <div className="flex flex-col items-center justify-center py-16 bg-background rounded-lg border-2 border-dashed border-border">
+                    <p className="text-muted-foreground font-medium text-center px-4">
                       No hay datos de ventas para mostrar con los filtros seleccionados.
                     </p>
                   </div>

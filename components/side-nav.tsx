@@ -12,7 +12,7 @@ export function SideNav() {
 
   return (
     <div
-      className={`fixed inset-y-0 left-0 z-20 hidden flex-col border-r bg-white shadow-sm transition-all duration-300 md:flex ${
+      className={`fixed inset-y-0 left-0 z-20 hidden flex-col border-r bg-background shadow-sm transition-all duration-300 md:flex ${
         collapsed ? "w-16" : "w-64"
       }`}
     >
@@ -25,7 +25,7 @@ export function SideNav() {
       {/* Botón colapso */}
       <button
         onClick={toggleCollapsed}
-        className="absolute -right-3 top-20 flex h-6 w-6 items-center justify-center rounded-full border bg-white shadow-md hover:bg-blue-50 hover:text-blue-600 transition-colors"
+        className="absolute -right-3 top-20 flex h-6 w-6 items-center justify-center rounded-full border bg-background shadow-md hover:bg-blue-50 hover:text-blue-600 transition-colors"
         title={collapsed ? "Expandir menú" : "Comprimir menú"}
       >
         {collapsed ? (

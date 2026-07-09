@@ -171,7 +171,7 @@ export default function LaboratoriosSection({ onOpenModalChange }: Props) {
         <>
             <div className="flex gap-2 mb-5">
                 <div className="relative flex-1 max-w-sm">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
                         placeholder="Buscar por código o descripción..."
                         value={busqueda}
@@ -198,9 +198,9 @@ export default function LaboratoriosSection({ onOpenModalChange }: Props) {
                 </div>
             ) : laboratorios.length === 0 ? (
                 <div className="text-center py-12">
-                    <FlaskConical className="h-12 w-12 text-slate-300 mx-auto mb-3" />
-                    <p className="text-slate-500 font-medium">No se encontraron laboratorios</p>
-                    <p className="text-xs text-slate-400 mt-1">
+                    <FlaskConical className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+                    <p className="text-muted-foreground font-medium">No se encontraron laboratorios</p>
+                    <p className="text-xs text-muted-foreground mt-1">
                         {busqueda ? 'Intenta con otro término de búsqueda.' : 'Crea el primer laboratorio con el botón "Nuevo Registro".'}
                     </p>
                 </div>
@@ -216,7 +216,7 @@ export default function LaboratoriosSection({ onOpenModalChange }: Props) {
                                             <FlaskConical className="h-4 w-4 text-sky-600" />
                                         </div>
                                         <div className="min-w-0">
-                                            <p className="font-semibold text-slate-800 truncate">{lab.Descripcion}</p>
+                                            <p className="font-semibold text-card-foreground truncate">{lab.Descripcion}</p>
                                             <div className="flex items-center gap-1.5 mt-0.5">
                                                 <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-sky-50 text-sky-700 border-sky-200">
                                                     {lab.Codigo_Linea}
@@ -226,18 +226,18 @@ export default function LaboratoriosSection({ onOpenModalChange }: Props) {
                                     </div>
                                 </div>
 
-                                <div className="space-y-1.5 mb-4 bg-slate-50 rounded-lg p-2.5 text-xs">
+                                <div className="space-y-1.5 mb-4 bg-muted rounded-lg p-2.5 text-xs">
                                     <div className="flex justify-between gap-2">
-                                        <span className="text-slate-400 font-medium uppercase tracking-wider text-[10px]">Procedencia</span>
-                                        <span className="text-slate-700 font-medium truncate">{lab.NombreProcedencia || '—'}</span>
+                                        <span className="text-muted-foreground font-medium uppercase tracking-wider text-[10px]">Procedencia</span>
+                                        <span className="text-foreground font-medium truncate">{lab.NombreProcedencia || '—'}</span>
                                     </div>
                                     <div className="flex justify-between gap-2">
-                                        <span className="text-slate-400 font-medium uppercase tracking-wider text-[10px]">Empresa</span>
-                                        <span className="text-slate-700 font-medium truncate max-w-[180px]">{lab.NombreEmpresa || '—'}</span>
+                                        <span className="text-muted-foreground font-medium uppercase tracking-wider text-[10px]">Empresa</span>
+                                        <span className="text-foreground font-medium truncate max-w-[180px]">{lab.NombreEmpresa || '—'}</span>
                                     </div>
                                     <div className="flex justify-between gap-2">
-                                        <span className="text-slate-400 font-medium uppercase tracking-wider text-[10px]">Registro</span>
-                                        <span className="text-slate-500 font-mono text-[10px]">{lab.EmpRegistro || '—'}</span>
+                                        <span className="text-muted-foreground font-medium uppercase tracking-wider text-[10px]">Registro</span>
+                                        <span className="text-muted-foreground font-mono text-[10px]">{lab.EmpRegistro || '—'}</span>
                                     </div>
                                 </div>
 
@@ -287,7 +287,7 @@ export default function LaboratoriosSection({ onOpenModalChange }: Props) {
                             {errors.codigo_linea && (
                                 <p className="text-xs text-red-500">{errors.codigo_linea}</p>
                             )}
-                            <p className="text-[11px] text-slate-400">Máximo 4 caracteres. Se convierte a mayúsculas.</p>
+                            <p className="text-[11px] text-muted-foreground">Máximo 4 caracteres. Se convierte a mayúsculas.</p>
                         </div>
 
                         <div className="space-y-1.5">

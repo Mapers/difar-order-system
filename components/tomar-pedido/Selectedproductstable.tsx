@@ -32,7 +32,7 @@ function MetaBar({ codArticulo, metasMap }: { codArticulo: string; metasMap: Map
     const cumplida = pct >= 100
     return (
         <div className="flex items-center gap-1.5 mt-1 w-full">
-            <div className="flex-1 bg-slate-100 rounded-full h-1 overflow-hidden">
+            <div className="flex-1 bg-secondary rounded-full h-1 overflow-hidden">
                 <div className="h-1 rounded-full transition-all" style={{ width: `${pct}%`, background: color }} />
             </div>
             {cumplida ? (
@@ -40,7 +40,7 @@ function MetaBar({ codArticulo, metasMap }: { codArticulo: string; metasMap: Map
             ) : (
                 <>
                     <span className="text-[9px] font-bold shrink-0" style={{ color }}>{pct}%</span>
-                    <span className="text-[9px] text-slate-400 shrink-0">meta</span>
+                    <span className="text-[9px] text-muted-foreground shrink-0">meta</span>
                 </>
             )}
         </div>
@@ -116,7 +116,7 @@ export default function SelectedProductsTable({
         const precioEscala = item.appliedScale?.precio_escala
         return (
             <div className="flex flex-col items-end">
-                <span className={item.appliedScale ? "line-through text-gray-400 text-xs" : ""}>
+                <span className={item.appliedScale ? "line-through text-muted-foreground text-xs" : ""}>
                     {sym}{Number(precioOriginal).toFixed(2)}
                 </span>
                 {item.appliedScale && (
@@ -135,7 +135,7 @@ export default function SelectedProductsTable({
         return (
             <div className="flex flex-col items-end">
                 <span className="font-medium">{sym}{subtotal.toFixed(2)}</span>
-                <span className={`text-[10px] font-medium ${isGravado ? "text-green-600" : "text-gray-400"}`}>
+                <span className={`text-[10px] font-medium ${isGravado ? "text-green-600" : "text-muted-foreground"}`}>
                     {label}
                 </span>
             </div>
@@ -146,17 +146,17 @@ export default function SelectedProductsTable({
         <>
             <div className="hidden sm:block border rounded-md overflow-hidden">
                 <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50">
+                    <table className="min-w-full divide-y divide-border">
+                        <thead className="bg-muted">
                         <tr>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Producto</th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Laboratorio</th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Lote - Fec.Venc</th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stock</th>
-                            <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Cantidad</th>
-                            <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Precio Unit.</th>
-                            <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Subtotal</th>
-                            {showActions && <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>}
+                            <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Producto</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Laboratorio</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Lote - Fec.Venc</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Stock</th>
+                            <th className="px-4 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">Cantidad</th>
+                            <th className="px-4 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">Precio Unit.</th>
+                            <th className="px-4 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">Subtotal</th>
+                            {showActions && <th className="px-4 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">Acciones</th>}
                         </tr>
                         </thead>
                         <tbody>
@@ -165,27 +165,29 @@ export default function SelectedProductsTable({
                             const subtotal = pu * item.quantity
                             const { cod, fec, stk } = parseLoteString(item.lote || '||')
 
-                            let rowBgClass = index % 2 === 0 ? "bg-white" : "bg-gray-50"
-                            if (item.isAuthorize) rowBgClass = "bg-blue-50 border-l-4 border-l-blue-500"
-                            else if (item.isEdit) rowBgClass = "bg-green-50 border-l-4 border-l-green-500"
+                            let rowBgClass = index % 2 === 0 ? "bg-background" : "bg-muted"
+                            let rowTextClass = "text-muted-foreground"
+                            let rowAccentTextClass = ""
+                            if (item.isAuthorize) { rowBgClass = "bg-blue-50 border-l-4 border-l-blue-500"; rowTextClass = "text-blue-900"; rowAccentTextClass = "text-blue-900" }
+                            else if (item.isEdit) { rowBgClass = "bg-green-50 border-l-4 border-l-green-500"; rowTextClass = "text-green-900"; rowAccentTextClass = "text-green-900" }
 
                             return (
                                 <tr key={index} className={rowBgClass}>
-                                    <td className="px-4 py-3 text-sm text-gray-700">
+                                    <td className={`px-4 py-3 text-sm ${rowTextClass}`}>
                                         <div className="flex items-start flex-wrap gap-1">
                                             {renderBadges(item)}
                                             <span className="w-full">{productNameWithIgv(item)}</span>
                                             <MetaBar codArticulo={item.product.Codigo_Art} metasMap={metasMap} />
                                         </div>
                                     </td>
-                                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{item.product.Descripcion}</td>
-                                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                                    <td className={`px-4 py-3 whitespace-nowrap text-sm ${rowTextClass}`}>{item.product.Descripcion}</td>
+                                    <td className={`px-4 py-3 whitespace-nowrap text-sm ${rowTextClass}`}>
                                         {cod} - Vence: {fec.length > 0 && format(parseISO(fec), "dd/MM/yyyy")}
                                     </td>
-                                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-right">{stk}</td>
-                                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-right font-medium">{item.quantity}</td>
-                                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-right">{renderPrice(item)}</td>
-                                    <td className="px-4 py-3 whitespace-nowrap text-sm text-right">
+                                    <td className={`px-4 py-3 whitespace-nowrap text-sm ${rowTextClass} text-right`}>{stk}</td>
+                                    <td className={`px-4 py-3 whitespace-nowrap text-sm ${rowTextClass} text-right font-medium`}>{item.quantity}</td>
+                                    <td className={`px-4 py-3 whitespace-nowrap text-sm ${rowTextClass} text-right`}>{renderPrice(item)}</td>
+                                    <td className={`px-4 py-3 whitespace-nowrap text-sm text-right ${rowAccentTextClass}`}>
                                         {renderSubtotal(item, subtotal)}
                                     </td>
                                     {showActions && (
@@ -217,8 +219,8 @@ export default function SelectedProductsTable({
                         <TableFooter>
                             <TableRow>
                                 <TableCell colSpan={5} />
-                                <TableCell className="px-4 py-3 text-right text-sm font-medium text-gray-900">Total:</TableCell>
-                                <TableCell className="px-4 py-3 whitespace-nowrap text-sm font-bold text-gray-900 text-right">
+                                <TableCell className="px-4 py-3 text-right text-sm font-medium text-foreground">Total:</TableCell>
+                                <TableCell className="px-4 py-3 whitespace-nowrap text-sm font-bold text-foreground text-right">
                                     {sym}{total.toFixed(2)}
                                 </TableCell>
                                 {showActions && <TableCell />}
@@ -236,15 +238,18 @@ export default function SelectedProductsTable({
                         productosConLotes.find(x => x.prod_codigo === item.product.Codigo_Art)?.loteSeleccionado || '||'
                     )
 
-                    let cardBgClass = "bg-white"
+                    let cardBgClass = "bg-background"
+                    let overlayBgClass = "bg-background/80"
                     let borderClass = ""
-                    if (item.isAuthorize) { cardBgClass = "bg-blue-50"; borderClass = "border-l-4 border-l-blue-500" }
-                    else if (item.isEdit) { cardBgClass = "bg-green-50"; borderClass = "border-l-4 border-l-green-500" }
+                    let cardTextClass = ""
+                    if (item.isAuthorize) { cardBgClass = "bg-blue-50"; overlayBgClass = "bg-blue-50/80"; borderClass = "border-l-4 border-l-blue-500"; cardTextClass = "text-blue-900" }
+                    else if (item.isEdit) { cardBgClass = "bg-green-50"; overlayBgClass = "bg-green-50/80"; borderClass = "border-l-4 border-l-green-500"; cardTextClass = "text-green-900" }
+                    const labelTextClass = cardTextClass || "text-muted-foreground"
 
                     return (
-                        <Card key={index} className={`p-4 relative ${cardBgClass} ${borderClass}`}>
+                        <Card key={index} className={`p-4 relative ${cardBgClass} ${borderClass} ${cardTextClass}`}>
                             {showActions && (
-                                <div className="absolute top-2 right-2 flex items-center gap-1 bg-white/80 rounded-md backdrop-blur-sm p-1">
+                                <div className={`absolute top-2 right-2 flex items-center gap-1 ${overlayBgClass} rounded-md backdrop-blur-sm p-1`}>
                                     {onEditClick && (
                                         <Button variant="ghost" size="icon" className="h-8 w-8 text-amber-500 hover:text-amber-700 hover:bg-amber-50"
                                                 onClick={() => onEditClick(index)} type="button">
@@ -270,34 +275,34 @@ export default function SelectedProductsTable({
                                         <div className="flex flex-wrap gap-1 mb-2">{renderBadges(item)}</div>
                                         <h4 className="font-medium text-sm line-clamp-2">{productNameWithIgv(item)}</h4>
                                         {item.product.afecto_igv === 0 && (
-                                            <p className="text-[10px] text-gray-400 mt-0.5">{item.product.tipo_afectacion_descripcion}</p>
+                                            <p className={`text-[10px] ${labelTextClass} mt-0.5`}>{item.product.tipo_afectacion_descripcion}</p>
                                         )}
-                                        <p className="text-xs text-gray-500 mt-1">Cód: {item.product.Codigo_Art}</p>
-                                        <p className="text-xs text-gray-500 line-clamp-1">{item.product.Descripcion}</p>
+                                        <p className={`text-xs ${labelTextClass} mt-1`}>Cód: {item.product.Codigo_Art}</p>
+                                        <p className={`text-xs ${labelTextClass} line-clamp-1`}>{item.product.Descripcion}</p>
                                         <MetaBar codArticulo={item.product.Codigo_Art} metasMap={metasMap} />
                                     </div>
                                 </div>
 
-                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm bg-gray-50/50 p-3 rounded-md border border-gray-100">
+                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm bg-muted/50 p-3 rounded-md border border-border">
                                     <div className="col-span-2 sm:col-span-1">
-                                        <Label className="text-[10px] uppercase text-gray-500 font-semibold">Lote - Vencimiento</Label>
+                                        <Label className={`text-[10px] uppercase ${labelTextClass} font-semibold`}>Lote - Vencimiento</Label>
                                         <p className="font-medium text-xs mt-0.5">{cod}</p>
-                                        <p className="text-xs text-gray-600">{fec.length > 0 ? format(parseISO(fec), "dd/MM/yyyy") : 'N/A'}</p>
+                                        <p className={`text-xs ${labelTextClass}`}>{fec.length > 0 ? format(parseISO(fec), "dd/MM/yyyy") : 'N/A'}</p>
                                     </div>
                                     <div>
-                                        <Label className="text-[10px] uppercase text-gray-500 font-semibold">Stock</Label>
+                                        <Label className={`text-[10px] uppercase ${labelTextClass} font-semibold`}>Stock</Label>
                                         <p className="font-medium text-xs mt-0.5">{stk}</p>
                                     </div>
                                     <div>
-                                        <Label className="text-[10px] uppercase text-gray-500 font-semibold">Cantidad</Label>
+                                        <Label className={`text-[10px] uppercase ${labelTextClass} font-semibold`}>Cantidad</Label>
                                         <p className="font-medium text-sm text-blue-700 mt-0.5">{item.quantity}</p>
                                     </div>
                                     <div>
-                                        <Label className="text-[10px] uppercase text-gray-500 font-semibold">Precio Unit.</Label>
+                                        <Label className={`text-[10px] uppercase ${labelTextClass} font-semibold`}>Precio Unit.</Label>
                                         <div className="mt-0.5">{renderPrice(item)}</div>
                                     </div>
                                     <div>
-                                        <Label className="text-[10px] uppercase text-gray-500 font-semibold">Subtotal</Label>
+                                        <Label className={`text-[10px] uppercase ${labelTextClass} font-semibold`}>Subtotal</Label>
                                         <div className="mt-0.5">{renderSubtotal(item, subtotal)}</div>
                                     </div>
                                 </div>
@@ -306,9 +311,9 @@ export default function SelectedProductsTable({
                     )
                 })}
 
-                <div className="bg-gray-50 rounded-lg border border-gray-200 p-4 shadow-sm">
+                <div className="bg-muted rounded-lg border border-border p-4 shadow-sm">
                     <div className="flex justify-between items-center">
-                        <span className="font-semibold text-gray-700">Total Pedido:</span>
+                        <span className="font-semibold text-foreground">Total Pedido:</span>
                         <span className="font-bold text-xl text-blue-700">{sym}{total.toFixed(2)}</span>
                     </div>
                 </div>

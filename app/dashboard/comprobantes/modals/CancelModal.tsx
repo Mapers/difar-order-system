@@ -58,8 +58,8 @@ export function CancelModal({ open, onOpenChange, comprobante, tiposComprobante,
                 {comprobante && (
                     <div className="space-y-4">
                         <div className="bg-red-50 p-4 rounded-lg border border-red-100">
-                            <h4 className="font-medium text-gray-900 mb-2">Datos del Comprobante</h4>
-                            <div className="text-sm space-y-1 text-gray-700">
+                            <h4 className="font-medium text-red-800 mb-2">Datos del Comprobante</h4>
+                            <div className="text-sm space-y-1 text-red-700">
                                 <p><span className="font-semibold">Tipo:</span> {getTipoDesc(comprobante.tipo_comprobante)}</p>
                                 <p><span className="font-semibold">Serie/Número:</span> {comprobante.serie}-{comprobante.numero}</p>
                                 <p><span className="font-semibold">Cliente:</span> {comprobante.cliente_denominacion}</p>

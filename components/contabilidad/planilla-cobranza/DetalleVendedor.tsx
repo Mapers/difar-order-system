@@ -42,7 +42,7 @@ export default function DetalleVendedor({
     const tCbza      = registros.reduce((s, r) => s + Number(r.importe_cobrado), 0)
 
     return (
-        <div className="border-t border-slate-100 p-4 bg-[#FAFAF8] space-y-3 animate-in slide-in-from-top-2 duration-200">
+        <div className="border-t border-border p-4 bg-muted/40 space-y-3 animate-in slide-in-from-top-2 duration-200">
 
             {/* Meta grid */}
             <div className="grid grid-cols-3 gap-2">
@@ -51,9 +51,9 @@ export default function DetalleVendedor({
                     { label: 'Zona',    val: planilla.zona || '—' },
                     { label: 'Enviada', val: planilla.fecha_envio ? fmtHora(planilla.fecha_envio) : '—' },
                 ].map(item => (
-                    <div key={item.label} className="bg-white border border-slate-100 rounded-lg px-3 py-2">
-                        <p className="text-[10px] uppercase text-slate-400 tracking-wide">{item.label}</p>
-                        <p className="text-xs font-medium text-slate-700 mt-0.5">{item.val}</p>
+                    <div key={item.label} className="bg-background border border-border rounded-lg px-3 py-2">
+                        <p className="text-[10px] uppercase text-muted-foreground tracking-wide">{item.label}</p>
+                        <p className="text-xs font-medium text-foreground mt-0.5">{item.val}</p>
                     </div>
                 ))}
             </div>
@@ -136,12 +136,12 @@ export default function DetalleVendedor({
 
             {/* Totales inline (desktop) */}
             <div className="hidden lg:flex gap-2">
-                <div className="flex-1 bg-white border border-slate-100 rounded-lg px-4 py-2">
-                    <p className="text-[10px] uppercase text-slate-400 tracking-wider">Total documentos</p>
+                <div className="flex-1 bg-background border border-border rounded-lg px-4 py-2">
+                    <p className="text-[10px] uppercase text-muted-foreground tracking-wider">Total documentos</p>
                     <p className="font-mono text-base font-medium text-blue-800 mt-0.5">{fmtMoney(tDocs)}</p>
                 </div>
-                <div className="flex-1 bg-white border border-slate-100 rounded-lg px-4 py-2">
-                    <p className="text-[10px] uppercase text-slate-400 tracking-wider">Total cobrado</p>
+                <div className="flex-1 bg-background border border-border rounded-lg px-4 py-2">
+                    <p className="text-[10px] uppercase text-muted-foreground tracking-wider">Total cobrado</p>
                     <p className="font-mono text-base font-medium text-emerald-600 mt-0.5">{fmtMoney(tCbza)}</p>
                 </div>
             </div>

@@ -181,28 +181,28 @@ export function NotaCreditoForm({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
                 <Card>
-                    <CardHeader className="bg-gray-50 py-3">
-                        <CardTitle className="text-sm font-medium text-gray-700">
+                    <CardHeader className="bg-muted py-3">
+                        <CardTitle className="text-sm font-medium text-foreground">
                             Documento a Modificar
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="pt-4 space-y-2 text-sm">
                         <div className="flex justify-between">
-                            <span className="text-gray-500">Documento:</span>
+                            <span className="text-muted-foreground">Documento:</span>
                             <span className="font-bold">{comprobante.serie}-{comprobante.numero}</span>
                         </div>
                         <div className="flex justify-between">
-                            <span className="text-gray-500">Tipo:</span>
+                            <span className="text-muted-foreground">Tipo:</span>
                             <span>{comprobante.tipo_comprobante === 1 ? 'Factura' : 'Boleta'}</span>
                         </div>
                         <div className="flex justify-between">
-                            <span className="text-gray-500">Cliente:</span>
+                            <span className="text-muted-foreground">Cliente:</span>
                             <span className="truncate max-w-[200px]" title={comprobante.cliente_denominacion || ''}>
                                 {comprobante.cliente_denominacion}
                             </span>
                         </div>
                         <div className="flex justify-between border-t pt-2 mt-2">
-                            <span className="text-gray-900 font-semibold">Total Original:</span>
+                            <span className="text-card-foreground font-semibold">Total Original:</span>
                             <span className="font-bold text-blue-600">
                                 {comprobante.moneda === 1 ? 'S/' : '$'} {Number(comprobante.total).toFixed(2)}
                             </span>
@@ -235,7 +235,7 @@ export function NotaCreditoForm({
                                     ))}
                                 </div>
                                 <div className="flex justify-between font-bold text-sm pt-1 border-t">
-                                    <span className="text-gray-700">Total a devolver:</span>
+                                    <span className="text-card-foreground">Total a devolver:</span>
                                     <span className="text-green-700">
                                         S/ {totalParcial.toFixed(2)}
                                     </span>
@@ -257,12 +257,12 @@ export function NotaCreditoForm({
                     <CardContent className="pt-4 space-y-4">
 
                         <div className="space-y-1">
-                            <Label className="text-xs font-semibold uppercase text-gray-500">
+                            <Label className="text-xs font-semibold uppercase text-muted-foreground">
                                 Serie NC <span className="text-red-500">*</span>
                             </Label>
                             <Select value={selectedSerie}
                                     onValueChange={(v) => { setSelectedSerie(v); clearError('selectedSerie') }}>
-                                <SelectTrigger className={`bg-white ${errors.selectedSerie ? 'border-red-400' : ''}`}>
+                                <SelectTrigger className={`bg-background ${errors.selectedSerie ? 'border-red-400' : ''}`}>
                                     <SelectValue placeholder="Seleccionar serie" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -272,7 +272,7 @@ export function NotaCreditoForm({
                                                 {tipo.prefijo} - {tipo.nombre || 'Nota de Crédito'}
                                             </SelectItem>
                                         ))
-                                        : <div className="p-2 text-xs text-center text-gray-500">Sin series disponibles</div>
+                                        : <div className="p-2 text-xs text-center text-muted-foreground">Sin series disponibles</div>
                                     }
                                 </SelectContent>
                             </Select>
@@ -281,11 +281,11 @@ export function NotaCreditoForm({
 
                         {esDescuento ? (
                             <div className="space-y-1">
-                                <Label className="text-xs font-semibold uppercase text-gray-500">
+                                <Label className="text-xs font-semibold uppercase text-muted-foreground">
                                     Monto del descuento <span className="text-red-500">*</span>
                                 </Label>
                                 <div className="relative">
-                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-500">
+                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
                                         {comprobante.moneda === 1 ? 'S/' : '$'}
                                     </span>
                                     <Input
@@ -295,10 +295,10 @@ export function NotaCreditoForm({
                                         placeholder="0.00"
                                         value={montoDescuento}
                                         onChange={(e) => { setMontoDescuento(e.target.value); clearError('montoDescuento') }}
-                                        className={`bg-white pl-9 ${errors.montoDescuento ? 'border-red-400' : ''}`}
+                                        className={`bg-background pl-9 ${errors.montoDescuento ? 'border-red-400' : ''}`}
                                     />
                                 </div>
-                                <p className="text-[11px] text-gray-400">
+                                <p className="text-[11px] text-muted-foreground">
                                     Monto total con IGV incluido (máx. {Number(comprobante.total).toFixed(2)})
                                 </p>
                                 <FieldError field="montoDescuento" />
@@ -306,18 +306,18 @@ export function NotaCreditoForm({
                         ) : (
                             <>
                                 <div className="space-y-1">
-                                    <Label className="text-xs font-semibold uppercase text-gray-500">
+                                    <Label className="text-xs font-semibold uppercase text-muted-foreground">
                                         Motivo SUNAT <span className="text-red-500">*</span>
                                     </Label>
                                     <Select value={motivo}
                                             onValueChange={(v) => { setMotivo(v); clearError('motivo') }}>
-                                        <SelectTrigger className={`bg-white ${errors.motivo ? 'border-red-400' : ''}`}>
+                                        <SelectTrigger className={`bg-background ${errors.motivo ? 'border-red-400' : ''}`}>
                                             <SelectValue />
                                         </SelectTrigger>
                                         <SelectContent>
                                             {motivos.map(m => (
                                                 <SelectItem key={m.code} value={m.code}>
-                                                    <span className="font-mono text-gray-500 mr-2">{m.code}</span>
+                                                    <span className="font-mono text-muted-foreground mr-2">{m.code}</span>
                                                     {m.label}
                                                 </SelectItem>
                                             ))}
@@ -327,18 +327,18 @@ export function NotaCreditoForm({
                                 </div>
 
                                 <div className="space-y-1">
-                                    <Label className="text-xs font-semibold uppercase text-gray-500">
+                                    <Label className="text-xs font-semibold uppercase text-muted-foreground">
                                         Tipo operación <span className="text-red-500">*</span>
                                     </Label>
                                     <Select value={idOperacion}
                                             onValueChange={(v) => { setIdOperacion(v); clearError('idOperacion') }}>
-                                        <SelectTrigger className={`bg-white ${errors.idOperacion ? 'border-red-400' : ''}`}>
+                                        <SelectTrigger className={`bg-background ${errors.idOperacion ? 'border-red-400' : ''}`}>
                                             <SelectValue placeholder="Seleccione operación" />
                                         </SelectTrigger>
                                         <SelectContent>
                                             {operaciones.map(op => (
                                                 <SelectItem key={op.Codigo_Op} value={op.Codigo_Op}>
-                                                    <span className="font-mono text-gray-500 mr-2">{op.Operacion}</span>
+                                                    <span className="font-mono text-muted-foreground mr-2">{op.Operacion}</span>
                                                     {op.descripcion}
                                                 </SelectItem>
                                             ))}

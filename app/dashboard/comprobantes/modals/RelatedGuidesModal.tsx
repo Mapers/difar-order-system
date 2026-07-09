@@ -63,26 +63,26 @@ export function RelatedGuidesModal({ open, onOpenChange, comprobante, onViewPdf 
                             <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
                         </div>
                     ) : guias.length === 0 ? (
-                        <div className="text-center py-8 text-gray-500 border-2 border-dashed rounded-lg bg-gray-50">
-                            <AlertCircle className="h-8 w-8 mx-auto mb-2 text-gray-400" />
+                        <div className="text-center py-8 text-muted-foreground border-2 border-dashed rounded-lg bg-muted">
+                            <AlertCircle className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
                             <p className="text-sm">No se encontraron guías asociadas a este comprobante.</p>
                         </div>
                     ) : (
                         <div className="space-y-3">
-                            <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Guías Referenciadas ({guias.length})</p>
+                            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Guías Referenciadas ({guias.length})</p>
                             <div className="max-h-[300px] overflow-y-auto pr-1 space-y-2">
                                 {guias.map((guia) => (
                                     <div
                                         key={guia.idGuiaRemCab}
-                                        className="flex items-center justify-between border p-3 rounded-lg bg-white hover:bg-gray-50 transition-colors"
+                                        className="flex items-center justify-between border p-3 rounded-lg bg-background hover:bg-muted transition-colors"
                                     >
                                         <div className="flex items-center gap-3">
                                             <div className="bg-blue-100 p-2 rounded-full">
                                                 <FileText className="h-4 w-4 text-blue-600" />
                                             </div>
                                             <div>
-                                                <p className="font-semibold text-sm text-gray-900">{guia.serie}-{guia.numero}</p>
-                                                <p className="text-xs text-gray-500">{format(parseISO(guia.fecha_emision), "dd/MM/yyyy")}</p>
+                                                <p className="font-semibold text-sm text-foreground">{guia.serie}-{guia.numero}</p>
+                                                <p className="text-xs text-muted-foreground">{format(parseISO(guia.fecha_emision), "dd/MM/yyyy")}</p>
                                             </div>
                                         </div>
 

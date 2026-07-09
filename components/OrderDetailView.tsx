@@ -132,7 +132,7 @@ const SubtotalCell = ({ item, moneda }: { item: PedidoDet; moneda?: string }) =>
     const val  = (Number(item.cantPedido) * Number(item.precioPedido)).toFixed(2)
     const tipo = item.tipo_afectacion_igv ?? '10'
     const label = tipo === '10' ? '+ IGV' : 'sin IGV'
-    const labelColor = tipo === '10' ? 'text-green-600' : 'text-gray-400'
+    const labelColor = tipo === '10' ? 'text-green-600' : 'text-muted-foreground'
 
     return (
         <div className="flex flex-col items-end">
@@ -211,7 +211,7 @@ export default function OrderDetailView({
                         </Button>
                     </Link>
                 )}
-                <h1 className="text-2xl font-bold text-gray-900">
+                <h1 className="text-2xl font-bold text-foreground">
                     {error ? 'Error' : 'Pedido no encontrado'}
                 </h1>
             </div>
@@ -242,7 +242,7 @@ export default function OrderDetailView({
                                 </Button>
                             </Link>
                         )}
-                        <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-gray-900">
+                        <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">
                             Pedido #{pedido.nroPedido}
                         </h1>
                     </div>
@@ -287,26 +287,26 @@ export default function OrderDetailView({
                         )}
                     </div>
                 </div>
-                <p className="text-gray-500">Información completa del pedido y sus productos.</p>
+                <p className="text-muted-foreground">Información completa del pedido y sus productos.</p>
             </div>
 
             <div className="grid gap-6 md:grid-cols-2">
-                <Card className="shadow-md bg-white">
-                    <CardHeader className="border-b bg-gray-50">
+                <Card className="shadow-md bg-background">
+                    <CardHeader className="border-b bg-muted">
                         <CardTitle className="text-xl font-semibold text-teal-700">Información del Pedido</CardTitle>
                     </CardHeader>
                     <CardContent className="p-6">
                         <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <p className="text-sm font-medium text-gray-500">Número de Pedido:</p>
+                                <p className="text-sm font-medium text-muted-foreground">Número de Pedido:</p>
                                 <p className="font-medium">{pedido.nroPedido}</p>
                             </div>
                             <div>
-                                <p className="text-sm font-medium text-gray-500">Fecha:</p>
+                                <p className="text-sm font-medium text-muted-foreground">Fecha:</p>
                                 <p>{new Date(pedido.fechaPedido).toLocaleDateString()}</p>
                             </div>
                             <div className="col-span-2 sm:col-span-1">
-                                <p className="text-sm font-medium text-gray-500 mb-1">Condición:</p>
+                                <p className="text-sm font-medium text-muted-foreground mb-1">Condición:</p>
                                 {isEditing && onConditionChange ? (
                                     <Popover
                                         open={isConditionOpen}
@@ -354,22 +354,22 @@ export default function OrderDetailView({
                                 )}
                             </div>
                             <div>
-                                <p className="text-sm font-medium text-gray-500">Moneda:</p>
+                                <p className="text-sm font-medium text-muted-foreground">Moneda:</p>
                                 <p>{pedido.monedaPedido === 'PEN' ? 'Soles (S/)' : 'Dólares ($)'}</p>
                             </div>
                             <div>
-                                <p className="text-sm font-medium text-gray-500">Vendedor:</p>
+                                <p className="text-sm font-medium text-muted-foreground">Vendedor:</p>
                                 <p>{pedido.nombreVendedor || 'No especificado'}</p>
                             </div>
                             <div>
-                                <p className="text-sm font-medium text-gray-500">Estado:</p>
+                                <p className="text-sm font-medium text-muted-foreground">Estado:</p>
                                 <Badge className={`${stateInfo?.color} flex items-center gap-1 text-xs`}>
                                     {stateInfo?.name || 'Desconocido'}
                                 </Badge>
                             </div>
                             {pedido.notaPedido && (
                                 <div className="col-span-2">
-                                    <p className="text-sm font-medium text-gray-500">Notas:</p>
+                                    <p className="text-sm font-medium text-muted-foreground">Notas:</p>
                                     <p>{pedido.notaPedido}</p>
                                 </div>
                             )}
@@ -377,23 +377,23 @@ export default function OrderDetailView({
                     </CardContent>
                 </Card>
 
-                <Card className="shadow-md bg-white">
-                    <CardHeader className="border-b bg-gray-50">
+                <Card className="shadow-md bg-background">
+                    <CardHeader className="border-b bg-muted">
                         <CardTitle className="text-xl font-semibold text-teal-700">Información del Cliente</CardTitle>
                     </CardHeader>
                     <CardContent className="p-6">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="md:col-span-2 flex justify-between items-start">
                                 <div>
-                                    <p className="text-sm font-medium text-gray-500 mb-1">Razón Social:</p>
-                                    <p className="font-medium text-lg text-gray-900">
+                                    <p className="text-sm font-medium text-muted-foreground mb-1">Razón Social:</p>
+                                    <p className="font-medium text-lg text-foreground">
                                         {isEditing && selectedClient ? selectedClient.NombreComercial : (pedido.nombreComercial || 'No especificada')}
                                     </p>
-                                    <p className="text-sm font-medium text-gray-500 mb-1">Cliente:</p>
-                                    <p className="font-medium text-lg text-gray-900">
+                                    <p className="text-sm font-medium text-muted-foreground mb-1">Cliente:</p>
+                                    <p className="font-medium text-lg text-foreground">
                                         {isEditing && selectedClient ? selectedClient.Nombre : (pedido.nombreCliente || 'No especificada')}
                                     </p>
-                                    <p className="text-xs text-gray-500">
+                                    <p className="text-xs text-muted-foreground">
                                         RUC: {isEditing && selectedClient ? selectedClient.RUC : pedido.codigoCliente || 'No especificada'}
                                     </p>
                                 </div>
@@ -435,20 +435,20 @@ export default function OrderDetailView({
                                                     </div>
 
                                                     <div className="flex flex-col flex-1 min-w-0 gap-0.5">
-                    <span className="font-semibold text-sm text-gray-900 dark:text-gray-100 line-clamp-1 leading-tight">
+                    <span className="font-semibold text-sm text-foreground line-clamp-1 leading-tight">
                       {c.Nombre}
                     </span>
 
                                                         {c.NombreComercial && (
-                                                            <span className="text-xs text-gray-500 dark:text-gray-400 line-clamp-1">
+                                                            <span className="text-xs text-muted-foreground line-clamp-1">
                         {c.NombreComercial}
                       </span>
                                                         )}
 
                                                         <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-0.5">
                                                             {c.RUC && (
-                                                                <span className="text-xs text-gray-500 dark:text-gray-400">
-                          <span className="font-medium text-gray-600 dark:text-gray-300">
+                                                                <span className="text-xs text-muted-foreground">
+                          <span className="font-medium text-muted-foreground">
                             RUC:
                           </span>{' '}
                                                                     {c.RUC}
@@ -456,7 +456,7 @@ export default function OrderDetailView({
                                                             )}
 
                                                             {c.Dirección && (
-                                                                <span className="text-xs text-gray-400 dark:text-gray-500 line-clamp-1 flex items-center gap-1">
+                                                                <span className="text-xs text-muted-foreground line-clamp-1 flex items-center gap-1">
                           <MapPin className="h-3 w-3 shrink-0" />
                                                                     {c.Dirección}
                         </span>
@@ -470,26 +470,26 @@ export default function OrderDetailView({
                                 )}
                             </div>
                             <div>
-                                <p className="text-sm font-medium text-gray-500">Correo Electrónico:</p>
+                                <p className="text-sm font-medium text-muted-foreground">Correo Electrónico:</p>
                                 <p>{pedido.correo || 'No especificado'}</p>
                             </div>
                             <div>
-                                <p className="text-sm font-medium text-gray-500">Teléfono:</p>
+                                <p className="text-sm font-medium text-muted-foreground">Teléfono:</p>
                                 <p>{pedido.telefonoPedido || 'No especificado'}</p>
                             </div>
                             {pedido.contactoPedido && (
                                 <div>
-                                    <p className="text-sm font-medium text-gray-500">Contacto Adicional:</p>
+                                    <p className="text-sm font-medium text-muted-foreground">Contacto Adicional:</p>
                                     <p>{pedido.contactoPedido}</p>
                                 </div>
                             )}
                             <div className="md:col-span-2">
-                                <p className="text-sm font-medium text-gray-500">Dirección de Entrega:</p>
+                                <p className="text-sm font-medium text-muted-foreground">Dirección de Entrega:</p>
                                 <p>{pedido.direccionEntrega || 'No especificada'}</p>
                             </div>
                             {pedido.referenciaDireccion && (
                                 <div className="md:col-span-2">
-                                    <p className="text-sm font-medium text-gray-500">Referencia:</p>
+                                    <p className="text-sm font-medium text-muted-foreground">Referencia:</p>
                                     <p>{pedido.referenciaDireccion}</p>
                                 </div>
                             )}
@@ -498,8 +498,8 @@ export default function OrderDetailView({
                 </Card>
             </div>
 
-            <Card className="shadow-md bg-white">
-                <CardHeader className="border-b bg-gray-50">
+            <Card className="shadow-md bg-background">
+                <CardHeader className="border-b bg-muted">
                     <div className="flex justify-between items-center">
                         <CardTitle className="text-xl font-semibold text-teal-700">Productos</CardTitle>
 
@@ -525,7 +525,7 @@ export default function OrderDetailView({
                 <CardContent className="p-0">
                     <div className="rounded-md border m-4 hidden md:block overflow-x-auto">
                         <Table>
-                            <TableHeader className="bg-gray-50">
+                            <TableHeader className="bg-muted">
                                 <TableRow>
                                     <TableHead>Código</TableHead>
                                     <TableHead>Producto</TableHead>
@@ -539,7 +539,7 @@ export default function OrderDetailView({
                             </TableHeader>
                             <TableBody>
                                 {activeDetalles.length > 0 ? activeDetalles.map((item, index) => (
-                                    <TableRow key={item.idPedidodet || index} className="hover:bg-gray-50">
+                                    <TableRow key={item.idPedidodet || index} className="hover:bg-muted">
                                         <TableCell className="text-sm">{item.codigoitemPedido}</TableCell>
                                         <TableCell><ProductName item={item} /></TableCell>
                                         <TableCell className="text-sm">{item.laboratorio || 'N/A'}</TableCell>
@@ -570,7 +570,7 @@ export default function OrderDetailView({
                                     </TableRow>
                                 )) : (
                                     <TableRow>
-                                        <TableCell colSpan={8} className="text-center py-8 text-gray-500">
+                                        <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                                             No se encontraron productos en este pedido
                                         </TableCell>
                                     </TableRow>
@@ -585,7 +585,7 @@ export default function OrderDetailView({
                                 <CardContent className="p-4 space-y-3">
                                     <div className="flex justify-between items-start">
                                         <div>
-                                            <p className="text-xs text-gray-500">Código</p>
+                                            <p className="text-xs text-muted-foreground">Código</p>
                                             <p className="font-semibold text-sm">{item.codigoitemPedido}</p>
                                         </div>
                                         {isEditing && onRemoveItem && (
@@ -596,20 +596,20 @@ export default function OrderDetailView({
                                         )}
                                     </div>
                                     <div>
-                                        <p className="text-xs text-gray-500">Producto</p>
+                                        <p className="text-xs text-muted-foreground">Producto</p>
                                         <ProductName item={item} />
                                     </div>
                                     <div>
-                                        <p className="text-xs text-gray-500">Laboratorio</p>
+                                        <p className="text-xs text-muted-foreground">Laboratorio</p>
                                         <p className="text-sm font-medium">{item.laboratorio || 'N/A'}</p>
                                     </div>
                                     <div>
-                                        <p className="text-xs text-gray-500">Lote - Vencimiento</p>
+                                        <p className="text-xs text-muted-foreground">Lote - Vencimiento</p>
                                         <p className="text-sm">{item.cod_lote || '—'} · {item.fec_venc_lote || '—'}</p>
                                     </div>
                                     <div className="grid grid-cols-2 gap-3">
                                         <div>
-                                            <p className="text-xs text-gray-500">Cantidad</p>
+                                            <p className="text-xs text-muted-foreground">Cantidad</p>
                                             {isEditing && onQuantityChange ? (
                                                 <Input type="number" min="1" value={item.cantPedido}
                                                        onChange={e => onQuantityChange(index, Number(e.target.value))}
@@ -617,27 +617,27 @@ export default function OrderDetailView({
                                             ) : <p className="font-semibold text-sm">{Number(item.cantPedido)}</p>}
                                         </div>
                                         <div>
-                                            <p className="text-xs text-gray-500">Precio Unit.</p>
+                                            <p className="text-xs text-muted-foreground">Precio Unit.</p>
                                             <p className="font-semibold text-sm">{currency} {Number(item.precioPedido).toFixed(2)}</p>
                                         </div>
                                     </div>
                                     <div className="border-t pt-2 flex justify-between items-center">
-                                        <p className="text-xs text-gray-500">Subtotal</p>
+                                        <p className="text-xs text-muted-foreground">Subtotal</p>
                                         <SubtotalCell item={item} moneda={pedido.monedaPedido} />
                                     </div>
                                 </CardContent>
                             </Card>
                         )) : (
-                            <p className="text-center py-8 text-gray-500">No se encontraron productos</p>
+                            <p className="text-center py-8 text-muted-foreground">No se encontraron productos</p>
                         )}
                     </div>
                 </CardContent>
 
-                <CardFooter className="flex justify-end items-end border-t bg-gray-50 p-4 flex-wrap gap-4">
+                <CardFooter className="flex justify-end items-end border-t bg-muted p-4 flex-wrap gap-4">
                     <div className="w-full max-w-sm space-y-1.5">
                         {totales.baseGravada > 0 && (
                             <div className="flex justify-between text-sm">
-                                <span className="text-gray-600 flex items-center gap-1.5">
+                                <span className="text-muted-foreground flex items-center gap-1.5">
                                     <span className="w-2 h-2 rounded-full bg-green-500 inline-block" />
                                     Subtotal:
                                 </span>
@@ -646,13 +646,13 @@ export default function OrderDetailView({
                         )}
                         {totales.igv > 0 && (
                             <div className="flex justify-between text-sm">
-                                <span className="text-gray-600 pl-3.5">IGV (18%):</span>
+                                <span className="text-muted-foreground pl-3.5">IGV (18%):</span>
                                 <span>{currency} {totales.igv.toFixed(2)}</span>
                             </div>
                         )}
                         {totales.baseExonerada > 0 && (
                             <div className="flex justify-between text-sm">
-                                <span className="text-gray-600 flex items-center gap-1.5">
+                                <span className="text-muted-foreground flex items-center gap-1.5">
                                     <span className="w-2 h-2 rounded-full bg-yellow-400 inline-block" />
                                     Subtotal:
                                 </span>
@@ -661,7 +661,7 @@ export default function OrderDetailView({
                         )}
                         {totales.baseInafecta > 0 && (
                             <div className="flex justify-between text-sm">
-                                <span className="text-gray-600 flex items-center gap-1.5">
+                                <span className="text-muted-foreground flex items-center gap-1.5">
                                     <span className="w-2 h-2 rounded-full bg-blue-400 inline-block" />
                                     Subtotal:
                                 </span>

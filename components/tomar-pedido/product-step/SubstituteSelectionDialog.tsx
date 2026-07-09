@@ -63,29 +63,29 @@ export default function SubstituteSelectionDialog({
                     </button>
                     <div className="text-center flex-1 px-2">
                         <div className="text-xs font-bold text-indigo-500 uppercase tracking-wider mb-0.5">Alternativas para</div>
-                        <div className="font-semibold text-gray-900 dark:text-gray-100 text-sm line-clamp-1">{nombrePrincipal}</div>
+                        <div className="font-semibold text-foreground text-sm line-clamp-1">{nombrePrincipal}</div>
                     </div>
                     <div className="w-7"></div> {/* Spacer para centrar texto */}
                 </div>
 
-                <div className="flex-1 overflow-y-auto bg-white dark:bg-gray-900">
+                <div className="flex-1 overflow-y-auto bg-background">
                     {loading ? (
                         <div className="flex flex-col items-center justify-center py-16">
                             <Loader2 className="h-8 w-8 animate-spin text-indigo-500 mb-4" />
-                            <p className="text-sm text-gray-500">Buscando alternativas disponibles...</p>
+                            <p className="text-sm text-muted-foreground">Buscando alternativas disponibles...</p>
                         </div>
                     ) : sustitutos.length === 0 ? (
                         <div className="py-16 text-center px-4">
-                            <Pill className="h-12 w-12 text-gray-300 dark:text-gray-700 mx-auto mb-4" />
-                            <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
+                            <Pill className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                            <p className="text-sm font-medium text-foreground mb-1">
                                 No hay alternativas disponibles
                             </p>
-                            <p className="text-xs text-gray-500">
+                            <p className="text-xs text-muted-foreground">
                                 No se encontraron sustitutos con stock o matriculados para este producto.
                             </p>
                         </div>
                     ) : (
-                        <div className="divide-y divide-gray-100 dark:divide-gray-800 pb-6">
+                        <div className="divide-y divide-border pb-6">
                             {sustitutos.map((sub) => {
                                 const stockNum = Number(sub.Stock)
 
@@ -116,14 +116,14 @@ export default function SubstituteSelectionDialog({
                                             <Badge className="bg-indigo-100 text-indigo-700 hover:bg-indigo-100 rounded text-[10px] px-1.5 py-0 border-none shadow-none">
                                                 Pri: {sub.prioridad}
                                             </Badge>
-                                            <div className="bg-gray-100 p-2 rounded-lg mt-1">
-                                                <Package className="h-4 w-4 text-gray-500" />
+                                            <div className="bg-muted p-2 rounded-lg mt-1">
+                                                <Package className="h-4 w-4 text-muted-foreground" />
                                             </div>
                                         </div>
 
                                         <div className="flex flex-col flex-1 min-w-0 gap-1.5">
                                             <div className="flex items-start justify-between gap-2">
-                                                <span className="font-semibold text-sm text-gray-900 line-clamp-2 flex-1 leading-tight">
+                                                <span className="font-semibold text-sm text-foreground line-clamp-2 flex-1 leading-tight">
                                                     {sub.NombreItem}
                                                 </span>
                                                 <span className={`text-[11px] shrink-0 font-bold border rounded-full px-2 py-0.5 ${stockBadgeClass}`}>
@@ -131,20 +131,20 @@ export default function SubstituteSelectionDialog({
                                                 </span>
                                             </div>
 
-                                            <div className="text-xs text-gray-500 leading-tight">
-                                                <span className="font-semibold text-gray-700">{sub.Descripcion || 'SIN LAB'}</span>
+                                            <div className="text-xs text-muted-foreground leading-tight">
+                                                <span className="font-semibold text-muted-foreground">{sub.Descripcion || 'SIN LAB'}</span>
                                                 {sub.principioActivo && ` — ${sub.principioActivo}`}
                                             </div>
 
-                                            <div className="text-xs text-gray-500">
-                                                Pres: <span className="text-gray-700">{sub.presentacion}</span>
+                                            <div className="text-xs text-muted-foreground">
+                                                Pres: <span className="text-muted-foreground">{sub.presentacion}</span>
                                             </div>
 
-                                            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 bg-gray-50 p-1.5 rounded-md border border-gray-100 w-fit">
+                                            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 bg-muted p-1.5 rounded-md border border-border w-fit">
                                                 <span className="text-xs font-semibold text-green-700">
                                                     Con: {currency?.value === "PEN" ? "S/." : "$"}{Number(sub.PUContado).toFixed(2)}
                                                 </span>
-                                                <span className="text-xs font-semibold text-blue-700 border-l border-gray-200 pl-3">
+                                                <span className="text-xs font-semibold text-blue-700 border-l border-border pl-3">
                                                     Cré: {currency?.value === "PEN" ? "S/." : "$"}{Number(sub.PUCredito).toFixed(2)}
                                                 </span>
                                             </div>

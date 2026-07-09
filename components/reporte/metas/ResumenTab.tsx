@@ -102,8 +102,8 @@ export default function ResumenTab({ data, kpis, onVendedorClick, isVendedorView
             <Card className="shadow-sm">
                 <CardContent className="p-4">
                     <div className="flex justify-between items-center mb-2">
-                        <span className="text-xs font-semibold text-slate-700">Progreso global del ciclo</span>
-                        <span className="text-xs text-slate-400">
+                        <span className="text-xs font-semibold text-card-foreground">Progreso global del ciclo</span>
+                        <span className="text-xs text-muted-foreground">
                             {fmtMoney(kpis.totalVendido)} vendido · {fmtMoney(kpis.totalCuota - kpis.totalVendido)} restante
                         </span>
                     </div>
@@ -117,7 +117,7 @@ export default function ResumenTab({ data, kpis, onVendedorClick, isVendedorView
                     <CardContent className="p-4">
                         <div className="flex items-center gap-2 mb-3">
                             <div className="w-1.5 h-1.5 rounded-full bg-red-500" />
-                            <h3 className="text-sm font-semibold text-slate-700">Labs que requieren atención</h3>
+                            <h3 className="text-sm font-semibold text-card-foreground">Labs que requieren atención</h3>
                         </div>
                         {labsAlert.length === 0 ? (
                             <p className="text-center text-emerald-600 text-sm py-4">✓ Todos los labs están en meta</p>
@@ -128,7 +128,7 @@ export default function ResumenTab({ data, kpis, onVendedorClick, isVendedorView
                                     const [c1] = getStatusColor(av);
                                     const color = getLabColor(i);
                                     return (
-                                        <div key={lab.id_linea_ge} className="flex flex-col gap-1.5 p-2.5 bg-slate-50 rounded-lg">
+                                        <div key={lab.id_linea_ge} className="flex flex-col gap-1.5 p-2.5 bg-muted rounded-lg">
                                             <div className="flex justify-between items-center">
                                                 <div className="flex items-center gap-2">
                                                     <div className="w-6 h-6 rounded-md flex items-center justify-center text-[10px] font-bold shrink-0"
@@ -136,8 +136,8 @@ export default function ResumenTab({ data, kpis, onVendedorClick, isVendedorView
                                                         {getInitials(lab.nombre_lab || String(lab.id_linea_ge))}
                                                     </div>
                                                     <div>
-                                                        <p className="text-xs font-bold text-slate-800">{lab.nombre_lab || `Lab ${lab.id_linea_ge}`}</p>
-                                                        <p className="text-[10px] text-slate-400">Falta {fmtMoney(Number(lab.monto_pendiente || 0))}</p>
+                                                        <p className="text-xs font-bold text-foreground">{lab.nombre_lab || `Lab ${lab.id_linea_ge}`}</p>
+                                                        <p className="text-[10px] text-muted-foreground">Falta {fmtMoney(Number(lab.monto_pendiente || 0))}</p>
                                                     </div>
                                                 </div>
                                                 <div className="flex items-center gap-2">
@@ -162,7 +162,7 @@ export default function ResumenTab({ data, kpis, onVendedorClick, isVendedorView
                             <CardContent className="p-4">
                                 <div className="flex items-center gap-2 mb-3">
                                     <div className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                                    <h3 className="text-sm font-semibold text-slate-700">Top 3 Vendedores del Ciclo</h3>
+                                    <h3 className="text-sm font-semibold text-card-foreground">Top 3 Vendedores del Ciclo</h3>
                                 </div>
                                 <div className="space-y-2.5">
                                     {top3.map((v, i) => {
@@ -200,7 +200,7 @@ export default function ResumenTab({ data, kpis, onVendedorClick, isVendedorView
                             <CardContent className="p-4">
                                 <div className="flex items-center gap-2 mb-3">
                                     <div className="w-1.5 h-1.5 rounded-full bg-red-500" />
-                                    <h3 className="text-sm font-semibold text-slate-700">Vendedores bajo meta</h3>
+                                    <h3 className="text-sm font-semibold text-card-foreground">Vendedores bajo meta</h3>
                                 </div>
                                 {vendBajos.length === 0 ? (
                                     <p className="text-center text-emerald-600 text-sm py-3">✓ Todos en meta</p>
@@ -212,7 +212,7 @@ export default function ResumenTab({ data, kpis, onVendedorClick, isVendedorView
                                             const falta = Number(v.monto_pendiente || 0);
                                             return (
                                                 <div key={v.cod_vendedor + 'b'}
-                                                     className="flex items-center gap-2 p-2 bg-slate-50 rounded-lg cursor-pointer hover:bg-slate-100 transition-colors"
+                                                     className="flex items-center gap-2 p-2 bg-muted rounded-lg cursor-pointer hover:bg-muted/70 transition-colors"
                                                      onClick={() => onVendedorClick?.(v)}
                                                 >
                                                     <div className="w-6 h-6 rounded-md flex items-center justify-center text-[10px] font-bold shrink-0"
@@ -226,7 +226,7 @@ export default function ResumenTab({ data, kpis, onVendedorClick, isVendedorView
                                                         </div>
                                                         <ProgressBar pct={av} height="h-1" className="mt-1" />
                                                         <div className="flex justify-between mt-0.5">
-                                                            <span className="text-[10px] text-slate-400">Cod: {v.cod_vendedor}</span>
+                                                            <span className="text-[10px] text-muted-foreground">Cod: {v.cod_vendedor}</span>
                                                             <span className="text-[10px] font-medium" style={{ color: c1 }}>Falta {fmtMoney(falta)}</span>
                                                         </div>
                                                     </div>

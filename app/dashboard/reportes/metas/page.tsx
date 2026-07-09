@@ -68,7 +68,7 @@ export default function MetasDashboardPage() {
         <div className="grid gap-4">
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-gray-900">
+                <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">
                     Metas Comerciales
                 </h1>
                 <div className="flex items-center gap-2 flex-wrap">
@@ -79,7 +79,7 @@ export default function MetasDashboardPage() {
                             if (ciclo) setSelectedCiclo(ciclo)
                         }}
                     >
-                        <SelectTrigger className="w-[200px] h-9 text-sm bg-white">
+                        <SelectTrigger className="w-[200px] h-9 text-sm bg-background">
                             <SelectValue placeholder="Seleccionar ciclo" />
                         </SelectTrigger>
                         <SelectContent>
@@ -90,7 +90,7 @@ export default function MetasDashboardPage() {
                             ))}
                         </SelectContent>
                     </Select>
-                    <Badge variant="outline" className="text-xs bg-slate-50">{cicloLabel}</Badge>
+                    <Badge variant="outline" className="text-xs bg-muted">{cicloLabel}</Badge>
                     {selectedCiclo && (
                         <Badge variant={selectedCiclo.estado === 'ABIERTO' ? "default" : "secondary"} className="text-xs">
                             {selectedCiclo.estado}
@@ -117,10 +117,10 @@ export default function MetasDashboardPage() {
             {loadingDashboard ? (
                 <div className="flex flex-col items-center justify-center py-16">
                     <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-sky-600 mb-4" />
-                    <p className="text-slate-500 font-medium">Cargando datos...</p>
+                    <p className="text-muted-foreground font-medium">Cargando datos...</p>
                 </div>
             ) : !dashboardData ? (
-                <div className="text-center py-16 text-slate-400">
+                <div className="text-center py-16 text-muted-foreground">
                     No hay datos para este ciclo
                 </div>
             ) : isVendedorView ? (
@@ -128,7 +128,7 @@ export default function MetasDashboardPage() {
             ) : (
                 <>
                     {/* Tabs admin */}
-                    <div className="flex gap-0 border-b border-slate-200">
+                    <div className="flex gap-0 border-b border-border">
                         {adminTabs.map(tab => {
                             const Icon = tab.icon
                             const isActive = activeTab === tab.id
@@ -139,7 +139,7 @@ export default function MetasDashboardPage() {
                                     className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-semibold border-b-2 transition-colors -mb-px ${
                                         isActive
                                             ? 'border-sky-600 text-sky-700'
-                                            : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
+                                            : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'
                                     }`}
                                 >
                                     <Icon className="h-4 w-4" />

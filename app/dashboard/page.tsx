@@ -141,14 +141,14 @@ export default function Dashboard() {
     })
   }
 
-  if (loading) return <div className="flex justify-center items-center h-64 text-gray-500">Cargando datos...</div>
+  if (loading) return <div className="flex justify-center items-center h-64 text-muted-foreground">Cargando datos...</div>
   if (error)   return <div className="text-red-500 p-4">Error: {error}</div>
 
   return (
       <div className="grid gap-6">
         <div className="flex flex-col gap-1">
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900">Panel de Control</h1>
-          <p className="text-gray-500">Bienvenido al sistema de gestión de pedidos de DIFAR.</p>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">Panel de Control</h1>
+          <p className="text-muted-foreground">Bienvenido al sistema de gestión de pedidos de DIFAR.</p>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -202,12 +202,12 @@ export default function Dashboard() {
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs text-gray-500">Total de ventas</p>
+                  <p className="text-xs text-muted-foreground">Total de ventas</p>
                   <CardTitle className="text-xl font-bold text-blue-600">
                     S/{ventasDiarias.reduce((s, d) => s + (d.total || 0), 0).toLocaleString('es-PE', {minimumFractionDigits: 2})}
                   </CardTitle>
                 </div>
-                <select className="text-xs border rounded px-2 py-1 text-gray-600">
+                <select className="text-xs border rounded px-2 py-1 text-muted-foreground">
                   <option>Mes actual (April)</option>
                 </select>
               </div>
@@ -244,8 +244,8 @@ export default function Dashboard() {
           <Card className="lg:col-span-1">
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-medium text-gray-700">Ventas por Mes</CardTitle>
-                <select className="text-xs border rounded px-2 py-1 text-gray-600">
+                <CardTitle className="text-sm font-medium text-card-foreground">Ventas por Mes</CardTitle>
+                <select className="text-xs border rounded px-2 py-1 text-muted-foreground">
                   <option>Últimos 3 meses</option>
                 </select>
               </div>
@@ -267,8 +267,8 @@ export default function Dashboard() {
           <Card className="lg:col-span-1 flex flex-col gap-0">
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-medium text-gray-700">Ticket Promedio ℹ</CardTitle>
-                <select className="text-xs border rounded px-2 py-1 text-gray-600">
+                <CardTitle className="text-sm font-medium text-card-foreground">Ticket Promedio ℹ</CardTitle>
+                <select className="text-xs border rounded px-2 py-1 text-muted-foreground">
                   <option>Mes actual (April)</option>
                 </select>
               </div>
@@ -277,21 +277,21 @@ export default function Dashboard() {
               </p>
             </CardHeader>
             <CardContent className="flex-1 pt-0">
-              <p className="text-xs font-semibold text-gray-600 mb-2 flex items-center justify-between">
+              <p className="text-xs font-semibold text-muted-foreground mb-2 flex items-center justify-between">
                 Clientes Frecuentes
-                <select className="border rounded px-1 py-0.5 text-xs font-normal text-gray-500">
+                <select className="border rounded px-1 py-0.5 text-xs font-normal text-muted-foreground">
                   <option>Mes actual (April)</option>
                 </select>
               </p>
               <ul className="space-y-2">
                 {clientesFrecuentes.slice(0, 5).map((c, i) => (
-                    <li key={i} className="flex items-center gap-2 text-xs text-gray-700">
-                      <Users className="h-3.5 w-3.5 text-gray-400 shrink-0"/>
+                    <li key={i} className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <Users className="h-3.5 w-3.5 text-muted-foreground shrink-0"/>
                       <span className="truncate">{c.nombre || c.client || c.cliente}</span>
                     </li>
                 ))}
                 {clientesFrecuentes.length === 0 && (
-                    <li className="text-xs text-gray-400 italic">Sin datos disponibles</li>
+                    <li className="text-xs text-muted-foreground italic">Sin datos disponibles</li>
                 )}
               </ul>
             </CardContent>
@@ -310,7 +310,7 @@ export default function Dashboard() {
                     </div>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-sm text-gray-500">{desc}</p>
+                    <p className="text-sm text-muted-foreground">{desc}</p>
                   </CardContent>
                 </Card>
               </Link>

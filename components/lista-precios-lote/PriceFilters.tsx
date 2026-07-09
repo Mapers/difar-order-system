@@ -24,14 +24,14 @@ export const PriceFilters = ({
     return (
         <Card className="shadow-sm">
             <CardHeader className="border-b">
-                <CardTitle className="text-lg font-semibold text-gray-800">Filtros</CardTitle>
+                <CardTitle className="text-lg font-semibold text-card-foreground">Filtros</CardTitle>
             </CardHeader>
             <CardContent className="pt-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     <div className="space-y-2">
                         <Label>Búsqueda</Label>
                         <div className="relative">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400"/>
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"/>
                             <Input className="pl-9" placeholder="Código, descripción..." value={searchTerm} onChange={(e) => { setSearchTerm(e.target.value); }} />
                         </div>
                     </div>
@@ -50,7 +50,7 @@ export const PriceFilters = ({
                                     variant="outline"
                                     role="combobox"
                                     aria-expanded={openPrinciple}
-                                    className="w-full justify-between font-normal text-left px-3 bg-white"
+                                    className="w-full justify-between font-normal text-left px-3 bg-background"
                                 >
                                     <span className="truncate">
                                         {selectedPrinciple ? selectedPrinciple : "Todos los principios..."}
@@ -102,9 +102,9 @@ export const PriceFilters = ({
                                 id="excludeNoStock"
                                 checked={excludeNoStock}
                                 onChange={(e) => setExcludeNoStock(e.target.checked)}
-                                className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                                className="h-4 w-4 rounded border-border text-blue-600 focus:ring-blue-500 cursor-pointer"
                             />
-                            <label htmlFor="excludeNoStock" className="text-sm font-medium text-gray-700 cursor-pointer">
+                            <label htmlFor="excludeNoStock" className="text-sm font-medium text-card-foreground cursor-pointer">
                                 Excluir sin stock
                             </label>
                         </div>

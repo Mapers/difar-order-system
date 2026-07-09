@@ -48,7 +48,7 @@ export default function ProductDetailsModal({
                                 {escalas.length > 0 ? (
                                     <div className="border rounded-lg divide-y">
                                         {escalas.map((escala, index) => (
-                                            <div key={escala.id} className="flex items-center justify-between p-4 hover:bg-gray-50">
+                                            <div key={escala.id} className="flex items-center justify-between p-4 hover:bg-muted">
                                                 <div className="flex-1">
                                                     <div className="flex items-center gap-3">
                                                         <div className="bg-purple-100 p-2 rounded-md">
@@ -58,10 +58,10 @@ export default function ProductDetailsModal({
                                                             <div className="font-medium text-sm">
                                                                 Escala {index + 1}: {escala.desde} - {escala.hasta} unidades
                                                             </div>
-                                                            <div className="text-sm text-gray-600">
+                                                            <div className="text-sm text-muted-foreground">
                                                                 Precio especial: <span className="font-semibold text-green-600">S/ {escala.precio.toFixed(2)}</span> c/u
                                                             </div>
-                                                            <div className="text-xs text-gray-500 mt-1">
+                                                            <div className="text-xs text-muted-foreground mt-1">
                                                                 Comparado con precio base: <span className="font-medium">S/ {Number(viewingProduct?.PUContado).toFixed(2)}</span>
                                                             </div>
                                                         </div>
@@ -74,10 +74,10 @@ export default function ProductDetailsModal({
                                         ))}
                                     </div>
                                 ) : (
-                                    <div className="text-center py-8 border-2 border-dashed border-gray-300 rounded-lg">
-                                        <TrendingUp className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                                        <h4 className="font-medium text-gray-900 mb-1">No hay escalas configuradas</h4>
-                                        <p className="text-sm text-gray-500">Este producto no tiene escalas de precio configuradas</p>
+                                    <div className="text-center py-8 border-2 border-dashed border-border rounded-lg">
+                                        <TrendingUp className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+                                        <h4 className="font-medium text-foreground mb-1">No hay escalas configuradas</h4>
+                                        <p className="text-sm text-muted-foreground">Este producto no tiene escalas de precio configuradas</p>
                                     </div>
                                 )}
                             </CardContent>
@@ -90,7 +90,7 @@ export default function ProductDetailsModal({
                                 {bonificaciones.length > 0 ? (
                                     <div className="border rounded-lg divide-y">
                                         {bonificaciones.map((bonificacion, index) => (
-                                            <div key={bonificacion.id} className="flex items-center justify-between p-4 hover:bg-gray-50">
+                                            <div key={bonificacion.id} className="flex items-center justify-between p-4 hover:bg-muted">
                                                 <div className="flex-1">
                                                     <div className="flex items-center gap-3">
                                                         <div className="bg-yellow-100 p-2 rounded-md">
@@ -100,13 +100,13 @@ export default function ProductDetailsModal({
                                                             <div className="font-medium text-sm">
                                                                 Promoción {index + 1}: Compra {bonificacion.compra} lleva {bonificacion.lleva} gratis
                                                             </div>
-                                                            <div className="text-sm text-gray-600">{bonificacion.descripcion}</div>
+                                                            <div className="text-sm text-muted-foreground">{bonificacion.descripcion}</div>
                                                             {!bonificacion.esMismoProducto && bonificacion.descripcionProducto && (
                                                                 <div className="text-xs text-blue-600 mt-1">
                                                                     Producto bonificado: {bonificacion.descripcionProducto}
                                                                 </div>
                                                             )}
-                                                            <div className="text-xs text-gray-500 mt-1">
+                                                            <div className="text-xs text-muted-foreground mt-1">
                                                                 Tipo: {bonificacion.esMismoProducto ? 'Mismo producto' : 'Producto diferente'}
                                                             </div>
                                                         </div>
@@ -119,10 +119,10 @@ export default function ProductDetailsModal({
                                         ))}
                                     </div>
                                 ) : (
-                                    <div className="text-center py-8 border-2 border-dashed border-gray-300 rounded-lg">
-                                        <Gift className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                                        <h4 className="font-medium text-gray-900 mb-1">No hay bonificaciones</h4>
-                                        <p className="text-sm text-gray-500">Este producto no tiene bonificaciones configuradas</p>
+                                    <div className="text-center py-8 border-2 border-dashed border-border rounded-lg">
+                                        <Gift className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+                                        <h4 className="font-medium text-foreground mb-1">No hay bonificaciones</h4>
+                                        <p className="text-sm text-muted-foreground">Este producto no tiene bonificaciones configuradas</p>
                                     </div>
                                 )}
                             </CardContent>

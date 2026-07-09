@@ -37,14 +37,14 @@ export function RoleEntryModal({
           <button
             onClick={onSelectRepresentante}
             disabled={loading}
-            className="flex flex-col items-center gap-3 p-6 rounded-xl border-2 border-gray-200 hover:border-blue-500 hover:bg-blue-50 transition-all group disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex flex-col items-center gap-3 p-6 rounded-xl border-2 border-border hover:border-blue-500 hover:bg-blue-50 transition-all group disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <div className="p-4 bg-blue-100 rounded-full group-hover:bg-blue-200 transition-colors">
               <Briefcase className="h-8 w-8 text-blue-600" />
             </div>
             <div className="text-center">
-              <p className="font-semibold text-gray-800">Representante</p>
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="font-semibold text-foreground group-hover:text-blue-900">Representante</p>
+              <p className="text-xs text-muted-foreground group-hover:text-blue-900 mt-1">
                 Ingresa con tu sesión de representante
               </p>
             </div>
@@ -53,7 +53,7 @@ export function RoleEntryModal({
           <button
             onClick={onSelectVendedor}
             disabled={loading}
-            className="flex flex-col items-center gap-3 p-6 rounded-xl border-2 border-gray-200 hover:border-green-500 hover:bg-green-50 transition-all group disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex flex-col items-center gap-3 p-6 rounded-xl border-2 border-border hover:border-green-500 hover:bg-green-50 transition-all group disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <div className="p-4 bg-green-100 rounded-full group-hover:bg-green-200 transition-colors">
               {loading ? (
@@ -63,8 +63,8 @@ export function RoleEntryModal({
               )}
             </div>
             <div className="text-center">
-              <p className="font-semibold text-gray-800">Vendedor</p>
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="font-semibold text-foreground group-hover:text-green-900">Vendedor</p>
+              <p className="text-xs text-muted-foreground group-hover:text-green-900 mt-1">
                 {vendedorRelacion
                   ? `Ingresa como ${vendedorRelacion.nombreCompleto}`
                   : "Ingresa con el rol de vendedor"}

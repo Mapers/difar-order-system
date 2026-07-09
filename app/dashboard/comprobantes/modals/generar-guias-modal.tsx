@@ -120,7 +120,7 @@ export function GenerarGuiasModal({
           {step === 1 && (
               <div className="flex-1 flex flex-col gap-4 overflow-hidden">
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                   <Input
                       placeholder="Buscar por número de pedido, cliente o RUC..."
                       value={searchQuery}
@@ -129,7 +129,7 @@ export function GenerarGuiasModal({
                   />
                 </div>
 
-                <ScrollArea className="flex-1 border rounded-md p-4 bg-gray-50">
+                <ScrollArea className="flex-1 border rounded-md p-4 bg-muted">
                   {filteredPedidos.length > 0 ? (
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         {filteredPedidos.map((pedidoItem) => (
@@ -137,13 +137,13 @@ export function GenerarGuiasModal({
                                 key={pedidoItem.idPedidocab}
                                 className={`cursor-pointer transition-all hover:border-blue-400 ${selectedPedido?.idPedidocab === pedidoItem.idPedidocab
                                     ? "border-blue-600 ring-1 ring-blue-600 bg-blue-50"
-                                    : "border-gray-200"
+                                    : "border-border"
                                 }`}
                                 onClick={() => setSelectedPedido(pedidoItem)}
                             >
                               <CardContent className="p-4">
                                 <div className="flex justify-between items-start mb-2">
-                                  <Badge variant="outline" className="bg-white">
+                                  <Badge variant="outline" className="bg-background">
                                     {pedidoItem.nroPedido}
                                   </Badge>
                                   {selectedPedido?.idPedidocab === pedidoItem.idPedidocab && (
@@ -151,7 +151,7 @@ export function GenerarGuiasModal({
                                   )}
                                 </div>
                                 <h4 className="font-semibold text-sm truncate mb-2">{pedidoItem.nombreCliente}</h4>
-                                <div className="space-y-1 text-xs text-gray-500">
+                                <div className="space-y-1 text-xs text-muted-foreground">
                                   <div className="flex items-center gap-2">
                                     <Calendar className="h-3 w-3" />
                                     {format(parseISO(pedidoItem.fechaPedido), "dd/MM/yyyy")}
@@ -161,7 +161,11 @@ export function GenerarGuiasModal({
                                     {pedidoItem.cantidadPedidos} items
                                   </div>
                                   <div className="flex items-center gap-2">
-                            <span className="font-bold text-gray-700">
+                            <span className={`font-bold ${
+                                selectedPedido?.idPedidocab === pedidoItem.idPedidocab
+                                    ? "text-blue-900"
+                                    : "text-card-foreground"
+                            }`}>
                               {pedidoItem.monedaPedido === 'PEN' ? 'S/' : '$'} {Number(pedidoItem.totalPedido).toFixed(2)}
                             </span>
                                   </div>
@@ -171,7 +175,7 @@ export function GenerarGuiasModal({
                         ))}
                       </div>
                   ) : (
-                      <div className="flex flex-col items-center justify-center h-full text-gray-500">
+                      <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
                         <Package className="h-10 w-10 mb-2 opacity-50" />
                         <p>No se encontraron pedidos pendientes.</p>
                       </div>
@@ -197,7 +201,7 @@ export function GenerarGuiasModal({
               <>
                 <div className="flex items-center justify-between mb-2 px-1">
                   {!pedidoPreseleccionado ? (
-                      <Button variant="ghost" size="sm" onClick={handleBack} className="text-gray-500 hover:text-blue-600 pl-0">
+                      <Button variant="ghost" size="sm" onClick={handleBack} className="text-muted-foreground hover:text-blue-600 pl-0">
                         <ArrowLeft className="mr-1 h-4 w-4" /> Cambiar Pedido
                       </Button>
                   ) : <div />}
@@ -220,7 +224,7 @@ export function GenerarGuiasModal({
                     </TabsList>
                   </div>
 
-                  <div className="flex-1 p-6 bg-gray-50 overflow-y-auto">
+                  <div className="flex-1 p-6 bg-muted overflow-y-auto">
                     {detalles.length > 0 ? (
                         <TabsContent value="remision" className="m-0 h-full">
                           <Remision

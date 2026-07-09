@@ -92,21 +92,21 @@ export default function ModalBuscarAmortizacion({ open, onClose, onSelectEditar,
         <>
             <Dialog open={open} onOpenChange={v => { if (!v) onClose() }}>
                 <DialogContent className="max-w-[1060px] max-h-[90vh] flex flex-col p-0 gap-0">
-                    <DialogHeader className="px-5 pt-5 pb-3 border-b border-slate-200 flex-shrink-0">
+                    <DialogHeader className="px-5 pt-5 pb-3 border-b border-border flex-shrink-0">
                         <div className="flex items-center gap-3">
                             <div>
                                 <DialogTitle className="text-[15px]">Buscar Cobranza</DialogTitle>
-                                <DialogDescription className="text-xs text-slate-400 mt-0.5">
+                                <DialogDescription className="text-xs text-muted-foreground mt-0.5">
                                     Filtra por rango de fechas o texto libre
                                 </DialogDescription>
                             </div>
                         </div>
                     </DialogHeader>
 
-                    <div className="px-5 py-3 border-b border-slate-200 bg-slate-50 flex-shrink-0">
+                    <div className="px-5 py-3 border-b border-border bg-muted flex-shrink-0">
                         <div className="flex flex-wrap items-end gap-3">
                             <div className="flex flex-col gap-1 w-[140px]">
-                                <Label className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Fecha desde</Label>
+                                <Label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Fecha desde</Label>
                                 <Input
                                     type="date"
                                     className="h-8 text-xs"
@@ -116,7 +116,7 @@ export default function ModalBuscarAmortizacion({ open, onClose, onSelectEditar,
                                 />
                             </div>
                             <div className="flex flex-col gap-1 w-[140px]">
-                                <Label className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Fecha hasta</Label>
+                                <Label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Fecha hasta</Label>
                                 <Input
                                     type="date"
                                     className="h-8 text-xs"
@@ -126,7 +126,7 @@ export default function ModalBuscarAmortizacion({ open, onClose, onSelectEditar,
                                 />
                             </div>
                             <div className="flex flex-col gap-1 flex-1 min-w-[200px]">
-                                <Label className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Buscar texto</Label>
+                                <Label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Buscar texto</Label>
                                 <Input
                                     className="h-8 text-xs"
                                     placeholder="Cliente, planilla, vendedor, N° doc..."
@@ -149,34 +149,34 @@ export default function ModalBuscarAmortizacion({ open, onClose, onSelectEditar,
                     <div className="flex-1 overflow-auto">
                         <table className="w-full text-xs border-collapse">
                             <thead>
-                            <tr className="bg-slate-50 sticky top-0 z-10">
-                                <th className="text-left py-2.5 px-3 font-semibold text-slate-500 uppercase text-[10px] tracking-wider border-b">N° Planilla</th>
-                                <th className="text-left py-2.5 px-3 font-semibold text-slate-500 uppercase text-[10px] tracking-wider border-b">Cliente</th>
-                                <th className="text-left py-2.5 px-3 font-semibold text-slate-500 uppercase text-[10px] tracking-wider border-b">Tipo Doc.</th>
-                                <th className="text-left py-2.5 px-3 font-semibold text-slate-500 uppercase text-[10px] tracking-wider border-b">Serie-Número</th>
-                                <th className="text-left py-2.5 px-3 font-semibold text-slate-500 uppercase text-[10px] tracking-wider border-b">Fecha Cobro</th>
-                                <th className="text-left py-2.5 px-3 font-semibold text-slate-500 uppercase text-[10px] tracking-wider border-b">Importe</th>
-                                <th className="text-left py-2.5 px-3 font-semibold text-slate-500 uppercase text-[10px] tracking-wider border-b">Vendedor</th>
-                                <th className="text-center py-2.5 px-3 font-semibold text-slate-500 uppercase text-[10px] tracking-wider border-b">Acciones</th>
+                            <tr className="bg-muted sticky top-0 z-10">
+                                <th className="text-left py-2.5 px-3 font-semibold text-muted-foreground uppercase text-[10px] tracking-wider border-b">N° Planilla</th>
+                                <th className="text-left py-2.5 px-3 font-semibold text-muted-foreground uppercase text-[10px] tracking-wider border-b">Cliente</th>
+                                <th className="text-left py-2.5 px-3 font-semibold text-muted-foreground uppercase text-[10px] tracking-wider border-b">Tipo Doc.</th>
+                                <th className="text-left py-2.5 px-3 font-semibold text-muted-foreground uppercase text-[10px] tracking-wider border-b">Serie-Número</th>
+                                <th className="text-left py-2.5 px-3 font-semibold text-muted-foreground uppercase text-[10px] tracking-wider border-b">Fecha Cobro</th>
+                                <th className="text-left py-2.5 px-3 font-semibold text-muted-foreground uppercase text-[10px] tracking-wider border-b">Importe</th>
+                                <th className="text-left py-2.5 px-3 font-semibold text-muted-foreground uppercase text-[10px] tracking-wider border-b">Vendedor</th>
+                                <th className="text-center py-2.5 px-3 font-semibold text-muted-foreground uppercase text-[10px] tracking-wider border-b">Acciones</th>
                             </tr>
                             </thead>
                             <tbody>
                             {loading ? (
                                 <tr>
-                                    <td colSpan={8} className="text-center py-12 text-slate-400">
+                                    <td colSpan={8} className="text-center py-12 text-muted-foreground">
                                         <Loader2 className="h-6 w-6 animate-spin mx-auto mb-2" />
                                         Cargando registros...
                                     </td>
                                 </tr>
                             ) : data.length === 0 ? (
                                 <tr>
-                                    <td colSpan={8} className="text-center py-12 text-slate-400">
+                                    <td colSpan={8} className="text-center py-12 text-muted-foreground">
                                         <div className="text-3xl mb-2 opacity-40">📂</div>
                                         No se encontraron registros
                                     </td>
                                 </tr>
                             ) : data.map(r => (
-                                <tr key={r.Id_Amort_Clie} className="hover:bg-slate-50/60 border-b border-slate-100">
+                                <tr key={r.Id_Amort_Clie} className="hover:bg-muted/60 border-b border-border">
                                     <td className="py-2 px-3 font-semibold">{r.NroPlanilla || `#${r.Id_Amort_Clie}`}</td>
                                     <td className="py-2 px-3">{r.NombreCliente || r.Cod_Clie}</td>
                                     <td className="py-2 px-3">
@@ -187,7 +187,7 @@ export default function ModalBuscarAmortizacion({ open, onClose, onSelectEditar,
                                     <td className="py-2 px-3 font-mono text-[11px]">{r.SerieDoc}-{r.NumeroDoc}</td>
                                     <td className="py-2 px-3">{fmtFecha(r.Fecha_Mvto)}</td>
                                     <td className="py-2 px-3 font-medium">{fmtMoney(r.Importe_Amortiz)}</td>
-                                    <td className="py-2 px-3 text-slate-500">
+                                    <td className="py-2 px-3 text-muted-foreground">
                                         {r.NombreVendedor ? `${r.NombreVendedor} ${r.ApellidoVendedor || ''}`.trim() : r.Cod_Vend || '–'}
                                     </td>
                                     <td className="py-2 px-3">
@@ -232,8 +232,8 @@ export default function ModalBuscarAmortizacion({ open, onClose, onSelectEditar,
                         </table>
                     </div>
 
-                    <div className="px-5 py-3 border-t border-slate-200 bg-slate-50 flex items-center justify-between flex-shrink-0 rounded-b-lg">
-                        <span className="text-xs text-slate-400">{data.length} registro{data.length !== 1 ? 's' : ''}</span>
+                    <div className="px-5 py-3 border-t border-border bg-muted flex items-center justify-between flex-shrink-0 rounded-b-lg">
+                        <span className="text-xs text-muted-foreground">{data.length} registro{data.length !== 1 ? 's' : ''}</span>
                         <Button variant="outline" size="sm" className="text-xs h-7" onClick={onClose}>Cerrar</Button>
                     </div>
                 </DialogContent>

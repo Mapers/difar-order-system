@@ -45,7 +45,7 @@ export default function LotesModal({ open, onOpenChange, editingLotes, loadingLo
                             const split = (lote: { value: string }) => lote.value.split('|')
                             return (
                                 <Card key={productIndex}>
-                                    <CardHeader className="bg-gray-50 py-3">
+                                    <CardHeader className="bg-muted py-3">
                                         <CardTitle className="text-sm font-medium">
                                             {producto.prod_codigo} — {producto.prod_descripcion}
                                         </CardTitle>
@@ -67,7 +67,7 @@ export default function LotesModal({ open, onOpenChange, editingLotes, loadingLo
                                                             "flex items-center gap-3 rounded-lg border p-3 cursor-pointer transition-colors",
                                                             isSelected
                                                                 ? "border-blue-500 bg-blue-50"
-                                                                : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                                                                : "border-border hover:bg-muted"
                                                         )}
                                                     >
                                                         <RadioGroupItem
@@ -76,14 +76,14 @@ export default function LotesModal({ open, onOpenChange, editingLotes, loadingLo
                                                             className="shrink-0"
                                                         />
                                                         <div className="flex flex-1 flex-wrap gap-x-4 gap-y-1 text-sm">
-                                                            <span className={cn("font-semibold", isSelected ? "text-blue-700" : "text-gray-800")}>
+                                                            <span className={cn("font-semibold", isSelected ? "text-blue-700" : "text-foreground")}>
                                                                 {codigo}
                                                             </span>
-                                                            <span className="flex items-center gap-1 text-gray-500">
+                                                            <span className={cn("flex items-center gap-1", isSelected ? "text-blue-700" : "text-muted-foreground")}>
                                                                 <CalendarDays className="h-3.5 w-3.5" />
                                                                 Vence: {format(parseISO(fechaISO), "dd/MM/yyyy")}
                                                             </span>
-                                                            <span className="flex items-center gap-1 text-gray-500">
+                                                            <span className={cn("flex items-center gap-1", isSelected ? "text-blue-700" : "text-muted-foreground")}>
                                                                 <Boxes className="h-3.5 w-3.5" />
                                                                 Stock: {stock}
                                                             </span>

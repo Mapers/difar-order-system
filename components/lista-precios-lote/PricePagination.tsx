@@ -11,18 +11,18 @@ export const PricePagination = ({
     };
 
     return (
-        <div className="border-t bg-gray-50 px-4 py-3">
+        <div className="border-t bg-muted px-4 py-3">
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
 
                 {/* Lado izquierdo: Mostrar N registros */}
                 <div className="flex flex-col xs:flex-row xs:items-center gap-3">
                     <div className="flex items-center gap-2">
-                        <Label htmlFor="itemsPerPage" className="text-sm text-gray-700 whitespace-nowrap">Mostrar:</Label>
+                        <Label htmlFor="itemsPerPage" className="text-sm text-muted-foreground whitespace-nowrap">Mostrar:</Label>
                         <select
                             id="itemsPerPage"
                             value={itemsPerPage}
                             onChange={(e) => onItemsPerPageChange(Number(e.target.value))}
-                            className="border border-gray-300 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-20"
+                            className="border border-border rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-20"
                         >
                             <option value={10}>10</option>
                             <option value={20}>20</option>
@@ -30,7 +30,7 @@ export const PricePagination = ({
                             <option value={100}>100</option>
                         </select>
                     </div>
-                    <div className="text-sm text-gray-700 whitespace-nowrap">
+                    <div className="text-sm text-muted-foreground whitespace-nowrap">
                         Página <span className="font-medium">{currentPage}</span> de <span className="font-medium">{totalPages}</span>
                     </div>
                 </div>
@@ -70,7 +70,7 @@ export const PricePagination = ({
                             })}
 
                             {totalPages > 5 && currentPage < totalPages - 2 && (
-                                <span className="px-2 text-sm text-gray-500">...</span>
+                                <span className="px-2 text-sm text-muted-foreground">...</span>
                             )}
 
                             {totalPages > 5 && currentPage < totalPages - 1 && (
@@ -89,12 +89,12 @@ export const PricePagination = ({
                     {/* Selector móvil oculto en escritorio */}
                     {totalPages > 5 && (
                         <div className="flex items-center gap-2 sm:hidden w-full justify-center">
-                            <Label htmlFor="pageSelect" className="text-sm text-gray-700 whitespace-nowrap">Ir a:</Label>
+                            <Label htmlFor="pageSelect" className="text-sm text-muted-foreground whitespace-nowrap">Ir a:</Label>
                             <select
                                 id="pageSelect"
                                 value={currentPage}
                                 onChange={(e) => goToPage(Number(e.target.value))}
-                                className="border border-gray-300 rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="border border-border rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                             >
                                 {Array.from({ length: totalPages }, (_, i) => (
                                     <option key={i + 1} value={i + 1}>{i + 1}</option>

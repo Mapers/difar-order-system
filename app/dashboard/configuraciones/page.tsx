@@ -138,8 +138,8 @@ export default function ConfiguracionesPage() {
     return (
         <div className="grid gap-6">
             <div className="flex flex-col gap-2">
-                <h1 className="text-3xl font-bold tracking-tight text-gray-900">Configuraciones del Sistema</h1>
-                <p className="text-gray-500">Administra los parámetros base, secuenciales y guías del aplicativo</p>
+                <h1 className="text-3xl font-bold tracking-tight text-foreground">Configuraciones del Sistema</h1>
+                <p className="text-muted-foreground">Administra los parámetros base, secuenciales y guías del aplicativo</p>
             </div>
 
             <div className="flex flex-col lg:flex-row gap-6">
@@ -154,17 +154,17 @@ export default function ConfiguracionesPage() {
                                         <button
                                             key={section.id}
                                             onClick={() => setActiveSection(section.id)}
-                                            className={`w-full text-left p-4 hover:bg-gray-50 transition-colors border-l-4 ${
-                                                isActive ? activeBgMap[section.id] : 'border-transparent text-gray-700'
+                                            className={`w-full text-left p-4 hover:bg-muted transition-colors border-l-4 ${
+                                                isActive ? activeBgMap[section.id] : 'border-transparent text-muted-foreground'
                                             }`}
                                         >
                                             <div className="flex items-center gap-3">
-                                                <div className={`p-2 rounded-lg ${isActive ? activeIconBg[section.id] : 'bg-gray-100 text-gray-600'}`}>
+                                                <div className={`p-2 rounded-lg ${isActive ? activeIconBg[section.id] : 'bg-muted text-muted-foreground'}`}>
                                                     <Icon className="h-4 w-4" />
                                                 </div>
                                                 <div className="flex-1 min-w-0">
                                                     <div className="font-medium text-sm">{section.title}</div>
-                                                    <div className="text-xs text-gray-500 truncate">{section.description}</div>
+                                                    <div className="text-xs text-muted-foreground truncate">{section.description}</div>
                                                 </div>
                                             </div>
                                         </button>

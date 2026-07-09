@@ -166,35 +166,35 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ client }) => {
                     <CardContent className="space-y-3 pt-0">
                         <div className="grid grid-cols-2 gap-2 text-sm">
                             <div>
-                                <Label className="text-xs text-gray-500">Fecha</Label>
+                                <Label className="text-xs text-muted-foreground">Fecha</Label>
                                 <p className="font-medium">{formatDate(order.fecha_mvto)}</p>
                             </div>
                             <div>
-                                <Label className="text-xs text-gray-500">Lote</Label>
+                                <Label className="text-xs text-muted-foreground">Lote</Label>
                                 <p className="font-medium">{order.lote || 'N/A'}</p>
                             </div>
                         </div>
 
                         <div className="grid grid-cols-2 gap-2 text-sm">
                             <div>
-                                <Label className="text-xs text-gray-500">Vence</Label>
+                                <Label className="text-xs text-muted-foreground">Vence</Label>
                                 <p className="font-medium">{formatDate(order.vctoitem)}</p>
                             </div>
                             <div>
-                                <Label className="text-xs text-gray-500">Presentación</Label>
+                                <Label className="text-xs text-muted-foreground">Presentación</Label>
                                 <p className="font-medium">{order.presentacion}</p>
                             </div>
                         </div>
 
                         <div className="text-sm">
-                            <Label className="text-xs text-gray-500">Descripción</Label>
+                            <Label className="text-xs text-muted-foreground">Descripción</Label>
                             <p className="font-medium line-clamp-2" title={order.nombreitem}>
                                 {order.nombreitem}
                             </p>
                         </div>
 
                         <div className="flex items-center justify-between pt-2 border-t">
-                            <div className="flex items-center gap-1 text-sm text-gray-600">
+                            <div className="flex items-center gap-1 text-sm text-muted-foreground">
                                 <Package className="w-4 h-4 text-green-600" />
                                 <span>Cantidad:</span>
                             </div>
@@ -217,7 +217,7 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ client }) => {
                 >
                     <FileText className="w-6 h-6 text-blue-600" />
                     <div className="flex-1">
-                        <Label className="text-sm font-medium text-gray-700">Historial de Pedidos de {client.Nombre}</Label>
+                        <Label className="text-sm font-medium text-blue-900">Historial de Pedidos de {client.Nombre}</Label>
                         <p className="text-xs text-blue-600 mt-1">Click para ver historial</p>
                     </div>
                     <ChevronDown className="w-4 h-4 text-blue-600 rotate-[-90deg]" />
@@ -236,7 +236,7 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ client }) => {
                 </DialogHeader>
 
                 {/* Filtros */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 bg-gray-50 rounded-lg">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 bg-muted rounded-lg">
                     <div className="space-y-2">
                         <Label htmlFor="fechaInicio" className="text-sm font-medium">
                             Fecha Inicio
@@ -246,7 +246,7 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ client }) => {
                             id="fechaInicio"
                             value={fechaInicio}
                             onChange={(e) => setFechaInicio(e.target.value)}
-                            className="bg-white"
+                            className="bg-background"
                         />
                     </div>
                     <div className="space-y-2">
@@ -258,7 +258,7 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ client }) => {
                             id="fechaFin"
                             value={fechaFin}
                             onChange={(e) => setFechaFin(e.target.value)}
-                            className="bg-white"
+                            className="bg-background"
                         />
                     </div>
                     <div className="space-y-2">
@@ -266,14 +266,14 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ client }) => {
                             Buscar por Descripción
                         </Label>
                         <div className="relative">
-                            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+                            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                             <Input
                                 type="text"
                                 id="searchDescripcion"
                                 placeholder="Buscar producto..."
                                 value={searchDescripcion}
                                 onChange={(e) => setSearchDescripcion(e.target.value)}
-                                className="bg-white pl-8"
+                                className="bg-background pl-8"
                             />
                             {searchDescripcion && (
                                 <Button
@@ -315,8 +315,8 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ client }) => {
 
                         {/* Selector de vista - solo visible en móvil */}
                         <div className="sm:hidden flex items-center gap-2 text-xs">
-                            <span className="text-gray-600">Vista:</span>
-                            <div className="flex bg-white border rounded-md p-1">
+                            <span className="text-blue-900">Vista:</span>
+                            <div className="flex bg-background border rounded-md p-1">
                                 <div className="flex items-center gap-1 px-2 py-1 rounded bg-blue-100 text-blue-700">
                                     <Smartphone className="w-3 h-3" />
                                     <span>Tarjetas</span>
@@ -342,9 +342,9 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ client }) => {
                         </div>
                     </>
                 ) : (
-                    <div className="text-center py-8 text-gray-500">
-                        <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                        <h3 className="font-medium text-gray-900 mb-2">
+                    <div className="text-center py-8 text-muted-foreground">
+                        <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                        <h3 className="font-medium text-foreground mb-2">
                             {searchDescripcion ? 'No se encontraron resultados' : 'No se encontraron pedidos'}
                         </h3>
                         <p className="text-sm">

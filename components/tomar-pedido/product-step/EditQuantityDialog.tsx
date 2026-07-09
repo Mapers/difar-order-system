@@ -34,25 +34,25 @@ export default function EditQuantityDialog({
 
                 <div className="grid gap-4 py-2 sm:py-4">
                     <div className="space-y-4">
-                        <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
-                            <h4 className="font-medium text-sm text-gray-900 line-clamp-2">
+                        <div className="bg-muted p-3 rounded-lg border border-border">
+                            <h4 className="font-medium text-sm text-foreground line-clamp-2">
                                 {selectedItem.product.NombreItem}
                             </h4>
-                            <p className="text-xs text-gray-500 mt-1">
-                                Stock disponible: <span className="font-medium text-gray-700">{maxStock.toFixed(0)}</span>
+                            <p className="text-xs text-muted-foreground mt-1">
+                                Stock disponible: <span className="font-medium text-foreground">{maxStock.toFixed(0)}</span>
                             </p>
                         </div>
 
                         <div className="space-y-2">
                             <Label htmlFor="edit-quantity">Nueva Cantidad</Label>
-                            <div className={`flex items-center h-12 sm:h-11 rounded-lg border overflow-hidden transition-colors ${typeof editQuantity === 'number' && editQuantity >= maxStock ? 'bg-red-50/50 border-red-300' : 'bg-gray-50 border-gray-200'}`}>
+                            <div className={`flex items-center h-12 sm:h-11 rounded-lg border overflow-hidden transition-colors ${typeof editQuantity === 'number' && editQuantity >= maxStock ? 'bg-red-50/50 border-red-300' : 'bg-muted border-border'}`}>
                                 <button
                                     type="button"
                                     onClick={() => {
                                         const currentVal = typeof editQuantity === 'number' ? editQuantity : 1;
                                         if (currentVal > 1) setEditQuantity(currentVal - 1);
                                     }}
-                                    className="h-full px-4 sm:px-3 flex items-center justify-center transition-colors text-gray-500 hover:text-gray-700 hover:bg-gray-200 active:bg-gray-300"
+                                    className="h-full px-4 sm:px-3 flex items-center justify-center transition-colors text-muted-foreground hover:text-foreground hover:bg-muted active:bg-accent"
                                 >
                                     <Minus className="h-4 w-4 sm:h-5 sm:w-5" />
                                 </button>
@@ -73,7 +73,7 @@ export default function EditQuantityDialog({
                                     }}
                                     onBlur={() => { if (editQuantity === "" || editQuantity < 1) setEditQuantity(1) }}
                                     onKeyDown={(e) => { if (['e', 'E', '+', '-', '.'].includes(e.key)) e.preventDefault() }}
-                                    className="w-full bg-transparent outline-none text-center text-lg sm:text-base font-semibold text-gray-900 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                    className="w-full bg-transparent outline-none text-center text-lg sm:text-base font-semibold text-foreground [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                                 />
 
                                 <button
@@ -83,7 +83,7 @@ export default function EditQuantityDialog({
                                         const currentVal = typeof editQuantity === 'number' ? editQuantity : 1;
                                         setEditQuantity(Math.min(currentVal + 1, maxStock))
                                     }}
-                                    className="h-full px-4 sm:px-3 flex items-center justify-center transition-colors text-gray-500 hover:text-blue-600 hover:bg-blue-100 active:bg-blue-200 disabled:text-gray-300 disabled:bg-transparent"
+                                    className="h-full px-4 sm:px-3 flex items-center justify-center transition-colors text-muted-foreground hover:text-blue-600 hover:bg-blue-100 active:bg-blue-200 disabled:text-muted-foreground/50 disabled:bg-transparent"
                                 >
                                     <Plus className="h-4 w-4 sm:h-5 sm:w-5" />
                                 </button>

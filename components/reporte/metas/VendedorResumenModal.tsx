@@ -40,7 +40,7 @@ export default function VendedorResumenModal({ open, onClose, vendedor, idCiclo 
     return (
         <Dialog open={open} onOpenChange={onClose}>
             <DialogContent className="max-w-lg max-h-[85vh] overflow-hidden flex flex-col p-0">
-                <div className="p-5 pb-4 border-b border-slate-200">
+                <div className="p-5 pb-4 border-b border-border">
                     <div className="flex items-center justify-between gap-3">
                         <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold"
@@ -48,14 +48,14 @@ export default function VendedorResumenModal({ open, onClose, vendedor, idCiclo 
                                 {getInitials(vendedor.nombre_vendedor || vendedor.cod_vendedor)}
                             </div>
                             <div>
-                                <DialogTitle className="text-base font-bold text-slate-800">
+                                <DialogTitle className="text-base font-bold text-foreground">
                                     {vendedor.nombre_vendedor || vendedor.cod_vendedor}
                                 </DialogTitle>
                                 <div className="flex items-center gap-2 mt-0.5">
                                     <Badge variant="outline" className="text-[10px] bg-sky-50 text-sky-700 border-sky-200">
                                         Cod: {vendedor.cod_vendedor}
                                     </Badge>
-                                    <span className="text-[10px] text-slate-400">{vendedor.total_labs} laboratorio{vendedor.total_labs === 1 ? '' : 's'}</span>
+                                    <span className="text-[10px] text-muted-foreground">{vendedor.total_labs} laboratorio{vendedor.total_labs === 1 ? '' : 's'}</span>
                                 </div>
                             </div>
                         </div>
@@ -63,33 +63,33 @@ export default function VendedorResumenModal({ open, onClose, vendedor, idCiclo 
                     </div>
                 </div>
 
-                <div className="grid grid-cols-3 gap-3 p-4 bg-slate-50 border-b border-slate-200">
-                    <div className="bg-white rounded-lg p-3 border border-slate-200">
-                        <p className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Venta Total</p>
+                <div className="grid grid-cols-3 gap-3 p-4 bg-muted border-b border-border">
+                    <div className="bg-background rounded-lg p-3 border border-border">
+                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Venta Total</p>
                         <p className="text-lg font-bold mt-0.5" style={{ color: c1 }}>
                             {fmtMoney(Number(vendedor.venta_total))}
                         </p>
-                        <p className="text-[10px] text-slate-400 mt-0.5">
+                        <p className="text-[10px] text-muted-foreground mt-0.5">
                             Cuota {fmtMoney(Number(vendedor.cuota_total))} · {pct}%
                         </p>
                         <ProgressBar pct={pct} height="h-1" className="mt-1.5" />
                     </div>
 
-                    <div className="bg-white rounded-lg p-3 border border-slate-200">
-                        <p className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Labs en meta</p>
+                    <div className="bg-background rounded-lg p-3 border border-border">
+                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Labs en meta</p>
                         <p className="text-lg font-bold mt-0.5 text-emerald-600">{vendedor.labs_en_meta}</p>
-                        <p className="text-[10px] text-slate-400 mt-0.5">≥ 80% avance</p>
+                        <p className="text-[10px] text-muted-foreground mt-0.5">≥ 80% avance</p>
                     </div>
 
-                    <div className="bg-white rounded-lg p-3 border border-slate-200">
-                        <p className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Labs bajo</p>
+                    <div className="bg-background rounded-lg p-3 border border-border">
+                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Labs bajo</p>
                         <p className="text-lg font-bold mt-0.5 text-red-500">{vendedor.labs_bajo}</p>
                         <p className="text-[10px] text-amber-500 mt-0.5">{vendedor.labs_riesgo} en riesgo</p>
                     </div>
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-4 space-y-2">
-                    <div className="grid grid-cols-[2fr_80px_80px_60px] gap-2 px-3 py-1.5 text-[9px] uppercase tracking-wider text-slate-400 font-semibold">
+                    <div className="grid grid-cols-[2fr_80px_80px_60px] gap-2 px-3 py-1.5 text-[9px] uppercase tracking-wider text-muted-foreground font-semibold">
                         <span>Laboratorio</span>
                         <span className="text-right">Venta S/</span>
                         <span className="text-right">Cuota S/</span>
@@ -101,7 +101,7 @@ export default function VendedorResumenModal({ open, onClose, vendedor, idCiclo 
                             <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-sky-600" />
                         </div>
                     ) : labs.length === 0 ? (
-                        <div className="text-center text-slate-400 text-sm py-8">
+                        <div className="text-center text-muted-foreground text-sm py-8">
                             Sin detalle de laboratorios
                         </div>
                     ) : (
@@ -113,14 +113,14 @@ export default function VendedorResumenModal({ open, onClose, vendedor, idCiclo 
                                 const labColor = getLabColor(idx);
                                 return (
                                     <div key={lab.id_lab}
-                                         className="grid grid-cols-[2fr_80px_80px_60px] gap-2 px-3 py-2.5 rounded-lg bg-slate-50 hover:bg-slate-100 items-center transition-colors"
+                                         className="grid grid-cols-[2fr_80px_80px_60px] gap-2 px-3 py-2.5 rounded-lg bg-muted hover:bg-muted/70 items-center transition-colors"
                                     >
                                         <div className="flex items-center gap-2 min-w-0">
                                             <div className="w-5 h-5 rounded-md flex items-center justify-center text-[9px] font-bold shrink-0"
                                                  style={{ background: `${labColor}22`, color: labColor }}>
                                                 {getInitials(lab.nombre_lab || String(lab.id_lab))}
                                             </div>
-                                            <p className="text-xs font-medium text-slate-800 truncate">
+                                            <p className="text-xs font-medium text-foreground truncate">
                                                 {lab.nombre_lab || `Lab ${lab.id_lab}`}
                                             </p>
                                         </div>
@@ -128,7 +128,7 @@ export default function VendedorResumenModal({ open, onClose, vendedor, idCiclo 
                                             <p className="text-xs font-semibold">{fmtMoney(Number(lab.venta_real))}</p>
                                             <ProgressBar pct={Math.min(labPct, 100)} height="h-[3px]" className="mt-0.5" />
                                         </div>
-                                        <div className="text-right text-[11px] text-slate-400">
+                                        <div className="text-right text-[11px] text-muted-foreground">
                                             {fmtMoney(Number(lab.meta_monto))}
                                         </div>
                                         <div className="text-center">

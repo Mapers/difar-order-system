@@ -144,17 +144,17 @@ export default function ClientConditionsSection({ onOpenModalChange }: ClientCon
                             <CardContent className="p-4">
                                 <div className="flex justify-between items-start mb-2">
                                     <div className="flex-1 min-w-0">
-                                        <h3 className="font-semibold text-sm text-gray-900 truncate">{item.cliente_nombre}</h3>
-                                        <p className="text-xs text-gray-500">RUC: {item.RUC}</p>
+                                        <h3 className="font-semibold text-sm text-card-foreground truncate">{item.cliente_nombre}</h3>
+                                        <p className="text-xs text-muted-foreground">RUC: {item.RUC}</p>
                                     </div>
                                     <Badge variant={item.estado === 'A' ? "default" : "secondary"} className="ml-2">
                                         {item.estado === 'A' ? "Activo" : "Inactivo"}
                                     </Badge>
                                 </div>
 
-                                <div className="bg-slate-50 border border-slate-100 p-2 rounded-md mb-3 mt-2">
-                                    <p className="text-xs text-slate-500 font-semibold mb-0.5">Condición de Pago:</p>
-                                    <p className="text-sm font-medium text-slate-800">{item.condicion_nombre}</p>
+                                <div className="bg-muted border border-border p-2 rounded-md mb-3 mt-2">
+                                    <p className="text-xs text-muted-foreground font-semibold mb-0.5">Condición de Pago:</p>
+                                    <p className="text-sm font-medium text-foreground">{item.condicion_nombre}</p>
                                 </div>
 
                                 <div className="flex gap-2">
@@ -171,8 +171,8 @@ export default function ClientConditionsSection({ onOpenModalChange }: ClientCon
                 </div>
             ) : (
                 <div className="text-center py-8">
-                    <CreditCard className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">No hay condiciones asignadas a clientes</h3>
+                    <CreditCard className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-foreground mb-2">No hay condiciones asignadas a clientes</h3>
                 </div>
             )}
 
@@ -189,7 +189,7 @@ export default function ClientConditionsSection({ onOpenModalChange }: ClientCon
                                 <Label>Cliente *</Label>
                                 <Popover open={openClient} onOpenChange={setOpenClient}>
                                     <PopoverTrigger asChild>
-                                        <Button variant="outline" role="combobox" className={cn("justify-between w-full font-normal h-10 bg-white", errors.cliente && "border-red-500")}>
+                                        <Button variant="outline" role="combobox" className={cn("justify-between w-full font-normal h-10 bg-background", errors.cliente && "border-red-500")}>
                                             <span className="truncate">
                                                 {form.cliente_codigo
                                                     ? clientOptions.find(c => c.codigo === form.cliente_codigo)?.Nombre
@@ -230,7 +230,7 @@ export default function ClientConditionsSection({ onOpenModalChange }: ClientCon
                             <Label>Condición de Pago *</Label>
                             <Popover open={openCondition} onOpenChange={setOpenCondition}>
                                 <PopoverTrigger asChild>
-                                    <Button variant="outline" role="combobox" className={cn("justify-between w-full font-normal h-10 bg-white", errors.condicion && "border-red-500")}>
+                                    <Button variant="outline" role="combobox" className={cn("justify-between w-full font-normal h-10 bg-background", errors.condicion && "border-red-500")}>
                                         <span className="truncate">
                                             {form.condicion_id ? form.condicion_nombre : "Seleccionar Condición..."}
                                         </span>

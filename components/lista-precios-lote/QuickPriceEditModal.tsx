@@ -100,13 +100,13 @@ export const QuickPriceEditModal = ({ filteredData = [] }: QuickPriceEditModalPr
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button variant="outline" className="gap-2 bg-blue-50 text-blue-700 hover:bg-blue-100 border-blue-200">
+                <Button variant="outline" className="gap-2 bg-blue-50 text-blue-700 hover:bg-blue-100 border-blue-200 dark:bg-blue-950/30 dark:text-blue-400 dark:hover:bg-blue-900/40 dark:border-blue-900/50">
                     <Edit3 className="h-4 w-4" /> Edición Rápida ({filteredData.length})
                 </Button>
             </DialogTrigger>
             <DialogContent className="max-w-7xl max-h-[90vh] overflow-hidden flex flex-col">
                 <DialogHeader>
-                    <DialogTitle className="text-xl flex items-center gap-2 text-blue-800">
+                    <DialogTitle className="text-xl flex items-center gap-2 text-blue-800 dark:text-blue-400">
                         <Edit3 className="h-5 w-5" /> Edición Rápida de Precios
                     </DialogTitle>
                     <DialogDescription>
@@ -116,22 +116,22 @@ export const QuickPriceEditModal = ({ filteredData = [] }: QuickPriceEditModalPr
 
                 <div className="flex-1 overflow-auto border rounded-md shadow-sm mt-4">
                     <Table className="relative">
-                        <TableHeader className="sticky top-0 bg-slate-100 shadow-sm z-10">
+                        <TableHeader className="sticky top-0 bg-muted shadow-sm z-10">
                             <TableRow>
-                                <TableHead className="w-[120px] font-bold text-slate-700">CÓDIGO</TableHead>
-                                <TableHead className="min-w-[200px] font-bold text-slate-700">NOMBRE</TableHead>
-                                <TableHead className="font-bold text-slate-700">PRESENTACIÓN</TableHead>
-                                <TableHead className="w-[120px] font-bold text-slate-700 bg-slate-200/50">P. CONTABLE</TableHead>
-                                <TableHead className="w-[120px] font-bold text-blue-700 bg-blue-50">P. CRÉDITO</TableHead>
-                                <TableHead className="w-[120px] font-bold text-slate-700 bg-slate-200/50">BONIF. CONT.</TableHead>
-                                <TableHead className="w-[120px] font-bold text-blue-700 bg-blue-50">BONIF. CRÉDITO</TableHead>
-                                <TableHead className="w-[80px] text-center font-bold text-slate-700">ACCIÓN</TableHead>
+                                <TableHead className="w-[120px] font-bold text-muted-foreground">CÓDIGO</TableHead>
+                                <TableHead className="min-w-[200px] font-bold text-muted-foreground">NOMBRE</TableHead>
+                                <TableHead className="font-bold text-muted-foreground">PRESENTACIÓN</TableHead>
+                                <TableHead className="w-[120px] font-bold text-muted-foreground bg-muted-foreground/10">P. CONTABLE</TableHead>
+                                <TableHead className="w-[120px] font-bold text-blue-700 bg-blue-50 dark:text-blue-400 dark:bg-blue-950/30">P. CRÉDITO</TableHead>
+                                <TableHead className="w-[120px] font-bold text-muted-foreground bg-muted-foreground/10">BONIF. CONT.</TableHead>
+                                <TableHead className="w-[120px] font-bold text-blue-700 bg-blue-50 dark:text-blue-400 dark:bg-blue-950/30">BONIF. CRÉDITO</TableHead>
+                                <TableHead className="w-[80px] text-center font-bold text-muted-foreground">ACCIÓN</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {rows.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={8} className="text-center py-8 text-gray-500">
+                                    <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                                         No hay productos filtrados para editar.
                                     </TableCell>
                                 </TableRow>
@@ -144,46 +144,46 @@ export const QuickPriceEditModal = ({ filteredData = [] }: QuickPriceEditModalPr
                                     const bContable = (bCreditoVal * 0.97).toFixed(2);
 
                                     return (
-                                        <TableRow key={row.codArticulo} className="hover:bg-slate-50 transition-colors">
-                                            <TableCell className="font-mono text-xs font-medium text-slate-600">
+                                        <TableRow key={row.codArticulo} className="hover:bg-muted transition-colors">
+                                            <TableCell className="font-mono text-xs font-medium text-muted-foreground">
                                                 {row.codArticulo}
                                             </TableCell>
-                                            <TableCell className="text-xs font-semibold text-slate-800">
+                                            <TableCell className="text-xs font-semibold text-foreground">
                                                 {row.nombre}
                                             </TableCell>
-                                            <TableCell className="text-xs text-slate-600">
+                                            <TableCell className="text-xs text-muted-foreground">
                                                 {row.presentacion}
                                             </TableCell>
 
-                                            <TableCell className="bg-slate-50">
-                                                <div className="text-sm font-medium text-slate-600 text-right pr-2">
+                                            <TableCell className="bg-muted">
+                                                <div className="text-sm font-medium text-muted-foreground text-right pr-2">
                                                     S/ {pContable}
                                                 </div>
                                             </TableCell>
 
-                                            <TableCell className="bg-blue-50/30 p-1">
+                                            <TableCell className="bg-blue-50/30 p-1 dark:bg-blue-950/20">
                                                 <Input
                                                     type="number"
                                                     step="0.01"
                                                     value={row.precioCredito}
                                                     onChange={(e) => handleInputChange(idx, 'precioCredito', e.target.value)}
-                                                    className="h-8 text-right font-semibold text-blue-800 border-blue-200 focus-visible:ring-blue-500 bg-white"
+                                                    className="h-8 text-right font-semibold text-blue-800 border-blue-200 focus-visible:ring-blue-500 bg-background dark:text-blue-300 dark:border-blue-800"
                                                 />
                                             </TableCell>
 
-                                            <TableCell className="bg-slate-50">
-                                                <div className="text-sm font-medium text-slate-600 text-right pr-2">
+                                            <TableCell className="bg-muted">
+                                                <div className="text-sm font-medium text-muted-foreground text-right pr-2">
                                                     S/ {bContable}
                                                 </div>
                                             </TableCell>
 
-                                            <TableCell className="bg-blue-50/30 p-1">
+                                            <TableCell className="bg-blue-50/30 p-1 dark:bg-blue-950/20">
                                                 <Input
                                                     type="number"
                                                     step="0.01"
                                                     value={row.bonifCredito}
                                                     onChange={(e) => handleInputChange(idx, 'bonifCredito', e.target.value)}
-                                                    className="h-8 text-right font-semibold text-blue-800 border-blue-200 focus-visible:ring-blue-500 bg-white"
+                                                    className="h-8 text-right font-semibold text-blue-800 border-blue-200 focus-visible:ring-blue-500 bg-background dark:text-blue-300 dark:border-blue-800"
                                                 />
                                             </TableCell>
 
@@ -197,13 +197,13 @@ export const QuickPriceEditModal = ({ filteredData = [] }: QuickPriceEditModalPr
                                                     title="Guardar fila"
                                                 >
                                                     {row.isSaving ? (
-                                                        <Loader2 className="h-4 w-4 animate-spin text-slate-500" />
+                                                        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
                                                     ) : row.isSuccess ? (
                                                         <CheckCircle2 className="h-4 w-4" />
                                                     ) : row.error ? (
                                                         <AlertCircle className="h-4 w-4" />
                                                     ) : (
-                                                        <Save className="h-4 w-4 text-blue-600" />
+                                                        <Save className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                                                     )}
                                                 </Button>
                                             </TableCell>

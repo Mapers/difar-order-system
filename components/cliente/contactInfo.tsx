@@ -71,11 +71,11 @@ const ContactInfo: React.FC<ClientRowProps> = ({
               />
           ) : (
               <>
-                <p className="text-sm text-gray-900">{text}</p>
+                <p className="text-sm text-foreground">{text}</p>
                 {isLong && (
                     <button
                         onClick={() => setShowFullDireccion(!showFullDireccion)}
-                        className="ml-1 text-gray-600 hover:text-black"
+                        className="ml-1 text-muted-foreground hover:text-foreground"
                         type="button"
                     >
                       <ChevronDown
@@ -96,12 +96,12 @@ const ContactInfo: React.FC<ClientRowProps> = ({
       : client.Dirección?.slice(0, 20) + '...';
 
     return (
-      <p className="text-sm text-gray-900 flex items-center gap-1">
+      <p className="text-sm text-green-900 flex items-center gap-1">
         {text}
         {isLong && (
           <button
             onClick={() => setShowFullDireccion(!showFullDireccion)}
-            className="ml-1 text-gray-600 hover:text-black"
+            className="ml-1 text-muted-foreground hover:text-foreground"
             type="button"
           >
             <ChevronDown
@@ -117,7 +117,7 @@ const ContactInfo: React.FC<ClientRowProps> = ({
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       {/* Contact Information */}
       <div className="space-y-4">
-        <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+        <h3 className="font-semibold text-foreground flex items-center gap-2">
           <Phone className="w-4 h-4 text-blue-600" />
           Información de Contacto
         </h3>
@@ -125,7 +125,7 @@ const ContactInfo: React.FC<ClientRowProps> = ({
         <div className="space-y-3">
           <div className="p-3 bg-blue-50 rounded-lg">
             <div className="flex items-center justify-between mb-2">
-              <Label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+              <Label className="text-sm font-medium text-blue-900 flex items-center gap-2">
                 <Phone className="w-5 h-5 text-blue-600" />
                 Teléfono
               </Label>
@@ -167,7 +167,7 @@ const ContactInfo: React.FC<ClientRowProps> = ({
                     autoFocus
                 />
             ) : (
-                <p className="text-sm text-gray-900">{client.telefono ?? '+51 ---------'}</p>
+                <p className="text-sm text-blue-900">{client.telefono ?? '+51 ---------'}</p>
             )}
           </div>
 
@@ -188,7 +188,7 @@ const ContactInfo: React.FC<ClientRowProps> = ({
 
       {/* Delivery Information */}
       <div className="space-y-4">
-        <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+        <h3 className="font-semibold text-foreground flex items-center gap-2">
           <MapPin className="w-4 h-4 text-green-600" />
           Información de Entrega
         </h3>
@@ -196,7 +196,7 @@ const ContactInfo: React.FC<ClientRowProps> = ({
         <div className="space-y-3">
           <div className="p-3 bg-green-50 rounded-lg">
             <div className="flex items-start justify-between mb-2">
-              <Label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+              <Label className="text-sm font-medium text-green-900 flex items-center gap-2">
                 <MapPin className="w-4 h-4 text-green-600" />
                 Dirección
               </Label>

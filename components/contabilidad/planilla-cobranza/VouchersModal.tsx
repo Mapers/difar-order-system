@@ -48,7 +48,7 @@ export function VouchersModal({ open, onOpenChange, numeroPlanilla, vouchers, ba
 
                 <div className="flex-1 overflow-y-auto px-6 py-4">
                     {total === 0 ? (
-                        <div className="flex flex-col items-center justify-center h-40 gap-3 text-slate-400">
+                        <div className="flex flex-col items-center justify-center h-40 gap-3 text-muted-foreground">
                             <Paperclip className="h-10 w-10 opacity-30" />
                             <p className="text-sm">Sin vouchers para esta planilla</p>
                         </div>
@@ -62,11 +62,11 @@ export function VouchersModal({ open, onOpenChange, numeroPlanilla, vouchers, ba
                                 return (
                                     <div
                                         key={v.id}
-                                        className="flex flex-col gap-2 p-2 border border-slate-200 rounded-xl bg-slate-50 hover:border-sky-300 transition-colors"
+                                        className="flex flex-col gap-2 p-2 border border-border rounded-xl bg-muted hover:border-sky-300 transition-colors"
                                     >
-                                        <div className="w-full aspect-square rounded-lg overflow-hidden bg-white border border-slate-100 flex items-center justify-center">
+                                        <div className="w-full aspect-square rounded-lg overflow-hidden bg-background border border-border flex items-center justify-center">
                                             {esPdf ? (
-                                                <div className="flex flex-col items-center gap-1 text-slate-400">
+                                                <div className="flex flex-col items-center gap-1 text-muted-foreground">
                                                     <FileText className="h-10 w-10" />
                                                     <span className="text-[10px] font-medium">PDF</span>
                                                 </div>
@@ -93,7 +93,7 @@ export function VouchersModal({ open, onOpenChange, numeroPlanilla, vouchers, ba
                                                     </Badge>
                                                 )}
                                             </div>
-                                            <p className="text-[10px] text-slate-400 truncate">{fmtFecha(v.fecha_subida)}</p>
+                                            <p className="text-[10px] text-muted-foreground truncate">{fmtFecha(v.fecha_subida)}</p>
                                         </div>
 
                                         <a

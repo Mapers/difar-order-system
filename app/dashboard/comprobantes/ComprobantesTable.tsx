@@ -80,8 +80,8 @@ export function ComprobantesTable({
         if (comprobante.estado_correlativo === 'LIBRE') {
             return {
                 label: 'LIBRE',
-                cellBg: 'bg-slate-100',
-                textColor: 'text-slate-500',
+                cellBg: 'bg-muted',
+                textColor: 'text-muted-foreground',
                 icon: <Lock className="h-3.5 w-3.5 mr-1 opacity-60" />
             }
         }
@@ -89,8 +89,8 @@ export function ComprobantesTable({
         if (comprobante.tipo_comprobante === null) {
             return {
                 label: comprobante?.estado || '',
-                cellBg: 'bg-gray-50',
-                textColor: 'text-gray-700',
+                cellBg: 'bg-muted',
+                textColor: 'text-muted-foreground',
             }
         }
 
@@ -190,24 +190,24 @@ export function ComprobantesTable({
     return (
         <>
             <div className="hidden lg:block">
-                <Card className="bg-white shadow-sm">
+                <Card className="bg-background shadow-sm">
                     <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-200">
-                            <thead className="bg-gray-50">
+                        <table className="min-w-full divide-y divide-border">
+                            <thead className="bg-muted">
                             <tr>
-                                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha</th>
-                                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tipo</th>
-                                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Serie/Número</th>
-                                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Almacén</th>
-                                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Vendedor</th>
-                                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cliente</th>
-                                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Documento</th>
-                                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total</th>
-                                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estado</th>
-                                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Acciones</th>
+                                <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Fecha</th>
+                                <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Tipo</th>
+                                <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Serie/Número</th>
+                                <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Almacén</th>
+                                <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Vendedor</th>
+                                <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Cliente</th>
+                                <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Documento</th>
+                                <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Total</th>
+                                <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Estado</th>
+                                <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Acciones</th>
                             </tr>
                             </thead>
-                            <tbody className="bg-white divide-y divide-gray-200">
+                            <tbody className="bg-background divide-y divide-border">
                             {comprobantes.length > 0 ? (
                                 comprobantes.map((comprobante) => (
                                     <tr key={`${comprobante.serie}-${comprobante.numero}`}
@@ -259,10 +259,10 @@ export function ComprobantesTable({
                                                         </DropdownMenuTrigger>
                                                         <DropdownMenuContent align="end" className="w-56">
                                                             <DropdownMenuItem onClick={() => handleViewJson('JSON Solicitud (Request)', comprobante.raw_request!)}>
-                                                                <Code className="mr-2 h-4 w-4 text-gray-500" /> JSON Solicitud
+                                                                <Code className="mr-2 h-4 w-4 text-muted-foreground" /> JSON Solicitud
                                                             </DropdownMenuItem>
                                                             <DropdownMenuItem onClick={() => handleViewJson('JSON Respuesta (Response)', comprobante.raw_response!)}>
-                                                                <FileJson className="mr-2 h-4 w-4 text-gray-500" /> JSON Respuesta
+                                                                <FileJson className="mr-2 h-4 w-4 text-muted-foreground" /> JSON Respuesta
                                                             </DropdownMenuItem>
                                                             {isAdmin && (
                                                                 <>
@@ -318,7 +318,7 @@ export function ComprobantesTable({
                                     </tr>
                                 ))
                             ) : (
-                                <tr><td colSpan={10} className="text-center py-8 text-gray-500">No se encontraron comprobantes</td></tr>
+                                <tr><td colSpan={10} className="text-center py-8 text-muted-foreground">No se encontraron comprobantes</td></tr>
                             )}
                             </tbody>
                         </table>
@@ -330,30 +330,30 @@ export function ComprobantesTable({
                 {comprobantes.length > 0 ? (
                     comprobantes.map((comprobante) => (
                         <Card key={`${comprobante.serie}-${comprobante.numero}`}
-                              className={`border ${esLibre(comprobante) ? 'border-slate-200 opacity-60' : 'border-gray-200'}`}>
+                              className={`border border-border ${esLibre(comprobante) ? 'opacity-60' : ''}`}>
                             <CardContent className="p-4">
                                 <div className="space-y-3">
                                     <div className="flex justify-between items-start">
                                         <div>
                                             <div className="flex items-center gap-2 mb-1">
-                                                <span className="font-semibold text-gray-900">
+                                                <span className="font-semibold text-card-foreground">
                                                     {getTipoComprobante(comprobante.serie)} {comprobante.serie}-{comprobante.numero}
                                                 </span>
                                                 <EstadoCell comprobante={comprobante} mobile />
                                             </div>
-                                            <p className="text-sm text-gray-600">
+                                            <p className="text-sm text-muted-foreground">
                                                 {comprobante.fecha_envio
                                                     ? format(parseISO(comprobante.fecha_envio), "dd/MM/yyyy")
                                                     : '—'}
                                             </p>
                                         </div>
                                         <div className="text-right">
-                                            <p className="text-lg font-bold text-gray-900">
+                                            <p className="text-lg font-bold text-card-foreground">
                                                 {comprobante.total != null
                                                     ? `${comprobante.moneda === 1 ? 'S/ ' : '$ '}${Number(comprobante.total).toFixed(2)}`
                                                     : '—'}
                                             </p>
-                                            <p className="text-xs text-gray-500">Total</p>
+                                            <p className="text-xs text-muted-foreground">Total</p>
                                         </div>
                                     </div>
 
@@ -361,16 +361,16 @@ export function ComprobantesTable({
                                         <>
                                             <div className="border-t pt-3 w-full overflow-hidden">
                                                 {comprobante.Almacen && (
-                                                    <p className="text-xs text-gray-500 mb-0.5">Almacén: {comprobante.Almacen}</p>
+                                                    <p className="text-xs text-muted-foreground mb-0.5">Almacén: {comprobante.Almacen}</p>
                                                 )}
                                                 {comprobante.Vendedor && (
-                                                    <p className="text-xs text-gray-500 mb-0.5">Vend: {comprobante.Vendedor}</p>
+                                                    <p className="text-xs text-muted-foreground mb-0.5">Vend: {comprobante.Vendedor}</p>
                                                 )}
-                                                <p className="font-medium text-gray-900 break-words line-clamp-2"
+                                                <p className="font-medium text-card-foreground break-words line-clamp-2"
                                                    title={comprobante.cliente_denominacion ?? ''}>
                                                     {comprobante.cliente_denominacion ?? '—'}
                                                 </p>
-                                                <p className="text-sm text-gray-600 break-words mt-0.5">
+                                                <p className="text-sm text-muted-foreground break-words mt-0.5">
                                                     {comprobante.cliente_numdoc ?? '—'}
                                                 </p>
                                             </div>
@@ -399,10 +399,10 @@ export function ComprobantesTable({
                                                             </DropdownMenuItem>
                                                         )}
                                                         <DropdownMenuItem onClick={() => handleViewJson('JSON Solicitud', comprobante.raw_request!)}>
-                                                            <Code className="mr-2 h-4 w-4 text-gray-500" /> JSON Solicitud
+                                                            <Code className="mr-2 h-4 w-4 text-muted-foreground" /> JSON Solicitud
                                                         </DropdownMenuItem>
                                                         <DropdownMenuItem onClick={() => handleViewJson('JSON Respuesta', comprobante.raw_response!)}>
-                                                            <FileJson className="mr-2 h-4 w-4 text-gray-500" /> JSON Respuesta
+                                                            <FileJson className="mr-2 h-4 w-4 text-muted-foreground" /> JSON Respuesta
                                                         </DropdownMenuItem>
                                                         {isAdmin && (
                                                             <>
@@ -447,7 +447,7 @@ export function ComprobantesTable({
                         </Card>
                     ))
                 ) : (
-                    <div className="text-center py-8 text-gray-500">No se encontraron comprobantes</div>
+                    <div className="text-center py-8 text-muted-foreground">No se encontraron comprobantes</div>
                 )}
             </div>
 

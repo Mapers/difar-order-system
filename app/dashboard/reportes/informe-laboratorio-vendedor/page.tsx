@@ -219,12 +219,12 @@ export default function LabSellerReportPage() {
     return (
         <div className="grid gap-6 p-4 md:p-6">
             <div className="flex flex-col gap-2">
-                <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-gray-900">Ventas por Vendedor</h1>
-                <p className="text-sm md:text-base text-gray-500">Consulta las ventas agrupadas por laboratorio y vendedor del mes seleccionado.</p>
+                <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">Ventas por Vendedor</h1>
+                <p className="text-sm md:text-base text-muted-foreground">Consulta las ventas agrupadas por laboratorio y vendedor del mes seleccionado.</p>
             </div>
 
             <Card className="shadow-md">
-                <CardHeader className="bg-slate-50 border-b border-slate-200 p-4 md:p-5">
+                <CardHeader className="bg-muted border-b border-border p-4 md:p-5">
                     <div className="flex flex-col gap-4">
                         {/* Fila de filtros */}
                         <div className={cn(
@@ -233,12 +233,12 @@ export default function LabSellerReportPage() {
                         )}>
                             {/* Periodo */}
                             <div className="flex flex-col gap-1.5 min-w-0">
-                                <label className="text-sm font-semibold flex items-center gap-2 text-slate-700">
+                                <label className="text-sm font-semibold flex items-center gap-2 text-foreground">
                                     <CalendarIcon className="w-4 h-4 shrink-0"/> Periodo (Mes y Año)
                                 </label>
                                 <Popover>
                                     <PopoverTrigger asChild>
-                                        <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal bg-white h-10", !selectedDate && "text-muted-foreground")}>
+                                        <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal bg-background h-10", !selectedDate && "text-muted-foreground")}>
                                             <CalendarIcon className="mr-2 h-4 w-4 opacity-50 shrink-0" />
                                             <span className="truncate">{selectedDate ? format(selectedDate, "MMMM yyyy", { locale: es }).replace(/^\w/, (c) => c.toUpperCase()) : "Seleccionar mes"}</span>
                                         </Button>
@@ -251,12 +251,12 @@ export default function LabSellerReportPage() {
 
                             {/* Laboratorios */}
                             <div className="flex flex-col gap-1.5 min-w-0">
-                                <label className="text-sm font-semibold flex items-center gap-2 text-slate-700">
+                                <label className="text-sm font-semibold flex items-center gap-2 text-foreground">
                                     <FlaskConical className="w-4 h-4 shrink-0"/> Laboratorios
                                 </label>
                                 <Popover open={openLab} onOpenChange={setOpenLab}>
                                     <PopoverTrigger asChild>
-                                        <Button variant="outline" role="combobox" className="justify-between w-full h-10 px-3 bg-white font-normal">
+                                        <Button variant="outline" role="combobox" className="justify-between w-full h-10 px-3 bg-background font-normal">
                                             {selectedLabs.length > 0 ? <span className="text-sm font-semibold text-blue-700 truncate">{selectedLabs.length} seleccionado(s)</span> : <span className="text-muted-foreground text-sm">Todos...</span>}
                                             <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                         </Button>
@@ -288,7 +288,7 @@ export default function LabSellerReportPage() {
                                                 </Badge>
                                             ) : null;
                                         })}
-                                        <span className="text-xs text-slate-500 cursor-pointer hover:text-slate-800 hover:underline self-center ml-1 font-medium" onClick={() => setSelectedLabs([])}>Limpiar</span>
+                                        <span className="text-xs text-muted-foreground cursor-pointer hover:text-foreground hover:underline self-center ml-1 font-medium" onClick={() => setSelectedLabs([])}>Limpiar</span>
                                     </div>
                                 )}
                             </div>
@@ -296,12 +296,12 @@ export default function LabSellerReportPage() {
                             {/* Vendedores (solo admin) */}
                             {isManagerOrAdmin && (
                                 <div className="flex flex-col gap-1.5 min-w-0">
-                                    <label className="text-sm font-semibold flex items-center gap-2 text-slate-700">
+                                    <label className="text-sm font-semibold flex items-center gap-2 text-foreground">
                                         <Users className="w-4 h-4 shrink-0"/> Vendedores
                                     </label>
                                     <Popover open={openVend} onOpenChange={setOpenVend}>
                                         <PopoverTrigger asChild>
-                                            <Button variant="outline" role="combobox" className="justify-between w-full h-10 px-3 bg-white font-normal">
+                                            <Button variant="outline" role="combobox" className="justify-between w-full h-10 px-3 bg-background font-normal">
                                                 {selectedVends.length > 0 ? <span className="text-sm font-semibold text-orange-700 truncate">{selectedVends.length} seleccionado(s)</span> : <span className="text-muted-foreground text-sm">Todos...</span>}
                                                 <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                             </Button>
@@ -333,7 +333,7 @@ export default function LabSellerReportPage() {
                                                     </Badge>
                                                 ) : null;
                                             })}
-                                            <span className="text-xs text-slate-500 cursor-pointer hover:text-slate-800 hover:underline self-center ml-1 font-medium" onClick={() => setSelectedVends([])}>Limpiar</span>
+                                            <span className="text-xs text-muted-foreground cursor-pointer hover:text-foreground hover:underline self-center ml-1 font-medium" onClick={() => setSelectedVends([])}>Limpiar</span>
                                         </div>
                                     )}
                                 </div>
@@ -341,14 +341,14 @@ export default function LabSellerReportPage() {
                         </div>
 
                         {/* Pie: opciones + acciones */}
-                        <div className="flex flex-col gap-3 border-t border-slate-200 pt-4 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex flex-col gap-3 border-t border-border pt-4 sm:flex-row sm:items-center sm:justify-between">
                             <div className="flex items-center gap-2.5">
                                 <Switch
                                     id="excluir-serie-0800"
                                     checked={excluirSerie0800}
                                     onCheckedChange={setExcluirSerie0800}
                                 />
-                                <label htmlFor="excluir-serie-0800" className="text-sm font-medium text-slate-700 cursor-pointer select-none">
+                                <label htmlFor="excluir-serie-0800" className="text-sm font-medium text-foreground cursor-pointer select-none">
                                     Excluir serie 0800
                                 </label>
                             </div>
@@ -362,16 +362,16 @@ export default function LabSellerReportPage() {
                     </div>
                 </CardHeader>
 
-                <CardContent className="p-4 md:p-6 bg-slate-100/50">
+                <CardContent className="p-4 md:p-6 bg-muted/50">
                     {loading ? (
                         <div className="flex flex-col items-center justify-center py-16">
                             <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mb-4"></div>
-                            <p className="text-slate-500 font-medium">Generando reporte, por favor espera...</p>
+                            <p className="text-muted-foreground font-medium">Generando reporte, por favor espera...</p>
                         </div>
                     ) : data.length > 0 ? (
                         <div className="space-y-6">
                             {data.map((lab, idx) => (
-                                <div key={idx} className="border border-slate-200 rounded-lg overflow-hidden shadow-sm bg-white">
+                                <div key={idx} className="border border-border rounded-lg overflow-hidden shadow-sm bg-background">
                                     <div className="bg-indigo-600 text-white p-3 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
                                         <span className="text-lg font-bold text-center sm:text-left">{lab.Laboratorio}</span>
                                         <Badge className="text-[10px] sm:text-xs font-medium bg-indigo-800/60 hover:bg-indigo-800/60 text-indigo-50 border-none w-fit mx-auto sm:mx-0">
@@ -380,8 +380,8 @@ export default function LabSellerReportPage() {
                                     </div>
 
                                     <div className="hidden md:block overflow-x-auto">
-                                        <table className="w-full text-sm text-left text-gray-600">
-                                            <thead className="text-xs text-slate-500 uppercase bg-slate-50 border-b border-slate-200">
+                                        <table className="w-full text-sm text-left text-muted-foreground">
+                                            <thead className="text-xs text-muted-foreground uppercase bg-muted border-b border-border">
                                             <tr>
                                                 <th className="px-4 py-3 font-bold min-w-[120px]">Cód Vendedor</th>
                                                 <th className="px-4 py-3 font-bold min-w-[200px]">Nombre Vendedor</th>
@@ -393,10 +393,10 @@ export default function LabSellerReportPage() {
                                             {lab.vendedores.map((vend, vIdx) => {
                                                 const nombreLimpio = vend.Vendedor.substring(vend.Codigo_Vend.length).trim();
                                                 return (
-                                                    <tr key={vIdx} className="bg-white border-b border-slate-100 hover:bg-slate-50 transition-colors">
-                                                        <td className="px-4 py-3 font-mono font-medium text-slate-900">{vend.Codigo_Vend}</td>
-                                                        <td className="px-4 py-3 text-slate-700">{nombreLimpio}</td>
-                                                        <td className="px-4 py-3 text-right font-semibold text-slate-800">
+                                                    <tr key={vIdx} className="bg-background border-b border-border hover:bg-muted transition-colors">
+                                                        <td className="px-4 py-3 font-mono font-medium text-foreground">{vend.Codigo_Vend}</td>
+                                                        <td className="px-4 py-3 text-foreground">{nombreLimpio}</td>
+                                                        <td className="px-4 py-3 text-right font-semibold text-foreground">
                                                             S/ {formatMoney(vend.SumaDeVta_Tot)}
                                                         </td>
                                                         <td className="px-4 py-3 text-center">
@@ -422,19 +422,19 @@ export default function LabSellerReportPage() {
                                         </table>
                                     </div>
 
-                                    <div className="grid grid-cols-1 gap-3 p-4 md:hidden bg-slate-50">
+                                    <div className="grid grid-cols-1 gap-3 p-4 md:hidden bg-muted">
                                         {lab.vendedores.map((vend, vIdx) => {
                                             const nombreLimpio = vend.Vendedor.substring(vend.Codigo_Vend.length).trim();
                                             return (
-                                                <div key={vIdx} className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm flex flex-col gap-2">
+                                                <div key={vIdx} className="bg-background p-4 rounded-lg border border-border shadow-sm flex flex-col gap-2">
                                                     <div className="flex justify-between items-start">
-                                                        <span className="font-bold text-sm text-slate-800 pr-2">{nombreLimpio}</span>
-                                                        <span className="font-mono text-[10px] text-slate-500 bg-slate-100 px-2 py-1 rounded font-bold whitespace-nowrap">
+                                                        <span className="font-bold text-sm text-foreground pr-2">{nombreLimpio}</span>
+                                                        <span className="font-mono text-[10px] text-muted-foreground bg-muted px-2 py-1 rounded font-bold whitespace-nowrap">
                                                             {vend.Codigo_Vend}
                                                         </span>
                                                     </div>
-                                                    <div className="flex justify-between items-center border-t border-slate-100 pt-2 mt-1">
-                                                        <span className="text-xs uppercase text-slate-400 font-bold">Ventas:</span>
+                                                    <div className="flex justify-between items-center border-t border-border pt-2 mt-1">
+                                                        <span className="text-xs uppercase text-muted-foreground font-bold">Ventas:</span>
                                                         <span className="font-bold text-indigo-700 text-sm">
                                                             S/ {formatMoney(vend.SumaDeVta_Tot)}
                                                         </span>
@@ -456,8 +456,8 @@ export default function LabSellerReportPage() {
                                 </div>
                             ))}
 
-                            <div className="bg-white border border-blue-200 p-4 rounded-lg flex flex-col sm:flex-row justify-between items-center shadow-md mt-6 sticky bottom-4">
-                                <span className="text-sm font-bold uppercase tracking-wider text-slate-700 mb-2 sm:mb-0">Total General (Todos los Laboratorios)</span>
+                            <div className="bg-background border border-blue-200 p-4 rounded-lg flex flex-col sm:flex-row justify-between items-center shadow-md mt-6 sticky bottom-4">
+                                <span className="text-sm font-bold uppercase tracking-wider text-foreground mb-2 sm:mb-0">Total General (Todos los Laboratorios)</span>
                                 <div className="text-center sm:text-right bg-blue-50 p-2 rounded-md sm:bg-transparent sm:p-0 border border-blue-100 sm:border-none">
                                     <p className="text-xs text-blue-600 font-semibold uppercase">Total Ventas</p>
                                     <p className="text-lg sm:text-xl font-bold text-blue-800">S/ {formatMoney(totalGeneral)}</p>
@@ -465,8 +465,8 @@ export default function LabSellerReportPage() {
                             </div>
                         </div>
                     ) : (
-                        <div className="flex flex-col items-center justify-center py-16 bg-white rounded-lg border-2 border-dashed border-slate-200">
-                            <p className="text-slate-500 font-medium text-center px-4">
+                        <div className="flex flex-col items-center justify-center py-16 bg-background rounded-lg border-2 border-dashed border-border">
+                            <p className="text-muted-foreground font-medium text-center px-4">
                                 No hay datos de ventas para mostrar con los filtros seleccionados.
                             </p>
                         </div>
@@ -477,39 +477,39 @@ export default function LabSellerReportPage() {
             <Dialog open={selectionModalOpen} onOpenChange={setSelectionModalOpen}>
                 <DialogContent className="max-w-sm">
                     <DialogHeader>
-                        <DialogTitle className="text-slate-800">¿Cómo deseas ver el detalle?</DialogTitle>
+                        <DialogTitle className="text-foreground">¿Cómo deseas ver el detalle?</DialogTitle>
                     </DialogHeader>
                     <div className="grid grid-cols-2 gap-3 py-2">
                         <button
                             onClick={() => executeDetailModal('laboratorios')}
-                            className="flex flex-col items-center gap-2 p-4 rounded-lg border-2 border-slate-200 hover:border-indigo-400 hover:bg-indigo-50 transition-colors cursor-pointer"
+                            className="flex flex-col items-center gap-2 p-4 rounded-lg border-2 border-border hover:border-indigo-400 hover:bg-indigo-50 transition-colors cursor-pointer"
                         >
                             <FlaskConical className="h-8 w-8 text-indigo-500" />
-                            <span className="text-sm font-semibold text-slate-800">Por Laboratorios</span>
-                            <span className="text-[11px] text-slate-500 text-center leading-tight">Agrupado por cliente e ítem</span>
+                            <span className="text-sm font-semibold text-foreground">Por Laboratorios</span>
+                            <span className="text-[11px] text-muted-foreground text-center leading-tight">Agrupado por cliente e ítem</span>
                         </button>
                         <button
                             onClick={() => executeDetailModal('productos')}
-                            className="flex flex-col items-center gap-2 p-4 rounded-lg border-2 border-slate-200 hover:border-emerald-400 hover:bg-emerald-50 transition-colors cursor-pointer"
+                            className="flex flex-col items-center gap-2 p-4 rounded-lg border-2 border-border hover:border-emerald-400 hover:bg-emerald-50 transition-colors cursor-pointer"
                         >
                             <Package className="h-8 w-8 text-emerald-500" />
-                            <span className="text-sm font-semibold text-slate-800">Por Productos</span>
-                            <span className="text-[11px] text-slate-500 text-center leading-tight">Total cantidad y monto por producto</span>
+                            <span className="text-sm font-semibold text-foreground">Por Productos</span>
+                            <span className="text-[11px] text-muted-foreground text-center leading-tight">Total cantidad y monto por producto</span>
                         </button>
                     </div>
                 </DialogContent>
             </Dialog>
 
             <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-                <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden flex flex-col bg-slate-50 p-0">
-                    <DialogHeader className="p-4 md:p-6 bg-white border-b border-slate-200 flex-shrink-0">
+                <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden flex flex-col bg-muted p-0">
+                    <DialogHeader className="p-4 md:p-6 bg-background border-b border-border flex-shrink-0">
                         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                             <div>
                                 <DialogTitle className="text-xl text-indigo-800">
                                     {viewMode === 'laboratorios' ? 'Detalle por Laboratorio' : 'Detalle por Productos'}
                                 </DialogTitle>
                                 {detailData && detailData.length > 0 && (
-                                    <p className="text-sm text-slate-500 mt-1 font-medium">{detailData[0].Vendedor} | {detailData[0].Laboratorios[0].Laboratorio}</p>
+                                    <p className="text-sm text-muted-foreground mt-1 font-medium">{detailData[0].Vendedor} | {detailData[0].Laboratorios[0].Laboratorio}</p>
                                 )}
                             </div>
                             <ExportDetalleLabVendedorPdf
@@ -525,20 +525,20 @@ export default function LabSellerReportPage() {
                         {detailLoading ? (
                             <div className="flex flex-col items-center justify-center py-12">
                                 <Loader2 className="h-8 w-8 animate-spin text-indigo-600 mb-4" />
-                                <p className="text-sm text-slate-500 font-medium">Cargando detalle...</p>
+                                <p className="text-sm text-muted-foreground font-medium">Cargando detalle...</p>
                             </div>
                         ) : detailData && detailData.length > 0 ? (
                             viewMode === 'laboratorios' ? (
                                 <div className="space-y-6">
                                     {detailData[0].Laboratorios[0].Clientes.map((cli: any, cIdx: number) => (
-                                        <div key={cIdx} className="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
-                                            <div className="bg-slate-100 p-3 border-b border-slate-200">
-                                                <p className="text-sm font-bold text-slate-800">{cli.Codigo} | {cli.Nombre}</p>
-                                                {cli.NombreComercial && <p className="text-xs text-slate-500 mt-0.5">{cli.NombreComercial}</p>}
+                                        <div key={cIdx} className="bg-background border border-border rounded-lg shadow-sm overflow-hidden">
+                                            <div className="bg-muted p-3 border-b border-border">
+                                                <p className="text-sm font-bold text-foreground">{cli.Codigo} | {cli.Nombre}</p>
+                                                {cli.NombreComercial && <p className="text-xs text-muted-foreground mt-0.5">{cli.NombreComercial}</p>}
                                             </div>
                                             <div className="hidden md:block overflow-x-auto">
-                                                <table className="w-full text-xs text-left text-slate-600">
-                                                    <thead className="bg-white border-b border-slate-100">
+                                                <table className="w-full text-xs text-left text-muted-foreground">
+                                                    <thead className="bg-background border-b border-border">
                                                     <tr>
                                                         <th className="px-3 py-2 font-semibold">Cód. Art</th>
                                                         <th className="px-3 py-2 font-semibold text-center">Cant</th>
@@ -547,14 +547,14 @@ export default function LabSellerReportPage() {
                                                         <th className="px-3 py-2 font-semibold text-right">Total S/.</th>
                                                     </tr>
                                                     </thead>
-                                                    <tbody className="divide-y divide-slate-50">
+                                                    <tbody className="divide-y divide-border">
                                                     {cli.Items.map((item: any, iIdx: number) => (
-                                                        <tr key={iIdx} className="hover:bg-slate-50">
-                                                            <td className="px-3 py-2 font-mono text-slate-500">{item.Codigo_Art}</td>
+                                                        <tr key={iIdx} className="hover:bg-muted">
+                                                            <td className="px-3 py-2 font-mono text-muted-foreground">{item.Codigo_Art}</td>
                                                             <td className="px-3 py-2 text-center font-medium">{item.Cantidad_Sal}</td>
                                                             <td className="px-3 py-2 text-center text-[10px] uppercase">{item.AbrevUnidMed}</td>
                                                             <td className="px-3 py-2">{item.NombreItem}</td>
-                                                            <td className="px-3 py-2 text-right font-semibold text-slate-800">{formatMoney(item.SumaDeVta_Tot)}</td>
+                                                            <td className="px-3 py-2 text-right font-semibold text-foreground">{formatMoney(item.SumaDeVta_Tot)}</td>
                                                         </tr>
                                                     ))}
                                                     </tbody>
@@ -566,12 +566,12 @@ export default function LabSellerReportPage() {
                                                     </tfoot>
                                                 </table>
                                             </div>
-                                            <div className="md:hidden grid grid-cols-1 gap-2 p-3 bg-slate-50">
+                                            <div className="md:hidden grid grid-cols-1 gap-2 p-3 bg-muted">
                                                 {cli.Items.map((item: any, iIdx: number) => (
-                                                    <div key={iIdx} className="bg-white border border-slate-100 rounded p-2 flex flex-col gap-1">
-                                                        <span className="text-xs font-medium text-slate-700">{item.NombreItem}</span>
+                                                    <div key={iIdx} className="bg-background border border-border rounded p-2 flex flex-col gap-1">
+                                                        <span className="text-xs font-medium text-foreground">{item.NombreItem}</span>
                                                         <div className="flex justify-between items-center mt-1">
-                                                            <Badge variant="outline" className="text-[10px] bg-slate-100">{item.Cantidad_Sal} {item.AbrevUnidMed}</Badge>
+                                                            <Badge variant="outline" className="text-[10px] bg-muted">{item.Cantidad_Sal} {item.AbrevUnidMed}</Badge>
                                                             <span className="text-sm font-bold text-indigo-700">S/ {formatMoney(item.SumaDeVta_Tot)}</span>
                                                         </div>
                                                     </div>
@@ -583,7 +583,7 @@ export default function LabSellerReportPage() {
                                             </div>
                                         </div>
                                     ))}
-                                    <div className="flex justify-end border-t border-slate-200 pt-4">
+                                    <div className="flex justify-end border-t border-border pt-4">
                                         <div className="bg-indigo-50 p-3 rounded-lg border border-indigo-100 text-right">
                                             <p className="text-[10px] font-bold text-indigo-500 uppercase">Total Vendedor</p>
                                             <p className="text-lg font-black text-indigo-900">S/ {formatMoney(detailData[0].TotalVendedor)}</p>
@@ -592,9 +592,9 @@ export default function LabSellerReportPage() {
                                 </div>
                             ) : (
                                 <div className="space-y-4">
-                                    <div className="hidden md:block overflow-x-auto bg-white border border-slate-200 rounded-lg shadow-sm">
-                                        <table className="w-full text-xs text-left text-slate-600">
-                                            <thead className="bg-slate-50 border-b border-slate-200">
+                                    <div className="hidden md:block overflow-x-auto bg-background border border-border rounded-lg shadow-sm">
+                                        <table className="w-full text-xs text-left text-muted-foreground">
+                                            <thead className="bg-muted border-b border-border">
                                             <tr>
                                                 <th className="px-3 py-2 font-semibold">Cód. Art</th>
                                                 <th className="px-3 py-2 font-semibold">Descripción</th>
@@ -603,14 +603,14 @@ export default function LabSellerReportPage() {
                                                 <th className="px-3 py-2 font-semibold text-right">Total S/.</th>
                                             </tr>
                                             </thead>
-                                            <tbody className="divide-y divide-slate-100">
+                                            <tbody className="divide-y divide-border">
                                             {productosAgrupados.map((prod, pIdx) => (
-                                                <tr key={pIdx} className="hover:bg-slate-50">
-                                                    <td className="px-3 py-2 font-mono text-slate-500">{prod.Codigo_Art}</td>
-                                                    <td className="px-3 py-2 text-slate-700">{prod.NombreItem}</td>
+                                                <tr key={pIdx} className="hover:bg-muted">
+                                                    <td className="px-3 py-2 font-mono text-muted-foreground">{prod.Codigo_Art}</td>
+                                                    <td className="px-3 py-2 text-foreground">{prod.NombreItem}</td>
                                                     <td className="px-3 py-2 text-center text-[10px] uppercase">{prod.AbrevUnidMed}</td>
                                                     <td className="px-3 py-2 text-right font-medium">{prod.TotalCantidad}</td>
-                                                    <td className="px-3 py-2 text-right font-semibold text-slate-800">{formatMoney(prod.TotalVentas)}</td>
+                                                    <td className="px-3 py-2 text-right font-semibold text-foreground">{formatMoney(prod.TotalVentas)}</td>
                                                 </tr>
                                             ))}
                                             </tbody>
@@ -624,11 +624,11 @@ export default function LabSellerReportPage() {
                                     </div>
                                     <div className="md:hidden grid grid-cols-1 gap-2">
                                         {productosAgrupados.map((prod, pIdx) => (
-                                            <div key={pIdx} className="bg-white border border-slate-200 rounded-lg p-3 flex flex-col gap-1.5">
-                                                <p className="text-xs font-semibold text-slate-800">{prod.NombreItem}</p>
-                                                <p className="text-[10px] font-mono text-slate-400">{prod.Codigo_Art}</p>
-                                                <div className="flex justify-between items-center border-t border-slate-100 pt-2 mt-1">
-                                                    <Badge variant="outline" className="text-[10px] bg-slate-100">{prod.TotalCantidad} {prod.AbrevUnidMed}</Badge>
+                                            <div key={pIdx} className="bg-background border border-border rounded-lg p-3 flex flex-col gap-1.5">
+                                                <p className="text-xs font-semibold text-foreground">{prod.NombreItem}</p>
+                                                <p className="text-[10px] font-mono text-muted-foreground">{prod.Codigo_Art}</p>
+                                                <div className="flex justify-between items-center border-t border-border pt-2 mt-1">
+                                                    <Badge variant="outline" className="text-[10px] bg-muted">{prod.TotalCantidad} {prod.AbrevUnidMed}</Badge>
                                                     <span className="text-sm font-bold text-emerald-700">S/ {formatMoney(prod.TotalVentas)}</span>
                                                 </div>
                                             </div>
@@ -642,7 +642,7 @@ export default function LabSellerReportPage() {
                             )
                         ) : (
                             <div className="flex flex-col items-center justify-center py-16">
-                                <p className="text-slate-500 font-medium">No se encontraron detalles para este vendedor.</p>
+                                <p className="text-muted-foreground font-medium">No se encontraron detalles para este vendedor.</p>
                             </div>
                         )}
                     </div>

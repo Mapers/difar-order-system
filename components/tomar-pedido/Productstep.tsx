@@ -87,8 +87,8 @@ export default function ProductStep({
 
     return (
         <div className="grid gap-6">
-            <Card className="shadow-md bg-white">
-                <CardHeader className="border-b bg-gray-50 dark:bg-gray-800/50 dark:border-gray-800">
+            <Card className="shadow-md bg-background">
+                <CardHeader className="border-b bg-muted">
                     <div className="flex items-center gap-2">
                         <div className="p-1.5 bg-blue-100 dark:bg-blue-900/40 rounded-md">
                             <Package className="h-4 w-4 text-blue-600 dark:text-blue-400" />
@@ -99,23 +99,23 @@ export default function ProductStep({
 
                 <CardContent className="space-y-6 pt-6 px-3 sm:px-6">
                     <div className="space-y-2">
-                        <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Producto</Label>
+                        <Label className="text-sm font-medium text-muted-foreground">Producto</Label>
                         <Button
                             type="button" variant="outline" onClick={() => onOpenChange(true)}
-                            className="w-full justify-start h-auto min-h-11 sm:min-h-12 px-3 py-2 text-left font-normal text-sm bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-white dark:hover:bg-gray-700 hover:border-blue-400 dark:hover:border-blue-500 overflow-hidden max-w-full"
+                            className="w-full justify-start h-auto min-h-11 sm:min-h-12 px-3 py-2 text-left font-normal text-sm bg-muted border-border hover:bg-background hover:border-blue-400 dark:hover:border-blue-500 overflow-hidden max-w-full"
                         >
-                            <Search className="mr-2 h-4 w-4 shrink-0 text-gray-400" />
+                            <Search className="mr-2 h-4 w-4 shrink-0 text-muted-foreground" />
                             {selectedProduct ? (
                                 <div className="flex flex-col items-start overflow-hidden w-0 flex-1">
-            <span className="font-semibold text-gray-900 dark:text-gray-100 truncate w-full leading-tight text-sm">
+            <span className="font-semibold text-foreground truncate w-full leading-tight text-sm">
                 {selectedProduct.NombreItem}
             </span>
-                                    <span className="text-xs text-gray-500 dark:text-gray-400 truncate w-full leading-tight mt-0.5">
+                                    <span className="text-xs text-muted-foreground truncate w-full leading-tight mt-0.5">
                 {selectedProduct.Codigo_Art} | {selectedProduct.Descripcion}
             </span>
                                 </div>
                             ) : (
-                                <span className="truncate text-gray-400 dark:text-gray-500 font-normal text-xs sm:text-sm">
+                                <span className="truncate text-muted-foreground font-normal text-xs sm:text-sm">
             Buscar por código, nombre o laboratorio...
         </span>
                             )}
@@ -141,16 +141,16 @@ export default function ProductStep({
                     <div className="flex flex-col gap-3">
                         <div className="flex flex-col lg:flex-row gap-2 lg:items-end">
                             <div className="w-full lg:flex-1 space-y-1.5">
-                                <Label className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">Laboratorio</Label>
+                                <Label className="text-xs sm:text-sm font-medium text-muted-foreground">Laboratorio</Label>
                                 <Button
                                     type="button" variant="outline" onClick={() => setLabModalSearchOpen(true)}
-                                    className="w-full justify-start h-11 px-3 text-left font-normal text-xs sm:text-sm bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-white dark:hover:bg-gray-700 hover:border-purple-400 dark:hover:border-purple-500 overflow-hidden"
+                                    className="w-full justify-start h-11 px-3 text-left font-normal text-xs sm:text-sm bg-muted border-border hover:bg-background hover:border-purple-400 dark:hover:border-purple-500 overflow-hidden"
                                 >
-                                    <Building className="mr-2 h-4 w-4 shrink-0 text-gray-400" />
-                                    <span className="truncate text-gray-900 dark:text-gray-100">
+                                    <Building className="mr-2 h-4 w-4 shrink-0 text-muted-foreground" />
+                                    <span className="truncate text-foreground">
                     {selectedLaboratorio
                         ? (laboratories.find(l => String(l.IdLineaGe) === selectedLaboratorio)?.Descripcion ?? selectedLaboratorio)
-                        : <span className="text-gray-400">Seleccionar laboratorio...</span>}
+                        : <span className="text-muted-foreground">Seleccionar laboratorio...</span>}
                 </span>
                                 </Button>
                                 <LabSearchDialog
@@ -162,13 +162,13 @@ export default function ProductStep({
 
                             <div className="flex gap-2 items-end shrink-0">
                                 <div className="shrink-0 space-y-1.5">
-                                    <Label className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">
+                                    <Label className="text-xs sm:text-sm font-medium text-muted-foreground">
                                         Cant.
                                         {selectedProduct && (() => {
                                             const stockTotal = Number(selectedProduct.Stock);
                                             const remaining = stockTotal - safeQuantity;
                                             return (
-                                                <span className="ml-1 text-[10px] font-normal text-gray-400 dark:text-gray-500">
+                                                <span className="ml-1 text-[10px] font-normal text-muted-foreground">
                                 Stock: {stockTotal.toFixed(0)} · <span className={remaining <= 0 ? 'text-red-500 font-semibold' : remaining <= 3 ? 'text-amber-500' : 'text-green-600'}>
                                     Restante: {Math.max(0, remaining)}
                                 </span>
@@ -178,10 +178,10 @@ export default function ProductStep({
                                     </Label>
                                     <div className={`flex items-center h-11 rounded-lg border overflow-hidden transition-colors
                     ${!selectedProduct
-                                        ? 'bg-gray-100 dark:bg-gray-800/50 border-gray-100 opacity-50 cursor-not-allowed'
+                                        ? 'bg-muted border-border opacity-50 cursor-not-allowed'
                                         : (selectedProduct && safeQuantity >= Number(selectedProduct.Stock))
-                                            ? 'bg-gray-50 border-red-300'
-                                            : 'bg-gray-50 border-gray-200'}`}
+                                            ? 'bg-muted border-red-300'
+                                            : 'bg-muted border-border'}`}
                                     >
                                         <button
                                             type="button" disabled={!selectedProduct}
@@ -191,7 +191,7 @@ export default function ProductStep({
                                             className={`h-full px-2.5 flex items-center justify-center transition-colors disabled:cursor-not-allowed
                             ${safeQuantity <= 1
                                                 ? 'text-red-400 hover:text-red-600 hover:bg-red-50'
-                                                : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'}`}
+                                                : 'text-muted-foreground hover:text-foreground hover:bg-muted'}`}
                                         >
                                             {safeQuantity <= 1 ? <Trash className="h-3.5 w-3.5" /> : <Minus className="h-3.5 w-3.5" />}
                                         </button>
@@ -209,7 +209,7 @@ export default function ProductStep({
                                             }}
                                             onBlur={() => { if (quantity === "" || quantity < 1) onQuantityChange(1) }}
                                             onKeyDown={(e) => { if (['e', 'E', '+', '-', '.'].includes(e.key)) e.preventDefault() }}
-                                            className="w-10 sm:w-12 bg-transparent outline-none text-center text-base font-semibold text-gray-900 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none disabled:cursor-not-allowed"
+                                            className="w-10 sm:w-12 bg-transparent outline-none text-center text-base font-semibold text-foreground [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none disabled:cursor-not-allowed"
                                         />
                                         <button
                                             type="button"
@@ -217,8 +217,8 @@ export default function ProductStep({
                                             onClick={() => onQuantityChange(Math.min(safeQuantity + 1, selectedProduct ? Number(selectedProduct.Stock) : Infinity))}
                                             className={`h-full px-2.5 flex items-center justify-center transition-colors disabled:cursor-not-allowed
                             ${selectedProduct && safeQuantity >= Number(selectedProduct.Stock)
-                                                ? 'text-gray-300'
-                                                : 'text-gray-500 hover:text-blue-600 hover:bg-blue-50'}`}
+                                                ? 'text-muted-foreground/50'
+                                                : 'text-muted-foreground hover:text-blue-600 hover:bg-blue-50'}`}
                                         >
                                             <Plus className="h-3.5 w-3.5" />
                                         </button>
@@ -243,8 +243,8 @@ export default function ProductStep({
                         const unitPrice = priceType === 'regalo' ? 0 : priceType === 'contado' ? Number(selectedProduct.PUContado) : priceType === 'credito' ? Number(selectedProduct.PUCredito) : priceType === 'porMenor' ? Number(selectedProduct.PUPorMenor) : priceType === 'porMayor' ? Number(selectedProduct.PUPorMayor) : Number(priceEdit);
                         const sym = getCurrencySymbol(currency?.value);
                         return (
-                            <p className="text-[11px] text-right text-gray-500 mt-1.5">
-                                {sym}{unitPrice.toFixed(2)} × {safeQuantity} = <span className="font-semibold text-gray-800">{sym}{(unitPrice * safeQuantity).toFixed(2)}</span>
+                            <p className="text-[11px] text-right text-muted-foreground mt-1.5">
+                                {sym}{unitPrice.toFixed(2)} × {safeQuantity} = <span className="font-semibold text-foreground">{sym}{(unitPrice * safeQuantity).toFixed(2)}</span>
                             </p>
                         );
                     })()}
@@ -261,8 +261,8 @@ export default function ProductStep({
             <ModalLoader open={isLoading} onOpenChange={onIsLoadingChange} caseKey={modalLoader ?? undefined} />
 
             {selectedProducts.length > 0 && (
-                <Card className="shadow-md bg-white">
-                    <CardHeader className="border-b bg-gray-50 dark:bg-gray-800/50 dark:border-gray-800">
+                <Card className="shadow-md bg-background">
+                    <CardHeader className="border-b bg-muted">
                         <div className="flex items-center gap-2">
                             <div className="p-1.5 bg-indigo-100 dark:bg-indigo-900/40 rounded-md">
                                 <ShoppingCart className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
@@ -287,7 +287,7 @@ export default function ProductStep({
                             metasMap={metasMap}
                         />
                     </CardContent>
-                    <CardFooter className="flex justify-between border-t bg-gray-50 py-4 gap-2 px-3 sm:px-6">
+                    <CardFooter className="flex justify-between border-t bg-muted py-4 gap-2 px-3 sm:px-6">
                         <div className="flex gap-2">
                             <Button type="button" variant="outline" onClick={onPrev}>
                                 <ArrowLeft className="mr-2 h-4 w-4" />

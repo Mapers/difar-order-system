@@ -129,13 +129,13 @@ export default function CreditLineSection({ onOpenModalChange }: LineasCreditoSe
 
     return (
         <>
-            <div className="flex items-center gap-3 mb-4 p-3 bg-slate-50 rounded-lg border border-slate-200">
-                <Search className="h-4 w-4 text-slate-400" />
+            <div className="flex items-center gap-3 mb-4 p-3 bg-muted rounded-lg border border-border">
+                <Search className="h-4 w-4 text-muted-foreground" />
                 <Input
                     placeholder="Buscar por nombre, RUC o código de cliente..."
                     value={searchQuery}
                     onChange={e => setSearchQuery(e.target.value)}
-                    className="bg-white border-slate-200 h-9 text-sm"
+                    className="bg-background border-border h-9 text-sm"
                 />
                 {data.length > 0 && (
                     <Badge variant="outline" className="text-xs whitespace-nowrap">
@@ -158,15 +158,15 @@ export default function CreditLineSection({ onOpenModalChange }: LineasCreditoSe
                                 <CardContent className="p-4">
                                     <div className="flex justify-between items-start mb-2">
                                         <div className="flex-1 min-w-0">
-                                            <h3 className="font-bold text-sm text-gray-900 truncate">
+                                            <h3 className="font-bold text-sm text-card-foreground truncate">
                                                 {item.Nombre}
                                             </h3>
                                             {item.NombreComercial && (
-                                                <p className="text-[10px] text-slate-400 truncate">
+                                                <p className="text-[10px] text-muted-foreground truncate">
                                                     {item.NombreComercial}
                                                 </p>
                                             )}
-                                            <p className="text-xs text-gray-500 mt-0.5">
+                                            <p className="text-xs text-muted-foreground mt-0.5">
                                                 RUC: {item.RUC} · Cod: {item.codigo}
                                             </p>
                                         </div>
@@ -182,7 +182,7 @@ export default function CreditLineSection({ onOpenModalChange }: LineasCreditoSe
                                     </div>
 
                                     {(item.Vendedor?.trim() || item.NombreZona) && (
-                                        <div className="flex gap-2 text-[10px] text-slate-400 mb-3">
+                                        <div className="flex gap-2 text-[10px] text-muted-foreground mb-3">
                                             {item.Vendedor?.trim() && (
                                                 <span className="truncate">
                                                     <User className="h-3 w-3 inline mr-0.5" />
@@ -219,7 +219,7 @@ export default function CreditLineSection({ onOpenModalChange }: LineasCreditoSe
                             >
                                 <ChevronLeft className="h-3.5 w-3.5" />
                             </Button>
-                            <span className="text-xs text-slate-500">
+                            <span className="text-xs text-muted-foreground">
                                 Página {page} de {totalPages}
                             </span>
                             <Button
@@ -236,11 +236,11 @@ export default function CreditLineSection({ onOpenModalChange }: LineasCreditoSe
                 </>
             ) : (
                 <div className="text-center py-8">
-                    <Landmark className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">
+                    <Landmark className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-foreground mb-2">
                         {debouncedQuery ? "No se encontraron clientes" : "No hay clientes registrados"}
                     </h3>
-                    <p className="text-sm text-gray-500">
+                    <p className="text-sm text-muted-foreground">
                         {debouncedQuery
                             ? "Intenta con otro término de búsqueda"
                             : "Los clientes aparecerán aquí cuando existan en el sistema"}
@@ -259,13 +259,13 @@ export default function CreditLineSection({ onOpenModalChange }: LineasCreditoSe
 
                     {editando && (
                         <div className="space-y-4">
-                            <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 space-y-1">
-                                <p className="text-sm font-semibold text-slate-800">{editando.Nombre}</p>
-                                <p className="text-xs text-slate-500">
+                            <div className="bg-muted border border-border rounded-lg p-3 space-y-1">
+                                <p className="text-sm font-semibold text-foreground">{editando.Nombre}</p>
+                                <p className="text-xs text-muted-foreground">
                                     RUC: {editando.RUC} · Código: {editando.codigo}
                                 </p>
                                 {editando.Vendedor?.trim() && (
-                                    <p className="text-xs text-slate-400">
+                                    <p className="text-xs text-muted-foreground">
                                         Vendedor: {editando.Vendedor.trim()}
                                     </p>
                                 )}

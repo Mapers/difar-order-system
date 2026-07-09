@@ -12,6 +12,7 @@ import { NavMenu } from "@/components/nav/NavMenu";
 import { UserCard } from "@/components/nav/UserCard";
 import { LogoutButton } from "@/components/nav/LogoutButton";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 /** Header + drawer para móvil. Oculto en escritorio (md:hidden). */
 export function MobileNav() {
@@ -19,7 +20,7 @@ export function MobileNav() {
   const closeDrawer = () => setOpen(false);
 
   return (
-    <header className="fixed inset-x-0 top-0 z-20 flex h-16 items-center justify-between border-b bg-white px-4 md:hidden">
+    <header className="fixed inset-x-0 top-0 z-20 flex h-16 items-center justify-between border-b bg-background px-4 md:hidden">
       <Link href="/dashboard" className="flex items-center gap-2">
         <Image
           src="/difar-logo.png"
@@ -31,6 +32,7 @@ export function MobileNav() {
       </Link>
 
       <div className="flex items-center gap-1">
+        <ThemeToggle />
         <NotificationBell />
 
         <Sheet open={open} onOpenChange={setOpen}>

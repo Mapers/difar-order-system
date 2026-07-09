@@ -83,14 +83,14 @@ export default function ModalEditarKardex({ open, onClose, item, onSaved }: Prop
     return (
         <Dialog open={open} onOpenChange={v => { if (!v) onClose() }}>
             <DialogContent className="max-w-[500px] p-0 gap-0">
-                <DialogHeader className="px-5 pt-5 pb-3 border-b border-slate-200">
+                <DialogHeader className="px-5 pt-5 pb-3 border-b border-border">
                     <div className="flex items-center gap-3">
                         <div className="w-9 h-9 rounded-lg bg-blue-100 flex items-center justify-center text-blue-700">
                             <Pencil className="h-4 w-4" />
                         </div>
                         <div>
                             <DialogTitle className="text-[15px]">Editar Movimiento — Kardex</DialogTitle>
-                            <DialogDescription className="text-xs text-slate-400 mt-0.5">
+                            <DialogDescription className="text-xs text-muted-foreground mt-0.5">
                                 {item ? `${item.SerieDoc}-${item.NumeroDoc}` : 'Movimiento seleccionado'}
                             </DialogDescription>
                         </div>
@@ -98,7 +98,7 @@ export default function ModalEditarKardex({ open, onClose, item, onSaved }: Prop
                 </DialogHeader>
 
                 <div className="p-5 space-y-4">
-                    <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider border-b border-slate-100 pb-2">
+                    <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider border-b border-border pb-2">
                         Datos del movimiento
                     </p>
 
@@ -156,8 +156,8 @@ export default function ModalEditarKardex({ open, onClose, item, onSaved }: Prop
                     </div>
                 </div>
 
-                <div className="px-5 py-3 border-t border-slate-200 bg-slate-50 flex items-center justify-between rounded-b-lg">
-                    <span className="text-xs text-slate-400">
+                <div className="px-5 py-3 border-t border-border bg-muted flex items-center justify-between rounded-b-lg">
+                    <span className="text-xs text-muted-foreground">
                         {item ? `ID: ${item.IdKardexClientes}` : ''}
                     </span>
                     <div className="flex gap-2">

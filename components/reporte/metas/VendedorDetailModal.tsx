@@ -61,7 +61,7 @@ export default function VendedorDetailModal({ open, onClose, vendedor, allItems,
         <>
         <Dialog open={open} onOpenChange={onClose}>
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col p-0">
-                <div className="p-5 pb-4 border-b border-slate-200">
+                <div className="p-5 pb-4 border-b border-border">
                     <div className="flex items-center justify-between gap-3">
                         <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold"
@@ -69,7 +69,7 @@ export default function VendedorDetailModal({ open, onClose, vendedor, allItems,
                                 {getInitials(vendedor.nombre_vendedor || vendedor.cod_vendedor)}
                             </div>
                             <div>
-                                <DialogTitle className="text-base font-bold text-slate-800">
+                                <DialogTitle className="text-base font-bold text-foreground">
                                     {vendedor.nombre_vendedor || vendedor.cod_vendedor}
                                 </DialogTitle>
                                 <div className="flex items-center gap-2 mt-0.5">
@@ -77,15 +77,15 @@ export default function VendedorDetailModal({ open, onClose, vendedor, allItems,
                                         Cod: {vendedor.cod_vendedor}
                                     </Badge>
                                     {vendedor.esAgrupado ? (
-                                        <Badge variant="outline" className="text-[10px] bg-slate-50 text-slate-600 border-slate-200">
+                                        <Badge variant="outline" className="text-[10px] bg-muted text-muted-foreground border-border">
                                             {vendedor.labs?.length ?? 0} laboratorio{(vendedor.labs?.length ?? 0) === 1 ? '' : 's'}
                                         </Badge>
                                     ) : vendedor.nombre_lab ? (
-                                        <Badge variant="outline" className="text-[10px] bg-slate-50 text-slate-600 border-slate-200">
+                                        <Badge variant="outline" className="text-[10px] bg-muted text-muted-foreground border-border">
                                             {vendedor.nombre_lab}
                                         </Badge>
                                     ) : null}
-                                    <span className="text-[10px] text-slate-400">
+                                    <span className="text-[10px] text-muted-foreground">
                                         {vendItems.length} ítem{vendItems.length === 1 ? '' : 's'} asignado{vendItems.length === 1 ? '' : 's'}
                                     </span>
                                 </div>
@@ -95,13 +95,13 @@ export default function VendedorDetailModal({ open, onClose, vendedor, allItems,
                     </div>
                 </div>
 
-                <div className={`grid gap-3 p-4 bg-slate-50 border-b border-slate-200 ${(visitasLoading || visitasData?.tiene_rutas) ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-3'}`}>
-                    <div className="bg-white rounded-lg p-3 border border-slate-200">
-                        <p className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Venta Total</p>
+                <div className={`grid gap-3 p-4 bg-muted border-b border-border ${(visitasLoading || visitasData?.tiene_rutas) ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-3'}`}>
+                    <div className="bg-background rounded-lg p-3 border border-border">
+                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Venta Total</p>
                         <p className="text-lg font-bold mt-0.5" style={{ color: c1 }}>
                             {fmtMoney(Number(vendedor.venta_real))}
                         </p>
-                        <p className="text-[10px] text-slate-400 mt-0.5">
+                        <p className="text-[10px] text-muted-foreground mt-0.5">
                             Meta {fmtMoney(Number(vendedor.meta_monto))} · avance {avPct}%
                         </p>
                         <ProgressBar pct={avPct} height="h-1" className="mt-1.5" />
@@ -110,12 +110,12 @@ export default function VendedorDetailModal({ open, onClose, vendedor, allItems,
                     <button type="button"
                             onClick={() => { if (!vendedor.esAgrupado) setClientesOpen(true) }}
                             disabled={vendedor.esAgrupado}
-                            className={`bg-white rounded-lg p-3 border border-slate-200 text-left transition-all ${vendedor.esAgrupado ? 'cursor-default' : 'hover:border-sky-300 hover:shadow-sm cursor-pointer'}`}>
-                        <p className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Cobertura Clientes</p>
+                            className={`bg-background rounded-lg p-3 border border-border text-left transition-all ${vendedor.esAgrupado ? 'cursor-default' : 'hover:border-sky-300 hover:shadow-sm cursor-pointer'}`}>
+                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Cobertura Clientes</p>
                         <p className="text-lg font-bold mt-0.5" style={{ color: cobColor }}>
                             {cobPct}%
                         </p>
-                        <p className="text-[10px] text-slate-400 mt-0.5">
+                        <p className="text-[10px] text-muted-foreground mt-0.5">
                             {Number(vendedor.clientes_atendidos)} atendidos / meta {Number(vendedor.meta_clientes)}
                         </p>
                         <ProgressBar pct={cobPct} height="h-1" className="mt-1.5" />
@@ -124,12 +124,12 @@ export default function VendedorDetailModal({ open, onClose, vendedor, allItems,
                         )}
                     </button>
 
-                    <div className="bg-white rounded-lg p-3 border border-slate-200">
-                        <p className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Unidades Totales</p>
-                        <p className="text-lg font-bold mt-0.5 text-slate-700">
+                    <div className="bg-background rounded-lg p-3 border border-border">
+                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Unidades Totales</p>
+                        <p className="text-lg font-bold mt-0.5 text-foreground">
                             {totalUnidades.toLocaleString()}
                         </p>
-                        <p className="text-[10px] text-slate-400 mt-0.5">
+                        <p className="text-[10px] text-muted-foreground mt-0.5">
                             {vendItems.length} producto{vendItems.length === 1 ? '' : 's'} · meta {totalMetaCant.toLocaleString()} uds
                         </p>
                     </div>
@@ -144,7 +144,7 @@ export default function VendedorDetailModal({ open, onClose, vendedor, allItems,
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-4 space-y-2">
-                    <div className="grid grid-cols-[2fr_80px_65px_70px_65px] gap-2 px-3 py-1.5 text-[9px] uppercase tracking-wider text-slate-400 font-semibold">
+                    <div className="grid grid-cols-[2fr_80px_65px_70px_65px] gap-2 px-3 py-1.5 text-[9px] uppercase tracking-wider text-muted-foreground font-semibold">
                         <span>Ítem</span>
                         <span className="text-right">Venta S/</span>
                         <span className="text-right">Cuota S/</span>
@@ -153,7 +153,7 @@ export default function VendedorDetailModal({ open, onClose, vendedor, allItems,
                     </div>
 
                     {vendItems.length === 0 ? (
-                        <div className="text-center text-slate-400 text-sm py-8">
+                        <div className="text-center text-muted-foreground text-sm py-8">
                             No hay ítems asignados a este vendedor en este laboratorio
                         </div>
                     ) : (
@@ -164,17 +164,17 @@ export default function VendedorDetailModal({ open, onClose, vendedor, allItems,
 
                             return (
                                 <div key={item.id_meta_item}
-                                     className="grid grid-cols-[2fr_80px_65px_70px_65px] gap-2 px-3 py-2.5 rounded-lg bg-slate-50 hover:bg-slate-100 items-center transition-colors"
+                                     className="grid grid-cols-[2fr_80px_65px_70px_65px] gap-2 px-3 py-2.5 rounded-lg bg-muted hover:bg-muted/70 items-center transition-colors"
                                 >
                                     <div className="min-w-0">
-                                        <p className="text-xs font-medium text-slate-800 truncate">
+                                        <p className="text-xs font-medium text-foreground truncate">
                                             {item.nombre_articulo || item.cod_articulo}
                                         </p>
                                         <div className="flex items-center gap-2 mt-0.5">
-                                            <span className="text-[9px] text-slate-400">
+                                            <span className="text-[9px] text-muted-foreground">
                                                 P.ref: {fmtMoney(Number(item.precio_ref_meta))}
                                             </span>
-                                            <span className="text-[9px] text-slate-400">
+                                            <span className="text-[9px] text-muted-foreground">
                                                 Meta: {Number(item.meta_cantidad).toLocaleString()} uds
                                             </span>
                                         </div>
@@ -185,7 +185,7 @@ export default function VendedorDetailModal({ open, onClose, vendedor, allItems,
                                         <ProgressBar pct={item.avPct} height="h-[3px]" className="mt-0.5" />
                                     </div>
 
-                                    <div className="text-right text-[11px] text-slate-400">
+                                    <div className="text-right text-[11px] text-muted-foreground">
                                         {fmtMoney(Number(item.meta_monto))}
                                     </div>
 
@@ -203,7 +203,7 @@ export default function VendedorDetailModal({ open, onClose, vendedor, allItems,
                                                 <span className="text-[8px] font-bold" style={{ color: uc1 }}>{item.uPct}%</span>
                                             </div>
                                         </div>
-                                        <p className="text-[9px] text-slate-500">{Number(item.u_vendidas).toLocaleString()}</p>
+                                        <p className="text-[9px] text-muted-foreground">{Number(item.u_vendidas).toLocaleString()}</p>
                                     </div>
 
                                     <div className="text-center">
@@ -215,20 +215,20 @@ export default function VendedorDetailModal({ open, onClose, vendedor, allItems,
                     )}
 
                     {vendItems.length > 0 && (
-                        <div className="grid grid-cols-[2fr_80px_65px_70px_65px] gap-2 px-3 py-2.5 bg-slate-100 rounded-lg border border-slate-200 items-center mt-2">
-                            <span className="text-[11px] font-semibold text-slate-500">
+                        <div className="grid grid-cols-[2fr_80px_65px_70px_65px] gap-2 px-3 py-2.5 bg-muted rounded-lg border border-border items-center mt-2">
+                            <span className="text-[11px] font-semibold text-muted-foreground">
                                 TOTAL · {vendItems.length} ítems
                             </span>
                             <span className="text-right text-xs font-bold" style={{ color: c1 }}>
                                 {fmtMoney(Number(vendedor.venta_real))}
                             </span>
-                            <span className="text-right text-[11px] text-slate-400">
+                            <span className="text-right text-[11px] text-muted-foreground">
                                 {fmtMoney(Number(vendedor.meta_monto))}
                             </span>
-                            <span className="text-center text-[10px] font-semibold text-slate-500">
+                            <span className="text-center text-[10px] font-semibold text-muted-foreground">
                                 {totalUnidades.toLocaleString()}
                             </span>
-                            <span className="text-center text-xs font-bold text-slate-400">100%</span>
+                            <span className="text-center text-xs font-bold text-muted-foreground">100%</span>
                         </div>
                     )}
                 </div>

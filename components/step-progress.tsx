@@ -27,12 +27,12 @@ export function StepProgress({ steps, currentStep, onStepClick }: StepProgressPr
                         <div key={index} className="flex flex-col items-center flex-1">
                             <div
                                 className={cn(
-                                    "flex h-10 w-10 items-center justify-center rounded-full border-2 transition-all duration-200 bg-white",
+                                    "flex h-10 w-10 items-center justify-center rounded-full border-2 transition-all duration-200 bg-background",
                                     isCompleted
                                         ? "border-blue-600 bg-blue-600 text-white" // Completado
                                         : isCurrent
                                             ? "border-blue-600 text-blue-600" // Actual
-                                            : "border-gray-300 text-gray-400", // Futuro
+                                            : "border-border text-muted-foreground", // Futuro
                                 )}
                                 onClick={() => {
                                     if (onStepClick && isCompleted) {
@@ -50,7 +50,7 @@ export function StepProgress({ steps, currentStep, onStepClick }: StepProgressPr
                             <span
                                 className={cn(
                                     "mt-2 text-xs font-medium transition-colors duration-200",
-                                    isCurrent ? "text-blue-600" : "text-gray-500",
+                                    isCurrent ? "text-blue-600" : "text-muted-foreground",
                                 )}
                             >
                 {step.label}
@@ -61,7 +61,7 @@ export function StepProgress({ steps, currentStep, onStepClick }: StepProgressPr
             </div>
 
             <div className="relative -top-9 mx-auto w-[85%]">
-                <div className="absolute top-1/2 left-0 h-1 w-full -translate-y-1/2 bg-gray-200" />
+                <div className="absolute top-1/2 left-0 h-1 w-full -translate-y-1/2 bg-muted" />
                 <div
                     className="absolute top-1/2 left-0 h-1 -translate-y-1/2 bg-blue-600 transition-all duration-300 ease-in-out"
                     style={{

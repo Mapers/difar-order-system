@@ -286,7 +286,7 @@ export const ExportLibroPsicotropicosPdf: React.FC<Props> = ({
         <Button
             variant="outline"
             size="sm"
-            className="h-9 text-xs bg-white text-red-700 border-red-200 hover:bg-red-50"
+            className="h-9 text-xs bg-background text-red-700 border-red-200 hover:bg-red-50"
             onClick={generatePdf}
             disabled={disabled || loading}
         >

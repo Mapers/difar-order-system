@@ -245,7 +245,7 @@ export function InvoiceModal({
                     {selectedOrder && (
                         <div className="space-y-4">
                             <div className="bg-blue-50 p-4 rounded-lg">
-                                <h4 className="font-medium text-gray-900 mb-2">Datos del Pedido</h4>
+                                <h4 className="font-medium text-blue-900 mb-2">Datos del Pedido</h4>
                                 <div className="text-sm space-y-1">
                                     <p><strong>Pedido:</strong> {selectedOrder.nroPedido}</p>
                                     <p><strong>Cliente:</strong> {selectedOrder.nombreCliente}</p>
@@ -358,18 +358,18 @@ export function InvoiceModal({
                                         disabled={isProcessing}
                                     />
                                     <Label htmlFor="chk-flete" className="text-sm font-medium flex items-center gap-2 cursor-pointer">
-                                        <Package className="h-4 w-4 text-gray-600" />
+                                        <Package className="h-4 w-4 text-muted-foreground" />
                                         Incluir Cargo por Flete
                                     </Label>
                                 </div>
                                 {fleteActivo && (
                                     <div className="space-y-2 pl-6">
                                         <div className="flex-1 space-y-1">
-                                            <Label className="text-xs text-gray-500">
-                                                Monto Flete <span className="text-gray-400">(sin IGV)</span>
+                                            <Label className="text-xs text-muted-foreground">
+                                                Monto Flete <span className="text-muted-foreground">(sin IGV)</span>
                                             </Label>
                                             <div className="relative">
-                                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-500">S/</span>
+                                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">S/</span>
                                                 <Input
                                                     type="number"
                                                     min="0.01"
@@ -399,18 +399,18 @@ export function InvoiceModal({
                                         disabled={isProcessing}
                                     />
                                     <Label htmlFor="chk-descuento" className="text-sm font-medium flex items-center gap-2 cursor-pointer">
-                                        <Tag className="h-4 w-4 text-gray-600" />
+                                        <Tag className="h-4 w-4 text-muted-foreground" />
                                         Incluir Descuento Global
                                     </Label>
                                 </div>
                                 {descuentoActivo && (
                                     <div className="space-y-2 pl-6">
                                         <div className="flex-1 space-y-1">
-                                            <Label className="text-xs text-gray-500">
-                                                Monto Descuento <span className="text-gray-400">(sobre el total)</span>
+                                            <Label className="text-xs text-muted-foreground">
+                                                Monto Descuento <span className="text-muted-foreground">(sobre el total)</span>
                                             </Label>
                                             <div className="relative">
-                                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-500">S/</span>
+                                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">S/</span>
                                                 <Input
                                                     type="number"
                                                     min="0.01"
@@ -444,11 +444,11 @@ export function InvoiceModal({
                                         <div className="space-y-1">
                                             <div className="flex items-center gap-2 text-sm">
                                                 <Badge>{cuotas.length} Cuota(s)</Badge>
-                                                <span className="text-xs text-gray-500">
+                                                <span className="text-xs text-muted-foreground">
                                                     Último vencimiento: {cuotas[cuotas.length - 1].fecha}
                                                 </span>
                                             </div>
-                                            <div className="text-xs text-gray-500 mt-1 max-h-[60px] overflow-y-auto">
+                                            <div className="text-xs text-muted-foreground mt-1 max-h-[60px] overflow-y-auto">
                                                 {cuotas.map((c, i) => (
                                                     <div key={i} className="flex justify-between w-[90%]">
                                                         <span>Cuota {i + 1} ({c.fecha}):</span>
@@ -472,7 +472,7 @@ export function InvoiceModal({
                                         variant="outline"
                                         onClick={() => setShowGuidesModal(true)}
                                         disabled={isProcessing || loadingGuides}
-                                        className="flex items-center gap-2 border-dashed border-gray-400"
+                                        className="flex items-center gap-2 border-dashed border-border"
                                     >
                                         {loadingGuides
                                             ? <><Loader2 className="h-4 w-4 animate-spin" /> Cargando guías...</>
@@ -489,17 +489,17 @@ export function InvoiceModal({
 
                             {selectedOrder.observaciones && (
                                 <div className="space-y-2">
-                                    <Label className="text-sm font-medium flex items-center gap-2 text-gray-700">
+                                    <Label className="text-sm font-medium flex items-center gap-2 text-foreground">
                                         <FileText className="h-4 w-4" /> Observaciones
                                     </Label>
-                                    <div className="bg-gray-50 border border-gray-200 rounded-md p-3 text-sm text-gray-600 italic">
+                                    <div className="bg-muted border border-border rounded-md p-3 text-sm text-muted-foreground italic">
                                         {selectedOrder.observaciones}
                                     </div>
                                 </div>
                             )}
 
                             {loadingPreviewData ? (
-                                <div className="flex items-center gap-2 text-xs text-gray-500 py-1">
+                                <div className="flex items-center gap-2 text-xs text-muted-foreground py-1">
                                     <Loader2 className="h-3 w-3 animate-spin" /> Verificando correlativo existente...
                                 </div>
                             ) : previewExistente && (

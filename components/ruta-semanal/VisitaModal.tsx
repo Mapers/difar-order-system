@@ -56,8 +56,8 @@ export function VisitaModal({
                 <div className="space-y-4">
                     <div className="p-3 bg-blue-50 rounded-lg">
                         <h4 className="font-medium text-sm mb-1">{selectedVisita?.NombreComercial}</h4>
-                        <p className="text-sm text-gray-600 flex items-center"><Locate className="h-4 w-4 mr-2 text-blue-600" /> {selectedVisita?.direccion}</p>
-                        <p className="text-xs text-gray-500 flex items-center"><User className="h-4 w-4 mr-2 text-orange-600" /> {selectedVisita?.Nombre}</p>
+                        <p className="text-sm text-blue-700 flex items-center"><Locate className="h-4 w-4 mr-2 text-blue-600" /> {selectedVisita?.direccion}</p>
+                        <p className="text-xs text-blue-700 flex items-center"><User className="h-4 w-4 mr-2 text-orange-600" /> {selectedVisita?.Nombre}</p>
                     </div>
 
                     <div className="space-y-2">

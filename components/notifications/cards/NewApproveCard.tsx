@@ -15,7 +15,7 @@ export function NewApproveCard({ notification }: NotifCardProps) {
       </div>
       <div className="min-w-0 flex-1">
         <div className="flex items-center justify-between gap-2">
-          <p className="truncate text-sm font-semibold text-gray-800">
+          <p className="truncate text-sm font-semibold text-foreground">
             Aprobación
           </p>
           {(payload?.numeroOrden || payload?.id) && (
@@ -25,20 +25,20 @@ export function NewApproveCard({ notification }: NotifCardProps) {
           )}
         </div>
         {payload?.message && (
-          <p className="text-xs text-gray-600 break-words">
+          <p className="text-xs text-muted-foreground break-words">
             {payload.message} {payload?.vendedor}
           </p>
         )}
         {payload?.cliente?.nombre && (
-          <div className="mt-1 flex items-start gap-2 text-xs text-gray-600">
-            <User className="mt-0.5 h-3.5 w-3.5 shrink-0 text-gray-400" />
+          <div className="mt-1 flex items-start gap-2 text-xs text-muted-foreground">
+            <User className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
             <span className="min-w-0 break-words">
               {payload.cliente.nombre}
               {payload?.cliente?.ruc ? ` · ${payload.cliente.ruc}` : ""}
             </span>
           </div>
         )}
-        <div className="mt-1 flex items-center gap-2 text-xs text-gray-400">
+        <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
           <Calendar className="h-3.5 w-3.5" />
           <span>{formatNotifDate(payload?.fecha || receivedAt)}</span>
         </div>

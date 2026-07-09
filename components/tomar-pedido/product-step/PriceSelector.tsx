@@ -26,16 +26,16 @@ export default function PriceSelector({
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 mt-3 [&>*]:min-w-0">
 
             <button type="button" onClick={() => onPriceTypeChange('contado')}
-                    className={`relative rounded-xl p-2 sm:p-3 text-center transition-all border-2 ${priceType === 'contado' ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 shadow-sm' : 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800'}`}>
+                    className={`relative rounded-xl p-2 sm:p-3 text-center transition-all border-2 ${priceType === 'contado' ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 shadow-sm' : 'border-border bg-muted'}`}>
                 {priceType === 'contado' && <Check className="absolute top-1 right-1 h-3 w-3 text-blue-600 dark:text-blue-400" />}
-                <div className="text-[10px] sm:text-xs font-medium text-gray-500 dark:text-gray-400 mb-0.5">Contado</div>
+                <div className="text-[10px] sm:text-xs font-medium text-muted-foreground mb-0.5">Contado</div>
                 <div className="text-xs sm:text-sm font-bold text-blue-700 dark:text-blue-300">{sym}{Number(selectedProduct.PUContado).toFixed(2)}</div>
             </button>
 
             <button type="button" onClick={() => onPriceTypeChange('credito')}
-                    className={`relative rounded-xl p-2 sm:p-3 text-center transition-all border-2 ${priceType === 'credito' ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 shadow-sm' : 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800'}`}>
+                    className={`relative rounded-xl p-2 sm:p-3 text-center transition-all border-2 ${priceType === 'credito' ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 shadow-sm' : 'border-border bg-muted'}`}>
                 {priceType === 'credito' && <Check className="absolute top-1 right-1 h-3 w-3 text-blue-600 dark:text-blue-400" />}
-                <div className="text-[10px] sm:text-xs font-medium text-gray-500 dark:text-gray-400 mb-0.5">Crédito</div>
+                <div className="text-[10px] sm:text-xs font-medium text-muted-foreground mb-0.5">Crédito</div>
                 <div className="text-xs sm:text-sm font-bold text-blue-700 dark:text-blue-300">{sym}{Number(selectedProduct.PUCredito).toFixed(2)}</div>
             </button>
 
@@ -82,7 +82,7 @@ export default function PriceSelector({
                             }
                         }}
                         onClick={(e) => e.stopPropagation()}
-                        className="h-6 sm:h-7 w-14 sm:w-16 text-center text-xs font-bold text-red-700 bg-white border-red-200 p-1"
+                        className="h-6 sm:h-7 w-14 sm:w-16 text-center text-xs font-bold text-red-700 bg-background border-red-200 p-1"
                         placeholder="0.00"
                     />
                 </div>

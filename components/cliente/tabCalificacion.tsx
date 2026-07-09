@@ -22,7 +22,7 @@ const TabCalificacion: React.FC<DireccionTecnicaProps> = ({ onClose, evaluacionC
     return (
         <TabsContent value="calificacion" className="space-y-6 mt-6">
             <div className="space-y-6">
-                <h4 className="font-medium text-gray-900 flex items-center gap-2">
+                <h4 className="font-medium text-foreground flex items-center gap-2">
                     <CheckCircle className="h-4 w-4 text-green-600" />
                     Calificación Final
                 </h4>
@@ -38,7 +38,7 @@ const TabCalificacion: React.FC<DireccionTecnicaProps> = ({ onClose, evaluacionC
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="text-center">
-                                <p className="text-sm text-gray-600 mb-4">Estado de aprobación:</p>
+                                <p className="text-sm text-blue-900 mb-4">Estado de aprobación:</p>
                                 <Button
                                     // onClick={() => handleInputChange("aprobadoDirTecnica", !formData.aprobDirTecnica)}
                                     className={`w-full h-12 text-sm sm:text-base font-bold transition-all duration-200 ${evaluacionCalificacion.dir_tecnica_estado !== ESTADO_APROBACION.APROBADO
@@ -60,15 +60,15 @@ const TabCalificacion: React.FC<DireccionTecnicaProps> = ({ onClose, evaluacionC
                                         </div>
                                     )}
                                 </Button>
-                                {/* <p className="text-xs text-gray-500 mt-2">Haz clic para cambiar el estado</p> */}
+                                {/* <p className="text-xs text-muted-foreground mt-2">Haz clic para cambiar el estado</p> */}
                             </div>
 
                             {/* Línea de firma */}
-                            <div className="border-t border-gray-300 pt-4 mt-6">
+                            <div className="border-t border-border pt-4 mt-6">
                                 <div className="text-center">
-                                    <div className="h-8 sm:h-12 border-b border-gray-400 mb-2"></div>
-                                    <p className="text-xs font-medium text-gray-700">DIRECCIÓN TÉCNICA</p>
-                                    <p className="text-xs text-gray-500">Firma y sello</p>
+                                    <div className="h-8 sm:h-12 border-b border-border mb-2"></div>
+                                    <p className="text-xs font-medium text-blue-900">DIRECCIÓN TÉCNICA</p>
+                                    <p className="text-xs text-blue-900">Firma y sello</p>
                                 </div>
                             </div>
                         </CardContent>
@@ -83,7 +83,7 @@ const TabCalificacion: React.FC<DireccionTecnicaProps> = ({ onClose, evaluacionC
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="text-center">
-                                <p className="text-sm text-gray-600 mb-4">Estado de aprobación:</p>
+                                <p className="text-sm text-green-900 mb-4">Estado de aprobación:</p>
                                 <Button
                                     // onClick={() => handleInputChange("aprobadoGerente", !formData.aprobadoGerente)}
                                     className={`w-full h-12 text-sm sm:text-base font-bold transition-all duration-200 ${evaluacionCalificacion.gerente_estado !== ESTADO_APROBACION.APROBADO
@@ -105,15 +105,15 @@ const TabCalificacion: React.FC<DireccionTecnicaProps> = ({ onClose, evaluacionC
                                         </div>
                                     )}
                                 </Button>
-                                {/* <p className="text-xs text-gray-500 mt-2">Haz clic para cambiar el estado</p> */}
+                                {/* <p className="text-xs text-muted-foreground mt-2">Haz clic para cambiar el estado</p> */}
                             </div>
 
                             {/* Línea de firma */}
-                            <div className="border-t border-gray-300 pt-4 mt-6">
+                            <div className="border-t border-border pt-4 mt-6">
                                 <div className="text-center">
-                                    <div className="h-8 sm:h-12 border-b border-gray-400 mb-2"></div>
-                                    <p className="text-xs font-medium text-gray-700">GERENTE</p>
-                                    <p className="text-xs text-gray-500">Firma y sello</p>
+                                    <div className="h-8 sm:h-12 border-b border-border mb-2"></div>
+                                    <p className="text-xs font-medium text-green-900">GERENTE</p>
+                                    <p className="text-xs text-green-900">Firma y sello</p>
                                 </div>
                             </div>
                         </CardContent>
@@ -132,14 +132,14 @@ const TabCalificacion: React.FC<DireccionTecnicaProps> = ({ onClose, evaluacionC
                             className="w-full"
                         />
                     ) : (
-                        <p className="text-gray-500 italic">No existen observaciones globales.</p>
+                        <p className="text-muted-foreground italic">No existen observaciones globales.</p>
                     )}
                 </div>
 
                 {/* Resultado final */}
-                <Card className="bg-gray-50 border-gray-200">
+                <Card className="bg-muted border-border">
                     <CardHeader className="pb-3">
-                        <CardTitle className="text-sm font-medium text-gray-900">Resultado de la Evaluación</CardTitle>
+                        <CardTitle className="text-sm font-medium text-foreground">Resultado de la Evaluación</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="flex items-center justify-center p-6">

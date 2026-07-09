@@ -46,10 +46,10 @@ function OrderArrivalBody({
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <User className="h-5 w-5 text-gray-500" />
+              <User className="h-5 w-5 text-muted-foreground" />
               <div>
                 <p className="font-semibold">{data?.cliente?.nombre || "Cliente"}</p>
-                <p className="text-sm text-gray-600">{data?.cliente?.ruc || "Sin RUC"}</p>
+                <p className="text-sm text-muted-foreground">{data?.cliente?.ruc || "Sin RUC"}</p>
               </div>
               <Badge variant="secondary" className="ml-auto">
                 {formatOrderNumber(data?.numeroOrden || data?.id)}

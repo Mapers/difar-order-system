@@ -76,14 +76,14 @@ export const CreateUsuarioWebModal = ({ isOpen, onClose, vendedores, usuariosNoW
                         <div>
                             <label className="block text-sm font-medium mb-1">Buscar Vendedor</label>
                             <div className="relative mb-2">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400"/>
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"/>
                                 <Input placeholder="Buscar..." className="pl-10" value={busquedaVendedor} onChange={(e) => setBusquedaVendedor(e.target.value)} />
                             </div>
                             <div className="border rounded-lg max-h-40 overflow-y-auto">
                                 {vendedoresFiltrados.map((v: Vendedor) => (
-                                    <div key={v.idVendedor} className={`p-3 cursor-pointer ${selectedVendedor?.idVendedor === v.idVendedor ? 'bg-blue-50' : 'hover:bg-gray-50'}`} onClick={() => { setSelectedVendedor(v); setDni(v.DNI); setTelefono(v.telefono); }}>
+                                    <div key={v.idVendedor} className={`p-3 cursor-pointer ${selectedVendedor?.idVendedor === v.idVendedor ? 'bg-blue-50' : 'hover:bg-muted'}`} onClick={() => { setSelectedVendedor(v); setDni(v.DNI); setTelefono(v.telefono); }}>
                                         <p className="font-medium">{v.nombres} {v.apellidos}</p>
-                                        <p className="text-sm text-gray-600">DNI: {v.DNI}</p>
+                                        <p className="text-sm text-muted-foreground">DNI: {v.DNI}</p>
                                     </div>
                                 ))}
                             </div>
@@ -94,12 +94,12 @@ export const CreateUsuarioWebModal = ({ isOpen, onClose, vendedores, usuariosNoW
                         <div>
                             <label className="block text-sm font-medium mb-1">Buscar Usuario</label>
                             <div className="relative mb-2">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400"/>
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"/>
                                 <Input placeholder="Buscar..." className="pl-10" value={busquedaUsuarios} onChange={(e) => setBusquedaUsuarios(e.target.value)} />
                             </div>
                             <div className="border rounded-lg max-h-40 overflow-y-auto">
                                 {usuariosFiltrados.map((v: UsuarioNoWeb) => (
-                                    <div key={v.IdUsuarios} className={`p-3 cursor-pointer ${selectedUsuarioNoWeb?.IdUsuarios === v.IdUsuarios ? 'bg-blue-50' : 'hover:bg-gray-50'}`} onClick={() => { setSelectedUsuarioNoWeb(v); setDni(v.ObsUsuario || ''); }}>
+                                    <div key={v.IdUsuarios} className={`p-3 cursor-pointer ${selectedUsuarioNoWeb?.IdUsuarios === v.IdUsuarios ? 'bg-blue-50' : 'hover:bg-muted'}`} onClick={() => { setSelectedUsuarioNoWeb(v); setDni(v.ObsUsuario || ''); }}>
                                         <p className="font-medium">{v.NombreUsuarios}</p>
                                     </div>
                                 ))}
@@ -217,9 +217,9 @@ export const DeleteUsuarioWebModal = ({ isOpen, onClose, usuario, onSuccess }: a
             <DialogContent className="max-w-md">
                 <DialogHeader><DialogTitle>Eliminar Usuario</DialogTitle></DialogHeader>
                 <div className="space-y-2">
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm text-muted-foreground">
                         ¿Estás seguro de eliminar al usuario{' '}
-                        <span className="font-semibold text-gray-900">{usuario?.nombre_completo}</span>?
+                        <span className="font-semibold text-foreground">{usuario?.nombre_completo}</span>?
                         Esta acción no se puede deshacer.
                     </p>
                 </div>
@@ -415,7 +415,7 @@ export const RepresentanteModal = ({ isOpen, onClose, initialData, vendedores, l
                     </div>
 
                     <div className="space-y-1">
-                        <label className="text-sm font-medium">Vendedor Relación <span className="text-gray-400 font-normal">(opcional)</span></label>
+                        <label className="text-sm font-medium">Vendedor Relación <span className="text-muted-foreground font-normal">(opcional)</span></label>
                         <Select
                             value={vendedorRelacion || SIN_RELACION}
                             onValueChange={(v) => setVendedorRelacion(v === SIN_RELACION ? '' : v)}
@@ -442,7 +442,7 @@ export const RepresentanteModal = ({ isOpen, onClose, initialData, vendedores, l
                                         id={`vend-${vend.idVendedor}`}
                                         checked={selectedVends.includes(vend.idVendedor)}
                                         onChange={() => toggleVend(vend.idVendedor)}
-                                        className="rounded border-gray-300"
+                                        className="rounded border-border"
                                     />
                                     <label htmlFor={`vend-${vend.idVendedor}`} className="text-xs truncate cursor-pointer" title={`${vend.nombres} ${vend.apellidos}`}>
                                         {vend.nombres} {vend.apellidos}
@@ -462,7 +462,7 @@ export const RepresentanteModal = ({ isOpen, onClose, initialData, vendedores, l
                                         id={`lab-${lab.IdLineaGe}`}
                                         checked={selectedLabs.includes(lab.IdLineaGe)}
                                         onChange={() => toggleLab(lab.IdLineaGe)}
-                                        className="rounded border-gray-300"
+                                        className="rounded border-border"
                                     />
                                     <label htmlFor={`lab-${lab.IdLineaGe}`} className="text-xs truncate cursor-pointer" title={lab.Descripcion}>
                                         {lab.Descripcion}

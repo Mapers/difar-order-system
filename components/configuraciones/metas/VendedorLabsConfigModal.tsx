@@ -61,20 +61,20 @@ export default function VendedorLabsConfigModal({
     return (
         <Dialog open={open} onOpenChange={onClose}>
             <DialogContent className="max-w-lg max-h-[85vh] overflow-hidden flex flex-col p-0">
-                <div className="p-5 pb-4 border-b border-slate-200">
+                <div className="p-5 pb-4 border-b border-border">
                     <div className="flex items-center gap-3">
                         <div className="w-9 h-9 rounded-lg flex items-center justify-center text-xs font-bold shrink-0 bg-sky-100 text-sky-600">
                             {getInitials(nombreVendedor)}
                         </div>
                         <div>
-                            <DialogTitle className="text-base font-bold text-slate-800">
+                            <DialogTitle className="text-base font-bold text-foreground">
                                 {nombreVendedor}
                             </DialogTitle>
                             <div className="flex items-center gap-2 mt-0.5">
                                 <Badge variant="outline" className="text-[10px] bg-sky-50 text-sky-700 border-sky-200">
                                     Cód: {codVendedor}
                                 </Badge>
-                                <span className="text-[10px] text-slate-400">
+                                <span className="text-[10px] text-muted-foreground">
                                     {totalLabs} laboratorio{totalLabs !== 1 ? 's' : ''} asignado{totalLabs !== 1 ? 's' : ''}
                                 </span>
                             </div>
@@ -82,14 +82,14 @@ export default function VendedorLabsConfigModal({
                     </div>
                 </div>
 
-                <div className="px-4 pt-3 pb-2 space-y-2 border-b border-slate-100">
+                <div className="px-4 pt-3 pb-2 space-y-2 border-b border-border">
                     <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input
                             placeholder="Buscar laboratorio..."
                             value={search}
                             onChange={e => setSearch(e.target.value)}
-                            className="pl-10 bg-slate-50 h-9 text-sm"
+                            className="pl-10 bg-muted h-9 text-sm"
                         />
                     </div>
                     <div className="flex items-center gap-1.5 flex-wrap">
@@ -98,13 +98,13 @@ export default function VendedorLabsConfigModal({
                                 key={btn.key}
                                 variant="outline"
                                 size="sm"
-                                className={`text-[11px] h-7 px-3 ${filter === btn.key ? btn.activeClass : "text-slate-500"}`}
+                                className={`text-[11px] h-7 px-3 ${filter === btn.key ? btn.activeClass : "text-muted-foreground"}`}
                                 onClick={() => setFilter(btn.key)}
                             >
                                 {btn.label}
                             </Button>
                         ))}
-                        <span className="text-[10px] text-slate-400 ml-auto">
+                        <span className="text-[10px] text-muted-foreground ml-auto">
                             {filtered.length} de {labsDelVendedor.length}
                         </span>
                     </div>
@@ -114,10 +114,10 @@ export default function VendedorLabsConfigModal({
                     {loading ? (
                         <div className="flex flex-col items-center justify-center py-12 gap-2">
                             <div className="animate-spin rounded-full h-7 w-7 border-b-2 border-sky-600" />
-                            <p className="text-xs text-slate-400">Cargando laboratorios...</p>
+                            <p className="text-xs text-muted-foreground">Cargando laboratorios...</p>
                         </div>
                     ) : filtered.length === 0 ? (
-                        <div className="text-center text-slate-400 text-sm py-10">
+                        <div className="text-center text-muted-foreground text-sm py-10">
                             Sin resultados
                         </div>
                     ) : filtered.map((lab, i) => {
@@ -126,7 +126,7 @@ export default function VendedorLabsConfigModal({
                         return (
                             <div
                                 key={lab.id_lab}
-                                className="rounded-lg border border-slate-100 bg-white p-3"
+                                className="rounded-lg border border-border bg-background p-3"
                                 style={{ borderLeft: `3px solid ${color}` }}
                             >
                                 <div className="flex items-center justify-between gap-2">
@@ -137,7 +137,7 @@ export default function VendedorLabsConfigModal({
                                         >
                                             {getInitials(lab.nombre_lab || '')}
                                         </div>
-                                        <span className="text-sm font-semibold text-slate-800 truncate">
+                                        <span className="text-sm font-semibold text-foreground truncate">
                                             {lab.nombre_lab || `Lab ${lab.id_lab}`}
                                         </span>
                                     </div>
@@ -148,7 +148,7 @@ export default function VendedorLabsConfigModal({
                                 </div>
                                 <div className="mt-2 space-y-1">
                                     <ProgressBar pct={lab.pct} height="h-1.5" />
-                                    <span className="text-[10px] text-slate-400">
+                                    <span className="text-[10px] text-muted-foreground">
                                         {fmtMoney(Number(lab.venta_real))} / {fmtMoney(Number(lab.meta_monto))}
                                     </span>
                                 </div>

@@ -114,7 +114,7 @@ export function TimelineModal({ pedido }: TimelineModalProps) {
               {error}
             </div>
           ) : historial.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
+            <div className="text-center py-8 text-muted-foreground">
               No hay historial de cambios para este pedido
             </div>
           ) : (
@@ -127,10 +127,10 @@ export function TimelineModal({ pedido }: TimelineModalProps) {
                   <div key={item.id_historial} className="flex gap-4 group">
                     <div className="flex flex-col items-center">
                       <div className={`w-3 h-3 rounded-full ${
-                        index === 0 ? 'bg-blue-500 ring-2 ring-blue-200' : 'bg-gray-300'
+                        index === 0 ? 'bg-blue-500 ring-2 ring-blue-200' : 'bg-muted'
                       }`} />
                       {index !== historial.length - 1 && (
-                        <div className="w-0.5 h-16 bg-gray-200 mt-1" />
+                        <div className="w-0.5 h-16 bg-muted mt-1" />
                       )}
                     </div>
 
@@ -139,25 +139,25 @@ export function TimelineModal({ pedido }: TimelineModalProps) {
                         <Badge variant="outline" className={estadoAnteriorInfo?.color}>
                           {estadoAnteriorInfo?.name || `Estado ${item.estado_anterior}`}
                         </Badge>
-                        <ArrowRight className="h-4 w-4 text-gray-400" />
+                        <ArrowRight className="h-4 w-4 text-muted-foreground" />
                         <Badge className={estadoNuevoInfo?.color}>
                           {estadoNuevoInfo?.name || `Estado ${item.estado_nuevo}`}
                         </Badge>
                       </div>
 
                       <div className="grid gap-2 text-sm">
-                        <div className="flex items-center gap-2 text-gray-600">
+                        <div className="flex items-center gap-2 text-muted-foreground">
                           <User className="h-4 w-4" />
                           <span>{item.usuario_cambio}</span>
                         </div>
 
-                        <div className="flex items-center gap-2 text-gray-600">
+                        <div className="flex items-center gap-2 text-muted-foreground">
                           <Calendar className="h-4 w-4" />
                           <span>{formatFecha(item.fecha_cambio)}</span>
                         </div>
 
                         {item.notas && (
-                          <div className="flex items-start gap-2 text-gray-700 mt-2">
+                          <div className="flex items-start gap-2 text-foreground mt-2">
                             <FileText className="h-4 w-4 mt-0.5 flex-shrink-0" />
                             <span className="text-sm">{item.notas}</span>
                           </div>

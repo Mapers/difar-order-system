@@ -20,23 +20,23 @@ const ClientRow: React.FC<ClientRowProps> = ({ client,invoices }) => {
     return (
         <div className="mb-4">
             <div
-                className="p-4 cursor-pointer flex justify-between items-center bg-white"
+                className="p-4 cursor-pointer flex justify-between items-center bg-background"
                 onClick={toggleExpand}
             >
                 <div className="w-full">
                     <div className="flex flex-col md:flex-row md:justify-between md:items-center">
                         <div className="flex-1">
-                            <div className="font-semibold text-lg text-gray-800">{client.head.NombreComercial}</div>
-                            <div className="text-sm text-gray-600">
+                            <div className="font-semibold text-lg text-foreground">{client.head.NombreComercial}</div>
+                            <div className="text-sm text-muted-foreground">
                                 <span className="font-medium">Cliente:</span> {client.head.Cod_Clie}
                             </div>
-                            <div className="text-sm text-gray-600">
+                            <div className="text-sm text-muted-foreground">
                                 <span className="font-medium">Zona:</span> {client.head.Nombre}
                             </div>
                         </div>
                         <div className="mt-2 md:mt-0 text-right">
-                            <div className="font-semibold text-lg text-gray-800"> S/. {total.toFixed(2)}</div>
-                            <div className="text-sm text-gray-600">Saldo Total</div>
+                            <div className="font-semibold text-lg text-foreground"> S/. {total.toFixed(2)}</div>
+                            <div className="text-sm text-muted-foreground">Saldo Total</div>
                         </div>
                     </div>
 
@@ -58,9 +58,9 @@ const ClientRow: React.FC<ClientRowProps> = ({ client,invoices }) => {
             </div>
 
             {expanded && (
-                <div className="border-t border-gray-200 overflow-x-auto">
+                <div className="border-t border-border overflow-x-auto">
                     <Table>
-                        <TableHeader className="bg-gray-50">
+                        <TableHeader className="bg-muted">
                             <TableRow>
                                 <TableHead>Fecha EMISIÓN</TableHead>
                                 <TableHead>FECHA VENCIMIENTO</TableHead>

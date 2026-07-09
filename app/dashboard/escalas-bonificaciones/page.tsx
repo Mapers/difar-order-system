@@ -280,8 +280,8 @@ export default function ScaleBonusManagementPage() {
         <div className="grid gap-6">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div className="flex flex-col gap-2">
-                    <h1 className="text-3xl font-bold tracking-tight text-gray-900">Gestión de Promociones</h1>
-                    <p className="text-gray-500">Administra escalas de precios y bonificaciones por producto</p>
+                    <h1 className="text-3xl font-bold tracking-tight text-foreground">Gestión de Promociones</h1>
+                    <p className="text-muted-foreground">Administra escalas de precios y bonificaciones por producto</p>
                 </div>
 
                 <div className="flex items-center gap-2 overflow-x-auto pb-2 sm:pb-0 w-full sm:w-auto">
@@ -291,15 +291,15 @@ export default function ScaleBonusManagementPage() {
             </div>
 
             <Card className="shadow-md">
-                <CardHeader className="flex flex-col sm:flex-row justify-between gap-4 sm:items-center border-b bg-gray-50">
+                <CardHeader className="flex flex-col sm:flex-row justify-between gap-4 sm:items-center border-b bg-muted">
                     <CardTitle className="text-xl font-semibold text-teal-700">Productos con Promociones</CardTitle>
                     <div className="flex flex-col sm:flex-row gap-3">
                         <div className="relative">
-                            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+                            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                             <Input
                                 type="search"
                                 placeholder="Buscar producto..."
-                                className="pl-8 bg-white w-full sm:w-64"
+                                className="pl-8 bg-background w-full sm:w-64"
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                             />
@@ -339,12 +339,12 @@ export default function ScaleBonusManagementPage() {
                                             <span className="font-medium truncate w-full text-sm">
                                                 {selectedProduct.NombreItem}
                                             </span>
-                                                                    <span className="text-xs text-gray-500 truncate w-full">
+                                                                    <span className="text-xs text-muted-foreground truncate w-full">
                                                 {selectedProduct.Codigo_Art} | {selectedProduct.Presentacion}
                                             </span>
                                                                 </div>
                                                             ) : (
-                                                                <span className="text-gray-500 truncate">Buscar producto...</span>
+                                                                <span className="text-muted-foreground truncate">Buscar producto...</span>
                                                             )}
                                                             <Search className="ml-2 h-4 w-4 shrink-0 opacity-50"/>
                                                         </Button>
@@ -392,10 +392,10 @@ export default function ScaleBonusManagementPage() {
                                                                                         </div>
                                                                                     </div>
                                                                                     <div className="flex flex-col xs:flex-row xs:justify-between xs:items-center w-full mt-1 gap-1">
-                                                                <span className="text-xs text-gray-500 break-words">
+                                                                <span className="text-xs text-muted-foreground break-words">
                                                                     <span className="font-medium">Código:</span> {product.Codigo_Art}
                                                                 </span>
-                                                                                        <span className="text-xs text-gray-500 break-words">
+                                                                                        <span className="text-xs text-muted-foreground break-words">
                                                                     <span className="font-medium">Lab:</span> {product.Presentacion}
                                                                 </span>
                                                                                     </div>
@@ -442,7 +442,7 @@ export default function ScaleBonusManagementPage() {
                                                             <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5" />
                                                             Escalas de Precio
                                                         </CardTitle>
-                                                        <CardDescription className="text-sm">
+                                                        <CardDescription className="text-sm text-purple-900">
                                                             Define rangos de cantidad con precios especiales por volumen
                                                         </CardDescription>
                                                     </CardHeader>
@@ -475,7 +475,7 @@ export default function ScaleBonusManagementPage() {
                                                             <div className="space-y-2">
                                                                 <Label htmlFor="precio" className="text-sm font-medium">Precio</Label>
                                                                 <div className="relative">
-                                                                    <DollarSign className="absolute left-3 top-3 h-4 w-4 text-gray-500" />
+                                                                    <DollarSign className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                                                                     <Input
                                                                         id="precio"
                                                                         type="number"
@@ -509,7 +509,7 @@ export default function ScaleBonusManagementPage() {
                                                                 </div>
                                                                 <div className="border rounded-lg divide-y max-h-48 sm:max-h-60 overflow-y-auto">
                                                                     {escalas.map((escala) => (
-                                                                        <div key={escala.id} className="flex items-center justify-between p-3 sm:p-4 hover:bg-gray-50">
+                                                                        <div key={escala.id} className="flex items-center justify-between p-3 sm:p-4 hover:bg-muted">
                                                                             <div className="flex-1 min-w-0">
                                                                                 <div className="flex items-center gap-2 sm:gap-3">
                                                                                     <div className="bg-purple-100 p-1.5 sm:p-2 rounded-md shrink-0">
@@ -519,7 +519,7 @@ export default function ScaleBonusManagementPage() {
                                                                                         <div className="font-medium text-sm break-words">
                                                                                             {escala.desde} - {escala.hasta} unidades
                                                                                         </div>
-                                                                                        <div className="text-sm text-gray-600 break-words">
+                                                                                        <div className="text-sm text-muted-foreground break-words">
                                                                                             Precio: <span className="font-semibold text-green-600">S/ {escala.precio.toFixed(2)}</span> c/u
                                                                                         </div>
                                                                                     </div>
@@ -538,10 +538,10 @@ export default function ScaleBonusManagementPage() {
                                                                 </div>
                                                             </div>
                                                         ) : (
-                                                            <div className="text-center py-6 sm:py-8 border-2 border-dashed border-gray-300 rounded-lg">
-                                                                <TrendingUp className="h-8 w-8 sm:h-12 sm:w-12 text-gray-400 mx-auto mb-2 sm:mb-3" />
-                                                                <h4 className="font-medium text-gray-900 mb-1 text-sm sm:text-base">No hay escalas configuradas</h4>
-                                                                <p className="text-xs sm:text-sm text-gray-500">
+                                                            <div className="text-center py-6 sm:py-8 border-2 border-dashed border-border rounded-lg">
+                                                                <TrendingUp className="h-8 w-8 sm:h-12 sm:w-12 text-muted-foreground mx-auto mb-2 sm:mb-3" />
+                                                                <h4 className="font-medium text-card-foreground mb-1 text-sm sm:text-base">No hay escalas configuradas</h4>
+                                                                <p className="text-xs sm:text-sm text-muted-foreground">
                                                                     Agrega rangos de cantidad con precios especiales
                                                                 </p>
                                                             </div>
@@ -558,7 +558,7 @@ export default function ScaleBonusManagementPage() {
                                                             <Gift className="h-4 w-4 sm:h-5 sm:w-5" />
                                                             Bonificaciones
                                                         </CardTitle>
-                                                        <CardDescription className="text-sm">
+                                                        <CardDescription className="text-sm text-yellow-900">
                                                             Configura promociones de "compra y lleva" - Puede ser del mismo producto u otros productos
                                                         </CardDescription>
                                                     </CardHeader>
@@ -641,13 +641,13 @@ export default function ScaleBonusManagementPage() {
                                                                         {nuevaBonificacion.descripcionProducto}
                                                                     </span>
                                                                                             {nuevaBonificacion.productoBonificado && (
-                                                                                                <span className="text-xs text-gray-500 truncate w-full">
+                                                                                                <span className="text-xs text-muted-foreground truncate w-full">
                                                                             Código: {nuevaBonificacion.productoBonificado}
                                                                         </span>
                                                                                             )}
                                                                                         </div>
                                                                                     ) : (
-                                                                                        <span className="text-gray-500 truncate">Seleccionar producto...</span>
+                                                                                        <span className="text-muted-foreground truncate">Seleccionar producto...</span>
                                                                                     )}
                                                                                     <Search className="ml-2 h-4 w-4 shrink-0 opacity-50"/>
                                                                                 </Button>
@@ -684,7 +684,7 @@ export default function ScaleBonusManagementPage() {
                                                                                     <span className="font-medium text-sm break-words">
                                                                                         {product.NombreItem}
                                                                                     </span>
-                                                                                                            <span className="text-xs text-gray-500 break-words">
+                                                                                                            <span className="text-xs text-muted-foreground break-words">
                                                                                         {product.Codigo_Art} | {product.Presentacion}
                                                                                     </span>
                                                                                                         </div>
@@ -725,7 +725,7 @@ export default function ScaleBonusManagementPage() {
                                                                 </div>
                                                                 <div className="border rounded-lg divide-y max-h-48 sm:max-h-60 overflow-y-auto">
                                                                     {bonificaciones.map((bonificacion) => (
-                                                                        <div key={bonificacion.id} className="flex items-center justify-between p-3 sm:p-4 hover:bg-gray-50">
+                                                                        <div key={bonificacion.id} className="flex items-center justify-between p-3 sm:p-4 hover:bg-muted">
                                                                             <div className="flex-1 min-w-0">
                                                                                 <div className="flex items-center gap-2 sm:gap-3">
                                                                                     <div className="bg-yellow-100 p-1.5 sm:p-2 rounded-md shrink-0">
@@ -740,7 +740,7 @@ export default function ScaleBonusManagementPage() {
                                                                                                 </Badge>
                                                                                             )}
                                                                                         </div>
-                                                                                        <div className="text-sm text-gray-600 break-words">
+                                                                                        <div className="text-sm text-muted-foreground break-words">
                                                                                             {bonificacion.descripcion}
                                                                                         </div>
                                                                                         {!bonificacion.esMismoProducto && bonificacion.descripcionProducto && (
@@ -764,10 +764,10 @@ export default function ScaleBonusManagementPage() {
                                                                 </div>
                                                             </div>
                                                         ) : (
-                                                            <div className="text-center py-6 sm:py-8 border-2 border-dashed border-gray-300 rounded-lg">
-                                                                <Gift className="h-8 w-8 sm:h-12 sm:w-12 text-gray-400 mx-auto mb-2 sm:mb-3" />
-                                                                <h4 className="font-medium text-gray-900 mb-1 text-sm sm:text-base">No hay bonificaciones</h4>
-                                                                <p className="text-xs sm:text-sm text-gray-500">
+                                                            <div className="text-center py-6 sm:py-8 border-2 border-dashed border-border rounded-lg">
+                                                                <Gift className="h-8 w-8 sm:h-12 sm:w-12 text-muted-foreground mx-auto mb-2 sm:mb-3" />
+                                                                <h4 className="font-medium text-card-foreground mb-1 text-sm sm:text-base">No hay bonificaciones</h4>
+                                                                <p className="text-xs sm:text-sm text-muted-foreground">
                                                                     Configura promociones de compra y lleva gratis
                                                                 </p>
                                                             </div>
@@ -805,7 +805,7 @@ export default function ScaleBonusManagementPage() {
                     {loading ? (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                             {Array.from({ length: 6 }).map((_, index) => (
-                                <Card key={index} className="border border-gray-200">
+                                <Card key={index} className="border border-border">
                                     <CardContent className="p-4">
                                         <div className="flex justify-between items-start mb-3">
                                             <Skeleton className="h-5 w-32" />
@@ -827,13 +827,13 @@ export default function ScaleBonusManagementPage() {
                     ) : filteredProducts.length > 0 ? (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                             {filteredProducts.map((producto, index) => (
-                                <Card key={index} className="border border-gray-200 hover:shadow-lg transition-shadow">
+                                <Card key={index} className="border border-border hover:shadow-lg transition-shadow">
                                     <CardContent className="p-4">
                                         <div className="flex justify-between items-start mb-3">
                                             <div className="flex-1 min-w-0">
                                                 <h3 className="font-bold text-blue-600 text-sm truncate">{producto.NombreItem}</h3>
-                                                <p className="text-xs text-gray-500 truncate">{producto.Codigo_Art}</p>
-                                                <p className="text-xs text-gray-400 truncate">{producto.Presentacion}</p>
+                                                <p className="text-xs text-muted-foreground truncate">{producto.Codigo_Art}</p>
+                                                <p className="text-xs text-muted-foreground truncate">{producto.Presentacion}</p>
                                             </div>
                                             <div className="flex gap-1 flex-shrink-0">
                                                 <Badge
@@ -853,7 +853,7 @@ export default function ScaleBonusManagementPage() {
 
                                         <div className="space-y-2 mb-3">
                                             <div className="flex justify-between items-center">
-                                                <span className="text-xs text-gray-500">Precio Base:</span>
+                                                <span className="text-xs text-muted-foreground">Precio Base:</span>
                                                 <div className="flex items-center gap-1 mr-1">
                                                     <span className="font-bold text-sm text-green-600">
                                                         S/ {Number(producto.PUContado).toFixed(2)}
@@ -861,8 +861,8 @@ export default function ScaleBonusManagementPage() {
                                                 </div>
                                             </div>
                                             <div className="flex justify-between items-center">
-                                                <span className="text-xs text-gray-500">Stock:</span>
-                                                <Badge variant="outline" className="bg-gray-50 text-gray-700 text-xs">
+                                                <span className="text-xs text-muted-foreground">Stock:</span>
+                                                <Badge variant="outline" className="bg-muted text-muted-foreground text-xs">
                                                     Stk. {Number(producto.Stock || 0)}
                                                 </Badge>
                                             </div>
@@ -903,9 +903,9 @@ export default function ScaleBonusManagementPage() {
                         </div>
                     ) : (
                         <div className="text-center py-12">
-                            <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                            <h3 className="text-lg font-medium text-gray-900 mb-2">No hay productos</h3>
-                            <p className="text-gray-500 mb-4">
+                            <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                            <h3 className="text-lg font-medium text-card-foreground mb-2">No hay productos</h3>
+                            <p className="text-muted-foreground mb-4">
                                 {searchQuery ? "No se encontraron productos que coincidan con tu búsqueda." : "Aún no hay productos en el sistema de promociones."}
                             </p>
                             <Button onClick={() => setIsProductModalOpen(true)}>
@@ -948,7 +948,7 @@ export default function ScaleBonusManagementPage() {
                                         <TrendingUp className="h-5 w-5" />
                                         Escalas de Precio
                                     </CardTitle>
-                                    <CardDescription>
+                                    <CardDescription className="text-purple-900">
                                         Define rangos de cantidad con precios especiales por volumen
                                     </CardDescription>
                                 </CardHeader>
@@ -981,7 +981,7 @@ export default function ScaleBonusManagementPage() {
                                         <div className="space-y-2">
                                             <Label htmlFor="precio" className="text-sm font-medium">Precio</Label>
                                             <div className="relative">
-                                                <DollarSign className="absolute left-3 top-3 h-4 w-4 text-gray-500" />
+                                                <DollarSign className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                                                 <Input
                                                     id="precio"
                                                     type="number"
@@ -1015,7 +1015,7 @@ export default function ScaleBonusManagementPage() {
                                             </div>
                                             <div className="border rounded-lg divide-y max-h-60 overflow-y-auto">
                                                 {escalas.map((escala) => (
-                                                    <div key={escala.id} className="flex items-center justify-between p-4 hover:bg-gray-50">
+                                                    <div key={escala.id} className="flex items-center justify-between p-4 hover:bg-muted">
                                                         <div className="flex-1">
                                                             <div className="flex items-center gap-3">
                                                                 <div className="bg-purple-100 p-2 rounded-md">
@@ -1025,7 +1025,7 @@ export default function ScaleBonusManagementPage() {
                                                                     <div className="font-medium text-sm">
                                                                         {escala.desde} - {escala.hasta} unidades
                                                                     </div>
-                                                                    <div className="text-sm text-gray-600">
+                                                                    <div className="text-sm text-muted-foreground">
                                                                         Precio: <span className="font-semibold text-green-600">S/ {escala.precio.toFixed(2)}</span> c/u
                                                                     </div>
                                                                 </div>
@@ -1044,10 +1044,10 @@ export default function ScaleBonusManagementPage() {
                                             </div>
                                         </div>
                                     ) : (
-                                        <div className="text-center py-8 border-2 border-dashed border-gray-300 rounded-lg">
-                                            <TrendingUp className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                                            <h4 className="font-medium text-gray-900 mb-1">No hay escalas configuradas</h4>
-                                            <p className="text-sm text-gray-500">
+                                        <div className="text-center py-8 border-2 border-dashed border-border rounded-lg">
+                                            <TrendingUp className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+                                            <h4 className="font-medium text-card-foreground mb-1">No hay escalas configuradas</h4>
+                                            <p className="text-sm text-muted-foreground">
                                                 Agrega rangos de cantidad con precios especiales
                                             </p>
                                         </div>
@@ -1063,7 +1063,7 @@ export default function ScaleBonusManagementPage() {
                                         <Gift className="h-5 w-5" />
                                         Bonificaciones
                                     </CardTitle>
-                                    <CardDescription>
+                                    <CardDescription className="text-yellow-900">
                                         Configura promociones de "compra y lleva" - Puede ser del mismo producto u otros productos
                                     </CardDescription>
                                 </CardHeader>
@@ -1145,13 +1145,13 @@ export default function ScaleBonusManagementPage() {
                                                                                         {nuevaBonificacion.descripcionProducto}
                                                                                     </span>
                                                                         {nuevaBonificacion.productoBonificado && (
-                                                                            <span className="text-xs text-gray-500 truncate w-full">
+                                                                            <span className="text-xs text-muted-foreground truncate w-full">
                                                                                             Código: {nuevaBonificacion.productoBonificado}
                                                                                         </span>
                                                                         )}
                                                                     </div>
                                                                 ) : (
-                                                                    <span className="text-gray-500">Seleccionar producto a bonificar...</span>
+                                                                    <span className="text-muted-foreground">Seleccionar producto a bonificar...</span>
                                                                 )}
                                                                 <Search className="ml-2 h-4 w-4 shrink-0 opacity-50"/>
                                                             </Button>
@@ -1186,7 +1186,7 @@ export default function ScaleBonusManagementPage() {
                                                                                                     <span className="font-medium text-sm truncate">
                                                                                                         {product.NombreItem}
                                                                                                     </span>
-                                                                                        <span className="text-xs text-gray-500 truncate">
+                                                                                        <span className="text-xs text-muted-foreground truncate">
                                                                                                         {product.Codigo_Art} | {product.Presentacion}
                                                                                                     </span>
                                                                                     </div>
@@ -1226,7 +1226,7 @@ export default function ScaleBonusManagementPage() {
                                             </div>
                                             <div className="border rounded-lg divide-y max-h-60 overflow-y-auto">
                                                 {bonificaciones.map((bonificacion) => (
-                                                    <div key={bonificacion.id} className="flex items-center justify-between p-4 hover:bg-gray-50">
+                                                    <div key={bonificacion.id} className="flex items-center justify-between p-4 hover:bg-muted">
                                                         <div className="flex-1">
                                                             <div className="flex items-center gap-3">
                                                                 <div className="bg-yellow-100 p-2 rounded-md">
@@ -1241,7 +1241,7 @@ export default function ScaleBonusManagementPage() {
                                                                             </Badge>
                                                                         )}
                                                                     </div>
-                                                                    <div className="text-sm text-gray-600">{bonificacion.descripcion}</div>
+                                                                    <div className="text-sm text-muted-foreground">{bonificacion.descripcion}</div>
                                                                     {!bonificacion.esMismoProducto && bonificacion.descripcionProducto && (
                                                                         <div className="text-xs text-blue-600 mt-1">
                                                                             Producto: {bonificacion.descripcionProducto}
@@ -1263,10 +1263,10 @@ export default function ScaleBonusManagementPage() {
                                             </div>
                                         </div>
                                     ) : (
-                                        <div className="text-center py-8 border-2 border-dashed border-gray-300 rounded-lg">
-                                            <Gift className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                                            <h4 className="font-medium text-gray-900 mb-1">No hay bonificaciones</h4>
-                                            <p className="text-sm text-gray-500">
+                                        <div className="text-center py-8 border-2 border-dashed border-border rounded-lg">
+                                            <Gift className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+                                            <h4 className="font-medium text-card-foreground mb-1">No hay bonificaciones</h4>
+                                            <p className="text-sm text-muted-foreground">
                                                 Configura promociones de compra y lleva gratis
                                             </p>
                                         </div>
@@ -1320,7 +1320,7 @@ export default function ScaleBonusManagementPage() {
                                         <div className="space-y-3">
                                             <div className="border rounded-lg divide-y">
                                                 {escalas.map((escala, index) => (
-                                                    <div key={escala.id} className="flex items-center justify-between p-4 hover:bg-gray-50">
+                                                    <div key={escala.id} className="flex items-center justify-between p-4 hover:bg-muted">
                                                         <div className="flex-1">
                                                             <div className="flex items-center gap-3">
                                                                 <div className="bg-purple-100 p-2 rounded-md">
@@ -1330,10 +1330,10 @@ export default function ScaleBonusManagementPage() {
                                                                     <div className="font-medium text-sm">
                                                                         Escala {index + 1}: {escala.desde} - {escala.hasta} unidades
                                                                     </div>
-                                                                    <div className="text-sm text-gray-600">
+                                                                    <div className="text-sm text-muted-foreground">
                                                                         Precio especial: <span className="font-semibold text-green-600">S/ {escala.precio.toFixed(2)}</span> c/u
                                                                     </div>
-                                                                    <div className="text-xs text-gray-500 mt-1">
+                                                                    <div className="text-xs text-muted-foreground mt-1">
                                                                         Comparado con precio base: <span className="font-medium">S/ {Number(viewingProduct?.PUContado).toFixed(2)}</span>
                                                                     </div>
                                                                 </div>
@@ -1347,10 +1347,10 @@ export default function ScaleBonusManagementPage() {
                                             </div>
                                         </div>
                                     ) : (
-                                        <div className="text-center py-8 border-2 border-dashed border-gray-300 rounded-lg">
-                                            <TrendingUp className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                                            <h4 className="font-medium text-gray-900 mb-1">No hay escalas configuradas</h4>
-                                            <p className="text-sm text-gray-500">
+                                        <div className="text-center py-8 border-2 border-dashed border-border rounded-lg">
+                                            <TrendingUp className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+                                            <h4 className="font-medium text-card-foreground mb-1">No hay escalas configuradas</h4>
+                                            <p className="text-sm text-muted-foreground">
                                                 Este producto no tiene escalas de precio configuradas
                                             </p>
                                         </div>
@@ -1366,7 +1366,7 @@ export default function ScaleBonusManagementPage() {
                                         <div className="space-y-3">
                                             <div className="border rounded-lg divide-y">
                                                 {bonificaciones.map((bonificacion, index) => (
-                                                    <div key={bonificacion.id} className="flex items-center justify-between p-4 hover:bg-gray-50">
+                                                    <div key={bonificacion.id} className="flex items-center justify-between p-4 hover:bg-muted">
                                                         <div className="flex-1">
                                                             <div className="flex items-center gap-3">
                                                                 <div className="bg-yellow-100 p-2 rounded-md">
@@ -1376,13 +1376,13 @@ export default function ScaleBonusManagementPage() {
                                                                     <div className="font-medium text-sm">
                                                                         Promoción {index + 1}: Compra {bonificacion.compra} lleva {bonificacion.lleva} gratis
                                                                     </div>
-                                                                    <div className="text-sm text-gray-600">{bonificacion.descripcion}</div>
+                                                                    <div className="text-sm text-muted-foreground">{bonificacion.descripcion}</div>
                                                                     {!bonificacion.esMismoProducto && bonificacion.descripcionProducto && (
                                                                         <div className="text-xs text-blue-600 mt-1">
                                                                             Producto bonificado: {bonificacion.descripcionProducto}
                                                                         </div>
                                                                     )}
-                                                                    <div className="text-xs text-gray-500 mt-1">
+                                                                    <div className="text-xs text-muted-foreground mt-1">
                                                                         Tipo: {bonificacion.esMismoProducto ? 'Mismo producto' : 'Producto diferente'}
                                                                     </div>
                                                                 </div>
@@ -1396,10 +1396,10 @@ export default function ScaleBonusManagementPage() {
                                             </div>
                                         </div>
                                     ) : (
-                                        <div className="text-center py-8 border-2 border-dashed border-gray-300 rounded-lg">
-                                            <Gift className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                                            <h4 className="font-medium text-gray-900 mb-1">No hay bonificaciones</h4>
-                                            <p className="text-sm text-gray-500">
+                                        <div className="text-center py-8 border-2 border-dashed border-border rounded-lg">
+                                            <Gift className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+                                            <h4 className="font-medium text-card-foreground mb-1">No hay bonificaciones</h4>
+                                            <p className="text-sm text-muted-foreground">
                                                 Este producto no tiene bonificaciones configuradas
                                             </p>
                                         </div>

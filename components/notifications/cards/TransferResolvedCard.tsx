@@ -24,12 +24,12 @@ export function TransferResolvedCard({ notification }: NotifCardProps) {
       </div>
       <div className="min-w-0 flex-1">
         <div className="flex items-center justify-between gap-2">
-          <p className="truncate text-sm font-semibold text-gray-800">
+          <p className="truncate text-sm font-semibold text-foreground">
             {aprobada ? "Transferencia aprobada" : "Transferencia rechazada"}
           </p>
         </div>
         {payload?.mensaje && (
-          <p className="text-xs text-gray-600">{payload.mensaje}</p>
+          <p className="text-xs text-muted-foreground">{payload.mensaje}</p>
         )}
         {aprobada && (
           <div className="mt-1 flex items-start gap-1.5 rounded-md bg-amber-50 px-2 py-1 text-xs font-medium text-amber-700">
@@ -37,7 +37,7 @@ export function TransferResolvedCard({ notification }: NotifCardProps) {
             <span>Recarga la página para poder usar el cliente nuevo.</span>
           </div>
         )}
-        <div className="mt-1 flex items-center gap-2 text-xs text-gray-400">
+        <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
           <Calendar className="h-3.5 w-3.5" />
           <span>{formatNotifDate(receivedAt)}</span>
         </div>

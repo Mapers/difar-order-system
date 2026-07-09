@@ -81,8 +81,8 @@ export default function OrderPage() {
       <div className="grid gap-6">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div className="flex flex-col gap-1">
-            <h1 className="text-3xl font-bold tracking-tight text-gray-900">Tomar Pedido</h1>
-            <p className="text-gray-500">Crea un nuevo pedido siguiendo los pasos.</p>
+            <h1 className="text-3xl font-bold tracking-tight text-foreground">Tomar Pedido</h1>
+            <p className="text-muted-foreground">Crea un nuevo pedido siguiendo los pasos.</p>
           </div>
 
           {savedDrafts.length > 0 && (
@@ -100,7 +100,7 @@ export default function OrderPage() {
           )}
         </div>
 
-        <Card className="mb-6 shadow-md bg-white">
+        <Card className="mb-6 shadow-md bg-background">
           <CardContent className="pt-6">
             <StepProgress steps={steps} currentStep={order.currentStep} onStepClick={order.goToStep} />
           </CardContent>

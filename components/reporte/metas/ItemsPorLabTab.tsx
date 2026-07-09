@@ -81,37 +81,37 @@ export default function ItemsPorLabTab({ laboratorios, items }: ItemsPorLabTabPr
             <Card className="shadow-sm">
                 <CardContent className="p-4 space-y-3">
                     <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input
                             placeholder="Buscar laboratorio..."
                             value={search}
                             onChange={e => setSearch(e.target.value)}
-                            className="pl-10 bg-slate-50"
+                            className="pl-10 bg-muted"
                         />
                     </div>
                     <div className="flex flex-wrap items-center justify-between gap-2">
                         <div className="flex items-center gap-1.5 flex-wrap">
-                            <span className="text-[11px] text-slate-400">Filtrar:</span>
+                            <span className="text-[11px] text-muted-foreground">Filtrar:</span>
                             {filterBtns.map(btn => (
                                 <Button key={btn.key} variant="outline" size="sm"
-                                        className={`text-[11px] h-7 px-3 ${filter === btn.key ? btn.activeClass : "text-slate-500"}`}
+                                        className={`text-[11px] h-7 px-3 ${filter === btn.key ? btn.activeClass : "text-muted-foreground"}`}
                                         onClick={() => setFilter(btn.key)}>
                                     {btn.label}
                                 </Button>
                             ))}
                         </div>
                         <div className="flex items-center gap-1.5 flex-wrap">
-                            <span className="text-[11px] text-slate-400">Ordenar ítems:</span>
+                            <span className="text-[11px] text-muted-foreground">Ordenar ítems:</span>
                             {sortBtns.map(btn => (
                                 <Button key={btn.key} variant="outline" size="sm"
-                                        className={`text-[11px] h-7 px-3 ${sort === btn.key ? "bg-sky-600 text-white border-sky-600" : "text-slate-500"}`}
+                                        className={`text-[11px] h-7 px-3 ${sort === btn.key ? "bg-sky-600 text-white border-sky-600" : "text-muted-foreground"}`}
                                         onClick={() => setSort(btn.key)}>
                                     {btn.label}
                                 </Button>
                             ))}
                         </div>
                     </div>
-                    <p className="text-[11px] text-slate-400">{labGroups.length} de {laboratorios.length} laboratorios</p>
+                    <p className="text-[11px] text-muted-foreground">{labGroups.length} de {laboratorios.length} laboratorios</p>
                 </CardContent>
             </Card>
 
@@ -130,22 +130,22 @@ export default function ItemsPorLabTab({ laboratorios, items }: ItemsPorLabTabPr
                     return (
                         <Card key={group.id_linea_ge} className="shadow-sm overflow-hidden">
                             <div
-                                className="flex items-center justify-between p-3.5 cursor-pointer hover:bg-slate-50 transition-colors"
+                                className="flex items-center justify-between p-3.5 cursor-pointer hover:bg-muted transition-colors"
                                 style={{ borderLeft: `4px solid ${color}` }}
                                 onClick={() => toggleLab(group.id_linea_ge)}
                             >
                                 <div className="flex items-center gap-2">
                                     {isOpen
-                                        ? <ChevronDown className="h-4 w-4 text-slate-400" />
-                                        : <ChevronRight className="h-4 w-4 text-slate-400" />}
+                                        ? <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                                        : <ChevronRight className="h-4 w-4 text-muted-foreground" />}
                                     <span className="font-semibold text-sm" style={{ color }}>
                                         {group.nombre_lab || `Lab ${group.id_linea_ge}`}
                                     </span>
-                                    <span className="text-[11px] text-slate-400">{sortedItems.length} ítems</span>
+                                    <span className="text-[11px] text-muted-foreground">{sortedItems.length} ítems</span>
                                 </div>
                                 <div className="flex items-center gap-3">
                                     <div className="hidden sm:flex flex-col items-end gap-0.5">
-                                        <span className="text-[10px] text-slate-400">Avance S/</span>
+                                        <span className="text-[10px] text-muted-foreground">Avance S/</span>
                                         <span className="text-xs font-bold" style={{ color: c1 }}>{group.pct}%</span>
                                     </div>
                                     <div className="w-24 hidden sm:block">
@@ -157,12 +157,12 @@ export default function ItemsPorLabTab({ laboratorios, items }: ItemsPorLabTabPr
 
                             {isOpen && (
                                 <div>
-                                    <div className="lg:hidden divide-y divide-slate-100 border-t border-slate-100">
+                                    <div className="lg:hidden divide-y divide-border border-t border-border">
                                         {sortedItems.map((item, idx) => {
                                             const [sc1] = getStatusColor(item.avPct);
                                             const [uc1] = getStatusColor(item.uPct);
                                             return (
-                                                <div key={item.id_meta_item} className="p-3 space-y-2 bg-white">
+                                                <div key={item.id_meta_item} className="p-3 space-y-2 bg-background">
                                                     <div className="flex items-start justify-between gap-2">
                                                         <div className="flex items-center gap-2 min-w-0">
                                                             <div
@@ -171,7 +171,7 @@ export default function ItemsPorLabTab({ laboratorios, items }: ItemsPorLabTabPr
                                                             >
                                                                 {idx + 1}
                                                             </div>
-                                                            <span className="text-xs font-medium text-slate-800 line-clamp-2">
+                                                            <span className="text-xs font-medium text-foreground line-clamp-2">
                                                                 {item.nombre_articulo || item.cod_articulo}
                                                             </span>
                                                         </div>
@@ -180,19 +180,19 @@ export default function ItemsPorLabTab({ laboratorios, items }: ItemsPorLabTabPr
 
                                                     <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 pl-7">
                                                         <div>
-                                                            <p className="text-[9px] text-slate-400 uppercase">Venta S/</p>
-                                                            <p className="text-xs font-semibold text-slate-800">{fmtMoney(Number(item.venta_real))}</p>
+                                                            <p className="text-[9px] text-muted-foreground uppercase">Venta S/</p>
+                                                            <p className="text-xs font-semibold text-foreground">{fmtMoney(Number(item.venta_real))}</p>
                                                         </div>
                                                         <div>
-                                                            <p className="text-[9px] text-slate-400 uppercase">Cuota S/</p>
-                                                            <p className="text-xs text-slate-500">{fmtMoney(Number(item.meta_monto))}</p>
+                                                            <p className="text-[9px] text-muted-foreground uppercase">Cuota S/</p>
+                                                            <p className="text-xs text-muted-foreground">{fmtMoney(Number(item.meta_monto))}</p>
                                                         </div>
                                                         <div>
-                                                            <p className="text-[9px] text-slate-400 uppercase">Contrib.</p>
+                                                            <p className="text-[9px] text-muted-foreground uppercase">Contrib.</p>
                                                             <p className="text-xs font-bold" style={{ color }}>{item.contrib}%</p>
                                                         </div>
                                                         <div>
-                                                            <p className="text-[9px] text-slate-400 uppercase">Avance S/</p>
+                                                            <p className="text-[9px] text-muted-foreground uppercase">Avance S/</p>
                                                             <p className="text-xs font-bold" style={{ color: sc1 }}>{item.avPct}%</p>
                                                         </div>
                                                     </div>
@@ -230,20 +230,20 @@ export default function ItemsPorLabTab({ laboratorios, items }: ItemsPorLabTabPr
                                             );
                                         })}
 
-                                        <div className="p-3 bg-slate-50 border-t border-slate-200">
+                                        <div className="p-3 bg-muted border-t border-border">
                                             <div className="grid grid-cols-2 gap-2">
                                                 <div>
-                                                    <p className="text-[9px] text-slate-400 uppercase">Total venta</p>
+                                                    <p className="text-[9px] text-muted-foreground uppercase">Total venta</p>
                                                     <p className="text-sm font-bold" style={{ color }}>{fmtMoney(Number(group.venta_real))}</p>
                                                 </div>
                                                 <div>
-                                                    <p className="text-[9px] text-slate-400 uppercase">Cuota total</p>
-                                                    <p className="text-sm text-slate-500">{fmtMoney(Number(group.meta_monto))}</p>
+                                                    <p className="text-[9px] text-muted-foreground uppercase">Cuota total</p>
+                                                    <p className="text-sm text-muted-foreground">{fmtMoney(Number(group.meta_monto))}</p>
                                                 </div>
                                                 <div className="col-span-2">
                                                     <ProgressBar pct={group.pct} height="h-2" />
                                                     <div className="flex justify-between mt-1">
-                                                        <span className="text-[10px] text-slate-400">{sortedItems.length} ítems · 100% contrib.</span>
+                                                        <span className="text-[10px] text-muted-foreground">{sortedItems.length} ítems · 100% contrib.</span>
                                                         <span className="text-[10px] font-bold" style={{ color }}>{group.pct}% avance</span>
                                                     </div>
                                                 </div>
@@ -252,7 +252,7 @@ export default function ItemsPorLabTab({ laboratorios, items }: ItemsPorLabTabPr
                                     </div>
 
                                     <div className="hidden lg:block">
-                                        <div className="grid grid-cols-[2fr_90px_90px_80px_70px_70px_70px] gap-2 px-4 py-2 border-t border-b border-slate-100 text-[10px] uppercase tracking-wider text-slate-400 font-semibold">
+                                        <div className="grid grid-cols-[2fr_90px_90px_80px_70px_70px_70px] gap-2 px-4 py-2 border-t border-b border-border text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
                                             <span>Ítem / Producto</span>
                                             <span className="text-right">Venta S/</span>
                                             <span className="text-right">Cuota S/</span>
@@ -268,7 +268,7 @@ export default function ItemsPorLabTab({ laboratorios, items }: ItemsPorLabTabPr
                                             return (
                                                 <div
                                                     key={item.id_meta_item}
-                                                    className="grid grid-cols-[2fr_90px_90px_80px_70px_70px_70px] gap-2 px-4 py-2.5 border-b border-slate-50 hover:bg-slate-50 items-center transition-colors"
+                                                    className="grid grid-cols-[2fr_90px_90px_80px_70px_70px_70px] gap-2 px-4 py-2.5 border-b border-border hover:bg-muted items-center transition-colors"
                                                 >
                                                     <div className="flex items-center gap-2">
                                                         <div
@@ -285,7 +285,7 @@ export default function ItemsPorLabTab({ laboratorios, items }: ItemsPorLabTabPr
                                                         <p className="text-xs font-semibold">{fmtMoney(Number(item.venta_real))}</p>
                                                         <ProgressBar pct={item.avPct} height="h-[3px]" className="mt-0.5" />
                                                     </div>
-                                                    <div className="text-right text-xs text-slate-400">{fmtMoney(Number(item.meta_monto))}</div>
+                                                    <div className="text-right text-xs text-muted-foreground">{fmtMoney(Number(item.meta_monto))}</div>
                                                     <div
                                                         className="flex flex-col items-center gap-0.5 cursor-pointer hover:opacity-70 transition-opacity"
                                                         onClick={e => {
@@ -296,13 +296,13 @@ export default function ItemsPorLabTab({ laboratorios, items }: ItemsPorLabTabPr
                                                         }}
                                                     >
                                                         <MiniDonut pct={item.uPct} size={36} strokeWidth={4} />
-                                                        <p className="text-[9px] text-slate-400">
+                                                        <p className="text-[9px] text-muted-foreground">
                                                             {Number(item.u_vendidas).toLocaleString()} / {Number(item.meta_cantidad).toLocaleString()}
                                                         </p>
                                                     </div>
                                                     <div className="text-center">
                                                         <p className="text-sm font-bold" style={{ color }}>{item.contrib}%</p>
-                                                        <p className="text-[9px] text-slate-400">del lab</p>
+                                                        <p className="text-[9px] text-muted-foreground">del lab</p>
                                                     </div>
                                                     <div
                                                         className="flex justify-center cursor-pointer hover:opacity-70 transition-opacity"
@@ -322,12 +322,12 @@ export default function ItemsPorLabTab({ laboratorios, items }: ItemsPorLabTabPr
                                             );
                                         })}
 
-                                        <div className="grid grid-cols-[2fr_90px_90px_80px_70px_70px_70px] gap-2 px-4 py-2.5 bg-slate-50 border-t border-slate-200 items-center">
-                                            <span className="text-[11px] text-slate-500 font-semibold">TOTAL · {sortedItems.length} ítems</span>
+                                        <div className="grid grid-cols-[2fr_90px_90px_80px_70px_70px_70px] gap-2 px-4 py-2.5 bg-muted border-t border-border items-center">
+                                            <span className="text-[11px] text-muted-foreground font-semibold">TOTAL · {sortedItems.length} ítems</span>
                                             <span className="text-right text-xs font-bold" style={{ color }}>{fmtMoney(Number(group.venta_real))}</span>
-                                            <span className="text-right text-xs text-slate-400">{fmtMoney(Number(group.meta_monto))}</span>
-                                            <span className="text-center text-[11px] text-slate-500 font-semibold">{group.pct}% cumpl.</span>
-                                            <span className="text-center text-xs font-bold text-slate-400">100%</span>
+                                            <span className="text-right text-xs text-muted-foreground">{fmtMoney(Number(group.meta_monto))}</span>
+                                            <span className="text-center text-[11px] text-muted-foreground font-semibold">{group.pct}% cumpl.</span>
+                                            <span className="text-center text-xs font-bold text-muted-foreground">100%</span>
                                             <span className="text-center text-xs font-bold" style={{ color }}>{group.pct}%</span>
                                             <span className="text-center"><StatusChip pct={group.pct} /></span>
                                         </div>

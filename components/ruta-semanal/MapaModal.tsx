@@ -337,7 +337,7 @@ export function MapaModal({
                 </DialogHeader>
 
                 {/* Barra de acciones */}
-                <div className="px-6 py-3 flex flex-wrap items-center gap-2 border-y bg-gray-50/80">
+                <div className="px-6 py-3 flex flex-wrap items-center gap-2 border-y bg-muted/80">
                     <Button
                         size="sm"
                         variant="outline"
@@ -406,7 +406,7 @@ export function MapaModal({
                         </>
                     )}
                     {!userLocation && !loadingLocation && !locationError && (
-                        <span className="text-xs text-gray-400 flex items-center gap-1">
+                        <span className="text-xs text-muted-foreground flex items-center gap-1">
                             <Locate className="h-3 w-3" />
                             Activa tu ubicación para calcular la trayectoria
                         </span>
@@ -432,16 +432,16 @@ export function MapaModal({
                 {/* Lista de puntos (rutas múltiples) */}
                 {selectedMapaDirecciones.length > 1 && (
                     <div className="px-6 pb-4 space-y-2">
-                        <h4 className="font-medium text-sm text-gray-700">Puntos de la ruta:</h4>
+                        <h4 className="font-medium text-sm text-foreground">Puntos de la ruta:</h4>
                         <div className="space-y-1 max-h-40 overflow-y-auto pr-1">
                             {selectedMapaDirecciones.map((dir, i) => (
-                                <div key={dir.id} className="flex items-center gap-3 p-2.5 bg-gray-50 rounded-lg border border-gray-100">
+                                <div key={dir.id} className="flex items-center gap-3 p-2.5 bg-muted rounded-lg border border-border">
                                     <div className="w-6 h-6 rounded-full bg-red-500 text-white text-xs font-bold flex items-center justify-center flex-shrink-0">
                                         {i + 1}
                                     </div>
                                     <div className="flex-1 min-w-0">
                                         <div className="font-medium text-sm truncate">{dir.NombreComercial}</div>
-                                        <div className="text-xs text-gray-500 truncate">{dir.direccion}</div>
+                                        <div className="text-xs text-muted-foreground truncate">{dir.direccion}</div>
                                     </div>
                                 </div>
                             ))}

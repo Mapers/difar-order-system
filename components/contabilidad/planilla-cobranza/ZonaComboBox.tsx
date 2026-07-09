@@ -28,10 +28,10 @@ export default function ZonaCombobox({ zones, value, onChange }: Props) {
                 <Button
                     variant="outline"
                     role="combobox"
-                    className="justify-between w-full h-10 font-normal bg-white"
+                    className="justify-between w-full h-10 font-normal bg-background"
                 >
           <span className="truncate flex items-center gap-1.5">
-            <MapPin className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+            <MapPin className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
               {value || 'Seleccionar zona...'}
           </span>
                     <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />

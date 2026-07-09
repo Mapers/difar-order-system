@@ -31,7 +31,7 @@ export function DeleteOrderDialog({
                 </DialogHeader>
 
                 <div className="py-2">
-                    <p className="text-sm text-gray-700">
+                    <p className="text-sm text-foreground">
                         ¿Estás seguro que deseas eliminar el pedido{" "}
                         <span className="font-semibold">{order?.nroPedido}</span>?
                     </p>

@@ -143,12 +143,12 @@ export default function AppConfigSection({ onOpenModalChange }: AppConfigSection
                                 <div className="flex justify-between items-start mb-3">
                                     <div className="flex-1 min-w-0">
                                         <div className="flex items-center gap-2 flex-wrap">
-                                            <h3 className="font-semibold text-lg text-gray-900 break-words">{config.cod_config}</h3>
+                                            <h3 className="font-semibold text-lg text-card-foreground break-words">{config.cod_config}</h3>
                                             <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">
                                                 APL: {config.cod_apl}
                                             </Badge>
                                         </div>
-                                        <p className="text-sm text-gray-600 break-words">{config.desc_corta}</p>
+                                        <p className="text-sm text-muted-foreground break-words">{config.desc_corta}</p>
                                     </div>
                                     <div className="flex gap-1 flex-shrink-0 ml-2">
                                         <Badge variant={config.est_config === 'A' ? "default" : "secondary"}>
@@ -157,9 +157,9 @@ export default function AppConfigSection({ onOpenModalChange }: AppConfigSection
                                     </div>
                                 </div>
 
-                                <div className="space-y-3 mb-4 p-2 bg-gray-50 rounded text-sm break-all">
-                                    <span className="font-medium text-gray-500">Llave: </span>
-                                    <span className="font-mono text-xs text-gray-700">{config.llave_config}</span>
+                                <div className="space-y-3 mb-4 p-2 bg-muted rounded text-sm break-all">
+                                    <span className="font-medium text-muted-foreground">Llave: </span>
+                                    <span className="font-mono text-xs text-foreground">{config.llave_config}</span>
                                 </div>
 
                                 <div className="flex gap-2">
@@ -176,8 +176,8 @@ export default function AppConfigSection({ onOpenModalChange }: AppConfigSection
                 </div>
             ) : (
                 <div className="text-center py-8">
-                    <Settings className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">No hay configuraciones registradas</h3>
+                    <Settings className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-foreground mb-2">No hay configuraciones registradas</h3>
                 </div>
             )}
 

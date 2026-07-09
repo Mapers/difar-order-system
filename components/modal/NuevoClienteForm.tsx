@@ -181,13 +181,13 @@ const NuevoClienteForm: React.FC<ModalVerificationProps> = ({ open, onOpenChange
           {isLoadingData ? (
               <div className="flex flex-col items-center justify-center py-20">
                 <Loader2 className="h-8 w-8 animate-spin text-blue-600 mb-4" />
-                <p className="text-slate-500 font-medium">Cargando datos del cliente...</p>
+                <p className="text-muted-foreground font-medium">Cargando datos del cliente...</p>
               </div>
           ) : (
               <div className="space-y-6">
                 {/* Información básica */}
                 <div className="space-y-4">
-                  <h4 className="font-medium text-gray-900 flex items-center gap-2">
+                  <h4 className="font-medium text-foreground flex items-center gap-2">
                     <User className="h-4 w-4 text-blue-600" />
                     Datos Principales
                   </h4>
@@ -199,7 +199,7 @@ const NuevoClienteForm: React.FC<ModalVerificationProps> = ({ open, onOpenChange
                           id="tipoDocIdent"
                           value={formData.tipoDocIdent}
                           onChange={(e) => handleInputChange("tipoDocIdent", e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white h-10"
+                          className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-background h-10"
                           required
                       >
                         <option value="">Seleccionar tipo</option>
@@ -221,7 +221,7 @@ const NuevoClienteForm: React.FC<ModalVerificationProps> = ({ open, onOpenChange
                           maxLength={11}
                           required
                       />
-                      <span className="text-[10px] text-gray-500">
+                      <span className="text-[10px] text-muted-foreground">
                       {formData.ruc.length} / 11 caracteres
                     </span>
                     </div>
@@ -233,7 +233,7 @@ const NuevoClienteForm: React.FC<ModalVerificationProps> = ({ open, onOpenChange
                           value={formData.codigo}
                           placeholder="Se autocompleta con el RUC"
                           disabled
-                          className="bg-slate-50"
+                          className="bg-muted"
                       />
                     </div>
 
@@ -307,7 +307,7 @@ const NuevoClienteForm: React.FC<ModalVerificationProps> = ({ open, onOpenChange
 
                 {/* Información de ubicación */}
                 <div className="space-y-4">
-                  <h4 className="font-medium text-gray-900 flex items-center gap-2">
+                  <h4 className="font-medium text-foreground flex items-center gap-2">
                     <MapPin className="h-4 w-4 text-purple-600" />
                     Información de Ubicación
                   </h4>
@@ -466,7 +466,7 @@ const NuevoClienteForm: React.FC<ModalVerificationProps> = ({ open, onOpenChange
 
                 {/* Información del sistema */}
                 <div className="space-y-4">
-                  <h4 className="font-medium text-gray-900 flex items-center gap-2">
+                  <h4 className="font-medium text-foreground flex items-center gap-2">
                     <Calendar className="h-4 w-4 text-orange-600" />
                     Configuración Comercial
                   </h4>
@@ -527,7 +527,7 @@ const NuevoClienteForm: React.FC<ModalVerificationProps> = ({ open, onOpenChange
                           id="tipoCliente"
                           value={formData.tipoCliente}
                           onChange={(e) => handleInputChange("tipoCliente", e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white h-10"
+                          className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-background h-10"
                       >
                         <option value="Activo">Activo</option>
                         <option value="Inactivo">Inactivo</option>
@@ -550,7 +550,7 @@ const NuevoClienteForm: React.FC<ModalVerificationProps> = ({ open, onOpenChange
                       <Input
                           value={formData.codigoVed || user?.codigo || ''}
                           disabled
-                          className="bg-slate-50"
+                          className="bg-muted"
                       />
                     </div>
                   </div>

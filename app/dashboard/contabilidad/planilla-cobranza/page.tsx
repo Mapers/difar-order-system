@@ -93,10 +93,10 @@ export default function PlanillaCobranzaPage() {
         <div className="grid gap-6 p-4 md:p-6">
 
             <div>
-                <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-gray-900">
+                <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">
                     Planilla de Cobranza
                 </h1>
-                <p className="text-sm text-gray-500 mt-1">
+                <p className="text-sm text-muted-foreground mt-1">
                     {isVendedor()
                         ? 'Crea y envía tus planillas de cobranza diarias.'
                         : 'Gestiona y valida las planillas de cobranza de los vendedores.'}
@@ -145,8 +145,8 @@ export default function PlanillaCobranzaPage() {
             {!isVendedor() && !isAdmin() && (
                 <Card>
                     <CardContent className="py-16 text-center">
-                        <AlertCircle className="h-12 w-12 text-slate-300 mx-auto mb-4" />
-                        <p className="text-slate-500">No tienes permisos para acceder a este módulo.</p>
+                        <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                        <p className="text-muted-foreground">No tienes permisos para acceder a este módulo.</p>
                     </CardContent>
                 </Card>
             )}

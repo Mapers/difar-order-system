@@ -713,8 +713,8 @@ export default function ComprobantesPage() {
   return (
       <div className="grid gap-6">
         <div className="flex flex-col gap-2">
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900">Gestión de Comprobantes</h1>
-          <p className="text-gray-500">Administración de facturas, boletas y notas electrónicas</p>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">Gestión de Comprobantes</h1>
+          <p className="text-muted-foreground">Administración de facturas, boletas y notas electrónicas</p>
         </div>
 
         <Tabs defaultValue={!(auth.isVendedor() || auth.isRepresentante()) ? 'pendientes' : 'comprobantes'} className="w-full">
@@ -749,7 +749,7 @@ export default function ComprobantesPage() {
           {/* ── TAB: PENDIENTES ── */}
           {!(auth.isVendedor() || auth.isRepresentante()) && (
               <TabsContent value="pendientes" className="space-y-4">
-                <Card className="bg-white shadow-sm">
+                <Card className="bg-background shadow-sm">
                   <CardHeader>
                     <CardTitle className="text-base sm:text-lg text-orange-600 flex items-center gap-2">
                       <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5" /> Pendientes por Facturar
@@ -759,7 +759,7 @@ export default function ComprobantesPage() {
                   <CardContent>
                     <div className="mb-4">
                       <div className="relative">
-                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-3 w-3 sm:h-4 sm:w-4" />
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-3 w-3 sm:h-4 sm:w-4" />
                         <Input
                             placeholder="Buscar pendientes..."
                             value={searchPendientes}
@@ -782,38 +782,38 @@ export default function ComprobantesPage() {
 
           {/* ── TAB: COMPROBANTES ── */}
           <TabsContent value="comprobantes" className="space-y-4">
-            <Card className="bg-white shadow-sm">
+            <Card className="bg-background shadow-sm">
               <CardContent className="p-3 sm:p-4 lg:p-6">
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                     <div className="space-y-1">
-                      <Label className="text-xs text-gray-500">Fecha desde</Label>
+                      <Label className="text-xs text-muted-foreground">Fecha desde</Label>
                       <div className="relative">
-                        <Input type="date" className="bg-white pr-8" name="fechaDesde" value={filters.fechaDesde}
+                        <Input type="date" className="bg-background pr-8" name="fechaDesde" value={filters.fechaDesde}
                                onChange={handleFilterChange} />
                         {filters.fechaDesde && (
                             <button type="button" onClick={() => setFilters(prev => ({ ...prev, fechaDesde: '', fechaHasta: '' }))}
-                                    className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                                    className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
                               <X className="h-3.5 w-3.5" />
                             </button>
                         )}
                       </div>
                     </div>
                     <div className="space-y-1">
-                      <Label className="text-xs text-gray-500">Fecha hasta</Label>
+                      <Label className="text-xs text-muted-foreground">Fecha hasta</Label>
                       <div className="relative">
-                        <Input type="date" className="bg-white pr-8" name="fechaHasta" value={filters.fechaHasta}
+                        <Input type="date" className="bg-background pr-8" name="fechaHasta" value={filters.fechaHasta}
                                onChange={handleFilterChange} />
                         {filters.fechaHasta && (
                             <button type="button" onClick={() => setFilters(prev => ({ ...prev, fechaDesde: '', fechaHasta: '' }))}
-                                    className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                                    className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
                               <X className="h-3.5 w-3.5" />
                             </button>
                         )}
                       </div>
                     </div>
                     <div className="space-y-1">
-                      <Label className="text-xs text-gray-500">Tipo de comprobante</Label>
+                      <Label className="text-xs text-muted-foreground">Tipo de comprobante</Label>
                       <Select value={filters.tipo} onValueChange={(value) => setFilters(prev => ({ ...prev, tipo: value }))}>
                         <SelectTrigger className="text-xs sm:text-sm"><SelectValue placeholder="Todos los tipos" /></SelectTrigger>
                         <SelectContent>
@@ -829,9 +829,9 @@ export default function ComprobantesPage() {
                       </Select>
                     </div>
                     <div className="space-y-1">
-                      <Label className="text-xs text-gray-500">Buscar</Label>
+                      <Label className="text-xs text-muted-foreground">Buscar</Label>
                       <div className="relative">
-                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-3 w-3 sm:h-4 sm:w-4" />
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-3 w-3 sm:h-4 sm:w-4" />
                         <Input
                             placeholder="Buscar por numero comprobante, documento, nombre cliente, ..."
                             value={searchComprobantes}
@@ -897,22 +897,22 @@ export default function ComprobantesPage() {
 
           {/* ── TAB: NOTAS DE CRÉDITO ── */}
           <TabsContent value="notas" className="space-y-4">
-            <Card className="bg-white shadow-sm">
+            <Card className="bg-background shadow-sm">
               <CardContent className="p-3 sm:p-4 lg:p-6">
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                     <div className="space-y-1">
-                      <Label className="text-xs text-gray-500">Fecha desde</Label>
-                      <Input type="date" className="bg-white" name="fechaDesde" value={filtersNotas.fechaDesde} onChange={handleFilterNotasChange} />
+                      <Label className="text-xs text-muted-foreground">Fecha desde</Label>
+                      <Input type="date" className="bg-background" name="fechaDesde" value={filtersNotas.fechaDesde} onChange={handleFilterNotasChange} />
                     </div>
                     <div className="space-y-1">
-                      <Label className="text-xs text-gray-500">Fecha hasta</Label>
-                      <Input type="date" className="bg-white" name="fechaHasta" value={filtersNotas.fechaHasta} onChange={handleFilterNotasChange} />
+                      <Label className="text-xs text-muted-foreground">Fecha hasta</Label>
+                      <Input type="date" className="bg-background" name="fechaHasta" value={filtersNotas.fechaHasta} onChange={handleFilterNotasChange} />
                     </div>
                     <div className="space-y-1">
-                      <Label className="text-xs text-gray-500">Buscar</Label>
+                      <Label className="text-xs text-muted-foreground">Buscar</Label>
                       <div className="relative">
-                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-3 w-3 sm:h-4 sm:w-4" />
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-3 w-3 sm:h-4 sm:w-4" />
                         <Input
                             placeholder="Buscar notas..."
                             value={searchNotas}
@@ -955,22 +955,22 @@ export default function ComprobantesPage() {
 
           {/* ── TAB: GUÍAS ── */}
           <TabsContent value="guias" className="space-y-4">
-            <Card className="bg-white shadow-sm">
+            <Card className="bg-background shadow-sm">
               <CardContent className="p-3 sm:p-4 lg:p-6">
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                     <div className="space-y-1">
-                      <Label className="text-xs text-gray-500">Fecha desde</Label>
-                      <Input type="date" className="bg-white" name="fechaDesde" value={filtersGuias.fechaDesde} onChange={handleFilterGuiaChange} />
+                      <Label className="text-xs text-muted-foreground">Fecha desde</Label>
+                      <Input type="date" className="bg-background" name="fechaDesde" value={filtersGuias.fechaDesde} onChange={handleFilterGuiaChange} />
                     </div>
                     <div className="space-y-1">
-                      <Label className="text-xs text-gray-500">Fecha hasta</Label>
-                      <Input type="date" className="bg-white" name="fechaHasta" value={filtersGuias.fechaHasta} onChange={handleFilterGuiaChange} />
+                      <Label className="text-xs text-muted-foreground">Fecha hasta</Label>
+                      <Input type="date" className="bg-background" name="fechaHasta" value={filtersGuias.fechaHasta} onChange={handleFilterGuiaChange} />
                     </div>
                     <div className="space-y-1">
-                      <Label className="text-xs text-gray-500">Buscar</Label>
+                      <Label className="text-xs text-muted-foreground">Buscar</Label>
                       <div className="relative">
-                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-3 w-3 sm:h-4 sm:w-4" />
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-3 w-3 sm:h-4 sm:w-4" />
                         <Input
                             placeholder="Buscar guías..."
                             value={searchGuias}

@@ -105,12 +105,12 @@ export default function EstadoCuentaClientePage() {
     return (
         <div className="grid gap-6 p-4 md:p-6">
             <div className="flex flex-col gap-2">
-                <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-gray-900">Estado de Cuenta Cliente</h1>
-                <p className="text-sm md:text-base text-gray-500">Consulta todos los movimientos detallados de los documentos y el cálculo de saldos.</p>
+                <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">Estado de Cuenta Cliente</h1>
+                <p className="text-sm md:text-base text-muted-foreground">Consulta todos los movimientos detallados de los documentos y el cálculo de saldos.</p>
             </div>
 
             <Card className="shadow-md">
-                <CardHeader className="bg-slate-50 border-b border-slate-200 p-4">
+                <CardHeader className="bg-muted border-b border-border p-4">
                     <div className="grid sm:grid-cols-12 gap-4 items-end">
                         <div className="flex flex-col gap-1 sm:col-span-6 relative">
                             <div className="flex items-center gap-1.5 mb-1">
@@ -120,7 +120,7 @@ export default function EstadoCuentaClientePage() {
                             <Popover open={openClientAutocomplete} onOpenChange={setOpenClientAutocomplete}>
                                 <div className="relative w-full">
                                     <PopoverTrigger asChild>
-                                        <Button variant="outline" role="combobox" className={cn("w-full justify-between h-10 font-normal overflow-hidden", selectedClientName && "pr-8 bg-white")}>
+                                        <Button variant="outline" role="combobox" className={cn("w-full justify-between h-10 font-normal overflow-hidden", selectedClientName && "pr-8 bg-background")}>
                                             <span className="truncate">
                                                 {selectedClientName ? `${selectedClientRuc} - ${selectedClientName}` : "Buscar por Nombre o RUC..."}
                                             </span>
@@ -129,7 +129,7 @@ export default function EstadoCuentaClientePage() {
                                     </PopoverTrigger>
                                     {selectedClientName && (
                                         <div
-                                            className="absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer p-1 text-gray-500 hover:text-red-500 hover:bg-red-50 rounded-md z-10"
+                                            className="absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer p-1 text-muted-foreground hover:text-red-500 hover:bg-red-50 rounded-md z-10"
                                             onClick={(e) => { e.preventDefault(); e.stopPropagation(); setSelectedClientRuc(""); setSelectedClientName(""); setSearchQuery(""); setData(null); }}
                                         >
                                             <X className="h-4 w-4" />
@@ -170,7 +170,7 @@ export default function EstadoCuentaClientePage() {
                             </div>
                             <Popover>
                                 <PopoverTrigger asChild>
-                                    <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal bg-white h-10", !selectedDate && "text-muted-foreground")}>
+                                    <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal bg-background h-10", !selectedDate && "text-muted-foreground")}>
                                         <CalendarIcon className="mr-2 h-4 w-4 opacity-50" />
                                         {selectedDate ? format(selectedDate, "PPP", { locale: es }) : <span>Seleccionar fecha</span>}
                                     </Button>
@@ -190,22 +190,22 @@ export default function EstadoCuentaClientePage() {
                     </div>
                 </CardHeader>
 
-                <CardContent className="p-4 md:p-6 bg-slate-100">
+                <CardContent className="p-4 md:p-6 bg-muted">
                     {loading ? (
                         <div className="flex flex-col items-center justify-center py-16">
                             <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mb-4"></div>
-                            <p className="text-slate-500 font-medium">Buscando movimientos, por favor espera...</p>
+                            <p className="text-muted-foreground font-medium">Buscando movimientos, por favor espera...</p>
                         </div>
                     ) : data ? (
                         <div className="space-y-6">
-                            <div className="bg-white p-5 rounded-lg border border-slate-200 shadow-sm grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="bg-background p-5 rounded-lg border border-border shadow-sm grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
-                                    <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">{data.NombreComercial || data.Cliente}</h2>
-                                    <p className="text-sm text-slate-600 mt-1 font-semibold">{data.RUC}   <span className="font-normal">{data.Cliente}</span></p>
-                                    <p className="text-sm text-slate-600 flex items-center gap-1 mt-1">{data.Direccion}</p>
+                                    <h2 className="text-lg font-bold text-foreground flex items-center gap-2">{data.NombreComercial || data.Cliente}</h2>
+                                    <p className="text-sm text-muted-foreground mt-1 font-semibold">{data.RUC}   <span className="font-normal">{data.Cliente}</span></p>
+                                    <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">{data.Direccion}</p>
                                 </div>
                                 <div className="md:text-right space-y-1">
-                                    <p className="text-sm text-slate-600 flex items-center md:justify-end gap-1">{data.Telefono || 'N/A'}</p>
+                                    <p className="text-sm text-muted-foreground flex items-center md:justify-end gap-1">{data.Telefono || 'N/A'}</p>
                                     <p className="text-sm font-semibold text-blue-700 mt-2">{formatDateToDDMMYYYY(data.FechaCorte)}</p>
                                 </div>
                             </div>
@@ -215,19 +215,19 @@ export default function EstadoCuentaClientePage() {
                                 let sumAmortizacion = 0;
 
                                 return (
-                                    <div key={dIdx} className="border border-slate-300 rounded-lg overflow-hidden shadow-sm bg-white">
-                                        <div className="bg-slate-200 text-slate-800 p-3 flex flex-col sm:flex-row sm:items-center gap-4 text-xs md:text-sm">
-                                            <div className="font-bold border-r border-slate-400 pr-4">Documento: {doc.Abreviatura}</div>
-                                            <div className="font-bold border-r border-slate-400 pr-4">
+                                    <div key={dIdx} className="border border-border rounded-lg overflow-hidden shadow-sm bg-background">
+                                        <div className="bg-muted text-foreground p-3 flex flex-col sm:flex-row sm:items-center gap-4 text-xs md:text-sm">
+                                            <div className="font-bold border-r border-border pr-4">Documento: {doc.Abreviatura}</div>
+                                            <div className="font-bold border-r border-border pr-4">
                                                 <DocumentoPdfLink numeroComprobante={doc.SerieNumero} />
                                             </div>
-                                            <div className="border-r border-slate-400 pr-4">Emisión: <span className="font-semibold">{formatDateToDDMMYYYY(doc.Emision)}</span></div>
+                                            <div className="border-r border-border pr-4">Emisión: <span className="font-semibold">{formatDateToDDMMYYYY(doc.Emision)}</span></div>
                                             <div>Vencimiento: <span className="font-semibold">{formatDateToDDMMYYYY(doc.Vencimiento)}</span></div>
                                         </div>
 
                                         <div className="hidden md:block overflow-x-auto">
-                                            <table className="w-full text-xs text-left text-slate-600">
-                                                <thead className="text-[10px] md:text-xs text-slate-500 uppercase bg-white border-b border-slate-200">
+                                            <table className="w-full text-xs text-left text-muted-foreground">
+                                                <thead className="text-[10px] md:text-xs text-muted-foreground uppercase bg-background border-b border-border">
                                                 <tr>
                                                     <th className="px-3 py-2 font-bold whitespace-nowrap">Fecha</th>
                                                     <th className="px-3 py-2 font-bold">Descripción</th>
@@ -238,14 +238,14 @@ export default function EstadoCuentaClientePage() {
                                                     <th className="px-3 py-2 font-bold text-right">Saldo US$</th>
                                                 </tr>
                                                 </thead>
-                                                <tbody className="divide-y divide-slate-100">
+                                                <tbody className="divide-y divide-border">
                                                 {doc.Movimientos.map((mov: any, mIdx: number) => {
                                                     sumProvision += mov.Provision;
                                                     sumAmortizacion += mov.Amortizacion;
                                                     const isSoles = mov.Moneda === 'S/.' || mov.Moneda === 'NSO';
 
                                                     return (
-                                                        <tr key={mIdx} className="hover:bg-slate-50 transition-colors">
+                                                        <tr key={mIdx} className="hover:bg-muted transition-colors">
                                                             <td className="px-3 py-2 whitespace-nowrap">{formatDateToDDMMYYYY(mov.Fecha)}</td>
                                                             <td className="px-3 py-2">{mov.Descripcion}</td>
                                                             <td className="px-3 py-2 text-center font-bold">{mov.Moneda}</td>
@@ -256,71 +256,71 @@ export default function EstadoCuentaClientePage() {
                                                         </tr>
                                                     )})}
                                                 </tbody>
-                                                <tfoot className="bg-slate-50 border-t border-slate-300 font-bold">
+                                                <tfoot className="bg-muted border-t border-border font-bold">
                                                 <tr>
-                                                    <td colSpan={3} className="px-3 py-3 text-right text-slate-700">SALDO: {doc.Abreviatura} Nro. {doc.SerieNumero}</td>
-                                                    <td className="px-3 py-3 text-right text-slate-800">{formatMoney(sumProvision)}</td>
-                                                    <td className="px-3 py-3 text-right text-slate-800">{formatMoney(sumAmortizacion)}</td>
-                                                    <td className="px-3 py-3 text-right text-slate-800">{formatMoney(doc.SaldoFinalSoles)}</td>
-                                                    <td className="px-3 py-3 text-right text-slate-800">{formatMoney(doc.SaldoFinalDolares)}</td>
+                                                    <td colSpan={3} className="px-3 py-3 text-right text-foreground">SALDO: {doc.Abreviatura} Nro. {doc.SerieNumero}</td>
+                                                    <td className="px-3 py-3 text-right text-foreground">{formatMoney(sumProvision)}</td>
+                                                    <td className="px-3 py-3 text-right text-foreground">{formatMoney(sumAmortizacion)}</td>
+                                                    <td className="px-3 py-3 text-right text-foreground">{formatMoney(doc.SaldoFinalSoles)}</td>
+                                                    <td className="px-3 py-3 text-right text-foreground">{formatMoney(doc.SaldoFinalDolares)}</td>
                                                 </tr>
                                                 </tfoot>
                                             </table>
                                         </div>
 
-                                        <div className="grid grid-cols-1 gap-2 p-3 md:hidden bg-slate-50">
+                                        <div className="grid grid-cols-1 gap-2 p-3 md:hidden bg-muted">
                                             {doc.Movimientos.map((mov: any, mIdx: number) => (
-                                                <div key={mIdx} className="bg-white border border-slate-200 rounded-md p-3 shadow-sm flex flex-col gap-2">
-                                                    <div className="flex justify-between items-start border-b border-slate-100 pb-1">
-                                                        <span className="font-bold text-xs text-slate-600">{formatDateToDDMMYYYY(mov.Fecha)}</span>
+                                                <div key={mIdx} className="bg-background border border-border rounded-md p-3 shadow-sm flex flex-col gap-2">
+                                                    <div className="flex justify-between items-start border-b border-border pb-1">
+                                                        <span className="font-bold text-xs text-muted-foreground">{formatDateToDDMMYYYY(mov.Fecha)}</span>
                                                         <Badge variant="outline" className="font-bold">{mov.Moneda}</Badge>
                                                     </div>
-                                                    <div className="text-xs text-slate-700 font-medium">
+                                                    <div className="text-xs text-foreground font-medium">
                                                         {mov.Descripcion}
                                                     </div>
                                                     <div className="grid grid-cols-2 gap-2 text-xs pt-1">
-                                                        <div className="bg-slate-50 p-1.5 rounded text-center">
-                                                            <span className="text-slate-400 block text-[10px] uppercase">Provisión</span>
-                                                            <span className="font-bold text-slate-800">{formatMoney(mov.Provision)}</span>
+                                                        <div className="bg-muted p-1.5 rounded text-center">
+                                                            <span className="text-muted-foreground block text-[10px] uppercase">Provisión</span>
+                                                            <span className="font-bold text-foreground">{formatMoney(mov.Provision)}</span>
                                                         </div>
-                                                        <div className="bg-slate-50 p-1.5 rounded text-center">
-                                                            <span className="text-slate-400 block text-[10px] uppercase">Amortización</span>
-                                                            <span className="font-bold text-slate-800">{formatMoney(mov.Amortizacion)}</span>
+                                                        <div className="bg-muted p-1.5 rounded text-center">
+                                                            <span className="text-muted-foreground block text-[10px] uppercase">Amortización</span>
+                                                            <span className="font-bold text-foreground">{formatMoney(mov.Amortizacion)}</span>
                                                         </div>
                                                     </div>
                                                     <div className="flex justify-between items-center pt-1">
-                                                        <span className="text-xs font-bold text-slate-500">Saldo:</span>
+                                                        <span className="text-xs font-bold text-muted-foreground">Saldo:</span>
                                                         <div className="text-right">
-                                                            <span className="text-sm font-bold text-slate-800 block">{mov.Moneda} {(mov.Moneda === 'S/.' || mov.Moneda === 'NSO') ? formatMoney(mov.SaldoSoles) : formatMoney(mov.SaldoDolares)}</span>
+                                                            <span className="text-sm font-bold text-foreground block">{mov.Moneda} {(mov.Moneda === 'S/.' || mov.Moneda === 'NSO') ? formatMoney(mov.SaldoSoles) : formatMoney(mov.SaldoDolares)}</span>
                                                         </div>
                                                     </div>
                                                 </div>
                                             ))}
-                                            <div className="bg-slate-200 p-3 rounded-md flex justify-between items-center mt-2">
-                                                <span className="text-xs font-bold text-slate-700">SALDO TOTAL DOC:</span>
-                                                <span className="font-bold text-sm text-slate-900">{formatMoney(doc.SaldoFinalSoles)} S/. | {formatMoney(doc.SaldoFinalDolares)} US$</span>
+                                            <div className="bg-muted p-3 rounded-md flex justify-between items-center mt-2">
+                                                <span className="text-xs font-bold text-foreground">SALDO TOTAL DOC:</span>
+                                                <span className="font-bold text-sm text-foreground">{formatMoney(doc.SaldoFinalSoles)} S/. | {formatMoney(doc.SaldoFinalDolares)} US$</span>
                                             </div>
                                         </div>
                                     </div>
                                 )})}
 
-                            <div className="bg-white border border-blue-200 p-4 rounded-lg flex flex-col sm:flex-row justify-between items-center shadow-md mt-4">
-                                <span className="text-sm font-bold tracking-wider text-slate-800 mb-2 sm:mb-0">SALDO Cliente:</span>
+                            <div className="bg-background border border-blue-200 p-4 rounded-lg flex flex-col sm:flex-row justify-between items-center shadow-md mt-4">
+                                <span className="text-sm font-bold tracking-wider text-foreground mb-2 sm:mb-0">SALDO Cliente:</span>
                                 <div className="flex gap-4 sm:gap-6 w-full sm:w-auto justify-between sm:justify-end">
                                     <div className="text-center sm:text-right flex-1 sm:flex-none">
-                                        <p className="text-xs text-slate-500 font-semibold uppercase">Total Soles</p>
-                                        <p className="text-lg sm:text-xl font-bold text-slate-800">{formatMoney(data.TotalSoles)}</p>
+                                        <p className="text-xs text-muted-foreground font-semibold uppercase">Total Soles</p>
+                                        <p className="text-lg sm:text-xl font-bold text-foreground">{formatMoney(data.TotalSoles)}</p>
                                     </div>
                                     <div className="text-center sm:text-right flex-1 sm:flex-none">
-                                        <p className="text-xs text-slate-500 font-semibold uppercase">Total Dólares</p>
-                                        <p className="text-lg sm:text-xl font-bold text-slate-800">{formatMoney(data.TotalDolares)}</p>
+                                        <p className="text-xs text-muted-foreground font-semibold uppercase">Total Dólares</p>
+                                        <p className="text-lg sm:text-xl font-bold text-foreground">{formatMoney(data.TotalDolares)}</p>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     ) : (
-                        <div className="flex flex-col items-center justify-center py-16 bg-white rounded-lg border-2 border-dashed border-slate-200">
-                            <p className="text-slate-500 font-medium text-center px-4">Utiliza el buscador para seleccionar un cliente.</p>
+                        <div className="flex flex-col items-center justify-center py-16 bg-background rounded-lg border-2 border-dashed border-border">
+                            <p className="text-muted-foreground font-medium text-center px-4">Utiliza el buscador para seleccionar un cliente.</p>
                         </div>
                     )}
                 </CardContent>

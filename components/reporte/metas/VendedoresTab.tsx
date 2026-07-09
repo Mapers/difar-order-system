@@ -95,12 +95,12 @@ export default function VendedoresTab({
                 <CardContent className="p-4 space-y-3">
                     <div className="flex flex-col sm:flex-row gap-2">
                         <div className="relative flex-1">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                             <Input
                                 placeholder="Buscar vendedor..."
                                 value={search}
                                 onChange={e => setSearch(e.target.value)}
-                                className="pl-10 bg-slate-50"
+                                className="pl-10 bg-muted"
                             />
                         </div>
                         {showSelector && (
@@ -108,7 +108,7 @@ export default function VendedoresTab({
                                 value={selectorValue || "__all__"}
                                 onValueChange={v => onSelectorChange?.(v === "__all__" ? "" : v)}
                             >
-                                <SelectTrigger className="h-10 text-sm bg-white sm:w-[200px]">
+                                <SelectTrigger className="h-10 text-sm bg-background sm:w-[200px]">
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -124,7 +124,7 @@ export default function VendedoresTab({
                                 value={zonaValue || "__all__"}
                                 onValueChange={v => onZonaChange?.(v === "__all__" ? "" : v)}
                             >
-                                <SelectTrigger className="h-10 text-sm bg-white sm:w-[200px]">
+                                <SelectTrigger className="h-10 text-sm bg-background sm:w-[200px]">
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -138,10 +138,10 @@ export default function VendedoresTab({
                     </div>
                     <div className="flex flex-wrap items-center justify-between gap-2">
                         <div className="flex items-center gap-1.5 flex-wrap">
-                            <span className="text-[11px] text-slate-400">Filtrar:</span>
+                            <span className="text-[11px] text-muted-foreground">Filtrar:</span>
                             {filterBtns.map(btn => (
                                 <Button key={btn.key} variant="outline" size="sm"
-                                        className={`text-[11px] h-7 px-3 ${filter === btn.key ? btn.activeClass : "text-slate-500"}`}
+                                        className={`text-[11px] h-7 px-3 ${filter === btn.key ? btn.activeClass : "text-muted-foreground"}`}
                                         onClick={() => setFilter(btn.key)}
                                 >
                                     {btn.label}
@@ -149,10 +149,10 @@ export default function VendedoresTab({
                             ))}
                         </div>
                         <div className="flex items-center gap-1.5 flex-wrap">
-                            <span className="text-[11px] text-slate-400">Ordenar:</span>
+                            <span className="text-[11px] text-muted-foreground">Ordenar:</span>
                             {sortBtns.map(btn => (
                                 <Button key={btn.key} variant="outline" size="sm"
-                                        className={`text-[11px] h-7 px-3 ${sort === btn.key ? "bg-sky-600 text-white border-sky-600" : "text-slate-500"}`}
+                                        className={`text-[11px] h-7 px-3 ${sort === btn.key ? "bg-sky-600 text-white border-sky-600" : "text-muted-foreground"}`}
                                         onClick={() => setSort(btn.key)}
                                 >
                                     {btn.label}
@@ -160,13 +160,13 @@ export default function VendedoresTab({
                             ))}
                         </div>
                     </div>
-                    <p className="text-[11px] text-slate-400">{filtered.length} de {agrupados.length} vendedores</p>
+                    <p className="text-[11px] text-muted-foreground">{filtered.length} de {agrupados.length} vendedores</p>
                 </CardContent>
             </Card>
 
             <div className="lg:hidden space-y-3">
                 {filtered.length === 0 ? (
-                    <Card><CardContent className="py-8 text-center text-slate-400 text-sm">Sin resultados</CardContent></Card>
+                    <Card><CardContent className="py-8 text-center text-muted-foreground text-sm">Sin resultados</CardContent></Card>
                 ) : filtered.map((v, i) => {
                     const [c1] = getStatusColor(v.pct);
                     const color = getLabColor(i);
@@ -194,10 +194,10 @@ export default function VendedoresTab({
                                                 {getInitials(v.nombre_vendedor || v.cod_vendedor)}
                                             </div>
                                             <div className="min-w-0">
-                                                <p className="text-sm font-bold text-slate-800 truncate">
+                                                <p className="text-sm font-bold text-card-foreground truncate">
                                                     {v.nombre_vendedor || v.cod_vendedor}
                                                 </p>
-                                                <p className="text-[10px] text-slate-400">
+                                                <p className="text-[10px] text-muted-foreground">
                                                     Cod: {v.cod_vendedor} · {labs.length} lab{labs.length === 1 ? '' : 's'}
                                                 </p>
                                             </div>
@@ -205,36 +205,36 @@ export default function VendedoresTab({
                                         <div className="flex items-center gap-2 shrink-0">
                                             <StatusChip pct={v.pct} />
                                             {isOpen
-                                                ? <ChevronDown className="h-4 w-4 text-slate-400" />
-                                                : <ChevronRight className="h-4 w-4 text-slate-400" />}
+                                                ? <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                                                : <ChevronRight className="h-4 w-4 text-muted-foreground" />}
                                         </div>
                                     </div>
 
                                     <div className="space-y-1">
                                         <div className="flex justify-between items-center">
-                                            <span className="text-[11px] text-slate-500">Avance</span>
+                                            <span className="text-[11px] text-muted-foreground">Avance</span>
                                             <span className="text-sm font-bold" style={{ color: c1 }}>{v.pct}%</span>
                                         </div>
                                         <ProgressBar pct={v.pct} height="h-2" />
                                     </div>
 
-                                    <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-100">
+                                    <div className="grid grid-cols-2 gap-2 pt-1 border-t border-border">
                                         <div>
-                                            <p className="text-[10px] text-slate-400 uppercase tracking-wide">Venta</p>
-                                            <p className="text-sm font-bold text-slate-800">{fmtMoney(Number(v.venta_real))}</p>
+                                            <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Venta</p>
+                                            <p className="text-sm font-bold text-card-foreground">{fmtMoney(Number(v.venta_real))}</p>
                                         </div>
                                         <div>
-                                            <p className="text-[10px] text-slate-400 uppercase tracking-wide">Cuota</p>
-                                            <p className="text-sm font-semibold text-slate-500">{fmtMoney(Number(v.meta_monto))}</p>
+                                            <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Cuota</p>
+                                            <p className="text-sm font-semibold text-muted-foreground">{fmtMoney(Number(v.meta_monto))}</p>
                                         </div>
                                         <div>
-                                            <p className="text-[10px] text-slate-400 uppercase tracking-wide">Clientes</p>
-                                            <p className="text-sm font-semibold text-slate-700">
+                                            <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Clientes</p>
+                                            <p className="text-sm font-semibold text-card-foreground">
                                                 {Number(v.clientes_atendidos || 0)}/{Number(v.meta_clientes || 0)}
                                             </p>
                                         </div>
                                         <div>
-                                            <p className="text-[10px] text-slate-400 uppercase tracking-wide">Pendiente</p>
+                                            <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Pendiente</p>
                                             <p className="text-sm font-semibold" style={{ color: c1 }}>
                                                 {pendiente > 0 ? fmtMoney(pendiente) : "✓ Logrado"}
                                             </p>
@@ -250,7 +250,7 @@ export default function VendedoresTab({
                             </button>
 
                             {isOpen && labs.length > 0 && (
-                                <div className="border-t border-slate-100 divide-y divide-slate-100 bg-slate-50/50">
+                                <div className="border-t border-border divide-y divide-border bg-muted/50">
                                     {labs.map((lab, li) => {
                                         const lpct = Number(lab.pct_avance_monto || 0);
                                         const [lc1] = getStatusColor(lpct);
@@ -258,14 +258,14 @@ export default function VendedoresTab({
                                             <button
                                                 key={lab.id_linea_ge + '-' + li}
                                                 type="button"
-                                                className="w-full text-left px-4 py-2.5 flex items-center gap-3 hover:bg-sky-50 transition-colors"
+                                                className="w-full text-left px-4 py-2.5 flex items-center gap-3 hover:bg-sky-50 dark:hover:bg-sky-950/20 transition-colors"
                                                 onClick={() => onVendedorClick?.(lab)}
                                             >
                                                 <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: color }} />
                                                 <div className="flex-1 min-w-0">
-                                                    <p className="text-xs font-semibold text-slate-700 truncate">{lab.nombre_lab}</p>
+                                                    <p className="text-xs font-semibold text-foreground truncate">{lab.nombre_lab}</p>
                                                     <div className="flex justify-between mt-0.5">
-                                                        <span className="text-[10px] text-slate-400">
+                                                        <span className="text-[10px] text-muted-foreground">
                                                             {fmtMoney(Number(lab.venta_real))} / {fmtMoney(Number(lab.meta_monto))}
                                                         </span>
                                                         <span className="text-[10px] text-sky-600">Ver ítems →</span>
@@ -288,21 +288,21 @@ export default function VendedoresTab({
                     <div className="overflow-x-auto">
                         <table className="w-full text-xs min-w-[560px]">
                             <thead>
-                            <tr className="border-b border-slate-200 bg-slate-50">
-                                <th className="text-left px-3 py-2.5 text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Vendedor</th>
-                                <th className="text-left px-3 py-2.5 text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Lab</th>
-                                <th className="text-left px-3 py-2.5 text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Venta S/</th>
-                                <th className="text-left px-3 py-2.5 text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Cuota S/</th>
-                                <th className="text-left px-3 py-2.5 text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Clientes</th>
-                                <th className="text-left px-3 py-2.5 text-[10px] uppercase tracking-wider text-slate-400 font-semibold">%</th>
-                                <th className="text-left px-3 py-2.5 text-[10px] uppercase tracking-wider text-slate-400 font-semibold min-w-[130px]">Avance</th>
-                                <th className="text-left px-3 py-2.5 text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Estado</th>
+                            <tr className="border-b border-border bg-muted">
+                                <th className="text-left px-3 py-2.5 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Vendedor</th>
+                                <th className="text-left px-3 py-2.5 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Lab</th>
+                                <th className="text-left px-3 py-2.5 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Venta S/</th>
+                                <th className="text-left px-3 py-2.5 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Cuota S/</th>
+                                <th className="text-left px-3 py-2.5 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Clientes</th>
+                                <th className="text-left px-3 py-2.5 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">%</th>
+                                <th className="text-left px-3 py-2.5 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold min-w-[130px]">Avance</th>
+                                <th className="text-left px-3 py-2.5 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Estado</th>
                             </tr>
                             </thead>
                             <tbody>
                             {filtered.length === 0 ? (
                                 <tr>
-                                    <td colSpan={8} className="text-center text-slate-400 py-8">Sin resultados</td>
+                                    <td colSpan={8} className="text-center text-muted-foreground py-8">Sin resultados</td>
                                 </tr>
                             ) : filtered.map((v, i) => {
                                 const [c1] = getStatusColor(v.pct);
@@ -312,14 +312,14 @@ export default function VendedoresTab({
                                 return (
                                     <Fragment key={v.cod_vendedor}>
                                         <tr
-                                            className="border-b border-slate-50 hover:bg-slate-50 cursor-pointer transition-colors"
+                                            className="border-b border-border hover:bg-muted cursor-pointer transition-colors"
                                             onClick={() => toggleExpand(v.cod_vendedor)}
                                         >
                                             <td className="px-3 py-2.5">
                                                 <div className="flex items-center gap-2">
                                                     {isOpen
-                                                        ? <ChevronDown className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-                                                        : <ChevronRight className="h-3.5 w-3.5 text-slate-400 shrink-0" />}
+                                                        ? <ChevronDown className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                                                        : <ChevronRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />}
                                                     <div
                                                         className="w-6 h-6 rounded-md flex items-center justify-center text-[10px] font-bold shrink-0"
                                                         style={{ background: `${color}22`, color }}
@@ -327,19 +327,19 @@ export default function VendedoresTab({
                                                         {getInitials(v.nombre_vendedor || v.cod_vendedor)}
                                                     </div>
                                                     <div>
-                                                        <p className="font-semibold text-slate-800">{v.nombre_vendedor || v.cod_vendedor}</p>
+                                                        <p className="font-semibold text-card-foreground">{v.nombre_vendedor || v.cod_vendedor}</p>
                                                         <p className="text-[10px] text-sky-600">
                                                             {isOpen ? 'Ocultar laboratorios' : 'Ver laboratorios'}
                                                         </p>
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td className="px-3 py-2.5 text-slate-400">
+                                            <td className="px-3 py-2.5 text-muted-foreground">
                                                 {labs.length} lab{labs.length === 1 ? '' : 's'}
                                             </td>
                                             <td className="px-3 py-2.5 font-semibold">{fmtMoney(Number(v.venta_real))}</td>
-                                            <td className="px-3 py-2.5 text-slate-400">{fmtMoney(Number(v.meta_monto))}</td>
-                                            <td className="px-3 py-2.5 text-slate-500">
+                                            <td className="px-3 py-2.5 text-muted-foreground">{fmtMoney(Number(v.meta_monto))}</td>
+                                            <td className="px-3 py-2.5 text-muted-foreground">
                                                 {Number(v.clientes_atendidos || 0)}/{Number(v.meta_clientes || 0)}
                                             </td>
                                             <td className="px-3 py-2.5 font-bold" style={{ color: c1 }}>{v.pct}%</td>
@@ -357,22 +357,22 @@ export default function VendedoresTab({
                                             return (
                                                 <tr
                                                     key={v.cod_vendedor + '-' + lab.id_linea_ge + '-' + li}
-                                                    className="border-b border-slate-50 bg-slate-50/60 hover:bg-sky-50 cursor-pointer transition-colors"
+                                                    className="border-b border-border bg-muted/60 hover:bg-sky-50 dark:hover:bg-sky-950/20 cursor-pointer transition-colors"
                                                     onClick={() => onVendedorClick?.(lab)}
                                                 >
                                                     <td className="px-3 py-2 pl-10">
                                                         <div className="flex items-center gap-2">
                                                             <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: color }} />
                                                             <div>
-                                                                <p className="font-medium text-slate-700">{lab.nombre_lab}</p>
+                                                                <p className="font-medium text-foreground">{lab.nombre_lab}</p>
                                                                 <p className="text-[10px] text-sky-600">Ver ítems vendidos →</p>
                                                             </div>
                                                         </div>
                                                     </td>
-                                                    <td className="px-3 py-2 text-slate-300">—</td>
-                                                    <td className="px-3 py-2 font-semibold text-slate-600">{fmtMoney(Number(lab.venta_real))}</td>
-                                                    <td className="px-3 py-2 text-slate-400">{fmtMoney(Number(lab.meta_monto))}</td>
-                                                    <td className="px-3 py-2 text-slate-300">—</td>
+                                                    <td className="px-3 py-2 text-muted-foreground/50">—</td>
+                                                    <td className="px-3 py-2 font-semibold text-muted-foreground">{fmtMoney(Number(lab.venta_real))}</td>
+                                                    <td className="px-3 py-2 text-muted-foreground">{fmtMoney(Number(lab.meta_monto))}</td>
+                                                    <td className="px-3 py-2 text-muted-foreground/50">—</td>
                                                     <td className="px-3 py-2 font-bold" style={{ color: lc1 }}>{lpct}%</td>
                                                     <td className="px-3 py-2">
                                                         <ProgressBar pct={lpct} height="h-1.5" />

@@ -51,16 +51,16 @@ function LabBarChart({ items, totalVenta }: {
                 const color   = getLabColor(i)
                 return (
                     <div key={item.id_meta_item} className="flex items-center gap-2">
-                        <p className="text-[10px] text-slate-600 w-28 truncate shrink-0">
+                        <p className="text-[10px] text-muted-foreground w-28 truncate shrink-0">
                             {item.nombre_articulo || item.cod_articulo}
                         </p>
-                        <div className="flex-1 bg-slate-100 rounded-full h-2 overflow-hidden">
+                        <div className="flex-1 bg-muted rounded-full h-2 overflow-hidden">
                             <div className="h-2 rounded-full" style={{ width: `${barPct}%`, background: color }} />
                         </div>
                         <span className="text-[10px] font-semibold shrink-0 w-20 text-right" style={{ color: c1 }}>
                             {fmtMoney(Number(item.venta_real))}
                         </span>
-                        <span className="text-[9px] text-slate-400 shrink-0 w-8 text-right">{contrib}%</span>
+                        <span className="text-[9px] text-muted-foreground shrink-0 w-8 text-right">{contrib}%</span>
                     </div>
                 )
             })}
@@ -113,7 +113,7 @@ function LabCard({
                                 <p className="text-sm font-bold truncate" style={{ color }}>
                                     {lab.nombre_lab || `Lab ${lab.id_linea_ge}`}
                                 </p>
-                                <p className="text-[10px] text-slate-400 mt-0.5">
+                                <p className="text-[10px] text-muted-foreground mt-0.5">
                                     {labItems.length} ítem{labItems.length !== 1 ? "s" : ""} ·{" "}
                                     {itemsEnMeta} en meta · {fmtMoney(Number(lab.venta_real))} vendido
                                 </p>
@@ -129,25 +129,25 @@ function LabCard({
                             </div>
                             <StatusChip pct={av} />
                             {isOpen
-                                ? <ChevronDown className="h-4 w-4 text-slate-400" />
-                                : <ChevronRight className="h-4 w-4 text-slate-400" />
+                                ? <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                                : <ChevronRight className="h-4 w-4 text-muted-foreground" />
                             }
                         </div>
                     </div>
 
                     <ProgressBar pct={av} height="h-1.5" className="mt-3" />
 
-                    <div className="grid grid-cols-3 gap-2 mt-3 pt-3 border-t border-slate-100">
+                    <div className="grid grid-cols-3 gap-2 mt-3 pt-3 border-t border-border">
                         <div>
-                            <p className="text-[9px] text-slate-400 uppercase tracking-wide">Venta</p>
-                            <p className="text-xs font-bold text-slate-800">{fmtMoney(Number(lab.venta_real))}</p>
+                            <p className="text-[9px] text-muted-foreground uppercase tracking-wide">Venta</p>
+                            <p className="text-xs font-bold text-card-foreground">{fmtMoney(Number(lab.venta_real))}</p>
                         </div>
                         <div>
-                            <p className="text-[9px] text-slate-400 uppercase tracking-wide">Cuota</p>
-                            <p className="text-xs font-semibold text-slate-500">{fmtMoney(Number(lab.meta_monto))}</p>
+                            <p className="text-[9px] text-muted-foreground uppercase tracking-wide">Cuota</p>
+                            <p className="text-xs font-semibold text-muted-foreground">{fmtMoney(Number(lab.meta_monto))}</p>
                         </div>
                         <div>
-                            <p className="text-[9px] text-slate-400 uppercase tracking-wide">Pendiente</p>
+                            <p className="text-[9px] text-muted-foreground uppercase tracking-wide">Pendiente</p>
                             <p className="text-xs font-semibold" style={{ color: c1 }}>
                                 {Number(lab.monto_pendiente) > 0
                                     ? fmtMoney(Number(lab.monto_pendiente))
@@ -159,15 +159,15 @@ function LabCard({
             </button>
 
             {isOpen && (
-                <div className="border-t border-slate-100">
+                <div className="border-t border-border">
                     {labItems.length === 0 ? (
-                        <div className="px-4 py-8 text-center text-slate-400 text-sm">
+                        <div className="px-4 py-8 text-center text-muted-foreground text-sm">
                             Sin ítems asignados en este laboratorio
                         </div>
                     ) : (
                         <>
                             <div className="px-4 pt-4 pb-3">
-                                <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide mb-2">
+                                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-2">
                                     Venta por producto (top {Math.min(labItems.length, 6)})
                                 </p>
                                 <LabBarChart items={labItems} totalVenta={totalVenta} />
@@ -180,17 +180,17 @@ function LabCard({
                                     { label: "Uds vendidas",  val: totalUndVend.toLocaleString() },
                                     { label: "Uds meta",      val: totalUndMeta.toLocaleString() },
                                 ].map(k => (
-                                    <div key={k.label} className="bg-slate-50 rounded-lg p-2.5 border border-slate-100">
-                                        <p className="text-[9px] text-slate-400 uppercase tracking-wide">{k.label}</p>
-                                        <p className="text-sm font-bold text-slate-700 mt-0.5">{k.val}</p>
+                                    <div key={k.label} className="bg-muted rounded-lg p-2.5 border border-border">
+                                        <p className="text-[9px] text-muted-foreground uppercase tracking-wide">{k.label}</p>
+                                        <p className="text-sm font-bold text-foreground mt-0.5">{k.val}</p>
                                     </div>
                                 ))}
                             </div>
 
                             <div className="hidden lg:block">
                                 <div className="grid grid-cols-[2fr_90px_90px_80px_70px_70px_70px] gap-2 px-4 py-2
-                                                border-t border-b border-slate-100
-                                                text-[10px] uppercase tracking-wider text-slate-400 font-semibold">
+                                                border-t border-b border-border
+                                                text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
                                     <span>Ítem / Producto</span>
                                     <span className="text-right">Venta S/</span>
                                     <span className="text-right">Cuota S/</span>
@@ -207,8 +207,8 @@ function LabCard({
                                         <div
                                             key={item.id_meta_item}
                                             className="grid grid-cols-[2fr_90px_90px_80px_70px_70px_70px] gap-2
-                                                       px-4 py-2.5 border-b border-slate-50
-                                                       hover:bg-slate-50 items-center transition-colors"
+                                                       px-4 py-2.5 border-b border-border
+                                                       hover:bg-muted items-center transition-colors"
                                         >
                                             <div className="flex items-center gap-2">
                                                 <div className="w-5 h-5 rounded flex items-center justify-center text-[9px] font-bold shrink-0"
@@ -216,10 +216,10 @@ function LabCard({
                                                     {idx + 1}
                                                 </div>
                                                 <div className="min-w-0">
-                                                    <p className="text-xs font-medium truncate text-slate-800">
+                                                    <p className="text-xs font-medium truncate text-card-foreground">
                                                         {item.nombre_articulo || item.cod_articulo}
                                                     </p>
-                                                    <p className="text-[9px] text-slate-400">
+                                                    <p className="text-[9px] text-muted-foreground">
                                                         P.ref: {fmtMoney(Number(item.precio_ref_meta))}
                                                     </p>
                                                 </div>
@@ -230,7 +230,7 @@ function LabCard({
                                                 <ProgressBar pct={item.avPct} height="h-[3px]" className="mt-0.5" />
                                             </div>
 
-                                            <div className="text-right text-xs text-slate-400">
+                                            <div className="text-right text-xs text-muted-foreground">
                                                 {fmtMoney(Number(item.meta_monto))}
                                             </div>
 
@@ -242,14 +242,14 @@ function LabCard({
                                                 }}
                                             >
                                                 <MiniDonut pct={item.uPct} size={36} strokeWidth={4} />
-                                                <p className="text-[9px] text-slate-400">
+                                                <p className="text-[9px] text-muted-foreground">
                                                     {Number(item.u_vendidas).toLocaleString()} / {Number(item.meta_cantidad).toLocaleString()}
                                                 </p>
                                             </div>
 
                                             <div className="text-center">
                                                 <p className="text-sm font-bold" style={{ color }}>{item.contrib}%</p>
-                                                <p className="text-[9px] text-slate-400">del lab</p>
+                                                <p className="text-[9px] text-muted-foreground">del lab</p>
                                             </div>
 
                                             <div
@@ -270,38 +270,38 @@ function LabCard({
                                 })}
 
                                 <div className="grid grid-cols-[2fr_90px_90px_80px_70px_70px_70px] gap-2
-                                                px-4 py-2.5 bg-slate-50 border-t border-slate-200 items-center">
-                                    <span className="text-[11px] text-slate-500 font-semibold">
+                                                px-4 py-2.5 bg-muted border-t border-border items-center">
+                                    <span className="text-[11px] text-muted-foreground font-semibold">
                                         TOTAL · {sortedItems.length} ítems
                                     </span>
                                     <span className="text-right text-xs font-bold" style={{ color: c1 }}>
                                         {fmtMoney(totalVenta)}
                                     </span>
-                                    <span className="text-right text-xs text-slate-400">
+                                    <span className="text-right text-xs text-muted-foreground">
                                         {fmtMoney(totalMeta)}
                                     </span>
-                                    <span className="text-center text-[11px] text-slate-500 font-semibold">
+                                    <span className="text-center text-[11px] text-muted-foreground font-semibold">
                                         {av}% cumpl.
                                     </span>
-                                    <span className="text-center text-xs font-bold text-slate-400">100%</span>
+                                    <span className="text-center text-xs font-bold text-muted-foreground">100%</span>
                                     <span className="text-center text-xs font-bold" style={{ color: c1 }}>{av}%</span>
                                     <span className="text-center"><StatusChip pct={av} /></span>
                                 </div>
                             </div>
 
-                            <div className="lg:hidden divide-y divide-slate-100 border-t border-slate-100">
+                            <div className="lg:hidden divide-y divide-border border-t border-border">
                                 {sortedItems.map((item, idx) => {
                                     const [sc1] = getStatusColor(item.avPct)
                                     const [uc1] = getStatusColor(item.uPct)
                                     return (
-                                        <div key={item.id_meta_item} className="p-3 space-y-2 bg-white">
+                                        <div key={item.id_meta_item} className="p-3 space-y-2 bg-background">
                                             <div className="flex items-start justify-between gap-2">
                                                 <div className="flex items-center gap-2 min-w-0">
                                                     <div className="w-5 h-5 rounded flex items-center justify-center text-[9px] font-bold shrink-0"
                                                          style={{ background: `${color}15`, color }}>
                                                         {idx + 1}
                                                     </div>
-                                                    <span className="text-xs font-medium text-slate-800 line-clamp-2">
+                                                    <span className="text-xs font-medium text-foreground line-clamp-2">
                                                         {item.nombre_articulo || item.cod_articulo}
                                                     </span>
                                                 </div>
@@ -310,23 +310,23 @@ function LabCard({
 
                                             <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 pl-7">
                                                 <div>
-                                                    <p className="text-[9px] text-slate-400 uppercase">Venta S/</p>
-                                                    <p className="text-xs font-semibold text-slate-800">
+                                                    <p className="text-[9px] text-muted-foreground uppercase">Venta S/</p>
+                                                    <p className="text-xs font-semibold text-foreground">
                                                         {fmtMoney(Number(item.venta_real))}
                                                     </p>
                                                 </div>
                                                 <div>
-                                                    <p className="text-[9px] text-slate-400 uppercase">Cuota S/</p>
-                                                    <p className="text-xs text-slate-500">
+                                                    <p className="text-[9px] text-muted-foreground uppercase">Cuota S/</p>
+                                                    <p className="text-xs text-muted-foreground">
                                                         {fmtMoney(Number(item.meta_monto))}
                                                     </p>
                                                 </div>
                                                 <div>
-                                                    <p className="text-[9px] text-slate-400 uppercase">Contrib.</p>
+                                                    <p className="text-[9px] text-muted-foreground uppercase">Contrib.</p>
                                                     <p className="text-xs font-bold" style={{ color }}>{item.contrib}%</p>
                                                 </div>
                                                 <div>
-                                                    <p className="text-[9px] text-slate-400 uppercase">Avance S/</p>
+                                                    <p className="text-[9px] text-muted-foreground uppercase">Avance S/</p>
                                                     <p className="text-xs font-bold" style={{ color: sc1 }}>{item.avPct}%</p>
                                                 </div>
                                             </div>
@@ -362,22 +362,22 @@ function LabCard({
                                     )
                                 })}
 
-                                <div className="p-3 bg-slate-50 border-t border-slate-200">
+                                <div className="p-3 bg-muted border-t border-border">
                                     <div className="grid grid-cols-2 gap-2">
                                         <div>
-                                            <p className="text-[9px] text-slate-400 uppercase">Total venta</p>
+                                            <p className="text-[9px] text-muted-foreground uppercase">Total venta</p>
                                             <p className="text-sm font-bold" style={{ color }}>
                                                 {fmtMoney(Number(lab.venta_real))}
                                             </p>
                                         </div>
                                         <div>
-                                            <p className="text-[9px] text-slate-400 uppercase">Cuota total</p>
-                                            <p className="text-sm text-slate-500">{fmtMoney(Number(lab.meta_monto))}</p>
+                                            <p className="text-[9px] text-muted-foreground uppercase">Cuota total</p>
+                                            <p className="text-sm text-muted-foreground">{fmtMoney(Number(lab.meta_monto))}</p>
                                         </div>
                                         <div className="col-span-2">
                                             <ProgressBar pct={av} height="h-2" />
                                             <div className="flex justify-between mt-1">
-                                                <span className="text-[10px] text-slate-400">
+                                                <span className="text-[10px] text-muted-foreground">
                                                     {sortedItems.length} ítems · 100% contrib.
                                                 </span>
                                                 <span className="text-[10px] font-bold" style={{ color }}>
@@ -503,8 +503,8 @@ export default function VendedorDashboardView({ data, kpis }: VendedorDashboardV
             <Card className="shadow-sm">
                 <CardContent className="p-4">
                     <div className="flex justify-between items-center mb-2">
-                        <span className="text-xs font-semibold text-slate-700">Mi progreso del ciclo</span>
-                        <span className="text-xs text-slate-400">
+                        <span className="text-xs font-semibold text-card-foreground">Mi progreso del ciclo</span>
+                        <span className="text-xs text-muted-foreground">
                             {fmtMoney(kpis.totalVendido)} vendido · {fmtMoney(kpis.totalCuota - kpis.totalVendido)} restante
                         </span>
                     </div>
@@ -517,7 +517,7 @@ export default function VendedorDashboardView({ data, kpis }: VendedorDashboardV
                     <CardContent className="p-4">
                         <div className="flex items-center gap-2 mb-3">
                             <div className="w-1.5 h-1.5 rounded-full bg-red-500" />
-                            <h3 className="text-sm font-semibold text-slate-700">Labs que requieren atención</h3>
+                            <h3 className="text-sm font-semibold text-card-foreground">Labs que requieren atención</h3>
                         </div>
                         <div className="space-y-2.5">
                             {labsAlert.map((lab, i) => {
@@ -525,7 +525,7 @@ export default function VendedorDashboardView({ data, kpis }: VendedorDashboardV
                                 const [c1]  = getStatusColor(av)
                                 const color = getLabColor(i)
                                 return (
-                                    <div key={lab.id_linea_ge} className="flex flex-col gap-1.5 p-2.5 bg-slate-50 rounded-lg">
+                                    <div key={lab.id_linea_ge} className="flex flex-col gap-1.5 p-2.5 bg-muted rounded-lg">
                                         <div className="flex justify-between items-center">
                                             <div className="flex items-center gap-2">
                                                 <div className="w-6 h-6 rounded-md flex items-center justify-center text-[10px] font-bold shrink-0"
@@ -533,10 +533,10 @@ export default function VendedorDashboardView({ data, kpis }: VendedorDashboardV
                                                     {getInitials(lab.nombre_lab || String(lab.id_linea_ge))}
                                                 </div>
                                                 <div>
-                                                    <p className="text-xs font-bold text-slate-800">
+                                                    <p className="text-xs font-bold text-foreground">
                                                         {lab.nombre_lab || `Lab ${lab.id_linea_ge}`}
                                                     </p>
-                                                    <p className="text-[10px] text-slate-400">
+                                                    <p className="text-[10px] text-muted-foreground">
                                                         Falta {fmtMoney(Number(lab.monto_pendiente || 0))}
                                                     </p>
                                                 </div>
@@ -558,15 +558,15 @@ export default function VendedorDashboardView({ data, kpis }: VendedorDashboardV
             <div>
                 <div className="flex items-center gap-2 mb-3">
                     <Package className="h-4 w-4 text-sky-600" />
-                    <h2 className="text-sm font-bold text-slate-700">Mis Laboratorios y Productos</h2>
-                    <span className="text-[10px] text-slate-400 hidden sm:inline">
+                    <h2 className="text-sm font-bold text-foreground">Mis Laboratorios y Productos</h2>
+                    <span className="text-[10px] text-muted-foreground hidden sm:inline">
                         — haz clic en un laboratorio para ver el detalle de sus ítems
                     </span>
                 </div>
 
                 {labsSorted.length === 0 ? (
                     <Card>
-                        <CardContent className="py-10 text-center text-slate-400 text-sm">
+                        <CardContent className="py-10 text-center text-muted-foreground text-sm">
                             Sin laboratorios asignados en este ciclo
                         </CardContent>
                     </Card>

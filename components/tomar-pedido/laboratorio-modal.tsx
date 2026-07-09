@@ -109,8 +109,8 @@ export const LaboratorioModal = ({
 
     return (
         <div className={`flex items-center h-9 sm:h-10 rounded-lg border overflow-hidden transition-colors ${safeQuantity >= stockTotal
-            ? 'bg-gray-50 border-red-300'
-            : 'bg-gray-50 border-gray-200'
+            ? 'bg-muted border-red-300'
+            : 'bg-muted border-border'
         }`}>
           <button
               type="button"
@@ -120,7 +120,7 @@ export const LaboratorioModal = ({
               }}
               className={`h-full px-2.5 flex items-center justify-center transition-colors disabled:cursor-not-allowed ${safeQuantity <= 1
                   ? 'text-red-400 hover:text-red-600 hover:bg-red-50'
-                  : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted'
               }`}
           >
             <Minus className="h-3.5 w-3.5" />
@@ -147,7 +147,7 @@ export const LaboratorioModal = ({
               onKeyDown={(e) => {
                 if (['e', 'E', '+', '-', '.'].includes(e.key)) e.preventDefault();
               }}
-              className="w-10 sm:w-12 bg-transparent outline-none text-center text-sm font-semibold text-gray-900 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+              className="w-10 sm:w-12 bg-transparent outline-none text-center text-sm font-semibold text-foreground [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
           />
           <button
               type="button"
@@ -155,8 +155,8 @@ export const LaboratorioModal = ({
               disabled={safeQuantity >= stockTotal}
               onClick={() => handleQuantityChange(productId, Math.min(safeQuantity + 1, stockTotal))}
               className={`h-full px-2.5 flex items-center justify-center transition-colors disabled:cursor-not-allowed ${safeQuantity >= stockTotal
-                  ? 'text-gray-300'
-                  : 'text-gray-500 hover:text-blue-600 hover:bg-blue-50'
+                  ? 'text-muted-foreground/50'
+                  : 'text-muted-foreground hover:text-blue-600 hover:bg-blue-50'
               }`}
           >
             <Plus className="h-3.5 w-3.5" />
@@ -173,8 +173,8 @@ export const LaboratorioModal = ({
     const sym = currency?.value === "PEN" ? "S/." : "$";
 
     return (
-        <p className="text-[11px] text-center text-gray-500 mt-1.5 w-full">
-          {sym}{unitPrice.toFixed(2)} × {qty} = <span className="font-semibold text-gray-800">{sym}{(unitPrice * qty).toFixed(2)}</span>
+        <p className="text-[11px] text-center text-muted-foreground mt-1.5 w-full">
+          {sym}{unitPrice.toFixed(2)} × {qty} = <span className="font-semibold text-foreground">{sym}{(unitPrice * qty).toFixed(2)}</span>
         </p>
     )
   }
@@ -193,7 +193,7 @@ export const LaboratorioModal = ({
     const qtyToSubmit = typeof rawQty === "number" ? rawQty : 1;
 
     return (
-        <Card key={productId} className="border border-gray-200 hover:shadow-md transition-shadow">
+        <Card key={productId} className="border border-border hover:shadow-md transition-shadow">
           <CardContent className="p-4">
             <div className="flex justify-between items-start mb-3">
               <div className="flex-1 min-w-0">
@@ -203,8 +203,8 @@ export const LaboratorioModal = ({
                   </div>
                   <h3 className="font-bold text-blue-600 text-sm truncate">{product.NombreItem}</h3>
                 </div>
-                <p className="text-xs text-gray-500 truncate mb-1">Código: {productId}</p>
-                <Badge variant="outline" className="bg-gray-50 text-gray-700 text-xs">
+                <p className="text-xs text-muted-foreground truncate mb-1">Código: {productId}</p>
+                <Badge variant="outline" className="bg-muted text-muted-foreground text-xs">
                   Stock: {Number(product.Stock).toFixed(2)}
                 </Badge>
               </div>
@@ -340,10 +340,10 @@ export const LaboratorioModal = ({
                 <TableRow key={productId}>
                   <TableCell>
                     <div className="text-sm font-semibold">{product.NombreItem}</div>
-                    <div className="text-xs text-gray-500">{productId}</div>
+                    <div className="text-xs text-muted-foreground">{productId}</div>
                   </TableCell>
                   <TableCell>
-                    <Badge variant="outline" className="bg-gray-50">
+                    <Badge variant="outline" className="bg-muted">
                       {Number(product.Stock).toFixed(2)}
                     </Badge>
                   </TableCell>
@@ -454,22 +454,22 @@ export const LaboratorioModal = ({
           <div className="flex-1 overflow-y-auto space-y-4 px-1 sm:px-0 py-2">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 h-full">
               <div className="lg:col-span-2 overflow-y-auto">
-                <div className="rounded-md border border-gray-200">
+                <div className="rounded-md border border-border">
                   {loading ? (
                       <div className="flex justify-center items-center h-64">
                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
-                        <span className="ml-3 text-gray-600 font-medium">Cargando productos...</span>
+                        <span className="ml-3 text-muted-foreground font-medium">Cargando productos...</span>
                       </div>
                   ) : products.length === 0 ? (
                       <div className="text-center py-12">
-                        <Package className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                        <h3 className="text-lg font-medium text-gray-900 mb-2">No hay productos</h3>
-                        <p className="text-gray-500">No se encontraron productos para este laboratorio</p>
+                        <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                        <h3 className="text-lg font-medium text-foreground mb-2">No hay productos</h3>
+                        <p className="text-muted-foreground">No se encontraron productos para este laboratorio</p>
                       </div>
                   ) : (
                       <>
                         <div className="block lg:hidden">
-                          <div className="grid grid-cols-1 gap-3 p-3 bg-gray-50">
+                          <div className="grid grid-cols-1 gap-3 p-3 bg-muted">
                             {products.map(renderProductCard)}
                           </div>
                         </div>
@@ -483,29 +483,29 @@ export const LaboratorioModal = ({
               </div>
 
               <div className="lg:col-span-1 overflow-y-auto">
-                <Card className="h-full border-gray-200 shadow-sm">
-                  <CardHeader className="bg-gray-50 border-b p-4">
+                <Card className="h-full border-border shadow-sm">
+                  <CardHeader className="bg-muted border-b p-4">
                     <CardTitle className="text-base sm:text-lg text-indigo-700">Resumen de selección</CardTitle>
                   </CardHeader>
                   <CardContent className="p-4">
                     {tempSelectedProducts.length === 0 ? (
                         <div className="text-center py-8">
-                          <Package className="h-8 w-8 text-gray-300 mx-auto mb-3" />
-                          <p className="text-sm font-medium text-gray-500">No hay productos seleccionados</p>
+                          <Package className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
+                          <p className="text-sm font-medium text-muted-foreground">No hay productos seleccionados</p>
                         </div>
                     ) : (
                         <div className="space-y-4">
                           {tempSelectedProducts.map((item, index) => (
-                              <div key={index} className="border-b border-gray-100 pb-3 last:border-b-0">
+                              <div key={index} className="border-b border-border pb-3 last:border-b-0">
                                 <div className="flex justify-between items-start">
                                   <div className="flex-1 min-w-0">
-                                    <div className="font-semibold text-gray-800 text-sm truncate">{item.product.NombreItem}</div>
-                                    <div className="text-xs text-gray-500 mb-1">
+                                    <div className="font-semibold text-foreground text-sm truncate">{item.product.NombreItem}</div>
+                                    <div className="text-xs text-muted-foreground mb-1">
                                       Precio Unit: {formatPrice(item.finalPrice)}
                                     </div>
                                     <div className="flex justify-between items-center text-sm">
-                                      <span className="text-gray-600 bg-gray-100 px-2 py-0.5 rounded text-xs">{item.quantity} und.</span>
-                                      <span className="font-bold text-gray-900">
+                                      <span className="text-muted-foreground bg-muted px-2 py-0.5 rounded text-xs">{item.quantity} und.</span>
+                                      <span className="font-bold text-foreground">
                                                                     {formatPrice(item.finalPrice * item.quantity)}
                                                                 </span>
                                     </div>
@@ -521,9 +521,9 @@ export const LaboratorioModal = ({
                                 </div>
                               </div>
                           ))}
-                          <div className="pt-4 border-t border-gray-200 mt-4">
+                          <div className="pt-4 border-t border-border mt-4">
                             <div className="flex justify-between items-center font-bold text-base mb-4">
-                              <span className="text-gray-700">Total Acumulado:</span>
+                              <span className="text-foreground">Total Acumulado:</span>
                               <span className="text-indigo-700 text-lg">
                                                         {formatPrice(tempSelectedProducts.reduce(
                                                             (sum, item) => sum + (item.finalPrice * item.quantity),

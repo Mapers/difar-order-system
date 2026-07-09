@@ -349,7 +349,7 @@ export default function ExportPlanillaPdfButton({ planilla, detalle }: Props) {
         <Button
             size="sm"
             variant="outline"
-            className="gap-1.5 border-slate-300 text-slate-700 hover:bg-slate-50"
+            className="gap-1.5 border-border text-foreground hover:bg-muted"
             onClick={generatePdf}
             disabled={loading}
         >

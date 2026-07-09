@@ -244,7 +244,7 @@ export const ExportEstadoCuentaPdf: React.FC<ExportPdfProps> = ({ data, disabled
     };
 
     return (
-        <Button variant="outline" className="bg-white shadow-sm w-full sm:w-auto text-blue-700 border-blue-200 hover:bg-blue-50" onClick={generatePdf} disabled={loading || disabled}>
+        <Button variant="outline" className="bg-background shadow-sm w-full sm:w-auto text-blue-700 border-blue-200 hover:bg-blue-50" onClick={generatePdf} disabled={loading || disabled}>
             <FileText className="mr-2 h-4 w-4" />
             {loading ? "Generando..." : "Exportar PDF"}
         </Button>

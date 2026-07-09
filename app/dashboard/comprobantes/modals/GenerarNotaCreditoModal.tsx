@@ -200,18 +200,18 @@ export function GenerarNotaCreditoModal({
 
                 {step === 1 && (
                     <div className="flex-1 flex flex-col gap-4 overflow-hidden">
-                        <div className="grid grid-cols-1 md:grid-cols-12 gap-3 p-3 bg-gray-50 rounded-lg border">
+                        <div className="grid grid-cols-1 md:grid-cols-12 gap-3 p-3 bg-muted rounded-lg border">
                             <div className="md:col-span-3 space-y-1">
                                 <Label className="text-xs">Fecha Desde</Label>
                                 <Input type="date" value={fechaDesde}
                                        onChange={(e) => setFechaDesde(e.target.value)}
-                                       className="bg-white h-8 text-xs" />
+                                       className="bg-background h-8 text-xs" />
                             </div>
                             <div className="md:col-span-3 space-y-1">
                                 <Label className="text-xs">Fecha Hasta</Label>
                                 <Input type="date" value={fechaHasta}
                                        onChange={(e) => setFechaHasta(e.target.value)}
-                                       className="bg-white h-8 text-xs" />
+                                       className="bg-background h-8 text-xs" />
                             </div>
                             <div className="md:col-span-2 flex items-end">
                                 <Button onClick={fetchComprobantes} disabled={loading}
@@ -221,7 +221,7 @@ export function GenerarNotaCreditoModal({
                             </div>
                         </div>
 
-                        <ScrollArea className="flex-1 border rounded-md p-4 bg-white">
+                        <ScrollArea className="flex-1 border rounded-md p-4 bg-background">
                             {loading ? (
                                 <div className="flex justify-center items-center h-40">
                                     <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
@@ -234,17 +234,17 @@ export function GenerarNotaCreditoModal({
                                             className={`cursor-pointer transition-all hover:border-blue-400 ${
                                                 selectedComprobante?.idComprobanteCab === item.idComprobanteCab
                                                     ? "border-blue-600 ring-1 ring-blue-600 bg-blue-50"
-                                                    : "border-gray-200"
+                                                    : "border-border"
                                             }`}
                                             onClick={() => handleSelectComprobante(item)}
                                         >
                                             <CardContent className="p-3">
                                                 <div className="flex justify-between items-start mb-2">
-                                                    <Badge variant="outline" className="bg-white font-bold text-xs">
+                                                    <Badge variant="outline" className="bg-background font-bold text-xs">
                                                         {item.serie}-{item.numero}
                                                     </Badge>
                                                     <div className="flex items-center gap-2">
-                                                        <span className="text-[10px] text-gray-500">
+                                                        <span className="text-[10px] text-muted-foreground">
                                                             {format(parseISO(item?.fecha_envio || ''), "dd/MM/yyyy")}
                                                         </span>
                                                         {selectedComprobante?.idComprobanteCab === item.idComprobanteCab && (
@@ -255,12 +255,16 @@ export function GenerarNotaCreditoModal({
                                                 <h4 className="font-semibold text-xs truncate mb-1">
                                                     {item.cliente_denominacion}
                                                 </h4>
-                                                <div className="flex justify-between items-center mt-2 text-xs text-gray-500">
+                                                <div className="flex justify-between items-center mt-2 text-xs text-muted-foreground">
                                                     <div className="flex items-center gap-1">
                                                         <FileText className="h-3 w-3" />
                                                         <span>{item.tipo_comprobante === 1 ? 'Factura' : 'Boleta'}</span>
                                                     </div>
-                                                    <span className="font-bold text-gray-700">
+                                                    <span className={`font-bold ${
+                                                        selectedComprobante?.idComprobanteCab === item.idComprobanteCab
+                                                            ? "text-blue-900"
+                                                            : "text-card-foreground"
+                                                    }`}>
                                                         {item.moneda === 1 ? 'S/' : '$'} {Number(item.total).toFixed(2)}
                                                     </span>
                                                 </div>
@@ -269,7 +273,7 @@ export function GenerarNotaCreditoModal({
                                     ))}
                                 </div>
                             ) : (
-                                <div className="flex flex-col items-center justify-center h-full text-gray-500">
+                                <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
                                     <FileText className="h-10 w-10 mb-2 opacity-50" />
                                     <p>No se encontraron comprobantes con esos filtros.</p>
                                 </div>
@@ -288,8 +292,8 @@ export function GenerarNotaCreditoModal({
 
                 {step === 2 && selectedComprobante && (
                     <div className="flex flex-col gap-6 py-4">
-                        <p className="text-sm text-gray-500 text-center">
-                            Comprobante: <span className="font-semibold text-gray-800">
+                        <p className="text-sm text-muted-foreground text-center">
+                            Comprobante: <span className="font-semibold text-foreground">
                                 {selectedComprobante.serie}-{selectedComprobante.numero}
                             </span> — {selectedComprobante.cliente_denominacion}
                         </p>
@@ -297,17 +301,17 @@ export function GenerarNotaCreditoModal({
                         <div className="grid grid-cols-3 gap-4 px-4">
                             <button
                                 onClick={() => handleSelectTipo('total')}
-                                className="flex flex-col items-center gap-3 p-6 rounded-xl border-2 border-gray-200 hover:border-blue-500 hover:bg-blue-50 transition-all group"
+                                className="flex flex-col items-center gap-3 p-6 rounded-xl border-2 border-border hover:border-blue-500 hover:bg-blue-50 transition-all group"
                                 disabled={selectedComprobante.tipoNC !== 'sin_nc'}
                             >
                                 <div className="p-4 bg-blue-100 rounded-full group-hover:bg-blue-200 transition-colors">
                                     <FileText className="h-8 w-8 text-blue-600" />
                                 </div>
                                 <div className="text-center">
-                                    <p className="font-semibold text-gray-800">NC Total</p>
+                                    <p className="font-semibold text-foreground">NC Total</p>
                                     {selectedComprobante.tipoNC !== 'sin_nc' ? <p className="text-xs text-red-500 mt-1">
                                         No puedes realizar una NC Total, ya existe NC Parcial
-                                    </p> : <p className="text-xs text-gray-500 mt-1">
+                                    </p> : <p className="text-xs text-muted-foreground mt-1">
                                         Anula el comprobante completo por el monto total
                                     </p>}
                                 </div>
@@ -315,15 +319,15 @@ export function GenerarNotaCreditoModal({
 
                             <button
                                 onClick={() => handleSelectTipo('parcial')}
-                                className="flex flex-col items-center gap-3 p-6 rounded-xl border-2 border-gray-200 hover:border-green-500 hover:bg-green-50 transition-all group"
+                                className="flex flex-col items-center gap-3 p-6 rounded-xl border-2 border-border hover:border-green-500 hover:bg-green-50 transition-all group"
                                 disabled={loadingDetalles}
                             >
                                 <div className="p-4 bg-green-100 rounded-full group-hover:bg-green-200 transition-colors">
                                     <Package className="h-8 w-8 text-green-600" />
                                 </div>
                                 <div className="text-center">
-                                    <p className="font-semibold text-gray-800">NC Parcial</p>
-                                    <p className="text-xs text-gray-500 mt-1">
+                                    <p className="font-semibold text-foreground">NC Parcial</p>
+                                    <p className="text-xs text-muted-foreground mt-1">
                                         Seleccioná los items y cantidades a devolver
                                     </p>
                                 </div>
@@ -331,14 +335,14 @@ export function GenerarNotaCreditoModal({
 
                             <button
                                 onClick={() => handleSelectTipo('descuento')}
-                                className="flex flex-col items-center gap-3 p-6 rounded-xl border-2 border-gray-200 hover:border-amber-500 hover:bg-amber-50 transition-all group"
+                                className="flex flex-col items-center gap-3 p-6 rounded-xl border-2 border-border hover:border-amber-500 hover:bg-amber-50 transition-all group"
                             >
                                 <div className="p-4 bg-amber-100 rounded-full group-hover:bg-amber-200 transition-colors">
                                     <Percent className="h-8 w-8 text-amber-600" />
                                 </div>
                                 <div className="text-center">
-                                    <p className="font-semibold text-gray-800">Descuento Global</p>
-                                    <p className="text-xs text-gray-500 mt-1">
+                                    <p className="font-semibold text-foreground">Descuento Global</p>
+                                    <p className="text-xs text-muted-foreground mt-1">
                                         Aplica un descuento al valor del comprobante, sin devolver productos
                                     </p>
                                 </div>
@@ -357,7 +361,7 @@ export function GenerarNotaCreditoModal({
                     <>
                         <div className="flex items-center mb-2 px-1">
                             <Button variant="ghost" size="sm" onClick={handleBack}
-                                    className="text-gray-500 hover:text-blue-600 pl-0">
+                                    className="text-muted-foreground hover:text-blue-600 pl-0">
                                 <ArrowLeft className="mr-1 h-4 w-4" /> Atrás
                             </Button>
                         </div>
@@ -375,7 +379,7 @@ export function GenerarNotaCreditoModal({
                     <>
                         <div className="flex items-center mb-2 px-1">
                             <Button variant="ghost" size="sm" onClick={handleBack}
-                                    className="text-gray-500 hover:text-blue-600 pl-0">
+                                    className="text-muted-foreground hover:text-blue-600 pl-0">
                                 <ArrowLeft className="mr-1 h-4 w-4" /> Atrás
                             </Button>
                         </div>
@@ -394,7 +398,7 @@ export function GenerarNotaCreditoModal({
                     <>
                         <div className="flex items-center mb-2 px-1">
                             <Button variant="ghost" size="sm" onClick={handleBack}
-                                    className="text-gray-500 hover:text-blue-600 pl-0">
+                                    className="text-muted-foreground hover:text-blue-600 pl-0">
                                 <ArrowLeft className="mr-1 h-4 w-4" /> Atrás
                             </Button>
                         </div>
@@ -405,33 +409,33 @@ export function GenerarNotaCreditoModal({
                             </div>
                         ) : (
                             <div className="flex flex-col gap-4 overflow-hidden">
-                                <p className="text-xs text-gray-500 px-1">
+                                <p className="text-xs text-muted-foreground px-1">
                                     Indicá la cantidad a devolver por cada producto (0 = no incluir en la NC)
                                 </p>
 
-                                <ScrollArea className="h-[380px] w-full rounded-md border bg-white">
+                                <ScrollArea className="h-[380px] w-full rounded-md border bg-background">
                                     <div className="min-w-full">
-                                        <table className="min-w-full divide-y divide-gray-200">
-                                            <thead className="bg-gray-50 sticky top-0">
+                                        <table className="min-w-full divide-y divide-border">
+                                            <thead className="bg-muted sticky top-0">
                                             <tr>
-                                                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">Producto</th>
-                                                <th className="px-3 py-2 text-right text-xs font-medium text-gray-500">P. Unit</th>
-                                                <th className="px-3 py-2 text-center text-xs font-medium text-gray-500">Cant. Max</th>
-                                                <th className="px-3 py-2 text-center text-xs font-medium text-gray-500">A Devolver</th>
+                                                <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground">Producto</th>
+                                                <th className="px-3 py-2 text-right text-xs font-medium text-muted-foreground">P. Unit</th>
+                                                <th className="px-3 py-2 text-center text-xs font-medium text-muted-foreground">Cant. Max</th>
+                                                <th className="px-3 py-2 text-center text-xs font-medium text-muted-foreground">A Devolver</th>
                                             </tr>
                                             </thead>
-                                            <tbody className="divide-y divide-gray-100">
+                                            <tbody className="divide-y divide-border">
                                             {itemsSeleccionados.map((item, index) => (
                                                 <tr key={item.cod_item}
                                                     className={item.cantidad > 0 ? 'bg-green-50' : ''}>
                                                     <td className="px-3 py-2">
-                                                        <p className="text-xs font-medium text-gray-800">{item.descripcion}</p>
-                                                        <p className="text-[10px] text-gray-400">{item.cod_item}</p>
+                                                        <p className="text-xs font-medium text-foreground">{item.descripcion}</p>
+                                                        <p className="text-[10px] text-muted-foreground">{item.cod_item}</p>
                                                     </td>
-                                                    <td className="px-3 py-2 text-right text-xs text-gray-600">
+                                                    <td className="px-3 py-2 text-right text-xs text-muted-foreground">
                                                         S/ {item.precio.toFixed(2)}
                                                     </td>
-                                                    <td className="px-3 py-2 text-center text-xs text-gray-500">
+                                                    <td className="px-3 py-2 text-center text-xs text-muted-foreground">
                                                         {item.cantMax}
                                                     </td>
                                                     <td className="px-3 py-2">
@@ -440,14 +444,14 @@ export function GenerarNotaCreditoModal({
                                                                 NC total emitida
                                                             </p>
                                                         ) : item.cantMax === 0 ? (
-                                                            <p className="text-center text-xs text-gray-400">
+                                                            <p className="text-center text-xs text-muted-foreground">
                                                                 Sin stock disponible
                                                             </p>
                                                         ) : (
                                                             <div className="flex items-center justify-center gap-1">
                                                                 <button
                                                                     onClick={() => handleCantidadChange(index, -1)}
-                                                                    className="h-6 w-6 rounded-full flex items-center justify-center border border-gray-300 hover:border-red-400 hover:text-red-500 transition-colors"
+                                                                    className="h-6 w-6 rounded-full flex items-center justify-center border border-border hover:border-red-400 hover:text-red-500 transition-colors"
                                                                 >
                                                                     <Minus className="h-3 w-3" />
                                                                 </button>
@@ -461,7 +465,7 @@ export function GenerarNotaCreditoModal({
                                                                 />
                                                                 <button
                                                                     onClick={() => handleCantidadChange(index, 1)}
-                                                                    className="h-6 w-6 rounded-full flex items-center justify-center border border-gray-300 hover:border-green-400 hover:text-green-500 transition-colors"
+                                                                    className="h-6 w-6 rounded-full flex items-center justify-center border border-border hover:border-green-400 hover:text-green-500 transition-colors"
                                                                 >
                                                                     <Plus className="h-3 w-3" />
                                                                 </button>
@@ -504,7 +508,7 @@ export function GenerarNotaCreditoModal({
                     <>
                         <div className="flex items-center mb-2 px-1">
                             <Button variant="ghost" size="sm" onClick={() => setStep(3)}
-                                    className="text-gray-500 hover:text-blue-600 pl-0">
+                                    className="text-muted-foreground hover:text-blue-600 pl-0">
                                 <ArrowLeft className="mr-1 h-4 w-4" /> Atrás
                             </Button>
                         </div>

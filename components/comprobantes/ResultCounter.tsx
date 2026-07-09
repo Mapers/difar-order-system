@@ -11,9 +11,9 @@ export function ResultCounter({
   label = "Documentos recuperados",
 }: ResultCounterProps) {
   return (
-    <p className="text-xs text-gray-500 sm:text-sm">
+    <p className="text-xs text-muted-foreground sm:text-sm">
       {label}:{" "}
-      <span className="font-semibold tabular-nums text-gray-800">{count}</span>
+      <span className="font-semibold tabular-nums text-foreground">{count}</span>
     </p>
   );
 }

@@ -176,14 +176,14 @@ export default function SequentialSection({ sectionType, onOpenModalChange }: Se
                                 <div className="flex justify-between items-start mb-3">
                                     <div className="flex-1 min-w-0">
                                         <div className="flex items-center gap-2 flex-wrap">
-                                            <h3 className="font-semibold text-lg text-gray-900 break-words">{sequential.nombre}</h3>
+                                            <h3 className="font-semibold text-lg text-card-foreground break-words">{sequential.nombre}</h3>
                                             {sectionType === "secuenciales" && sequential.tipo && (
                                                 <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
                                                     {getTypeName(sequential.tipo)}
                                                 </Badge>
                                             )}
                                         </div>
-                                        <p className="text-sm text-gray-600 break-words">{sequential.descripcion}</p>
+                                        <p className="text-sm text-muted-foreground break-words">{sequential.descripcion}</p>
                                     </div>
                                     <div className="flex gap-1 flex-shrink-0 ml-2">
                                         <Badge variant={sequential.activo ? "default" : "secondary"}>
@@ -194,17 +194,17 @@ export default function SequentialSection({ sectionType, onOpenModalChange }: Se
 
                                 <div className={`grid ${sectionType === "secuenciales" ? "grid-cols-3" : "grid-cols-2"} gap-3 text-sm`}>
                                     <div>
-                                        <span className="font-medium text-gray-500">Prefijo:</span>
+                                        <span className="font-medium text-muted-foreground">Prefijo:</span>
                                         <div className="font-semibold text-blue-600">{sequential.prefijo}</div>
                                     </div>
                                     <div>
-                                        <span className="font-medium text-gray-500">Secuencial:</span>
+                                        <span className="font-medium text-muted-foreground">Secuencial:</span>
                                         <div className="font-semibold text-green-600">{sequential.valorActual}</div>
                                     </div>
 
                                     {sectionType === "secuenciales" && (
                                         <div className="min-w-0">
-                                            <span className="font-medium text-gray-500">Almacén:</span>
+                                            <span className="font-medium text-muted-foreground">Almacén:</span>
                                             <div
                                                 className="font-semibold text-purple-600 truncate"
                                                 title={getAlmacenName(sequential.id_almacen)}
@@ -229,8 +229,8 @@ export default function SequentialSection({ sectionType, onOpenModalChange }: Se
                 </div>
             ) : (
                 <div className="text-center py-8">
-                    <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">No hay registros configurados</h3>
+                    <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-foreground mb-2">No hay registros configurados</h3>
                 </div>
             )}
 

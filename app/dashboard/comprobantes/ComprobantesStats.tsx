@@ -8,7 +8,7 @@ interface TotalesComprobantes {
 
 export function ComprobantesStats({ totales }: { totales: TotalesComprobantes }) {
     return (
-        <Card className="bg-white shadow-sm">
+        <Card className="bg-background shadow-sm">
             <CardContent className="p-3 sm:p-4">
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 text-sm">
                     <div className="bg-blue-50 p-3 rounded-lg">

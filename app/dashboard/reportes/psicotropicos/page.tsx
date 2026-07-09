@@ -279,25 +279,25 @@ export default function PsicotropicosPage() {
 
             {/* Title */}
             <div className="flex flex-col gap-1">
-                <h1 className="text-xl md:text-2xl font-bold tracking-tight text-gray-900">
+                <h1 className="text-xl md:text-2xl font-bold tracking-tight text-foreground">
                     Libro de Control · Psicotrópicos y Estupefacientes
                 </h1>
-                <p className="text-xs md:text-sm text-gray-500">
+                <p className="text-xs md:text-sm text-muted-foreground">
                     Registro oficial de movimientos de sustancias fiscalizadas.
                 </p>
             </div>
 
             {/* Main card */}
             <Card className="shadow-md min-w-0">
-                <CardHeader className="bg-slate-50 border-b border-slate-200 p-3 md:p-5 space-y-3">
+                <CardHeader className="bg-muted border-b border-border p-3 md:p-5 space-y-3">
 
                     {/* Toolbar */}
                     <div className="flex flex-wrap items-end gap-2">
                         <div className="flex items-end gap-2">
                             <div className="flex flex-col gap-1">
-                                <Label className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">Año</Label>
+                                <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide">Año</Label>
                                 <Select value={selectedYear} onValueChange={setSelectedYear}>
-                                    <SelectTrigger className="w-24 h-9 bg-white text-sm">
+                                    <SelectTrigger className="w-24 h-9 bg-background text-sm">
                                         <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -340,7 +340,7 @@ export default function PsicotropicosPage() {
                                 <Button
                                     variant="outline"
                                     size="sm"
-                                    className="h-9 text-xs bg-white text-emerald-700 border-emerald-200 hover:bg-emerald-50"
+                                    className="h-9 text-xs bg-background text-emerald-700 border-emerald-200 hover:bg-emerald-50"
                                     onClick={exportExcel}
                                 >
                                     <Download className="h-3.5 w-3.5 mr-1.5" />
@@ -359,14 +359,14 @@ export default function PsicotropicosPage() {
 
                     {/* View toggle */}
                     {hayDatos && (
-                        <div className="inline-flex border border-slate-300 rounded-md overflow-hidden w-full sm:w-auto">
+                        <div className="inline-flex border border-border rounded-md overflow-hidden w-full sm:w-auto">
                             <button
                                 onClick={() => setVista('diario')}
                                 className={cn(
                                     "flex-1 sm:flex-none px-4 py-2 text-sm font-semibold transition-colors",
                                     vista === 'diario'
                                         ? "bg-blue-600 text-white"
-                                        : "bg-white text-slate-600 hover:bg-slate-50"
+                                        : "bg-background text-muted-foreground hover:bg-muted"
                                 )}
                             >
                                 Diario (lista)
@@ -374,10 +374,10 @@ export default function PsicotropicosPage() {
                             <button
                                 onClick={() => setVista('folio')}
                                 className={cn(
-                                    "flex-1 sm:flex-none px-4 py-2 text-sm font-semibold transition-colors border-l border-slate-300",
+                                    "flex-1 sm:flex-none px-4 py-2 text-sm font-semibold transition-colors border-l border-border",
                                     vista === 'folio'
                                         ? "bg-blue-600 text-white"
-                                        : "bg-white text-slate-600 hover:bg-slate-50"
+                                        : "bg-background text-muted-foreground hover:bg-muted"
                                 )}
                             >
                                 Folio (matriz)
@@ -389,27 +389,27 @@ export default function PsicotropicosPage() {
                     {hayDatos && (
                         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2">
                             <div className="flex flex-col gap-1">
-                                <Label className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">Desde</Label>
+                                <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide">Desde</Label>
                                 <Input
                                     type="date"
                                     value={desde}
                                     onChange={e => setDesde(e.target.value)}
-                                    className="h-9 bg-white w-full text-sm"
+                                    className="h-9 bg-background w-full text-sm"
                                 />
                             </div>
                             <div className="flex flex-col gap-1">
-                                <Label className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">Hasta</Label>
+                                <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide">Hasta</Label>
                                 <Input
                                     type="date"
                                     value={hasta}
                                     onChange={e => setHasta(e.target.value)}
-                                    className="h-9 bg-white w-full text-sm"
+                                    className="h-9 bg-background w-full text-sm"
                                 />
                             </div>
                             <div className="flex flex-col gap-1">
-                                <Label className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">Tipo</Label>
+                                <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide">Tipo</Label>
                                 <Select value={tipoFiltro} onValueChange={setTipoFiltro}>
-                                    <SelectTrigger className="h-9 bg-white w-full text-sm">
+                                    <SelectTrigger className="h-9 bg-background w-full text-sm">
                                         <SelectValue placeholder="Todos" />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -421,9 +421,9 @@ export default function PsicotropicosPage() {
                             </div>
                             {vista === 'diario' && (
                                 <div className="flex flex-col gap-1">
-                                    <Label className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">Producto</Label>
+                                    <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide">Producto</Label>
                                     <Select value={prodDiario} onValueChange={setProdDiario}>
-                                        <SelectTrigger className="h-9 bg-white w-full text-sm">
+                                        <SelectTrigger className="h-9 bg-background w-full text-sm">
                                             <SelectValue placeholder="Todos" />
                                         </SelectTrigger>
                                         <SelectContent>
@@ -436,12 +436,12 @@ export default function PsicotropicosPage() {
                                 </div>
                             )}
                             <div className="flex flex-col gap-1 col-span-2 sm:col-span-2 lg:col-span-1 xl:col-span-1">
-                                <Label className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">Buscar</Label>
+                                <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide">Buscar</Label>
                                 <Input
                                     value={buscar}
                                     onChange={e => setBuscar(e.target.value)}
                                     placeholder="Comprobante, establecimiento…"
-                                    className="h-9 bg-white w-full text-sm"
+                                    className="h-9 bg-background w-full text-sm"
                                 />
                             </div>
                             <div className="flex items-end col-span-2 sm:col-span-1">
@@ -459,9 +459,9 @@ export default function PsicotropicosPage() {
 
                     {/* Folio chips */}
                     {hayDatos && vista === 'folio' && (
-                        <div className="border border-slate-200 rounded-lg bg-white p-3 space-y-2">
+                        <div className="border border-border rounded-lg bg-background p-3 space-y-2">
                             <div className="flex items-center justify-between">
-                                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">
+                                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide">
                                     Sustancias en folio
                                 </span>
                                 <span className="text-[10px] font-semibold text-blue-700 bg-blue-50 border border-blue-200 rounded-full px-2 py-0.5">
@@ -483,8 +483,8 @@ export default function PsicotropicosPage() {
                                                 activo
                                                     ? "bg-blue-600 text-white border-blue-600 shadow-sm"
                                                     : lleno
-                                                        ? "bg-slate-50 text-slate-300 border-slate-200 cursor-not-allowed"
-                                                        : "bg-white text-slate-600 border-slate-300 hover:border-blue-400 hover:text-blue-700"
+                                                        ? "bg-muted text-muted-foreground border-border cursor-not-allowed"
+                                                        : "bg-background text-muted-foreground border-border hover:border-blue-400 hover:text-blue-700"
                                             )}
                                         >
                                             {prodLabel(p)}
@@ -496,16 +496,16 @@ export default function PsicotropicosPage() {
                     )}
                 </CardHeader>
 
-                <CardContent className="p-0 bg-slate-100/30">
+                <CardContent className="p-0 bg-muted/30">
                     {loading ? (
-                        <div className="flex flex-col items-center justify-center py-24 bg-white">
+                        <div className="flex flex-col items-center justify-center py-24 bg-background">
                             <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mb-4" />
-                            <p className="text-slate-500 font-medium">Cargando libro de control…</p>
+                            <p className="text-muted-foreground font-medium">Cargando libro de control…</p>
                         </div>
                     ) : !hayDatos ? (
-                        <div className="flex flex-col items-center justify-center py-24 bg-white">
-                            <FileText className="h-16 w-16 text-slate-200 mb-4" />
-                            <p className="text-slate-500 font-medium text-center px-4 max-w-sm">
+                        <div className="flex flex-col items-center justify-center py-24 bg-background">
+                            <FileText className="h-16 w-16 text-muted-foreground mb-4" />
+                            <p className="text-muted-foreground font-medium text-center px-4 max-w-sm">
                                 Selecciona el año y presiona <strong>Consultar</strong> para cargar el libro de control.
                             </p>
                         </div>
@@ -529,8 +529,8 @@ export default function PsicotropicosPage() {
 
             {/* Legend */}
             {hayDatos && (
-                <div className="bg-white border border-slate-200 rounded-lg shadow-sm p-3 flex flex-wrap gap-5 items-center text-xs text-slate-600">
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-slate-700">Leyenda</span>
+                <div className="bg-background border border-border rounded-lg shadow-sm p-3 flex flex-wrap gap-5 items-center text-xs text-muted-foreground">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-foreground">Leyenda</span>
                     <span className="flex items-center gap-1.5">
                         <span className="inline-block w-3 h-3 rounded bg-emerald-600 shrink-0" />
                         <b>Debe</b> — ingreso (compra / devolución que aumenta el stock)
@@ -553,7 +553,7 @@ export default function PsicotropicosPage() {
             {/* ── Kardex Modal ───────────────────────────────────────────────────── */}
             <Dialog open={showKardex} onOpenChange={setShowKardex}>
                 <DialogContent className="max-w-3xl max-h-[85vh] flex flex-col gap-0 p-0">
-                    <DialogHeader className="px-5 pt-5 pb-4 border-b border-slate-200 shrink-0">
+                    <DialogHeader className="px-5 pt-5 pb-4 border-b border-border shrink-0">
                         <div className="flex flex-wrap items-center gap-3">
                             <div>
                                 <p className="text-[11px] font-bold uppercase tracking-wider text-blue-700 mb-0.5">
@@ -578,18 +578,18 @@ export default function PsicotropicosPage() {
 
                     <div className="flex-1 overflow-y-auto px-5 py-4">
                         {kardexProd && (
-                            <p className="text-xs text-slate-500 mb-3">
+                            <p className="text-xs text-muted-foreground mb-3">
                                 {prodLabel(kardexProd)} — {kardexProd.forma} · {kardexProd.lista} ·
                                 Saldo inicial: <strong>{fmt(kardexProd.saldoIni)}</strong> {kardexProd.unidad}
                             </p>
                         )}
                         {kardexRows.length === 0 ? (
-                            <div className="flex flex-col items-center justify-center py-16 text-slate-400">
-                                <FileText className="h-10 w-10 mb-3 text-slate-200" />
+                            <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+                                <FileText className="h-10 w-10 mb-3 text-muted-foreground" />
                                 <p>Sin movimientos para este producto.</p>
                             </div>
                         ) : (
-                            <div className="overflow-x-auto border border-slate-200 rounded-lg">
+                            <div className="overflow-x-auto border border-border rounded-lg">
                                 <table className="w-full text-sm">
                                     <thead className="text-[10px] text-white uppercase bg-slate-800">
                                         <tr>
@@ -601,11 +601,11 @@ export default function PsicotropicosPage() {
                                             <th className="px-3 py-2.5 text-right font-semibold">Saldo</th>
                                         </tr>
                                     </thead>
-                                    <tbody className="divide-y divide-slate-100">
+                                    <tbody className="divide-y divide-border">
                                         {kardexProd && (
                                             <tr className="bg-amber-50 font-semibold">
                                                 <td className="px-3 py-2 text-center text-slate-400 text-xs">—</td>
-                                                <td className="px-3 py-2 text-slate-600 text-xs">Saldo Inicial</td>
+                                                <td className="px-3 py-2 text-amber-900 text-xs">Saldo Inicial</td>
                                                 <td />
                                                 <td className="px-3 py-2 text-right font-mono text-emerald-700 tabular-nums text-xs">
                                                     {fmt(kardexProd.saldoIni)}
@@ -620,15 +620,15 @@ export default function PsicotropicosPage() {
                                             <tr
                                                 key={m.id}
                                                 className={cn(
-                                                    "hover:bg-slate-50 transition-colors",
-                                                    idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/40'
+                                                    "hover:bg-muted transition-colors",
+                                                    idx % 2 === 0 ? 'bg-background' : 'bg-muted/40'
                                                 )}
                                             >
-                                                <td className="px-3 py-2 text-xs text-slate-600">{m.fecha}</td>
+                                                <td className="px-3 py-2 text-xs text-muted-foreground">{m.fecha}</td>
                                                 <td className="px-3 py-2 font-mono text-xs font-semibold text-blue-900">
                                                     <DocumentoPdfLink numeroComprobante={m.serie && m.corr ? `${m.serie}-${m.corr}` : null} />
                                                 </td>
-                                                <td className="px-3 py-2 text-xs text-slate-600">{m.estab}</td>
+                                                <td className="px-3 py-2 text-xs text-muted-foreground">{m.estab}</td>
                                                 <td className="px-3 py-2 text-right font-mono font-semibold text-emerald-700 tabular-nums text-xs">
                                                     {m.tipo === 'INGRESO' ? fmt(m.cant) : ''}
                                                 </td>
@@ -637,7 +637,7 @@ export default function PsicotropicosPage() {
                                                 </td>
                                                 <td className={cn(
                                                     "px-3 py-2 text-right font-mono font-bold tabular-nums text-xs",
-                                                    m.saldoCorriente < 0 ? "text-red-700 bg-red-50" : "text-slate-800"
+                                                    m.saldoCorriente < 0 ? "text-red-700 bg-red-50" : "text-foreground"
                                                 )}>
                                                     {fmt(m.saldoCorriente)}
                                                 </td>
@@ -654,7 +654,7 @@ export default function PsicotropicosPage() {
             {/* ── Saldo actual Modal ────────────────────────────────────────────── */}
             <Dialog open={showSaldos} onOpenChange={setShowSaldos}>
                 <DialogContent className="max-w-xl max-h-[85vh] flex flex-col gap-0 p-0">
-                    <DialogHeader className="px-5 pt-5 pb-4 border-b border-slate-200 shrink-0">
+                    <DialogHeader className="px-5 pt-5 pb-4 border-b border-border shrink-0">
                         <p className="text-[11px] font-bold uppercase tracking-wider text-blue-700 mb-0.5">
                             Existencias
                         </p>
@@ -675,7 +675,7 @@ export default function PsicotropicosPage() {
                                 ))}
                             </div>
                         )}
-                        <p className="text-xs text-slate-400 mt-3 leading-relaxed">
+                        <p className="text-xs text-muted-foreground mt-3 leading-relaxed">
                             El saldo actual es la existencia vigente: saldo inicial + ingresos − egresos.
                             En <strong>rojo</strong>, stock bajo (≤ 5 unidades) o negativo.
                         </p>
@@ -699,7 +699,7 @@ function LaboratorioGroup({
     const [expanded, setExpanded] = useState(true)
 
     return (
-        <div className="border border-slate-200 rounded-lg overflow-hidden">
+        <div className="border border-border rounded-lg overflow-hidden">
             <button
                 type="button"
                 onClick={() => setExpanded(e => !e)}
@@ -721,7 +721,7 @@ function LaboratorioGroup({
 
             {expanded && (
                 <table className="w-full text-sm">
-                    <thead className="text-[10px] text-slate-500 uppercase bg-slate-50 border-b border-slate-200">
+                    <thead className="text-[10px] text-muted-foreground uppercase bg-muted border-b border-border">
                         <tr>
                             <th className="px-3 py-2 text-left font-semibold">Sustancia</th>
                             <th className="px-3 py-2 text-left font-semibold">Clasificación</th>
@@ -729,7 +729,7 @@ function LaboratorioGroup({
                             <th className="px-3 py-2 text-right font-semibold">Saldo actual</th>
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100">
+                    <tbody className="divide-y divide-border">
                         {productos.map((p, idx) => {
                             const s = saldoActual(p.id)
                             const low = s <= 5
@@ -737,18 +737,18 @@ function LaboratorioGroup({
                                 <tr
                                     key={p.id}
                                     className={cn(
-                                        "hover:bg-slate-50 transition-colors",
-                                        idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/40'
+                                        "hover:bg-muted transition-colors",
+                                        idx % 2 === 0 ? 'bg-background' : 'bg-muted/40'
                                     )}
                                 >
                                     <td className="px-3 py-2 text-sm">
                                         <strong>{p.dci}</strong>{' '}{p.conc}
                                     </td>
-                                    <td className="px-3 py-2 text-xs text-slate-600">{p.lista}</td>
+                                    <td className="px-3 py-2 text-xs text-muted-foreground">{p.lista}</td>
                                     <td className="px-3 py-2 text-center text-xs">{p.unidad}</td>
                                     <td className={cn(
                                         "px-3 py-2 text-right font-mono font-bold tabular-nums text-xs",
-                                        low ? "text-red-700 bg-red-50" : "text-slate-800"
+                                        low ? "text-red-700 bg-red-50" : "text-foreground"
                                     )}>
                                         {fmt(s)}
                                     </td>
@@ -775,17 +775,17 @@ function DiarioView({
 
     if (movs.length === 0) {
         return (
-            <div className="flex flex-col items-center justify-center py-20 bg-white">
-                <FileText className="h-12 w-12 text-slate-200 mb-3" />
-                <p className="font-medium text-slate-500">Ningún movimiento coincide con los filtros.</p>
-                <p className="text-xs text-slate-400 mt-1">Intenta ajustar el rango de fechas o el tipo.</p>
+            <div className="flex flex-col items-center justify-center py-20 bg-background">
+                <FileText className="h-12 w-12 text-muted-foreground mb-3" />
+                <p className="font-medium text-muted-foreground">Ningún movimiento coincide con los filtros.</p>
+                <p className="text-xs text-muted-foreground mt-1">Intenta ajustar el rango de fechas o el tipo.</p>
             </div>
         )
     }
 
     return (
         <div className="w-full min-w-0">
-            <div className="px-4 py-2 bg-slate-100 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500 font-medium">
+            <div className="px-4 py-2 bg-muted border-b border-border flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground font-medium">
                 <span>{movs.length} de {totalMovs} movimientos · {productos.length} sustancias</span>
                 {prodFiltro && (
                     <Badge variant="outline" className="text-blue-700 border-blue-300 bg-blue-50">
@@ -808,21 +808,21 @@ function DiarioView({
                             <th className="px-3 py-3 text-right font-semibold">Saldo</th>
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100">
+                    <tbody className="divide-y divide-border">
                         {prodFiltro && (
                             <tr className="bg-amber-50 font-semibold border-b border-amber-200">
-                                <td className="px-3 py-2 text-center text-slate-400 border-r border-slate-200">—</td>
-                                <td className="px-3 py-2 text-center text-slate-400 border-r border-slate-200">—</td>
-                                <td className="px-3 py-2 text-amber-900 border-r border-slate-200">Saldo Inicial</td>
-                                <td className="px-3 py-2 border-r border-slate-200">
+                                <td className="px-3 py-2 text-center text-slate-400 border-r border-border">—</td>
+                                <td className="px-3 py-2 text-center text-slate-400 border-r border-border">—</td>
+                                <td className="px-3 py-2 text-amber-900 border-r border-border">Saldo Inicial</td>
+                                <td className="px-3 py-2 border-r border-border">
                                     <span className="inline-block text-xs font-bold text-blue-800 bg-blue-100 rounded px-2 py-0.5">
                                         {prodLabel(prodFiltro)}
                                     </span>
                                 </td>
-                                <td className="px-3 py-2 text-right font-mono text-emerald-700 tabular-nums border-r border-slate-200">
+                                <td className="px-3 py-2 text-right font-mono text-emerald-700 tabular-nums border-r border-border">
                                     {fmt(prodFiltro.saldoIni)}
                                 </td>
-                                <td className="px-3 py-2 border-r border-slate-200" />
+                                <td className="px-3 py-2 border-r border-border" />
                                 <td className="px-3 py-2 text-right font-mono font-bold text-slate-800 tabular-nums">
                                     {fmt(prodFiltro.saldoIni)}
                                 </td>
@@ -837,34 +837,34 @@ function DiarioView({
                                 <tr
                                     key={m.id}
                                     className={cn(
-                                        "hover:bg-slate-50 transition-colors",
-                                        idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/40'
+                                        "hover:bg-muted transition-colors",
+                                        idx % 2 === 0 ? 'bg-background' : 'bg-muted/40'
                                     )}
                                 >
-                                    <td className="px-3 py-2 text-center text-xs text-slate-500 tabular-nums border-r border-slate-100">{mes}</td>
-                                    <td className="px-3 py-2 text-center text-xs text-slate-500 tabular-nums border-r border-slate-100">{dia}</td>
-                                    <td className="px-3 py-2 border-r border-slate-100">
+                                    <td className="px-3 py-2 text-center text-xs text-muted-foreground tabular-nums border-r border-border">{mes}</td>
+                                    <td className="px-3 py-2 text-center text-xs text-muted-foreground tabular-nums border-r border-border">{dia}</td>
+                                    <td className="px-3 py-2 border-r border-border">
                                         <span className="font-mono text-xs font-semibold text-blue-900">
                                             <DocumentoPdfLink numeroComprobante={m.serie && m.corr ? `${m.serie}-${m.corr}` : null} />
                                         </span>
-                                        <span className="text-xs text-slate-500 ml-1">/ {m.estab}</span>
+                                        <span className="text-xs text-muted-foreground ml-1">/ {m.estab}</span>
                                     </td>
-                                    <td className="px-3 py-2 border-r border-slate-100">
+                                    <td className="px-3 py-2 border-r border-border">
                                         {p && (
                                             <span className="inline-block text-xs font-bold text-blue-800 bg-blue-100 rounded px-2 py-0.5">
                                                 {prodLabel(p)}
                                             </span>
                                         )}
                                     </td>
-                                    <td className="px-3 py-2 text-right font-mono font-semibold text-emerald-700 tabular-nums border-r border-slate-100 text-xs">
+                                    <td className="px-3 py-2 text-right font-mono font-semibold text-emerald-700 tabular-nums border-r border-border text-xs">
                                         {m.tipo === 'INGRESO' ? fmt(m.cant) : ''}
                                     </td>
-                                    <td className="px-3 py-2 text-right font-mono font-semibold text-red-700 tabular-nums border-r border-slate-100 text-xs">
+                                    <td className="px-3 py-2 text-right font-mono font-semibold text-red-700 tabular-nums border-r border-border text-xs">
                                         {m.tipo === 'EGRESO' ? fmt(m.cant) : ''}
                                     </td>
                                     <td className={cn(
                                         "px-3 py-2 text-right font-mono font-bold tabular-nums text-xs",
-                                        negativo ? "text-red-700 bg-red-50" : "text-slate-800"
+                                        negativo ? "text-red-700 bg-red-50" : "text-foreground"
                                     )}>
                                         {sal != null ? fmt(sal) : ''}
                                     </td>
@@ -881,13 +881,13 @@ function DiarioView({
                     const p = productos.find(pr => pr.id === m.prodId)
                     const sal = mapaSaldos[m.id]
                     return (
-                        <div key={m.id} className="bg-white border border-slate-200 rounded-lg shadow-sm p-3 space-y-2">
+                        <div key={m.id} className="bg-background border border-border rounded-lg shadow-sm p-3 space-y-2">
                             <div className="flex justify-between items-start gap-2">
                                 <div className="min-w-0">
                                     <span className="font-mono text-sm font-bold text-blue-900">
                                         <DocumentoPdfLink numeroComprobante={m.serie && m.corr ? `${m.serie}-${m.corr}` : null} />
                                     </span>
-                                    <p className="text-xs text-slate-500 mt-0.5 truncate">{m.fecha} · {m.estab}</p>
+                                    <p className="text-xs text-muted-foreground mt-0.5 truncate">{m.fecha} · {m.estab}</p>
                                 </div>
                                 <Badge className={cn(
                                     "shrink-0 text-xs",
@@ -903,9 +903,9 @@ function DiarioView({
                                     {prodLabel(p)}
                                 </span>
                             )}
-                            <div className="flex gap-6 pt-1 border-t border-slate-100">
+                            <div className="flex gap-6 pt-1 border-t border-border">
                                 <div>
-                                    <p className="text-[10px] text-slate-400 uppercase font-bold">Cantidad</p>
+                                    <p className="text-[10px] text-muted-foreground uppercase font-bold">Cantidad</p>
                                     <p className={cn(
                                         "font-bold font-mono text-sm",
                                         m.tipo === 'INGRESO' ? 'text-emerald-700' : 'text-red-700'
@@ -915,10 +915,10 @@ function DiarioView({
                                 </div>
                                 {sal != null && (
                                     <div>
-                                        <p className="text-[10px] text-slate-400 uppercase font-bold">Saldo</p>
+                                        <p className="text-[10px] text-muted-foreground uppercase font-bold">Saldo</p>
                                         <p className={cn(
                                             "font-bold font-mono text-sm",
-                                            sal < 0 ? 'text-red-700' : 'text-slate-800'
+                                            sal < 0 ? 'text-red-700' : 'text-foreground'
                                         )}>
                                             {sal}
                                         </p>
@@ -942,9 +942,9 @@ function FolioView({
 }) {
     if (prodsVisibles.length === 0) {
         return (
-            <div className="flex flex-col items-center justify-center py-20 bg-white">
-                <FileText className="h-12 w-12 text-slate-200 mb-3" />
-                <p className="font-medium text-slate-500">
+            <div className="flex flex-col items-center justify-center py-20 bg-background">
+                <FileText className="h-12 w-12 text-muted-foreground mb-3" />
+                <p className="font-medium text-muted-foreground">
                     Selecciona qué sustancias ver en <strong>Mostrar sustancias</strong> (máx. {MAX_FOLIO}).
                 </p>
             </div>
@@ -956,11 +956,11 @@ function FolioView({
     return (
         <div className="w-full min-w-0">
             {/* Info bar */}
-            <div className="px-4 py-2 bg-slate-100 border-b border-slate-200 flex flex-wrap items-center gap-x-4 gap-y-1">
-                <span className="text-xs text-slate-500 font-medium">
+            <div className="px-4 py-2 bg-muted border-b border-border flex flex-wrap items-center gap-x-4 gap-y-1">
+                <span className="text-xs text-muted-foreground font-medium">
                     {prodsVisibles.length} de {productos.length} sustancias · {movsFiltrados.length} movimientos
                 </span>
-                <span className="text-xs text-slate-400 hidden sm:inline">
+                <span className="text-xs text-muted-foreground hidden sm:inline">
                     Mes / Día / Especificación fijos al desplazar →
                 </span>
             </div>
@@ -1037,27 +1037,27 @@ function FolioView({
 
                         {movsFiltrados.map((m, idx) => {
                             const [, mes, dia] = m.fecha.split('-')
-                            const bgRow = idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/60'
+                            const bgRow = idx % 2 === 0 ? 'bg-background' : 'bg-muted/60'
                             return (
                                 <tr
                                     key={m.id}
-                                    className={cn("border-b border-slate-100 hover:bg-blue-50/40 transition-colors group", bgRow)}
+                                    className={cn("border-b border-border hover:bg-blue-50/40 transition-colors group", bgRow)}
                                 >
-                                    <td className={cn("px-2 py-1.5 text-center text-xs text-slate-500 tabular-nums sticky left-0 border-r border-slate-200 w-[40px] group-hover:bg-blue-50/40", bgRow)}>
+                                    <td className={cn("px-2 py-1.5 text-center text-xs text-muted-foreground tabular-nums sticky left-0 border-r border-border w-[40px] group-hover:bg-blue-50/40", bgRow)}>
                                         {mes}
                                     </td>
-                                    <td className={cn("px-2 py-1.5 text-center text-xs text-slate-500 tabular-nums sticky left-[40px] border-r border-slate-200 w-[40px] group-hover:bg-blue-50/40", bgRow)}>
+                                    <td className={cn("px-2 py-1.5 text-center text-xs text-muted-foreground tabular-nums sticky left-[40px] border-r border-border w-[40px] group-hover:bg-blue-50/40", bgRow)}>
                                         {dia}
                                     </td>
-                                    <td className={cn("px-3 py-1.5 sticky left-[80px] border-r border-slate-300 shadow-[3px_0_6px_rgba(0,0,0,.06)] group-hover:bg-blue-50/40", bgRow)}>
+                                    <td className={cn("px-3 py-1.5 sticky left-[80px] border-r border-border shadow-[3px_0_6px_rgba(0,0,0,.06)] group-hover:bg-blue-50/40", bgRow)}>
                                         <span className="font-mono text-xs font-semibold text-blue-900 whitespace-nowrap">
                                             <DocumentoPdfLink numeroComprobante={m.serie && m.corr ? `${m.serie}-${m.corr}` : null} />
                                         </span>
-                                        <span className="block text-[11px] text-slate-400 truncate max-w-[190px]" title={m.estab}>{m.estab}</span>
+                                        <span className="block text-[11px] text-muted-foreground truncate max-w-[190px]" title={m.estab}>{m.estab}</span>
                                     </td>
                                     {prodsVisibles.map(p => (
                                         <React.Fragment key={p.id}>
-                                            <td className="px-3 py-1.5 text-right font-mono font-semibold text-emerald-700 tabular-nums border-l border-slate-100 text-xs">
+                                            <td className="px-3 py-1.5 text-right font-mono font-semibold text-emerald-700 tabular-nums border-l border-border text-xs">
                                                 {p.id === m.prodId && m.tipo === 'INGRESO' ? fmt(m.cant) : ''}
                                             </td>
                                             <td className="px-3 py-1.5 text-right font-mono font-semibold text-red-700 tabular-nums text-xs">

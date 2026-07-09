@@ -88,8 +88,8 @@ export function GuidesSelectorModal({
                             <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
                         </div>
                     ) : guiasDisponibles.length === 0 ? (
-                        <div className="text-center py-8 text-gray-500 border-2 border-dashed rounded-lg">
-                            <AlertCircle className="h-10 w-10 mx-auto mb-2 text-gray-300" />
+                        <div className="text-center py-8 text-muted-foreground border-2 border-dashed rounded-lg">
+                            <AlertCircle className="h-10 w-10 mx-auto mb-2 text-muted-foreground" />
                             <p>No se encontraron guías emitidas para este pedido.</p>
                         </div>
                     ) : (
@@ -99,7 +99,7 @@ export function GuidesSelectorModal({
                                 return (
                                     <div
                                         key={guia.idGuiaRemCab}
-                                        className={`flex items-start space-x-3 border p-3 rounded-md transition-colors ${isSelected ? 'border-blue-500 bg-blue-50' : 'border-gray-200'}`}
+                                        className={`flex items-start space-x-3 border p-3 rounded-md transition-colors ${isSelected ? 'border-blue-500 bg-blue-50' : 'border-border'}`}
                                     >
                                         <Checkbox
                                             id={`guia-${guia.idGuiaRemCab}`}
@@ -112,7 +112,7 @@ export function GuidesSelectorModal({
                                                 className="text-sm font-medium leading-none cursor-pointer flex justify-between"
                                             >
                                                 <span>{guia.serie}-{guia.numero}</span>
-                                                <span className="text-gray-500 font-normal">
+                                                <span className="text-muted-foreground font-normal">
                                                     {format(parseISO(guia.fecha_emision), "dd/MM/yyyy")}
                                                 </span>
                                             </label>

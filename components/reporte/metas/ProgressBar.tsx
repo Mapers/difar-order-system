@@ -13,7 +13,7 @@ export default function ProgressBar({ pct, height = "h-1.5", showLabel = false, 
 
     return (
         <div className={`flex items-center gap-2 ${className}`}>
-            <div className={`flex-1 bg-slate-200 rounded-full overflow-hidden ${height}`}>
+            <div className={`flex-1 bg-muted rounded-full overflow-hidden ${height}`}>
                 <div
                     className="h-full rounded-full transition-all duration-700 ease-out"
                     style={{ width: `${safeWidth}%`, background: `linear-gradient(90deg, ${c1}, ${c2})` }}

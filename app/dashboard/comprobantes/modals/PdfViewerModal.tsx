@@ -32,7 +32,7 @@ export function PdfViewerModal({ open, onOpenChange, pdfUrl, fileName = "documen
                 <DialogHeader>
                     <DialogTitle>Visualizador de Comprobante</DialogTitle>
                 </DialogHeader>
-                <div className="flex-1 overflow-hidden bg-gray-100 rounded-md">
+                <div className="flex-1 overflow-hidden bg-muted rounded-md">
                     {pdfUrl ? (
                         <iframe
                             src={pdfUrl}
@@ -41,7 +41,7 @@ export function PdfViewerModal({ open, onOpenChange, pdfUrl, fileName = "documen
                         />
                     ) : (
                         <div className="flex items-center justify-center h-full">
-                            <Loader2 className="h-8 w-8 animate-spin text-gray-500" />
+                            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                         </div>
                     )}
                 </div>

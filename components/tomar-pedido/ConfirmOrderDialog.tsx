@@ -75,17 +75,17 @@ export default function ConfirmOrderDialog({
                                         {gravados.length} ítem{gravados.length !== 1 ? 's' : ''}
                                     </Badge>
                                 </div>
-                                <ul className="divide-y divide-gray-100">
+                                <ul className="divide-y divide-border">
                                     {gravados.map((item, i) => (
                                         <li key={i} className="px-3 py-2 flex items-center justify-between gap-2">
                                             <div className="flex-1 min-w-0 space-y-0.5">
-                                                <p className="text-sm font-medium text-gray-800 break-words leading-snug truncate">
+                                                <p className="text-sm font-medium text-foreground break-words leading-snug truncate">
                                                     {item.product.NombreItem}
                                                 </p>
-                                                <p className="text-xs text-gray-400">{item.product.Codigo_Art}</p>
+                                                <p className="text-xs text-muted-foreground">{item.product.Codigo_Art}</p>
                                             </div>
                                             <div className="text-right shrink-0">
-                                                <p className="text-xs font-medium text-gray-600">x{item.quantity}</p>
+                                                <p className="text-xs font-medium text-muted-foreground">x{item.quantity}</p>
                                                 <TipoBadge tipo="GRAVADO" />
                                             </div>
                                         </li>
@@ -103,17 +103,17 @@ export default function ConfirmOrderDialog({
                                         {noGravados.length} ítem{noGravados.length !== 1 ? 's' : ''}
                                     </Badge>
                                 </div>
-                                <ul className="divide-y divide-gray-100">
+                                <ul className="divide-y divide-border">
                                     {noGravados.map((item, i) => (
                                         <li key={i} className="px-3 py-2 flex items-center justify-between gap-2">
                                             <div className="flex-1 min-w-0">
-                                                <p className="text-sm font-medium text-gray-800 truncate">
+                                                <p className="text-sm font-medium text-foreground truncate">
                                                     {item.product.NombreItem}
                                                 </p>
-                                                <p className="text-xs text-gray-400">{item.product.Codigo_Art}</p>
+                                                <p className="text-xs text-muted-foreground">{item.product.Codigo_Art}</p>
                                             </div>
                                             <div className="text-right shrink-0">
-                                                <p className="text-xs font-medium text-gray-600">x{item.quantity}</p>
+                                                <p className="text-xs font-medium text-muted-foreground">x{item.quantity}</p>
                                                 <TipoBadge tipo={getTipoLabel(item.product)} />
                                             </div>
                                         </li>
@@ -128,26 +128,26 @@ export default function ConfirmOrderDialog({
                     ) : (
                         /* Un solo tipo — lista simple */
                         <div className="border rounded-lg overflow-hidden">
-                            <div className="bg-gray-50 border-b px-3 py-2 flex items-center gap-2">
-                                <Package className="h-4 w-4 text-gray-600" />
-                                <span className="font-semibold text-gray-700 text-sm">
+                            <div className="bg-muted border-b px-3 py-2 flex items-center gap-2">
+                                <Package className="h-4 w-4 text-muted-foreground" />
+                                <span className="font-semibold text-foreground text-sm">
                                     Productos del pedido
                                 </span>
                                 <TipoBadge tipo={tiposPresentes[0]} />
-                                <Badge className="ml-auto bg-gray-100 text-gray-600 border-gray-300">
+                                <Badge className="ml-auto bg-muted text-muted-foreground border-border">
                                     {selectedProducts.length} ítem{selectedProducts.length !== 1 ? 's' : ''}
                                 </Badge>
                             </div>
-                            <ul className="divide-y divide-gray-100">
+                            <ul className="divide-y divide-border">
                                 {selectedProducts.map((item, i) => (
                                     <li key={i} className="px-3 py-2 flex items-center justify-between gap-2">
                                         <div className="flex-1 min-w-0">
-                                            <p className="text-sm font-medium text-gray-800 truncate">
+                                            <p className="text-sm font-medium text-foreground truncate">
                                                 {item.product.NombreItem}
                                             </p>
-                                            <p className="text-xs text-gray-400">{item.product.Codigo_Art}</p>
+                                            <p className="text-xs text-muted-foreground">{item.product.Codigo_Art}</p>
                                         </div>
-                                        <p className="text-xs font-medium text-gray-600 shrink-0">x{item.quantity}</p>
+                                        <p className="text-xs font-medium text-muted-foreground shrink-0">x{item.quantity}</p>
                                     </li>
                                 ))}
                             </ul>

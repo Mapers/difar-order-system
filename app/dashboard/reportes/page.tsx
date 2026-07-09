@@ -146,8 +146,8 @@ export default function ReportsPage() {
   return (
     <div className="grid gap-6">
       <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold tracking-tight text-gray-900">Clientes</h1>
-        <p className="text-gray-500">Gestiona la información de tus clientes.</p>
+        <h1 className="text-3xl font-bold tracking-tight text-foreground">Clientes</h1>
+        <p className="text-muted-foreground">Gestiona la información de tus clientes.</p>
       </div>
 
       <Card className="shadow-md">
@@ -155,11 +155,11 @@ export default function ReportsPage() {
           <CardTitle className="text-xl font-semibold text-blue-700">Lista de Clientes</CardTitle>
           <div className="flex flex-col sm:flex-row gap-4 sm:items-center">
             <div className="relative">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
                 type="search"
                 placeholder="Buscar por código, nombre o RUC..."
-                className="pl-8 bg-white"
+                className="pl-8 bg-background"
                 value={searchQuery}
                 onChange={(e) => {
                   setSearchQuery(e.target.value)
@@ -174,9 +174,9 @@ export default function ReportsPage() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="rounded-md border bg-white">
+          <div className="rounded-md border bg-background">
             <Table>
-              <TableHeader className="bg-gray-50">
+              <TableHeader className="bg-muted">
                 <TableRow>
                   <TableHead>Código</TableHead>
                   <TableHead>Nombre/Razón Social</TableHead>
@@ -213,7 +213,7 @@ export default function ReportsPage() {
                   ))
                 ) : clients.length > 0 ? (
                   clients.map((client, index) => (
-                    <TableRow key={client.Codigo + index} className="hover:bg-gray-50">
+                    <TableRow key={client.Codigo + index} className="hover:bg-muted">
                       <TableCell className="font-medium">{client.Codigo}</TableCell>
                       <TableCell className="font-medium">{client.Nombre}</TableCell>
                       <TableCell className="hidden md:table-cell">
@@ -228,7 +228,7 @@ export default function ReportsPage() {
                           className={
                             client.TipoCliente === "Activo"
                               ? "bg-green-100 text-green-800 hover:bg-green-100"
-                              : "bg-gray-100 text-gray-800 hover:bg-gray-100"
+                              : "bg-muted text-muted-foreground hover:bg-muted"
                           }
                         >
                           {client.TipoCliente}
@@ -269,7 +269,7 @@ export default function ReportsPage() {
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8 text-gray-500">
+                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                       No se encontraron clientes
                     </TableCell>
                   </TableRow>

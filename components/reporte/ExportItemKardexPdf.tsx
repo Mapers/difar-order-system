@@ -257,7 +257,7 @@ export const ExportItemKardexPdf: React.FC<ExportPdfProps> = ({ data, startDate,
     };
 
     return (
-        <Button variant="outline" className="bg-white shadow-sm w-full sm:w-auto" onClick={generatePdf} disabled={loading || disabled}>
+        <Button variant="outline" className="bg-background shadow-sm w-full sm:w-auto" onClick={generatePdf} disabled={loading || disabled}>
             <Download className="mr-2 h-4 w-4" />
             {loading ? "Generando..." : "Exportar PDF"}
         </Button>

@@ -186,28 +186,28 @@ export function ChangeStateDialog({
                     <div className="space-y-4">
                         <div className="grid grid-cols-2 gap-3">
                             <div>
-                                <Label className="text-xs text-gray-500">Estado Actual</Label>
+                                <Label className="text-xs text-muted-foreground">Estado Actual</Label>
                                 <div className="mt-1">
                                     <Badge className={currentStateInfo?.color}>{currentStateInfo?.name}</Badge>
                                 </div>
                             </div>
                             <div>
-                                <Label className="text-xs text-gray-500">Nuevo Estado</Label>
+                                <Label className="text-xs text-muted-foreground">Nuevo Estado</Label>
                                 <div className="mt-1">
                                     <Badge className={nextStateInfo?.color}>{nextStateInfo?.name}</Badge>
                                 </div>
                             </div>
                         </div>
-                        <p className="text-xs text-gray-500">{nextStateInfo?.description}</p>
+                        <p className="text-xs text-muted-foreground">{nextStateInfo?.description}</p>
 
                         {detalle.length > 0 && [1, 2, 4].includes(selectedOrder.estadodePedido) && (
-                            <div className="border rounded-md p-3 space-y-3 bg-gray-50">
-                                <p className="text-xs font-semibold text-gray-600 flex items-center gap-1">
+                            <div className="border rounded-md p-3 space-y-3 bg-muted">
+                                <p className="text-xs font-semibold text-muted-foreground flex items-center gap-1">
                                     <FileText className="h-3.5 w-3.5" /> Datos para Comprobante
                                 </p>
 
                                 {loadingPreviewData ? (
-                                    <div className="flex items-center gap-2 text-xs text-gray-500">
+                                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
                                         <Loader2 className="h-3 w-3 animate-spin" /> Verificando correlativo...
                                     </div>
                                 ) : previewExistente && (
@@ -224,7 +224,7 @@ export function ChangeStateDialog({
 
                                 <div className="grid grid-cols-2 gap-3">
                                     <div className="space-y-1">
-                                        <Label className="text-xs text-gray-500">
+                                        <Label className="text-xs text-muted-foreground">
                                             Tipo Comprobante
                                             {previewExistente && (
                                                 <span className="ml-1 text-amber-600">(bloqueado)</span>
@@ -251,7 +251,7 @@ export function ChangeStateDialog({
                                     </div>
 
                                     <div className="space-y-1">
-                                        <Label className="text-xs text-gray-500">Transacción SUNAT</Label>
+                                        <Label className="text-xs text-muted-foreground">Transacción SUNAT</Label>
                                         <Select value={sunatTransaction} onValueChange={setSunatTransaction} disabled={loadingPreviewData}>
                                             <SelectTrigger className="h-8 text-xs">
                                                 <SelectValue placeholder="Seleccionar" />
@@ -267,7 +267,7 @@ export function ChangeStateDialog({
                                     </div>
 
                                     <div className="space-y-1">
-                                        <Label className="text-xs text-gray-500">Tipo Doc. Cliente</Label>
+                                        <Label className="text-xs text-muted-foreground">Tipo Doc. Cliente</Label>
                                         <Select value={tipoSunat} onValueChange={setTipoSunat} disabled={loadingPreviewData}>
                                             <SelectTrigger className="h-8 text-xs">
                                                 <SelectValue placeholder="Seleccionar" />
@@ -283,7 +283,7 @@ export function ChangeStateDialog({
                                     </div>
 
                                     <div className="space-y-1">
-                                        <Label className="text-xs text-gray-500">Almacén</Label>
+                                        <Label className="text-xs text-muted-foreground">Almacén</Label>
                                         <Select value={selectedAlmacen} onValueChange={setSelectedAlmacen} disabled={loadingPreviewData}>
                                             <SelectTrigger className="h-8 text-xs">
                                                 <SelectValue placeholder="Seleccionar" />
@@ -352,12 +352,12 @@ export function ChangeStateDialog({
 
             <Dialog open={isPreviewOpen} onOpenChange={onClosePreview}>
                 <DialogContent className="min-w-[90vw] h-[95vh] p-0 overflow-hidden">
-                    <DialogHeader className="px-4 py-3 border-b absolute bg-white w-full z-10">
+                    <DialogHeader className="px-4 py-3 border-b absolute bg-background w-full z-10">
                         <div className="flex items-center justify-between">
                             <DialogTitle>
                                 Preview — {String(selectedOrder.nroPedido).padStart(10, '0')}
                                 {previewExistente && (
-                                    <span className="ml-2 text-sm font-normal text-gray-500">
+                                    <span className="ml-2 text-sm font-normal text-muted-foreground">
                                         {previewExistente.serie}-{previewExistente.numero}
                                     </span>
                                 )}
@@ -370,7 +370,7 @@ export function ChangeStateDialog({
                     <div className="w-full h-full mt-16">
                         {pdfPreviewBase64
                             ? <iframe title="Preview PDF" src={`data:application/pdf;base64,${pdfPreviewBase64}`} className="w-full h-full border-0" />
-                            : <div className="flex items-center justify-center h-full gap-2 text-gray-500">
+                            : <div className="flex items-center justify-center h-full gap-2 text-muted-foreground">
                                 <Loader2 className="h-5 w-5 animate-spin" /> Cargando preview...
                             </div>
                         }

@@ -33,8 +33,8 @@ export default function PricePage() {
       <div className="grid gap-6">
           <div className='flex justify-between items-center gap-2'>
               <div className="flex flex-col gap-2">
-                  <h1 className="text-3xl font-bold tracking-tight text-gray-900">Lista de Precios por Lote</h1>
-                  <p className="text-gray-500">Gestión de inventario DIFAR</p>
+                  <h1 className="text-3xl font-bold tracking-tight text-foreground">Lista de Precios por Lote</h1>
+                  <p className="text-muted-foreground">Gestión de inventario DIFAR</p>
               </div>
               <div className="flex items-center gap-2">
                   {isAdmin() && (
@@ -71,11 +71,11 @@ export default function PricePage() {
               uniquePrinciples={listData.uniquePrinciples}
           />
 
-        <Card className="bg-white shadow-sm overflow-auto">
+        <Card className="bg-background shadow-sm overflow-auto">
           <CardHeader className="border-b">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div className="space-y-1">
-                <CardTitle className="text-lg font-semibold text-gray-800">
+                <CardTitle className="text-lg font-semibold text-foreground">
                     Lista de Productos
                 </CardTitle>
                 <CardDescription>
@@ -85,7 +85,7 @@ export default function PricePage() {
               <div className="flex items-center gap-3">
                 <ExportExcelButton payload={listData.exportPayload} filters={listData.exportFilters} />
                 <ExportPdfButton payload={listData.exportPayload} filters={listData.exportFilters} />
-                <div className="text-sm text-gray-500 text-right hidden sm:block">
+                <div className="text-sm text-muted-foreground text-right hidden sm:block">
                   {currentDateTime.date} | {currentDateTime.time}
                 </div>
               </div>

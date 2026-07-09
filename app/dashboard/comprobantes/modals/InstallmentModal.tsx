@@ -132,7 +132,7 @@ export function InstallmentModal({
                 </DialogHeader>
 
                 <div className="space-y-4 py-2">
-                    <div className="flex items-end gap-2 p-3 bg-gray-50 rounded-md border">
+                    <div className="flex items-end gap-2 p-3 bg-muted rounded-md border">
                         <div className="space-y-1 flex-1">
                             <Label className="text-xs">Cantidad de Cuotas</Label>
                             <Input
@@ -161,7 +161,7 @@ export function InstallmentModal({
                     </div>
 
                     <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
-                        <div className="grid grid-cols-12 gap-2 text-xs font-medium text-gray-500 mb-1">
+                        <div className="grid grid-cols-12 gap-2 text-xs font-medium text-muted-foreground mb-1">
                             <div className="col-span-1 text-center">#</div>
                             <div className="col-span-5">Fecha Vencimiento</div>
                             <div className="col-span-5">Importe</div>
@@ -170,7 +170,7 @@ export function InstallmentModal({
 
                         {cuotas.map((cuota, index) => (
                             <div key={index} className="grid grid-cols-12 gap-2 items-center">
-                                <div className="col-span-1 text-center font-bold text-sm bg-gray-100 rounded h-8 flex items-center justify-center">
+                                <div className="col-span-1 text-center font-bold text-sm bg-muted rounded h-8 flex items-center justify-center">
                                     {index + 1}
                                 </div>
                                 <div className="col-span-5">
@@ -205,7 +205,7 @@ export function InstallmentModal({
                         ))}
 
                         {cuotas.length === 0 && (
-                            <p className="text-center text-sm text-gray-400 py-4">
+                            <p className="text-center text-sm text-muted-foreground py-4">
                                 No hay cuotas. Generá o agregá una manualmente.
                             </p>
                         )}

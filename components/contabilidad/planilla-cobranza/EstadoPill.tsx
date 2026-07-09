@@ -16,7 +16,7 @@ const CONFIG: Record<string, {
 }> = {
     borrador: {
         label:     'Borrador',
-        className: 'bg-slate-100 text-slate-600 border-slate-200',
+        className: 'bg-muted text-muted-foreground border-border',
         dotClass:  'bg-slate-500',
         icon:      <Clock className="h-3 w-3" />,
     },

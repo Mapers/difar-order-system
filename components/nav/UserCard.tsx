@@ -60,7 +60,7 @@ export function UserCard() {
           </div>
 
           <div className="flex-1 min-w-0">
-            <span style={{ fontSize: "12px" }}>
+            <span className="text-blue-900" style={{ fontSize: "12px" }}>
               {user?.nombreCompleto || "Usuario"}
             </span>
             <div className="flex items-center gap-1.5 mb-1">
@@ -71,7 +71,7 @@ export function UserCard() {
               </span>
             </div>
             <div className="flex items-center gap-1.5 ml-1">
-              <span className="text-xs text-gray-400 font-mono">
+              <span className="text-xs text-blue-700 font-mono">
                 {!!user?.codRepres ? user?.codRepres : user?.codigo || "N/A"}
               </span>
             </div>
@@ -84,7 +84,7 @@ export function UserCard() {
               <span
                 className={cn(
                   "text-[11px] font-medium transition-colors",
-                  !esVendedorSimulado ? "text-blue-700" : "text-gray-400"
+                  !esVendedorSimulado ? "text-blue-700" : "text-slate-400"
                 )}
               >
                 Representante
@@ -98,13 +98,13 @@ export function UserCard() {
               <span
                 className={cn(
                   "text-[11px] font-medium transition-colors",
-                  esVendedorSimulado ? "text-green-700" : "text-gray-400"
+                  esVendedorSimulado ? "text-green-700" : "text-slate-400"
                 )}
               >
                 Vendedor
               </span>
               {switchingRole && (
-                <Loader2 className="h-3.5 w-3.5 animate-spin text-gray-400" />
+                <Loader2 className="h-3.5 w-3.5 animate-spin text-blue-400" />
               )}
             </div>
           </div>

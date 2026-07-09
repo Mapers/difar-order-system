@@ -52,20 +52,20 @@ export function TransferirVendedorModal({ open, onOpenChange, comprobante, isPro
 
                 {comprobante && (
                     <div className="flex flex-col gap-4">
-                        <div className="flex items-center justify-center gap-3 rounded-lg border bg-gray-50 p-3">
+                        <div className="flex items-center justify-center gap-3 rounded-lg border bg-muted p-3">
                             <div className="flex flex-col items-center gap-1 text-center">
-                                <span className="text-[10px] font-semibold uppercase text-gray-400">Actual</span>
-                                <div className="flex items-center gap-1.5 rounded-full bg-gray-100 px-3 py-1.5">
-                                    <User className="h-3.5 w-3.5 text-gray-500" />
-                                    <span className="text-sm font-medium text-gray-800">{comprobante.Vendedor || "Sin asignar"}</span>
+                                <span className="text-[10px] font-semibold uppercase text-muted-foreground">Actual</span>
+                                <div className="flex items-center gap-1.5 rounded-full bg-muted px-3 py-1.5">
+                                    <User className="h-3.5 w-3.5 text-muted-foreground" />
+                                    <span className="text-sm font-medium text-foreground">{comprobante.Vendedor || "Sin asignar"}</span>
                                 </div>
                             </div>
-                            <ArrowRight className="h-5 w-5 shrink-0 text-gray-400" />
+                            <ArrowRight className="h-5 w-5 shrink-0 text-muted-foreground" />
                             <div className="flex flex-col items-center gap-1 text-center">
-                                <span className="text-[10px] font-semibold uppercase text-gray-400">Nuevo</span>
+                                <span className="text-[10px] font-semibold uppercase text-muted-foreground">Nuevo</span>
                                 <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
                                     <PopoverTrigger asChild>
-                                        <Button variant="outline" role="combobox" className="h-8 justify-between gap-1.5 bg-white px-3 text-sm font-normal">
+                                        <Button variant="outline" role="combobox" className="h-8 justify-between gap-1.5 bg-background px-3 text-sm font-normal">
                                             {selected ? `${selected.Nombres} ${selected.Apellidos}` : "Seleccionar..."}
                                             <ChevronDown className="h-3.5 w-3.5 shrink-0 opacity-50" />
                                         </Button>
@@ -92,8 +92,8 @@ export function TransferirVendedorModal({ open, onOpenChange, comprobante, isPro
                                 </Popover>
                             </div>
                         </div>
-                        <p className="text-xs text-gray-500">
-                            Documento: <span className="font-mono font-medium text-gray-700">{comprobante.serie}-{comprobante.numero}</span>
+                        <p className="text-xs text-muted-foreground">
+                            Documento: <span className="font-mono font-medium text-foreground">{comprobante.serie}-{comprobante.numero}</span>
                         </p>
                     </div>
                 )}

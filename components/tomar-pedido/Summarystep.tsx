@@ -44,8 +44,8 @@ export default function SummaryStep({
     const sym = getCurrencySymbol(currency?.value)
 
     return (
-        <Card className="shadow-md bg-white">
-            <CardHeader className="border-b bg-gray-50 dark:bg-gray-800/50 dark:border-gray-800">
+        <Card className="shadow-md bg-background">
+            <CardHeader className="border-b bg-muted">
                 <div className="flex items-center gap-2">
                     <div className="p-1.5 bg-green-100 dark:bg-green-900/40 rounded-md">
                         <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
@@ -59,29 +59,29 @@ export default function SummaryStep({
                     <div className="space-y-3">
                         <div className="flex items-center gap-2">
                             <User className="w-4 h-4 text-blue-600" />
-                            <h3 className="font-semibold text-gray-900 text-sm sm:text-base">Información del Cliente</h3>
+                            <h3 className="font-semibold text-foreground text-sm sm:text-base">Información del Cliente</h3>
                         </div>
                         <div className="bg-blue-50 rounded-lg p-3 sm:p-4 border border-blue-100 space-y-3">
 
                             <div>
-                                <Label className="text-xs text-gray-500">Cliente</Label>
-                                <p className="font-medium text-sm sm:text-base leading-tight">{selectedClient?.Nombre}</p>
-                                <p className="text-xs text-gray-500">Documento: doc nro</p>
+                                <Label className="text-xs text-blue-900">Cliente</Label>
+                                <p className="font-medium text-sm sm:text-base leading-tight text-blue-900">{selectedClient?.Nombre}</p>
+                                <p className="text-xs text-blue-900">Documento: doc nro</p>
                             </div>
 
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 <div className="flex items-start gap-2">
                                     <Phone className="w-4 h-4 text-blue-600 mt-0.5 shrink-0" />
                                     <div className="min-w-0">
-                                        <Label className="text-xs text-gray-500">Teléfono</Label>
-                                        <p className="text-sm truncate">{selectedClient?.telefono ?? '+52 ---------'}</p>
+                                        <Label className="text-xs text-blue-900">Teléfono</Label>
+                                        <p className="text-sm truncate text-blue-900">{selectedClient?.telefono ?? '+52 ---------'}</p>
                                     </div>
                                 </div>
                                 <div className="flex items-start gap-2">
                                     <User className="w-4 h-4 text-blue-600 mt-0.5 shrink-0" />
                                     <div className="min-w-0">
-                                        <Label className="text-xs text-gray-500">Contacto</Label>
-                                        <p className="text-sm truncate">{contactoPedido ?? '-----'}</p>
+                                        <Label className="text-xs text-blue-900">Contacto</Label>
+                                        <p className="text-sm truncate text-blue-900">{contactoPedido ?? '-----'}</p>
                                     </div>
                                 </div>
                             </div>
@@ -90,18 +90,18 @@ export default function SummaryStep({
                                 <div className="flex items-start gap-2">
                                     <MapPin className="w-4 h-4 text-green-600 mt-0.5 shrink-0" />
                                     <div className="min-w-0">
-                                        <Label className="text-xs text-gray-500">Dirección</Label>
-                                        <p className="text-sm line-clamp-2">{selectedClient?.Dirección ?? '----'}</p>
+                                        <Label className="text-xs text-blue-900">Dirección</Label>
+                                        <p className="text-sm line-clamp-2 text-blue-900">{selectedClient?.Dirección ?? '----'}</p>
                                         {selectedClient?.referenciaDireccion && (
-                                            <p className="text-xs text-gray-600 mt-0.5 line-clamp-1">Ref: {selectedClient.referenciaDireccion}</p>
+                                            <p className="text-xs text-blue-900 mt-0.5 line-clamp-1">Ref: {selectedClient.referenciaDireccion}</p>
                                         )}
                                     </div>
                                 </div>
                                 <div className="flex items-start gap-2">
                                     <MapPin className="w-4 h-4 text-purple-600 mt-0.5 shrink-0" />
                                     <div className="min-w-0">
-                                        <Label className="text-xs text-gray-500">Zona</Label>
-                                        <p className="text-sm truncate">{nameZone}</p>
+                                        <Label className="text-xs text-blue-900">Zona</Label>
+                                        <p className="text-sm truncate text-blue-900">{nameZone}</p>
                                     </div>
                                 </div>
                             </div>
@@ -111,15 +111,15 @@ export default function SummaryStep({
                     <div className="space-y-3">
                         <div className="flex items-center gap-2">
                             <CreditCard className="w-4 h-4 text-green-600" />
-                            <h3 className="font-semibold text-gray-900 text-sm sm:text-base">Condiciones de Pago</h3>
+                            <h3 className="font-semibold text-foreground text-sm sm:text-base">Condiciones de Pago</h3>
                         </div>
                         <div className="bg-green-50 rounded-lg p-3 sm:p-4 border border-green-100">
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="flex items-start gap-2">
                                     <Calendar className="w-4 h-4 text-green-600 mt-0.5 shrink-0" />
                                     <div className="min-w-0">
-                                        <Label className="text-xs text-gray-500">Condición</Label>
-                                        <p className="font-medium text-sm truncate">{condition?.Descripcion}</p>
+                                        <Label className="text-xs text-green-900">Condición</Label>
+                                        <p className="font-medium text-sm truncate text-green-900">{condition?.Descripcion}</p>
                                     </div>
                                 </div>
                                 <div className="flex items-start gap-2">
@@ -127,8 +127,8 @@ export default function SummaryStep({
                                         ? <Coins className="w-4 h-4 text-green-600 mt-0.5 shrink-0" />
                                         : <DollarSign className="w-4 h-4 text-green-600 mt-0.5 shrink-0" />}
                                     <div className="min-w-0">
-                                        <Label className="text-xs text-gray-500">Moneda</Label>
-                                        <p className="font-medium text-sm truncate">{currency?.label}</p>
+                                        <Label className="text-xs text-green-900">Moneda</Label>
+                                        <p className="font-medium text-sm truncate text-green-900">{currency?.label}</p>
                                     </div>
                                 </div>
                             </div>
@@ -139,7 +139,7 @@ export default function SummaryStep({
                 <div className="space-y-3">
                     <div className="flex items-center gap-2">
                         <Package className="w-4 h-4 sm:w-5 sm:h-5 text-orange-600" />
-                        <h3 className="font-semibold text-gray-900 text-sm sm:text-base">Productos Seleccionados</h3>
+                        <h3 className="font-semibold text-foreground text-sm sm:text-base">Productos Seleccionados</h3>
                     </div>
                     <div className="overflow-x-auto -mx-3 sm:mx-0">
                         <div className="min-w-0 px-3 sm:px-0">
@@ -164,24 +164,24 @@ export default function SummaryStep({
 
                 <div className="space-y-3">
                     <div className="flex items-center gap-2">
-                        <FileText className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
-                        <h3 className="font-semibold text-gray-900 text-sm sm:text-base">Observaciones</h3>
+                        <FileText className="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground" />
+                        <h3 className="font-semibold text-foreground text-sm sm:text-base">Observaciones</h3>
                     </div>
-                    <div className="bg-white rounded-lg border border-gray-200">
+                    <div className="bg-background rounded-lg border border-border">
                         <Textarea
                             placeholder="Escribe aquí cualquier observación adicional para el pedido..."
                             className="min-h-[100px] resize-none border-0 focus-visible:ring-0 text-sm"
                             value={note}
                             onChange={(e) => onNoteChange(e.target.value)}
                         />
-                        <div className="border-t px-3 py-2 bg-gray-50 text-xs text-gray-500">
+                        <div className="border-t px-3 py-2 bg-muted text-xs text-muted-foreground">
                             Esta información será incluida en el pedido.
                         </div>
                     </div>
                 </div>
             </CardContent>
 
-            <CardFooter className="flex justify-between border-t bg-gray-50 py-4 gap-2 px-3 sm:px-6">
+            <CardFooter className="flex justify-between border-t bg-muted py-4 gap-2 px-3 sm:px-6">
                 <div className="flex gap-2">
                     <Button type="button" variant="outline" onClick={onPrev}>
                         <ArrowLeft className="mr-2 h-4 w-4" />

@@ -39,7 +39,7 @@ export function StatusModal({ open, onOpenChange, data, loading }: StatusModalPr
             case "105": // ANULADO
                 return { color: "bg-red-100 text-red-800 border-red-200", icon: <XCircle className="h-12 w-12 text-red-600" />, label: "RECHAZADO / ANULADO" }
             default:
-                return { color: "bg-gray-100 text-gray-800 border-gray-200", icon: <AlertCircle className="h-12 w-12 text-gray-600" />, label: "DESCONOCIDO" }
+                return { color: "bg-muted text-muted-foreground border-border", icon: <AlertCircle className="h-12 w-12 text-muted-foreground" />, label: "DESCONOCIDO" }
         }
     }
 
@@ -77,7 +77,7 @@ export function StatusModal({ open, onOpenChange, data, loading }: StatusModalPr
                         {/*    <div className="space-y-1">*/}
                         {/*        <span className="text-xs text-muted-foreground font-medium">Código Hash</span>*/}
                         {/*        <div className="flex items-center text-xs break-all" title={data.codigo_hash}>*/}
-                        {/*            <Hash className="h-3 w-3 mr-1 text-gray-500" />*/}
+                        {/*            <Hash className="h-3 w-3 mr-1 text-muted-foreground" />*/}
                         {/*            <span className="truncate w-32">{data.codigo_hash || "-"}</span>*/}
                         {/*        </div>*/}
                         {/*    </div>*/}
@@ -92,8 +92,8 @@ export function StatusModal({ open, onOpenChange, data, loading }: StatusModalPr
                                     Cód: {data.sunat_responsecode || "---"}
                                 </Badge>
                             </div>
-                            <ScrollArea className="h-[80px] w-full rounded-md border p-3 bg-slate-50">
-                                <p className="text-xs text-gray-700">
+                            <ScrollArea className="h-[80px] w-full rounded-md border p-3 bg-muted">
+                                <p className="text-xs text-muted-foreground">
                                     {data.sunat_description || "Sin descripción disponible."}
                                 </p>
                                 {data.errors && (
@@ -105,7 +105,7 @@ export function StatusModal({ open, onOpenChange, data, loading }: StatusModalPr
                         </div>
                     </div>
                 ) : (
-                    <div className="text-center py-8 text-gray-500">
+                    <div className="text-center py-8 text-muted-foreground">
                         No se pudo cargar la información.
                     </div>
                 )}

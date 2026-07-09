@@ -19,29 +19,29 @@ const OrderSummary: React.FC<ModalVerificationProps> = ({ selectedClient, contac
       <div className="space-y-4">
         <div className="flex items-center gap-2">
           <User className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
-          <h3 className="font-semibold text-gray-900 text-sm sm:text-base">Información del Cliente</h3>
+          <h3 className="font-semibold text-foreground text-sm sm:text-base">Información del Cliente</h3>
         </div>
         <div className="bg-blue-50 rounded-lg p-4 border border-blue-100">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-3">
               <div>
-                <Label className="text-xs text-gray-500">Cliente</Label>
-                <p className="font-medium text-sm sm:text-base">{selectedClient?.Nombre}</p>
-                <p className="text-xs text-gray-500">Documento: doc nro</p>
+                <Label className="text-xs text-blue-900">Cliente</Label>
+                <p className="font-medium text-sm sm:text-base text-blue-900">{selectedClient?.Nombre}</p>
+                <p className="text-xs text-blue-900">Documento: doc nro</p>
               </div>
 
               <div className="flex items-start gap-2">
                 <Phone className="w-4 h-4 text-blue-600 mt-0.5" />
                 <div>
-                  <Label className="text-xs text-gray-500">Teléfono</Label>
-                  <p className="text-sm">{selectedClient?.telefono ?? '+52 ---------'}</p>
+                  <Label className="text-xs text-blue-900">Teléfono</Label>
+                  <p className="text-sm text-blue-900">{selectedClient?.telefono ?? '+52 ---------'}</p>
                 </div>
               </div>
               <div className="flex items-start gap-2">
                 <User className="w-4 h-4 text-blue-600 mt-0.5" />
                 <div>
-                  <Label className="text-xs text-gray-500">Contacto para el Pedido</Label>
-                  <p className="text-sm">{contactoPedido ?? '-----'}</p>
+                  <Label className="text-xs text-blue-900">Contacto para el Pedido</Label>
+                  <p className="text-sm text-blue-900">{contactoPedido ?? '-----'}</p>
                 </div>
               </div>
             </div>
@@ -50,10 +50,10 @@ const OrderSummary: React.FC<ModalVerificationProps> = ({ selectedClient, contac
               <div className="flex items-start gap-2">
                 <MapPin className="w-4 h-4 text-green-600 mt-0.5" />
                 <div>
-                  <Label className="text-xs text-gray-500">Dirección de Entrega</Label>
-                  <p className="text-sm">{selectedClient?.Dirección ?? 'test direccion entrega ----'}</p>
+                  <Label className="text-xs text-blue-900">Dirección de Entrega</Label>
+                  <p className="text-sm text-blue-900">{selectedClient?.Dirección ?? 'test direccion entrega ----'}</p>
                   {selectedClient?.referenciaDireccion && (
-                    <p className="text-xs text-gray-600 mt-1">Ref: {selectedClient.referenciaDireccion}</p>
+                    <p className="text-xs text-blue-900 mt-1">Ref: {selectedClient.referenciaDireccion}</p>
                   )}
                 </div>
               </div>
@@ -61,8 +61,8 @@ const OrderSummary: React.FC<ModalVerificationProps> = ({ selectedClient, contac
               <div className="flex items-start gap-2">
                 <MapPin className="w-4 h-4 text-purple-600 mt-0.5" />
                 <div>
-                  <Label className="text-xs text-gray-500">Zona</Label>
-                  <p className="text-sm">
+                  <Label className="text-xs text-blue-900">Zona</Label>
+                  <p className="text-sm text-blue-900">
                     {nameZone}
                   </p>
                 </div>
@@ -74,7 +74,7 @@ const OrderSummary: React.FC<ModalVerificationProps> = ({ selectedClient, contac
       <div className="space-y-4">
         <div className="flex items-center gap-2">
           <CreditCard className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
-          <h3 className="font-semibold text-gray-900 text-sm sm:text-base">Condiciones de Pago</h3>
+          <h3 className="font-semibold text-foreground text-sm sm:text-base">Condiciones de Pago</h3>
         </div>
 
         <div className="bg-green-50 rounded-lg p-4 border border-green-100">
@@ -82,8 +82,8 @@ const OrderSummary: React.FC<ModalVerificationProps> = ({ selectedClient, contac
             <div className="flex items-start gap-2">
               <Calendar className="w-4 h-4 text-green-600 mt-0.5" />
               <div>
-                <Label className="text-xs text-gray-500">Condición</Label>
-                <p className="font-medium text-sm"> {condition?.Descripcion}</p>
+                <Label className="text-xs text-green-900">Condición</Label>
+                <p className="font-medium text-sm text-green-900"> {condition?.Descripcion}</p>
               </div>
             </div>
             <div className="flex items-start gap-2">
@@ -93,8 +93,8 @@ const OrderSummary: React.FC<ModalVerificationProps> = ({ selectedClient, contac
                 <DollarSign className="w-4 h-4 text-green-600 mt-0.5" />
               )}
               <div>
-                <Label className="text-xs text-gray-500">Moneda</Label>
-                <p className="font-medium text-sm">{currency?.label}</p>
+                <Label className="text-xs text-green-900">Moneda</Label>
+                <p className="font-medium text-sm text-green-900">{currency?.label}</p>
               </div>
             </div>
 
@@ -105,11 +105,11 @@ const OrderSummary: React.FC<ModalVerificationProps> = ({ selectedClient, contac
       <div className="space-y-4">
         <div className="flex items-center gap-2">
           <Package className="w-4 h-4 sm:w-5 sm:h-5 text-orange-600" />
-          <h3 className="font-semibold text-gray-900 text-sm sm:text-base">Productos Seleccionados</h3>
+          <h3 className="font-semibold text-foreground text-sm sm:text-base">Productos Seleccionados</h3>
         </div>
         <div className="rounded-md border">
           <Table>
-            <TableHeader className="bg-gray-50">
+            <TableHeader className="bg-muted">
               <TableRow>
                 <TableHead>Producto</TableHead>
                 <TableHead className="text-right">Cantidad</TableHead>
@@ -124,8 +124,8 @@ const OrderSummary: React.FC<ModalVerificationProps> = ({ selectedClient, contac
                 const precioUnitario = item.isBonification ? 0 : precioEscala ?? precioOriginal;
                 const subtotal = precioUnitario * item.quantity;
                 return (
-                  <TableRow key={index} className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}>
-                    <TableCell className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
+                  <TableRow key={index} className={index % 2 === 0 ? "bg-background" : "bg-muted"}>
+                    <TableCell className="px-4 py-3 whitespace-nowrap text-sm text-muted-foreground">
                       <div className="flex items-center flex-wrap gap-1">
                         {item.isBonification && (
                           <Badge variant="outline" className="bg-yellow-50 text-yellow-700">
@@ -140,13 +140,13 @@ const OrderSummary: React.FC<ModalVerificationProps> = ({ selectedClient, contac
                         <span>{item.product.NombreItem}</span>
                       </div>
                     </TableCell>
-                    <TableCell className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-right">
+                    <TableCell className="px-4 py-3 whitespace-nowrap text-sm text-muted-foreground text-right">
                       {item.quantity}
                     </TableCell>
 
-                    <TableCell className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-right">
+                    <TableCell className="px-4 py-3 whitespace-nowrap text-sm text-muted-foreground text-right">
                       <div className="flex flex-col items-end">
-                        <span className={item.appliedScale ? "line-through text-gray-400 text-xs" : ""}>
+                        <span className={item.appliedScale ? "line-through text-muted-foreground text-xs" : ""}>
                           {currency?.value === "PEN" ? "S/." : "$"}
                           {Number(precioOriginal).toFixed(2)}
                         </span>
@@ -162,7 +162,7 @@ const OrderSummary: React.FC<ModalVerificationProps> = ({ selectedClient, contac
                       </div>
                     </TableCell>
 
-                    <TableCell className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900 text-right">
+                    <TableCell className="px-4 py-3 whitespace-nowrap text-sm font-medium text-foreground text-right">
                       {currency?.value === "PEN" ? "S/." : "$"}
                       {subtotal.toFixed(2)}
                     </TableCell>
@@ -184,20 +184,20 @@ const OrderSummary: React.FC<ModalVerificationProps> = ({ selectedClient, contac
             <TableFooter>
               <TableRow>
                 <TableCell colSpan={3}></TableCell>
-                <TableCell className="px-4 py-3 text-right text-sm font-medium text-gray-900">
+                <TableCell className="px-4 py-3 text-right text-sm font-medium text-foreground">
                   SubTotal:
                 </TableCell>
-                <TableCell className="px-4 py-3 whitespace-nowrap text-sm font-bold text-gray-900 text-right">
+                <TableCell className="px-4 py-3 whitespace-nowrap text-sm font-bold text-foreground text-right">
                   {currency?.value === "PEN" ? "S/." : "$"}
                   {calcularSubtotal(selectedProducts).toFixed(2)}
                 </TableCell>
               </TableRow>
               <TableRow>
                 <TableCell colSpan={3}></TableCell>
-                <TableCell className="px-4 py-3 text-right text-sm font-medium text-gray-500">
+                <TableCell className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">
                   IGV (18%):
                 </TableCell>
-                <TableCell className="px-4 py-3 whitespace-nowrap text-sm font-bold text-gray-900 text-right">
+                <TableCell className="px-4 py-3 whitespace-nowrap text-sm font-bold text-foreground text-right">
                   {currency?.value === "PEN" ? "S/." : "$"}
                   {calcularIGV(selectedProducts).toFixed(2)}
                 </TableCell>

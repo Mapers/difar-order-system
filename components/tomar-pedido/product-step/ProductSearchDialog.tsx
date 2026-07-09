@@ -68,8 +68,8 @@ export default function ProductSearchDialog({
                 <DialogContent className="p-0 gap-0 flex flex-col [&>button]:hidden overflow-hidden fixed bottom-0 left-0 right-0 top-auto translate-x-0 translate-y-0 rounded-t-2xl rounded-b-none h-[88vh] w-full sm:left-1/2 sm:right-auto sm:bottom-auto sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-xl sm:w-[620px] sm:h-[75vh] sm:max-w-[95vw]">
                     <DialogTitle className="sr-only">Buscar producto</DialogTitle>
 
-                    <div className="flex items-center gap-2 border-b border-gray-200 dark:border-gray-700 px-3 py-2.5 bg-white dark:bg-gray-900">
-                        <Search className="h-4 w-4 text-gray-400 shrink-0" />
+                    <div className="flex items-center gap-2 border-b border-border px-3 py-2.5 bg-background">
+                        <Search className="h-4 w-4 text-muted-foreground shrink-0" />
                         <input
                             type="text"
                             autoFocus
@@ -81,10 +81,10 @@ export default function ProductSearchDialog({
                                 if (searchTimerRef.current) clearTimeout(searchTimerRef.current)
                                 searchTimerRef.current = setTimeout(() => setIsSearching(false), 350)
                             }}
-                            className="flex-1 bg-transparent outline-none text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 h-9"
+                            className="flex-1 bg-transparent outline-none text-sm text-foreground placeholder-muted-foreground h-9"
                         />
                         {searchQuery && (
-                            <button type="button" onClick={() => onSearchQueryChange('')} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+                            <button type="button" onClick={() => onSearchQueryChange('')} className="text-muted-foreground hover:text-foreground">
                                 <X className="h-4 w-4" />
                             </button>
                         )}
@@ -93,11 +93,11 @@ export default function ProductSearchDialog({
                         </button>
                     </div>
 
-                    <div className="flex-1 overflow-y-auto bg-white dark:bg-gray-900">
+                    <div className="flex-1 overflow-y-auto bg-background">
                         {isSearching ? (
                             <div className="p-3 space-y-2">
                                 {[1, 2, 3].map((i) => (
-                                    <div key={i} className="flex gap-3 px-3 py-2.5 rounded-lg border border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50">
+                                    <div key={i} className="flex gap-3 px-3 py-2.5 rounded-lg border border-border bg-muted/50">
                                         <Skeleton className="h-8 w-8 rounded-lg shrink-0" />
                                         <div className="flex-1 space-y-1.5">
                                             <div className="flex justify-between gap-2">
@@ -115,13 +115,13 @@ export default function ProductSearchDialog({
                             </div>
                         ) : filteredProducts.length === 0 ? (
                             <div className="py-12 text-center">
-                                <Search className="h-10 w-10 text-gray-200 dark:text-gray-700 mx-auto mb-3" />
-                                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                                <Search className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+                                <p className="text-sm font-medium text-muted-foreground">
                                     {searchQuery ? 'No se encontraron productos' : 'Escribe para buscar productos'}
                                 </p>
                             </div>
                         ) : (
-                            <div className="divide-y divide-gray-100 dark:divide-gray-800">
+                            <div className="divide-y divide-border">
                                 {filteredProducts.map((product) => {
                                     const stockNum = Number(product.Stock)
                                     const isAgotado = stockNum <= 0
@@ -133,7 +133,7 @@ export default function ProductSearchDialog({
                                             : "bg-green-50 text-green-700 border-green-200 dark:bg-green-950/30 dark:text-green-400 dark:border-green-900/50"
 
                                     return (
-                                        <div key={product.Codigo_Art} className="flex flex-col border-b border-gray-100 last:border-0">
+                                        <div key={product.Codigo_Art} className="flex flex-col border-b border-border last:border-0">
                                             <button
                                                 type="button"
                                                 onClick={() => {
@@ -147,7 +147,7 @@ export default function ProductSearchDialog({
 
                                                 <div className="flex flex-col flex-1 min-w-0 gap-1">
                                                     <div className="flex items-start justify-between gap-2">
-                                                        <span className="font-semibold text-sm text-gray-900 dark:text-gray-100 line-clamp-2 flex-1 leading-tight">
+                                                        <span className="font-semibold text-sm text-foreground line-clamp-2 flex-1 leading-tight">
                                                             {product.NombreItem}
                                                         </span>
                                                         <span className={`text-xs shrink-0 font-medium border rounded-full px-2 py-0.5 ${stockBadgeClass}`}>
@@ -156,11 +156,11 @@ export default function ProductSearchDialog({
                                                     </div>
 
                                                     <div className="flex flex-wrap gap-x-3 gap-y-0.5">
-                                                        <span className="text-xs text-gray-500 dark:text-gray-400">
-                                                            <span className="font-medium text-gray-600 dark:text-gray-300">Cód:</span> {product.Codigo_Art}
+                                                        <span className="text-xs text-muted-foreground">
+                                                            <span className="font-medium text-muted-foreground">Cód:</span> {product.Codigo_Art}
                                                         </span>
-                                                        <span className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                                                            <span className="font-medium text-gray-600 dark:text-gray-300">Lab:</span> {product.Descripcion}
+                                                        <span className="text-xs text-muted-foreground truncate">
+                                                            <span className="font-medium text-muted-foreground">Lab:</span> {product.Descripcion}
                                                         </span>
                                                     </div>
 
