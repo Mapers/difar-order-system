@@ -17,24 +17,6 @@ interface VendedorDashboardViewProps {
     kpis: any
 }
 
-function DonutChart({ pct, color, size = 48 }: { pct: number; color: string; size?: number }) {
-    const r    = (size - 8) / 2
-    const circ = 2 * Math.PI * r
-    const fill = Math.min(pct, 100) / 100 * circ
-    const cx   = size / 2
-    return (
-        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}
-             style={{ transform: "rotate(-90deg)" }}>
-            <circle cx={cx} cy={cx} r={r} fill="none" stroke="#e2e8f0" strokeWidth="6" />
-            <circle cx={cx} cy={cx} r={r} fill="none"
-                    stroke={color} strokeWidth="6"
-                    strokeDasharray={`${fill} ${circ - fill}`}
-                    strokeLinecap="round"
-            />
-        </svg>
-    )
-}
-
 function LabBarChart({ items, totalVenta }: {
     items: (IItemDashboard & { avPct: number; uPct: number })[]
     totalVenta: number
@@ -121,11 +103,8 @@ function LabCard({
                         </div>
 
                         <div className="flex items-center gap-3 shrink-0">
-                            <div className="relative hidden sm:block" style={{ width: 48, height: 48 }}>
-                                <DonutChart pct={av} color={c1} size={48} />
-                                <div className="absolute inset-0 flex items-center justify-center">
-                                    <span className="text-[9px] font-bold" style={{ color: c1 }}>{capPct(av)}%</span>
-                                </div>
+                            <div className="hidden sm:block">
+                                <MiniDonut pct={av} size={48} strokeWidth={6} />
                             </div>
                             <StatusChip pct={av} />
                             {isOpen

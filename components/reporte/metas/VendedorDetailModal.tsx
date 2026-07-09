@@ -7,6 +7,7 @@ import { IVendedorDashboard, IItemDashboard, ICiclo } from "@/app/types/metas-ty
 import { fmtMoney, getInitials, getLabColor, getStatusColor, capPct } from "@/app/utils/metas-helpers"
 import StatusChip from "@/components/reporte/metas/StatusChip"
 import ProgressBar from "@/components/reporte/metas/ProgressBar"
+import MiniDonut from "@/components/reporte/metas/MiniDonut"
 import VisitasSemanaCard from "@/components/reporte/metas/VisitasSemanaCard"
 import VisitasDetallePanel from "@/components/reporte/metas/VisitasDetallePanel"
 import ClientesAtendidosModal from "@/components/reporte/metas/ClientesAtendidosModal"
@@ -159,7 +160,6 @@ export default function VendedorDetailModal({ open, onClose, vendedor, allItems,
                     ) : (
                         vendItems.map((item) => {
                             const [sc1] = getStatusColor(item.avPct);
-                            const [uc1] = getStatusColor(item.uPct);
                             const contribColor = item.contrib >= 25 ? "#0284c7" : item.contrib >= 15 ? "#d97706" : "#94a3b8";
 
                             return (
@@ -190,19 +190,7 @@ export default function VendedorDetailModal({ open, onClose, vendedor, allItems,
                                     </div>
 
                                     <div className="flex flex-col items-center gap-0.5">
-                                        <div className="relative w-8 h-8">
-                                            <svg width="32" height="32" viewBox="0 0 32 32" style={{ transform: 'rotate(-90deg)' }}>
-                                                <circle cx="16" cy="16" r="12" fill="none" stroke="#e2e8f0" strokeWidth="4" />
-                                                <circle cx="16" cy="16" r="12" fill="none"
-                                                        stroke={uc1} strokeWidth="4"
-                                                        strokeDasharray={`${Math.min(item.uPct, 100) / 100 * 75.4} ${75.4 - Math.min(item.uPct, 100) / 100 * 75.4}`}
-                                                        strokeLinecap="round"
-                                                />
-                                            </svg>
-                                            <div className="absolute inset-0 flex items-center justify-center">
-                                                <span className="text-[8px] font-bold" style={{ color: uc1 }}>{capPct(item.uPct)}%</span>
-                                            </div>
-                                        </div>
+                                        <MiniDonut pct={item.uPct} size={32} strokeWidth={4} />
                                         <p className="text-[9px] text-muted-foreground">{Number(item.u_vendidas).toLocaleString()}</p>
                                     </div>
 
