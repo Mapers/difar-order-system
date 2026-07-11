@@ -132,7 +132,7 @@ export default function CronogramaPage() {
       {/* Encabezado */}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <p className="font-mono text-[11px] uppercase tracking-widest text-blue-600">DIFAR · Cuentas por Cobrar</p>
+          <p className="font-mono text-[11px] uppercase tracking-widest text-blue-600 dark:text-blue-400">DIFAR · Cuentas por Cobrar</p>
           <h1 className="text-2xl font-bold tracking-tight">Calendario de Vencimientos</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             {activeView === 'calendar'

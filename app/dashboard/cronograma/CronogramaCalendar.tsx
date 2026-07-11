@@ -36,7 +36,7 @@ export function CronogramaCalendar({
 
   const cells: React.ReactNode[] = []
   for (let i = 0; i < firstDow; i++) {
-    cells.push(<div key={`empty-${i}`} className="min-h-[110px] border-b border-r bg-muted/30" />)
+    cells.push(<div key={`empty-${i}`} className="min-h-[72px] border-b border-r bg-muted/30 sm:min-h-[110px]" />)
   }
 
   for (let d = 1; d <= daysInMonth; d++) {
@@ -51,7 +51,7 @@ export function CronogramaCalendar({
         key={d}
         onClick={() => delDia.length && onSelectDay(d)}
         className={cn(
-          "min-h-[110px] border-b border-r p-2 transition-colors",
+          "min-h-[72px] border-b border-r p-1.5 transition-colors sm:min-h-[110px] sm:p-2",
           delDia.length && "cursor-pointer hover:bg-accent/50",
           isSelected && "bg-accent ring-2 ring-inset ring-blue-500",
         )}
@@ -100,7 +100,7 @@ export function CronogramaCalendar({
     <div className="overflow-hidden rounded-xl border bg-card shadow-sm">
       <div className="grid grid-cols-7 bg-blue-600">
         {WEEKDAYS.map(w => (
-          <div key={w} className="py-2.5 text-center font-mono text-[11px] uppercase tracking-wide text-white">
+          <div key={w} className="py-2 text-center font-mono text-[9px] uppercase tracking-wide text-white sm:py-2.5 sm:text-[11px]">
             {w}
           </div>
         ))}
