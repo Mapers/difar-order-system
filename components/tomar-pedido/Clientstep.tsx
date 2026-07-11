@@ -22,7 +22,7 @@ import { IClient, ICondicion, IMoneda, ITerritorio } from '@/app/types/order/cli
 import { Seller } from '@/app/types/order/order-interface'
 import { monedas } from '@/constants'
 import SearchPickerDialog from "@/components/tomar-pedido/SearchPickerDialog";
-import { ClientTransferButton } from "@/components/tomar-pedido/ClientTransferButton";
+// import { ClientTransferButton } from "@/components/tomar-pedido/ClientTransferButton"; // "Transferir" deshabilitado (selección por zona)
 
 interface ClientStepProps {
     search: { client: string; product: string; condition: string }
@@ -184,10 +184,12 @@ export default function ClientStep({
                             searchTransform={(value) => value.toUpperCase()}
                             getKey={(c) => c.codigo}
                             onSelect={(c) => onClientSelect(c)}
-                            isItemDisabled={(c) => !c.isMine}
+                            isItemDisabled={(c) => !c.isMine && !c.mismaZona}
+                            /* "Transferir" deshabilitado: los clientes de la misma zona ahora son seleccionables.
                             renderItemAction={(c) =>
                                 !c.isMine ? <ClientTransferButton client={c} /> : null
                             }
+                            */
                             widthClassName="sm:w-[620px]"
                             heightClassName="sm:h-[75vh]"
                             renderItem={(c) => (
