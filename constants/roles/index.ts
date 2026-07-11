@@ -8,7 +8,7 @@ import {
     BarChart2,
     LineChart,
     GitBranch,
-    Receipt, GoalIcon, UserCog, Notebook, Gift, Map, Settings, FileDiff
+    Receipt, GoalIcon, UserCog, Notebook, Gift, Map, Settings, FileDiff, CalendarClock
 } from "lucide-react";
 
 export interface NavItem {
@@ -40,6 +40,7 @@ export const ICON_MAP: Record<string, React.ComponentType<{ className?: string }
     "/dashboard/estados-pedidos": GitBranch,
     "/dashboard/comprobantes": Receipt,
     "/dashboard/comprobantes/procesar-nota-credito": FileDiff,
+    "/dashboard/cronograma": CalendarClock,
     "/dashboard/reportes": BarChart2,
     "/dashboard/reportes/documento-cliente": LineChart,
     "/dashboard/reportes/cobrar-cliente": LineChart,
