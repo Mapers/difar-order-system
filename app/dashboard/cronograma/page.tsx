@@ -12,7 +12,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select"
-import { PdfViewerModal } from "@/app/dashboard/comprobantes/modals/PdfViewerModal"
+import { ComprobantePdfModal } from "@/app/dashboard/comprobantes/modals/ComprobantePdfModal"
 import { CronogramaSummary } from "./CronogramaSummary"
 import { CronogramaCalendar } from "./CronogramaCalendar"
 import { CronogramaClientView } from "./CronogramaClientView"
@@ -40,7 +40,7 @@ export default function CronogramaPage() {
   const [detail, setDetail] = useState<CronogramaComprobante | null>(null)
   const [detailOpen, setDetailOpen] = useState(false)
   const [pdfOpen, setPdfOpen] = useState(false)
-  const [pdfUrl, setPdfUrl] = useState('')
+  const [pdfNumero, setPdfNumero] = useState('')
 
   const [clientSearch, setClientSearch] = useState('')
   const [clientSort, setClientSort] = useState<'urgencia' | 'monto' | 'nombre'>('urgencia')
@@ -104,10 +104,16 @@ export default function CronogramaPage() {
   }
 
   const verPdf = () => {
-    if (!detail?.enlace_pdf) return
-    setPdfUrl(detail.enlace_pdf)
+    if (!detail) return
+    const numero = `${detail.serie}-${detail.numero}`
+    // Cerramos el modal de detalle y abrimos el visor DESPUÉS de que termine de
+    // cerrar. Abrir un segundo Dialog (Radix) mientras el primero aún se cierra
+    // deja el body con pointer-events:none y el visor queda "congelado".
     setDetailOpen(false)
-    setPdfOpen(true)
+    setTimeout(() => {
+      setPdfNumero(numero)
+      setPdfOpen(true)
+    }, 200)
   }
 
   const delDiaSeleccionado = selectedDay
@@ -231,7 +237,7 @@ export default function CronogramaPage() {
       <ComprobanteDetailModal
         comprobante={detail} open={detailOpen} onOpenChange={setDetailOpen} hoy={hoy} onVerPdf={verPdf}
       />
-      <PdfViewerModal open={pdfOpen} onOpenChange={setPdfOpen} pdfUrl={pdfUrl} />
+      <ComprobantePdfModal open={pdfOpen} onOpenChange={setPdfOpen} numeroComprobante={pdfNumero} fileName={`${pdfNumero}.pdf`} />
     </div>
   )
 }

@@ -75,11 +75,10 @@ export function ComprobanteDetailModal({
 
         <Button
           onClick={onVerPdf}
-          disabled={!comprobante.enlace_pdf}
           className="mt-2 w-full"
         >
           <FileText className="mr-2 h-4 w-4" />
-          {comprobante.enlace_pdf ? 'Ver PDF' : 'PDF no disponible'}
+          Ver PDF
         </Button>
       </DialogContent>
     </Dialog>
