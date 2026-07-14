@@ -5,6 +5,7 @@ import { NewApproveCard } from "./NewApproveCard";
 import { TransferApprovalCard } from "./TransferApprovalCard";
 import { TransferResolvedCard } from "./TransferResolvedCard";
 import { StockBajoCard } from "./StockBajoCard";
+import { SunatEstadoCard } from "./SunatEstadoCard";
 
 /** Mapa visual kind → card de la lista. Agregar un tipo nuevo = una línea aquí. */
 export const NOTIFICATION_CARDS: Record<
@@ -16,4 +17,5 @@ export const NOTIFICATION_CARDS: Record<
   transferApproval: TransferApprovalCard,
   transferResolved: TransferResolvedCard,
   stockBajo: StockBajoCard,
+  sunatEstado: SunatEstadoCard,
 };

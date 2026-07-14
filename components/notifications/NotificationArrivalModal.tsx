@@ -1,6 +1,6 @@
 "use client";
 
-import { ShoppingCart, User, Calendar, ArrowLeftRight, AlertTriangle } from "lucide-react";
+import { ShoppingCart, User, Calendar, ArrowLeftRight, AlertTriangle, FileWarning } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -16,6 +16,7 @@ import type { AppNotification } from "./types";
 import { TransferApprovalCard } from "./cards/TransferApprovalCard";
 import { TransferResolvedCard } from "./cards/TransferResolvedCard";
 import { StockBajoCard } from "./cards/StockBajoCard";
+import { SunatEstadoCard } from "./cards/SunatEstadoCard";
 import { formatNotifDate, formatOrderNumber } from "./cards/shared";
 
 function OrderArrivalBody({
@@ -178,6 +179,42 @@ function StockBajoArrivalBody({
   );
 }
 
+function SunatEstadoArrivalBody({
+  notification,
+  onClose,
+}: {
+  notification: AppNotification;
+  onClose: () => void;
+}) {
+  return (
+    <>
+      <DialogHeader>
+        <div className="flex items-center gap-2">
+          <div className="shrink-0 rounded-full bg-red-100 p-2">
+            <FileWarning className="h-6 w-6 text-red-600" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <DialogTitle className="text-lg">Estado SUNAT</DialogTitle>
+            <DialogDescription className="truncate">
+              {notification.payload?.titulo || "Hay comprobantes con problema en SUNAT"}
+            </DialogDescription>
+          </div>
+        </div>
+      </DialogHeader>
+
+      <div className="overflow-hidden rounded-lg border">
+        <SunatEstadoCard notification={notification} onClose={onClose} />
+      </div>
+
+      <div className="flex gap-3 pt-2">
+        <Button variant="outline" className="flex-1" onClick={onClose}>
+          Cerrar
+        </Button>
+      </div>
+    </>
+  );
+}
+
 export function NotificationArrivalModal() {
   const { latestArrival, dismissArrival } = useNotifications();
 
@@ -196,6 +233,10 @@ export function NotificationArrivalModal() {
       case "stockBajo":
         return (
           <StockBajoArrivalBody notification={latestArrival} onClose={dismissArrival} />
+        );
+      case "sunatEstado":
+        return (
+          <SunatEstadoArrivalBody notification={latestArrival} onClose={dismissArrival} />
         );
       default:
         return <OrderArrivalBody notification={latestArrival} onClose={dismissArrival} />;

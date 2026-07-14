@@ -15,6 +15,7 @@ import { useAuth } from "@/context/authContext";
 import {
   NOTIFICATION_TYPES,
   PERSISTED_KINDS,
+  SINGLETON_KINDS,
   VALID_KINDS,
 } from "@/components/notifications/registry";
 import type {
@@ -169,7 +170,12 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
 
         setNotifications((prev) => {
           if (prev.some((n) => n.id === notif.id)) return prev;
-          return [notif, ...prev].slice(0, MAX_NOTIFICATIONS);
+          // Los kinds "singleton" mantienen una sola notificación viva:
+          // la nueva reemplaza a cualquier anterior del mismo kind.
+          const base = SINGLETON_KINDS.has(notif.kind)
+            ? prev.filter((n) => n.kind !== notif.kind)
+            : prev;
+          return [notif, ...base].slice(0, MAX_NOTIFICATIONS);
         });
 
         if (cfg.playSound) audioRef.current?.play().catch(() => {});

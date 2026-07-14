@@ -1,4 +1,4 @@
-import { ShoppingCart, CheckCircle2, ArrowLeftRight, AlertTriangle } from "lucide-react";
+import { ShoppingCart, CheckCircle2, ArrowLeftRight, AlertTriangle, FileWarning } from "lucide-react";
 import type { User } from "@/app/services/auth/types";
 import type { NotificationKind } from "./types";
 
@@ -18,6 +18,8 @@ export interface NotificationTypeConfig {
   showArrivalModal: boolean;
   playSound: boolean;
   persisted: boolean;
+  /** Si es true, solo se mantiene una notificación viva de este kind: la nueva reemplaza a la anterior. */
+  singleton?: boolean;
   shouldReceive: (ctx: NotifGuardCtx, payload?: any) => boolean;
 }
 
@@ -78,10 +80,26 @@ export const NOTIFICATION_TYPES: NotificationTypeConfig[] = [
     persisted: true,
     shouldReceive: ({ isAdmin }) => isAdmin(),
   },
+  {
+    kind: "sunatEstado",
+    socketEvent: "notification:sunatEstado",
+    title: "Estado SUNAT",
+    icon: FileWarning,
+    actionable: false,
+    showArrivalModal: true,
+    playSound: false,
+    persisted: true,
+    singleton: true,
+    shouldReceive: ({ isAdmin }) => isAdmin(),
+  },
 ];
 
 export const PERSISTED_KINDS = new Set(
   NOTIFICATION_TYPES.filter((t) => t.persisted).map((t) => t.kind),
+);
+
+export const SINGLETON_KINDS = new Set(
+  NOTIFICATION_TYPES.filter((t) => t.singleton).map((t) => t.kind),
 );
 
 export const VALID_KINDS = new Set(NOTIFICATION_TYPES.map((t) => t.kind));
