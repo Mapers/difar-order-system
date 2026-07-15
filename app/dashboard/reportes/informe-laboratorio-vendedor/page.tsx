@@ -153,7 +153,8 @@ export default function LabSellerReportPage() {
             const res = await apiClient.post('/reportes/detalle-laboratorio-vendedor', {
                 fecha: fechaStr,
                 id_laboratorio: foundLab.IdLineaGe,
-                codigo_vendedor: vendCodigo
+                codigo_vendedor: vendCodigo,
+                excluir: excluirSerie0800
             });
 
             if (res.data?.data && res.data.data.length > 0) {
