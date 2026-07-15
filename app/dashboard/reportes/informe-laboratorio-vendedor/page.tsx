@@ -9,11 +9,9 @@ import { useAuth } from "@/context/authContext"
 import { Badge } from "@/components/ui/badge"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
-import { Calendar } from "@/components/ui/calendar"
+import { MonthYearPicker } from "@/components/ui/month-year-picker"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Switch } from "@/components/ui/switch"
-import { format } from "date-fns"
-import { es } from "date-fns/locale"
 import { cn } from "@/lib/utils"
 import apiClient from '@/app/api/client'
 
@@ -239,17 +237,10 @@ export default function LabSellerReportPage() {
                                 <label className="text-sm font-semibold flex items-center gap-2 text-foreground">
                                     <CalendarIcon className="w-4 h-4 shrink-0"/> Periodo (Mes y Año)
                                 </label>
-                                <Popover>
-                                    <PopoverTrigger asChild>
-                                        <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal bg-background h-10", !selectedDate && "text-muted-foreground")}>
-                                            <CalendarIcon className="mr-2 h-4 w-4 opacity-50 shrink-0" />
-                                            <span className="truncate">{selectedDate ? format(selectedDate, "MMMM yyyy", { locale: es }).replace(/^\w/, (c) => c.toUpperCase()) : "Seleccionar mes"}</span>
-                                        </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-auto p-0 z-50" align="start">
-                                        <Calendar mode="single" selected={selectedDate} onSelect={(date) => date && setSelectedDate(date)} initialFocus locale={es} />
-                                    </PopoverContent>
-                                </Popover>
+                                <MonthYearPicker
+                                    value={selectedDate}
+                                    onChange={setSelectedDate}
+                                />
                             </div>
 
                             {/* Laboratorios */}
