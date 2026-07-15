@@ -5,10 +5,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { CalendarClock, Loader2, Save } from "lucide-react"
 import { Comprobante } from "@/app/types/order/order-interface"
 import { Sequential } from "@/app/types/config-types"
+import { SerieNCField } from "./SerieNCField"
 import { InstallmentModal, Cuota } from "./InstallmentModal"
 
 interface ModificarCuotasModalProps {
@@ -34,7 +34,6 @@ export function ModificarCuotasModal({
     const [cuotas,             setCuotas]             = useState<Cuota[]>([])
     const [showCuotasModal,    setShowCuotasModal]    = useState(false)
 
-    const seriesNC = tiposComprobante.filter(t => t.tipo === '07' || t.tipo === '7')
     const totalImporte = Number(comprobante.total || 0)
 
     useEffect(() => {
@@ -42,11 +41,6 @@ export function ModificarCuotasModal({
             setObservaciones("")
             setCuotas([])
             setLoading(false)
-            return
-        }
-
-        if (seriesNC.length > 0) {
-            setSelectedSerie(`${seriesNC[0].prefijo}|${seriesNC[0].tipo}`)
         }
     }, [open])
 
@@ -86,23 +80,11 @@ export function ModificarCuotasModal({
                         </div>
 
                         <div className="grid grid-cols-1 gap-3">
-                            <div className="space-y-1">
-                                <Label className="text-xs font-semibold uppercase text-muted-foreground">
-                                    Serie NC <span className="text-red-500">*</span>
-                                </Label>
-                                <Select value={selectedSerie} onValueChange={setSelectedSerie}>
-                                    <SelectTrigger className="bg-background">
-                                        <SelectValue placeholder="Seleccionar serie" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {seriesNC.map(t => (
-                                            <SelectItem key={t.prefijo} value={`${t.prefijo}|${t.tipo}`}>
-                                                {t.prefijo} - {t.nombre || 'Nota de Crédito'}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
+                            <SerieNCField
+                                comprobante={comprobante}
+                                series={tiposComprobante}
+                                onResolve={setSelectedSerie}
+                            />
                         </div>
 
                         <div className="space-y-2">

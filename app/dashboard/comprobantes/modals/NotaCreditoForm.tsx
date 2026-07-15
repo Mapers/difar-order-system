@@ -12,6 +12,7 @@ import { Comprobante } from "@/app/types/order/order-interface"
 import { Loader2, Save, FileDiff, Package } from "lucide-react"
 import apiClient from "@/app/api/client"
 import { Sequential } from "@/app/types/config-types"
+import { SerieNCField } from "./SerieNCField"
 import { toast } from "@/app/hooks/useToast"
 
 interface ItemParcial {
@@ -77,14 +78,7 @@ export function NotaCreditoForm({
                     apiClient.get('/admin/listar/operaciones'),
                 ])
 
-                const allSeries = resSeries.data.data
-                const seriesNC  = allSeries.filter(
-                    (s: Sequential) => s.tipo === '07' || s.tipo === '7'
-                )
-                setTiposComprobante(seriesNC)
-                if (seriesNC.length > 0) {
-                    setSelectedSerie(`${seriesNC[0].prefijo}|${seriesNC[0].tipo}`)
-                }
+                setTiposComprobante(resSeries.data.data)
 
                 const ops = resOps.data.data || []
                 setOperaciones(ops)
@@ -256,28 +250,12 @@ export function NotaCreditoForm({
                     </CardHeader>
                     <CardContent className="pt-4 space-y-4">
 
-                        <div className="space-y-1">
-                            <Label className="text-xs font-semibold uppercase text-muted-foreground">
-                                Serie NC <span className="text-red-500">*</span>
-                            </Label>
-                            <Select value={selectedSerie}
-                                    onValueChange={(v) => { setSelectedSerie(v); clearError('selectedSerie') }}>
-                                <SelectTrigger className={`bg-background ${errors.selectedSerie ? 'border-red-400' : ''}`}>
-                                    <SelectValue placeholder="Seleccionar serie" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {tiposComprobante.length > 0
-                                        ? tiposComprobante.map(tipo => (
-                                            <SelectItem key={tipo.prefijo} value={`${tipo.prefijo}|${tipo.tipo}`}>
-                                                {tipo.prefijo} - {tipo.nombre || 'Nota de Crédito'}
-                                            </SelectItem>
-                                        ))
-                                        : <div className="p-2 text-xs text-center text-muted-foreground">Sin series disponibles</div>
-                                    }
-                                </SelectContent>
-                            </Select>
-                            <FieldError field="selectedSerie" />
-                        </div>
+                        <SerieNCField
+                            comprobante={comprobante}
+                            series={tiposComprobante}
+                            onResolve={(v) => { setSelectedSerie(v); clearError('selectedSerie') }}
+                            error={errors.selectedSerie}
+                        />
 
                         {esDescuento ? (
                             <div className="space-y-1">
