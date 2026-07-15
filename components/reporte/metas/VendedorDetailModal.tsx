@@ -11,6 +11,7 @@ import MiniDonut from "@/components/reporte/metas/MiniDonut"
 import VisitasSemanaCard from "@/components/reporte/metas/VisitasSemanaCard"
 import VisitasDetallePanel from "@/components/reporte/metas/VisitasDetallePanel"
 import ClientesAtendidosModal from "@/components/reporte/metas/ClientesAtendidosModal"
+import ItemDetailModal, { ItemWithComputed } from "@/components/reporte/metas/ItemDetailModal"
 import { useVisitasSemana } from "@/app/hooks/useVisitasSemana"
 
 interface VendedorDetailModalProps {
@@ -24,6 +25,7 @@ interface VendedorDetailModalProps {
 export default function VendedorDetailModal({ open, onClose, vendedor, allItems, ciclo }: VendedorDetailModalProps) {
     const [visitasPanelOpen, setVisitasPanelOpen] = useState(false);
     const [clientesOpen, setClientesOpen] = useState(false);
+    const [modalItem, setModalItem] = useState<ItemWithComputed | null>(null);
     const { data: visitasData, loading: visitasLoading, semana } = useVisitasSemana(
         open ? (vendedor?.cod_vendedor ?? null) : null,
         ciclo
@@ -189,7 +191,13 @@ export default function VendedorDetailModal({ open, onClose, vendedor, allItems,
                                         {fmtMoney(Number(item.meta_monto))}
                                     </div>
 
-                                    <div className="flex flex-col items-center gap-0.5">
+                                    <div
+                                        className="flex flex-col items-center gap-0.5 cursor-pointer hover:opacity-70 transition-opacity"
+                                        onClick={e => {
+                                            e.stopPropagation();
+                                            setModalItem(item);
+                                        }}
+                                    >
                                         <MiniDonut pct={item.uPct} size={32} strokeWidth={4} />
                                         <p className="text-[9px] text-muted-foreground">{Number(item.u_vendidas).toLocaleString()}</p>
                                     </div>
@@ -244,6 +252,14 @@ export default function VendedorDetailModal({ open, onClose, vendedor, allItems,
                 nombreVendedor={vendedor.nombre_vendedor || vendedor.cod_vendedor}
             />
         )}
+
+        <ItemDetailModal
+            item={modalItem}
+            type="unidades"
+            labColor={color}
+            open={!!modalItem}
+            onClose={() => setModalItem(null)}
+        />
         </>
     );
 }
