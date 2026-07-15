@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { FileText } from "lucide-react";
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
 import { toast } from "@/app/hooks/useToast";
+import { formatDocumentoConTipo, formatFechaEmision } from "@/components/reporte/detalleLabVendedorShared";
 
 interface ProductoAgrupado {
     Codigo_Art: string;
@@ -93,7 +94,30 @@ export const ExportDetalleLabVendedorPdf: React.FC<ExportPdfProps> = ({
             drawPageHeader(currentPage, true);
 
             if (viewMode === 'laboratorios') {
-                const cols = [30, 30, 370, 60];
+                // Cant | U.M. | Descripción | Documento | F. Emisión | Total
+                // Suma 506 sobre 515.28 útiles (A4 vertical, margen 40).
+                const cols       = [28, 28, 245, 85, 55, 65];
+                const colHeaders = ['Cant', 'U.M.', 'Descripción', 'Documento', 'F. Emisión', 'Total S/.'];
+                const totalColsW = cols.reduce((a, b) => a + b, 0);
+
+                // El modo laboratorios no tenía encabezado de columnas. Con
+                // Documento y F. Emisión sumadas, sin rótulos no se entiende.
+                checkPageBreak(20);
+                currentPage.drawRectangle({
+                    x: margin, y: yPosition - 2, width: totalColsW, height: 13,
+                    color: rgb(0.93, 0.93, 0.95)
+                });
+                let xHdr = margin;
+                colHeaders.forEach((h, i) => {
+                    const isRight = i === 5;
+                    const textW = boldFont.widthOfTextAtSize(h, 8);
+                    currentPage.drawText(h, {
+                        x: isRight ? xHdr + cols[i] - textW - 2 : xHdr + 2,
+                        y: yPosition, size: 8, font: boldFont
+                    });
+                    xHdr += cols[i];
+                });
+                yPosition -= 18;
 
                 for (const cli of labData.Clientes) {
                     checkPageBreak(40);
@@ -106,12 +130,20 @@ export const ExportDetalleLabVendedorPdf: React.FC<ExportPdfProps> = ({
                     for (const item of cli.Items) {
                         checkPageBreak(15);
                         let xPos = margin;
-                        const desc = item.NombreItem.length > 75 ? item.NombreItem.substring(0, 75) + '...' : item.NombreItem;
-                        const rowData = [item.Cantidad_Sal.toString(), item.AbrevUnidMed, desc, formatMoney(item.SumaDeVta_Tot)];
+                        // 48 chars ~ 245pt a 8pt. Antes eran 75 sobre 370pt.
+                        const desc = item.NombreItem.length > 48 ? item.NombreItem.substring(0, 48) + '...' : item.NombreItem;
+                        const rowData = [
+                            item.Cantidad_Sal.toString(),
+                            item.AbrevUnidMed,
+                            desc,
+                            formatDocumentoConTipo(item),
+                            formatFechaEmision(item),
+                            formatMoney(item.SumaDeVta_Tot)
+                        ];
 
                         rowData.forEach((text, i) => {
                             let textX = xPos;
-                            if (i === 3) textX = xPos + cols[i] - font.widthOfTextAtSize(text, 8);
+                            if (i === 5) textX = xPos + cols[i] - font.widthOfTextAtSize(text, 8);
                             currentPage.drawText(text, { x: textX, y: yPosition, size: 8, font });
                             xPos += cols[i];
                         });
@@ -119,10 +151,13 @@ export const ExportDetalleLabVendedorPdf: React.FC<ExportPdfProps> = ({
                     }
 
                     checkPageBreak(20);
-                    currentPage.drawText("Total Cliente", { x: margin + cols[0] + cols[1] + 250, y: yPosition, size: 8, font: boldFont });
                     const tcText = formatMoney(cli.TotalCliente);
+                    currentPage.drawText("Total Cliente", {
+                        x: margin + totalColsW - cols[5] - boldFont.widthOfTextAtSize("Total Cliente", 8) - 8,
+                        y: yPosition, size: 8, font: boldFont
+                    });
                     currentPage.drawText(tcText, {
-                        x: margin + cols[0] + cols[1] + cols[2] + cols[3] - boldFont.widthOfTextAtSize(tcText, 8),
+                        x: margin + totalColsW - boldFont.widthOfTextAtSize(tcText, 8),
                         y: yPosition, size: 8, font: boldFont
                     });
                     yPosition -= 20;

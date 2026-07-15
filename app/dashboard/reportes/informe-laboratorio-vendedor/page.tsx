@@ -19,6 +19,8 @@ import apiClient from '@/app/api/client'
 
 import { ExportLabSellerPdf, LabSellerReportData } from "@/components/reporte/exportLabSellerPdf"
 import { ExportDetalleLabVendedorPdf } from "@/components/reporte/exportDetalleLabVendedorPdf"
+import { ExportDetalleLabVendedorExcel } from "@/components/reporte/exportDetalleLabVendedorExcel"
+import { formatDocumentoConTipo, formatFechaEmision } from "@/components/reporte/detalleLabVendedorShared"
 import {Laboratorio} from "@/app/types/user-types";
 
 export default function LabSellerReportPage() {
@@ -513,12 +515,20 @@ export default function LabSellerReportPage() {
                                     <p className="text-sm text-muted-foreground mt-1 font-medium">{detailData[0].Vendedor} | {detailData[0].Laboratorios[0].Laboratorio}</p>
                                 )}
                             </div>
-                            <ExportDetalleLabVendedorPdf
-                                data={detailData}
-                                viewMode={viewMode}
-                                productData={productosAgrupados}
-                                disabled={detailLoading || !detailData}
-                            />
+                            <div className="flex items-center gap-2">
+                                <ExportDetalleLabVendedorExcel
+                                    data={detailData}
+                                    viewMode={viewMode}
+                                    productData={productosAgrupados}
+                                    disabled={detailLoading || !detailData}
+                                />
+                                <ExportDetalleLabVendedorPdf
+                                    data={detailData}
+                                    viewMode={viewMode}
+                                    productData={productosAgrupados}
+                                    disabled={detailLoading || !detailData}
+                                />
+                            </div>
                         </div>
                     </DialogHeader>
 
@@ -545,6 +555,8 @@ export default function LabSellerReportPage() {
                                                         <th className="px-3 py-2 font-semibold text-center">Cant</th>
                                                         <th className="px-3 py-2 font-semibold text-center">U.M.</th>
                                                         <th className="px-3 py-2 font-semibold">Descripción</th>
+                                                        <th className="px-3 py-2 font-semibold">Documento</th>
+                                                        <th className="px-3 py-2 font-semibold text-center">F. Emisión</th>
                                                         <th className="px-3 py-2 font-semibold text-right">Total S/.</th>
                                                     </tr>
                                                     </thead>
@@ -555,13 +567,15 @@ export default function LabSellerReportPage() {
                                                             <td className="px-3 py-2 text-center font-medium">{item.Cantidad_Sal}</td>
                                                             <td className="px-3 py-2 text-center text-[10px] uppercase">{item.AbrevUnidMed}</td>
                                                             <td className="px-3 py-2">{item.NombreItem}</td>
+                                                            <td className="px-3 py-2 font-mono text-[11px] whitespace-nowrap">{formatDocumentoConTipo(item)}</td>
+                                                            <td className="px-3 py-2 text-center whitespace-nowrap">{formatFechaEmision(item)}</td>
                                                             <td className="px-3 py-2 text-right font-semibold text-foreground">{formatMoney(item.SumaDeVta_Tot)}</td>
                                                         </tr>
                                                     ))}
                                                     </tbody>
                                                     <tfoot className="bg-indigo-50/50">
                                                     <tr>
-                                                        <td colSpan={4} className="px-3 py-2 text-right text-indigo-800 text-xs font-bold uppercase tracking-wider">Total Cliente:</td>
+                                                        <td colSpan={6} className="px-3 py-2 text-right text-indigo-800 text-xs font-bold uppercase tracking-wider">Total Cliente:</td>
                                                         <td className="px-3 py-2 text-right text-indigo-700 font-bold">{formatMoney(cli.TotalCliente)}</td>
                                                     </tr>
                                                     </tfoot>
@@ -571,6 +585,10 @@ export default function LabSellerReportPage() {
                                                 {cli.Items.map((item: any, iIdx: number) => (
                                                     <div key={iIdx} className="bg-background border border-border rounded p-2 flex flex-col gap-1">
                                                         <span className="text-xs font-medium text-foreground">{item.NombreItem}</span>
+                                                        <div className="flex justify-between items-center gap-2 text-[10px] text-muted-foreground">
+                                                            <span className="font-mono">{formatDocumentoConTipo(item)}</span>
+                                                            <span>{formatFechaEmision(item)}</span>
+                                                        </div>
                                                         <div className="flex justify-between items-center mt-1">
                                                             <Badge variant="outline" className="text-[10px] bg-muted">{item.Cantidad_Sal} {item.AbrevUnidMed}</Badge>
                                                             <span className="text-sm font-bold text-indigo-700">S/ {formatMoney(item.SumaDeVta_Tot)}</span>
