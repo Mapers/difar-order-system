@@ -27,25 +27,35 @@ interface ExportRegistroButtonProps {
     filters?         : FiltersComprobantes
 }
 
-type ColDef = { label: string; width: number; align: 'left' | 'right' | 'center' }
+type ColDef = {
+    label: string
+    width: number
+    align: 'left' | 'right' | 'center'
+    /** Cabecera agrupada del registro de ventas. Define el corte Emitido/Original. */
+    group?: 'emit' | 'orig'
+}
+
+/** Columnas cuyo importe se pinta en rojo cuando la fila tiene nota de crédito. */
+const MONTO_LABELS = ['B.Imponible', 'IGV', 'Total']
 
 const COLS_COMPROBANTES: ColDef[] = [
-    { label: 'F.Emision',    width: 52,  align: 'left'   },
-    { label: 'Doc',          width: 26,  align: 'left'   },
-    { label: 'Serie',        width: 34,  align: 'left'   },
-    { label: 'NroDesde',     width: 44,  align: 'left'   },
-    { label: 'F.Vcto.',      width: 50,  align: 'left'   },
-    { label: 'Cliente',      width: 130, align: 'left'   },
-    { label: 'D.I.',         width: 26,  align: 'center' },
-    { label: 'Nº D.I.',      width: 62,  align: 'left'   },
-    { label: 'T/C',          width: 24,  align: 'center' },
-    { label: 'No Grabado',   width: 50,  align: 'right'  },
-    { label: 'B.Imponible',  width: 52,  align: 'right'  },
-    { label: 'IGV',          width: 44,  align: 'right'  },
-    { label: 'Total',        width: 48,  align: 'right'  },
-    { label: 'F.Emision',    width: 52,  align: 'left'   },
-    { label: 'Serie',        width: 36,  align: 'left'   },
-    { label: 'Numero',       width: 44,  align: 'left'   },
+    { label: 'F.Emision',    width: 52,  align: 'left',   group: 'emit' },
+    { label: 'Doc',          width: 26,  align: 'left',   group: 'emit' },
+    { label: 'Serie',        width: 34,  align: 'left',   group: 'emit' },
+    { label: 'NroDesde',     width: 44,  align: 'left',   group: 'emit' },
+    { label: 'F.Vcto.',      width: 50,  align: 'left',   group: 'emit' },
+    { label: 'Cliente',      width: 118, align: 'left',   group: 'emit' },
+    { label: 'Vendedor',     width: 86,  align: 'left',   group: 'emit' },
+    { label: 'D.I.',         width: 26,  align: 'center', group: 'emit' },
+    { label: 'Nº D.I.',      width: 62,  align: 'left',   group: 'emit' },
+    { label: 'T/C',          width: 24,  align: 'center', group: 'emit' },
+    { label: 'No Grabado',   width: 50,  align: 'right',  group: 'emit' },
+    { label: 'B.Imponible',  width: 52,  align: 'right',  group: 'emit' },
+    { label: 'IGV',          width: 44,  align: 'right',  group: 'emit' },
+    { label: 'Total',        width: 48,  align: 'right',  group: 'emit' },
+    { label: 'F.Emision',    width: 52,  align: 'left',   group: 'orig' },
+    { label: 'Serie',        width: 36,  align: 'left',   group: 'orig' },
+    { label: 'Numero',       width: 44,  align: 'left',   group: 'orig' },
 ]
 
 const COLS_NOTAS: ColDef[] = [
@@ -201,8 +211,11 @@ export function ExportRegistroButton({
                 return { ...c, width: scaled }
             })
 
-            const scaledWEmitido  = type === 'comprobantes' ? cols.slice(0, 13).reduce((s, c) => s + c.width, 0) : 0
-            const scaledWOriginal = type === 'comprobantes' ? cols.slice(13).reduce((s, c) => s + c.width, 0) : 0
+            const sumWidth = (g: 'emit' | 'orig') =>
+                cols.filter(c => c.group === g).reduce((s, c) => s + c.width, 0)
+
+            const scaledWEmitido  = type === 'comprobantes' ? sumWidth('emit') : 0
+            const scaledWOriginal = type === 'comprobantes' ? sumWidth('orig') : 0
 
             const totalColsW = availableW
 
@@ -236,6 +249,7 @@ export function ExportRegistroButton({
                 FechaDocOriginal : string | null
                 SerieDocOriginal : string | null
                 NumeroDocOriginal: string | null
+                Vendedor         : string
             }
 
             let registroVentas: RegistroVenta[] = []
@@ -303,6 +317,7 @@ export function ExportRegistroButton({
                                 s(rv.NroDesde),
                                 safeDate(rv.FVcto),
                                 s(rv.Cliente),
+                                s(rv.Vendedor),
                                 s(rv.DI),
                                 s(rv.NroDI),
                                 tcStr,
@@ -354,6 +369,7 @@ export function ExportRegistroButton({
                             c.numero,
                             safeDate(c.fecha_emision ?? c.fecha_envio, 5),
                             c.cliente_denominacion ?? '—',
+                            c.Vendedor || '—',
                             tiDI,
                             c.cliente_numdoc ?? '—',
                             moneda,
@@ -604,7 +620,7 @@ export function ExportRegistroButton({
                         : col.align === 'center' ? xPosition + (col.width - tw) / 2
                             : xPosition + 3
 
-                    const isNumCol = i >= 10 && i <= 12
+                    const isNumCol = MONTO_LABELS.includes(col.label) && col.group !== 'orig'
                     const color    = anulado              ? C_ANULADO
                         : negativo && isNumCol ? C_RED
                             : C_TEXT
