@@ -18,6 +18,7 @@ import SummaryStep from "@/components/tomar-pedido/Summarystep";
 import ProductDetailsModal from "@/components/tomar-pedido/Productdetailsmodal";
 import DraftsModal from "@/components/tomar-pedido/DraftsModal";
 import {OrderDraft, useOrderDrafts} from "@/app/hooks/useOrderDrafts";
+import {useAutoSaveDraft} from "@/app/hooks/useAutoSaveDraft";
 import {toast} from "@/app/hooks/useToast";
 import {Button} from "@/components/ui/button";
 import AlmacenModal from "@/components/tomar-pedido/AlmacenModal";
@@ -38,14 +39,33 @@ export default function OrderPage() {
       : (user?.codigo ?? null)
   const metasMap = useMetasItems(codVendedor)
 
-  const { savedDrafts, saveDraft, deleteDraft } = useOrderDrafts()
+  const { savedDrafts, saveDraft, upsertDraft, deleteDraft } = useOrderDrafts()
   const [showDraftsDialog, setShowDraftsDialog] = useState(false)
   const [activeDraftId, setActiveDraftId] = useState<string | null>(null)
+  // Una vez confirmado el pedido, el borrador se borra: cualquier autoguardado
+  // posterior lo resucitaría como huérfano.
+  const [orderConfirmed, setOrderConfirmed] = useState(false)
+
+  const draftState = order.getOrderStateForDraft()
+
+  const { markSaved, cancel: cancelAutoSave } = useAutoSaveDraft({
+    state: draftState,
+    // Sin cliente no hay pedido que valga la pena guardar, y el borrador
+    // tampoco tendría nombre: DraftService lo toma de selectedClient.Nombre.
+    enabled: !!order.selectedClient && !orderConfirmed,
+    draftId: activeDraftId,
+    upsert: upsertDraft,
+    onCreated: setActiveDraftId,
+  })
 
   const handleSaveDraft = async () => {
     const currentState = order.getOrderStateForDraft()
-    const ok = await saveDraft(currentState)
-    if (ok) {
+    // upsert, no create: si ya hay borrador activo (cargado o autoguardado),
+    // guardar de nuevo debe pisarlo, no duplicarlo.
+    const id = await upsertDraft(activeDraftId, currentState)
+    if (id) {
+      setActiveDraftId(id)
+      markSaved(currentState)
       toast({
         title: "Borrador guardado",
         description: "El pedido se ha guardado en tus pendientes.",
@@ -64,15 +84,25 @@ export default function OrderPage() {
     order.loadStateFromDraft(draft)
     setActiveDraftId(draft.id)
     setShowDraftsDialog(false)
+    // Lo recién traído de la BD ya está persistido: sin esto, el autoguardado
+    // lo re-enviaría apenas cargue.
+    const { id, savedAt, ...rest } = draft
+    markSaved(rest as typeof draftState)
     toast({
       title: "Borrador cargado",
       description: "Se han restaurado los datos del pedido.",
     })
   }
 
+  const cleanupDraft = () => {
+    setOrderConfirmed(true)
+    cancelAutoSave()
+    if (activeDraftId) deleteDraft(activeDraftId)
+  }
+
   const handleSaveOrderWithCleanup = (extraAction?: () => void) => {
     order.handleSaveOrder(() => {
-      if (activeDraftId) deleteDraft(activeDraftId)
+      cleanupDraft()
       extraAction?.()
     })
   }
@@ -106,7 +136,7 @@ export default function OrderPage() {
           </CardContent>
         </Card>
 
-        <form onSubmit={order.handleSubmit}>
+        <form onSubmit={(e) => order.handleSubmit(e, cleanupDraft)}>
           {order.currentStep === 0 && (
               <ClientStep
                   search={order.search}

@@ -576,12 +576,17 @@ export function useOrderPage() {
 
     // --- Submit ---
 
-    const handleSubmit = (e: React.FormEvent) => {
+    // onSuccess se reenvía a handleSaveOrder. Sin esto, un submit por Enter
+    // creaba el pedido sin ejecutar la limpieza del borrador, que solo colgaba
+    // del botón "Confirmar", y el borrador quedaba huérfano.
+    // La rama del modal no lo necesita: su botón de confirmar ya pasa por
+    // handleSaveOrderWithCleanup.
+    const handleSubmit = (e: React.FormEvent, onSuccess?: () => void) => {
         e.preventDefault()
         if (checkClientDataChanges()) {
             setShowClientDataConfirmModal(true)
         } else {
-            handleSaveOrder()
+            handleSaveOrder(onSuccess)
         }
     }
 
