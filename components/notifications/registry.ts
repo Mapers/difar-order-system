@@ -1,4 +1,4 @@
-import { ShoppingCart, CheckCircle2, ArrowLeftRight, AlertTriangle, FileWarning } from "lucide-react";
+import { ShoppingCart, CheckCircle2, ArrowLeftRight, AlertTriangle, FileWarning, FileClock } from "lucide-react";
 import type { User } from "@/app/services/auth/types";
 import type { NotificationKind } from "./types";
 
@@ -91,6 +91,23 @@ export const NOTIFICATION_TYPES: NotificationTypeConfig[] = [
     persisted: true,
     singleton: true,
     shouldReceive: ({ isAdmin }) => isAdmin(),
+  },
+  {
+    kind: "borradorPendiente",
+    socketEvent: "notification:borradorPendiente",
+    title: "Pedido sin enviar",
+    icon: FileClock,
+    actionable: false,
+    showArrivalModal: true,
+    playSound: false,
+    persisted: true,
+    singleton: true,
+    // Se compara contra idUsuarioWeb y NO contra codigo: el borrador es del
+    // usuario web, y codigo cambia cuando un representante simula a un
+    // vendedor (authController.js:44-47). Mismo molde que transferResolved.
+    shouldReceive: ({ user }, payload) =>
+      user?.idUsuarioWeb != null &&
+      payload?.destinatario_codigo === `U${user.idUsuarioWeb}`,
   },
 ];
 

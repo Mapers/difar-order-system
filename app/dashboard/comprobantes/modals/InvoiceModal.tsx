@@ -26,6 +26,8 @@ import { Sequential } from "@/app/types/config-types"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import apiClient from "@/app/api/client"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { addDays, format, parseISO } from "date-fns"
 
 interface InvoiceModalProps {
     open:                boolean
@@ -48,7 +50,8 @@ interface InvoiceModalProps {
         phone: string,
         idAlmacen: number,
         flete: { activo: boolean; monto: number },
-        descuento: { activo: boolean; monto: number }
+        descuento: { activo: boolean; monto: number },
+        fechaEmision: string
     ) => void
 }
 
@@ -63,6 +66,7 @@ export function InvoiceModal({
     const [showContactModal,     setShowContactModal]     = useState(false)
     const [showInstallmentModal, setShowInstallmentModal] = useState(false)
     const [cuotas,               setCuotas]               = useState<Cuota[]>([])
+    const [fechaEmisionOpcion,   setFechaEmisionOpcion]   = useState<'hoy' | 'pedido'>('pedido')
     const [fleteActivo,          setFleteActivo]          = useState(false)
     const [fleteMonto,           setFleteMonto]           = useState<string>("")
     const [fleteError,           setFleteError]           = useState<string>("")
@@ -84,6 +88,14 @@ export function InvoiceModal({
 
     const valorFlete = fleteActivo ? Number(fleteMonto) || 0 : 0
     const isCredit   = selectedOrder?.condicionCredito === '1'
+
+    // Fecha de emisión elegida (yyyy-MM-dd): hoy o la fecha de generación del pedido.
+    const hoyStr         = format(new Date(), 'yyyy-MM-dd')
+    const fechaPedidoStr = selectedOrder?.fechaPedido
+        ? format(parseISO(selectedOrder.fechaPedido), 'yyyy-MM-dd')
+        : hoyStr
+    const fechaEmisionElegida = fechaEmisionOpcion === 'pedido' ? fechaPedidoStr : hoyStr
+    const mismasFechas = fechaPedidoStr === hoyStr
 
     const almacenesDisponibles = useMemo(() => {
         const seen = new Set<string>()
@@ -120,6 +132,7 @@ export function InvoiceModal({
             setFleteMonto("")
             setFleteError("")
             setIsSubmitting(false)
+            setFechaEmisionOpcion('pedido')
             return
         }
 
@@ -141,13 +154,35 @@ export function InvoiceModal({
             fetchGuias()
         }
 
-        if (isCredit) {
+    }, [open, selectedOrder])
+
+    useEffect(() => {
+        if (!open || !isCredit || !selectedOrder?.condicionPedido) return
+
+        const fetchDiasCredito = async () => {
+            let dias = 0
+            try {
+                // condicionPedido en esta lista es la DESCRIPCIÓN (ej. "1 Dias Credito"),
+                // no el código; por eso se busca en la lista completa por Descripcion/código.
+                const res = await apiClient.get('/tomarPedido/condiciones')
+                const lista = res.data?.data?.data || []
+                const cond = lista.find(
+                    (c: { CodigoCondicion: string; Descripcion: string; DiasCdto: number }) =>
+                        c.Descripcion === selectedOrder.condicionPedido ||
+                        c.CodigoCondicion === selectedOrder.condicionPedido
+                )
+                dias = Number(cond?.DiasCdto) || 0
+            } catch {
+                dias = 0
+            }
             setCuotas([{
-                fecha: new Date(new Date().setDate(new Date().getDate() + 30)).toISOString().split('T')[0],
+                fecha: format(addDays(parseISO(fechaEmisionElegida), dias), 'yyyy-MM-dd'),
                 monto: Number(selectedOrder?.totalPedido)
             }])
         }
-    }, [open, selectedOrder])
+
+        fetchDiasCredito()
+    }, [open, isCredit, selectedOrder?.condicionPedido, fechaEmisionElegida])
 
     useEffect(() => {
         if (!open || !selectedOrder) return
@@ -219,7 +254,8 @@ export function InvoiceModal({
             phone,
             Number(selectedAlmacen) || 1,
             { activo: fleteActivo, monto: valorFlete },
-            { activo: descuentoActivo, monto: valorDescuento }
+            { activo: descuentoActivo, monto: valorDescuento },
+            fechaEmisionElegida
         )
     }
 
@@ -259,6 +295,28 @@ export function InvoiceModal({
                                             <Badge variant="outline" className="bg-purple-100 text-purple-800 border-purple-300">
                                                 Venta al Crédito
                                             </Badge>
+                                        )}
+                                    </div>
+                                    <div className="flex items-center gap-3 pt-1">
+                                        <span className="text-xs font-medium text-blue-900">Emisión:</span>
+                                        {mismasFechas ? (
+                                            <span className="text-xs">Hoy ({format(parseISO(hoyStr), 'dd/MM/yyyy')})</span>
+                                        ) : (
+                                            <RadioGroup
+                                                value={fechaEmisionOpcion}
+                                                onValueChange={(v) => setFechaEmisionOpcion(v as 'hoy' | 'pedido')}
+                                                className="flex flex-row gap-4"
+                                                disabled={isProcessing}
+                                            >
+                                                <Label htmlFor="fe-pedido" className="flex items-center gap-1.5 text-xs cursor-pointer font-normal">
+                                                    <RadioGroupItem id="fe-pedido" value="pedido" className="h-3.5 w-3.5" />
+                                                    Fecha pedido ({format(parseISO(fechaPedidoStr), 'dd/MM/yyyy')})
+                                                </Label>
+                                                <Label htmlFor="fe-hoy" className="flex items-center gap-1.5 text-xs cursor-pointer font-normal">
+                                                    <RadioGroupItem id="fe-hoy" value="hoy" className="h-3.5 w-3.5" />
+                                                    Hoy ({format(parseISO(hoyStr), 'dd/MM/yyyy')})
+                                                </Label>
+                                            </RadioGroup>
                                         )}
                                     </div>
                                 </div>
@@ -445,13 +503,13 @@ export function InvoiceModal({
                                             <div className="flex items-center gap-2 text-sm">
                                                 <Badge>{cuotas.length} Cuota(s)</Badge>
                                                 <span className="text-xs text-muted-foreground">
-                                                    Último vencimiento: {cuotas[cuotas.length - 1].fecha}
+                                                    Último vencimiento: {format(parseISO(cuotas[cuotas.length - 1].fecha), 'dd/MM/yyyy')}
                                                 </span>
                                             </div>
                                             <div className="text-xs text-muted-foreground mt-1 max-h-[60px] overflow-y-auto">
                                                 {cuotas.map((c, i) => (
                                                     <div key={i} className="flex justify-between w-[90%]">
-                                                        <span>Cuota {i + 1} ({c.fecha}):</span>
+                                                        <span>Cuota {i + 1} ({format(parseISO(c.fecha), 'dd/MM/yyyy')}):</span>
                                                         <span className="font-medium">{c.monto.toFixed(2)}</span>
                                                     </div>
                                                 ))}

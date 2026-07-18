@@ -134,21 +134,37 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
     const ctx = authRef.current;
     const rol = ctx.isAdmin() ? "admin" : null;
     const codigo = ctx.user?.codigo ?? null;
-    if (!rol && !codigo) return;
+    // Las notificaciones de borrador se direccionan por usuario web, no por
+    // código de vendedor, así que necesitan su propia consulta.
+    const codigoUsuario =
+      ctx.user?.idUsuarioWeb != null ? `U${ctx.user.idUsuarioWeb}` : null;
+
+    if (!rol && !codigo && !codigoUsuario) return;
+
     try {
-      const res = await NotificationService.listNotifications(rol, codigo);
-      const rows: any[] = res?.data ?? res ?? [];
+      const respuestas = await Promise.all([
+        rol || codigo
+          ? NotificationService.listNotifications(rol, codigo)
+          : Promise.resolve(null),
+        codigoUsuario
+          ? NotificationService.listNotifications(null, codigoUsuario)
+          : Promise.resolve(null),
+      ]);
+
+      const rows: any[] = respuestas.flatMap((res) => res?.data ?? res ?? []);
       const backend = rows
         .filter((r) => r && VALID_KINDS.has(r.tipo))
         .map(fromBackendRow);
+      // mergeBackend deduplica por id (`${tipo}:${id}`), así que si una fila
+      // viniera en ambas consultas no se duplica.
       setNotifications((prev) => mergeBackend(prev, backend));
     } catch {
     }
   }, []);
 
   useEffect(() => {
-    if (user?.codigo || user?.idVendedor != null) refresh();
-  }, [user?.idVendedor, refresh]);
+    if (user?.codigo || user?.idVendedor != null || user?.idUsuarioWeb != null) refresh();
+  }, [user?.idVendedor, user?.idUsuarioWeb, refresh]);
 
   useEffect(() => {
     const handlers: Array<[string, (data: any) => void]> = [];
@@ -199,6 +215,8 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
       return {
         rol: ctx.isAdmin() ? "admin" : null,
         codigo: ctx.user?.codigo ?? null,
+        codigoUsuario:
+          ctx.user?.idUsuarioWeb != null ? `U${ctx.user.idUsuarioWeb}` : null,
       };
     };
 
@@ -213,8 +231,13 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
             ? prev.map((n) => ({ ...n, read: true }))
             : prev,
         );
-        const { rol, codigo } = backendReadParams();
-        if (rol || codigo) NotificationService.markAllRead(rol, codigo).catch(() => {});
+        const { rol, codigo, codigoUsuario } = backendReadParams();
+        if (rol || codigo) {
+          NotificationService.markAllRead(rol, codigo).catch(() => {});
+        }
+        if (codigoUsuario) {
+          NotificationService.markAllRead(null, codigoUsuario).catch(() => {});
+        }
       },
       markRead: (id) => {
         setNotifications((prev) =>

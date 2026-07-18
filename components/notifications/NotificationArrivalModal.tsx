@@ -1,6 +1,6 @@
 "use client";
 
-import { ShoppingCart, User, Calendar, ArrowLeftRight, AlertTriangle, FileWarning } from "lucide-react";
+import { ShoppingCart, User, Calendar, ArrowLeftRight, AlertTriangle, FileWarning, FileClock } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -17,6 +17,7 @@ import { TransferApprovalCard } from "./cards/TransferApprovalCard";
 import { TransferResolvedCard } from "./cards/TransferResolvedCard";
 import { StockBajoCard } from "./cards/StockBajoCard";
 import { SunatEstadoCard } from "./cards/SunatEstadoCard";
+import { BorradorPendienteCard } from "./cards/BorradorPendienteCard";
 import { formatNotifDate, formatOrderNumber } from "./cards/shared";
 
 function OrderArrivalBody({
@@ -215,6 +216,42 @@ function SunatEstadoArrivalBody({
   );
 }
 
+function BorradorPendienteArrivalBody({
+  notification,
+  onClose,
+}: {
+  notification: AppNotification;
+  onClose: () => void;
+}) {
+  return (
+    <>
+      <DialogHeader>
+        <div className="flex items-center gap-2">
+          <div className="shrink-0 rounded-full bg-amber-100 p-2">
+            <FileClock className="h-6 w-6 text-amber-600" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <DialogTitle className="text-lg">Pedido sin enviar</DialogTitle>
+            <DialogDescription className="truncate">
+              {notification.payload?.titulo || "Tienes un pedido guardado sin enviar"}
+            </DialogDescription>
+          </div>
+        </div>
+      </DialogHeader>
+
+      <div className="overflow-hidden rounded-lg border">
+        <BorradorPendienteCard notification={notification} onClose={onClose} />
+      </div>
+
+      <div className="flex gap-3 pt-2">
+        <Button variant="outline" className="flex-1" onClick={onClose}>
+          Cerrar
+        </Button>
+      </div>
+    </>
+  );
+}
+
 export function NotificationArrivalModal() {
   const { latestArrival, dismissArrival } = useNotifications();
 
@@ -237,6 +274,10 @@ export function NotificationArrivalModal() {
       case "sunatEstado":
         return (
           <SunatEstadoArrivalBody notification={latestArrival} onClose={dismissArrival} />
+        );
+      case "borradorPendiente":
+        return (
+          <BorradorPendienteArrivalBody notification={latestArrival} onClose={dismissArrival} />
         );
       default:
         return <OrderArrivalBody notification={latestArrival} onClose={dismissArrival} />;

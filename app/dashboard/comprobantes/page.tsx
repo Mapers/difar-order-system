@@ -337,7 +337,8 @@ export default function ComprobantesPage() {
       phone: string,
       idAlmacen: number,
       flete: { activo: boolean; monto: number },
-      descuento: { activo: boolean; monto: number }
+      descuento: { activo: boolean; monto: number },
+      fechaEmision: string
   ) => {
     setIsProcessingInvoice(true)
     try {
@@ -364,6 +365,7 @@ export default function ComprobantesPage() {
             id_almacen: idAlmacen,
             flete_monto: flete.activo ? flete.monto : 0,
             descuento_global: descuento.activo ? descuento.monto : 0,
+            fecha_emision: fechaEmision,
           }
       )
 
