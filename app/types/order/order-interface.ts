@@ -25,6 +25,9 @@ export interface Comprobante {
     motivo_anulado?:       string  | null
     tipoNC:               string
     aceptada_por_sunat?:   number  | null
+    /** Código estado_documento de SUNAT: 101, 102, 103, 104, 105, 108. Ver app/utils/sunat.ts */
+    estado_sunat?:         string  | null
+    estado_sunat_desc?:    string  | null
     estado_correlativo:    'OCUPADO' | 'LIBRE'
     fecha_emision?:        string  | null
     estado?:               string | null
@@ -56,6 +59,9 @@ export interface GuiaRemision {
     sunat_description:    string | null
     sunat_soap_error:     string | null
     sunat_responsecode:   string | null
+    /** Código estado_documento de SUNAT: 101, 102, 103, 104, 105, 108. Ver app/utils/sunat.ts */
+    estado_sunat?:        string | null
+    estado_sunat_desc?:   string | null
     raw_request:          string | null
     raw_response:         string | null
     motivo_anulado:       string | null

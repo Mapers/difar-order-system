@@ -2,6 +2,7 @@
 
 import { FileWarning, Calendar } from "lucide-react";
 import { NotifCardProps, formatNotifDate } from "./shared";
+import { getEstadoSunatConfig } from "@/app/utils/sunat";
 
 interface ComprobanteProblema {
   idComprobanteCab: number;
@@ -14,12 +15,9 @@ interface ComprobanteProblema {
   cliente?: string | null;
 }
 
-/** Color del badge según el estado SUNAT: rojo 104, ámbar 101, azul 103. */
+/** Color del badge según el estado SUNAT. Ver app/utils/sunat.ts */
 function estadoBadgeClass(estado: number): string {
-  if (estado === 104) return "bg-red-100 text-red-700";
-  if (estado === 101) return "bg-amber-100 text-amber-700";
-  if (estado === 103) return "bg-blue-100 text-blue-700";
-  return "bg-muted text-muted-foreground";
+  return getEstadoSunatConfig(estado)?.badgeClass ?? "bg-muted text-muted-foreground";
 }
 
 export function SunatEstadoCard({ notification }: NotifCardProps) {

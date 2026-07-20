@@ -20,6 +20,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { format, parseISO } from "date-fns"
 import { Comprobante } from "@/app/types/order/order-interface";
 import {Sequential} from "@/app/types/config-types";
+import { getEstadoSunatDestacable } from "@/app/utils/sunat";
 
 interface CreditNotesTableProps {
     notas: Comprobante[]
@@ -106,6 +107,32 @@ export function CreditNotesTable({
                 </div>
             )
         }
+        // Problema en SUNAT (101/103/104/105/108). El 102 no entra: una NC
+        // aceptada se sigue viendo como Emitida.
+        const estadoSunat = getEstadoSunatDestacable(nota.estado_sunat)
+        if (estadoSunat) {
+            const { Icon } = estadoSunat
+            return (
+                <div className="flex items-center gap-1">
+                    <Badge variant="outline" className={estadoSunat.badgeClass}>
+                        <Icon className="mr-1 h-3 w-3" />
+                        {estadoSunat.label}
+                    </Badge>
+                    {nota.estado_sunat_desc && (
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6"
+                            onClick={() => handleViewReason(nota.estado_sunat_desc!)}
+                            title="Ver detalle de SUNAT"
+                        >
+                            <AlertCircle className="h-4 w-4" />
+                        </Button>
+                    )}
+                </div>
+            )
+        }
+
         return <div className="flex items-center gap-1">
             <Badge className='bg-blue-100 text-blue-800 hover:bg-blue-200 border-blue-200'>Emitido</Badge>
             {nota.motivo_descripcion && nota.motivo_descripcion !== 'Nota de Crédito' && (

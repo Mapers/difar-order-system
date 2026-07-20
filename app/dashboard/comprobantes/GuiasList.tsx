@@ -15,6 +15,7 @@ import { format, parseISO } from "date-fns"
 import {Comprobante, GuiaRemision} from "@/app/types/order/order-interface";
 import { Mail, MessageCircle, Activity } from "lucide-react"
 import {RelatedComprobanteModal} from "@/app/dashboard/comprobantes/modals/RelatedComprobanteModal";
+import { getEstadoSunatDestacable } from "@/app/utils/sunat";
 
 interface GuiasListProps {
     guias: GuiaRemision[]
@@ -41,7 +42,26 @@ export function GuiasList({
     const [selectedGuiaForComp, setSelectedGuiaForComp] = useState<GuiaRemision | null>(null)
 
 
+    /**
+     * Error real de envío al webservice.
+     *
+     * NULL no es error: cuando SUNAT todavía está procesando (estado 101),
+     * MiFact no devuelve sunat_responsecode y el backend lo guarda como NULL.
+     * Compararlo directo contra '0' marcaba esas guías como erróneas y abría
+     * un modal de error vacío, porque sunat_description también viene NULL.
+     */
+    const tieneErrorSunat = (guia: GuiaRemision) =>
+        guia.sunat_responsecode != null && guia.sunat_responsecode !== '0'
+
     const getEstadoBadge = (guia: GuiaRemision) => {
+        if (!guia.idGuiaRemCab) {
+            return (
+                <Badge variant="outline" className="text-muted-foreground border-border">
+                    No utilizado
+                </Badge>
+            )
+        }
+
         if (guia.anulado) {
             return (
                 <div className="flex items-center gap-1">
@@ -60,6 +80,44 @@ export function GuiasList({
                 </div>
             )
         }
+        // El estado del documento en SUNAT (101/103/104/105/108) va ANTES del
+        // error de envío: es información específica y precisa. Un "Ver Error
+        // SUNAT" genérico encima de un 101 esconde que solo está en proceso.
+        const estadoSunat = getEstadoSunatDestacable(guia.estado_sunat)
+        if (estadoSunat) {
+            const { Icon } = estadoSunat
+            return (
+                <div className="flex items-center gap-1">
+                    <Badge variant="outline" className={estadoSunat.badgeClass}>
+                        <Icon className="mr-1 h-3 w-3" />
+                        {estadoSunat.label}
+                    </Badge>
+                    {guia.estado_sunat_desc && (
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6"
+                            onClick={() => handleViewReason(guia.estado_sunat_desc!)}
+                            title="Ver detalle de SUNAT"
+                        >
+                            <AlertCircle className="h-4 w-4" />
+                        </Button>
+                    )}
+                </div>
+            )
+        }
+
+        if (tieneErrorSunat(guia)) {
+            return (
+                <Button variant="ghost" size="sm"
+                        onClick={() => onErrorView(guia)}
+                        className="h-auto p-0 hover:bg-transparent text-red-600 hover:text-red-700 font-normal text-xs flex items-center gap-1">
+                    <AlertTriangle className="h-3 w-3" />
+                    <span className="underline decoration-dotted underline-offset-2">Ver Error SUNAT</span>
+                </Button>
+            )
+        }
+
         return <Badge variant="success">Activo</Badge>
     }
 
@@ -124,18 +182,7 @@ export function GuiasList({
                                         </td>
                                         <td className="p-4 text-sm">{guia.cliente_num_doc ?? '—'}</td>
                                         <td className="p-4">
-                                            {!guia.idGuiaRemCab ? (
-                                                <Badge variant="outline" className="text-muted-foreground border-border">
-                                                    No utilizado
-                                                </Badge>
-                                            ) : guia.sunat_responsecode !== '0' ? (
-                                                <Button variant="ghost" size="sm"
-                                                        onClick={() => onErrorView(guia)}
-                                                        className="h-auto p-0 hover:bg-transparent text-red-600 hover:text-red-700 font-normal text-xs flex items-center gap-1 mt-1">
-                                                    <AlertTriangle className="h-3 w-3" />
-                                                    <span className="underline decoration-dotted underline-offset-2">Ver Error SUNAT</span>
-                                                </Button>
-                                            ) : getEstadoBadge(guia)}
+                                            {getEstadoBadge(guia)}
                                         </td>
                                         <td className="p-4">
                                             {guia.idGuiaRemCab && (
@@ -209,10 +256,7 @@ export function GuiasList({
                                                 <span className="font-semibold text-card-foreground">
                                                     {guia.serie}-{Number(guia.numero)}
                                                 </span>
-                                                {!guia.idGuiaRemCab
-                                                    ? <Badge variant="outline" className="text-muted-foreground border-border">No utilizado</Badge>
-                                                    : getEstadoBadge(guia)
-                                                }
+                                                {getEstadoBadge(guia)}
                                             </div>
                                             <p className="text-sm text-muted-foreground">
                                                 {guia.fecha_emision
@@ -232,7 +276,7 @@ export function GuiasList({
                                                     {guia.cliente_num_doc ?? '—'}
                                                 </p>
                                             </div>
-                                            {guia.sunat_responsecode !== "0" && (
+                                            {tieneErrorSunat(guia) && (
                                                 <div className="bg-red-100 border border-red-200 rounded-md p-3 mt-2">
                                                     <div className="flex items-center gap-2 mb-2">
                                                         <AlertTriangle className="h-4 w-4 text-red-600" />

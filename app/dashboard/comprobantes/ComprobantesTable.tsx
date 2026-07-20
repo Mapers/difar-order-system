@@ -11,6 +11,7 @@ import { addHours, format, parseISO } from "date-fns"
 import { Comprobante } from "@/app/types/order/order-interface"
 import { RelatedGuidesModal } from "@/app/dashboard/comprobantes/modals/RelatedGuidesModal"
 import { Sequential } from "@/app/types/config-types"
+import { getEstadoSunatDestacable } from "@/app/utils/sunat"
 
 interface ComprobantesTableProps {
     comprobantes: Comprobante[]
@@ -94,22 +95,6 @@ export function ComprobantesTable({
             }
         }
 
-        if (comprobante.tipoNC !== 'sin_nc') {
-            return {
-                label: `NC ${comprobante.tipoNC.toUpperCase()}`,
-                cellBg: 'bg-purple-50',
-                textColor: 'text-purple-700',
-            }
-        }
-
-        if (comprobante.aceptada_por_sunat != null && comprobante.aceptada_por_sunat === 104) {
-            return {
-                label: 'Rechazado',
-                cellBg: 'bg-orange-50',
-                textColor: 'text-orange-700',
-            }
-        }
-
         if (comprobante.anulado) {
             return {
                 label: 'Anulado',
@@ -124,6 +109,37 @@ export function ComprobantesTable({
                         <AlertCircle className="h-3.5 w-3.5" />
                     </button>
                 ) : undefined
+            }
+        }
+
+        // Un problema en SUNAT (101/103/104/105/108) pesa más que tener una NC
+        // asociada: es algo que hay que atender. El 102 no entra aquí, un
+        // comprobante aceptado se sigue viendo como Activo.
+        const estadoSunat = getEstadoSunatDestacable(comprobante.estado_sunat)
+        if (estadoSunat) {
+            const { Icon } = estadoSunat
+            return {
+                label: estadoSunat.label,
+                cellBg: estadoSunat.cellBg,
+                textColor: estadoSunat.textColor,
+                icon: <Icon className="h-3.5 w-3.5 mr-1" />,
+                extra: comprobante.estado_sunat_desc ? (
+                    <button
+                        className="ml-1 opacity-60 hover:opacity-100"
+                        onClick={() => handleViewReason(comprobante.estado_sunat_desc!)}
+                        title="Ver detalle de SUNAT"
+                    >
+                        <AlertCircle className="h-3.5 w-3.5" />
+                    </button>
+                ) : undefined
+            }
+        }
+
+        if (comprobante.tipoNC !== 'sin_nc') {
+            return {
+                label: `NC ${comprobante.tipoNC.toUpperCase()}`,
+                cellBg: 'bg-purple-50',
+                textColor: 'text-purple-700',
             }
         }
 

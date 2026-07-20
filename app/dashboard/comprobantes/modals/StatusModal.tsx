@@ -2,8 +2,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
-import { CheckCircle2, XCircle, AlertCircle, Clock, FileText, Hash } from "lucide-react"
+import { AlertCircle, FileText, Hash } from "lucide-react"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { getEstadoSunatConfig } from "@/app/utils/sunat"
 
 interface StatusData {
     estado_documento: string
@@ -28,18 +29,17 @@ interface StatusModalProps {
 export function StatusModal({ open, onOpenChange, data, loading }: StatusModalProps) {
 
     const getStatusConfig = (estado: string) => {
-        switch (estado) {
-            case "102": // ACEPTADO
-                return { color: "bg-green-100 text-green-800 border-green-200", icon: <CheckCircle2 className="h-12 w-12 text-green-600" />, label: "ACEPTADO" }
-            case "103": // ACEPTADO CON OBS
-                return { color: "bg-blue-100 text-blue-800 border-blue-200", icon: <AlertCircle className="h-12 w-12 text-blue-600" />, label: "ACEPTADO CON OBS." }
-            case "101": // EN PROCESO
-                return { color: "bg-yellow-100 text-yellow-800 border-yellow-200", icon: <Clock className="h-12 w-12 text-yellow-600" />, label: "EN PROCESO" }
-            case "104": // RECHAZADO
-            case "105": // ANULADO
-                return { color: "bg-red-100 text-red-800 border-red-200", icon: <XCircle className="h-12 w-12 text-red-600" />, label: "RECHAZADO / ANULADO" }
-            default:
-                return { color: "bg-muted text-muted-foreground border-border", icon: <AlertCircle className="h-12 w-12 text-muted-foreground" />, label: "DESCONOCIDO" }
+        const config = getEstadoSunatConfig(estado) ?? {
+            badgeClass: "bg-muted text-muted-foreground border-border",
+            iconClass: "text-muted-foreground",
+            descripcion: "DESCONOCIDO",
+            Icon: AlertCircle,
+        }
+        const { Icon } = config
+        return {
+            color: config.badgeClass,
+            icon: <Icon className={`h-12 w-12 ${config.iconClass}`} />,
+            label: config.descripcion,
         }
     }
 
