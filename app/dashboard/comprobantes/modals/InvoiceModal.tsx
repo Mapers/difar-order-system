@@ -89,7 +89,10 @@ export function InvoiceModal({
     const valorFlete = fleteActivo ? Number(fleteMonto) || 0 : 0
     const isCredit   = selectedOrder?.condicionCredito === '1'
 
-    // Fecha de emisión elegida (yyyy-MM-dd): hoy o la fecha de generación del pedido.
+    const totalConCargos = Number((
+        (Number(selectedOrder?.totalPedido) || 0) + valorFlete - valorDescuento * 1.18
+    ).toFixed(2))
+
     const hoyStr         = format(new Date(), 'yyyy-MM-dd')
     const fechaPedidoStr = selectedOrder?.fechaPedido
         ? format(parseISO(selectedOrder.fechaPedido), 'yyyy-MM-dd')
@@ -162,8 +165,6 @@ export function InvoiceModal({
         const fetchDiasCredito = async () => {
             let dias = 0
             try {
-                // condicionPedido en esta lista es la DESCRIPCIÓN (ej. "1 Dias Credito"),
-                // no el código; por eso se busca en la lista completa por Descripcion/código.
                 const res = await apiClient.get('/tomarPedido/condiciones')
                 const lista = res.data?.data?.data || []
                 const cond = lista.find(
@@ -177,12 +178,12 @@ export function InvoiceModal({
             }
             setCuotas([{
                 fecha: format(addDays(parseISO(fechaEmisionElegida), dias), 'yyyy-MM-dd'),
-                monto: Number(selectedOrder?.totalPedido)
+                monto: totalConCargos
             }])
         }
 
         fetchDiasCredito()
-    }, [open, isCredit, selectedOrder?.condicionPedido, fechaEmisionElegida])
+    }, [open, isCredit, selectedOrder?.condicionPedido, fechaEmisionElegida, valorFlete, valorDescuento])
 
     useEffect(() => {
         if (!open || !selectedOrder) return
@@ -609,7 +610,7 @@ export function InvoiceModal({
                     <InstallmentModal
                         open={showInstallmentModal}
                         onOpenChange={setShowInstallmentModal}
-                        totalImporte={Number(selectedOrder.totalPedido)}
+                        totalImporte={totalConCargos}
                         initialCuotas={cuotas}
                         onSave={setCuotas}
                     />
