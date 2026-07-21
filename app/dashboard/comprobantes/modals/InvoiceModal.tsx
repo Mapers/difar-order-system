@@ -23,6 +23,7 @@ import { Badge } from "@/components/ui/badge"
 import { InstallmentModal, Cuota } from "./InstallmentModal"
 import { ContactConfirmModal } from "@/app/dashboard/comprobantes/modals/ContactConfirmModal"
 import { Sequential } from "@/app/types/config-types"
+import { IAlmacen } from "@/app/types/order/product-interface"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import apiClient from "@/app/api/client"
@@ -36,6 +37,7 @@ interface InvoiceModalProps {
     tiposComprobante:    Sequential[]
     sunatTransacciones:  SunatTransaccion[]
     tipoDocsSunat:       TipoDocSunat[]
+    almacenes:           IAlmacen[]
     invoiceType:         string
     setInvoiceType:      (v: string) => void
     sunatTransaction:    string
@@ -56,7 +58,7 @@ interface InvoiceModalProps {
 }
 
 export function InvoiceModal({
-                                 open, onOpenChange, selectedOrder, tiposComprobante, sunatTransacciones, tipoDocsSunat,
+                                 open, onOpenChange, selectedOrder, tiposComprobante, sunatTransacciones, tipoDocsSunat, almacenes,
                                  invoiceType, setInvoiceType, sunatTransaction, setSunatTransaction, tipoSunat, setTipoSunat,
                                  isProcessing, onConfirm
                              }: InvoiceModalProps) {
@@ -100,25 +102,18 @@ export function InvoiceModal({
     const fechaEmisionElegida = fechaEmisionOpcion === 'pedido' ? fechaPedidoStr : hoyStr
     const mismasFechas = fechaPedidoStr === hoyStr
 
-    const almacenesDisponibles = useMemo(() => {
-        const seen = new Set<string>()
-        return tiposComprobante
-            .filter(t => t.id_almacen && t.desc_almacen)
-            .reduce<{ id: string; desc: string }[]>((acc, t) => {
-                const key = String(t.id_almacen)
-                if (!seen.has(key)) {
-                    seen.add(key)
-                    acc.push({ id: key, desc: t.desc_almacen! })
-                }
-                return acc
-            }, [])
-    }, [tiposComprobante])
+    // Almacenes desde el API de almacenes (/admin/listar/almacenes), no derivados
+    // de los tipos de comprobante.
+    const almacenesDisponibles = useMemo(
+        () => almacenes.map(a => ({ id: String(a.IdAlmacen), desc: a.Descripcion })),
+        [almacenes]
+    )
 
     useEffect(() => {
-        if (!invoiceType) return
+        if (!invoiceType || previewExistente) return
         const sequential = tiposComprobante.find(t => `${t.prefijo}|${t.tipo}` === invoiceType)
         if (sequential?.id_almacen) setSelectedAlmacen(String(sequential.id_almacen))
-    }, [invoiceType, tiposComprobante])
+    }, [invoiceType, tiposComprobante, previewExistente])
 
     useEffect(() => {
         if (!isProcessing) {
@@ -211,7 +206,7 @@ export function InvoiceModal({
                         setSunatTransaction(data.idTransaction)
                     }
                     if (data.idAlmacen) {
-                        setSelectedAlmacen(data.idAlmacen)
+                        setSelectedAlmacen(String(data.idAlmacen))
                     }
                 } else {
                     setPreviewExistente(null)

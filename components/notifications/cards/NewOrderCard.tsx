@@ -38,7 +38,7 @@ export function NewOrderCard({ notification }: NotifCardProps) {
         </div>
         <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
           <Calendar className="h-3.5 w-3.5" />
-          <span>{formatNotifDate(payload?.fecha || receivedAt)}</span>
+          <span>{formatNotifDate(receivedAt)}</span>
         </div>
       </div>
     </div>

@@ -63,7 +63,7 @@ function OrderArrivalBody({
         <div className="grid grid-cols-2 gap-3">
           <div className="flex items-center gap-2 text-sm">
             <Calendar className="h-4 w-4 text-blue-500" />
-            <span>{formatNotifDate(data?.fecha || new Date().toISOString())}</span>
+            <span>{formatNotifDate(notification.receivedAt)}</span>
           </div>
         </div>
 

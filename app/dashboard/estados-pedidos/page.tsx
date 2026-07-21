@@ -22,6 +22,7 @@ import {ChangeStateDialog} from "@/app/dashboard/estados-pedidos/modals/ChangeSt
 import {DeleteOrderDialog} from "@/app/dashboard/estados-pedidos/modals/DeleteOrderDialog";
 import {DocumentsDialog} from "@/app/dashboard/estados-pedidos/modals/DocumentsDialog";
 import {Sequential} from "@/app/types/config-types";
+import { IAlmacen } from "@/app/types/order/product-interface";
 import {SunatTransaccion, TipoDocSunat} from "@/app/types/order/order-interface";
 import {toast} from "@/app/hooks/useToast";
 
@@ -133,6 +134,7 @@ export default function OrderStatusManagementPage() {
   const [tiposComprobante,   setTiposComprobante]   = useState<Sequential[]>([])
   const [sunatTransacciones, setSunatTransacciones] = useState<SunatTransaccion[]>([])
   const [tipoDocsSunat,      setTipoDocsSunat]      = useState<TipoDocSunat[]>([])
+  const [almacenes,          setAlmacenes]          = useState<IAlmacen[]>([])
 
 
   const STATE_JUMPS: Record<number, number> = { 2: 4, 4: 7 }
@@ -307,14 +309,16 @@ export default function OrderStatusManagementPage() {
   useEffect(() => {
     const fetchCatalogs = async () => {
       try {
-        const [tiposRes, transRes, docsRes] = await Promise.all([
+        const [tiposRes, transRes, docsRes, almacenesRes] = await Promise.all([
           apiClient.get('/admin/listar/secuenciales'),
           apiClient.get('/pedidos/sunatTrans'),
           apiClient.get('/pedidos/tipoDocSunat'),
+          apiClient.get('/admin/listar/almacenes'),
         ])
         setTiposComprobante(tiposRes.data.data)
         setSunatTransacciones(transRes.data.data.data)
         setTipoDocsSunat(docsRes.data.data.data)
+        setAlmacenes(almacenesRes.data.data || [])
       } catch (error) {
         console.error('Error cargando catálogos preview:', error)
       }
@@ -710,6 +714,7 @@ export default function OrderStatusManagementPage() {
             tiposComprobante={tiposComprobante}
             sunatTransacciones={sunatTransacciones}
             tipoDocsSunat={tipoDocsSunat}
+            almacenes={almacenes}
         />
 
         <DeleteOrderDialog

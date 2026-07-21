@@ -36,6 +36,7 @@ import {CreditNotesTable} from "@/app/dashboard/comprobantes/CreditNotesTable";
 import {GenerarNotaCreditoModal} from "@/app/dashboard/comprobantes/modals/GenerarNotaCreditoModal";
 import {Cuota} from "@/app/dashboard/comprobantes/modals/InstallmentModal";
 import {Sequential} from "@/app/types/config-types";
+import { IAlmacen } from "@/app/types/order/product-interface";
 import {DeletePendienteModal} from "@/app/dashboard/comprobantes/modals/DeletePendienteModal";
 import {toast} from "@/app/hooks/useToast";
 import {CorregirDescripcionModal} from "@/app/dashboard/comprobantes/modals/CorregirDescripcionModal";
@@ -122,6 +123,7 @@ export default function ComprobantesPage() {
   const [tiposComprobante, setTiposComprobante] = useState<Sequential[]>([])
   const [sunatTransacciones, setSunatTransacciones] = useState<SunatTransaccion[]>([])
   const [tipoDocsSunat, setTipoDocsSunat] = useState<TipoDocSunat[]>([])
+  const [almacenes, setAlmacenes] = useState<IAlmacen[]>([])
   const [sunatTransaction, setSunatTransaction] = useState("")
   const [tipoSunat, setTipoSunat] = useState("")
 
@@ -286,15 +288,17 @@ export default function ComprobantesPage() {
   useEffect(() => {
     const fetchCatalogs = async () => {
       try {
-        const [tiposResponse, transResponse, docsSunat] = await Promise.all([
+        const [tiposResponse, transResponse, docsSunat, almacenesResponse] = await Promise.all([
           apiClient.get('/admin/listar/secuenciales'),
           apiClient.get('/pedidos/sunatTrans'),
           apiClient.get('/pedidos/tipoDocSunat'),
+          apiClient.get('/admin/listar/almacenes'),
         ])
 
         setTiposComprobante(tiposResponse.data.data)
         setSunatTransacciones(transResponse.data.data.data)
         setTipoDocsSunat(docsSunat.data.data.data)
+        setAlmacenes(almacenesResponse.data.data || [])
 
         if (transResponse.data.data.data?.length > 0) setSunatTransaction(transResponse.data.data.data[0].idTransaction.toString())
         if (docsSunat.data.data.data?.length > 0) handleInvoiceType(tiposResponse.data.data[0].prefijo + '|' + tiposResponse.data.data[0].tipo)
@@ -1018,6 +1022,7 @@ export default function ComprobantesPage() {
         {showInvoiceModal && <InvoiceModal
             open={showInvoiceModal} onOpenChange={setShowInvoiceModal} selectedOrder={selectedOrder}
             tiposComprobante={tiposComprobante} sunatTransacciones={sunatTransacciones} tipoDocsSunat={tipoDocsSunat}
+            almacenes={almacenes}
             invoiceType={invoiceType} setInvoiceType={handleInvoiceType} sunatTransaction={sunatTransaction}
             setSunatTransaction={setSunatTransaction}
             tipoSunat={tipoSunat} setTipoSunat={setTipoSunat} isProcessing={isProcessingInvoice}

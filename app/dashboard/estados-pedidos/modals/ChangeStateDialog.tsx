@@ -3,6 +3,7 @@ import { useState, useEffect, useMemo } from "react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Sequential } from "@/app/types/config-types"
 import { SunatTransaccion, TipoDocSunat } from "@/app/types/order/order-interface"
+import { IAlmacen } from "@/app/types/order/product-interface"
 import {
     Dialog, DialogContent, DialogFooter,
     DialogHeader, DialogTitle, DialogDescription,
@@ -35,6 +36,7 @@ interface ChangeStateDialogProps {
     tiposComprobante: Sequential[]
     sunatTransacciones: SunatTransaccion[]
     tipoDocsSunat: TipoDocSunat[]
+    almacenes: IAlmacen[]
 }
 
 export function ChangeStateDialog({
@@ -42,7 +44,7 @@ export function ChangeStateDialog({
                                       detalle, loading, pdfUrl, getNextState, getStateInfo,
                                       onConfirm, onCancel, onDownload,
                                       onPreview, loadingPreview, pdfPreviewBase64, isPreviewOpen, onClosePreview,
-                                      tiposComprobante, sunatTransacciones, tipoDocsSunat,
+                                      tiposComprobante, sunatTransacciones, tipoDocsSunat, almacenes,
                                   }: ChangeStateDialogProps) {
     const [invoiceType,      setInvoiceType]      = useState("")
     const [sunatTransaction, setSunatTransaction] = useState("")
@@ -86,7 +88,7 @@ export function ChangeStateDialog({
                         setSunatTransaction(data.idTransaction)
                     }
                     if (data.idAlmacen) {
-                        setSelectedAlmacen(data.idAlmacen)
+                        setSelectedAlmacen(String(data.idAlmacen))
                     }
                 } else {
                     setPreviewExistente(null)
@@ -126,19 +128,12 @@ export function ChangeStateDialog({
         if (!previewExistente && !invoiceType) initDefaults()
     }, [tiposComprobante, sunatTransacciones, tipoDocsSunat])
 
-    const almacenesDisponibles = useMemo(() => {
-        const seen = new Set<string>()
-        return tiposComprobante
-            .filter(t => t.id_almacen && t.desc_almacen)
-            .reduce<{ id: string; desc: string }[]>((acc, t) => {
-                const key = String(t.id_almacen)
-                if (!seen.has(key)) {
-                    seen.add(key)
-                    acc.push({ id: key, desc: t.desc_almacen! })
-                }
-                return acc
-            }, [])
-    }, [tiposComprobante])
+    // Almacenes desde el API de almacenes (/admin/listar/almacenes), no derivados
+    // de los tipos de comprobante.
+    const almacenesDisponibles = useMemo(
+        () => almacenes.map(a => ({ id: String(a.IdAlmacen), desc: a.Descripcion })),
+        [almacenes]
+    )
 
     const handleInvoiceTypeChange = (val: string) => {
         if (previewExistente) return

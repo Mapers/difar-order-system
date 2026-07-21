@@ -41,7 +41,7 @@ const CONFIG: Record<CodigoSunat, EstadoSunatConfig> = {
         Icon: CheckCircle2,
     },
     '103': {
-        label: 'Observado',
+        label: 'Aceptado',
         descripcion: 'ACEPTADO CON OBSERVACIÓN',
         badgeClass: 'bg-blue-100 text-blue-700 border-blue-200',
         cellBg: 'bg-blue-50',
