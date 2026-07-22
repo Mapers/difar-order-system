@@ -443,15 +443,7 @@ export function GenerarNotaCreditoModal({
                                                         {item.cantMax}
                                                     </td>
                                                     <td className="px-3 py-2">
-                                                        {item.bloqueado ? (
-                                                            <p className="text-center text-xs text-red-500 font-medium">
-                                                                NC total emitida
-                                                            </p>
-                                                        ) : item.cantMax === 0 ? (
-                                                            <p className="text-center text-xs text-muted-foreground">
-                                                                Sin stock disponible
-                                                            </p>
-                                                        ) : (
+                                                        {item.cantMax > 0 ? (
                                                             <div className="flex items-center justify-center gap-1">
                                                                 <button
                                                                     onClick={() => handleCantidadChange(index, -1)}
@@ -474,6 +466,14 @@ export function GenerarNotaCreditoModal({
                                                                     <Plus className="h-3 w-3" />
                                                                 </button>
                                                             </div>
+                                                        ) : item.bloqueado ? (
+                                                            <p className="text-center text-xs text-red-500 font-medium">
+                                                                NC total emitida
+                                                            </p>
+                                                        ) : (
+                                                            <p className="text-center text-xs text-muted-foreground">
+                                                                Sin stock disponible
+                                                            </p>
                                                         )}
                                                     </td>
                                                 </tr>
