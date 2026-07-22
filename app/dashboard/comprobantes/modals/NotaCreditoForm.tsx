@@ -16,11 +16,13 @@ import { SerieNCField } from "./SerieNCField"
 import { toast } from "@/app/hooks/useToast"
 
 interface ItemParcial {
+    idPedidodet: number
     cod_item:    string
     descripcion: string
     cantidad:    number
     cantMax:     number
     precio:      number
+    cod_lote?:   string
 }
 
 interface NotaCreditoFormProps {
@@ -137,8 +139,11 @@ export function NotaCreditoForm({
 
             if (esParcial) {
                 body.items = itemsParciales!.map(i => ({
+                    idPedidodet: i.idPedidodet,
                     cod_item:  i.cod_item,
                     cantidad:  i.cantidad,
+                    precio:    i.precio,
+                    cod_lote:  i.cod_lote,
                 }))
             }
 

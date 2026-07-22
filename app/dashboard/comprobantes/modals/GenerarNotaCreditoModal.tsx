@@ -16,11 +16,13 @@ import apiClient from "@/app/api/client"
 import { useAuth } from "@/context/authContext"
 
 interface ItemSeleccionado {
+    idPedidodet: number
     cod_item:    string
     descripcion: string
     cantidad:    number
     cantMax:     number
     precio:      number
+    cod_lote?:   string
     bloqueado:   boolean
 }
 
@@ -95,11 +97,13 @@ export function GenerarNotaCreditoModal({
                 data.map(d => {
                     const cantDisponible = Math.max(0, Number(d.cantPedido) - Number(d.cantidadNC || 0))
                     return {
+                        idPedidodet:  d.idPedidodet,
                         cod_item:     d.codigoitemPedido,
                         descripcion:  d.productoNombre,
                         cantidad:     0,
                         cantMax:      cantDisponible,
                         precio:       Number(d.precioPedido),
+                        cod_lote:     d.cod_lote,
                         bloqueado:   !!d.tieneNC,
                     }
                 })
