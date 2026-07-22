@@ -217,7 +217,7 @@ export function NotaCreditoForm({
                                 </div>
                                 <div className="space-y-1 max-h-32 overflow-y-auto">
                                     {itemsParciales!.map(i => (
-                                        <div key={i.cod_item}
+                                        <div key={i.idPedidodet}
                                              className="flex justify-between items-center text-xs bg-green-50 rounded px-2 py-1">
                                             <span className="truncate max-w-[140px]" title={i.descripcion}>
                                                 {i.descripcion}

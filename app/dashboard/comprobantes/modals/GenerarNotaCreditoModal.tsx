@@ -430,7 +430,7 @@ export function GenerarNotaCreditoModal({
                                             </thead>
                                             <tbody className="divide-y divide-border">
                                             {itemsSeleccionados.map((item, index) => (
-                                                <tr key={item.cod_item}
+                                                <tr key={item.idPedidodet}
                                                     className={item.cantidad > 0 ? 'bg-green-50' : ''}>
                                                     <td className="px-3 py-2">
                                                         <p className="text-xs font-medium text-foreground">{item.descripcion}</p>
