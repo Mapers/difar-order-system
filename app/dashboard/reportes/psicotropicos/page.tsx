@@ -626,7 +626,7 @@ export default function PsicotropicosPage() {
                                             >
                                                 <td className="px-3 py-2 text-xs text-muted-foreground">{m.fecha}</td>
                                                 <td className="px-3 py-2 font-mono text-xs font-semibold text-blue-900">
-                                                    <DocumentoPdfLink numeroComprobante={m.serie && m.corr ? `${m.serie}-${m.corr}` : null} />
+                                                    <DocumentoPdfLink numeroComprobante={m.serie && m.corr ? `${m.serie}-${m.corr}` : null} existeComprobante={!!m.existeComprobante} />
                                                 </td>
                                                 <td className="px-3 py-2 text-xs text-muted-foreground">{m.estab}</td>
                                                 <td className="px-3 py-2 text-right font-mono font-semibold text-emerald-700 tabular-nums text-xs">
@@ -845,7 +845,7 @@ function DiarioView({
                                     <td className="px-3 py-2 text-center text-xs text-muted-foreground tabular-nums border-r border-border">{dia}</td>
                                     <td className="px-3 py-2 border-r border-border">
                                         <span className="font-mono text-xs font-semibold text-blue-900">
-                                            <DocumentoPdfLink numeroComprobante={m.serie && m.corr ? `${m.serie}-${m.corr}` : null} />
+                                            <DocumentoPdfLink numeroComprobante={m.serie && m.corr ? `${m.serie}-${m.corr}` : null} existeComprobante={!!m.existeComprobante} />
                                         </span>
                                         <span className="text-xs text-muted-foreground ml-1">/ {m.estab}</span>
                                     </td>
@@ -885,7 +885,7 @@ function DiarioView({
                             <div className="flex justify-between items-start gap-2">
                                 <div className="min-w-0">
                                     <span className="font-mono text-sm font-bold text-blue-900">
-                                        <DocumentoPdfLink numeroComprobante={m.serie && m.corr ? `${m.serie}-${m.corr}` : null} />
+                                        <DocumentoPdfLink numeroComprobante={m.serie && m.corr ? `${m.serie}-${m.corr}` : null} existeComprobante={!!m.existeComprobante} />
                                     </span>
                                     <p className="text-xs text-muted-foreground mt-0.5 truncate">{m.fecha} · {m.estab}</p>
                                 </div>
@@ -1051,7 +1051,7 @@ function FolioView({
                                     </td>
                                     <td className={cn("px-3 py-1.5 sticky left-[80px] border-r border-border shadow-[3px_0_6px_rgba(0,0,0,.06)] group-hover:bg-blue-50/40", bgRow)}>
                                         <span className="font-mono text-xs font-semibold text-blue-900 whitespace-nowrap">
-                                            <DocumentoPdfLink numeroComprobante={m.serie && m.corr ? `${m.serie}-${m.corr}` : null} />
+                                            <DocumentoPdfLink numeroComprobante={m.serie && m.corr ? `${m.serie}-${m.corr}` : null} existeComprobante={!!m.existeComprobante} />
                                         </span>
                                         <span className="block text-[11px] text-muted-foreground truncate max-w-[190px]" title={m.estab}>{m.estab}</span>
                                     </td>

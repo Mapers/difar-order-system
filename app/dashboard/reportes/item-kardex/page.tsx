@@ -338,7 +338,7 @@ export default function ItemKardexReportPage() {
                                             </td>
                                             <td className="px-4 py-3 text-xs">{row.Abreviatura || '-'}</td>
                                             <td className="px-4 py-3 font-mono text-xs whitespace-nowrap">
-                                                <DocumentoPdfLink numeroComprobante={row.SerieNumero} />
+                                                <DocumentoPdfLink numeroComprobante={row.SerieNumero} existeComprobante={!!row.existe_comprobante} />
                                             </td>
                                             <td className="px-4 py-3 text-xs max-w-[200px] truncate" title={row.OPERACION}>{row.OPERACION || '-'}</td>
                                             <td className="px-4 py-3 text-xs max-w-[150px] truncate" title={row.formula_ab || ''}>{row.formula_ab || '-'}</td>
@@ -384,7 +384,7 @@ export default function ItemKardexReportPage() {
                                                 <div className="flex items-center gap-2 mt-1">
                                                     <Badge variant="outline" className="text-[10px] bg-muted">{row.Abreviatura || '-'}</Badge>
                                                     <span className="text-xs font-mono text-muted-foreground">
-                                                        <DocumentoPdfLink numeroComprobante={row.SerieNumero} />
+                                                        <DocumentoPdfLink numeroComprobante={row.SerieNumero} existeComprobante={!!row.existe_comprobante} />
                                                     </span>
                                                 </div>
                                             </div>

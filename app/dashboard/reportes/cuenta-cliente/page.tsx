@@ -219,7 +219,7 @@ export default function EstadoCuentaClientePage() {
                                         <div className="bg-muted text-foreground p-3 flex flex-col sm:flex-row sm:items-center gap-4 text-xs md:text-sm">
                                             <div className="font-bold border-r border-border pr-4">Documento: {doc.Abreviatura}</div>
                                             <div className="font-bold border-r border-border pr-4">
-                                                <DocumentoPdfLink numeroComprobante={doc.SerieNumero} />
+                                                <DocumentoPdfLink numeroComprobante={doc.SerieNumero} existeComprobante={!!doc.existeComprobante} />
                                             </div>
                                             <div className="border-r border-border pr-4">Emisión: <span className="font-semibold">{formatDateToDDMMYYYY(doc.Emision)}</span></div>
                                             <div>Vencimiento: <span className="font-semibold">{formatDateToDDMMYYYY(doc.Vencimiento)}</span></div>

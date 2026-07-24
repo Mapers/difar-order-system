@@ -470,7 +470,7 @@ export default function SaldoCobrarClientePage() {
                                                                 <td className="px-3 py-2 whitespace-nowrap text-red-600 font-medium">{formatDateToDDMMYYYY(doc.Fecha_Vcto)}</td>
                                                                 <td className="px-3 py-2 font-medium">{doc.TipoDocumento}</td>
                                                                 <td className="px-3 py-2 font-mono font-semibold">
-                                                                    <DocumentoPdfLink numeroComprobante={doc.SerieDoc && doc.NumeroDoc ? `${doc.SerieDoc}-${doc.NumeroDoc}` : null} />
+                                                                    <DocumentoPdfLink numeroComprobante={doc.SerieDoc && doc.NumeroDoc ? `${doc.SerieDoc}-${doc.NumeroDoc}` : null} existeComprobante={!!doc.existeComprobante} />
                                                                 </td>
                                                                 <td className="px-3 py-2 text-center font-bold">{doc.Moneda}</td>
                                                                 <td className="px-3 py-2 text-right">{formatMoney(doc.SumaProvision)}</td>
@@ -497,7 +497,7 @@ export default function SaldoCobrarClientePage() {
                                                                 <div>
                                                                     <span className="text-[10px] uppercase font-bold text-muted-foreground">{doc.TipoDocumento}</span>
                                                                     <p className="font-mono font-bold text-sm text-foreground">
-                                                                        <DocumentoPdfLink numeroComprobante={doc.SerieDoc && doc.NumeroDoc ? `${doc.SerieDoc}-${doc.NumeroDoc}` : null} />
+                                                                        <DocumentoPdfLink numeroComprobante={doc.SerieDoc && doc.NumeroDoc ? `${doc.SerieDoc}-${doc.NumeroDoc}` : null} existeComprobante={!!doc.existeComprobante} />
                                                                     </p>
                                                                 </div>
                                                                 <Badge variant="outline" className="font-bold">{doc.Moneda}</Badge>
