@@ -24,11 +24,14 @@ export interface AppConfig {
 
 export type TipoFiltroWhatsapp = 'TODOS' | 'ZONA' | 'CLIENTE'
 
+export type ModuloWhatsapp = 'VENTAS' | 'VENCIMIENTOS'
+
 export interface WhatsappConfig {
     id_whatsapp: number
     numero: string
     nombre: string
     descripcion?: string
+    modulo?: ModuloWhatsapp
     est_whatsapp: string
     tipo_filtro?: TipoFiltroWhatsapp
     clientes_filtro?: string[]

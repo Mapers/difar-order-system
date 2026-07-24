@@ -1,13 +1,16 @@
 'use client'
 
 import {useState, useEffect, useCallback, useRef} from "react"
-import {Search, FileText, AlertTriangle, Truck, Loader2, FileDiff, X, FileSearch} from "lucide-react"
+import {Search, FileText, AlertTriangle, Truck, Loader2, FileDiff, X, FileSearch, Users, ChevronDown, Check} from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
+import { cn } from "@/lib/utils"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { addDays, format } from "date-fns"
 import apiClient from "@/app/api/client"
@@ -84,8 +87,11 @@ export default function ComprobantesPage() {
     tipo: "|-1",
     estado: 4,
     fechaDesde: format(today, 'yyyy-MM-dd'),
-    fechaHasta: format(today, 'yyyy-MM-dd')
+    fechaHasta: format(today, 'yyyy-MM-dd'),
+    vendedor: ""
   })
+  const [catVendedores, setCatVendedores] = useState<any[]>([])
+  const [openVend, setOpenVend] = useState(false)
   const [filtersGuias, setFiltersGuias] = useState({
     fechaDesde: format(today, 'yyyy-MM-dd'),
     fechaHasta: format(tomorrow, 'yyyy-MM-dd')
@@ -182,6 +188,7 @@ export default function ComprobantesPage() {
       if (auth.isRepresentante()) params.append('representante', auth.user?.codRepres || '')
       if (filters.tipo !== '|-1') params.append('tipoDoc', filters.tipo.split('|')[1])
       if (filters.tipo !== '|-1') params.append('serie', filters.tipo.split('|')[0])
+      if (filters.vendedor) params.append('vendedor', filters.vendedor)
       if (tieneFechas) {
         params.append('fechaDesde', filters.fechaDesde)
         params.append('fechaHasta', filters.fechaHasta)
@@ -279,6 +286,25 @@ export default function ComprobantesPage() {
 
   // Pendientes por facturar conserva su búsqueda reactiva (no tiene botón Buscar).
   useEffect(() => { fetchPedidosPendientes() }, [fetchPedidosPendientes])
+
+  // Catálogo de vendedores para el filtro del tab Comprobantes.
+  // Admin: todos (endpoint). Representante: solo sus vendedores asignados.
+  useEffect(() => {
+    const cargarVendedores = async () => {
+      try {
+        if (isAdmin) {
+          const res = await apiClient.get('/usuarios/listar/vendedores')
+          setCatVendedores(res.data?.data?.data || res.data?.data || [])
+        } else if (auth.isRepresentante()) {
+          setCatVendedores(auth.user?.vendedores || [])
+        }
+      } catch (error) {
+        console.error('Error cargando vendedores', error)
+      }
+    }
+    if (isAdmin || auth.isRepresentante()) cargarVendedores()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAdmin, auth.user?.idRol])
 
   const handleFilterNotasChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -791,7 +817,7 @@ export default function ComprobantesPage() {
             <Card className="bg-background shadow-sm">
               <CardContent className="p-3 sm:p-4 lg:p-6">
                 <div className="space-y-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                  <div className={cn("grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4", (isAdmin || auth.isRepresentante()) ? "lg:grid-cols-5" : "lg:grid-cols-4")}>
                     <div className="space-y-1">
                       <Label className="text-xs text-muted-foreground">Fecha desde</Label>
                       <div className="relative">
@@ -834,6 +860,60 @@ export default function ComprobantesPage() {
                         </SelectContent>
                       </Select>
                     </div>
+                    {(isAdmin || auth.isRepresentante()) && (
+                      <div className="space-y-1">
+                        <Label className="text-xs text-muted-foreground">Vendedor</Label>
+                        <Popover open={openVend} onOpenChange={setOpenVend}>
+                          <PopoverTrigger asChild>
+                            <Button variant="outline" role="combobox" className="w-full justify-between h-10 px-3 bg-background font-normal text-xs sm:text-sm">
+                              {filters.vendedor ? (
+                                <span className="truncate">
+                                  {(() => {
+                                    const v = catVendedores.find(x => (x.Codigo_Vend || x.codigo) === filters.vendedor)
+                                    return v ? `${v.Nombres || v.nombres || ''} ${v.Apellidos || v.apellidos || ''}`.trim() || filters.vendedor : filters.vendedor
+                                  })()}
+                                </span>
+                              ) : (
+                                <span className="text-muted-foreground">Todos los vendedores</span>
+                              )}
+                              {filters.vendedor ? (
+                                <X
+                                  className="ml-2 h-4 w-4 shrink-0 opacity-60 hover:opacity-100"
+                                  onClick={(e) => { e.stopPropagation(); setFilters(prev => ({ ...prev, vendedor: "" })) }}
+                                />
+                              ) : (
+                                <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                              )}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-[--radix-popover-trigger-width] min-w-[260px] p-0 z-50" align="start">
+                            <Command>
+                              <CommandInput placeholder="Buscar vendedor..." />
+                              <CommandList>
+                                <CommandEmpty>No se encontró vendedor.</CommandEmpty>
+                                <CommandGroup>
+                                  {catVendedores.map((vend) => {
+                                    const cod = vend.Codigo_Vend || vend.codigo
+                                    return (
+                                      <CommandItem
+                                        key={cod}
+                                        onSelect={() => {
+                                          setFilters(prev => ({ ...prev, vendedor: prev.vendedor === cod ? "" : cod }))
+                                          setOpenVend(false)
+                                        }}
+                                      >
+                                        <Check className={cn("mr-2 h-4 w-4", filters.vendedor === cod ? "opacity-100" : "opacity-0")} />
+                                        {(vend.Nombres || vend.nombres || '')} {(vend.Apellidos || vend.apellidos || '')}
+                                      </CommandItem>
+                                    )
+                                  })}
+                                </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+                    )}
                     <div className="space-y-1">
                       <Label className="text-xs text-muted-foreground">Buscar</Label>
                       <div className="relative">

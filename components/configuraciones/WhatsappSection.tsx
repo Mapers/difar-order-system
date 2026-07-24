@@ -14,7 +14,7 @@ import {
     DialogHeader, DialogTitle
 } from "@/components/ui/dialog"
 import apiClient from "@/app/api/client"
-import { WhatsappConfig, TipoFiltroWhatsapp } from "@/app/types/config-types"
+import { WhatsappConfig, TipoFiltroWhatsapp, ModuloWhatsapp } from "@/app/types/config-types"
 import { ClientService } from "@/app/services/client/ClientService"
 import { toast } from "@/app/hooks/useToast"
 import MultiSelectFilter, { OptionItem } from "@/components/configuraciones/MultiSelectFilter"
@@ -38,6 +38,8 @@ const toArr = (v: unknown): string[] => {
 }
 
 export default function WhatsappSection({ onOpenModalChange }: WhatsappSectionProps) {
+    // Módulo activo: separa los números de Ventas vs Vencimientos.
+    const [modulo, setModulo] = useState<ModuloWhatsapp>("VENTAS")
     const [items, setItems] = useState<WhatsappConfig[]>([])
     const [loading, setLoading] = useState(true)
     const [loadingSave, setLoadingSave] = useState(false)
@@ -57,22 +59,23 @@ export default function WhatsappSection({ onOpenModalChange }: WhatsappSectionPr
     const [optsLoaded, setOptsLoaded] = useState(false)
     const [loadingOpts, setLoadingOpts] = useState(false)
 
-    const fetchItems = async () => {
+    const fetchItems = useCallback(async (mod: ModuloWhatsapp) => {
         setLoading(true)
         try {
-            const res = await apiClient.get("/admin/listar/whatsapp-config")
+            const res = await apiClient.get(`/admin/listar/whatsapp-config?modulo=${mod}`)
             setItems(res.data?.data || [])
         } catch {
             setItems([])
         } finally {
             setLoading(false)
         }
-    }
+    }, [])
 
-    useEffect(() => { fetchItems() }, [])
+    useEffect(() => { fetchItems(modulo) }, [modulo, fetchItems])
 
     const cargarOpciones = useCallback(async () => {
-        if (optsLoaded) return
+        // Vencimientos no filtra por zona/cliente: no hace falta cargar catálogos.
+        if (modulo === "VENCIMIENTOS" || optsLoaded) return
         setLoadingOpts(true)
         try {
             const [zRes, cRes] = await Promise.all([
@@ -97,7 +100,7 @@ export default function WhatsappSection({ onOpenModalChange }: WhatsappSectionPr
         } finally {
             setLoadingOpts(false)
         }
-    }, [optsLoaded])
+    }, [optsLoaded, modulo])
 
     const abrirModalNuevo = useCallback(() => {
         setEditando(null)
@@ -128,8 +131,8 @@ export default function WhatsappSection({ onOpenModalChange }: WhatsappSectionPr
         if (!form.numero.trim()) newErrors.numero = "Requerido"
         else if (!/^\d{9,15}$/.test(form.numero.replace(/\s/g, ""))) newErrors.numero = "Número inválido (9-15 dígitos)"
         if (!form.nombre.trim()) newErrors.nombre = "Requerido"
-        if (tipoFiltro === "ZONA" && zonasSel.length === 0) newErrors.filtro = "Selecciona al menos una zona"
-        if (tipoFiltro === "CLIENTE" && clientesSel.length === 0) newErrors.filtro = "Selecciona al menos un cliente"
+        if (modulo === "VENTAS" && tipoFiltro === "ZONA" && zonasSel.length === 0) newErrors.filtro = "Selecciona al menos una zona"
+        if (modulo === "VENTAS" && tipoFiltro === "CLIENTE" && clientesSel.length === 0) newErrors.filtro = "Selecciona al menos un cliente"
         setErrors(newErrors)
         if (Object.keys(newErrors).length > 0) return
 
@@ -137,9 +140,10 @@ export default function WhatsappSection({ onOpenModalChange }: WhatsappSectionPr
             numero: form.numero,
             nombre: form.nombre,
             descripcion: form.descripcion,
-            tipo_filtro: tipoFiltro,
-            clientes_filtro: tipoFiltro === "CLIENTE" ? clientesSel : [],
-            zonas_filtro: tipoFiltro === "ZONA" ? zonasSel : [],
+            modulo,
+            tipo_filtro: modulo === "VENCIMIENTOS" ? "TODOS" : tipoFiltro,
+            clientes_filtro: modulo === "VENTAS" && tipoFiltro === "CLIENTE" ? clientesSel : [],
+            zonas_filtro: modulo === "VENTAS" && tipoFiltro === "ZONA" ? zonasSel : [],
         }
 
         setLoadingSave(true)
@@ -152,7 +156,7 @@ export default function WhatsappSection({ onOpenModalChange }: WhatsappSectionPr
                 toast({ title: "✓ Registrado", description: "Número registrado correctamente." })
             }
             setIsModalOpen(false)
-            fetchItems()
+            fetchItems(modulo)
         } catch (error: any) {
             const msg = error?.response?.data?.message || "No se pudo guardar el número."
             toast({ title: "Error", description: msg, variant: "destructive" })
@@ -164,13 +168,20 @@ export default function WhatsappSection({ onOpenModalChange }: WhatsappSectionPr
     const handleToggle = async (item: WhatsappConfig) => {
         try {
             await apiClient.put(`/admin/toggle/whatsapp-config/${item.id_whatsapp}`)
-            fetchItems()
+            fetchItems(modulo)
         } catch {
             toast({ title: "Error", description: "No se pudo cambiar el estado.", variant: "destructive" })
         }
     }
 
     const renderFiltroBadge = (item: WhatsappConfig) => {
+        if ((item.modulo || modulo) === "VENCIMIENTOS") {
+            return (
+                <Badge variant="outline" className="text-xs gap-1">
+                    <Globe className="h-3 w-3" /> Vencimientos del día
+                </Badge>
+            )
+        }
         if (item.tipo_filtro === "ZONA") {
             return (
                 <Badge variant="outline" className="text-xs gap-1">
@@ -192,17 +203,20 @@ export default function WhatsappSection({ onOpenModalChange }: WhatsappSectionPr
         )
     }
 
-    if (loading) {
-        return (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-36 w-full" />)}
-            </div>
-        )
-    }
-
     return (
         <>
-            {items.length > 0 ? (
+            <Tabs value={modulo} onValueChange={(v) => setModulo(v as ModuloWhatsapp)} className="mb-4">
+                <TabsList className="grid w-full max-w-md grid-cols-2">
+                    <TabsTrigger value="VENTAS">Ventas</TabsTrigger>
+                    <TabsTrigger value="VENCIMIENTOS">Vencimientos</TabsTrigger>
+                </TabsList>
+            </Tabs>
+
+            {loading ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-36 w-full" />)}
+                </div>
+            ) : items.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {items.map((item) => (
                         <Card key={item.id_whatsapp} className="overflow-hidden">
@@ -258,15 +272,23 @@ export default function WhatsappSection({ onOpenModalChange }: WhatsappSectionPr
                 <div className="text-center py-8">
                     <MessageCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                     <h3 className="text-lg font-medium text-foreground mb-2">No hay números registrados</h3>
-                    <p className="text-sm text-muted-foreground">Registra un número de WhatsApp para recibir notificaciones de ventas.</p>
+                    <p className="text-sm text-muted-foreground">
+                        {modulo === "VENCIMIENTOS"
+                            ? "Registra un número de WhatsApp para recibir el aviso diario de comprobantes que vencen."
+                            : "Registra un número de WhatsApp para recibir notificaciones de ventas."}
+                    </p>
                 </div>
             )}
 
             <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
                 <DialogContent className="max-w-md">
                     <DialogHeader>
-                        <DialogTitle>{editando ? "Editar" : "Nuevo"} WhatsApp</DialogTitle>
-                        <DialogDescription>Número que recibirá notificaciones de ventas.</DialogDescription>
+                        <DialogTitle>{editando ? "Editar" : "Nuevo"} WhatsApp · {modulo === "VENCIMIENTOS" ? "Vencimientos" : "Ventas"}</DialogTitle>
+                        <DialogDescription>
+                            {modulo === "VENCIMIENTOS"
+                                ? "Número que recibirá cada día (9am) los comprobantes que vencen hoy."
+                                : "Número que recibirá notificaciones de ventas."}
+                        </DialogDescription>
                     </DialogHeader>
 
                     <div className="space-y-4">
@@ -308,6 +330,7 @@ export default function WhatsappSection({ onOpenModalChange }: WhatsappSectionPr
                             />
                         </div>
 
+                        {modulo === "VENTAS" ? (
                         <div className="space-y-2">
                             <Label>¿Qué notificaciones recibe?</Label>
                             <Tabs value={tipoFiltro} onValueChange={(v) => setTipoFiltro(v as TipoFiltroWhatsapp)}>
@@ -349,6 +372,11 @@ export default function WhatsappSection({ onOpenModalChange }: WhatsappSectionPr
                             </Tabs>
                             {errors.filtro && <p className="text-xs text-red-500">{errors.filtro}</p>}
                         </div>
+                        ) : (
+                        <p className="text-xs text-muted-foreground bg-muted rounded p-2">
+                            Recibirá cada día a las 9am el listado de comprobantes que vencen ese día. No se aplica filtro por zona ni cliente.
+                        </p>
+                        )}
                     </div>
 
                     <DialogFooter>
