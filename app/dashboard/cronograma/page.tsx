@@ -9,6 +9,7 @@ import { toast } from "@/app/hooks/useToast"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select"
@@ -75,11 +76,11 @@ export default function CronogramaPage() {
 
   useEffect(() => { fetchData() }, [fetchData])
 
-  // Reiniciar selección al cambiar de mes
+  // Reiniciar selección al cambiar de mes, filtros o vista
   useEffect(() => {
     setSelectedDay(null)
     setSelectedCell(null)
-  }, [year, month, filterVendedor, filterTipo])
+  }, [year, month, filterVendedor, filterTipo, activeView])
 
   // Comprobantes cuyo VENCIMIENTO cae dentro del mes visible + filtros de vendedor/tipo
   const visibles = useMemo(() => {
@@ -101,6 +102,16 @@ export default function CronogramaPage() {
   const abrirComprobante = (c: CronogramaComprobante) => {
     setDetail(c)
     setDetailOpen(true)
+  }
+
+  // Abrir el detalle de un comprobante DESDE el modal de lista del día/celda.
+  // Cerramos primero el modal de lista y abrimos el detalle después, para no
+  // encimar dos Dialog de Radix mientras uno se está cerrando (deja el body con
+  // pointer-events:none). Mismo criterio que verPdf().
+  const abrirDesdeLista = (c: CronogramaComprobante) => {
+    setSelectedDay(null)
+    setSelectedCell(null)
+    setTimeout(() => abrirComprobante(c), 200)
   }
 
   const verPdf = () => {
@@ -207,7 +218,6 @@ export default function CronogramaPage() {
             onSelectDay={(d) => setSelectedDay(d)}
             onSelectComprobante={abrirComprobante}
           />
-          <DetalleDia titulo={detalleTitulo} lista={detalleLista} hoy={hoy} onOpen={abrirComprobante} vacio="Selecciona un día o una factura del calendario para ver el detalle." />
         </>
       )}
 
@@ -230,9 +240,17 @@ export default function CronogramaPage() {
             selectedCell={selectedCell}
             onSelectCell={(cliente, day) => setSelectedCell({ cliente, day })}
           />
-          <DetalleDia titulo={detalleTitulo} lista={detalleLista} hoy={hoy} onOpen={abrirComprobante} vacio="Haz clic en una celda del cronograma para ver el detalle." />
         </>
       )}
+
+      <DetalleDiaModal
+        open={activeView === 'calendar' ? selectedDay != null : selectedCell != null}
+        onOpenChange={(o) => { if (!o) { setSelectedDay(null); setSelectedCell(null) } }}
+        titulo={detalleTitulo}
+        lista={detalleLista}
+        hoy={hoy}
+        onOpen={abrirDesdeLista}
+      />
 
       <ComprobanteDetailModal
         comprobante={detail} open={detailOpen} onOpenChange={setDetailOpen} hoy={hoy} onVerPdf={verPdf}
@@ -242,59 +260,57 @@ export default function CronogramaPage() {
   )
 }
 
-// --- Tabla de detalle (día o celda seleccionada) ---
-function DetalleDia({
-  titulo, lista, hoy, onOpen, vacio,
+// --- Modal de detalle (lista de comprobantes del día o celda seleccionada) ---
+function DetalleDiaModal({
+  open, onOpenChange, titulo, lista, hoy, onOpen,
 }: {
+  open: boolean
+  onOpenChange: (open: boolean) => void
   titulo: string
   lista: CronogramaComprobante[]
   hoy: Date
   onOpen: (c: CronogramaComprobante) => void
-  vacio: string
 }) {
-  if (!lista.length) {
-    return (
-      <div className="rounded-xl border bg-card p-6 text-center text-sm text-muted-foreground shadow-sm">
-        {vacio}
-      </div>
-    )
-  }
   const total = lista.reduce((a, c) => a + montoDe(c), 0)
   return (
-    <div className="rounded-xl border bg-card p-5 shadow-sm">
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-2 border-b pb-3">
-        <div className="text-base font-bold capitalize">{titulo}</div>
-        <div className="font-mono text-xs text-muted-foreground">{lista.length} doc. · {fmtSoles(total)}</div>
-      </div>
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="text-left text-[11px] uppercase tracking-wide text-muted-foreground">
-              <th className="py-1.5 pr-3 font-medium">N° Comprobante</th>
-              <th className="py-1.5 pr-3 font-medium">Cliente</th>
-              <th className="py-1.5 pr-3 font-medium">Vendedor</th>
-              <th className="py-1.5 pr-3 font-medium">Estado</th>
-              <th className="py-1.5 text-right font-medium">Monto</th>
-            </tr>
-          </thead>
-          <tbody>
-            {lista.map(c => {
-              const estado: EstadoVencimiento = estadoDe(parseFechaLocal(c.fecha_vencimiento), hoy)
-              return (
-                <tr key={`${c.serie}-${c.numero}`} className="cursor-pointer border-t hover:bg-accent/50" onClick={() => onOpen(c)}>
-                  <td className="py-2 pr-3 font-mono text-xs">{c.serie}-{c.numero}</td>
-                  <td className="py-2 pr-3">{c.cliente_denominacion ?? '—'}</td>
-                  <td className="py-2 pr-3">{c.Vendedor ?? '—'}</td>
-                  <td className="py-2 pr-3">
-                    <span className={`rounded-full px-2 py-0.5 text-[10.5px] font-medium ${ESTADO_BADGE[estado]}`}>{estadoLabel(estado)}</span>
-                  </td>
-                  <td className="py-2 text-right font-mono text-xs">{fmtSoles(montoDe(c))}</td>
-                </tr>
-              )
-            })}
-          </tbody>
-        </table>
-      </div>
-    </div>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle className="flex flex-wrap items-center justify-between gap-2 pr-6">
+            <span className="text-base font-bold capitalize">{titulo}</span>
+            <span className="font-mono text-xs font-normal text-muted-foreground">{lista.length} doc. · {fmtSoles(total)}</span>
+          </DialogTitle>
+        </DialogHeader>
+        <div className="max-h-[60vh] overflow-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left text-[11px] uppercase tracking-wide text-muted-foreground">
+                <th className="py-1.5 pr-3 font-medium">N° Comprobante</th>
+                <th className="py-1.5 pr-3 font-medium">Cliente</th>
+                <th className="py-1.5 pr-3 font-medium">Vendedor</th>
+                <th className="py-1.5 pr-3 font-medium">Estado</th>
+                <th className="py-1.5 text-right font-medium">Monto</th>
+              </tr>
+            </thead>
+            <tbody>
+              {lista.map(c => {
+                const estado: EstadoVencimiento = estadoDe(parseFechaLocal(c.fecha_vencimiento), hoy)
+                return (
+                  <tr key={`${c.serie}-${c.numero}`} className="cursor-pointer border-t hover:bg-accent/50" onClick={() => onOpen(c)}>
+                    <td className="py-2 pr-3 font-mono text-xs">{c.serie}-{c.numero}</td>
+                    <td className="py-2 pr-3">{c.cliente_denominacion ?? '—'}</td>
+                    <td className="py-2 pr-3">{c.Vendedor ?? '—'}</td>
+                    <td className="py-2 pr-3">
+                      <span className={`rounded-full px-2 py-0.5 text-[10.5px] font-medium ${ESTADO_BADGE[estado]}`}>{estadoLabel(estado)}</span>
+                    </td>
+                    <td className="py-2 text-right font-mono text-xs">{fmtSoles(montoDe(c))}</td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+      </DialogContent>
+    </Dialog>
   )
 }

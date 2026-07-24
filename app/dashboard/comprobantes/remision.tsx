@@ -18,6 +18,10 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {Pedido} from "@/app/types/order/order-interface";
 import {toast} from "@/app/hooks/useToast";
 
+// RUC del remitente/emisor (DIFAR). SUNAT rechaza la guía si el transportista
+// tiene el mismo documento que el remitente en transporte público.
+const RUC_REMITENTE = "20481321892";
+
 interface PedidoDet {
   idPedidodet: number
   idPedidocab: number
@@ -380,6 +384,10 @@ export const Remision = ({ pedido, detalles, onOpenChange, fetchGuiasRemision }:
       if (datosGuia.tipoTransporte === '01') {
         if (!datosTransportista.numeroDocumento) {
           setValidationError("Debe seleccionar una empresa de transporte");
+          return false;
+        }
+        if (datosTransportista.numeroDocumento.trim() === RUC_REMITENTE) {
+          setValidationError("El transportista no puede ser igual al remitente. Seleccione una empresa de transporte distinta a DIFAR.");
           return false;
         }
       }

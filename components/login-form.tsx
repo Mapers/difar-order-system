@@ -143,7 +143,7 @@ export function LoginForm() {
         <p className="text-muted-foreground mt-2">Sistema de Gestión de Pedidos</p>
       </div>
 
-      <Card className="w-full border-0 shadow-xl bg-white/90 backdrop-blur-sm">
+      <Card className="w-full border-0 shadow-xl bg-card/90 backdrop-blur-sm">
         <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-indigo-500/20 rounded-xl -z-10"></div>
         <CardHeader className="space-y-1 pb-2">
           <CardTitle className="text-2xl text-center font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
