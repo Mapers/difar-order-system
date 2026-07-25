@@ -17,131 +17,91 @@ export const useInactivity = ({
                               }: UseInactivityProps) => {
   const [isWarning, setIsWarning] = useState(false);
   const [timeLeft, setTimeLeft] = useState<number>(warningTime);
-  const [lastActivity, setLastActivity] = useState<number>(Date.now());
   const STORAGE_KEY = 'lastActivityTime';
-  const inactivityTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const lastActivityRef = useRef<number>(Date.now());
+  const checkIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const onLogoutRef = useRef(onLogout);
+
+  // Mantener la referencia al logout fresca sin recrear el temporizador
+  useEffect(() => {
+    onLogoutRef.current = onLogout;
+  }, [onLogout]);
 
   const clearAllTimers = useCallback(() => {
-    if (inactivityTimerRef.current) clearTimeout(inactivityTimerRef.current);
-    if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
-    inactivityTimerRef.current = null;
-    countdownIntervalRef.current = null;
+    if (checkIntervalRef.current) clearInterval(checkIntervalRef.current);
+    checkIntervalRef.current = null;
   }, []);
 
-  const startInactivityTimer = useCallback(() => {
-    clearAllTimers();
-
-    // Programar el temporizador de advertencia
-    inactivityTimerRef.current = setTimeout(() => {
-      setIsWarning(true);
-      setTimeLeft(warningTime);
-
-      // Iniciar cuenta regresiva visual
-      countdownIntervalRef.current = setInterval(() => {
-        setTimeLeft(prev => {
-          const newTime = prev - 1000;
-          if (newTime <= 0) {
-            clearAllTimers();
-            return 0;
-          }
-          return newTime;
-        });
-      }, 1000);
-    }, timeout - warningTime);
-  }, [timeout, warningTime, onLogout, clearAllTimers]);
+  const markActivity = useCallback(() => {
+    const now = Date.now();
+    lastActivityRef.current = now;
+    if (shouldCheckInactivity) {
+      localStorage.setItem(STORAGE_KEY, now.toString());
+    }
+  }, [shouldCheckInactivity]);
 
   const resetTimer = useCallback(() => {
-    setLastActivity(Date.now());
-    if (isWarning) {
-      setIsWarning(false);
-      setTimeLeft(warningTime);
-      clearAllTimers();
-      startInactivityTimer();
-    }
-  }, [isWarning, warningTime, clearAllTimers, startInactivityTimer]);
+    markActivity();
+    setIsWarning(false);
+    setTimeLeft(warningTime);
+  }, [markActivity, warningTime]);
 
   // Efecto para manejar los event listeners
   useEffect(() => {
-    const handleActivity = () => {
-      if (shouldCheckInactivity) {
-        localStorage.setItem(STORAGE_KEY, Date.now().toString());
-      }
-      setLastActivity(Date.now());
-    };
-
     const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
 
     events.forEach(event => {
-      document.addEventListener(event, handleActivity);
+      document.addEventListener(event, markActivity);
     });
 
     return () => {
       events.forEach(event => {
-        document.removeEventListener(event, handleActivity);
+        document.removeEventListener(event, markActivity);
       });
-      clearAllTimers();
     };
-  }, [clearAllTimers, shouldCheckInactivity]);
+  }, [markActivity]);
 
   // Efecto para verificar inactividad
   useEffect(() => {
-    const checkInactivity = () => {
-      const currentTime = Date.now();
-      const elapsed = currentTime - lastActivity;
-
-      if (!isWarning && elapsed >= timeout - warningTime) {
-        setIsWarning(true);
-        setTimeLeft(warningTime - (elapsed - (timeout - warningTime)));
-
-        // Iniciar cuenta regresiva
-        countdownIntervalRef.current = setInterval(() => {
-          setTimeLeft(prev => {
-            const newTime = prev - 1000;
-            if (newTime <= 0) {
-              clearAllTimers();
-              return 0;
-            }
-            return newTime;
-          });
-        }, 1000);
-      } else if (elapsed >= timeout) {
-        clearAllTimers();
-      }
-    };
-
-    // Verificar inactividad cada segundo
-    const interval = setInterval(checkInactivity, 1000);
-
-    return () => {
-      clearInterval(interval);
+    if (!shouldCheckInactivity) {
       clearAllTimers();
-    };
-  }, [lastActivity, timeout, warningTime, isWarning, onLogout, clearAllTimers]);
-
-  useEffect(() => {
-    if (shouldCheckInactivity) {
-      startInactivityTimer();
-    } else {
-      clearAllTimers()
+      setIsWarning(false);
+      setTimeLeft(warningTime);
+      return;
     }
-    return () => clearAllTimers();
-  }, [startInactivityTimer, clearAllTimers, shouldCheckInactivity]);
 
-  useEffect(() => {
-    if (shouldCheckInactivity) {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        const storedTime = parseInt(stored, 10);
-        const currentTime = Date.now();
-        const elapsed = currentTime - storedTime;
+    // Retomar la última actividad persistida para que sobreviva a recargas
+    const stored = parseInt(localStorage.getItem(STORAGE_KEY) ?? '', 10);
+    const now = Date.now();
+    lastActivityRef.current = Number.isNaN(stored) || stored > now ? now : stored;
+    localStorage.setItem(STORAGE_KEY, lastActivityRef.current.toString());
 
-        if (elapsed >= timeout) {
-          onLogout()
-        }
+    const checkInactivity = () => {
+      const elapsed = Date.now() - lastActivityRef.current;
+
+      if (elapsed >= timeout) {
+        clearAllTimers();
+        setIsWarning(false);
+        setTimeLeft(warningTime);
+        onLogoutRef.current();
+        return;
       }
-    }
-  }, [shouldCheckInactivity]);
+
+      if (elapsed >= timeout - warningTime) {
+        setIsWarning(true);
+        setTimeLeft(timeout - elapsed);
+      } else {
+        setIsWarning(false);
+        setTimeLeft(warningTime);
+      }
+    };
+
+    // Evaluar de inmediato: cubre el caso de sesión ya vencida al cargar la página
+    checkInactivity();
+    checkIntervalRef.current = setInterval(checkInactivity, 1000);
+
+    return () => clearAllTimers();
+  }, [shouldCheckInactivity, timeout, warningTime, clearAllTimers]);
 
   return {
     isWarning,
