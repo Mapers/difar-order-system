@@ -36,6 +36,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setPendingRoleSelection(false);
         localStorage.removeItem('token');
         localStorage.removeItem('invoice');
+        localStorage.removeItem('lastActivityTime');
     }, []);
 
     const fetchGlobalConfigs = useCallback(async () => {
@@ -119,6 +120,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             const resCheck = await AuthService.checkToken(smsCheck);
             if (resCheck.success) {
                 localStorage.setItem("token", tokenRef.current);
+                localStorage.setItem("lastActivityTime", Date.now().toString());
                 const tokenResult = decodeToken(tokenRef.current);
                 setUser(tokenResult.user);
                 setIsAuthenticated(true);
