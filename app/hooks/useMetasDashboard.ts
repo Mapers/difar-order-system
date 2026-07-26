@@ -57,6 +57,7 @@ export function useMetasDashboard() {
     const [dashboardData, setDashboardData] = useState<IDashboardData | null>(null);
     const [loading, setLoading]             = useState(true);
     const [loadingDashboard, setLoadingDashboard] = useState(false);
+    const [soloFacturado, setSoloFacturado] = useState(false);
 
     const isVendedorView = isVendedor();
     const codVend = isVendedorView ? (user?.codigo || undefined) : undefined;
@@ -81,7 +82,7 @@ export function useMetasDashboard() {
         if (!selectedCiclo) return;
         setLoadingDashboard(true);
         try {
-            const res = await MetasService.getDashboard(selectedCiclo.id_ciclo, codVend, undefined);
+            const res = await MetasService.getDashboard(selectedCiclo.id_ciclo, codVend, undefined, soloFacturado);
             const raw = res?.data ?? {};
             setDashboardData({
                 laboratorios: unwrap(raw.laboratorios),
@@ -91,7 +92,7 @@ export function useMetasDashboard() {
         } catch { /* ignore */ } finally {
             setLoadingDashboard(false);
         }
-    }, [selectedCiclo, codVend]);
+    }, [selectedCiclo, codVend, soloFacturado]);
 
     useEffect(() => {
         loadDashboard();
@@ -109,5 +110,7 @@ export function useMetasDashboard() {
         refreshDashboard: loadDashboard,
         kpis,
         isVendedorView,
+        soloFacturado,
+        setSoloFacturado,
     };
 }

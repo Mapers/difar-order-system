@@ -20,9 +20,10 @@ interface VendedorDetailModalProps {
     vendedor: IVendedorDashboard | null;
     allItems: IItemDashboard[];
     ciclo: ICiclo | null;
+    soloFacturado?: boolean;
 }
 
-export default function VendedorDetailModal({ open, onClose, vendedor, allItems, ciclo }: VendedorDetailModalProps) {
+export default function VendedorDetailModal({ open, onClose, vendedor, allItems, ciclo, soloFacturado }: VendedorDetailModalProps) {
     const [visitasPanelOpen, setVisitasPanelOpen] = useState(false);
     const [clientesOpen, setClientesOpen] = useState(false);
     const [modalItem, setModalItem] = useState<ItemWithComputed | null>(null);
@@ -250,6 +251,7 @@ export default function VendedorDetailModal({ open, onClose, vendedor, allItems,
                 idCiclo={ciclo.id_ciclo}
                 idLineaGe={vendedor.id_linea_ge}
                 nombreVendedor={vendedor.nombre_vendedor || vendedor.cod_vendedor}
+                soloFacturado={soloFacturado}
             />
         )}
 

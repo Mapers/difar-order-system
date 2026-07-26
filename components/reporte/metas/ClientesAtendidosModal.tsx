@@ -20,9 +20,10 @@ interface ClientesAtendidosModalProps {
     idCiclo: number;
     idLineaGe: number;
     nombreVendedor?: string;
+    soloFacturado?: boolean;
 }
 
-export default function ClientesAtendidosModal({ open, onClose, codVendedor, idCiclo, idLineaGe, nombreVendedor }: ClientesAtendidosModalProps) {
+export default function ClientesAtendidosModal({ open, onClose, codVendedor, idCiclo, idLineaGe, nombreVendedor, soloFacturado }: ClientesAtendidosModalProps) {
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
     const [clientes, setClientes] = useState<ClienteAtendido[]>([])
@@ -32,7 +33,7 @@ export default function ClientesAtendidosModal({ open, onClose, codVendedor, idC
         let cancel = false
         setLoading(true)
         setError(null)
-        MetasService.listarClientesAtendidosDirecto(codVendedor, idCiclo, idLineaGe)
+        MetasService.listarClientesAtendidosDirecto(codVendedor, idCiclo, idLineaGe, soloFacturado)
             .then(res => {
                 if (cancel) return
                 const list: ClienteAtendido[] = res?.data?.data || []
@@ -41,7 +42,7 @@ export default function ClientesAtendidosModal({ open, onClose, codVendedor, idC
             .catch(() => { if (!cancel) setError("No se pudieron cargar los clientes") })
             .finally(() => { if (!cancel) setLoading(false) })
         return () => { cancel = true }
-    }, [open, codVendedor, idCiclo, idLineaGe])
+    }, [open, codVendedor, idCiclo, idLineaGe, soloFacturado])
 
     const totalMonto = clientes.reduce((s, c) => s + Number(c.monto_vendido || 0), 0)
 

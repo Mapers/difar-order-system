@@ -13,8 +13,8 @@ export class MetasService {
         return response.data;
     }
 
-    static async getDashboard(idCiclo: number, codVendedor: string | undefined, idZona?: string): Promise<any> {
-        const response = await apiClient.get(`/metas/dashboard?id_ciclo=${idCiclo}&codVendedor=${codVendedor || ''}&id_zona=${idZona || ''}`);
+    static async getDashboard(idCiclo: number, codVendedor: string | undefined, idZona?: string, soloFacturado?: boolean): Promise<any> {
+        const response = await apiClient.get(`/metas/dashboard?id_ciclo=${idCiclo}&codVendedor=${codVendedor || ''}&id_zona=${idZona || ''}&solo_facturado=${soloFacturado ? 1 : 0}`);
         return response.data;
     }
 
@@ -180,9 +180,9 @@ export class MetasService {
         return response.data;
     }
 
-    static async listarClientesAtendidosDirecto(codVendedor: string, idCiclo: number, idLineaGe: number): Promise<any> {
+    static async listarClientesAtendidosDirecto(codVendedor: string, idCiclo: number, idLineaGe: number, soloFacturado?: boolean): Promise<any> {
         const response = await apiClient.get(
-            `/metas/dashboard/clientes-atendidos?cod_vendedor=${codVendedor}&id_ciclo=${idCiclo}&id_linea_ge=${idLineaGe}`
+            `/metas/dashboard/clientes-atendidos?cod_vendedor=${codVendedor}&id_ciclo=${idCiclo}&id_linea_ge=${idLineaGe}&solo_facturado=${soloFacturado ? 1 : 0}`
         );
         return response.data;
     }

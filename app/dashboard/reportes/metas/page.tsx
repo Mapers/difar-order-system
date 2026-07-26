@@ -5,6 +5,8 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Switch } from "@/components/ui/switch"
+import { Label } from "@/components/ui/label"
 import { BarChart3, RefreshCw, Users, Factory, Pill, LockKeyhole } from "lucide-react"
 
 import { IVendedorDashboard } from "@/app/types/metas-types"
@@ -42,6 +44,8 @@ export default function MetasDashboardPage() {
         refreshDashboard,
         kpis,
         isVendedorView,
+        soloFacturado,
+        setSoloFacturado,
     } = useMetasDashboard()
 
     const cicloLabel = selectedCiclo
@@ -96,6 +100,17 @@ export default function MetasDashboardPage() {
                             {selectedCiclo.estado}
                         </Badge>
                     )}
+                    <div className="flex items-center gap-2 rounded-md border border-border bg-background px-3 h-9">
+                        <Switch
+                            id="solo-facturado"
+                            checked={soloFacturado}
+                            onCheckedChange={setSoloFacturado}
+                            disabled={loadingDashboard}
+                        />
+                        <Label htmlFor="solo-facturado" className="text-xs font-medium cursor-pointer whitespace-nowrap">
+                            Solo venta facturada
+                        </Label>
+                    </div>
                     <Button variant="outline" size="sm" onClick={refreshDashboard} disabled={loadingDashboard}>
                         <RefreshCw className={`h-3.5 w-3.5 mr-1 ${loadingDashboard ? "animate-spin" : ""}`} />
                         Actualizar
@@ -181,6 +196,7 @@ export default function MetasDashboardPage() {
                         vendedor={selectedVendedor}
                         allItems={dashboardData.items}
                         ciclo={selectedCiclo}
+                        soloFacturado={soloFacturado}
                     />
                 </>
             )}
