@@ -35,7 +35,15 @@ export function useMetasItems(codVendedor: string | null | undefined) {
                 const items: IItemDashboard[] = unwrap(res?.data?.items)
                 const map = new Map<string, IItemDashboard>()
                 for (const item of items) {
-                    if (item.cod_articulo) map.set(item.cod_articulo, item)
+                    if (!item.cod_articulo) continue
+                    // El SP puede emitir dos filas para el mismo artículo cuando su meta
+                    // está cargada bajo un laboratorio pero el lote lo asigna a otro: una
+                    // fila CONFIGURADO (venta 0) y una SIN_META (venta real). No pisar una
+                    // entrada CONFIGURADO ya presente con una SIN_META del mismo artículo,
+                    // para que el resultado no dependa del orden en que llegan las filas.
+                    const existing = map.get(item.cod_articulo)
+                    if (existing?.estado_config === 'CONFIGURADO' && item.estado_config === 'SIN_META') continue
+                    map.set(item.cod_articulo, item)
                 }
                 setMetasMap(map)
             } catch {

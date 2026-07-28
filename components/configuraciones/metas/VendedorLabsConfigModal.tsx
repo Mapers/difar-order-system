@@ -9,7 +9,7 @@ import { Search } from "lucide-react"
 import StatusChip from "@/components/reporte/metas/StatusChip"
 import ProgressBar from "@/components/reporte/metas/ProgressBar"
 import { IVendedorLabDetalle, FilterStatus } from "@/app/types/metas-types"
-import { fmtMoney, getStatusColor, getLabColor, getInitials } from "@/app/utils/metas-helpers"
+import { fmtMoney, getStatusColor, getLabColor, getInitials, ID_LAB_SIN_META } from "@/app/utils/metas-helpers"
 
 interface VendedorLabsConfigModalProps {
     open: boolean;
@@ -37,6 +37,7 @@ export default function VendedorLabsConfigModal({
         let rows = labsDelVendedor.map(l => ({
             ...l,
             pct: Number(l.pct_lab || 0),
+            sinMeta: l.id_lab === ID_LAB_SIN_META,
         }))
 
         if (search) {
@@ -44,11 +45,13 @@ export default function VendedorLabsConfigModal({
             rows = rows.filter(l => (l.nombre_lab || '').toLowerCase().includes(q))
         }
 
-        if (filter === "verde")    rows = rows.filter(l => l.pct >= 80)
-        if (filter === "amarillo") rows = rows.filter(l => l.pct >= 50 && l.pct < 80)
-        if (filter === "rojo")     rows = rows.filter(l => l.pct < 50)
+        // El bucket no tiene avance que clasificar: solo aparece en "Todos".
+        if (filter === "verde")    rows = rows.filter(l => !l.sinMeta && l.pct >= 80)
+        if (filter === "amarillo") rows = rows.filter(l => !l.sinMeta && l.pct >= 50 && l.pct < 80)
+        if (filter === "rojo")     rows = rows.filter(l => !l.sinMeta && l.pct < 50)
 
-        return rows.sort((a, b) => b.pct - a.pct)
+        // El bucket al final, sin avance con el cual competir.
+        return rows.sort((a, b) => (a.sinMeta ? 1 : 0) - (b.sinMeta ? 1 : 0) || b.pct - a.pct)
     }, [labsDelVendedor, search, filter])
 
     const filterBtns: { key: FilterStatus; label: string; activeClass: string }[] = [
@@ -121,7 +124,7 @@ export default function VendedorLabsConfigModal({
                             Sin resultados
                         </div>
                     ) : filtered.map((lab, i) => {
-                        const [c1] = getStatusColor(lab.pct)
+                        const [c1] = lab.sinMeta ? ["#b45309", "#fbbf24"] : getStatusColor(lab.pct)
                         const color = getLabColor(i)
                         return (
                             <div
@@ -142,14 +145,14 @@ export default function VendedorLabsConfigModal({
                                         </span>
                                     </div>
                                     <div className="flex items-center gap-2 shrink-0">
-                                        <span className="text-sm font-bold" style={{ color: c1 }}>{lab.pct}%</span>
-                                        <StatusChip pct={lab.pct} />
+                                        <span className="text-sm font-bold" style={{ color: c1 }}>{lab.sinMeta ? "—" : `${lab.pct}%`}</span>
+                                        <StatusChip pct={lab.sinMeta ? null : lab.pct} />
                                     </div>
                                 </div>
                                 <div className="mt-2 space-y-1">
-                                    <ProgressBar pct={lab.pct} height="h-1.5" />
+                                    <ProgressBar pct={lab.sinMeta ? 0 : lab.pct} height="h-1.5" />
                                     <span className="text-[10px] text-muted-foreground">
-                                        {fmtMoney(Number(lab.venta_real))} / {fmtMoney(Number(lab.meta_monto))}
+                                        {fmtMoney(Number(lab.venta_real))} / {lab.sinMeta ? "—" : fmtMoney(Number(lab.meta_monto))}
                                     </span>
                                 </div>
                             </div>

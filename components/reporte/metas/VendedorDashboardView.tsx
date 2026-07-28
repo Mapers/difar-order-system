@@ -9,7 +9,7 @@ import MiniDonut from "@/components/reporte/metas/MiniDonut"
 import MiniGauge from "@/components/reporte/metas/MiniGauge"
 import ItemDetailModal, { ItemWithComputed, ItemModalType } from "@/components/reporte/metas/ItemDetailModal"
 import { IDashboardData, IItemDashboard, ILabDashboard } from "@/app/types/metas-types"
-import { fmtMoney, getStatusColor, getInitials, getLabColor, capPct } from "@/app/utils/metas-helpers"
+import { fmtMoney, getStatusColor, getInitials, getLabColor, capPct, ID_LAB_SIN_META } from "@/app/utils/metas-helpers"
 import { ChevronDown, ChevronRight, Package } from "lucide-react"
 
 interface VendedorDashboardViewProps {
@@ -29,10 +29,10 @@ function LabBarChart({ items, totalVenta }: {
             {top.map((item, i) => {
                 const barPct  = Math.round(Number(item.venta_real) / maxVenta * 100)
                 const contrib = totalVenta > 0 ? Math.round(Number(item.venta_real) / totalVenta * 100) : 0
-                const [c1]    = getStatusColor(item.avPct)
+                const [c1]    = item.estado_config === 'SIN_META' ? ["#b45309", "#fbbf24"] : getStatusColor(item.avPct)
                 const color   = getLabColor(i)
                 return (
-                    <div key={item.id_meta_item} className="flex items-center gap-2">
+                    <div key={`${item.cod_vendedor}-${item.id_linea_ge}-${item.cod_articulo}`} className="flex items-center gap-2">
                         <p className="text-[10px] text-muted-foreground w-28 truncate shrink-0">
                             {item.nombre_articulo || item.cod_articulo}
                         </p>
@@ -62,23 +62,27 @@ function LabCard({
 }) {
     const [isOpen, setIsOpen] = useState(defaultOpen)
 
+    const sinMeta = lab.id_linea_ge === ID_LAB_SIN_META
     const av    = Number(lab.pct_avance_monto || 0)
-    const [c1]  = getStatusColor(av)
+    const [c1]  = sinMeta ? ["#b45309", "#fbbf24"] : getStatusColor(av)
     const color = getLabColor(colorIdx)
 
     const totalVenta   = labItems.reduce((s, i) => s + Number(i.venta_real), 0)
     const totalMeta    = labItems.reduce((s, i) => s + Number(i.meta_monto), 0)
     const totalUndVend = labItems.reduce((s, i) => s + Number(i.u_vendidas), 0)
     const totalUndMeta = labItems.reduce((s, i) => s + Number(i.meta_cantidad), 0)
-    const itemsEnMeta  = labItems.filter(i => i.avPct >= 80).length
+    const itemsConMeta = labItems.filter(i => i.estado_config !== 'SIN_META').length
+    const itemsEnMeta  = labItems.filter(i => i.estado_config !== 'SIN_META' && i.avPct >= 80).length
 
     const enrichedLabItems = labItems.map(item => ({
         ...item,
+        sinMeta: item.estado_config === 'SIN_META',
         contrib: totalVenta > 0
             ? Math.round(Number(item.venta_real) / totalVenta * 100)
             : 0,
     }))
 
+    // El bucket al final; dentro de cada lab, los sin meta caen solos por avPct = 0.
     const sortedItems = [...enrichedLabItems].sort((a, b) => b.avPct - a.avPct)
 
     return (
@@ -98,15 +102,22 @@ function LabCard({
                                 <p className="text-[10px] text-muted-foreground mt-0.5">
                                     {labItems.length} ítem{labItems.length !== 1 ? "s" : ""} ·{" "}
                                     {itemsEnMeta} en meta · {fmtMoney(Number(lab.venta_real))} vendido
+                                    {!sinMeta && Number(lab.venta_sin_meta) > 0 && (
+                                        <span className="text-amber-700"> · ⚠ {fmtMoney(Number(lab.venta_sin_meta))} sin meta</span>
+                                    )}
                                 </p>
                             </div>
                         </div>
 
                         <div className="flex items-center gap-3 shrink-0">
                             <div className="hidden sm:block">
-                                <MiniDonut pct={av} size={48} strokeWidth={6} />
+                                {sinMeta ? (
+                                    <span className="text-xs font-bold text-amber-700">—</span>
+                                ) : (
+                                    <MiniDonut pct={av} size={48} strokeWidth={6} />
+                                )}
                             </div>
-                            <StatusChip pct={av} />
+                            <StatusChip pct={sinMeta ? null : av} />
                             {isOpen
                                 ? <ChevronDown className="h-4 w-4 text-muted-foreground" />
                                 : <ChevronRight className="h-4 w-4 text-muted-foreground" />
@@ -114,7 +125,7 @@ function LabCard({
                         </div>
                     </div>
 
-                    <ProgressBar pct={av} height="h-1.5" className="mt-3" />
+                    <ProgressBar pct={sinMeta ? 0 : av} height="h-1.5" className="mt-3" />
 
                     <div className="grid grid-cols-3 gap-2 mt-3 pt-3 border-t border-border">
                         <div>
@@ -123,14 +134,18 @@ function LabCard({
                         </div>
                         <div>
                             <p className="text-[9px] text-muted-foreground uppercase tracking-wide">Cuota</p>
-                            <p className="text-xs font-semibold text-muted-foreground">{fmtMoney(Number(lab.meta_monto))}</p>
+                            <p className="text-xs font-semibold text-muted-foreground">
+                                {sinMeta ? "—" : fmtMoney(Number(lab.meta_monto))}
+                            </p>
                         </div>
                         <div>
                             <p className="text-[9px] text-muted-foreground uppercase tracking-wide">Pendiente</p>
                             <p className="text-xs font-semibold" style={{ color: c1 }}>
-                                {Number(lab.monto_pendiente) > 0
-                                    ? fmtMoney(Number(lab.monto_pendiente))
-                                    : "✓ Logrado"}
+                                {sinMeta
+                                    ? "—"
+                                    : Number(lab.monto_pendiente) > 0
+                                        ? fmtMoney(Number(lab.monto_pendiente))
+                                        : "✓ Logrado"}
                             </p>
                         </div>
                     </div>
@@ -155,7 +170,7 @@ function LabCard({
                             <div className="px-4 pb-3 grid grid-cols-2 sm:grid-cols-4 gap-2">
                                 {[
                                     { label: "Ítems totales", val: String(labItems.length) },
-                                    { label: "Ítems en meta", val: `${itemsEnMeta} / ${labItems.length}` },
+                                    { label: "Ítems en meta", val: sinMeta ? "—" : `${itemsEnMeta} / ${itemsConMeta}` },
                                     { label: "Uds vendidas",  val: totalUndVend.toLocaleString() },
                                     { label: "Uds meta",      val: totalUndMeta.toLocaleString() },
                                 ].map(k => (
@@ -184,10 +199,10 @@ function LabCard({
                                     const [uc1] = getStatusColor(item.uPct)
                                     return (
                                         <div
-                                            key={item.id_meta_item}
-                                            className="grid grid-cols-[2fr_90px_90px_80px_70px_70px_70px] gap-2
+                                            key={`${item.cod_vendedor}-${item.id_linea_ge}-${item.cod_articulo}`}
+                                            className={`grid grid-cols-[2fr_90px_90px_80px_70px_70px_70px] gap-2
                                                        px-4 py-2.5 border-b border-border
-                                                       hover:bg-muted items-center transition-colors"
+                                                       hover:bg-muted items-center transition-colors ${item.sinMeta ? "bg-amber-50/40" : ""}`}
                                         >
                                             <div className="flex items-center gap-2">
                                                 <div className="w-5 h-5 rounded flex items-center justify-center text-[9px] font-bold shrink-0"
@@ -199,50 +214,61 @@ function LabCard({
                                                         {item.nombre_articulo || item.cod_articulo}
                                                     </p>
                                                     <p className="text-[9px] text-muted-foreground">
-                                                        P.ref: {fmtMoney(Number(item.precio_ref_meta))}
+                                                        P.ref: {item.sinMeta ? "—" : fmtMoney(Number(item.precio_ref_meta))}
                                                     </p>
                                                 </div>
                                             </div>
 
                                             <div className="text-right">
                                                 <p className="text-xs font-semibold">{fmtMoney(Number(item.venta_real))}</p>
-                                                <ProgressBar pct={item.avPct} height="h-[3px]" className="mt-0.5" />
+                                                <ProgressBar pct={item.sinMeta ? 0 : item.avPct} height="h-[3px]" className="mt-0.5" />
                                             </div>
 
                                             <div className="text-right text-xs text-muted-foreground">
-                                                {fmtMoney(Number(item.meta_monto))}
+                                                {item.sinMeta ? "—" : fmtMoney(Number(item.meta_monto))}
                                             </div>
 
-                                            <div
-                                                className="flex flex-col items-center gap-0.5 cursor-pointer hover:opacity-70 transition-opacity"
-                                                onClick={e => {
-                                                    e.stopPropagation()
-                                                    onOpenModal(item, 'unidades', color)
-                                                }}
-                                            >
-                                                <MiniDonut pct={item.uPct} size={36} strokeWidth={4} />
-                                                <p className="text-[9px] text-muted-foreground">
-                                                    {Number(item.u_vendidas).toLocaleString()} / {Number(item.meta_cantidad).toLocaleString()}
-                                                </p>
-                                            </div>
+                                            {item.sinMeta ? (
+                                                <div className="flex flex-col items-center gap-0.5">
+                                                    <p className="text-xs font-semibold">{Number(item.u_vendidas).toLocaleString()}</p>
+                                                    <p className="text-[9px] text-muted-foreground">sin meta</p>
+                                                </div>
+                                            ) : (
+                                                <div
+                                                    className="flex flex-col items-center gap-0.5 cursor-pointer hover:opacity-70 transition-opacity"
+                                                    onClick={e => {
+                                                        e.stopPropagation()
+                                                        onOpenModal(item, 'unidades', color)
+                                                    }}
+                                                >
+                                                    <MiniDonut pct={item.uPct} size={36} strokeWidth={4} />
+                                                    <p className="text-[9px] text-muted-foreground">
+                                                        {Number(item.u_vendidas).toLocaleString()} / {Number(item.meta_cantidad).toLocaleString()}
+                                                    </p>
+                                                </div>
+                                            )}
 
                                             <div className="text-center">
                                                 <p className="text-sm font-bold" style={{ color }}>{capPct(item.contrib)}%</p>
                                                 <p className="text-[9px] text-muted-foreground">del lab</p>
                                             </div>
 
-                                            <div
-                                                className="flex justify-center cursor-pointer hover:opacity-70 transition-opacity"
-                                                onClick={e => {
-                                                    e.stopPropagation()
-                                                    onOpenModal(item, 'avance', color)
-                                                }}
-                                            >
-                                                <MiniGauge pct={item.avPct} width={56} height={34} />
-                                            </div>
+                                            {item.sinMeta ? (
+                                                <div className="flex justify-center text-xs text-muted-foreground">—</div>
+                                            ) : (
+                                                <div
+                                                    className="flex justify-center cursor-pointer hover:opacity-70 transition-opacity"
+                                                    onClick={e => {
+                                                        e.stopPropagation()
+                                                        onOpenModal(item, 'avance', color)
+                                                    }}
+                                                >
+                                                    <MiniGauge pct={item.avPct} width={56} height={34} />
+                                                </div>
+                                            )}
 
                                             <div className="text-center">
-                                                <StatusChip pct={item.avPct} />
+                                                <StatusChip pct={item.sinMeta ? null : item.avPct} />
                                             </div>
                                         </div>
                                     )
@@ -257,14 +283,16 @@ function LabCard({
                                         {fmtMoney(totalVenta)}
                                     </span>
                                     <span className="text-right text-xs text-muted-foreground">
-                                        {fmtMoney(totalMeta)}
+                                        {sinMeta ? "—" : fmtMoney(totalMeta)}
                                     </span>
                                     <span className="text-center text-[11px] text-muted-foreground font-semibold">
-                                        {capPct(av)}% cumpl.
+                                        {sinMeta ? "—" : `${capPct(av)}% cumpl.`}
                                     </span>
                                     <span className="text-center text-xs font-bold text-muted-foreground">100%</span>
-                                    <span className="text-center text-xs font-bold" style={{ color: c1 }}>{capPct(av)}%</span>
-                                    <span className="text-center"><StatusChip pct={av} /></span>
+                                    <span className="text-center text-xs font-bold" style={{ color: c1 }}>
+                                        {sinMeta ? "—" : `${capPct(av)}%`}
+                                    </span>
+                                    <span className="text-center"><StatusChip pct={sinMeta ? null : av} /></span>
                                 </div>
                             </div>
 
@@ -273,7 +301,10 @@ function LabCard({
                                     const [sc1] = getStatusColor(item.avPct)
                                     const [uc1] = getStatusColor(item.uPct)
                                     return (
-                                        <div key={item.id_meta_item} className="p-3 space-y-2 bg-background">
+                                        <div
+                                            key={`${item.cod_vendedor}-${item.id_linea_ge}-${item.cod_articulo}`}
+                                            className={`p-3 space-y-2 ${item.sinMeta ? "bg-amber-50/40" : "bg-background"}`}
+                                        >
                                             <div className="flex items-start justify-between gap-2">
                                                 <div className="flex items-center gap-2 min-w-0">
                                                     <div className="w-5 h-5 rounded flex items-center justify-center text-[9px] font-bold shrink-0"
@@ -284,7 +315,7 @@ function LabCard({
                                                         {item.nombre_articulo || item.cod_articulo}
                                                     </span>
                                                 </div>
-                                                <StatusChip pct={item.avPct} />
+                                                <StatusChip pct={item.sinMeta ? null : item.avPct} />
                                             </div>
 
                                             <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 pl-7">
@@ -297,7 +328,7 @@ function LabCard({
                                                 <div>
                                                     <p className="text-[9px] text-muted-foreground uppercase">Cuota S/</p>
                                                     <p className="text-xs text-muted-foreground">
-                                                        {fmtMoney(Number(item.meta_monto))}
+                                                        {item.sinMeta ? "—" : fmtMoney(Number(item.meta_monto))}
                                                     </p>
                                                 </div>
                                                 <div>
@@ -306,36 +337,46 @@ function LabCard({
                                                 </div>
                                                 <div>
                                                     <p className="text-[9px] text-muted-foreground uppercase">Avance S/</p>
-                                                    <p className="text-xs font-bold" style={{ color: sc1 }}>{capPct(item.avPct)}%</p>
+                                                    <p className="text-xs font-bold" style={{ color: item.sinMeta ? "#b45309" : sc1 }}>
+                                                        {item.sinMeta ? "—" : `${capPct(item.avPct)}%`}
+                                                    </p>
                                                 </div>
                                             </div>
 
                                             <div className="pl-7 flex items-center gap-3">
-                                                <button
-                                                    className="flex items-center gap-1.5 text-[10px] text-sky-600 hover:text-sky-700"
-                                                    onClick={e => {
-                                                        e.stopPropagation()
-                                                        onOpenModal(item, 'unidades', color)
-                                                    }}
-                                                >
-                                                    <MiniDonut pct={item.uPct} size={28} strokeWidth={3} />
-                                                    <span>
-                                                        {Number(item.u_vendidas).toLocaleString()}/{Number(item.meta_cantidad).toLocaleString()} uds
+                                                {item.sinMeta ? (
+                                                    <span className="text-[10px] text-muted-foreground">
+                                                        {Number(item.u_vendidas).toLocaleString()} uds vendidas · sin meta configurada
                                                     </span>
-                                                </button>
-                                                <button
-                                                    className="text-[10px] text-sky-600 hover:text-sky-700"
-                                                    onClick={e => {
-                                                        e.stopPropagation()
-                                                        onOpenModal(item, 'avance', color)
-                                                    }}
-                                                >
-                                                    Ver avance S/ →
-                                                </button>
+                                                ) : (
+                                                    <>
+                                                        <button
+                                                            className="flex items-center gap-1.5 text-[10px] text-sky-600 hover:text-sky-700"
+                                                            onClick={e => {
+                                                                e.stopPropagation()
+                                                                onOpenModal(item, 'unidades', color)
+                                                            }}
+                                                        >
+                                                            <MiniDonut pct={item.uPct} size={28} strokeWidth={3} />
+                                                            <span>
+                                                                {Number(item.u_vendidas).toLocaleString()}/{Number(item.meta_cantidad).toLocaleString()} uds
+                                                            </span>
+                                                        </button>
+                                                        <button
+                                                            className="text-[10px] text-sky-600 hover:text-sky-700"
+                                                            onClick={e => {
+                                                                e.stopPropagation()
+                                                                onOpenModal(item, 'avance', color)
+                                                            }}
+                                                        >
+                                                            Ver avance S/ →
+                                                        </button>
+                                                    </>
+                                                )}
                                             </div>
 
                                             <div className="pl-7">
-                                                <ProgressBar pct={item.avPct} height="h-1.5" />
+                                                <ProgressBar pct={item.sinMeta ? 0 : item.avPct} height="h-1.5" />
                                             </div>
                                         </div>
                                     )
@@ -351,16 +392,18 @@ function LabCard({
                                         </div>
                                         <div>
                                             <p className="text-[9px] text-muted-foreground uppercase">Cuota total</p>
-                                            <p className="text-sm text-muted-foreground">{fmtMoney(Number(lab.meta_monto))}</p>
+                                            <p className="text-sm text-muted-foreground">
+                                                {sinMeta ? "—" : fmtMoney(Number(lab.meta_monto))}
+                                            </p>
                                         </div>
                                         <div className="col-span-2">
-                                            <ProgressBar pct={av} height="h-2" />
+                                            <ProgressBar pct={sinMeta ? 0 : av} height="h-2" />
                                             <div className="flex justify-between mt-1">
                                                 <span className="text-[10px] text-muted-foreground">
                                                     {sortedItems.length} ítems · 100% contrib.
                                                 </span>
                                                 <span className="text-[10px] font-bold" style={{ color }}>
-                                                    {capPct(av)}% avance
+                                                    {sinMeta ? "sin meta" : `${capPct(av)}% avance`}
                                                 </span>
                                             </div>
                                         </div>
@@ -414,13 +457,15 @@ export default function VendedorDashboardView({ data, kpis }: VendedorDashboardV
         return map
     }, [enrichedItems])
 
-    const labsAlert = [...labs]
+    const labsReales = labs.filter(l => l.id_linea_ge !== ID_LAB_SIN_META)
+
+    const labsAlert = [...labsReales]
         .filter(l => Number(l.pct_avance_monto) < 80)
         .sort((a, b) => Number(a.pct_avance_monto) - Number(b.pct_avance_monto))
         .slice(0, 5)
 
     const labsSorted = [...labs].sort(
-        (a, b) => Number(b.pct_avance_monto) - Number(a.pct_avance_monto)
+        (a, b) => Number(b.pct_avance_monto ?? -1) - Number(a.pct_avance_monto ?? -1)
     )
 
     return (
@@ -470,12 +515,12 @@ export default function VendedorDashboardView({ data, kpis }: VendedorDashboardV
                 <KpiCard
                     label="Mis Productos"
                     value={String(items.length)}
-                    subtitle={`${enrichedItems.filter(i => i.avPct >= 80).length} en meta`}
+                    subtitle={`${enrichedItems.filter(i => i.estado_config !== 'SIN_META' && i.avPct >= 80).length} en meta`}
                     accentColor="#7c3aed"
-                    delta={enrichedItems.filter(i => i.avPct < 80).length > 0
-                        ? `${enrichedItems.filter(i => i.avPct < 80).length} bajo meta`
+                    delta={enrichedItems.filter(i => i.estado_config !== 'SIN_META' && i.avPct < 80).length > 0
+                        ? `${enrichedItems.filter(i => i.estado_config !== 'SIN_META' && i.avPct < 80).length} bajo meta`
                         : "✓ Todos en meta"}
-                    deltaType={enrichedItems.filter(i => i.avPct < 80).length > 0 ? "warning" : "success"}
+                    deltaType={enrichedItems.filter(i => i.estado_config !== 'SIN_META' && i.avPct < 80).length > 0 ? "warning" : "success"}
                 />
             </div>
 

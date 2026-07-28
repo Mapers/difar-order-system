@@ -5,9 +5,11 @@ export interface ILabDashboard {
     meta_clientes: number;
     venta_real: number;
     clientes_atendidos: number;
-    pct_avance_monto: number;
-    pct_cobertura_clientes: number;
+    pct_avance_monto: number | null;
+    pct_cobertura_clientes: number | null;
     monto_pendiente: number;
+    venta_sin_meta: number;
+    items_sin_meta: number;
     color?: string;
 }
 
@@ -21,9 +23,11 @@ export interface IVendedorDashboard {
     meta_clientes: number;
     venta_real: number;
     clientes_atendidos: number;
-    pct_avance_monto: number;
-    pct_cobertura_clientes: number;
+    pct_avance_monto: number | null;
+    pct_cobertura_clientes: number | null;
     monto_pendiente: number;
+    venta_sin_meta: number;
+    items_sin_meta: number;
     items?: IItemDashboard[];
     // Presentes solo cuando la fila es un vendedor agrupado (todos sus labs sumados)
     labs?: IVendedorDashboard[];
@@ -32,7 +36,8 @@ export interface IVendedorDashboard {
 }
 
 export interface IItemDashboard {
-    id_meta_item: number;
+    estado_config: 'CONFIGURADO' | 'SIN_META';
+    id_meta_item: number | null;
     id_ciclo: number;
     id_linea_ge: number;
     cod_vendedor: string;
@@ -43,8 +48,8 @@ export interface IItemDashboard {
     meta_monto: number;
     u_vendidas: number;
     venta_real: number;
-    pct_cumplimiento_unidades: number;
-    pct_avance_monto: number;
+    pct_cumplimiento_unidades: number | null;
+    pct_avance_monto: number | null;
     unidades_pendientes: number;
     monto_pendiente: number;
     nombre_lab?: string;
@@ -69,7 +74,7 @@ export interface IVendedorLabDetalle {
     nombre_lab: string;
     meta_monto: number;
     venta_real: number;
-    pct_lab: number;
+    pct_lab: number | null;
 }
 
 export type FilterStatus = 'todos' | 'verde' | 'amarillo' | 'rojo';

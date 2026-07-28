@@ -10,7 +10,7 @@ import KpiCard from "@/components/reporte/metas/KpiCard"
 import ProgressBar from "@/components/reporte/metas/ProgressBar"
 import StatusChip from "@/components/reporte/metas/StatusChip"
 import { ILabDashboard } from "@/app/types/metas-types"
-import { fmtMoney, getStatusColor, getInitials, getLabColor, capPct } from "@/app/utils/metas-helpers"
+import { fmtMoney, getStatusColor, getInitials, getLabColor, capPct, ID_LAB_SIN_META } from "@/app/utils/metas-helpers"
 import { FilterStatus, SortMode } from "@/app/types/metas-types"
 
 interface LaboratoriosTabProps {
@@ -34,15 +34,19 @@ export default function LaboratoriosTab({
     const [filter, setFilter] = useState<FilterStatus>("todos");
     const [sort, setSort] = useState<SortMode>("pct");
 
+    // El bucket "Sin meta asignada" no compite por una tarjeta de KPI ni cuenta como laboratorio.
+    const labsReales = laboratorios.filter(l => l.id_linea_ge !== ID_LAB_SIN_META);
+
     const top4 = useMemo(() =>
-            [...laboratorios].sort((a, b) => Number(b.pct_avance_monto) - Number(a.pct_avance_monto)).slice(0, 4),
-        [laboratorios]
+            [...labsReales].sort((a, b) => Number(b.pct_avance_monto) - Number(a.pct_avance_monto)).slice(0, 4),
+        [labsReales]
     );
 
     const filtered = useMemo(() => {
         let rows = laboratorios.map(l => ({
             ...l,
-            pct: Number(l.pct_avance_monto || 0)
+            pct: Number(l.pct_avance_monto || 0),
+            sinMeta: l.id_linea_ge === ID_LAB_SIN_META,
         }));
 
         if (search) {
@@ -50,9 +54,10 @@ export default function LaboratoriosTab({
             rows = rows.filter(l => (l.nombre_lab || String(l.id_linea_ge)).toLowerCase().includes(q));
         }
 
-        if (filter === "verde") rows = rows.filter(l => l.pct >= 80);
-        if (filter === "amarillo") rows = rows.filter(l => l.pct >= 50 && l.pct < 80);
-        if (filter === "rojo") rows = rows.filter(l => l.pct < 50);
+        // El bucket no tiene avance que clasificar: solo aparece en "Todos".
+        if (filter === "verde") rows = rows.filter(l => !l.sinMeta && l.pct >= 80);
+        if (filter === "amarillo") rows = rows.filter(l => !l.sinMeta && l.pct >= 50 && l.pct < 80);
+        if (filter === "rojo") rows = rows.filter(l => !l.sinMeta && l.pct < 50);
 
         if (sort === "pct") rows.sort((a, b) => b.pct - a.pct);
         if (sort === "venta") rows.sort((a, b) => Number(b.venta_real) - Number(a.venta_real));
@@ -144,7 +149,7 @@ export default function LaboratoriosTab({
                             ))}
                         </div>
                     </div>
-                    <p className="text-[11px] text-muted-foreground">{filtered.length} de {laboratorios.length} laboratorios</p>
+                    <p className="text-[11px] text-muted-foreground">{filtered.length} de {labsReales.length} laboratorios</p>
                 </CardContent>
             </Card>
 
@@ -152,9 +157,10 @@ export default function LaboratoriosTab({
                 {filtered.length === 0 ? (
                     <Card><CardContent className="py-8 text-center text-muted-foreground text-sm">Sin resultados</CardContent></Card>
                 ) : filtered.map((l, i) => {
-                    const [c1] = getStatusColor(l.pct);
+                    const lSinMeta = l.id_linea_ge === ID_LAB_SIN_META;
+                    const [c1] = lSinMeta ? ["#b45309", "#fbbf24"] : getStatusColor(l.pct);
                     const color = getLabColor(i);
-                    const pendiente = Number(l.monto_pendiente || 0);
+                    const montoPendiente = Number(l.monto_pendiente || 0);
                     return (
                         <Card
                             key={l.id_linea_ge}
@@ -174,15 +180,17 @@ export default function LaboratoriosTab({
                                             {l.nombre_lab || `Lab ${l.id_linea_ge}`}
                                         </p>
                                     </div>
-                                    <StatusChip pct={l.pct} />
+                                    <StatusChip pct={lSinMeta ? null : l.pct} />
                                 </div>
 
                                 <div className="space-y-1">
                                     <div className="flex justify-between items-center">
                                         <span className="text-[11px] text-muted-foreground">Avance</span>
-                                        <span className="text-sm font-bold" style={{ color: c1 }}>{capPct(l.pct)}%</span>
+                                        <span className="text-sm font-bold" style={{ color: c1 }}>
+                                            {lSinMeta ? "—" : `${capPct(l.pct)}%`}
+                                        </span>
                                     </div>
-                                    <ProgressBar pct={l.pct} height="h-2" />
+                                    <ProgressBar pct={lSinMeta ? 0 : l.pct} height="h-2" />
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-2 pt-1 border-t border-border">
@@ -192,18 +200,20 @@ export default function LaboratoriosTab({
                                     </div>
                                     <div>
                                         <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Cuota</p>
-                                        <p className="text-sm font-semibold text-muted-foreground">{fmtMoney(Number(l.meta_monto))}</p>
+                                        <p className="text-sm font-semibold text-muted-foreground">
+                                            {lSinMeta ? "—" : fmtMoney(Number(l.meta_monto))}
+                                        </p>
                                     </div>
                                     <div>
                                         <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Clientes</p>
                                         <p className="text-sm font-semibold text-card-foreground">
-                                            {Number(l.clientes_atendidos)}/{Number(l.meta_clientes)}
+                                            {lSinMeta ? "—" : `${Number(l.clientes_atendidos)}/${Number(l.meta_clientes)}`}
                                         </p>
                                     </div>
                                     <div>
                                         <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Pendiente</p>
                                         <p className="text-sm font-semibold" style={{ color: c1 }}>
-                                            {pendiente > 0 ? fmtMoney(pendiente) : "✓ Logrado"}
+                                            {lSinMeta ? "—" : montoPendiente > 0 ? fmtMoney(montoPendiente) : "✓ Logrado"}
                                         </p>
                                     </div>
                                 </div>
@@ -232,7 +242,8 @@ export default function LaboratoriosTab({
                             {filtered.length === 0 ? (
                                 <tr><td colSpan={7} className="text-center text-muted-foreground py-8">Sin resultados</td></tr>
                             ) : filtered.map((l, i) => {
-                                const [c1] = getStatusColor(l.pct);
+                                const lSinMeta = l.id_linea_ge === ID_LAB_SIN_META;
+                                const [c1] = lSinMeta ? ["#b45309", "#fbbf24"] : getStatusColor(l.pct);
                                 const color = getLabColor(i);
                                 return (
                                     <tr key={l.id_linea_ge} className="border-b border-border hover:bg-muted transition-colors">
@@ -247,12 +258,18 @@ export default function LaboratoriosTab({
                                                 <b style={{ color }}>{l.nombre_lab || `Lab ${l.id_linea_ge}`}</b>
                                             </div>
                                         </td>
-                                        <td className="px-3 py-2.5 text-muted-foreground">{Number(l.clientes_atendidos)}/{Number(l.meta_clientes)}</td>
+                                        <td className="px-3 py-2.5 text-muted-foreground">
+                                            {lSinMeta ? "—" : `${Number(l.clientes_atendidos)}/${Number(l.meta_clientes)}`}
+                                        </td>
                                         <td className="px-3 py-2.5 font-semibold">{fmtMoney(Number(l.venta_real))}</td>
-                                        <td className="px-3 py-2.5 text-muted-foreground">{fmtMoney(Number(l.meta_monto))}</td>
-                                        <td className="px-3 py-2.5 font-bold" style={{ color: c1 }}>{capPct(l.pct)}%</td>
-                                        <td className="px-3 py-2.5"><ProgressBar pct={l.pct} height="h-1.5" /></td>
-                                        <td className="px-3 py-2.5"><StatusChip pct={l.pct} /></td>
+                                        <td className="px-3 py-2.5 text-muted-foreground">
+                                            {lSinMeta ? "—" : fmtMoney(Number(l.meta_monto))}
+                                        </td>
+                                        <td className="px-3 py-2.5 font-bold" style={{ color: c1 }}>
+                                            {lSinMeta ? "—" : `${capPct(l.pct)}%`}
+                                        </td>
+                                        <td className="px-3 py-2.5"><ProgressBar pct={lSinMeta ? 0 : l.pct} height="h-1.5" /></td>
+                                        <td className="px-3 py-2.5"><StatusChip pct={lSinMeta ? null : l.pct} /></td>
                                     </tr>
                                 );
                             })}

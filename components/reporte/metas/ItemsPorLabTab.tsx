@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { ChevronDown, ChevronRight, Search } from "lucide-react"
 import { ILabDashboard, IItemDashboard, FilterStatus, ItemSortMode } from "@/app/types/metas-types"
-import { fmtMoney, getStatusColor, getLabColor, capPct } from "@/app/utils/metas-helpers"
+import { fmtMoney, getStatusColor, getLabColor, capPct, ID_LAB_SIN_META } from "@/app/utils/metas-helpers"
 import ProgressBar from "@/components/reporte/metas/ProgressBar"
 import StatusChip from "@/components/reporte/metas/StatusChip"
 import MiniDonut from "@/components/reporte/metas/MiniDonut"
@@ -42,13 +42,19 @@ export default function ItemsPorLabTab({ laboratorios, items }: ItemsPorLabTabPr
                 .filter(i => i.id_linea_ge === lab.id_linea_ge)
                 .map(item => ({
                     ...item,
+                    sinMeta: item.estado_config === 'SIN_META',
                     avPct: Number(item.pct_avance_monto || 0),
                     uPct: Number(item.pct_cumplimiento_unidades || 0),
                     contrib: Number(lab.venta_real) > 0
                         ? Math.round(Number(item.venta_real) / Number(lab.venta_real) * 100)
                         : 0
                 }));
-            return { ...lab, pct: Number(lab.pct_avance_monto || 0), labItems };
+            return {
+                ...lab,
+                pct: Number(lab.pct_avance_monto || 0),
+                sinMeta: lab.id_linea_ge === ID_LAB_SIN_META,
+                labItems,
+            };
         });
 
         let filtered = groups;
@@ -56,11 +62,13 @@ export default function ItemsPorLabTab({ laboratorios, items }: ItemsPorLabTabPr
             const q = search.toLowerCase();
             filtered = filtered.filter(g => (g.nombre_lab || String(g.id_linea_ge)).toLowerCase().includes(q));
         }
-        if (filter === "verde") filtered = filtered.filter(g => g.pct >= 80);
-        if (filter === "amarillo") filtered = filtered.filter(g => g.pct >= 50 && g.pct < 80);
-        if (filter === "rojo") filtered = filtered.filter(g => g.pct < 50);
+        // El bucket no tiene avance que clasificar: solo aparece en "Todos".
+        if (filter === "verde")    filtered = filtered.filter(g => !g.sinMeta && g.pct >= 80);
+        if (filter === "amarillo") filtered = filtered.filter(g => !g.sinMeta && g.pct >= 50 && g.pct < 80);
+        if (filter === "rojo")     filtered = filtered.filter(g => !g.sinMeta && g.pct < 50);
 
-        return filtered.sort((a, b) => b.pct - a.pct);
+        // El bucket al final, sin avance con el cual competir.
+        return filtered.sort((a, b) => (a.sinMeta ? 1 : 0) - (b.sinMeta ? 1 : 0) || b.pct - a.pct);
     }, [laboratorios, items, search, filter]);
 
     const filterBtns: { key: FilterStatus; label: string; activeClass: string }[] = [
@@ -75,6 +83,8 @@ export default function ItemsPorLabTab({ laboratorios, items }: ItemsPorLabTabPr
         { key: "avance", label: "% Avance S/" },
         { key: "unidades", label: "Unidades" },
     ];
+
+    const itemKey = (item: IItemDashboard) => `${item.cod_vendedor}-${item.id_linea_ge}-${item.cod_articulo}`;
 
     return (
         <div className="space-y-4">
@@ -118,7 +128,7 @@ export default function ItemsPorLabTab({ laboratorios, items }: ItemsPorLabTabPr
             <div className="space-y-3">
                 {labGroups.map((group, gIdx) => {
                     const isOpen = openLabs.has(group.id_linea_ge);
-                    const [c1] = getStatusColor(group.pct);
+                    const [c1] = group.sinMeta ? ["#b45309", "#fbbf24"] : getStatusColor(group.pct);
                     const color = getLabColor(gIdx);
 
                     const sortedItems = [...group.labItems].sort((a, b) => {
@@ -142,16 +152,23 @@ export default function ItemsPorLabTab({ laboratorios, items }: ItemsPorLabTabPr
                                         {group.nombre_lab || `Lab ${group.id_linea_ge}`}
                                     </span>
                                     <span className="text-[11px] text-muted-foreground">{sortedItems.length} ítems</span>
+                                    {!group.sinMeta && Number(group.venta_sin_meta) > 0 && (
+                                        <span className="text-[10px] text-amber-700 whitespace-nowrap">
+                                            ⚠ incluye {fmtMoney(Number(group.venta_sin_meta))} sin meta
+                                        </span>
+                                    )}
                                 </div>
                                 <div className="flex items-center gap-3">
                                     <div className="hidden sm:flex flex-col items-end gap-0.5">
                                         <span className="text-[10px] text-muted-foreground">Avance S/</span>
-                                        <span className="text-xs font-bold" style={{ color: c1 }}>{capPct(group.pct)}%</span>
+                                        <span className="text-xs font-bold" style={{ color: c1 }}>
+                                            {group.sinMeta ? "—" : `${capPct(group.pct)}%`}
+                                        </span>
                                     </div>
                                     <div className="w-24 hidden sm:block">
-                                        <ProgressBar pct={group.pct} height="h-1.5" />
+                                        <ProgressBar pct={group.sinMeta ? 0 : group.pct} height="h-1.5" />
                                     </div>
-                                    <StatusChip pct={group.pct} />
+                                    <StatusChip pct={group.sinMeta ? null : group.pct} />
                                 </div>
                             </div>
 
@@ -162,7 +179,7 @@ export default function ItemsPorLabTab({ laboratorios, items }: ItemsPorLabTabPr
                                             const [sc1] = getStatusColor(item.avPct);
                                             const [uc1] = getStatusColor(item.uPct);
                                             return (
-                                                <div key={item.id_meta_item} className="p-3 space-y-2 bg-background">
+                                                <div key={itemKey(item)} className={`p-3 space-y-2 ${item.sinMeta ? "bg-amber-50/40" : "bg-background"}`}>
                                                     <div className="flex items-start justify-between gap-2">
                                                         <div className="flex items-center gap-2 min-w-0">
                                                             <div
@@ -175,7 +192,7 @@ export default function ItemsPorLabTab({ laboratorios, items }: ItemsPorLabTabPr
                                                                 {item.nombre_articulo || item.cod_articulo}
                                                             </span>
                                                         </div>
-                                                        <StatusChip pct={item.avPct} />
+                                                        <StatusChip pct={item.sinMeta ? null : item.avPct} />
                                                     </div>
 
                                                     <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 pl-7">
@@ -185,7 +202,9 @@ export default function ItemsPorLabTab({ laboratorios, items }: ItemsPorLabTabPr
                                                         </div>
                                                         <div>
                                                             <p className="text-[9px] text-muted-foreground uppercase">Cuota S/</p>
-                                                            <p className="text-xs text-muted-foreground">{fmtMoney(Number(item.meta_monto))}</p>
+                                                            <p className="text-xs text-muted-foreground">
+                                                                {item.sinMeta ? "—" : fmtMoney(Number(item.meta_monto))}
+                                                            </p>
                                                         </div>
                                                         <div>
                                                             <p className="text-[9px] text-muted-foreground uppercase">Contrib.</p>
@@ -193,38 +212,48 @@ export default function ItemsPorLabTab({ laboratorios, items }: ItemsPorLabTabPr
                                                         </div>
                                                         <div>
                                                             <p className="text-[9px] text-muted-foreground uppercase">Avance S/</p>
-                                                            <p className="text-xs font-bold" style={{ color: sc1 }}>{capPct(item.avPct)}%</p>
+                                                            <p className="text-xs font-bold" style={{ color: item.sinMeta ? "#b45309" : sc1 }}>
+                                                                {item.sinMeta ? "—" : `${capPct(item.avPct)}%`}
+                                                            </p>
                                                         </div>
                                                     </div>
 
                                                     <div className="pl-7 flex items-center gap-3">
-                                                        <button
-                                                            className="flex items-center gap-1.5 text-[10px] text-sky-600 hover:text-sky-700"
-                                                            onClick={e => {
-                                                                e.stopPropagation();
-                                                                setModalItem(item);
-                                                                setModalType('unidades');
-                                                                setModalLabColor(color);
-                                                            }}
-                                                        >
-                                                            <MiniDonut pct={item.uPct} size={28} strokeWidth={3} />
-                                                            <span>{Number(item.u_vendidas).toLocaleString()}/{Number(item.meta_cantidad).toLocaleString()} uds</span>
-                                                        </button>
-                                                        <button
-                                                            className="text-[10px] text-sky-600 hover:text-sky-700"
-                                                            onClick={e => {
-                                                                e.stopPropagation();
-                                                                setModalItem(item);
-                                                                setModalType('avance');
-                                                                setModalLabColor(color);
-                                                            }}
-                                                        >
-                                                            Ver avance S/ →
-                                                        </button>
+                                                        {item.sinMeta ? (
+                                                            <span className="text-[10px] text-muted-foreground">
+                                                                {Number(item.u_vendidas).toLocaleString()} uds vendidas · sin meta configurada
+                                                            </span>
+                                                        ) : (
+                                                            <>
+                                                                <button
+                                                                    className="flex items-center gap-1.5 text-[10px] text-sky-600 hover:text-sky-700"
+                                                                    onClick={e => {
+                                                                        e.stopPropagation();
+                                                                        setModalItem(item);
+                                                                        setModalType('unidades');
+                                                                        setModalLabColor(color);
+                                                                    }}
+                                                                >
+                                                                    <MiniDonut pct={item.uPct} size={28} strokeWidth={3} />
+                                                                    <span>{Number(item.u_vendidas).toLocaleString()}/{Number(item.meta_cantidad).toLocaleString()} uds</span>
+                                                                </button>
+                                                                <button
+                                                                    className="text-[10px] text-sky-600 hover:text-sky-700"
+                                                                    onClick={e => {
+                                                                        e.stopPropagation();
+                                                                        setModalItem(item);
+                                                                        setModalType('avance');
+                                                                        setModalLabColor(color);
+                                                                    }}
+                                                                >
+                                                                    Ver avance S/ →
+                                                                </button>
+                                                            </>
+                                                        )}
                                                     </div>
 
                                                     <div className="pl-7">
-                                                        <ProgressBar pct={item.avPct} height="h-1.5" />
+                                                        <ProgressBar pct={item.sinMeta ? 0 : item.avPct} height="h-1.5" />
                                                     </div>
                                                 </div>
                                             );
@@ -238,13 +267,17 @@ export default function ItemsPorLabTab({ laboratorios, items }: ItemsPorLabTabPr
                                                 </div>
                                                 <div>
                                                     <p className="text-[9px] text-muted-foreground uppercase">Cuota total</p>
-                                                    <p className="text-sm text-muted-foreground">{fmtMoney(Number(group.meta_monto))}</p>
+                                                    <p className="text-sm text-muted-foreground">
+                                                        {group.sinMeta ? "—" : fmtMoney(Number(group.meta_monto))}
+                                                    </p>
                                                 </div>
                                                 <div className="col-span-2">
-                                                    <ProgressBar pct={group.pct} height="h-2" />
+                                                    <ProgressBar pct={group.sinMeta ? 0 : group.pct} height="h-2" />
                                                     <div className="flex justify-between mt-1">
                                                         <span className="text-[10px] text-muted-foreground">{sortedItems.length} ítems · 100% contrib.</span>
-                                                        <span className="text-[10px] font-bold" style={{ color }}>{capPct(group.pct)}% avance</span>
+                                                        <span className="text-[10px] font-bold" style={{ color }}>
+                                                            {group.sinMeta ? "sin meta" : `${capPct(group.pct)}% avance`}
+                                                        </span>
                                                     </div>
                                                 </div>
                                             </div>
@@ -267,8 +300,8 @@ export default function ItemsPorLabTab({ laboratorios, items }: ItemsPorLabTabPr
                                             const [uc1] = getStatusColor(item.uPct);
                                             return (
                                                 <div
-                                                    key={item.id_meta_item}
-                                                    className="grid grid-cols-[2fr_90px_90px_80px_70px_70px_70px] gap-2 px-4 py-2.5 border-b border-border hover:bg-muted items-center transition-colors"
+                                                    key={itemKey(item)}
+                                                    className={`grid grid-cols-[2fr_90px_90px_80px_70px_70px_70px] gap-2 px-4 py-2.5 border-b border-border hover:bg-muted items-center transition-colors ${item.sinMeta ? "bg-amber-50/40" : ""}`}
                                                 >
                                                     <div className="flex items-center gap-2">
                                                         <div
@@ -283,40 +316,53 @@ export default function ItemsPorLabTab({ laboratorios, items }: ItemsPorLabTabPr
                                                     </div>
                                                     <div className="text-right">
                                                         <p className="text-xs font-semibold">{fmtMoney(Number(item.venta_real))}</p>
-                                                        <ProgressBar pct={item.avPct} height="h-[3px]" className="mt-0.5" />
+                                                        <ProgressBar pct={item.sinMeta ? 0 : item.avPct} height="h-[3px]" className="mt-0.5" />
                                                     </div>
-                                                    <div className="text-right text-xs text-muted-foreground">{fmtMoney(Number(item.meta_monto))}</div>
-                                                    <div
-                                                        className="flex flex-col items-center gap-0.5 cursor-pointer hover:opacity-70 transition-opacity"
-                                                        onClick={e => {
-                                                            e.stopPropagation();
-                                                            setModalItem(item);
-                                                            setModalType('unidades');
-                                                            setModalLabColor(color);
-                                                        }}
-                                                    >
-                                                        <MiniDonut pct={item.uPct} size={36} strokeWidth={4} />
-                                                        <p className="text-[9px] text-muted-foreground">
-                                                            {Number(item.u_vendidas).toLocaleString()} / {Number(item.meta_cantidad).toLocaleString()}
-                                                        </p>
+                                                    <div className="text-right text-xs text-muted-foreground">
+                                                        {item.sinMeta ? "—" : fmtMoney(Number(item.meta_monto))}
                                                     </div>
+                                                    {item.sinMeta ? (
+                                                        <div className="flex flex-col items-center gap-0.5">
+                                                            <p className="text-xs font-semibold">{Number(item.u_vendidas).toLocaleString()}</p>
+                                                            <p className="text-[9px] text-muted-foreground">sin meta</p>
+                                                        </div>
+                                                    ) : (
+                                                        <div
+                                                            className="flex flex-col items-center gap-0.5 cursor-pointer hover:opacity-70 transition-opacity"
+                                                            onClick={e => {
+                                                                e.stopPropagation();
+                                                                setModalItem(item);
+                                                                setModalType('unidades');
+                                                                setModalLabColor(color);
+                                                            }}
+                                                        >
+                                                            <MiniDonut pct={item.uPct} size={36} strokeWidth={4} />
+                                                            <p className="text-[9px] text-muted-foreground">
+                                                                {Number(item.u_vendidas).toLocaleString()} / {Number(item.meta_cantidad).toLocaleString()}
+                                                            </p>
+                                                        </div>
+                                                    )}
                                                     <div className="text-center">
                                                         <p className="text-sm font-bold" style={{ color }}>{capPct(item.contrib)}%</p>
                                                         <p className="text-[9px] text-muted-foreground">del lab</p>
                                                     </div>
-                                                    <div
-                                                        className="flex justify-center cursor-pointer hover:opacity-70 transition-opacity"
-                                                        onClick={e => {
-                                                            e.stopPropagation();
-                                                            setModalItem(item);
-                                                            setModalType('avance');
-                                                            setModalLabColor(color);
-                                                        }}
-                                                    >
-                                                        <MiniGauge pct={item.avPct} width={56} height={34} />
-                                                    </div>
+                                                    {item.sinMeta ? (
+                                                        <div className="flex justify-center text-xs text-muted-foreground">—</div>
+                                                    ) : (
+                                                        <div
+                                                            className="flex justify-center cursor-pointer hover:opacity-70 transition-opacity"
+                                                            onClick={e => {
+                                                                e.stopPropagation();
+                                                                setModalItem(item);
+                                                                setModalType('avance');
+                                                                setModalLabColor(color);
+                                                            }}
+                                                        >
+                                                            <MiniGauge pct={item.avPct} width={56} height={34} />
+                                                        </div>
+                                                    )}
                                                     <div className="text-center">
-                                                        <StatusChip pct={item.avPct} />
+                                                        <StatusChip pct={item.sinMeta ? null : item.avPct} />
                                                     </div>
                                                 </div>
                                             );
@@ -325,11 +371,17 @@ export default function ItemsPorLabTab({ laboratorios, items }: ItemsPorLabTabPr
                                         <div className="grid grid-cols-[2fr_90px_90px_80px_70px_70px_70px] gap-2 px-4 py-2.5 bg-muted border-t border-border items-center">
                                             <span className="text-[11px] text-muted-foreground font-semibold">TOTAL · {sortedItems.length} ítems</span>
                                             <span className="text-right text-xs font-bold" style={{ color }}>{fmtMoney(Number(group.venta_real))}</span>
-                                            <span className="text-right text-xs text-muted-foreground">{fmtMoney(Number(group.meta_monto))}</span>
-                                            <span className="text-center text-[11px] text-muted-foreground font-semibold">{capPct(group.pct)}% cumpl.</span>
+                                            <span className="text-right text-xs text-muted-foreground">
+                                                {group.sinMeta ? "—" : fmtMoney(Number(group.meta_monto))}
+                                            </span>
+                                            <span className="text-center text-[11px] text-muted-foreground font-semibold">
+                                                {group.sinMeta ? "—" : `${capPct(group.pct)}% cumpl.`}
+                                            </span>
                                             <span className="text-center text-xs font-bold text-muted-foreground">100%</span>
-                                            <span className="text-center text-xs font-bold" style={{ color }}>{capPct(group.pct)}%</span>
-                                            <span className="text-center"><StatusChip pct={group.pct} /></span>
+                                            <span className="text-center text-xs font-bold" style={{ color }}>
+                                                {group.sinMeta ? "—" : `${capPct(group.pct)}%`}
+                                            </span>
+                                            <span className="text-center"><StatusChip pct={group.sinMeta ? null : group.pct} /></span>
                                         </div>
                                     </div>
                                 </div>

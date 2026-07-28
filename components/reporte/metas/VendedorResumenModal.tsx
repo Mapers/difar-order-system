@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
 import { IVendedorResumenDashboard, IVendedorLabDetalle } from "@/app/types/metas-types"
-import { fmtMoney, getInitials, getLabColor, getStatusColor, capPct } from "@/app/utils/metas-helpers"
+import { fmtMoney, getInitials, getLabColor, getStatusColor, capPct, ID_LAB_SIN_META } from "@/app/utils/metas-helpers"
 import StatusChip from "@/components/reporte/metas/StatusChip"
 import ProgressBar from "@/components/reporte/metas/ProgressBar"
 import { MetasService } from "@/app/services/reports/metasService"
@@ -14,22 +14,23 @@ interface VendedorResumenModalProps {
     onClose: () => void;
     vendedor: IVendedorResumenDashboard | null;
     idCiclo: number;
+    soloFacturado?: boolean;
 }
 
-export default function VendedorResumenModal({ open, onClose, vendedor, idCiclo }: VendedorResumenModalProps) {
+export default function VendedorResumenModal({ open, onClose, vendedor, idCiclo, soloFacturado }: VendedorResumenModalProps) {
     const [labs, setLabs] = useState<IVendedorLabDetalle[]>([]);
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
         if (!open || !vendedor) return;
         setLoading(true);
-        MetasService.getDetalleVendedorPorLab(idCiclo, vendedor.cod_vendedor)
+        MetasService.getDetalleVendedorPorLab(idCiclo, vendedor.cod_vendedor, soloFacturado)
             .then(res => {
                 setLabs(res?.data?.data || []);
             })
             .catch(console.error)
             .finally(() => setLoading(false));
-    }, [open, vendedor, idCiclo]);
+    }, [open, vendedor, idCiclo, soloFacturado]);
 
     if (!vendedor) return null;
 
@@ -106,10 +107,11 @@ export default function VendedorResumenModal({ open, onClose, vendedor, idCiclo 
                         </div>
                     ) : (
                         labs
-                            .sort((a, b) => Number(b.pct_lab) - Number(a.pct_lab))
+                            .sort((a, b) => Number(b.pct_lab ?? -1) - Number(a.pct_lab ?? -1))
                             .map((lab, idx) => {
+                                const lSinMeta = lab.id_lab === ID_LAB_SIN_META;
                                 const labPct = Number(lab.pct_lab || 0);
-                                const [lc] = getStatusColor(labPct);
+                                const [lc] = lSinMeta ? ["#b45309", "#fbbf24"] : getStatusColor(labPct);
                                 const labColor = getLabColor(idx);
                                 return (
                                     <div key={lab.id_lab}
@@ -129,10 +131,12 @@ export default function VendedorResumenModal({ open, onClose, vendedor, idCiclo 
                                             <ProgressBar pct={labPct} height="h-[3px]" className="mt-0.5" />
                                         </div>
                                         <div className="text-right text-[11px] text-muted-foreground">
-                                            {fmtMoney(Number(lab.meta_monto))}
+                                            {lSinMeta ? "—" : fmtMoney(Number(lab.meta_monto))}
                                         </div>
                                         <div className="text-center">
-                                            <p className="text-sm font-bold" style={{ color: lc }}>{capPct(labPct)}%</p>
+                                            <p className="text-sm font-bold" style={{ color: lc }}>
+                                                {lSinMeta ? "—" : `${capPct(labPct)}%`}
+                                            </p>
                                         </div>
                                     </div>
                                 );

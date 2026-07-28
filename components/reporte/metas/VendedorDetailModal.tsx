@@ -4,7 +4,7 @@ import { useMemo, useState } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
 import { IVendedorDashboard, IItemDashboard, ICiclo } from "@/app/types/metas-types"
-import { fmtMoney, getInitials, getLabColor, getStatusColor, capPct } from "@/app/utils/metas-helpers"
+import { fmtMoney, getInitials, getLabColor, getStatusColor, capPct, ID_LAB_SIN_META } from "@/app/utils/metas-helpers"
 import StatusChip from "@/components/reporte/metas/StatusChip"
 import ProgressBar from "@/components/reporte/metas/ProgressBar"
 import MiniDonut from "@/components/reporte/metas/MiniDonut"
@@ -38,6 +38,7 @@ export default function VendedorDetailModal({ open, onClose, vendedor, allItems,
             .filter(i => i.cod_vendedor === vendedor.cod_vendedor && (vendedor.esAgrupado || i.id_linea_ge === vendedor.id_linea_ge))
             .map(item => ({
                 ...item,
+                sinMeta: item.estado_config === 'SIN_META',
                 avPct: Number(item.pct_avance_monto || 0),
                 uPct: Number(item.pct_cumplimiento_unidades || 0),
                 contrib: Number(vendedor.venta_real) > 0
@@ -49,17 +50,18 @@ export default function VendedorDetailModal({ open, onClose, vendedor, allItems,
 
     if (!vendedor) return null;
 
+    const sinMeta = vendedor.id_linea_ge === ID_LAB_SIN_META;
     const avPct = Number(vendedor.pct_avance_monto || 0);
-    const [c1] = getStatusColor(avPct);
+    const [c1] = sinMeta ? ["#b45309", "#fbbf24"] : getStatusColor(avPct);
     const color = getLabColor(0);
 
     const totalUnidades = vendItems.reduce((s, i) => s + Number(i.u_vendidas || 0), 0);
     const totalMetaCant = vendItems.reduce((s, i) => s + Number(i.meta_cantidad || 0), 0);
 
-    const cobPct = Number(vendedor.meta_clientes) > 0
+    const cobPct = sinMeta ? 0 : (Number(vendedor.meta_clientes) > 0
         ? Math.round(Number(vendedor.clientes_atendidos) / Number(vendedor.meta_clientes) * 100)
-        : 0;
-    const [cobColor] = getStatusColor(cobPct);
+        : 0);
+    const [cobColor] = sinMeta ? ["#b45309", "#fbbf24"] : getStatusColor(cobPct);
 
     return (
         <>
@@ -95,7 +97,7 @@ export default function VendedorDetailModal({ open, onClose, vendedor, allItems,
                                 </div>
                             </div>
                         </div>
-                        <StatusChip pct={avPct} />
+                        <StatusChip pct={sinMeta ? null : avPct} />
                     </div>
                 </div>
 
@@ -106,24 +108,24 @@ export default function VendedorDetailModal({ open, onClose, vendedor, allItems,
                             {fmtMoney(Number(vendedor.venta_real))}
                         </p>
                         <p className="text-[10px] text-muted-foreground mt-0.5">
-                            Meta {fmtMoney(Number(vendedor.meta_monto))} · avance {capPct(avPct)}%
+                            {sinMeta ? "—" : `Meta ${fmtMoney(Number(vendedor.meta_monto))} · avance ${capPct(avPct)}%`}
                         </p>
-                        <ProgressBar pct={avPct} height="h-1" className="mt-1.5" />
+                        <ProgressBar pct={sinMeta ? 0 : avPct} height="h-1" className="mt-1.5" />
                     </div>
 
                     <button type="button"
-                            onClick={() => { if (!vendedor.esAgrupado) setClientesOpen(true) }}
-                            disabled={vendedor.esAgrupado}
-                            className={`bg-background rounded-lg p-3 border border-border text-left transition-all ${vendedor.esAgrupado ? 'cursor-default' : 'hover:border-sky-300 hover:shadow-sm cursor-pointer'}`}>
+                            onClick={() => { if (!vendedor.esAgrupado && !sinMeta) setClientesOpen(true) }}
+                            disabled={vendedor.esAgrupado || sinMeta}
+                            className={`bg-background rounded-lg p-3 border border-border text-left transition-all ${(vendedor.esAgrupado || sinMeta) ? 'cursor-default' : 'hover:border-sky-300 hover:shadow-sm cursor-pointer'}`}>
                         <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Cobertura Clientes</p>
                         <p className="text-lg font-bold mt-0.5" style={{ color: cobColor }}>
-                            {capPct(cobPct)}%
+                            {sinMeta ? "—" : `${capPct(cobPct)}%`}
                         </p>
                         <p className="text-[10px] text-muted-foreground mt-0.5">
-                            {Number(vendedor.clientes_atendidos)} atendidos / meta {Number(vendedor.meta_clientes)}
+                            {sinMeta ? "—" : `${Number(vendedor.clientes_atendidos)} atendidos / meta ${Number(vendedor.meta_clientes)}`}
                         </p>
-                        <ProgressBar pct={cobPct} height="h-1" className="mt-1.5" />
-                        {!vendedor.esAgrupado && (
+                        <ProgressBar pct={sinMeta ? 0 : cobPct} height="h-1" className="mt-1.5" />
+                        {!vendedor.esAgrupado && !sinMeta && (
                             <p className="text-[9px] text-sky-600 font-semibold mt-1">Ver clientes →</p>
                         )}
                     </button>
@@ -166,7 +168,7 @@ export default function VendedorDetailModal({ open, onClose, vendedor, allItems,
                             const contribColor = item.contrib >= 25 ? "#0284c7" : item.contrib >= 15 ? "#d97706" : "#94a3b8";
 
                             return (
-                                <div key={item.id_meta_item}
+                                <div key={`${item.cod_vendedor}-${item.id_linea_ge}-${item.cod_articulo}`}
                                      className="grid grid-cols-[2fr_80px_65px_70px_65px] gap-2 px-3 py-2.5 rounded-lg bg-muted hover:bg-muted/70 items-center transition-colors"
                                 >
                                     <div className="min-w-0">
@@ -175,33 +177,40 @@ export default function VendedorDetailModal({ open, onClose, vendedor, allItems,
                                         </p>
                                         <div className="flex items-center gap-2 mt-0.5">
                                             <span className="text-[9px] text-muted-foreground">
-                                                P.ref: {fmtMoney(Number(item.precio_ref_meta))}
+                                                P.ref: {item.sinMeta ? "—" : fmtMoney(Number(item.precio_ref_meta))}
                                             </span>
                                             <span className="text-[9px] text-muted-foreground">
-                                                Meta: {Number(item.meta_cantidad).toLocaleString()} uds
+                                                Meta: {item.sinMeta ? "—" : `${Number(item.meta_cantidad).toLocaleString()} uds`}
                                             </span>
                                         </div>
                                     </div>
 
                                     <div className="text-right">
                                         <p className="text-xs font-semibold">{fmtMoney(Number(item.venta_real))}</p>
-                                        <ProgressBar pct={item.avPct} height="h-[3px]" className="mt-0.5" />
+                                        <ProgressBar pct={item.sinMeta ? 0 : item.avPct} height="h-[3px]" className="mt-0.5" />
                                     </div>
 
                                     <div className="text-right text-[11px] text-muted-foreground">
-                                        {fmtMoney(Number(item.meta_monto))}
+                                        {item.sinMeta ? "—" : fmtMoney(Number(item.meta_monto))}
                                     </div>
 
-                                    <div
-                                        className="flex flex-col items-center gap-0.5 cursor-pointer hover:opacity-70 transition-opacity"
-                                        onClick={e => {
-                                            e.stopPropagation();
-                                            setModalItem(item);
-                                        }}
-                                    >
-                                        <MiniDonut pct={item.uPct} size={32} strokeWidth={4} />
-                                        <p className="text-[9px] text-muted-foreground">{Number(item.u_vendidas).toLocaleString()}</p>
-                                    </div>
+                                    {item.sinMeta ? (
+                                        <div className="flex flex-col items-center gap-0.5">
+                                            <span className="text-xs text-muted-foreground">sin meta</span>
+                                            <p className="text-[9px] text-muted-foreground">{Number(item.u_vendidas).toLocaleString()}</p>
+                                        </div>
+                                    ) : (
+                                        <div
+                                            className="flex flex-col items-center gap-0.5 cursor-pointer hover:opacity-70 transition-opacity"
+                                            onClick={e => {
+                                                e.stopPropagation();
+                                                if (!item.sinMeta) setModalItem(item);
+                                            }}
+                                        >
+                                            <MiniDonut pct={item.uPct} size={32} strokeWidth={4} />
+                                            <p className="text-[9px] text-muted-foreground">{Number(item.u_vendidas).toLocaleString()}</p>
+                                        </div>
+                                    )}
 
                                     <div className="text-center">
                                         <p className="text-sm font-bold" style={{ color: contribColor }}>{capPct(item.contrib)}%</p>

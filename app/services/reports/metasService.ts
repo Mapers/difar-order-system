@@ -18,13 +18,15 @@ export class MetasService {
         return response.data;
     }
 
-    static async getResumenVendedorLabs(idCiclo: number): Promise<any> {
-        const response = await apiClient.get(`/metas/dashboard/resumen-vendedor-labs?id_ciclo=${idCiclo}`);
+    static async getResumenVendedorLabs(idCiclo: number, soloFacturado = false): Promise<any> {
+        const sf = soloFacturado ? '1' : '0';
+        const response = await apiClient.get(`/metas/dashboard/resumen-vendedor-labs?id_ciclo=${idCiclo}&solo_facturado=${sf}`);
         return response.data;
     }
 
-    static async getDetalleVendedorPorLab(idCiclo: number, codVendedor: string): Promise<any> {
-        const response = await apiClient.get(`/metas/dashboard/detalle-vendedor-labs?id_ciclo=${idCiclo}&cod_vendedor=${codVendedor}`);
+    static async getDetalleVendedorPorLab(idCiclo: number, codVendedor: string, soloFacturado = false): Promise<any> {
+        const sf = soloFacturado ? '1' : '0';
+        const response = await apiClient.get(`/metas/dashboard/detalle-vendedor-labs?id_ciclo=${idCiclo}&cod_vendedor=${codVendedor}&solo_facturado=${sf}`);
         return response.data;
     }
 

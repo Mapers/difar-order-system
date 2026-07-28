@@ -5,7 +5,7 @@ import KpiCard from "@/components/reporte/metas/KpiCard"
 import ProgressBar from "@/components/reporte/metas/ProgressBar"
 import StatusChip from "@/components/reporte/metas/StatusChip"
 import { IDashboardData, IVendedorDashboard } from "@/app/types/metas-types"
-import { fmtMoney, getStatusColor, getInitials, getLabColor, agruparVendedores, capPct } from "@/app/utils/metas-helpers"
+import { fmtMoney, getStatusColor, getInitials, getLabColor, agruparVendedores, capPct, ID_LAB_SIN_META } from "@/app/utils/metas-helpers"
 import { MedalIcon } from "lucide-react"
 
 interface ResumenTabProps {
@@ -22,7 +22,10 @@ export default function ResumenTab({ data, kpis, onVendedorClick, isVendedorView
     // Vendedores agrupados (una sola fila por vendedor, sus labs sumados)
     const vendsAgrupados = agruparVendedores(vends);
 
-    const labsAlert = [...labs]
+    // El bucket "Sin meta asignada" no dispara alerta de bajo cumplimiento: no tiene meta contra la cual medirse.
+    const labsReales = labs.filter(l => l.id_linea_ge !== ID_LAB_SIN_META);
+
+    const labsAlert = [...labsReales]
         .filter(l => Number(l.pct_avance_monto) < 80)
         .sort((a, b) => Number(a.pct_avance_monto) - Number(b.pct_avance_monto))
         .slice(0, 5);

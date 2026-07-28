@@ -2,7 +2,7 @@ import {getStatusChip} from "@/app/utils/metas-helpers";
 import {Badge} from "@/components/ui/badge";
 
 interface StatusChipProps {
-    pct: number;
+    pct: number | null;
 }
 
 export default function StatusChip({ pct }: StatusChipProps) {

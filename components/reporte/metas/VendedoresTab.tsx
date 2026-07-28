@@ -9,7 +9,7 @@ import { Search, ChevronDown, ChevronRight } from "lucide-react"
 import ProgressBar from "@/components/reporte/metas/ProgressBar"
 import StatusChip from "@/components/reporte/metas/StatusChip"
 import { IVendedorDashboard } from "@/app/types/metas-types"
-import { fmtMoney, getStatusColor, getInitials, getLabColor, agruparVendedores, capPct } from "@/app/utils/metas-helpers"
+import { fmtMoney, getStatusColor, getInitials, getLabColor, agruparVendedores, capPct, ID_LAB_SIN_META } from "@/app/utils/metas-helpers"
 import { FilterStatus, SortMode } from "@/app/types/metas-types"
 
 interface VendedoresTabProps {
@@ -172,6 +172,7 @@ export default function VendedoresTab({
                     const color = getLabColor(i);
                     const pendiente = Number(v.monto_pendiente || 0);
                     const labs = v.labs || [];
+                    const labsReales = labs.filter(l => l.id_linea_ge !== ID_LAB_SIN_META);
                     const isOpen = expanded.has(v.cod_vendedor);
                     return (
                         <Card
@@ -198,7 +199,7 @@ export default function VendedoresTab({
                                                     {v.nombre_vendedor || v.cod_vendedor}
                                                 </p>
                                                 <p className="text-[10px] text-muted-foreground">
-                                                    Cod: {v.cod_vendedor} · {labs.length} lab{labs.length === 1 ? '' : 's'}
+                                                    Cod: {v.cod_vendedor} · {labsReales.length} lab{labsReales.length === 1 ? '' : 's'}
                                                 </p>
                                             </div>
                                         </div>
@@ -244,7 +245,7 @@ export default function VendedoresTab({
                                     <p className="text-[10px] text-sky-500 font-medium">
                                         {isOpen
                                             ? "Toca un laboratorio para ver sus ítems"
-                                            : `Ver ${labs.length} laboratorio${labs.length === 1 ? '' : 's'} →`}
+                                            : `Ver ${labsReales.length} laboratorio${labsReales.length === 1 ? '' : 's'} →`}
                                     </p>
                                 </CardContent>
                             </button>
@@ -252,8 +253,9 @@ export default function VendedoresTab({
                             {isOpen && labs.length > 0 && (
                                 <div className="border-t border-border divide-y divide-border bg-muted/50">
                                     {labs.map((lab, li) => {
+                                        const lSinMeta = lab.id_linea_ge === ID_LAB_SIN_META;
                                         const lpct = Number(lab.pct_avance_monto || 0);
-                                        const [lc1] = getStatusColor(lpct);
+                                        const [lc1] = lSinMeta ? ["#b45309", "#fbbf24"] : getStatusColor(lpct);
                                         return (
                                             <button
                                                 key={lab.id_linea_ge + '-' + li}
@@ -263,16 +265,18 @@ export default function VendedoresTab({
                                             >
                                                 <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: color }} />
                                                 <div className="flex-1 min-w-0">
-                                                    <p className="text-xs font-semibold text-foreground truncate">{lab.nombre_lab}</p>
+                                                    <p className="text-xs font-semibold text-foreground truncate">{lab.nombre_lab || `Lab ${lab.id_linea_ge}`}</p>
                                                     <div className="flex justify-between mt-0.5">
                                                         <span className="text-[10px] text-muted-foreground">
-                                                            {fmtMoney(Number(lab.venta_real))} / {fmtMoney(Number(lab.meta_monto))}
+                                                            {fmtMoney(Number(lab.venta_real))} / {lSinMeta ? "—" : fmtMoney(Number(lab.meta_monto))}
                                                         </span>
                                                         <span className="text-[10px] text-sky-600">Ver ítems →</span>
                                                     </div>
-                                                    <ProgressBar pct={lpct} height="h-1" className="mt-1" />
+                                                    <ProgressBar pct={lSinMeta ? 0 : lpct} height="h-1" className="mt-1" />
                                                 </div>
-                                                <span className="text-xs font-bold shrink-0" style={{ color: lc1 }}>{capPct(lpct)}%</span>
+                                                <span className="text-xs font-bold shrink-0" style={{ color: lc1 }}>
+                                                    {lSinMeta ? "—" : `${capPct(lpct)}%`}
+                                                </span>
                                             </button>
                                         );
                                     })}
@@ -308,6 +312,7 @@ export default function VendedoresTab({
                                 const [c1] = getStatusColor(v.pct);
                                 const color = getLabColor(i);
                                 const labs = v.labs || [];
+                                const labsReales = labs.filter(l => l.id_linea_ge !== ID_LAB_SIN_META);
                                 const isOpen = expanded.has(v.cod_vendedor);
                                 return (
                                     <Fragment key={v.cod_vendedor}>
@@ -335,7 +340,7 @@ export default function VendedoresTab({
                                                 </div>
                                             </td>
                                             <td className="px-3 py-2.5 text-muted-foreground">
-                                                {labs.length} lab{labs.length === 1 ? '' : 's'}
+                                                {labsReales.length} lab{labsReales.length === 1 ? '' : 's'}
                                             </td>
                                             <td className="px-3 py-2.5 font-semibold">{fmtMoney(Number(v.venta_real))}</td>
                                             <td className="px-3 py-2.5 text-muted-foreground">{fmtMoney(Number(v.meta_monto))}</td>
@@ -352,8 +357,9 @@ export default function VendedoresTab({
                                         </tr>
 
                                         {isOpen && labs.map((lab, li) => {
+                                            const lSinMeta = lab.id_linea_ge === ID_LAB_SIN_META;
                                             const lpct = Number(lab.pct_avance_monto || 0);
-                                            const [lc1] = getStatusColor(lpct);
+                                            const [lc1] = lSinMeta ? ["#b45309", "#fbbf24"] : getStatusColor(lpct);
                                             return (
                                                 <tr
                                                     key={v.cod_vendedor + '-' + lab.id_linea_ge + '-' + li}
@@ -364,21 +370,25 @@ export default function VendedoresTab({
                                                         <div className="flex items-center gap-2">
                                                             <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: color }} />
                                                             <div>
-                                                                <p className="font-medium text-foreground">{lab.nombre_lab}</p>
+                                                                <p className="font-medium text-foreground">{lab.nombre_lab || `Lab ${lab.id_linea_ge}`}</p>
                                                                 <p className="text-[10px] text-sky-600">Ver ítems vendidos →</p>
                                                             </div>
                                                         </div>
                                                     </td>
                                                     <td className="px-3 py-2 text-muted-foreground/50">—</td>
                                                     <td className="px-3 py-2 font-semibold text-muted-foreground">{fmtMoney(Number(lab.venta_real))}</td>
-                                                    <td className="px-3 py-2 text-muted-foreground">{fmtMoney(Number(lab.meta_monto))}</td>
+                                                    <td className="px-3 py-2 text-muted-foreground">
+                                                        {lSinMeta ? "—" : fmtMoney(Number(lab.meta_monto))}
+                                                    </td>
                                                     <td className="px-3 py-2 text-muted-foreground/50">—</td>
-                                                    <td className="px-3 py-2 font-bold" style={{ color: lc1 }}>{capPct(lpct)}%</td>
-                                                    <td className="px-3 py-2">
-                                                        <ProgressBar pct={lpct} height="h-1.5" />
+                                                    <td className="px-3 py-2 font-bold" style={{ color: lc1 }}>
+                                                        {lSinMeta ? "—" : `${capPct(lpct)}%`}
                                                     </td>
                                                     <td className="px-3 py-2">
-                                                        <StatusChip pct={lpct} />
+                                                        <ProgressBar pct={lSinMeta ? 0 : lpct} height="h-1.5" />
+                                                    </td>
+                                                    <td className="px-3 py-2">
+                                                        <StatusChip pct={lSinMeta ? null : lpct} />
                                                     </td>
                                                 </tr>
                                             );

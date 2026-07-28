@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { ICiclo, IDashboardData } from "@/app/types/metas-types";
 import { MetasService } from "@/app/services/reports/metasService";
 import { useAuth } from "@/context/authContext";
+import { ID_LAB_SIN_META } from "@/app/utils/metas-helpers";
 
 function unwrap(arr: any): any[] {
     if (!arr) return [];
@@ -23,14 +24,18 @@ function computeKpis(data: IDashboardData) {
     const totalMetaCantidad = items.reduce((s, i) => s + Number(i.meta_cantidad), 0);
     const pctUnidades = totalMetaCantidad > 0 ? Math.round(totalUndVendidas / totalMetaCantidad * 100) : 0;
 
-    const clientesAtendidos = labs.reduce((s, l) => s + Number(l.clientes_atendidos || 0), 0);
-    const totalClientes     = labs.reduce((s, l) => s + Number(l.meta_clientes || 0), 0);
+    // El bucket "Sin meta asignada" suma en venta y unidades, pero no es un
+    // laboratorio ni tiene meta de clientes: queda fuera de estos dos KPIs.
+    const labsReales = labs.filter(l => l.id_linea_ge !== ID_LAB_SIN_META);
+
+    const clientesAtendidos = labsReales.reduce((s, l) => s + Number(l.clientes_atendidos || 0), 0);
+    const totalClientes     = labsReales.reduce((s, l) => s + Number(l.meta_clientes || 0), 0);
     const pctCobertura = totalClientes > 0 ? Math.round(clientesAtendidos / totalClientes * 100) : 0;
 
-    const labsEnMeta  = labs.filter(l => Number(l.pct_avance_monto) >= 80).length;
-    const labsBajo    = labs.filter(l => Number(l.pct_avance_monto) < 50).length;
-    const labsRiesgo  = labs.filter(l => Number(l.pct_avance_monto) >= 50 && Number(l.pct_avance_monto) < 80).length;
-    const totalLabs   = labs.length;
+    const labsEnMeta  = labsReales.filter(l => Number(l.pct_avance_monto) >= 80).length;
+    const labsBajo    = labsReales.filter(l => Number(l.pct_avance_monto) < 50).length;
+    const labsRiesgo  = labsReales.filter(l => Number(l.pct_avance_monto) >= 50 && Number(l.pct_avance_monto) < 80).length;
+    const totalLabs   = labsReales.length;
 
     const uniqueVends     = [...new Set(vends.map(v => v.cod_vendedor))];
     const vendEnMeta      = uniqueVends.filter(cod => {

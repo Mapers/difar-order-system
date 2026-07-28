@@ -27,6 +27,7 @@ function MetaBar({ codArticulo, metasMap }: { codArticulo: string; metasMap: Map
     if (!metasMap) return null
     const meta = metasMap.get(codArticulo)
     if (!meta) return null
+    if (meta.estado_config === 'SIN_META') return null
     const pct = Math.min(Number(meta.pct_avance_monto || 0), 100)
     const color = pct >= 80 ? '#059669' : pct >= 50 ? '#d97706' : '#dc2626'
     const cumplida = pct >= 100
