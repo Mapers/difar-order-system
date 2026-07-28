@@ -2,13 +2,15 @@
 
 import { NavMenu } from "@/components/nav/NavMenu";
 import { UserCard } from "@/components/nav/UserCard";
-import { LogoutButton } from "@/components/nav/LogoutButton";
+import { LogoutButton, LogoutConfirmDialog } from "@/components/nav/LogoutButton";
 import { useSidebar } from "@/context/sidebarContext";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useState } from "react";
 
 /** Sidebar fijo para escritorio. Oculto en móvil (md:flex). */
 export function SideNav() {
   const { collapsed, toggleCollapsed } = useSidebar();
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   return (
     <div
@@ -19,8 +21,12 @@ export function SideNav() {
       <UserCard />
       <NavMenu />
       <div className="mt-auto">
-        <LogoutButton />
+        <LogoutButton onClick={() => setShowLogoutConfirm(true)} />
       </div>
+      <LogoutConfirmDialog
+        open={showLogoutConfirm}
+        onOpenChange={setShowLogoutConfirm}
+      />
 
       {/* Botón colapso */}
       <button

@@ -10,14 +10,23 @@ import { DialogTitle as RadixDialogTitle } from "@radix-ui/react-dialog";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { NavMenu } from "@/components/nav/NavMenu";
 import { UserCard } from "@/components/nav/UserCard";
-import { LogoutButton } from "@/components/nav/LogoutButton";
+import { LogoutButton, LogoutConfirmDialog } from "@/components/nav/LogoutButton";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 /** Header + drawer para móvil. Oculto en escritorio (md:hidden). */
 export function MobileNav() {
   const [open, setOpen] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const closeDrawer = () => setOpen(false);
+
+  // Cierra el drawer y abre la confirmación. El diálogo NO puede vivir dentro
+  // del <Sheet>: al cerrarse, Radix desmonta su contenido y se llevaría puesto
+  // el modal en el mismo gesto.
+  const handleLogoutClick = () => {
+    closeDrawer();
+    setShowLogoutConfirm(true);
+  };
 
   return (
     <header className="fixed inset-x-0 top-0 z-20 flex h-16 items-center justify-between border-b bg-background px-4 md:hidden">
@@ -49,10 +58,16 @@ export function MobileNav() {
           </RadixDialogTitle>
           <UserCard />
           <NavMenu onNavigate={closeDrawer} />
-          <LogoutButton onBeforeOpen={closeDrawer} />
+          <LogoutButton onClick={handleLogoutClick} />
         </SheetContent>
         </Sheet>
       </div>
+
+      {/* Fuera del <Sheet> a propósito: sobrevive al cierre del drawer. */}
+      <LogoutConfirmDialog
+        open={showLogoutConfirm}
+        onOpenChange={setShowLogoutConfirm}
+      />
     </header>
   );
 }
