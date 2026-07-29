@@ -20,6 +20,59 @@ import { ExportDetalleLabVendedorPdf } from "@/components/reporte/exportDetalleL
 import { ExportDetalleLabVendedorExcel } from "@/components/reporte/exportDetalleLabVendedorExcel"
 import { formatDocumentoConTipo, formatFechaEmision } from "@/components/reporte/detalleLabVendedorShared"
 import {Laboratorio} from "@/app/types/user-types";
+import { useCuotasReporte } from "@/app/hooks/useCuotasReporte"
+import {
+    calcPctCuota, estadoCuota, coloresEstado, capPctCuota,
+    restanteCuota, sinIgv,
+} from "@/app/utils/cuotas-helpers"
+
+interface ProductoAgrupadoBase {
+    Codigo_Art: string
+    NombreItem: string
+    AbrevUnidMed: string
+    TotalCantidad: number
+    TotalVentas: number
+    /** Facturadas: numerador del % de cumplimiento, al margen del switch. */
+    TotalCantFact: number
+    TotalVentasFact: number
+}
+
+interface ProductoConCuota extends ProductoAgrupadoBase {
+    cuotaCant: number
+    cuotaSoles: number
+    /** null solo cuando no hay ni cuota ni venta: la columna no aplica. */
+    restante: number | null
+    pct: number | null
+    sinVentas: boolean
+}
+
+/**
+ * Celda de % de cumplimiento: barra + número con el color del semáforo.
+ *
+ * pct nulo significa "no hay cuota contra la cual medir" y se muestra "—",
+ * que es distinto de 0%.
+ *
+ * El valor se topa a 100%: una cuota superada se lee "100%", no "1018%".
+ * El semáforo se decide con el porcentaje real, aunque dé lo mismo porque
+ * cualquier valor sobre 100 ya es verde.
+ */
+function CeldaCumplimiento({ pct, compacta = false }: { pct: number | null; compacta?: boolean }) {
+    if (pct === null) {
+        return <span className="text-xs text-muted-foreground">—</span>
+    }
+    const c = coloresEstado[estadoCuota(pct)]
+    const mostrado = capPctCuota(pct)!
+    return (
+        <div className={cn("flex items-center gap-2", compacta && "w-full")}>
+            <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden min-w-[40px]">
+                <div className={cn("h-full rounded-full", c.barra)} style={{ width: `${mostrado}%` }} />
+            </div>
+            <span className={cn("text-xs font-bold tabular-nums whitespace-nowrap", c.texto)}>
+                {mostrado.toFixed(2)}%
+            </span>
+        </div>
+    )
+}
 
 export default function LabSellerReportPage() {
     const auth = useAuth()
@@ -37,6 +90,25 @@ export default function LabSellerReportPage() {
     const [selectedVends, setSelectedVends] = useState<string[]>([]);
     const [selectedDate, setSelectedDate] = useState<Date>(new Date());
     const [excluirSerie0800, setExcluirSerie0800] = useState(false);
+    // Apagado por defecto: así el reporte sigue devolviendo lo mismo de siempre.
+    // El % de cumplimiento NO depende de este switch, siempre usa la venta
+    // facturada que el SP devuelve aparte.
+    const [soloFacturado, setSoloFacturado] = useState(false);
+
+    // Período consultado, no el del filtro: las cuotas tienen que corresponder
+    // a los datos que están en pantalla, no a lo que el usuario esté eligiendo.
+    const [periodoConsultado, setPeriodoConsultado] = useState<{ anio: number; mes: number }>(
+        { anio: new Date().getFullYear(), mes: new Date().getMonth() + 1 }
+    );
+    // Vendedores del reporte que está en pantalla. Array vacío = todos.
+    // Acota el total de cuotas: sp_pbl_meta_vend_listar devuelve TODOS los
+    // vendedores del laboratorio, así que sin esto un reporte filtrado por un
+    // vendedor sumaría la cuota de sus compañeros.
+    const [vendedoresConsultados, setVendedoresConsultados] = useState<string[]>([]);
+    const {
+        hayCiclo, cicloResuelto, cuotaVendedor,
+        cargarCuotasItems, cuotasDeItems,
+    } = useCuotasReporte(periodoConsultado.anio, periodoConsultado.mes);
 
     const [openLab, setOpenLab] = useState(false);
     const [openVend, setOpenVend] = useState(false);
@@ -47,6 +119,10 @@ export default function LabSellerReportPage() {
     const [viewMode, setViewMode] = useState<'laboratorios' | 'productos'>('laboratorios');
     const [selectionModalOpen, setSelectionModalOpen] = useState(false);
     const [pendingDetail, setPendingDetail] = useState<{ labName: string; vendCodigo: string } | null>(null);
+    // (laboratorio, vendedor) del detalle abierto, para saber qué cuotas cruzar.
+    const [detalleLabVend, setDetalleLabVend] = useState<{ idLab: number; codVend: string } | null>(null);
+    // R2.5: divide montos, nunca porcentajes ni cantidades.
+    const [quitarIgv, setQuitarIgv] = useState(false);
 
     useEffect(() => {
         const fetchCatalogs = async () => {
@@ -97,31 +173,41 @@ export default function LabSellerReportPage() {
                 vendedores: vendorsToQuery,
                 anio: anioSeleccionado,
                 mes: mesSeleccionado,
-                excluir: excluirSerie0800
+                excluir: excluirSerie0800,
+                solo_facturado: soloFacturado
             };
 
             const response = await apiClient.post('/reportes/informe-laboratorio-vendedor', payload);
+
+            // Al filtrar por vendedor hay que recalcular los dos totales del
+            // laboratorio, no solo el visible: el facturado es el denominador
+            // del % del laboratorio.
+            const recalcularTotales = (lab: any) => ({
+                ...lab,
+                totalVentasLaboratorio: lab.vendedores.reduce((acc: number, v: any) => acc + Number(v.SumaDeVta_Tot || 0), 0),
+                totalVentasFacturadas:  lab.vendedores.reduce((acc: number, v: any) => acc + Number(v.SumaDeVta_Fact || 0), 0),
+            });
 
             let reportData = response.data?.data || [];
             if (isRepresentative && vendorsToQuery.length > 0 && vendorsToQuery[0] !== 'SIN_VENDEDORES') {
                 reportData = reportData.map((lab: any) => ({
                     ...lab,
                     vendedores: lab.vendedores.filter((v: any) => vendorsToQuery.includes(v.Codigo_Vend))
-                })).map((lab: any) => ({
-                    ...lab,
-                    totalVentasLaboratorio: lab.vendedores.reduce((acc: number, v: any) => acc + v.SumaDeVta_Tot, 0)
-                })).filter((lab: any) => lab.vendedores.length > 0);
+                })).map(recalcularTotales).filter((lab: any) => lab.vendedores.length > 0);
             } else if (isVendor && auth.user?.codigo) {
                 reportData = reportData.map((lab: any) => ({
                     ...lab,
                     vendedores: lab.vendedores.filter((v: any) => v.Codigo_Vend === auth.user?.codigo)
-                })).map((lab: any) => ({
-                    ...lab,
-                    totalVentasLaboratorio: lab.vendedores.reduce((acc: number, v: any) => acc + v.SumaDeVta_Tot, 0)
-                })).filter((lab: any) => lab.vendedores.length > 0);
+                })).map(recalcularTotales).filter((lab: any) => lab.vendedores.length > 0);
             }
 
             setData(reportData);
+            setPeriodoConsultado({ anio: anioSeleccionado, mes: mesSeleccionado });
+            // 'SIN_VENDEDORES' es el centinela del representante sin vendedores
+            // asignados: no es un código real y no debe acotar nada.
+            setVendedoresConsultados(
+                vendorsToQuery.filter(v => v && v !== 'SIN_VENDEDORES')
+            );
 
             if(reportData.length === 0) {
                 toast({ description: "No se encontraron datos en este periodo" });
@@ -154,8 +240,15 @@ export default function LabSellerReportPage() {
                 fecha: fechaStr,
                 id_laboratorio: foundLab.IdLineaGe,
                 codigo_vendedor: vendCodigo,
-                excluir: excluirSerie0800
+                excluir: excluirSerie0800,
+                solo_facturado: soloFacturado
             });
+
+            // Las cuotas por artículo van aparte del detalle: un producto con
+            // meta y sin ventas no viene en la respuesta del kardex, y es el
+            // caso "Sin ventas → restante = cuota, 0%".
+            setDetalleLabVend({ idLab: Number(foundLab.IdLineaGe), codVend: vendCodigo });
+            await cargarCuotasItems(Number(foundLab.IdLineaGe), vendCodigo);
 
             if (res.data?.data && res.data.data.length > 0) {
                 setDetailData(res.data.data);
@@ -172,21 +265,26 @@ export default function LabSellerReportPage() {
 
     const productosAgrupados = useMemo(() => {
         if (!detailData || detailData.length === 0) return [];
-        const map = new Map<string, { Codigo_Art: string; NombreItem: string; AbrevUnidMed: string; TotalCantidad: number; TotalVentas: number }>();
+        const map = new Map<string, ProductoAgrupadoBase>();
         for (const lab of detailData[0].Laboratorios) {
             for (const cli of lab.Clientes) {
                 for (const item of cli.Items) {
                     const existing = map.get(item.Codigo_Art);
                     if (existing) {
-                        existing.TotalCantidad += item.Cantidad_Sal;
-                        existing.TotalVentas += item.SumaDeVta_Tot;
+                        existing.TotalCantidad   += Number(item.Cantidad_Sal) || 0;
+                        existing.TotalVentas     += Number(item.SumaDeVta_Tot) || 0;
+                        existing.TotalCantFact   += Number(item.Cant_Fact) || 0;
+                        existing.TotalVentasFact += Number(item.Vta_Fact) || 0;
                     } else {
                         map.set(item.Codigo_Art, {
                             Codigo_Art: item.Codigo_Art,
                             NombreItem: item.NombreItem,
                             AbrevUnidMed: item.AbrevUnidMed,
-                            TotalCantidad: item.Cantidad_Sal,
-                            TotalVentas: item.SumaDeVta_Tot
+                            TotalCantidad:   Number(item.Cantidad_Sal) || 0,
+                            TotalVentas:     Number(item.SumaDeVta_Tot) || 0,
+                            // Facturadas: numerador del % de cumplimiento.
+                            TotalCantFact:   Number(item.Cant_Fact) || 0,
+                            TotalVentasFact: Number(item.Vta_Fact) || 0,
                         });
                     }
                 }
@@ -195,10 +293,195 @@ export default function LabSellerReportPage() {
         return Array.from(map.values()).sort((a, b) => b.TotalVentas - a.TotalVentas);
     }, [detailData]);
 
+    /**
+     * Productos con cuota, restante y semáforo.
+     *
+     * Un producto con meta que no se vendió no está en productosAgrupados
+     * (sale del kardex): se agrega con cantidad y venta en 0 para cubrir el
+     * caso "Sin ventas → restante = cuota, 0%" y para que la fila de totales
+     * incluya toda la cuota del vendedor en ese laboratorio.
+     */
+    const productosConCuota = useMemo<ProductoConCuota[]>(() => {
+        const cuotas = detalleLabVend
+            ? cuotasDeItems(detalleLabVend.idLab, detalleLabVend.codVend)
+            : [];
+        const porArt = new Map(cuotas.map(c => [c.cod_articulo, c]));
+
+        // La cuota en soles es el meta_monto configurado, tal cual está en
+        // pbl_meta_laboratorio_vendedor_item. NO se revaloriza al precio real
+        // de venta: así el total de esta vista coincide con la cuota que
+        // muestra la vista 1 para el mismo (laboratorio, vendedor), que sale
+        // del mismo campo.
+        //
+        // Consecuencia asumida: cuando el precio real difiere del precio_ref
+        // de la meta, el % en soles deja de ser igual al % en unidades.
+        // Manda el % en soles, que es contra lo que se mide la cuota.
+        const filas: ProductoConCuota[] = productosAgrupados.map(p => {
+            const c = porArt.get(p.Codigo_Art);
+            const cuotaCant = c?.meta_cantidad ?? 0;
+            const cSoles = c?.meta_monto ?? 0;
+            return {
+                ...p,
+                cuotaCant,
+                cuotaSoles: cSoles,
+                restante: restanteCuota(cuotaCant, p.TotalCantFact),
+                pct: calcPctCuota(p.TotalVentasFact, cSoles),
+                sinVentas: false,
+            };
+        });
+
+        const yaListados = new Set(filas.map(f => f.Codigo_Art));
+        for (const c of cuotas) {
+            if (yaListados.has(c.cod_articulo) || c.meta_cantidad <= 0) continue;
+            filas.push({
+                Codigo_Art: c.cod_articulo,
+                // El nombre sale de la meta, no del kardex: estos productos no
+                // tienen ninguna venta en el período.
+                NombreItem: c.nombre_item || '(artículo no encontrado en el maestro)',
+                AbrevUnidMed: c.abrev_unidad,
+                TotalCantidad: 0, TotalVentas: 0,
+                TotalCantFact: 0, TotalVentasFact: 0,
+                cuotaCant: c.meta_cantidad,
+                cuotaSoles: c.meta_monto,
+                restante: c.meta_cantidad,
+                pct: 0,
+                sinVentas: true,
+            });
+        }
+
+        return filas.sort((a, b) => b.TotalVentas - a.TotalVentas);
+    }, [productosAgrupados, cuotasDeItems, detalleLabVend]);
+
+    /** Fila de totales de la vista de productos (R2.7). */
+    const totalesProductos = useMemo(() => {
+        const suma = (f: (p: ProductoConCuota) => number) =>
+            productosConCuota.reduce((a, p) => a + f(p), 0);
+        const cuotaSol = suma(p => p.cuotaSoles);
+        return {
+            cantidad: suma(p => p.TotalCantidad),
+            ventas:   suma(p => p.TotalVentas),
+            cuotaCant: suma(p => p.cuotaCant),
+            cuotaSoles: cuotaSol,
+            // Suma de los faltantes por producto, no la resta de los totales.
+            // Así responde "cuántas unidades faltan vender en total"; con la
+            // resta de agregados, un producto muy superado tapaba el faltante
+            // de todos los demás.
+            restante: suma(p => p.restante ?? 0),
+            pct: calcPctCuota(suma(p => p.TotalVentasFact), cuotaSol),
+        };
+    }, [productosConCuota]);
+
+    /** R2.5: el switch afecta montos, no porcentajes ni cantidades. */
+    const money = (n: number) => formatMoney(quitarIgv ? sinIgv(n) : n);
+
+    /**
+     * Filas de la vista 1 con cuota, % y semáforo.
+     *
+     * Un vendedor con cuota que no vendió NO viene en la respuesta del reporte,
+     * porque esa sale del kardex. Se agrega acá con ventas en 0 para cubrir el
+     * caso "Sin ventas → 0%" y para que las filas visibles sumen el total de
+     * cuotas del laboratorio (R1.4). Sin esto, el total no cuadraría con lo
+     * que el usuario ve.
+     *
+     * El % usa SIEMPRE SumaDeVta_Fact, no SumaDeVta_Tot: la cuota está en soles
+     * facturados. Con el switch apagado, la columna Ventas trae también
+     * operaciones que no son venta facturada (en julio 2026, 19,415.09 sobre
+     * 143,520.91) y el porcentaje saldría inflado.
+     */
+    const dataConCuotas = useMemo(() => {
+        // Solo se consideran los vendedores dentro del alcance consultado.
+        // sp_pbl_meta_vend_listar devuelve todos los del laboratorio; sin este
+        // filtro, un reporte de un solo vendedor traía la cuota de todos sus
+        // compañeros y el % se hundía.
+        const enAlcance = (codVend: string) =>
+            vendedoresConsultados.length === 0 || vendedoresConsultados.includes(codVend);
+
+        const filaVendedorSinVentas = (codVend: string, cuota: number) => {
+            const cat = catVendedores.find((x: any) => x.Codigo_Vend === codVend);
+            return {
+                Codigo_Vend: codVend,
+                Vendedor: cat ? `${codVend} ${cat.Nombres}, ${cat.Apellidos}` : codVend,
+                SumaDeVta_Tot: 0,
+                SumaDeVta_Fact: 0,
+                cuota,
+                pct: 0,
+                estado: estadoCuota(0),
+                sinVentas: true,
+            };
+        };
+
+        const conCuota = data.map((lab: any) => {
+            const idLab = Number(lab.IdLineaGe);
+
+            const vendedores = lab.vendedores.map((v: any) => {
+                const cuota = cuotaVendedor.get(`${idLab}|${v.Codigo_Vend}`) ?? 0;
+                const pct = calcPctCuota(Number(v.SumaDeVta_Fact) || 0, cuota);
+                return { ...v, cuota, pct, estado: estadoCuota(pct), sinVentas: false };
+            });
+
+            const yaListados = new Set(vendedores.map((v: any) => v.Codigo_Vend));
+            for (const [claveCuota, cuota] of cuotaVendedor) {
+                const [labId, codVend] = claveCuota.split('|');
+                if (Number(labId) !== idLab || yaListados.has(codVend) || !enAlcance(codVend)) continue;
+                vendedores.push(filaVendedorSinVentas(codVend, cuota));
+            }
+
+            const cuotaLab = vendedores.reduce((a: number, v: any) => a + Number(v.cuota || 0), 0);
+            const factLab = vendedores.reduce((a: number, v: any) => a + Number(v.SumaDeVta_Fact || 0), 0);
+
+            return { ...lab, vendedores, cuotaLab, pctLab: calcPctCuota(factLab, cuotaLab) };
+        });
+
+        // Laboratorios con cuota donde NO se vendió nada. No vienen en la
+        // respuesta del reporte, que sale del kardex, así que su cuota se
+        // perdía del total. Y son el peor caso posible: meta asignada y cero
+        // avance. Esconderlos es justo lo contrario de lo que sirve.
+        const idsPresentes = new Set(data.map((l: any) => Number(l.IdLineaGe)));
+        const porLabAusente = new Map<number, { codVend: string; cuota: number }[]>();
+        for (const [claveCuota, cuota] of cuotaVendedor) {
+            const [labId, codVend] = claveCuota.split('|');
+            const idLab = Number(labId);
+            if (idsPresentes.has(idLab) || !enAlcance(codVend)) continue;
+            if (!porLabAusente.has(idLab)) porLabAusente.set(idLab, []);
+            porLabAusente.get(idLab)!.push({ codVend, cuota });
+        }
+
+        const mes = data[0]?.Mes ?? '';
+        const anio = data[0]?.Año ?? periodoConsultado.anio;
+
+        for (const [idLab, vends] of porLabAusente) {
+            const cat = catLaboratorios.find((l: any) => Number(l.IdLineaGe) === idLab);
+            const cuotaLab = vends.reduce((a, v) => a + v.cuota, 0);
+            conCuota.push({
+                Laboratorio: cat ? `${cat.Codigo_Linea} ${cat.Descripcion}` : `Lab #${idLab}`,
+                IdLineaGe: idLab,
+                Mes: mes,
+                Año: anio,
+                totalVentasLaboratorio: 0,
+                totalVentasFacturadas: 0,
+                vendedores: vends.map(v => filaVendedorSinVentas(v.codVend, v.cuota)),
+                cuotaLab,
+                pctLab: calcPctCuota(0, cuotaLab),
+            } as any);
+        }
+
+        return conCuota;
+    }, [data, cuotaVendedor, catVendedores, catLaboratorios, vendedoresConsultados, periodoConsultado]);
+
     const totalGeneral = useMemo(
-        () => data.reduce((acc, lab) => acc + (lab.totalVentasLaboratorio || 0), 0),
-        [data]
+        () => dataConCuotas.reduce((acc: number, lab: any) => acc + (lab.totalVentasLaboratorio || 0), 0),
+        [dataConCuotas]
     );
+
+    /** Cuota consolidada y % global de todos los laboratorios (R1.5). */
+    const totalGeneralCuotas = useMemo(() => {
+        const cuota = dataConCuotas.reduce((a: number, l: any) => a + Number(l.cuotaLab || 0), 0);
+        const fact = dataConCuotas.reduce(
+            (a: number, l: any) => a + l.vendedores.reduce((b: number, v: any) => b + Number(v.SumaDeVta_Fact || 0), 0),
+            0
+        );
+        return { cuota, pct: calcPctCuota(fact, cuota) };
+    }, [dataConCuotas]);
 
     const handleDetalleBtnClick = (labName: string, vendCodigo: string) => {
         setPendingDetail({ labName, vendCodigo });
@@ -336,21 +619,36 @@ export default function LabSellerReportPage() {
 
                         {/* Pie: opciones + acciones */}
                         <div className="flex flex-col gap-3 border-t border-border pt-4 sm:flex-row sm:items-center sm:justify-between">
-                            <div className="flex items-center gap-2.5">
-                                <Switch
-                                    id="excluir-serie-0800"
-                                    checked={excluirSerie0800}
-                                    onCheckedChange={setExcluirSerie0800}
-                                />
-                                <label htmlFor="excluir-serie-0800" className="text-sm font-medium text-foreground cursor-pointer select-none">
-                                    Excluir serie 0800
-                                </label>
+                            <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:gap-6">
+                                <div className="flex items-center gap-2.5">
+                                    <Switch
+                                        id="excluir-serie-0800"
+                                        checked={excluirSerie0800}
+                                        onCheckedChange={setExcluirSerie0800}
+                                    />
+                                    <label htmlFor="excluir-serie-0800" className="text-sm font-medium text-foreground cursor-pointer select-none">
+                                        Excluir serie 0800
+                                    </label>
+                                </div>
+                                <div className="flex items-center gap-2.5">
+                                    <Switch
+                                        id="solo-facturado"
+                                        checked={soloFacturado}
+                                        onCheckedChange={setSoloFacturado}
+                                    />
+                                    <label htmlFor="solo-facturado" className="text-sm font-medium text-foreground cursor-pointer select-none">
+                                        Solo facturado
+                                        <span className="block text-[10px] font-normal text-muted-foreground leading-tight">
+                                            El % de cumplimiento siempre usa venta facturada
+                                        </span>
+                                    </label>
+                                </div>
                             </div>
                             <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                                 <Button onClick={handleSearch} disabled={loading} className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto shadow-sm h-10">
                                     <Search className="mr-2 h-4 w-4" /> Buscar
                                 </Button>
-                                <ExportLabSellerPdf data={data} disabled={loading || data.length === 0} />
+                                <ExportLabSellerPdf data={dataConCuotas} disabled={loading || data.length === 0} />
                             </div>
                         </div>
                     </div>
@@ -364,7 +662,13 @@ export default function LabSellerReportPage() {
                         </div>
                     ) : data.length > 0 ? (
                         <div className="space-y-6">
-                            {data.map((lab, idx) => (
+                            {cicloResuelto && !hayCiclo && (
+                                <div className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-3 py-2">
+                                    No hay un ciclo de metas cargado para este período: las columnas de cuota y
+                                    % de cumplimiento no aplican. No es lo mismo que una cuota en cero.
+                                </div>
+                            )}
+                            {dataConCuotas.map((lab: any, idx: number) => (
                                 <div key={idx} className="border border-border rounded-lg overflow-hidden shadow-sm bg-background">
                                     <div className="bg-indigo-600 text-white p-3 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
                                         <span className="text-lg font-bold text-center sm:text-left">{lab.Laboratorio}</span>
@@ -380,11 +684,13 @@ export default function LabSellerReportPage() {
                                                 <th className="px-4 py-3 font-bold min-w-[120px]">Cód Vendedor</th>
                                                 <th className="px-4 py-3 font-bold min-w-[200px]">Nombre Vendedor</th>
                                                 <th className="px-4 py-3 font-bold text-right min-w-[150px]">Ventas (S/.)</th>
+                                                <th className="px-4 py-3 font-bold text-right min-w-[130px]">Cuota (S/.)</th>
+                                                <th className="px-4 py-3 font-bold text-center min-w-[170px]">% Cumplimiento</th>
                                                 <th className="px-4 py-3 font-bold text-center w-[120px]">Acciones</th>
                                             </tr>
                                             </thead>
                                             <tbody>
-                                            {lab.vendedores.map((vend, vIdx) => {
+                                            {lab.vendedores.map((vend: any, vIdx: number) => {
                                                 const nombreLimpio = vend.Vendedor.substring(vend.Codigo_Vend.length).trim();
                                                 return (
                                                     <tr key={vIdx} className="bg-background border-b border-border hover:bg-muted transition-colors">
@@ -393,8 +699,14 @@ export default function LabSellerReportPage() {
                                                         <td className="px-4 py-3 text-right font-semibold text-foreground">
                                                             S/ {formatMoney(vend.SumaDeVta_Tot)}
                                                         </td>
+                                                        <td className="px-4 py-3 text-right text-foreground">
+                                                            {vend.cuota > 0 ? `S/ ${formatMoney(vend.cuota)}` : "—"}
+                                                        </td>
+                                                        <td className="px-4 py-3">
+                                                            <CeldaCumplimiento pct={vend.pct} />
+                                                        </td>
                                                         <td className="px-4 py-3 text-center">
-                                                            <Button size="sm" variant="ghost" className="text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50" onClick={() => handleDetalleBtnClick(lab.Laboratorio, vend.Codigo_Vend)}>
+                                                            <Button size="sm" variant="ghost" className="text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50" disabled={vend.sinVentas} onClick={() => handleDetalleBtnClick(lab.Laboratorio, vend.Codigo_Vend)}>
                                                                 <Eye className="w-4 h-4 mr-1"/> Detalle
                                                             </Button>
                                                         </td>
@@ -410,6 +722,12 @@ export default function LabSellerReportPage() {
                                                 <td className="px-4 py-4 text-right text-emerald-700 text-base font-bold">
                                                     S/ {formatMoney(lab.totalVentasLaboratorio)}
                                                 </td>
+                                                <td className="px-4 py-4 text-right text-emerald-700 text-base font-bold">
+                                                    {lab.cuotaLab > 0 ? `S/ ${formatMoney(lab.cuotaLab)}` : "—"}
+                                                </td>
+                                                <td className="px-4 py-4">
+                                                    <CeldaCumplimiento pct={lab.pctLab} />
+                                                </td>
                                                 <td></td>
                                             </tr>
                                             </tfoot>
@@ -417,7 +735,7 @@ export default function LabSellerReportPage() {
                                     </div>
 
                                     <div className="grid grid-cols-1 gap-3 p-4 md:hidden bg-muted">
-                                        {lab.vendedores.map((vend, vIdx) => {
+                                        {lab.vendedores.map((vend: any, vIdx: number) => {
                                             const nombreLimpio = vend.Vendedor.substring(vend.Codigo_Vend.length).trim();
                                             return (
                                                 <div key={vIdx} className="bg-background p-4 rounded-lg border border-border shadow-sm flex flex-col gap-2">
@@ -433,18 +751,35 @@ export default function LabSellerReportPage() {
                                                             S/ {formatMoney(vend.SumaDeVta_Tot)}
                                                         </span>
                                                     </div>
-                                                    <Button variant="outline" size="sm" className="w-full mt-2 text-indigo-600 border-indigo-200 bg-indigo-50/50" onClick={() => handleDetalleBtnClick(lab.Laboratorio, vend.Codigo_Vend)}>
+                                                    <div className="flex justify-between items-center">
+                                                        <span className="text-xs uppercase text-muted-foreground font-bold">Cuota:</span>
+                                                        <span className="font-semibold text-foreground text-sm">
+                                                            {vend.cuota > 0 ? `S/ ${formatMoney(vend.cuota)}` : "—"}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex flex-col gap-1">
+                                                        <span className="text-xs uppercase text-muted-foreground font-bold">Cumplimiento:</span>
+                                                        <CeldaCumplimiento pct={vend.pct} compacta />
+                                                    </div>
+                                                    <Button variant="outline" size="sm" className="w-full mt-2 text-indigo-600 border-indigo-200 bg-indigo-50/50" disabled={vend.sinVentas} onClick={() => handleDetalleBtnClick(lab.Laboratorio, vend.Codigo_Vend)}>
                                                         <Eye className="w-4 h-4 mr-2"/> Ver Detalle
                                                     </Button>
                                                 </div>
                                             )
                                         })}
 
-                                        <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 mt-2 flex flex-col items-center shadow-sm">
-                                            <span className="text-[10px] font-bold text-emerald-600 uppercase mb-1">Total Ventas Laboratorio</span>
+                                        <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 mt-2 flex flex-col items-center shadow-sm gap-1">
+                                            <span className="text-[10px] font-bold text-emerald-600 uppercase">Total Ventas Laboratorio</span>
                                             <span className="font-black text-emerald-800 text-lg">
                                                 S/ {formatMoney(lab.totalVentasLaboratorio)}
                                             </span>
+                                            <span className="text-[10px] font-bold text-emerald-600 uppercase mt-1">Cuota</span>
+                                            <span className="font-bold text-emerald-800 text-sm">
+                                                {lab.cuotaLab > 0 ? `S/ ${formatMoney(lab.cuotaLab)}` : "—"}
+                                            </span>
+                                            <div className="w-full px-4 mt-1">
+                                                <CeldaCumplimiento pct={lab.pctLab} compacta />
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -452,9 +787,21 @@ export default function LabSellerReportPage() {
 
                             <div className="bg-background border border-blue-200 p-4 rounded-lg flex flex-col sm:flex-row justify-between items-center shadow-md mt-6 sticky bottom-4">
                                 <span className="text-sm font-bold uppercase tracking-wider text-foreground mb-2 sm:mb-0">Total General (Todos los Laboratorios)</span>
-                                <div className="text-center sm:text-right bg-blue-50 p-2 rounded-md sm:bg-transparent sm:p-0 border border-blue-100 sm:border-none">
-                                    <p className="text-xs text-blue-600 font-semibold uppercase">Total Ventas</p>
-                                    <p className="text-lg sm:text-xl font-bold text-blue-800">S/ {formatMoney(totalGeneral)}</p>
+                                <div className="flex flex-col gap-3 items-stretch sm:flex-row sm:items-center sm:gap-8">
+                                    <div className="text-center sm:text-right bg-blue-50 p-2 rounded-md sm:bg-transparent sm:p-0 border border-blue-100 sm:border-none">
+                                        <p className="text-xs text-blue-600 font-semibold uppercase">Total Ventas</p>
+                                        <p className="text-lg sm:text-xl font-bold text-blue-800">S/ {formatMoney(totalGeneral)}</p>
+                                    </div>
+                                    <div className="text-center sm:text-right bg-blue-50 p-2 rounded-md sm:bg-transparent sm:p-0 border border-blue-100 sm:border-none">
+                                        <p className="text-xs text-blue-600 font-semibold uppercase">Total Cuotas</p>
+                                        <p className="text-lg sm:text-xl font-bold text-blue-800">
+                                            {totalGeneralCuotas.cuota > 0 ? `S/ ${formatMoney(totalGeneralCuotas.cuota)}` : "—"}
+                                        </p>
+                                    </div>
+                                    <div className="min-w-[150px]">
+                                        <p className="text-xs text-blue-600 font-semibold uppercase mb-1 text-center sm:text-right">Cumplimiento</p>
+                                        <CeldaCumplimiento pct={totalGeneralCuotas.pct} compacta />
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -506,17 +853,33 @@ export default function LabSellerReportPage() {
                                     <p className="text-sm text-muted-foreground mt-1 font-medium">{detailData[0].Vendedor} | {detailData[0].Laboratorios[0].Laboratorio}</p>
                                 )}
                             </div>
-                            <div className="flex items-center gap-2">
+                            <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center">
+                                {viewMode === 'productos' && (
+                                    <div className="flex items-center gap-2 mr-2">
+                                        <Switch
+                                            id="quitar-igv"
+                                            checked={quitarIgv}
+                                            onCheckedChange={setQuitarIgv}
+                                        />
+                                        <label htmlFor="quitar-igv" className="text-xs font-medium text-foreground cursor-pointer select-none whitespace-nowrap">
+                                            Quitar IGV
+                                        </label>
+                                    </div>
+                                )}
                                 <ExportDetalleLabVendedorExcel
                                     data={detailData}
                                     viewMode={viewMode}
-                                    productData={productosAgrupados}
+                                    productData={productosConCuota}
+                                    quitarIgv={quitarIgv}
+                                    totales={totalesProductos}
                                     disabled={detailLoading || !detailData}
                                 />
                                 <ExportDetalleLabVendedorPdf
                                     data={detailData}
                                     viewMode={viewMode}
-                                    productData={productosAgrupados}
+                                    productData={productosConCuota}
+                                    quitarIgv={quitarIgv}
+                                    totales={totalesProductos}
                                     disabled={detailLoading || !detailData}
                                 />
                             </div>
@@ -611,36 +974,94 @@ export default function LabSellerReportPage() {
                                                 <th className="px-3 py-2 font-semibold text-center">U.M.</th>
                                                 <th className="px-3 py-2 font-semibold text-right">Cant. Total</th>
                                                 <th className="px-3 py-2 font-semibold text-right">Total S/.</th>
+                                                <th className="px-3 py-2 font-semibold text-right">Cuota cant.</th>
+                                                <th className="px-3 py-2 font-semibold text-right">Cuota S/.</th>
+                                                <th className="px-3 py-2 font-semibold text-center min-w-[150px]">% Cumpl.</th>
+                                                <th className="px-3 py-2 font-semibold text-right">Restante</th>
                                             </tr>
                                             </thead>
                                             <tbody className="divide-y divide-border">
-                                            {productosAgrupados.map((prod, pIdx) => (
-                                                <tr key={pIdx} className="hover:bg-muted">
+                                            {productosConCuota.map((prod, pIdx) => (
+                                                <tr key={pIdx} className={cn("hover:bg-muted", prod.sinVentas && "bg-amber-50/40")}>
                                                     <td className="px-3 py-2 font-mono text-muted-foreground">{prod.Codigo_Art}</td>
-                                                    <td className="px-3 py-2 text-foreground">{prod.NombreItem}</td>
+                                                    <td className="px-3 py-2 text-foreground">
+                                                        <span className={cn(prod.sinVentas && "text-muted-foreground")}>{prod.NombreItem}</span>
+                                                        {prod.sinVentas && (
+                                                            <Badge variant="outline" className="ml-2 text-[9px] bg-amber-50 text-amber-800 border-amber-300 border-dashed align-middle">
+                                                                sin ventas
+                                                            </Badge>
+                                                        )}
+                                                    </td>
                                                     <td className="px-3 py-2 text-center text-[10px] uppercase">{prod.AbrevUnidMed}</td>
                                                     <td className="px-3 py-2 text-right font-medium">{prod.TotalCantidad}</td>
-                                                    <td className="px-3 py-2 text-right font-semibold text-foreground">{formatMoney(prod.TotalVentas)}</td>
+                                                    <td className="px-3 py-2 text-right font-semibold text-foreground">{money(prod.TotalVentas)}</td>
+                                                    <td className="px-3 py-2 text-right">{prod.cuotaCant > 0 ? prod.cuotaCant : "—"}</td>
+                                                    <td className="px-3 py-2 text-right">{prod.cuotaSoles > 0 ? money(prod.cuotaSoles) : "—"}</td>
+                                                    <td className="px-3 py-2"><CeldaCumplimiento pct={prod.pct} /></td>
+                                                    <td className={cn(
+                                                        "px-3 py-2 text-right font-medium tabular-nums",
+                                                        prod.restante === null ? "text-muted-foreground"
+                                                            : prod.restante === 0 ? "text-emerald-700" : "text-amber-700"
+                                                    )}>
+                                                        {prod.restante === null ? "—" : prod.restante}
+                                                    </td>
                                                 </tr>
                                             ))}
                                             </tbody>
                                             <tfoot className="bg-emerald-50/50">
                                             <tr>
-                                                <td colSpan={4} className="px-3 py-2 text-right text-emerald-800 text-xs font-bold uppercase tracking-wider">Total Vendedor:</td>
-                                                <td className="px-3 py-2 text-right text-emerald-700 font-bold">{formatMoney(detailData[0].TotalVendedor)}</td>
+                                                <td colSpan={3} className="px-3 py-2 text-right text-emerald-800 text-xs font-bold uppercase tracking-wider">Totales:</td>
+                                                <td className="px-3 py-2 text-right text-emerald-700 font-bold">{totalesProductos.cantidad}</td>
+                                                <td className="px-3 py-2 text-right text-emerald-700 font-bold">{money(totalesProductos.ventas)}</td>
+                                                <td className="px-3 py-2 text-right text-emerald-700 font-bold">{totalesProductos.cuotaCant > 0 ? totalesProductos.cuotaCant : "—"}</td>
+                                                <td className="px-3 py-2 text-right text-emerald-700 font-bold">{totalesProductos.cuotaSoles > 0 ? money(totalesProductos.cuotaSoles) : "—"}</td>
+                                                <td className="px-3 py-2"><CeldaCumplimiento pct={totalesProductos.pct} /></td>
+                                                <td className={cn(
+                                                    "px-3 py-2 text-right font-bold tabular-nums",
+                                                    totalesProductos.restante === 0 ? "text-emerald-700" : "text-amber-700"
+                                                )}>
+                                                    {totalesProductos.restante}
+                                                </td>
                                             </tr>
                                             </tfoot>
                                         </table>
                                     </div>
                                     <div className="md:hidden grid grid-cols-1 gap-2">
-                                        {productosAgrupados.map((prod, pIdx) => (
-                                            <div key={pIdx} className="bg-background border border-border rounded-lg p-3 flex flex-col gap-1.5">
-                                                <p className="text-xs font-semibold text-foreground">{prod.NombreItem}</p>
+                                        {productosConCuota.map((prod, pIdx) => (
+                                            <div key={pIdx} className={cn(
+                                                "bg-background border border-border rounded-lg p-3 flex flex-col gap-1.5",
+                                                prod.sinVentas && "bg-amber-50/40"
+                                            )}>
+                                                <p className={cn("text-xs font-semibold text-foreground", prod.sinVentas && "text-muted-foreground")}>
+                                                    {prod.NombreItem}
+                                                    {prod.sinVentas && (
+                                                        <Badge variant="outline" className="ml-2 text-[9px] bg-amber-50 text-amber-800 border-amber-300 border-dashed align-middle">
+                                                            sin ventas
+                                                        </Badge>
+                                                    )}
+                                                </p>
                                                 <p className="text-[10px] font-mono text-muted-foreground">{prod.Codigo_Art}</p>
                                                 <div className="flex justify-between items-center border-t border-border pt-2 mt-1">
                                                     <Badge variant="outline" className="text-[10px] bg-muted">{prod.TotalCantidad} {prod.AbrevUnidMed}</Badge>
-                                                    <span className="text-sm font-bold text-emerald-700">S/ {formatMoney(prod.TotalVentas)}</span>
+                                                    <span className="text-sm font-bold text-emerald-700">S/ {money(prod.TotalVentas)}</span>
                                                 </div>
+                                                <div className="flex justify-between items-center text-[11px]">
+                                                    <span className="text-muted-foreground uppercase font-bold">Cuota</span>
+                                                    <span className="text-foreground font-medium">
+                                                        {prod.cuotaCant > 0 ? `${prod.cuotaCant} ${prod.AbrevUnidMed} · S/ ${money(prod.cuotaSoles)}` : "—"}
+                                                    </span>
+                                                </div>
+                                                <div className="flex justify-between items-center text-[11px]">
+                                                    <span className="text-muted-foreground uppercase font-bold">Restante</span>
+                                                    <span className={cn(
+                                                        "font-medium tabular-nums",
+                                                        prod.restante === null ? "text-muted-foreground"
+                                                            : prod.restante === 0 ? "text-emerald-700" : "text-amber-700"
+                                                    )}>
+                                                        {prod.restante === null ? "—" : prod.restante}
+                                                    </span>
+                                                </div>
+                                                <CeldaCumplimiento pct={prod.pct} compacta />
                                             </div>
                                         ))}
                                         <div className="flex justify-between items-center pt-2 border-t border-emerald-100">

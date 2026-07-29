@@ -10,8 +10,10 @@ import {
     DetalleItem,
     formatDocumento,
     tipoDocLabel,
-    formatFechaEmision
+    formatFechaEmision,
+    TotalesProductos
 } from "@/components/reporte/detalleLabVendedorShared"
+import { capPctCuota, sinIgv } from "@/app/utils/cuotas-helpers"
 
 interface ProductoAgrupado {
     Codigo_Art:    string
@@ -19,12 +21,22 @@ interface ProductoAgrupado {
     AbrevUnidMed:  string
     TotalCantidad: number
     TotalVentas:   number
+    cuotaCant?:    number
+    cuotaSoles?:   number
+    /** null = no hay cuota contra la cual medir. Distinto de 0. */
+    pct?:          number | null
+    restante?:     number | null
+    sinVentas?:    boolean
 }
 
 interface ExportExcelProps {
     data:         any
     viewMode:     'laboratorios' | 'productos'
     productData?: ProductoAgrupado[]
+    /** Estado del switch de la pantalla: el archivo tiene que coincidir. */
+    quitarIgv?:   boolean
+    /** Totales de la vista de productos, calculados en la página. */
+    totales?:     TotalesProductos
     disabled?:    boolean
 }
 
@@ -62,12 +74,18 @@ const COLS_PRODUCTO: ColDef[] = [
     { header: 'U.M.',        width:  8, numFmt: '@',        align: 'center' },
     { header: 'Cant. Total', width: 12, numFmt: '#,##0',    align: 'right'  },
     { header: 'Total S/.',   width: 13, numFmt: '#,##0.00', align: 'right'  },
+    { header: 'Cuota cant.', width: 12, numFmt: '#,##0',    align: 'right'  },
+    { header: 'Cuota S/.',   width: 13, numFmt: '#,##0.00', align: 'right'  },
+    { header: '% Cumpl.',    width: 11, numFmt: '@',        align: 'right'  },
+    { header: 'Restante',    width: 11, numFmt: '#,##0',    align: 'right'  },
 ]
 
 export const ExportDetalleLabVendedorExcel: React.FC<ExportExcelProps> = ({
     data,
     viewMode,
     productData = [],
+    quitarIgv = false,
+    totales,
     disabled = false
 }) => {
     const [loading, setLoading] = useState(false)
@@ -84,6 +102,12 @@ export const ExportDetalleLabVendedorExcel: React.FC<ExportExcelProps> = ({
             const esCliente = viewMode === 'laboratorios'
             const COLUMNS   = esCliente ? COLS_CLIENTE : COLS_PRODUCTO
             const lastCol   = COLUMNS.length
+
+            // El switch de IGV de la pantalla se refleja en el archivo: divide
+            // montos, nunca cantidades ni porcentajes.
+            const money = (n: number) => quitarIgv ? Number(sinIgv(n).toFixed(2)) : Number(n)
+            const textoPct = (pct: number | null | undefined): string =>
+                pct === null || pct === undefined ? '—' : `${capPctCuota(pct)!.toFixed(2)}%`
 
             const workbook = new ExcelJS.Workbook()
             workbook.creator = 'DROGUERÍA DIFAR'
@@ -194,10 +218,16 @@ export const ExportDetalleLabVendedorExcel: React.FC<ExportExcelProps> = ({
                 for (const prod of productData) {
                     writeDataRow([
                         prod.Codigo_Art,
-                        prod.NombreItem,
+                        // Marca en el texto, no con color: al filtrar u ordenar
+                        // en Excel el relleno se pierde de vista, el sufijo no.
+                        prod.sinVentas ? `${prod.NombreItem}  [sin ventas]` : prod.NombreItem,
                         prod.AbrevUnidMed,
                         Number(prod.TotalCantidad),
-                        Number(prod.TotalVentas),
+                        money(Number(prod.TotalVentas)),
+                        Number(prod.cuotaCant || 0) > 0 ? Number(prod.cuotaCant) : '—',
+                        Number(prod.cuotaSoles || 0) > 0 ? money(Number(prod.cuotaSoles)) : '—',
+                        textoPct(prod.pct),
+                        prod.restante === null || prod.restante === undefined ? '—' : Number(prod.restante),
                     ])
                 }
             }
@@ -220,8 +250,35 @@ export const ExportDetalleLabVendedorExcel: React.FC<ExportExcelProps> = ({
                 r++
             }
 
-            if (esCliente) mkTotal('TOTAL LÍNEA', Number(labData.TotalLinea))
-            mkTotal('TOTAL VENDEDOR', Number(vendData.TotalVendedor))
+            if (esCliente) {
+                mkTotal('TOTAL LÍNEA', Number(labData.TotalLinea))
+                mkTotal('TOTAL VENDEDOR', Number(vendData.TotalVendedor))
+            } else if (totales) {
+                // Fila completa: mkTotal solo escribe la primera y la última
+                // columna, y acá la última es Restante.
+                const valores: (string | number)[] = [
+                    'TOTALES', '', '',
+                    Number(totales.cantidad),
+                    money(Number(totales.ventas)),
+                    totales.cuotaCant > 0 ? Number(totales.cuotaCant) : '—',
+                    totales.cuotaSoles > 0 ? money(Number(totales.cuotaSoles)) : '—',
+                    textoPct(totales.pct),
+                    Number(totales.restante),
+                ]
+                const row = ws.getRow(r)
+                row.height = 20
+                COLUMNS.forEach((col, idx) => {
+                    const cell = row.getCell(idx + 1)
+                    cell.value     = valores[idx]
+                    cell.font      = { bold: true, color: { argb: 'FFFFFFFF' }, size: 9 }
+                    cell.fill      = { type: 'pattern', pattern: 'solid', fgColor: { argb: TOTAL_ARGB } }
+                    cell.alignment = { horizontal: idx === 0 ? 'left' : col.align, vertical: 'middle' }
+                    if (col.numFmt !== '@' && typeof valores[idx] === 'number') cell.numFmt = col.numFmt
+                })
+                r++
+            } else {
+                mkTotal('TOTAL VENDEDOR', Number(vendData.TotalVendedor))
+            }
 
             // Ancho final, acotado como en ExcelExportButton
             COLUMNS.forEach((col, idx) => {

@@ -19,6 +19,24 @@ export interface DetalleItem {
     FechaEmision?: string | Date | null
 }
 
+/**
+ * Fila de totales de la vista de productos.
+ *
+ * La calcula la página y se la pasa a los exportadores en vez de que cada uno
+ * la rehaga: el archivo tiene que decir exactamente lo mismo que la pantalla,
+ * y tres implementaciones del mismo total divergen tarde o temprano.
+ */
+export interface TotalesProductos {
+    cantidad:   number
+    ventas:     number
+    cuotaCant:  number
+    cuotaSoles: number
+    /** Suma de faltantes por producto; nunca negativo. */
+    restante:   number
+    /** null = no hay cuota contra la cual medir. */
+    pct:        number | null
+}
+
 /** El SP mezcla tipos: Serie_Doc llega string y Nro_Doc número. */
 const txt = (v: string | number | null | undefined): string =>
     (v === null || v === undefined) ? '' : String(v).trim()

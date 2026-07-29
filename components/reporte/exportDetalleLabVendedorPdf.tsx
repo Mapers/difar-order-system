@@ -3,7 +3,8 @@ import { Button } from "@/components/ui/button";
 import { FileText } from "lucide-react";
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
 import { toast } from "@/app/hooks/useToast";
-import { formatDocumentoConTipo, formatFechaEmision } from "@/components/reporte/detalleLabVendedorShared";
+import { formatDocumentoConTipo, formatFechaEmision, TotalesProductos } from "@/components/reporte/detalleLabVendedorShared";
+import { capPctCuota, estadoCuota, hexEstado, sinIgv } from "@/app/utils/cuotas-helpers";
 
 interface ProductoAgrupado {
     Codigo_Art: string;
@@ -11,12 +12,22 @@ interface ProductoAgrupado {
     AbrevUnidMed: string;
     TotalCantidad: number;
     TotalVentas: number;
+    cuotaCant?: number;
+    cuotaSoles?: number;
+    /** null = no hay cuota contra la cual medir. Distinto de 0. */
+    pct?: number | null;
+    restante?: number | null;
+    sinVentas?: boolean;
 }
 
 interface ExportPdfProps {
     data: any;
     viewMode: 'laboratorios' | 'productos';
     productData?: ProductoAgrupado[];
+    /** Estado del switch de la pantalla: el archivo tiene que coincidir. */
+    quitarIgv?: boolean;
+    /** Totales de la vista de productos, calculados en la página. */
+    totales?: TotalesProductos;
     disabled?: boolean;
 }
 
@@ -24,9 +35,23 @@ export const ExportDetalleLabVendedorPdf: React.FC<ExportPdfProps> = ({
     data,
     viewMode,
     productData = [],
+    quitarIgv = false,
+    totales,
     disabled = false
 }) => {
     const [loading, setLoading] = useState(false);
+
+    // El switch de IGV divide montos, nunca cantidades ni porcentajes.
+    const money = (n: number) => quitarIgv ? sinIgv(Number(n)) : Number(n);
+
+    const textoPct = (pct: number | null | undefined): string =>
+        pct === null || pct === undefined ? '-' : `${capPctCuota(pct)!.toFixed(2)}%`;
+
+    const colorPct = (pct: number | null | undefined) => {
+        const hex = hexEstado[estadoCuota(pct ?? null)];
+        const n = parseInt(hex.slice(1), 16);
+        return rgb(((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255);
+    };
 
     const formatMoney = (amount: number) =>
         amount.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -172,18 +197,21 @@ export const ExportDetalleLabVendedorPdf: React.FC<ExportPdfProps> = ({
                 currentPage.drawText(formatMoney(vendData.TotalVendedor), { x: margin + 100, y: yPosition, size: 9, font: boldFont });
 
             } else {
-                // Encabezado de columnas para productos
-                const colWidths = [55, 270, 40, 60, 70];
-                const colHeaders = ['Cód. Art', 'Descripción', 'U.M.', 'Cant. Total', 'Total S/.'];
+                // Encabezado de columnas para productos.
+                // La descripción cede ancho para las cuatro columnas de cuota;
+                // el nombre se recorta más corto para compensar.
+                const colWidths = [50, 140, 30, 48, 60, 48, 60, 50, 45];
+                const colHeaders = ['Cód. Art', 'Descripción', 'U.M.', 'Cant.', 'Total S/.', 'Cuota cant.', 'Cuota S/.', '% Cumpl.', 'Restante'];
+                const primeraDerecha = 3;
                 let xPos = margin;
 
                 currentPage.drawRectangle({ x: margin, y: yPosition - 2, width: pageWidth - margin * 2, height: 13, color: rgb(0.93, 0.93, 0.95) });
                 colHeaders.forEach((h, i) => {
-                    const isRight = i >= 3;
-                    const textW = boldFont.widthOfTextAtSize(h, 8);
+                    const isRight = i >= primeraDerecha;
+                    const textW = boldFont.widthOfTextAtSize(h, 7);
                     currentPage.drawText(h, {
                         x: isRight ? xPos + colWidths[i] - textW - 2 : xPos + 2,
-                        y: yPosition, size: 8, font: boldFont
+                        y: yPosition, size: 7, font: boldFont
                     });
                     xPos += colWidths[i];
                 });
@@ -192,15 +220,27 @@ export const ExportDetalleLabVendedorPdf: React.FC<ExportPdfProps> = ({
                 for (const prod of productData) {
                     checkPageBreak(14);
                     xPos = margin;
-                    const desc = prod.NombreItem.length > 60 ? prod.NombreItem.substring(0, 60) + '...' : prod.NombreItem;
-                    const rowData = [prod.Codigo_Art, desc, prod.AbrevUnidMed, prod.TotalCantidad.toString(), formatMoney(prod.TotalVentas)];
+                    const nombre = prod.sinVentas ? `${prod.NombreItem} [sin ventas]` : prod.NombreItem;
+                    const desc = nombre.length > 40 ? nombre.substring(0, 40) + '...' : nombre;
+                    const rowData = [
+                        prod.Codigo_Art,
+                        desc,
+                        prod.AbrevUnidMed,
+                        prod.TotalCantidad.toString(),
+                        formatMoney(money(prod.TotalVentas)),
+                        Number(prod.cuotaCant || 0) > 0 ? String(prod.cuotaCant) : '-',
+                        Number(prod.cuotaSoles || 0) > 0 ? formatMoney(money(Number(prod.cuotaSoles))) : '-',
+                        textoPct(prod.pct),
+                        prod.restante === null || prod.restante === undefined ? '-' : String(prod.restante),
+                    ];
 
                     rowData.forEach((text, i) => {
-                        const isRight = i >= 3;
-                        const textW = font.widthOfTextAtSize(text, 8);
+                        const isRight = i >= primeraDerecha;
+                        const textW = font.widthOfTextAtSize(text, 7);
                         currentPage.drawText(text, {
                             x: isRight ? xPos + colWidths[i] - textW - 2 : xPos + 2,
-                            y: yPosition, size: 8, font
+                            y: yPosition, size: 7, font,
+                            color: i === 7 ? colorPct(prod.pct) : rgb(0, 0, 0),
                         });
                         xPos += colWidths[i];
                     });
@@ -215,16 +255,36 @@ export const ExportDetalleLabVendedorPdf: React.FC<ExportPdfProps> = ({
 
                 checkPageBreak(25);
                 yPosition -= 8;
-                const tvText = formatMoney(vendData.TotalVendedor);
-                const totalLabel = 'TOTAL VENDEDOR:';
-                currentPage.drawText(totalLabel, {
-                    x: pageWidth - margin - boldFont.widthOfTextAtSize(totalLabel, 9) - boldFont.widthOfTextAtSize(tvText, 9) - 15,
-                    y: yPosition, size: 9, font: boldFont, color: rgb(0.1, 0.45, 0.1)
-                });
-                currentPage.drawText(tvText, {
-                    x: pageWidth - margin - boldFont.widthOfTextAtSize(tvText, 9),
-                    y: yPosition, size: 9, font: boldFont, color: rgb(0.1, 0.45, 0.1)
-                });
+
+                const verde = rgb(0.1, 0.45, 0.1);
+                currentPage.drawText('TOTALES:', { x: margin + 2, y: yPosition, size: 8, font: boldFont, color: verde });
+
+                if (totales) {
+                    // Cada total alineado al borde derecho de su columna, para
+                    // que quede debajo del valor que resume.
+                    const celdas: [string, number][] = [
+                        [String(totales.cantidad), 3],
+                        [formatMoney(money(totales.ventas)), 4],
+                        [totales.cuotaCant > 0 ? String(totales.cuotaCant) : '-', 5],
+                        [totales.cuotaSoles > 0 ? formatMoney(money(totales.cuotaSoles)) : '-', 6],
+                        [textoPct(totales.pct), 7],
+                        [String(totales.restante), 8],
+                    ];
+                    for (const [texto, idx] of celdas) {
+                        const bordeDerecho = margin + colWidths.slice(0, idx + 1).reduce((a, c) => a + c, 0);
+                        currentPage.drawText(texto, {
+                            x: bordeDerecho - boldFont.widthOfTextAtSize(texto, 8) - 2,
+                            y: yPosition, size: 8, font: boldFont,
+                            color: idx === 7 ? colorPct(totales.pct) : verde,
+                        });
+                    }
+                } else {
+                    const tvText = formatMoney(vendData.TotalVendedor);
+                    currentPage.drawText(tvText, {
+                        x: pageWidth - margin - boldFont.widthOfTextAtSize(tvText, 8),
+                        y: yPosition, size: 8, font: boldFont, color: verde
+                    });
+                }
             }
 
             const pdfBytes = await pdfDoc.save();
