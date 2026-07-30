@@ -135,6 +135,18 @@ export function ComprobantesTable({
             }
         }
 
+        // La fila que ES una nota de crédito se identifica como tal. El resto
+        // de los tipoNC ('total', 'parcial') van sobre una FACTURA e indican
+        // cuánto de ella quedó acreditado, por eso ahí sí corresponde el
+        // prefijo "NC". Sin esta distinción la NC salía como "NC NOTA_CREDITO".
+        if (comprobante.tipoNC === 'nota_credito') {
+            return {
+                label: 'Nota de Crédito',
+                cellBg: 'bg-purple-50',
+                textColor: 'text-purple-700',
+            }
+        }
+
         if (comprobante.tipoNC !== 'sin_nc') {
             return {
                 label: `NC ${comprobante.tipoNC.toUpperCase()}`,
