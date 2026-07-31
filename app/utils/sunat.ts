@@ -90,6 +90,13 @@ const DESCONOCIDO: EstadoSunatConfig = {
 
 const DESTACABLES: readonly string[] = ['101', '103', '104', '105', '108']
 
+/**
+ * Estados que sí entran al registro de ventas (PDF / Excel):
+ * 101 EN PROCESO, 102 ACEPTADO, 103 ACEPTADO CON OBSERVACIÓN.
+ * Quedan fuera 104 RECHAZADO, 105 ANULADO y 108 SOLICITUD DE BAJA.
+ */
+const EXPORTABLES: readonly string[] = ['101', '102', '103']
+
 function normalizar(codigo: string | number | null | undefined): string | null {
     if (codigo === null || codigo === undefined) return null
     const limpio = String(codigo).trim()
@@ -110,4 +117,29 @@ export function getEstadoSunatDestacable(
     const clave = normalizar(codigo)
     if (clave === null || !DESTACABLES.includes(clave)) return null
     return CONFIG[clave as CodigoSunat] ?? null
+}
+
+/**
+ * ¿La fila entra al registro de ventas (PDF / Excel)?
+ *
+ * Manda `estado_sunat`: si viene poblado, solo pasan 101 / 102 / 103.
+ * `idSunat` + `aceptada_por_sunat` actúan de respaldo cuando el estado todavía
+ * es NULL — mismo patrón que sp_ws_buscar_compr_emitidos_advance.sql:71-75, que
+ * es lo que deja entrar al listado a los comprobantes legados. Ese respaldo es
+ * también el que mantiene las filas de nota de crédito, que el SP manda a
+ * propósito sin estado_sunat (ver sp_ws_buscar_compr_emitidos_advance.sql:526).
+ *
+ * `idSunat === null` = correlativo no utilizado: nunca se exporta.
+ */
+export function esExportableARegistroVentas(comprobante: {
+    idSunat            : number | null
+    estado_sunat?      : string | null
+    aceptada_por_sunat?: number | null
+}): boolean {
+    if (comprobante.idSunat === null) return false
+
+    const estado = normalizar(comprobante.estado_sunat)
+    if (estado !== null) return EXPORTABLES.includes(estado)
+
+    return comprobante.aceptada_por_sunat !== 104
 }

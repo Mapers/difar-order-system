@@ -4,7 +4,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { FileText, Pencil, Trash2 } from "lucide-react"
-import { AsientoLinea } from "@/app/types/procesar-nota-credito-types"
+import { AMO_ASIENTO_LABEL, AsientoLinea } from "@/app/types/procesar-nota-credito-types"
 import { cn } from "@/lib/utils"
 
 const fmt = (n: number) => n.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
@@ -58,7 +58,7 @@ export function DetalleAsientoTable({
                                     <div className="font-medium leading-tight">
                                         {l.razonSocial || <span className="text-destructive">Sin tercero</span>}
                                     </div>
-                                    <div className="max-w-[240px] truncate text-xs text-muted-foreground">{l.concepto}</div>
+                                    <div className="font-mono text-xs text-muted-foreground">{l.codCliente}</div>
                                 </TableCell>
                                 <TableCell className={cn("text-right font-mono font-semibold", l.cargo > 0 ? "text-green-700" : "text-muted-foreground")}>
                                     {fmt(l.cargo)}
@@ -66,10 +66,10 @@ export function DetalleAsientoTable({
                                 <TableCell className={cn("text-right font-mono font-semibold", l.abono > 0 ? "text-red-700" : "text-muted-foreground")}>
                                     {fmt(l.abono)}
                                 </TableCell>
-                                <TableCell className="whitespace-nowrap font-mono text-xs">{l.ctaContable || '—'}</TableCell>
+                                <TableCell className="whitespace-nowrap font-mono text-xs">{l.ctaContable ?? '—'}</TableCell>
                                 <TableCell className="whitespace-nowrap text-xs text-muted-foreground">{l.centroCostos || '—'}</TableCell>
                                 <TableCell className="whitespace-nowrap text-xs text-muted-foreground">
-                                    {l.tipoAmortizacion || '—'}
+                                    {AMO_ASIENTO_LABEL}
                                     <br />
                                     <span className="text-[11px]">{l.fechaEmision || '—'} → {l.fechaVencimiento || '—'}</span>
                                 </TableCell>

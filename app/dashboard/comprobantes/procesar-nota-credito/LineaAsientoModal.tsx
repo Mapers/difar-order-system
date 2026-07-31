@@ -11,39 +11,43 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { FileDown } from "lucide-react"
 import { cn } from "@/lib/utils"
 import {
-    AMO_ASIENTO_DEFAULT, AsientoLinea, CENTROS_COSTO, DocumentoAplicable,
+    AMO_ASIENTO_LABEL, AsientoLinea, ComboCentroCostosRow, CONCEPTO_MAX, DocumentoAplicable,
 } from "@/app/types/procesar-nota-credito-types"
 import { SeleccionarDocumentoModal, PickerModo } from "./SeleccionarDocumentoModal"
 
 type Side = 'cargo' | 'abono'
 
 interface FormErrors {
-    razonSocial?: string
-    importe?:     string
+    documento?: string
+    importe?:   string
 }
 
 interface LineaAsientoModalProps {
-    open:         boolean
-    onOpenChange: (open: boolean) => void
-    linea:        AsientoLinea | null   // null = nueva línea
-    fechaAsiento: string
-    onSave:       (linea: AsientoLinea) => void
+    open:            boolean
+    onOpenChange:    (open: boolean) => void
+    linea:           AsientoLinea | null   // null = nueva línea
+    fechaAsiento:    string
+    glosa:           string
+    centrosCosto:    ComboCentroCostosRow[]
+    clienteAsiento:  string                // RUC fijado por la N.C. ya cargada
+    onSave:          (linea: AsientoLinea) => void
 }
 
 function lineaVacia(): AsientoLinea {
     return {
-        id: '', tipDoc: '', serie: '', numero: '', razonSocial: '', concepto: '',
-        cargo: 0, abono: 0, ctaContable: '', centroCostos: '', undCosto: '',
-        tipoAmortizacion: AMO_ASIENTO_DEFAULT, fechaEmision: '', fechaVencimiento: '',
+        id: '', tipDoc: '', serie: '', numero: '', codCliente: '', razonSocial: '',
+        cargo: 0, abono: 0, ctaContable: null, codContable: '', centroCostos: '',
+        undCosto: '', fechaEmision: '', fechaVencimiento: '',
     }
 }
 
-export function LineaAsientoModal({ open, onOpenChange, linea, fechaAsiento, onSave }: LineaAsientoModalProps) {
-    const [form, setForm]     = useState<AsientoLinea>(lineaVacia())
-    const [side, setSide]     = useState<Side>('cargo')
+export function LineaAsientoModal({
+    open, onOpenChange, linea, fechaAsiento, glosa, centrosCosto, clienteAsiento, onSave,
+}: LineaAsientoModalProps) {
+    const [form, setForm]       = useState<AsientoLinea>(lineaVacia())
+    const [side, setSide]       = useState<Side>('cargo')
     const [importe, setImporte] = useState('')
-    const [errors, setErrors] = useState<FormErrors>({})
-    const [ncCargada, setNcCargada] = useState(false)
+    const [errors, setErrors]   = useState<FormErrors>({})
     const [pickerModo, setPickerModo] = useState<PickerModo | null>(null)
 
     useEffect(() => {
@@ -53,18 +57,20 @@ export function LineaAsientoModal({ open, onOpenChange, linea, fechaAsiento, onS
         setSide(base.abono > 0 ? 'abono' : 'cargo')
         setImporte(base.abono > 0 ? String(base.abono) : base.cargo > 0 ? String(base.cargo) : '')
         setErrors({})
-        setNcCargada(!!linea && linea.tipDoc === '07')
     }, [open, linea])
 
     const set = <K extends keyof AsientoLinea>(field: K, value: AsientoLinea[K]) =>
         setForm(prev => ({ ...prev, [field]: value }))
 
-    const clearError = (field: keyof FormErrors) => setErrors(prev => ({ ...prev, [field]: undefined }))
+    // El documento solo entra por el picker: tiene que existir en el kardex de
+    // clientes con su provisión '00', o el SP rechaza el asiento completo.
+    const docCargado = !!form.tipDoc && !!form.codCliente
+    const esNC       = form.tipDoc === '07'
 
     function validate(): boolean {
         const newErrors: FormErrors = {}
         const monto = Number(importe)
-        if (!form.razonSocial.trim()) newErrors.razonSocial = "La razón social es obligatoria."
+        if (!docCargado) newErrors.documento = "Carga la N.C. o el comprobante desde el buscador."
         if (!importe || isNaN(monto) || monto <= 0) newErrors.importe = "El importe debe ser mayor a 0.00."
         setErrors(newErrors)
         return Object.keys(newErrors).length === 0
@@ -86,18 +92,14 @@ export function LineaAsientoModal({ open, onOpenChange, linea, fechaAsiento, onS
         setForm(prev => ({
             ...prev,
             tipDoc: doc.tipDoc, serie: doc.serie, numero: doc.numero,
-            razonSocial: doc.razonSocial, concepto: doc.motivo, ctaContable: doc.ctaContable || prev.ctaContable,
+            codCliente: doc.codCliente, razonSocial: doc.razonSocial,
+            ctaContable: doc.idCtaContable, codContable: '',
             fechaEmision: doc.fechaEmision, fechaVencimiento: doc.fechaVencimiento,
         }))
         setImporte(String(doc.monto))
-        if (pickerModo === 'nc') {
-            setSide('cargo')
-            setNcCargada(true)
-        } else {
-            setSide('abono')
-        }
-        clearError('razonSocial')
-        clearError('importe')
+        // N.C. al debe, factura/boleta al haber — así lo graba el sistema.
+        setSide(doc.tipDoc === '07' ? 'cargo' : 'abono')
+        setErrors({})
         setPickerModo(null)
     }
 
@@ -111,30 +113,49 @@ export function LineaAsientoModal({ open, onOpenChange, linea, fechaAsiento, onS
 
                     <div className="grid grid-cols-12 gap-3.5">
                         <SectionLabel>Documento</SectionLabel>
+
+                        {!docCargado && (
+                            <div className="col-span-12 rounded-md border border-dashed p-4 text-center text-sm text-muted-foreground">
+                                Aún no hay documento. Usa <b>Cargar N.C</b> o <b>Cargar Factura/Boleta</b>
+                                {' '}para traerlo del kardex.
+                            </div>
+                        )}
+
                         <Field className="col-span-2" label="tipD">
-                            <Input className="font-mono" value={form.tipDoc} onChange={e => set('tipDoc', e.target.value)} placeholder="07" />
+                            <Input className="bg-muted font-mono text-muted-foreground" value={form.tipDoc} readOnly placeholder="07" />
                         </Field>
                         <Field className="col-span-3" label="Serie">
-                            <Input className="font-mono" value={form.serie} onChange={e => set('serie', e.target.value.toUpperCase())} placeholder="F001" />
+                            <Input className="bg-muted font-mono text-muted-foreground" value={form.serie} readOnly placeholder="F001" />
                         </Field>
                         <Field className="col-span-3" label="Nro documento">
-                            <Input className="font-mono" value={form.numero} onChange={e => set('numero', e.target.value)} placeholder="1350" />
+                            <Input className="bg-muted font-mono text-muted-foreground" value={form.numero} readOnly placeholder="1350" />
                         </Field>
                         <Field className="col-span-4" label="Cta. contable">
-                            <Input className="font-mono" value={form.ctaContable} onChange={e => set('ctaContable', e.target.value)} placeholder="1210201" />
-                        </Field>
-
-                        <SectionLabel>Tercero y concepto</SectionLabel>
-                        <Field className="col-span-6" label="Razón social" error={errors.razonSocial}>
                             <Input
-                                value={form.razonSocial}
-                                onChange={e => { set('razonSocial', e.target.value); clearError('razonSocial') }}
-                                className={cn(errors.razonSocial && "border-destructive")}
-                                placeholder="RED SALUD NORTE S.A.C."
+                                className="bg-muted font-mono text-muted-foreground"
+                                value={form.ctaContable ?? ''}
+                                readOnly
+                                placeholder="del cliente"
                             />
                         </Field>
-                        <Field className="col-span-6" label="Concepto">
-                            <Input value={form.concepto} onChange={e => set('concepto', e.target.value)} placeholder="APLICACIÓN DE NOTA DE CRÉDITO" />
+                        {errors.documento && (
+                            <p className="col-span-12 -mt-1 text-xs text-destructive">{errors.documento}</p>
+                        )}
+
+                        <SectionLabel>Tercero y concepto</SectionLabel>
+                        <Field className="col-span-4" label="RUC / código">
+                            <Input className="bg-muted font-mono text-muted-foreground" value={form.codCliente} readOnly placeholder="—" />
+                        </Field>
+                        <Field className="col-span-8" label="Razón social">
+                            <Input className="bg-muted text-muted-foreground" value={form.razonSocial} readOnly placeholder="—" />
+                        </Field>
+                        <Field className="col-span-12" label={`Concepto · se copia de la glosa (máx. ${CONCEPTO_MAX})`}>
+                            <Input
+                                className="bg-muted text-muted-foreground"
+                                value={glosa.slice(0, CONCEPTO_MAX)}
+                                readOnly
+                                placeholder="Define la glosa en la cabecera"
+                            />
                         </Field>
 
                         <SectionLabel>Importe</SectionLabel>
@@ -168,7 +189,7 @@ export function LineaAsientoModal({ open, onOpenChange, linea, fechaAsiento, onS
                                 <Input
                                     inputMode="decimal"
                                     value={importe}
-                                    onChange={e => { setImporte(e.target.value); clearError('importe') }}
+                                    onChange={e => { setImporte(e.target.value); setErrors(p => ({ ...p, importe: undefined })) }}
                                     className={cn("pl-8 text-right font-mono", errors.importe && "border-destructive")}
                                     placeholder="0.00"
                                 />
@@ -178,23 +199,24 @@ export function LineaAsientoModal({ open, onOpenChange, linea, fechaAsiento, onS
                             <Select value={form.centroCostos} onValueChange={v => set('centroCostos', v)}>
                                 <SelectTrigger><SelectValue placeholder="— Seleccionar —" /></SelectTrigger>
                                 <SelectContent>
-                                    {CENTROS_COSTO.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                                    {centrosCosto.map(c => (
+                                        <SelectItem key={c.CodCentroCostos} value={c.CodCentroCostos}>
+                                            {c.CodCentroCostos} · {c.Descripcion}
+                                        </SelectItem>
+                                    ))}
                                 </SelectContent>
                             </Select>
                         </Field>
 
                         <SectionLabel>Amortización y fechas</SectionLabel>
-                        <Field className="col-span-6" label="tipAmo">
-                            <Input value={form.tipoAmortizacion} readOnly className="bg-muted text-muted-foreground" />
+                        <Field className="col-span-4" label="tipAmo">
+                            <Input value={AMO_ASIENTO_LABEL} readOnly className="bg-muted text-muted-foreground" />
                         </Field>
-                        <Field className="col-span-6" label="Und. costo">
-                            <Input value={form.undCosto} onChange={e => set('undCosto', e.target.value)} placeholder="—" />
+                        <Field className="col-span-4" label="F. emisión">
+                            <Input className="bg-muted font-mono text-muted-foreground" value={form.fechaEmision} readOnly placeholder="aaaa-mm-dd" />
                         </Field>
-                        <Field className="col-span-6" label="F. emisión (de la N.C.)">
-                            <Input className="bg-muted font-mono text-muted-foreground" value={form.fechaEmision} readOnly placeholder="dd/mm/aaaa" />
-                        </Field>
-                        <Field className="col-span-6" label="F. vencimiento (de la N.C.)">
-                            <Input className="bg-muted font-mono text-muted-foreground" value={form.fechaVencimiento} readOnly placeholder="dd/mm/aaaa" />
+                        <Field className="col-span-4" label="F. vencimiento">
+                            <Input className="bg-muted font-mono text-muted-foreground" value={form.fechaVencimiento} readOnly placeholder="aaaa-mm-dd" />
                         </Field>
                     </div>
 
@@ -204,7 +226,14 @@ export function LineaAsientoModal({ open, onOpenChange, linea, fechaAsiento, onS
                                 <FileDown className="h-3.5 w-3.5" />
                                 Cargar N.C
                             </Button>
-                            <Button type="button" variant="outline" disabled={!ncCargada} onClick={() => setPickerModo('comp')} className="gap-1.5">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                disabled={!clienteAsiento && !esNC}
+                                title={!clienteAsiento ? "Primero agrega la línea de la nota de crédito" : undefined}
+                                onClick={() => setPickerModo('comp')}
+                                className="gap-1.5"
+                            >
                                 <FileDown className="h-3.5 w-3.5" />
                                 Cargar Factura/Boleta
                             </Button>
@@ -221,6 +250,7 @@ export function LineaAsientoModal({ open, onOpenChange, linea, fechaAsiento, onS
                 open={pickerModo !== null}
                 modo={pickerModo ?? 'nc'}
                 fechaAsiento={fechaAsiento}
+                codCliente={clienteAsiento || form.codCliente}
                 onClose={() => setPickerModo(null)}
                 onPick={handlePick}
             />

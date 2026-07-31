@@ -107,9 +107,11 @@ export default function ProcesarNotaCreditoPage() {
                     <p className={hook.puedeAceptar ? "text-sm text-green-700" : "text-sm text-red-600"}>
                         {hook.lineas.length === 0
                             ? "Agrega líneas para procesar la aplicación."
-                            : hook.puedeAceptar
-                                ? "Asiento cuadrado · listo para procesar."
-                                : "El asiento debe estar cuadrado (diferencia 0.00) para procesar."}
+                            : !hook.cabecera.glosa.trim()
+                                ? "Falta la glosa de registro en la cabecera."
+                                : !hook.cuadrado
+                                    ? "El asiento debe estar cuadrado (diferencia 0.00) para procesar."
+                                    : "Asiento cuadrado · listo para procesar."}
                     </p>
                     <Button size="lg" disabled={!hook.puedeAceptar} onClick={onAceptar} className="gap-2">
                         Aceptar y procesar
@@ -122,6 +124,9 @@ export default function ProcesarNotaCreditoPage() {
                 onOpenChange={setLineaModalOpen}
                 linea={editIndex === null ? null : hook.lineas[editIndex]}
                 fechaAsiento={hook.cabecera.fecha}
+                glosa={hook.cabecera.glosa}
+                centrosCosto={hook.combos.centrosCosto}
+                clienteAsiento={hook.clienteAsiento}
                 onSave={guardarLinea}
             />
 

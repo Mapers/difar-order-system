@@ -1,21 +1,22 @@
 'use client'
 
-import { useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { toast } from "@/app/hooks/useToast"
-import { useAuth } from "@/context/authContext"
 import {
-    fetchComboAnio, fetchComboGlosa, fetchComboMes, fetchComboTipoAsiento, guardarAsiento as guardarAsientoRequest,
+    fetchComboAnio, fetchComboCentroCostos, fetchComboGlosa, fetchComboMes,
+    fetchComboTipoAsiento, fetchSiguienteVoucher,
+    guardarAsiento as guardarAsientoRequest,
 } from "@/app/api/asientos"
 import {
     AsientoCabecera,
     AsientoLinea,
     ComboAnioRow,
+    ComboCentroCostosRow,
     ComboGlosaRow,
     ComboMesRow,
     ComboTipoAsientoRow,
 } from "@/app/types/procesar-nota-credito-types"
 
-const VOUCHER_INICIAL = 213
 const TOLERANCIA_CUADRE = 0.005
 
 function cabeceraInicial(): AsientoCabecera {
@@ -23,9 +24,9 @@ function cabeceraInicial(): AsientoCabecera {
     return {
         fecha:        hoy,
         moneda:       'SOLES',
-        mesRegistro:  String(Number(hoy.slice(5, 7))),
+        mesRegistro:  hoy.slice(5, 7),   // Meses.Numero lleva cero: '07', no '7'
         anioRegistro: hoy.slice(0, 4),
-        tipoAsiento:  'REGISTROS',
+        tipoAsiento:  '0',               // doc_registros: 0 = REGISTROS
         destino:      false,
         glosa:        '',  // vacía a propósito: se busca/escribe, no se preselecciona
     }
@@ -36,16 +37,15 @@ interface Combos {
     tiposAsiento:  ComboTipoAsientoRow[]
     meses:         ComboMesRow[]
     anios:         ComboAnioRow[]
+    centrosCosto:  ComboCentroCostosRow[]
 }
 
-const COMBOS_VACIOS: Combos = { glosas: [], tiposAsiento: [], meses: [], anios: [] }
+const COMBOS_VACIOS: Combos = { glosas: [], tiposAsiento: [], meses: [], anios: [], centrosCosto: [] }
 
 export function useProcesarNotaCredito() {
-    const { user } = useAuth()
     const [cabecera, setCabecera]         = useState<AsientoCabecera>(cabeceraInicial())
     const [lineas, setLineas]             = useState<AsientoLinea[]>([])
-    const [numeroVoucher, setNumeroVoucher] = useState(VOUCHER_INICIAL)
-    const [editIndex, setEditIndex]       = useState<number | null>(null)
+    const [numeroVoucher, setNumeroVoucher] = useState<number | null>(null)
     const [procesando, setProcesando]     = useState(false)
     const [combos, setCombos]             = useState<Combos>(COMBOS_VACIOS)
     const [combosLoading, setCombosLoading] = useState(true)
@@ -56,30 +56,42 @@ export function useProcesarNotaCredito() {
             fetchComboTipoAsiento().then(res => res.data?.data?.data as ComboTipoAsientoRow[] ?? []).catch(() => []),
             fetchComboMes().then(res => res.data?.data?.data as ComboMesRow[] ?? []).catch(() => []),
             fetchComboAnio().then(res => res.data?.data?.data as ComboAnioRow[] ?? []).catch(() => []),
+            fetchComboCentroCostos().then(res => res.data?.data?.data as ComboCentroCostosRow[] ?? []).catch(() => []),
         ])
-            .then(([glosasCrudas, tiposCrudos, mesesCrudos, aniosCrudos]) => {
+            .then(([glosasCrudas, tiposCrudos, mesesCrudos, aniosCrudos, centrosCrudos]) => {
                 // El SP puede traer filas con la columna clave en NULL
                 // (p.ej. encabezados de diario sin glosa) — se descartan aquí,
                 // en el borde donde entran los datos, para que el resto del
                 // formulario pueda asumir combos siempre limpios.
                 const glosas       = glosasCrudas.filter((g): g is ComboGlosaRow => !!g?.Glosa)
-                const tiposAsiento = tiposCrudos.filter((t): t is ComboTipoAsientoRow => !!t?.TipoRegistros)
-                const meses        = mesesCrudos.filter((m): m is ComboMesRow => !!m?.Mes && m.Numero != null)
+                const tiposAsiento = tiposCrudos.filter((t): t is ComboTipoAsientoRow => t?.Id_Doc_Registros != null)
+                const meses        = mesesCrudos.filter((m): m is ComboMesRow => !!m?.Mes && !!m.Numero)
                 const anios        = aniosCrudos.filter((a): a is ComboAnioRow => a?.Anio != null)
+                const centrosCosto = centrosCrudos.filter((c): c is ComboCentroCostosRow => !!c?.CodCentroCostos)
 
-                setCombos({ glosas, tiposAsiento, meses, anios })
-
-                // Al cargar, se posiciona cada combo en su primer registro disponible,
-                // salvo la glosa: se deja vacía a propósito para buscar/escribir libremente.
-                setCabecera(prev => ({
-                    ...prev,
-                    tipoAsiento:  tiposAsiento[0]?.TipoRegistros ?? prev.tipoAsiento,
-                    mesRegistro:  meses[0] ? String(meses[0].Numero) : prev.mesRegistro,
-                    anioRegistro: anios[0] ? String(anios[0].Anio)  : prev.anioRegistro,
-                }))
+                setCombos({ glosas, tiposAsiento, meses, anios, centrosCosto })
             })
             .finally(() => setCombosLoading(false))
     }, [])
+
+    // El correlativo se reserva por año contable. Es solo la vista previa:
+    // el número definitivo lo recalcula el SP al insertar la cabecera.
+    const cargarVoucher = useCallback(async (anio: string) => {
+        try {
+            const { data } = await fetchSiguienteVoucher(anio)
+            setNumeroVoucher(data?.data?.numeroVoucher ?? null)
+            return true
+        } catch (error: any) {
+            setNumeroVoucher(null)
+            const msg = error?.response?.data?.message || "No se pudo obtener el correlativo de voucher"
+            toast({ title: "Error", description: msg, variant: "destructive" })
+            return false
+        }
+    }, [])
+
+    useEffect(() => {
+        cargarVoucher(cabecera.anioRegistro)
+    }, [cabecera.anioRegistro, cargarVoucher])
 
     const totalCargo = useMemo(
         () => lineas.reduce((s, l) => s + l.cargo, 0),
@@ -91,7 +103,14 @@ export function useProcesarNotaCredito() {
     )
     const diferencia = useMemo(() => totalCargo - totalAbono, [totalCargo, totalAbono])
     const cuadrado   = Math.abs(diferencia) < TOLERANCIA_CUADRE
-    const puedeAceptar = cuadrado && lineas.length > 0
+    const puedeAceptar = cuadrado && lineas.length > 0 && !!cabecera.glosa.trim() && !procesando
+
+    // La N.C. define el cliente del asiento: las facturas aplicables se
+    // buscan contra ese mismo cliente.
+    const clienteAsiento = useMemo(
+        () => lineas.find(l => l.tipDoc === '07')?.codCliente ?? lineas[0]?.codCliente ?? '',
+        [lineas]
+    )
 
     function agregarLinea(linea: AsientoLinea) {
         setLineas(prev => [...prev, linea])
@@ -105,20 +124,12 @@ export function useProcesarNotaCredito() {
         setLineas(prev => prev.filter((_, i) => i !== index))
     }
 
+    // Nada se persiste hasta "Aceptar y procesar", así que reiniciar es
+    // limpiar el detalle y volver a pedir el correlativo por si otro
+    // usuario grabó un asiento mientras tanto.
     async function reiniciarVoucher() {
-        try {
-            // TODO: reemplazar por endpoint real de correlativo cuando exista
-            // (similar a generarCorrelativo de usePlanillaCobranza), p.ej.:
-            // const { data } = await apiClient.get('/contabilidad/asientos/siguiente-voucher')
-            const siguiente = numeroVoucher + 1
-            setNumeroVoucher(siguiente)
-            setLineas([])
-            return true
-        } catch (error: any) {
-            const msg = error?.response?.data?.message || "No se pudo reiniciar el voucher"
-            toast({ title: "Error", description: msg, variant: "destructive" })
-            return false
-        }
+        setLineas([])
+        return cargarVoucher(cabecera.anioRegistro)
     }
 
     async function aplicarAsiento() {
@@ -127,17 +138,19 @@ export function useProcesarNotaCredito() {
         try {
             await guardarAsientoRequest({
                 fecha:         cabecera.fecha,
-                numeroVoucher,
                 moneda:        cabecera.moneda,
                 mesRegistro:   cabecera.mesRegistro,
                 anioRegistro:  cabecera.anioRegistro,
                 glosa:         cabecera.glosa,
                 destino:       cabecera.destino,
-                tipoAsiento:   cabecera.tipoAsiento,
-                usuario:       user?.idUsuarioWeb,
+                tipoAsientoId: Number(cabecera.tipoAsiento),
                 lineas,
             })
             toast({ title: "Éxito", description: "Nota de crédito aplicada correctamente" })
+            // Se limpia el detalle y se pide el siguiente correlativo: sin esto,
+            // volver a pulsar "Aceptar" grabaría un segundo asiento idéntico.
+            setLineas([])
+            await cargarVoucher(cabecera.anioRegistro)
             return true
         } catch (error: any) {
             const msg = error?.response?.data?.message || "Error al procesar el asiento"
@@ -152,9 +165,9 @@ export function useProcesarNotaCredito() {
         cabecera, setCabecera,
         lineas,
         numeroVoucher,
-        editIndex, setEditIndex,
         procesando,
         combos, combosLoading,
+        clienteAsiento,
 
         totalCargo, totalAbono, diferencia, cuadrado, puedeAceptar,
 

@@ -3,15 +3,15 @@ export interface AsientoLinea {
     tipDoc:           string   // "07" N.C., "01" Factura, "03" Boleta
     serie:            string
     numero:           string
-    razonSocial:      string
-    concepto:         string
+    codCliente:       string   // RUC — es lo que se graba en `diario centralizacion.Nombre`
+    razonSocial:      string   // solo para mostrar; no se persiste
     cargo:            number  // 0 si es abono
     abono:            number  // 0 si es cargo
-    ctaContable:      string
-    centroCostos:     string
-    undCosto:         string
-    tipoAmortizacion: string  // fijo: "APLICACIÓN DE NOTA DE CRÉDITO"
-    fechaEmision:     string  // dd/mm/aaaa, de la N.C. de origen
+    ctaContable:      number | null  // IdCtaContable, resuelto desde el cliente
+    codContable:      string   // Cod_Contab, solo para mostrar
+    centroCostos:     string   // Cod_CC de mcentrocostos
+    undCosto:         string   // solo UI, no tiene columna destino
+    fechaEmision:     string   // aaaa-mm-dd, del documento de origen
     fechaVencimiento: string
 }
 
@@ -20,9 +20,9 @@ export type MonedaAsiento = 'SOLES' | 'DOLARES'
 export interface AsientoCabecera {
     fecha:        string
     moneda:       MonedaAsiento
-    mesRegistro:  string  // Meses.Numero, como string (valor de Select)
-    anioRegistro: string  // year.Año, como string (valor de Select)
-    tipoAsiento:  string  // TipoRegistros del combo (REGISTROS / INICIAL / CIERRE)
+    mesRegistro:  string  // Meses.Numero con cero a la izquierda ("07")
+    anioRegistro: string  // year.year, como string (valor de Select)
+    tipoAsiento:  string  // doc_registros.Id_Doc_Registros, como string (valor de Select)
     destino:      boolean
     glosa:        string
 }
@@ -32,17 +32,25 @@ export interface DocumentoAplicable {
     tipo?:            'Factura' | 'Boleta'
     serie:            string
     numero:           string
+    codCliente:       string
     razonSocial:      string
     motivo:           string
     monto:            number
-    ctaContable:      string
+    idCtaContable:    number | null
+    codVend:          string
     fechaEmision:     string
     fechaVencimiento: string
 }
 
-export const AMO_ASIENTO_DEFAULT = "APLICACIÓN DE NOTA DE CRÉDITO"
+// El asiento siempre se graba con este tipo de amortización — el SP lo fija
+// en '999' ("Aplicacion nota de credito"). Aquí solo se muestra.
+export const AMO_ASIENTO_LABEL = "APLICACIÓN DE NOTA DE CRÉDITO"
 
-export const CENTROS_COSTO = ["ADMINISTRACIÓN", "VENTAS", "LOGÍSTICA", "GERENCIA"]
+// `diario encabezado.Glosa Registro` es varchar(50) y
+// `diario centralizacion.Concepto` es varchar(30): el SP trunca la glosa
+// a 30 al copiarla al concepto de cada línea.
+export const GLOSA_MAX     = 50
+export const CONCEPTO_MAX  = 30
 
 // ─── Combos (respuesta cruda de los SP sp_ws_combo_*) ───
 
@@ -57,9 +65,15 @@ export interface ComboTipoAsientoRow {
 
 export interface ComboMesRow {
     Mes:    string
-    Numero: number
+    Numero: string
 }
 
 export interface ComboAnioRow {
     Anio: number
+}
+
+export interface ComboCentroCostosRow {
+    CodCentroCostos: string
+    Descripcion:     string
+    Abreviado:       string
 }

@@ -7,6 +7,7 @@ import { PDFDocument, StandardFonts, rgb } from 'pdf-lib'
 import { format, parseISO, addHours } from 'date-fns'
 import { Comprobante, GuiaRemision } from '@/app/types/order/order-interface'
 import { Sequential } from '@/app/types/config-types'
+import { esExportableARegistroVentas } from '@/app/utils/sunat'
 import apiClient from "@/app/api/client";
 
 type ReportType = 'comprobantes' | 'notas' | 'guias'
@@ -334,7 +335,7 @@ export function ExportRegistroButton({
                 }
 
                 for (const c of data) {
-                    if (c.idSunat === null || (c.aceptada_por_sunat != null && c.aceptada_por_sunat === 104)) {
+                    if (!esExportableARegistroVentas(c)) {
                         continue
                     }
 

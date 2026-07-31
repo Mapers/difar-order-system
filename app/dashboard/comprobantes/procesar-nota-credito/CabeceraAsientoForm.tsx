@@ -9,14 +9,15 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { RotateCcw } from "lucide-react"
 import {
-    AsientoCabecera, ComboAnioRow, ComboGlosaRow, ComboMesRow, ComboTipoAsientoRow, MonedaAsiento,
+    AsientoCabecera, ComboAnioRow, ComboGlosaRow, ComboMesRow, ComboTipoAsientoRow,
+    GLOSA_MAX, MonedaAsiento,
 } from "@/app/types/procesar-nota-credito-types"
 import { GlosaComboBox } from "./GlosaComboBox"
 
 interface CabeceraAsientoFormProps {
     cabecera:      AsientoCabecera
     onChange:      (cabecera: AsientoCabecera) => void
-    numeroVoucher: number
+    numeroVoucher: number | null
     onReiniciar:   () => void
     combosLoading: boolean
     combos: {
@@ -39,7 +40,7 @@ export function CabeceraAsientoForm({ cabecera, onChange, numeroVoucher, onReini
                     <span className="text-base font-semibold">Aplicación de Nota de Crédito</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    Nro Voucher <b className="font-mono text-foreground">{numeroVoucher}</b>
+                    Nro Voucher <b className="font-mono text-foreground">{numeroVoucher ?? '—'}</b>
                     <Button variant="outline" size="sm" onClick={onReiniciar} className="gap-1.5">
                         <RotateCcw className="h-3.5 w-3.5" />
                         Reiniciar
@@ -69,7 +70,7 @@ export function CabeceraAsientoForm({ cabecera, onChange, numeroVoucher, onReini
                         <SelectTrigger><SelectValue placeholder={combosLoading ? "Cargando…" : "—"} /></SelectTrigger>
                         <SelectContent>
                             {combos.meses.map(m => (
-                                <SelectItem key={m.Numero} value={String(m.Numero)}>{m.Mes}</SelectItem>
+                                <SelectItem key={m.Numero} value={m.Numero}>{m.Mes}</SelectItem>
                             ))}
                         </SelectContent>
                     </Select>
@@ -93,7 +94,9 @@ export function CabeceraAsientoForm({ cabecera, onChange, numeroVoucher, onReini
                         <SelectTrigger><SelectValue placeholder={combosLoading ? "Cargando…" : "—"} /></SelectTrigger>
                         <SelectContent>
                             {combos.tiposAsiento.map(t => (
-                                <SelectItem key={t.Id_Doc_Registros} value={t.TipoRegistros}>{t.TipoRegistros}</SelectItem>
+                                <SelectItem key={t.Id_Doc_Registros} value={String(t.Id_Doc_Registros)}>
+                                    {t.TipoRegistros}
+                                </SelectItem>
                             ))}
                         </SelectContent>
                     </Select>
@@ -105,13 +108,21 @@ export function CabeceraAsientoForm({ cabecera, onChange, numeroVoucher, onReini
                 </div>
 
                 <div className="col-span-2 space-y-1.5 md:col-span-6">
-                    <Label className="text-xs uppercase text-muted-foreground">Glosa de registro</Label>
+                    <div className="flex items-baseline justify-between gap-2">
+                        <Label className="text-xs uppercase text-muted-foreground">Glosa de registro</Label>
+                        <span className="font-mono text-[11px] text-muted-foreground">
+                            {cabecera.glosa.length}/{GLOSA_MAX}
+                        </span>
+                    </div>
                     <GlosaComboBox
                         glosas={combos.glosas.map(g => g.Glosa)}
                         value={cabecera.glosa}
-                        onChange={v => set('glosa', v)}
+                        onChange={v => set('glosa', v.slice(0, GLOSA_MAX))}
                         disabled={combosLoading}
                     />
+                    <p className="text-[11px] text-muted-foreground">
+                        Se copia como concepto de cada línea, recortada a los primeros 30 caracteres.
+                    </p>
                 </div>
             </CardContent>
         </Card>

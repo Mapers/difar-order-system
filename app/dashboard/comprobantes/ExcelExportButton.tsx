@@ -7,6 +7,7 @@ import { format, parseISO, addHours } from 'date-fns'
 import { Comprobante } from '@/app/types/order/order-interface'
 import { Sequential } from '@/app/types/config-types'
 import apiClient from '@/app/api/client'
+import { esExportableARegistroVentas } from '@/app/utils/sunat'
 import ExcelJS from 'exceljs'
 
 interface FiltersComprobantes {
@@ -151,7 +152,7 @@ export function ExcelExportButton({
             }
 
             for (const c of data) {
-                if (c.idSunat === null || (c.aceptada_por_sunat != null && c.aceptada_por_sunat === 104)) continue
+                if (!esExportableARegistroVentas(c)) continue
                 const base    = Number(c.total_gravada || 0)
                 const igv     = Number(c.total_igv || 0)
                 const totalN  = Number(c.total) || 0

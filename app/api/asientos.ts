@@ -16,8 +16,20 @@ export const fetchComboAnio = async (): Promise<any> => {
     return apiClient.get('/asientos/combos/anio')
 }
 
+export const fetchComboCentroCostos = async (): Promise<any> => {
+    return apiClient.get('/asientos/combos/centro-costos')
+}
+
+export const fetchSiguienteVoucher = async (anio: string): Promise<any> => {
+    return apiClient.get('/asientos/voucher/siguiente', { params: { anio } })
+}
+
 export const buscarNotasCredito = async (params: { fecha?: string; busqueda?: string }): Promise<any> => {
     return apiClient.get('/asientos/notas-credito/buscar', { params })
+}
+
+export const buscarComprobantes = async (params: { codCliente: string; busqueda?: string }): Promise<any> => {
+    return apiClient.get('/asientos/comprobantes/buscar', { params })
 }
 
 export const guardarAsiento = async (payload: any): Promise<any> => {
