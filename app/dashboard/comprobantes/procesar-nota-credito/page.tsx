@@ -127,6 +127,7 @@ export default function ProcesarNotaCreditoPage() {
                 glosa={hook.cabecera.glosa}
                 centrosCosto={hook.combos.centrosCosto}
                 clienteAsiento={hook.clienteAsiento}
+                diferencia={hook.diferencia}
                 onSave={guardarLinea}
             />
 

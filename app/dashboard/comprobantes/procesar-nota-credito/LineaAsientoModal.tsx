@@ -30,6 +30,7 @@ interface LineaAsientoModalProps {
     glosa:           string
     centrosCosto:    ComboCentroCostosRow[]
     clienteAsiento:  string                // RUC fijado por la N.C. ya cargada
+    diferencia:      number                // cargos - abonos del asiento en curso
     onSave:          (linea: AsientoLinea) => void
 }
 
@@ -42,7 +43,7 @@ function lineaVacia(): AsientoLinea {
 }
 
 export function LineaAsientoModal({
-    open, onOpenChange, linea, fechaAsiento, glosa, centrosCosto, clienteAsiento, onSave,
+    open, onOpenChange, linea, fechaAsiento, glosa, centrosCosto, clienteAsiento, diferencia, onSave,
 }: LineaAsientoModalProps) {
     const [form, setForm]       = useState<AsientoLinea>(lineaVacia())
     const [side, setSide]       = useState<Side>('cargo')
@@ -96,9 +97,17 @@ export function LineaAsientoModal({
             ctaContable: doc.idCtaContable, codContable: '',
             fechaEmision: doc.fechaEmision, fechaVencimiento: doc.fechaVencimiento,
         }))
-        setImporte(String(doc.monto))
         // N.C. al debe, factura/boleta al haber — así lo graba el sistema.
-        setSide(doc.tipDoc === '07' ? 'cargo' : 'abono')
+        const esNotaCredito = doc.tipDoc === '07'
+        setSide(esNotaCredito ? 'cargo' : 'abono')
+
+        // El saldo del comprobante casi nunca es lo que se aplica: una factura
+        // de 1101.37 recibe la N.C. de 65.50. Se propone lo que falta para
+        // cuadrar, topado por el saldo disponible del documento.
+        const porCuadrar = esNotaCredito || linea ? 0 : diferencia
+        const sugerido   = porCuadrar > 0 ? Math.min(doc.monto, porCuadrar) : doc.monto
+        setImporte(String(Number(sugerido.toFixed(2))))
+
         setErrors({})
         setPickerModo(null)
     }

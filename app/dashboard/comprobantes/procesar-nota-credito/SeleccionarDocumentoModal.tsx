@@ -46,6 +46,7 @@ export function SeleccionarDocumentoModal({ open, modo, fechaAsiento, codCliente
     const [soloFecha, setSoloFecha] = useState(true)
     const [lista, setLista]         = useState<DocumentoAplicable[]>([])
     const [loading, setLoading]     = useState(false)
+    const [error, setError]         = useState<string | null>(null)
 
     const esNC = modo === 'nc'
 
@@ -56,6 +57,7 @@ export function SeleccionarDocumentoModal({ open, modo, fechaAsiento, codCliente
         if (!esNC && !codCliente) { setLista([]); return }
 
         setLoading(true)
+        setError(null)
         const timer = setTimeout(() => {
             const req = esNC
                 ? buscarNotasCredito({
@@ -68,8 +70,19 @@ export function SeleccionarDocumentoModal({ open, modo, fechaAsiento, codCliente
                 })
 
             req
-                .then(res => setLista((res.data?.data?.data ?? []).map(mapDocumento)))
-                .catch(() => setLista([]))
+                .then(res => {
+                    setLista((res.data?.data?.data ?? []).map(mapDocumento))
+                    setError(null)
+                })
+                // Antes esto era `.catch(() => setLista([]))`: un 404 por ruta
+                // sin registrar o un 500 del SP se veían igual que "no hay
+                // resultados", y no había forma de distinguirlos desde la UI.
+                .catch(err => {
+                    setLista([])
+                    const status = err?.response?.status
+                    const msg    = err?.response?.data?.message || err?.message || 'Error desconocido'
+                    setError(status ? `${status} · ${msg}` : msg)
+                })
                 .finally(() => setLoading(false))
         }, 300)
         return () => clearTimeout(timer)
@@ -117,13 +130,26 @@ export function SeleccionarDocumentoModal({ open, modo, fechaAsiento, codCliente
                             <Loader2 className="h-4 w-4 animate-spin" />
                             Buscando…
                         </div>
+                    ) : error ? (
+                        <div className="px-5 py-12 text-center">
+                            <p className="text-sm font-medium text-destructive">
+                                No se pudo consultar {esNC ? 'las notas de crédito' : 'los comprobantes'}.
+                            </p>
+                            <p className="mt-1.5 font-mono text-xs text-muted-foreground">{error}</p>
+                        </div>
                     ) : !esNC && !codCliente ? (
                         <div className="py-12 text-center text-sm text-muted-foreground">
                             Primero agrega la línea de la nota de crédito: define el cliente contra el que se buscan los comprobantes.
                         </div>
                     ) : lista.length === 0 ? (
-                        <div className="py-12 text-center text-sm text-muted-foreground">
+                        <div className="px-5 py-12 text-center text-sm text-muted-foreground">
                             No hay {esNC ? 'notas de crédito' : 'comprobantes'} con saldo pendiente para los filtros seleccionados.
+                            {esNC && soloFecha && (
+                                <span className="mt-1.5 block text-xs">
+                                    Estás filtrando por la fecha del asiento ({fechaAsiento || '—'}).
+                                    Destilda <b>Solo de la fecha</b> para ver todas.
+                                </span>
+                            )}
                         </div>
                     ) : (
                         <Table>
