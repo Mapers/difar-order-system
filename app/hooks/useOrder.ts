@@ -109,7 +109,9 @@ export function useOrderPage() {
     const [loading, setLoading] = useState({
         clients: false,
         conditions: true,
-        products: false
+        products: false,
+        almacenes: false,
+        sellers: false
     })
     const [search, setSearch] = useState({
         client: "",
@@ -214,6 +216,7 @@ export function useOrderPage() {
     }
 
     const fetchVendedores = async () => {
+        setLoading(prev => ({ ...prev, sellers: true }))
         try {
             const response = await apiClient.get('/usuarios/listar/vendedores')
             const vendedoresTransformados = response.data.data.data.map((v: any) => ({
@@ -230,6 +233,8 @@ export function useOrderPage() {
             setSellers(vendedoresTransformados)
         } catch (error) {
             setSellers([])
+        } finally {
+            setLoading(prev => ({ ...prev, sellers: false }))
         }
     }
 
@@ -837,11 +842,14 @@ export function useOrderPage() {
     };
 
     const fetchAlmacenes = async () => {
+        setLoading(prev => ({ ...prev, almacenes: true }))
         try {
             const response = await apiClient.get('/admin/listar/almacenes')
             setAlmacenes(response.data.data || [])
         } catch (error) {
             console.error("Error fetching almacenes:", error)
+        } finally {
+            setLoading(prev => ({ ...prev, almacenes: false }))
         }
     }
 

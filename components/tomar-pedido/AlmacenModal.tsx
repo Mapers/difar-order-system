@@ -1,7 +1,7 @@
 'use client'
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Building2 } from "lucide-react"
+import { Building2, Loader2 } from "lucide-react"
 import { IAlmacen } from "@/app/types/order/product-interface"
 
 interface AlmacenModalProps {
@@ -10,10 +10,12 @@ interface AlmacenModalProps {
     almacenes:          IAlmacen[]
     selectedAlmacen:    IAlmacen | null
     onSelectAlmacen:    (alm: IAlmacen) => void
+    loading?:           boolean
 }
 
 export default function AlmacenModal({
-                                         open, onOpenChange, almacenes, selectedAlmacen, onSelectAlmacen
+                                         open, onOpenChange, almacenes, selectedAlmacen, onSelectAlmacen,
+                                         loading = false
                                      }: AlmacenModalProps) {
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
@@ -37,7 +39,16 @@ export default function AlmacenModal({
                     )}
 
                     <div className="grid gap-2 max-h-64 overflow-y-auto">
-                        {almacenes.map((alm) => (
+                        {loading ? (
+                            <div className="flex items-center justify-center gap-2 py-10 text-sm text-muted-foreground">
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                                Cargando almacenes...
+                            </div>
+                        ) : almacenes.length === 0 ? (
+                            <div className="py-10 text-center text-sm text-muted-foreground">
+                                No hay almacenes disponibles.
+                            </div>
+                        ) : almacenes.map((alm) => (
                             <button
                                 key={alm.IdAlmacen}
                                 onClick={() => onSelectAlmacen(alm)}

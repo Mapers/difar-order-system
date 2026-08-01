@@ -30,6 +30,7 @@ interface ClientStepProps {
         React.SetStateAction<{ client: string; product: string; condition: string }>
     >
     loadingClients: boolean
+    loadingSellers?: boolean
     clientsFiltered: IClient[]
     selectedClient: IClient | null
     onClientSelect: (c: IClient | null) => void
@@ -60,6 +61,7 @@ export default function ClientStep({
                                        search,
                                        setSearch,
                                        loadingClients,
+                                       loadingSellers = false,
                                        clientsFiltered,
                                        selectedClient,
                                        onClientSelect,
@@ -294,6 +296,7 @@ export default function ClientStep({
                             onSearchChange={onSellerSearch}
                             onClearSearch={() => onSellerSearch('')}
                             items={sellersFiltered}
+                            loading={loadingSellers}
                             emptyMessage="No se encontraron vendedores"
                             idleMessage="Escribe para buscar vendedores"
                             searchTransform={(value) => value.toUpperCase()}

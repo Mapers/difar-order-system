@@ -15,6 +15,7 @@ interface ProductSearchDialogProps {
     filteredProducts: IProduct[]
     onProductSelect: (product: IProduct) => void
     currency: IMoneda | null
+    loadingProducts?: boolean
 }
 
 const IgvBadge = ({ product }: { product: IProduct }) => {
@@ -43,7 +44,7 @@ const IgvBadge = ({ product }: { product: IProduct }) => {
 
 export default function ProductSearchDialog({
                                                 open, onOpenChange, searchQuery, onSearchQueryChange,
-                                                filteredProducts, onProductSelect, currency
+                                                filteredProducts, onProductSelect, currency, loadingProducts = false
                                             }: ProductSearchDialogProps) {
     const [isSearching, setIsSearching] = useState(false)
     const searchTimerRef = useRef<NodeJS.Timeout | null>(null)
@@ -94,7 +95,7 @@ export default function ProductSearchDialog({
                     </div>
 
                     <div className="flex-1 overflow-y-auto bg-background">
-                        {isSearching ? (
+                        {isSearching || loadingProducts ? (
                             <div className="p-3 space-y-2">
                                 {[1, 2, 3].map((i) => (
                                     <div key={i} className="flex gap-3 px-3 py-2.5 rounded-lg border border-border bg-muted/50">

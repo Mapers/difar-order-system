@@ -3,7 +3,7 @@ import React, { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
-import {ShoppingCart, ArrowRight, ArrowLeft, Search, Building, Minus, Plus, Trash, Package, Save} from "lucide-react"
+import {ShoppingCart, ArrowRight, ArrowLeft, Search, Building, Minus, Plus, Trash, Package, Save, Loader2} from "lucide-react"
 import { IProduct, ISelectedProduct } from "@/app/types/order/product-interface"
 import { IItemDashboard } from "@/app/types/metas-types"
 import { IMoneda } from "@/app/types/order/client-interface"
@@ -114,6 +114,11 @@ export default function ProductStep({
                 {selectedProduct.Codigo_Art} | {selectedProduct.Descripcion}
             </span>
                                 </div>
+                            ) : loadingProducts ? (
+                                <span className="flex items-center gap-2 truncate text-muted-foreground font-normal text-xs sm:text-sm">
+            <Loader2 className="h-3.5 w-3.5 animate-spin shrink-0" />
+            Cargando productos del almacén...
+        </span>
                             ) : (
                                 <span className="truncate text-muted-foreground font-normal text-xs sm:text-sm">
             Buscar por código, nombre o laboratorio...
@@ -125,7 +130,7 @@ export default function ProductStep({
                             open={open} onOpenChange={onOpenChange}
                             searchQuery={searchQuery} onSearchQueryChange={onSearchQueryChange}
                             filteredProducts={filteredProducts} onProductSelect={onProductSelect}
-                            currency={currency}
+                            currency={currency} loadingProducts={loadingProducts}
                         />
 
                         {selectedProduct && (

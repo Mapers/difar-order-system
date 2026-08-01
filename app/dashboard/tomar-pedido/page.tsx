@@ -142,6 +142,7 @@ export default function OrderPage() {
                   search={order.search}
                   setSearch={order.setSearch}
                   loadingClients={order.loading.clients}
+                  loadingSellers={order.loading.sellers}
                   clientsFiltered={order.clientsFiltered}
                   selectedClient={order.selectedClient}
                   sellersFiltered={order.sellersFiltered}
@@ -304,6 +305,7 @@ export default function OrderPage() {
               open={order.showAlmacenModal}
               onOpenChange={order.setShowAlmacenModal}
               almacenes={order.almacenes}
+              loading={order.loading.almacenes}
               selectedAlmacen={order.selectedAlmacen}
               onSelectAlmacen={(alm) => {
                   order.cambiarAlmacen(alm)
