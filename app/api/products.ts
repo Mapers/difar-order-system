@@ -10,8 +10,8 @@ export const getProductsRequest = async (): Promise<any> => {
     return apiClient.get(`/articulos`)
 }
 
-export const getProductsLabRequest = async (laboratorio?: string, descripcion?: string): Promise<any> => {
-    return apiClient.get(`/articulos/byLab`, { params: { laboratorio, descripcion } })
+export const getProductsLabRequest = async (laboratorio?: string, descripcion?: string, almacen?: number | null): Promise<any> => {
+    return apiClient.get(`/articulos/byLab`, { params: { laboratorio, descripcion, almacen: almacen ?? undefined } })
 }
 
 export const getEscalasRequest = async (requestEscala: IPromocionRequest): Promise<any> => {

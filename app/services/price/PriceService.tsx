@@ -30,8 +30,10 @@ export class PriceService {
     return response.data;
   }
 
-  static async getProductLots(code: string): Promise<any> {
-    const response = await apiClient.get(`/price/list-prices-lote/${code}`);
+  static async getProductLots(code: string, almacen?: number | null): Promise<any> {
+    const response = await apiClient.get(`/price/list-prices-lote/${code}`, {
+      params: almacen ? { almacen } : undefined,
+    });
     return response.data;
   }
 }

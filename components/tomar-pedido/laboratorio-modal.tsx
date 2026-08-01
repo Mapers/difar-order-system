@@ -24,12 +24,15 @@ export const LaboratorioModal = ({
                                    tempSelectedProducts,
                                    onRemoveTempProduct,
                                    onConfirmSelection,
-                                   currency
+                                   currency,
+                                   idAlmacen
                                  }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   laboratorio: string;
   products: IProduct[];
+  // Almacén seleccionado en el pedido: sin él el SP suma el stock de todos.
+  idAlmacen?: number | null;
   onAddTempProduct: (product: IProduct, quantity: number, priceType: PriceType, customPrice?: number) => void;
   tempSelectedProducts: ISelectedProduct[];
   onRemoveTempProduct: (index: number) => void;
@@ -88,7 +91,7 @@ export const LaboratorioModal = ({
     const fetchProducts = async () => {
       try {
         setLoading(true)
-        const response = await getProductsLabRequest(laboratorio)
+        const response = await getProductsLabRequest(laboratorio, undefined, idAlmacen)
         setProducts(response.data?.data?.data || [])
       } catch (error) {
         console.error("Error fetching products:", error)
@@ -99,7 +102,7 @@ export const LaboratorioModal = ({
     if (laboratorio.length > 0) {
       fetchProducts()
     }
-  }, [laboratorio])
+  }, [laboratorio, idAlmacen])
 
   const renderQuantityControl = (product: IProduct) => {
     const productId = product.Codigo_Art;

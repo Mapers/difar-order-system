@@ -247,6 +247,7 @@ export default function OrderPage() {
             onRemoveTempProduct={order.handleRemoveTempProduct}
             onConfirmSelection={order.handleConfirmSelection}
             currency={order.currency}
+            idAlmacen={order.selectedAlmacen?.IdAlmacen}
         />
 
         <LotesModal
@@ -305,7 +306,7 @@ export default function OrderPage() {
               almacenes={order.almacenes}
               selectedAlmacen={order.selectedAlmacen}
               onSelectAlmacen={(alm) => {
-                  order.setSelectedAlmacen(alm)
+                  order.cambiarAlmacen(alm)
                   order.setShowAlmacenModal(false)
                   order.setCurrentStep(1)
               }}

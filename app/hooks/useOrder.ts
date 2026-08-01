@@ -293,7 +293,10 @@ export function useOrderPage() {
             const productosTemp: ProductoConLotes[] = []
 
             for (const producto of productsToList) {
-                const response = await PriceService.getProductLots(producto.product.Codigo_Art)
+                const response = await PriceService.getProductLots(
+                    producto.product.Codigo_Art,
+                    selectedAlmacen?.IdAlmacen
+                )
                 const lotes = response.data.map((lote: any) => ({
                     value: lote.numeroLote + '|' + lote.fechaVencimiento +
                         '|' + (Number(lote.stock) >= 0 ? Number(lote.stock).toFixed(2) : 0),
@@ -823,6 +826,16 @@ export function useOrderPage() {
         setProductosConLotes([]);
     };
 
+    const cambiarAlmacen = (alm: IAlmacen | null) => {
+        const esOtroAlmacen = alm?.IdAlmacen !== selectedAlmacen?.IdAlmacen
+        setSelectedAlmacen(alm)
+        if (esOtroAlmacen) {
+            setSelectedProducts([])
+            setProductosConLotes([])
+            setEditingLotes([])
+        }
+    };
+
     const fetchAlmacenes = async () => {
         try {
             const response = await apiClient.get('/admin/listar/almacenes')
@@ -911,7 +924,7 @@ export function useOrderPage() {
         nextStep, prevStep, goToStep, isStepValid,
         isAdmin, clear,
         getOrderStateForDraft, loadStateFromDraft,
-        selectedAlmacen, setSelectedAlmacen,
+        selectedAlmacen, setSelectedAlmacen, cambiarAlmacen,
         almacenes, showAlmacenModal, setShowAlmacenModal,
         setCurrentStep
     }
