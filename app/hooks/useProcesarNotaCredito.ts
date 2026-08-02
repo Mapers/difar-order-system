@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useState } from "react"
+import { format } from "date-fns"
 import { toast } from "@/app/hooks/useToast"
 import {
     fetchComboAnio, fetchComboCentroCostos, fetchComboGlosa, fetchComboMes,
@@ -20,7 +21,11 @@ import {
 const TOLERANCIA_CUADRE = 0.005
 
 function cabeceraInicial(): AsientoCabecera {
-    const hoy = new Date().toISOString().slice(0, 10)
+    // format() de date-fns, NO toISOString(): este convierte a UTC y, estando
+    // en UTC-5, desde las 19:00 hora local devuelve ya el día siguiente. El
+    // asiento se guardaba con fecha de mañana, y arrastraba mes y año — un 31
+    // de julio a las 19:00 quedaba registrado en agosto.
+    const hoy = format(new Date(), 'yyyy-MM-dd')
     return {
         fecha:        hoy,
         moneda:       'SOLES',
