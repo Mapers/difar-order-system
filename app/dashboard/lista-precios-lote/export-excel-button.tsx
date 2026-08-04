@@ -21,7 +21,8 @@ const COLUMNS = [
     { header: 'PRESENTACIÓN',    key: 'presentacion',  width: 18, numFmt: '@' },
     { header: 'PRINCIPIO ACTIVO',key: 'principio',     width: 22, numFmt: '@' },
     { header: 'UM',              key: 'um',            width:  6, numFmt: '@' },
-    { header: 'LOTES',           key: 'lotes',         width: 28, numFmt: '@' },
+    { header: 'LOTES',           key: 'lotes',         width: 18, numFmt: '@' },
+    { header: 'F. VENCIMIENTO',  key: 'vencimientos',  width: 14, numFmt: '@' },
     { header: 'STOCK',           key: 'stock',         width: 10, numFmt: '#,##0.00' },
     { header: 'P.CONTADO',       key: 'precioContado', width: 12, numFmt: '#,##0.00' },
     { header: 'P.CRÉDITO',       key: 'precioCredito', width: 12, numFmt: '#,##0.00' },
@@ -31,12 +32,28 @@ const COLUMNS = [
     { header: 'ESCALAS',         key: 'escalas',       width: 30, numFmt: '@' },
 ] as const
 
-function parseLotes(raw: string): string {
-    if (!raw) return ''
-    return raw.split(';').map(s => {
+/**
+ * Lote y vencimiento van en columnas separadas, una línea por lote.
+ * Se devuelven los dos strings con la misma cantidad de líneas para que
+ * las celdas queden alineadas fila a fila dentro del producto.
+ */
+function parseLotes(raw: string): { lotes: string; vencimientos: string } {
+    if (!raw) return { lotes: '', vencimientos: '' }
+
+    const filas = raw.split(';').map(s => {
         const [lote, fecha] = s.split('|')
-        return `${lote} - ${moment(fecha, 'YYYY-MM-DD').format('DD/MM/YYYY')}`
-    }).join('\n')
+        const vcto = moment(fecha, 'YYYY-MM-DD')
+        return {
+            lote: lote ?? '',
+            // Sin esto, un lote sin fecha imprimía "Invalid date".
+            vcto: fecha && vcto.isValid() ? vcto.format('DD/MM/YYYY') : '',
+        }
+    })
+
+    return {
+        lotes:        filas.map(f => f.lote).join('\n'),
+        vencimientos: filas.map(f => f.vcto).join('\n'),
+    }
 }
 
 function parseBonificaciones(raw: string, prodDesc: string): string {
@@ -126,7 +143,7 @@ const ExportExcelButton = ({ payload, filters }: { payload: any; filters?: any }
                     labRow.height     = 16
                 }
 
-                const lotes         = parseLotes(item.lotes_raw)
+                const { lotes, vencimientos } = parseLotes(item.lotes_raw)
                 const bonificaciones = parseBonificaciones(item.bonificaciones_raw, item.prod_descripcion)
                 const escalas        = parseEscalas(item.escalas_raw)
 
@@ -143,6 +160,7 @@ const ExportExcelButton = ({ payload, filters }: { payload: any; filters?: any }
                     principio    : item.prod_principio ?? '',
                     um           : item.prod_medida ?? '',
                     lotes,
+                    vencimientos,
                     stock        : Number(Number(item.kardex_saldoCant || 0).toFixed(2)),
                     precioContado,
                     precioCredito,

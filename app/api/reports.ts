@@ -42,3 +42,12 @@ export const saldoPorCobrarClienteRequest = async (doc_cliente: string, fecha: s
 export const estadoCuentaClienteRequest = async (doc_cliente: string, fecha: string): Promise<any> => {
     return apiClient.post(`/reportes/estado-cuenta-cliente`, { doc_cliente, fecha });
 };
+
+export const ventasTotalesRequest = async (params: {
+    anio: string
+    mes: string
+    laboratorios?: number[]
+    vendedores?: string[]
+}): Promise<any> => {
+    return apiClient.post(`/reportes/ventas-totales`, params);
+};
