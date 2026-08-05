@@ -222,7 +222,7 @@ export function EstadosPedidosDetailModal({ open, onOpenChange, nroPedido }: Est
 
   const handleConfirmarLotes = () => {
     if (!pendingDetalle) return
-    let lote = null, fecVenc = null
+    let lote: string | undefined, fecVenc: string | undefined
     if (editingLotes[0]?.loteSeleccionado) {
       const parts = editingLotes[0].loteSeleccionado.split('|')
       lote = parts[0]; fecVenc = fmtFecha(parts[1])
