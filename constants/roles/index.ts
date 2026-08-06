@@ -48,6 +48,7 @@ export const ICON_MAP: Record<string, React.ComponentType<{ className?: string }
     "/dashboard/reportes/cobrar-vendedor": LineChart,
     "/dashboard/reportes/metas": GoalIcon,
     "/dashboard/reportes/ventas-totales": TrendingUp,
+    "/dashboard/reportes/hoja-en-blanco": FileText,
     "/dashboard/usuarios": UserCog,
     "/dashboard/roles": Notebook,
     "/dashboard/escalas-bonificaciones": Gift,

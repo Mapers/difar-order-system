@@ -51,3 +51,12 @@ export const ventasTotalesRequest = async (params: {
 }): Promise<any> => {
     return apiClient.post(`/reportes/ventas-totales`, params);
 };
+
+export const hojaEnBlancoRequest = async (params: {
+    anio: string
+    mes: string
+    vendedores?: string[]
+    cliente?: string | null
+}): Promise<any> => {
+    return apiClient.post(`/reportes/hoja-en-blanco`, params);
+};
