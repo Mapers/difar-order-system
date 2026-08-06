@@ -47,7 +47,7 @@ const COLS_COMPROBANTES: ColDef[] = [
     { label: 'F.Vcto.',      width: 50,  align: 'left',   group: 'emit' },
     { label: 'Cliente',      width: 118, align: 'left',   group: 'emit' },
     { label: 'Vendedor',     width: 86,  align: 'left',   group: 'emit' },
-    { label: 'Representante', width: 78, align: 'left',   group: 'emit' },
+    { label: 'Repres',       width: 62,  align: 'left',   group: 'emit' },
     { label: 'D.I.',         width: 26,  align: 'center', group: 'emit' },
     { label: 'Nº D.I.',      width: 62,  align: 'left',   group: 'emit' },
     { label: 'T/C',          width: 24,  align: 'center', group: 'emit' },

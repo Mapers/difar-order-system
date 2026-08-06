@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
-import { ShoppingCart, Lock, User, ArrowRight } from "lucide-react"
+import { ShoppingCart, Lock, User, ArrowRight, Delete } from "lucide-react"
 import { useAuth } from "@/context/authContext"
 import { SmsCheck, SmsSend, UserLoginDTO, VendedorRelacionUnico } from "@/app/services/auth/types"
 import { AuthService } from "@/app/services/auth/AuthService"
@@ -114,18 +114,69 @@ export function LoginForm() {
     }
   }
 
-  const handleCodeChange = (index: number, value: string) => {
-    if (value.length <= 1) {
-      const newCode = [...verificationCode];
-      newCode[index] = value;
-      setVerificationCode(newCode);
-      if (value && index < 5) {
-        document.getElementById(`code-${index + 1}`)?.focus();
-      } else if (!value && index > 0) {
-        document.getElementById(`code-${index - 1}`)?.focus();
-      }
-    }
+  /**
+   * El foco se mueve fuera del ciclo de render: llamarlo dentro del updater
+   * de setState lo ejecutaria durante el render, y en modo estricto ademas
+   * dos veces. queueMicrotask lo deja para justo despues, ya con el DOM al día.
+   */
+  const enfocarCasilla = (index: number) => {
+    queueMicrotask(() => document.getElementById(`code-${index}`)?.focus());
   }
+
+  /**
+   * Las casillas son readOnly para que el teclado del dispositivo no se abra
+   * encima del teclado virtual, asi que no hay onChange. Un input readOnly
+   * igual recibe eventos de teclado, y de ahi sale el soporte para teclado
+   * fisico en escritorio.
+   */
+  const handleCodeKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (/^[0-9]$/.test(e.key)) {
+      e.preventDefault();
+      handleTecladoDigito(e.key);
+      return;
+    }
+    if (e.key === 'Backspace' || e.key === 'Delete') {
+      e.preventDefault();
+      handleTecladoBorrar();
+    }
+    // Enter, Tab y flechas siguen con su comportamiento normal.
+  }
+
+  // Los dos handlers usan la forma funcional del setState a proposito: en
+  // tactil es facil pulsar dos teclas dentro del mismo tick, React agrupa las
+  // actualizaciones y leer `verificationCode` del closure haria que la segunda
+  // pulsacion pise el digito de la primera en vez de avanzar.
+
+  /** Escribe el dígito en la primera casilla vacía. Si ya están las 6, no hace nada. */
+  const handleTecladoDigito = (digito: string) => {
+    setVerificationCode(prev => {
+      const destino = prev.findIndex(d => d === '');
+      if (destino === -1) return prev;
+      const newCode = [...prev];
+      newCode[destino] = digito;
+      enfocarCasilla(Math.min(destino + 1, 5));
+      return newCode;
+    });
+  }
+
+  /** Borra la última casilla con contenido. */
+  const handleTecladoBorrar = () => {
+    setVerificationCode(prev => {
+      const ultima = prev.reduce((acc, d, i) => (d !== '' ? i : acc), -1);
+      if (ultima === -1) return prev;
+      const newCode = [...prev];
+      newCode[ultima] = '';
+      enfocarCasilla(ultima);
+      return newCode;
+    });
+  }
+
+  const handleTecladoLimpiar = () => {
+    setVerificationCode(["", "", "", "", "", ""]);
+    enfocarCasilla(0);
+  }
+
+  const codigoIncompleto = verificationCode.some(d => d === '');
 
   return (
     <>
@@ -207,22 +258,62 @@ export function LoginForm() {
                         key={index}
                         id={`code-${index}`}
                         type="text"
-                        inputMode="numeric"
-                        pattern="[0-9]"
+                        inputMode="none"
                         maxLength={1}
                         value={digit}
-                        onChange={(e) => handleCodeChange(index, e.target.value)}
-                        className="w-12 h-14 text-center text-lg font-bold bg-background border-border focus:border-blue-500 focus:ring-blue-500"
+                        readOnly
+                        onKeyDown={handleCodeKeyDown}
+                        className="w-12 h-14 text-center text-lg font-bold bg-background border-border focus:border-blue-500 focus:ring-blue-500 caret-transparent cursor-default"
                         autoFocus={index === 0}
                       />
                     ))}
                   </div>
                   <p className="text-xs text-center text-muted-foreground mt-2">Se ha enviado un código a su dispositivo</p>
+
+                  {/* Teclado numérico: type="button" en todos, si no cada tecla envía el formulario. */}
+                  <div className="mx-auto mt-4 grid w-full max-w-[260px] grid-cols-3 gap-2">
+                    {['1', '2', '3', '4', '5', '6', '7', '8', '9'].map(digito => (
+                      <Button
+                        key={digito}
+                        type="button"
+                        variant="outline"
+                        onClick={() => handleTecladoDigito(digito)}
+                        className="h-14 text-xl font-semibold bg-background hover:bg-muted active:scale-95 transition-transform"
+                      >
+                        {digito}
+                      </Button>
+                    ))}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleTecladoLimpiar}
+                      className="h-14 text-sm font-semibold bg-background text-muted-foreground hover:bg-muted active:scale-95 transition-transform"
+                    >
+                      Limpiar
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => handleTecladoDigito('0')}
+                      className="h-14 text-xl font-semibold bg-background hover:bg-muted active:scale-95 transition-transform"
+                    >
+                      0
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleTecladoBorrar}
+                      aria-label="Borrar"
+                      className="h-14 bg-background text-red-600 hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-950/40 active:scale-95 transition-transform"
+                    >
+                      <Delete className="h-6 w-6" />
+                    </Button>
+                  </div>
                 </div>
                 <Button
                   type="submit"
-                  className="w-full h-12 mt-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-medium rounded-lg shadow-md hover:shadow-lg transition-all"
-                  disabled={loading}
+                  className="w-full h-12 mt-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-medium rounded-lg shadow-md hover:shadow-lg transition-all disabled:opacity-60"
+                  disabled={loading || codigoIncompleto}
                 >
                   {loading ? (
                     <div className="flex items-center justify-center">

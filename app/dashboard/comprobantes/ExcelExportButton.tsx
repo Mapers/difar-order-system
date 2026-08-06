@@ -74,7 +74,7 @@ const COLUMNS = [
     { header: 'Serie',         key: 'serieOrig',     width:  8, numFmt: '@',       group: 'orig' },
     { header: 'Numero',        key: 'numeroOrig',    width: 10, numFmt: '@',       group: 'orig' },
     { header: 'Vendedor',      key: 'vendedor',      width: 24, numFmt: '@',       group: 'vend' },
-    { header: 'Representante', key: 'representante', width: 24, numFmt: '@',       group: 'vend' },
+    { header: 'Repres',        key: 'representante', width: 18, numFmt: '@',       group: 'vend' },
 ] as const
 
 export function ExcelExportButton({

@@ -228,7 +228,7 @@ export function ComprobantesTable({
                                 <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Serie/Número</th>
                                 <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Almacén</th>
                                 <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Vendedor</th>
-                                <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Representante</th>
+                                <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Repres</th>
                                 <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Cliente</th>
                                 <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Documento</th>
                                 <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Total</th>
