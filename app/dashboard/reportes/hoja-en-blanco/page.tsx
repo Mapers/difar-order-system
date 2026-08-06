@@ -9,7 +9,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
 import { MonthYearPicker } from "@/components/ui/month-year-picker"
 import {
-    Calendar as CalendarIcon, Check, ChevronDown, ChevronRight, FileText,
+    AlertTriangle, Calendar as CalendarIcon, Check, ChevronDown, ChevronRight, FileText,
     Loader2, Package, Search, User, Users, X,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -26,6 +26,8 @@ interface ProductoHB {
     Monto:        number
     Costo:        number
     Utilidad:     number
+    /** El lote despachado no tiene ningún ingreso costeado: el Costo es 0 por falta de dato. */
+    SinCosto:     boolean
 }
 
 interface DocumentoHB {
@@ -37,6 +39,7 @@ interface DocumentoHB {
     Cliente:    string
     CodAlmacen: number
     Almacen:    string
+    SinCosto:   boolean
     TotalCantidad: number
     TotalMonto:    number
     TotalCosto:    number
@@ -358,11 +361,11 @@ export default function HojaEnBlancoPage() {
                         <div className="space-y-4">
                             {/* Totales */}
                             <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
-                                <TotalCard label="Documentos" valor={String(data.TotalDocumentos)} />
-                                <TotalCard label="Cantidad"   valor={fmtCant(data.TotalCantidad)} />
-                                <TotalCard label="Monto"      valor={`S/ ${fmt(data.TotalMonto)}`}    acento={ACENTO.monto} />
-                                <TotalCard label="Costo"      valor={`S/ ${fmt(data.TotalCosto)}`}    acento={ACENTO.costo} />
-                                <TotalCard label="Utilidad"   valor={`S/ ${fmt(data.TotalUtilidad)}`} acento={ACENTO.utilidad} />
+                                <TotalCard label="Documentos"     valor={String(data.TotalDocumentos)} />
+                                <TotalCard label="Cantidad"       valor={fmtCant(data.TotalCantidad)} />
+                                <TotalCard label="Monto (sin IGV)" valor={`S/ ${fmt(data.TotalMonto)}`}    acento={ACENTO.monto} />
+                                <TotalCard label="Costo"          valor={`S/ ${fmt(data.TotalCosto)}`}    acento={ACENTO.costo} />
+                                <TotalCard label="Utilidad"       valor={`S/ ${fmt(data.TotalUtilidad)}`} acento={data.TotalUtilidad < 0 ? ACENTO.costo : ACENTO.utilidad} />
                             </div>
 
                             {data.Vendedores.map(vend => {
@@ -386,10 +389,10 @@ export default function HojaEnBlancoPage() {
                                         </button>
 
                                         <div className="grid grid-cols-2 gap-x-4 gap-y-1 border-b border-border bg-muted/50 px-4 py-2.5 md:grid-cols-4">
-                                            <Resumen label="Cantidad" valor={fmtCant(vend.TotalCantidad)} />
-                                            <Resumen label="Monto"    valor={fmt(vend.TotalMonto)}    acento={ACENTO.monto} />
-                                            <Resumen label="Costo"    valor={fmt(vend.TotalCosto)}    acento={ACENTO.costo} />
-                                            <Resumen label="Utilidad" valor={fmt(vend.TotalUtilidad)} acento={ACENTO.utilidad} />
+                                            <Resumen label="Cantidad"        valor={fmtCant(vend.TotalCantidad)} />
+                                            <Resumen label="Monto (sin IGV)" valor={fmt(vend.TotalMonto)}    acento={ACENTO.monto} />
+                                            <Resumen label="Costo"           valor={fmt(vend.TotalCosto)}    acento={ACENTO.costo} />
+                                            <Resumen label="Utilidad"        valor={fmt(vend.TotalUtilidad)} acento={vend.TotalUtilidad < 0 ? ACENTO.costo : ACENTO.utilidad} />
                                         </div>
 
                                         {vendAbierto && (
@@ -413,12 +416,20 @@ export default function HojaEnBlancoPage() {
                                                                             <span className="font-mono text-sm font-bold text-foreground">
                                                                                 {doc.Serie}-{doc.Numero}
                                                                             </span>
-                                                                            {/* Fijo: todo documento de la serie 0800 sale cancelado. */}
-                                                                            <Badge className="border border-green-200 bg-green-50 text-[10px] font-semibold text-green-700 hover:bg-green-50 dark:border-green-900/60 dark:bg-green-950/40 dark:text-green-400 dark:hover:bg-green-950/40">
-                                                                                Cancelado
+                                                                            {/* Fijo, y verificado: la serie 0800 no llega a `kardex clientes`
+                                                                                ni se regulariza después con factura, así que no existe
+                                                                                estado de cobranza que consultar. Antes decía "Cancelado",
+                                                                                que era una afirmación sin respaldo. */}
+                                                                            <Badge variant="outline" className="border-slate-300 text-[10px] font-semibold text-slate-600 dark:border-slate-700 dark:text-slate-400">
+                                                                                Sin comprobante
                                                                             </Badge>
                                                                             <Badge variant="outline" className="text-[10px]">{fmtDate(doc.Fecha)}</Badge>
                                                                             <Badge variant="secondary" className="text-[10px]">{doc.Almacen}</Badge>
+                                                                            {doc.SinCosto && (
+                                                                                <Badge className="border border-amber-200 bg-amber-50 text-[10px] font-semibold text-amber-700 hover:bg-amber-50 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-400 dark:hover:bg-amber-950/40">
+                                                                                    <AlertTriangle className="mr-1 h-3 w-3 shrink-0" /> Costo incompleto
+                                                                                </Badge>
+                                                                            )}
                                                                         </div>
                                                                         <div className="mt-0.5 truncate text-xs text-muted-foreground">
                                                                             {doc.CodCliente} · {doc.Cliente}
@@ -426,10 +437,10 @@ export default function HojaEnBlancoPage() {
                                                                     </div>
                                                                 </div>
                                                                 <div className="grid shrink-0 grid-cols-2 gap-x-4 gap-y-1 pl-6 md:flex md:gap-5 md:pl-0">
-                                                                    <Resumen label="Cant." valor={fmtCant(doc.TotalCantidad)} compacto />
-                                                                    <Resumen label="Monto" valor={fmt(doc.TotalMonto)}    acento={ACENTO.monto} compacto />
-                                                                    <Resumen label="Costo" valor={fmt(doc.TotalCosto)}    acento={ACENTO.costo} compacto />
-                                                                    <Resumen label="Util." valor={fmt(doc.TotalUtilidad)} acento={ACENTO.utilidad} compacto />
+                                                                    <Resumen label="Cant."          valor={fmtCant(doc.TotalCantidad)} compacto />
+                                                                    <Resumen label="Monto (s/IGV)"  valor={fmt(doc.TotalMonto)}    acento={ACENTO.monto} compacto />
+                                                                    <Resumen label="Costo"          valor={fmt(doc.TotalCosto)}    acento={ACENTO.costo} compacto />
+                                                                    <Resumen label="Util."          valor={fmt(doc.TotalUtilidad)} acento={doc.TotalUtilidad < 0 ? ACENTO.costo : ACENTO.utilidad} compacto />
                                                                 </div>
                                                             </button>
 
@@ -443,7 +454,7 @@ export default function HojaEnBlancoPage() {
                                                                                     <th className="px-3 py-2.5 font-bold">Producto</th>
                                                                                     <th className="px-3 py-2.5 font-bold">Und.</th>
                                                                                     <th className="px-3 py-2.5 text-right font-bold">Cantidad</th>
-                                                                                    <th className={cn("px-3 py-2.5 text-right font-bold", ACENTO.monto)}>Monto</th>
+                                                                                    <th className={cn("px-3 py-2.5 text-right font-bold", ACENTO.monto)}>Monto (sin IGV)</th>
                                                                                     <th className={cn("px-3 py-2.5 text-right font-bold", ACENTO.costo)}>Costo</th>
                                                                                     <th className={cn("px-3 py-2.5 text-right font-bold", ACENTO.utilidad)}>Utilidad</th>
                                                                                 </tr>
@@ -457,13 +468,21 @@ export default function HojaEnBlancoPage() {
                                                                                         <td className="px-3 py-2">{p.AbrevUnidMed}</td>
                                                                                         <td className="px-3 py-2 text-right font-mono">{fmtCant(p.Cantidad)}</td>
                                                                                         <td className={cn("px-3 py-2 text-right font-mono font-bold", ACENTO.monto, TINTE.monto)}>{fmt(p.Monto)}</td>
-                                                                                        <td className="px-3 py-2 text-right font-mono">{fmt(p.Costo)}</td>
+                                                                                        <td className="px-3 py-2 text-right font-mono">
+                                                                                            {p.SinCosto ? (
+                                                                                                <span className="inline-flex items-center gap-1 text-amber-600 dark:text-amber-500" title="El lote despachado no tiene ningún ingreso costeado">
+                                                                                                    <AlertTriangle className="h-3 w-3 shrink-0" /> s/costo
+                                                                                                </span>
+                                                                                            ) : fmt(p.Costo)}
+                                                                                        </td>
                                                                                         <td className={cn(
                                                                                             "px-3 py-2 text-right font-mono font-bold",
-                                                                                            p.Utilidad < 0 ? ACENTO.costo : ACENTO.utilidad,
-                                                                                            p.Utilidad < 0 ? TINTE.costo : TINTE.utilidad
+                                                                                            p.SinCosto
+                                                                                                ? "text-muted-foreground"
+                                                                                                : cn(p.Utilidad < 0 ? ACENTO.costo : ACENTO.utilidad,
+                                                                                                     p.Utilidad < 0 ? TINTE.costo : TINTE.utilidad)
                                                                                         )}>
-                                                                                            {fmt(p.Utilidad)}
+                                                                                            {p.SinCosto ? '—' : fmt(p.Utilidad)}
                                                                                         </td>
                                                                                     </tr>
                                                                                 ))}
@@ -480,10 +499,13 @@ export default function HojaEnBlancoPage() {
                                                                                 </span>
                                                                                 <div className="mt-1 border-t border-border pt-2">
                                                                                     <FilaMovil label={`Cantidad (${p.AbrevUnidMed})`} valor={fmtCant(p.Cantidad)} />
-                                                                                    <FilaMovil label="Monto"    valor={`S/ ${fmt(p.Monto)}`} acento={ACENTO.monto} />
-                                                                                    <FilaMovil label="Costo"    valor={`S/ ${fmt(p.Costo)}`} />
-                                                                                    <FilaMovil label="Utilidad" valor={`S/ ${fmt(p.Utilidad)}`}
-                                                                                               acento={p.Utilidad < 0 ? ACENTO.costo : ACENTO.utilidad} />
+                                                                                    <FilaMovil label="Monto (sin IGV)" valor={`S/ ${fmt(p.Monto)}`} acento={ACENTO.monto} />
+                                                                                    <FilaMovil label="Costo"    valor={p.SinCosto ? 'Sin costear' : `S/ ${fmt(p.Costo)}`}
+                                                                                               acento={p.SinCosto ? 'text-amber-600 dark:text-amber-500' : undefined} />
+                                                                                    <FilaMovil label="Utilidad" valor={p.SinCosto ? '—' : `S/ ${fmt(p.Utilidad)}`}
+                                                                                               acento={p.SinCosto
+                                                                                                   ? 'text-muted-foreground'
+                                                                                                   : (p.Utilidad < 0 ? ACENTO.costo : ACENTO.utilidad)} />
                                                                                 </div>
                                                                             </div>
                                                                         ))}
@@ -505,11 +527,28 @@ export default function HojaEnBlancoPage() {
                                     Total general · {data.TotalDocumentos} documento{data.TotalDocumentos === 1 ? '' : 's'}
                                 </div>
                                 <div className="grid grid-cols-2 gap-x-4 gap-y-1 md:grid-cols-4">
-                                    <Resumen label="Cantidad" valor={fmtCant(data.TotalCantidad)} />
-                                    <Resumen label="Monto"    valor={fmt(data.TotalMonto)}    acento={ACENTO.monto} />
-                                    <Resumen label="Costo"    valor={fmt(data.TotalCosto)}    acento={ACENTO.costo} />
-                                    <Resumen label="Utilidad" valor={fmt(data.TotalUtilidad)} acento={ACENTO.utilidad} />
+                                    <Resumen label="Cantidad"        valor={fmtCant(data.TotalCantidad)} />
+                                    <Resumen label="Monto (sin IGV)" valor={fmt(data.TotalMonto)}    acento={ACENTO.monto} />
+                                    <Resumen label="Costo"           valor={fmt(data.TotalCosto)}    acento={ACENTO.costo} />
+                                    <Resumen label="Utilidad"        valor={fmt(data.TotalUtilidad)} acento={data.TotalUtilidad < 0 ? ACENTO.costo : ACENTO.utilidad} />
                                 </div>
+                            </div>
+
+                            {/* De dónde salen los números, para que nadie los compare mal. */}
+                            <div className="rounded-lg border border-border bg-background p-3 text-[11px] leading-relaxed text-muted-foreground">
+                                <p>
+                                    <b className="text-foreground">Monto sin IGV.</b> La serie 0800 registra la base imponible,
+                                    a diferencia de lo facturado, que se registra con impuesto incluido. No es comparable de
+                                    frente con Ventas Totales.
+                                </p>
+                                <p className="mt-1">
+                                    <b className="text-foreground">Costo del lote.</b> El costo se calcula con el costo real de
+                                    ingreso del lote despachado, no con el del kardex de salida. Las líneas marcadas
+                                    <span className="mx-1 inline-flex items-center gap-1 align-middle text-amber-600 dark:text-amber-500">
+                                        <AlertTriangle className="h-3 w-3 shrink-0" /> s/costo
+                                    </span>
+                                    corresponden a lotes sin ningún ingreso costeado y no suman a la utilidad.
+                                </p>
                             </div>
                         </div>
                     )}

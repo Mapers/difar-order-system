@@ -228,6 +228,7 @@ export function ComprobantesTable({
                                 <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Serie/Número</th>
                                 <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Almacén</th>
                                 <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Vendedor</th>
+                                <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Representante</th>
                                 <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Cliente</th>
                                 <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Documento</th>
                                 <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Total</th>
@@ -249,6 +250,7 @@ export function ComprobantesTable({
                                         <td className="p-4 font-medium text-sm">{comprobante.serie}-{comprobante.numero}</td>
                                         <td className="p-4 text-sm">{comprobante.Almacen ?? '—'}</td>
                                         <td className="p-4 text-sm">{comprobante.Vendedor ?? '—'}</td>
+                                        <td className="p-4 text-sm">{comprobante.Representante || '—'}</td>
                                         <td className="p-4">
                                             <div className="font-medium text-sm">
                                                 {comprobante.cliente_denominacion ?? '—'}
@@ -346,7 +348,7 @@ export function ComprobantesTable({
                                     </tr>
                                 ))
                             ) : (
-                                <tr><td colSpan={10} className="text-center py-8 text-muted-foreground">No se encontraron comprobantes</td></tr>
+                                <tr><td colSpan={11} className="text-center py-8 text-muted-foreground">No se encontraron comprobantes</td></tr>
                             )}
                             </tbody>
                         </table>
@@ -393,6 +395,9 @@ export function ComprobantesTable({
                                                 )}
                                                 {comprobante.Vendedor && (
                                                     <p className="text-xs text-muted-foreground mb-0.5">Vend: {comprobante.Vendedor}</p>
+                                                )}
+                                                {comprobante.Representante && (
+                                                    <p className="text-xs text-muted-foreground mb-0.5">Repres: {comprobante.Representante}</p>
                                                 )}
                                                 <p className="font-medium text-card-foreground break-words line-clamp-2"
                                                    title={comprobante.cliente_denominacion ?? ''}>

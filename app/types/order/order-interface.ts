@@ -36,8 +36,9 @@ export interface Comprobante {
     nc_serie?:   string | null
     nc_numero?:  string | null
     nc_fecha?:   string | null
-    Vendedor?: string | null
-    Almacen?:  string | null
+    Vendedor?:      string | null
+    Representante?: string | null
+    Almacen?:       string | null
 }
 
 export interface GuiaRemision {

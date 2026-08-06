@@ -47,6 +47,7 @@ const COLS_COMPROBANTES: ColDef[] = [
     { label: 'F.Vcto.',      width: 50,  align: 'left',   group: 'emit' },
     { label: 'Cliente',      width: 118, align: 'left',   group: 'emit' },
     { label: 'Vendedor',     width: 86,  align: 'left',   group: 'emit' },
+    { label: 'Representante', width: 78, align: 'left',   group: 'emit' },
     { label: 'D.I.',         width: 26,  align: 'center', group: 'emit' },
     { label: 'Nº D.I.',      width: 62,  align: 'left',   group: 'emit' },
     { label: 'T/C',          width: 24,  align: 'center', group: 'emit' },
@@ -251,6 +252,7 @@ export function ExportRegistroButton({
                 SerieDocOriginal : string | null
                 NumeroDocOriginal: string | null
                 Vendedor         : string
+                Representante    : string | null
             }
 
             let registroVentas: RegistroVenta[] = []
@@ -319,6 +321,7 @@ export function ExportRegistroButton({
                                 safeDate(rv.FVcto),
                                 s(rv.Cliente),
                                 s(rv.Vendedor),
+                                s(rv.Representante),
                                 s(rv.DI),
                                 s(rv.NroDI),
                                 tcStr,
@@ -371,6 +374,7 @@ export function ExportRegistroButton({
                             safeDate(c.fecha_emision ?? c.fecha_envio, 5),
                             c.cliente_denominacion ?? '—',
                             c.Vendedor || '—',
+                            c.Representante || '—',
                             tiDI,
                             c.cliente_numdoc ?? '—',
                             moneda,

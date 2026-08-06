@@ -39,6 +39,7 @@ type RegistroVenta = {
     SerieDocOriginal : string | null
     NumeroDocOriginal: string | null
     Vendedor         : string
+    Representante    : string | null
 }
 
 const HEADER_ARGB    = 'FF163161'
@@ -73,6 +74,7 @@ const COLUMNS = [
     { header: 'Serie',         key: 'serieOrig',     width:  8, numFmt: '@',       group: 'orig' },
     { header: 'Numero',        key: 'numeroOrig',    width: 10, numFmt: '@',       group: 'orig' },
     { header: 'Vendedor',      key: 'vendedor',      width: 24, numFmt: '@',       group: 'vend' },
+    { header: 'Representante', key: 'representante', width: 24, numFmt: '@',       group: 'vend' },
 ] as const
 
 export function ExcelExportButton({
@@ -146,6 +148,7 @@ export function ExcelExportButton({
                             serieOrig   : hasOriginal ? s(rv.SerieDocOriginal)        : '—',
                             numeroOrig  : hasOriginal ? s(rv.NumeroDocOriginal)       : '—',
                             vendedor    : s(rv.Vendedor),
+                            representante: s(rv.Representante),
                         },
                     })
                 }
@@ -183,6 +186,7 @@ export function ExcelExportButton({
                         serieOrig   : '—',
                         numeroOrig  : '—',
                         vendedor    : c.Vendedor || '—',
+                        representante: c.Representante || '—',
                     },
                 })
             }
@@ -238,14 +242,18 @@ export function ExcelExportButton({
                 }
             })
 
-            // Vendedor column: single header spanning both header rows
-            const vendCol = origEnd + 1
-            ws.mergeCells(1, vendCol, 2, vendCol)
-            const vendCell = ws.getCell(1, vendCol)
-            vendCell.value     = 'Vendedor'
-            vendCell.font      = { bold: true, color: { argb: 'FFFFFFFF' }, size: 9 }
-            vendCell.fill      = { type: 'pattern', pattern: 'solid', fgColor: { argb: HEADER_ARGB } }
-            vendCell.alignment = { horizontal: 'center', vertical: 'middle' }
+            // Columnas fuera de los dos grupos (Vendedor, Representante): su
+            // título ocupa las dos filas de cabecera, no cuelga de ninguna.
+            COLUMNS.forEach((col, idx) => {
+                if (col.group !== 'vend') return
+                const colNum = idx + 1
+                ws.mergeCells(1, colNum, 2, colNum)
+                const cell = ws.getCell(1, colNum)
+                cell.value     = col.header
+                cell.font      = { bold: true, color: { argb: 'FFFFFFFF' }, size: 9 }
+                cell.fill      = { type: 'pattern', pattern: 'solid', fgColor: { argb: HEADER_ARGB } }
+                cell.alignment = { horizontal: 'center', vertical: 'middle' }
+            })
 
             // Track max content length for auto-width
             const maxLen: number[] = COLUMNS.map(c => c.header.length)
