@@ -176,6 +176,29 @@ export function LoginForm() {
     enfocarCasilla(0);
   }
 
+  /**
+   * Pegar el código completo. Va sobre `document` y no sobre los inputs
+   * porque estos son readOnly: el navegador bloquea el pegado en ellos y no
+   * siempre dispara el evento. A nivel de documento llega igual, venga del
+   * atajo de teclado o del menú contextual.
+   */
+  useEffect(() => {
+    if (!showVerification) return;
+
+    const alPegar = (e: ClipboardEvent) => {
+      const digitos = (e.clipboardData?.getData('text') ?? '').replace(/\D/g, '').slice(0, 6);
+      if (!digitos) return;
+      e.preventDefault();
+      // Reemplaza el código entero: si pegan 4 dígitos, las casillas
+      // restantes quedan vacías en vez de arrastrar lo que hubiera antes.
+      setVerificationCode(Array.from({ length: 6 }, (_, i) => digitos[i] ?? ''));
+      enfocarCasilla(Math.min(digitos.length, 5));
+    };
+
+    document.addEventListener('paste', alPegar);
+    return () => document.removeEventListener('paste', alPegar);
+  }, [showVerification]);
+
   const codigoIncompleto = verificationCode.some(d => d === '');
 
   return (
