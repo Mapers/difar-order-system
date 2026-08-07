@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea"
 import {
     Edit, Trash2, RefreshCw, Save, AlertCircle, Calendar, Factory,
     Users, Pill, ChevronRight, CheckCircle, XCircle, ChevronDown, Check,
-    X, Search, Package, Lock, Unlock
+    X, Search, Package, Lock, Unlock, Copy
 } from "lucide-react"
 import {
     Dialog, DialogContent, DialogDescription, DialogFooter,
@@ -33,6 +33,7 @@ import {Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandL
 import {cn} from "@/lib/utils";
 import {getProductsRequest} from "@/app/api/products";
 import {useAuth} from "@/context/authContext";
+import { toast } from "@/app/hooks/useToast";
 import apiClient from "@/app/api/client";
 import { MetaExcelButtons } from "@/components/configuraciones/metas/MetaExcelButtons";
 import { MetaColumn } from "@/components/configuraciones/metas/metaExcel";
@@ -145,6 +146,14 @@ function CiclosSection({ onOpenModalChange }: { onOpenModalChange: (fn: () => vo
     const [errors, setErrors] = useState<Record<string, string>>({})
     const { user } = useAuth()
 
+    const [isDuplicarOpen, setIsDuplicarOpen] = useState(false)
+    const [loadingDuplicar, setLoadingDuplicar] = useState(false)
+    const [cicloOrigen, setCicloOrigen] = useState<ICiclo | null>(null)
+    const [formDuplicar, setFormDuplicar] = useState<ICicloForm>({
+        anio: new Date().getFullYear(), mes: new Date().getMonth() + 1,
+        fecha_inicio: '', fecha_fin: '', usuario: user?.nombreCompleto || 'WEB'
+    })
+
     const [form, setForm] = useState<ICicloForm>({
         anio: new Date().getFullYear(), mes: new Date().getMonth() + 1,
         fecha_inicio: '', fecha_fin: '', usuario: user?.nombreCompleto || 'WEB'
@@ -220,6 +229,49 @@ function CiclosSection({ onOpenModalChange }: { onOpenModalChange: (fn: () => vo
         finally { setLoadingSave(false) }
     }
 
+    /** Fechas del mes completo, que es lo que se usa por defecto en todo el módulo. */
+    const rangoDelMes = (anio: number, mes: number) => ({
+        fecha_inicio: `${anio}-${String(mes).padStart(2, '0')}-01`,
+        fecha_fin: `${anio}-${String(mes).padStart(2, '0')}-${new Date(anio, mes, 0).getDate()}`
+    })
+
+    const abrirDuplicar = (item: ICiclo) => {
+        const mes = item.mes === 12 ? 1 : item.mes + 1
+        const anio = item.mes === 12 ? item.anio + 1 : item.anio
+        setCicloOrigen(item)
+        setFormDuplicar({ anio, mes, ...rangoDelMes(anio, mes), usuario: user?.nombreCompleto || 'WEB' })
+        setIsDuplicarOpen(true)
+    }
+
+    const handleDuplicarMesChange = (mes: number) => {
+        setFormDuplicar({ ...formDuplicar, mes, ...rangoDelMes(formDuplicar.anio, mes) })
+    }
+
+    const handleDuplicarAnioChange = (anio: number) => {
+        setFormDuplicar({ ...formDuplicar, anio, ...rangoDelMes(anio, formDuplicar.mes) })
+    }
+
+    const handleDuplicar = async () => {
+        if (!cicloOrigen) return
+        setLoadingDuplicar(true)
+        try {
+            const res = await MetasService.duplicarCiclo(cicloOrigen.id_ciclo, formDuplicar)
+            const copiados = res?.data?.items_copiados ?? 0
+            toast({
+                title: 'Ciclo duplicado',
+                description: `${MESES[formDuplicar.mes]} ${formDuplicar.anio}: se copiaron ${copiados} meta(s) de producto.`
+            })
+            setIsDuplicarOpen(false)
+            fetchData()
+        } catch (e: any) {
+            toast({
+                title: 'No se pudo duplicar',
+                description: e?.response?.data?.message || 'Error al duplicar el ciclo.',
+                variant: 'destructive'
+            })
+        } finally { setLoadingDuplicar(false) }
+    }
+
     const cambiarEstado = async (item: ICiclo) => {
         const nuevoEstado = item.estado === 'ABIERTO' ? 'CERRADO' : 'ABIERTO'
         try {
@@ -261,9 +313,13 @@ function CiclosSection({ onOpenModalChange }: { onOpenModalChange: (fn: () => vo
                                         {item.estado === 'ABIERTO' ? '🟢 Abierto' : '🔴 Cerrado'}
                                     </Badge>
                                 </div>
-                                <div className="flex gap-2 mt-3">
+                                <div className="flex flex-wrap gap-2 mt-3">
                                     <Button variant="outline" size="sm" onClick={() => abrirEditar(item)} className="flex-1 text-xs">
                                         <Edit className="h-3 w-3 mr-1" /> Editar
+                                    </Button>
+                                    <Button variant="outline" size="sm" onClick={() => abrirDuplicar(item)}
+                                            className="flex-1 text-xs text-sky-700 border-sky-200 hover:bg-sky-50 dark:text-sky-400 dark:border-sky-900/60 dark:hover:bg-sky-950/40">
+                                        <Copy className="h-3 w-3 mr-1" /> Duplicar
                                     </Button>
                                     <Button variant="outline" size="sm" onClick={() => cambiarEstado(item)}
                                             className={`flex-1 text-xs ${item.estado === 'ABIERTO' ? 'text-red-600 border-red-200 hover:bg-red-50' : 'text-emerald-600 border-emerald-200 hover:bg-emerald-50'}`}>
@@ -333,6 +389,63 @@ function CiclosSection({ onOpenModalChange }: { onOpenModalChange: (fn: () => vo
                         <Button onClick={handleGuardar} disabled={loadingSave}>
                             {loadingSave && <RefreshCw className="h-4 w-4 mr-2 animate-spin" />}
                             <Save className="h-4 w-4 mr-2" /> Guardar
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={isDuplicarOpen} onOpenChange={setIsDuplicarOpen}>
+                <DialogContent className="max-w-lg">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <Copy className="h-5 w-5 text-sky-600" /> Duplicar Ciclo
+                        </DialogTitle>
+                        <DialogDescription>
+                            {cicloOrigen && <>Se copiarán todas las metas de <b>{MESES[cicloOrigen.mes]} {cicloOrigen.anio}</b> al período que elijas. El ciclo original no se modifica.</>}
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label>Año destino *</Label>
+                                <Input type="number" min={2020} max={2030} value={formDuplicar.anio}
+                                       onChange={e => handleDuplicarAnioChange(Number(e.target.value))} />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Mes destino *</Label>
+                                <Select value={String(formDuplicar.mes)} onValueChange={v => handleDuplicarMesChange(Number(v))}>
+                                    <SelectTrigger><SelectValue /></SelectTrigger>
+                                    <SelectContent>
+                                        {MESES.slice(1).map((m, i) => (
+                                            <SelectItem key={i + 1} value={String(i + 1)}>{m}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label>Fecha Inicio *</Label>
+                                <Input type="date" value={formDuplicar.fecha_inicio}
+                                       onChange={e => setFormDuplicar({ ...formDuplicar, fecha_inicio: e.target.value })} />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Fecha Fin *</Label>
+                                <Input type="date" value={formDuplicar.fecha_fin}
+                                       onChange={e => setFormDuplicar({ ...formDuplicar, fecha_fin: e.target.value })} />
+                            </div>
+                        </div>
+                        <div className="rounded-lg border border-border bg-muted/50 p-3 text-xs text-muted-foreground">
+                            Se copian los laboratorios, vendedores y productos con sus cantidades y precios
+                            referenciales. El ciclo nuevo nace <b>abierto</b>, así que puedes editarlo después
+                            sin tocar el original.
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsDuplicarOpen(false)} disabled={loadingDuplicar}>Cancelar</Button>
+                        <Button onClick={handleDuplicar} disabled={loadingDuplicar || !formDuplicar.fecha_inicio || !formDuplicar.fecha_fin}>
+                            {loadingDuplicar ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <Copy className="h-4 w-4 mr-2" />}
+                            Duplicar
                         </Button>
                     </DialogFooter>
                 </DialogContent>

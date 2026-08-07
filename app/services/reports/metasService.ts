@@ -56,6 +56,11 @@ export class MetasService {
         return response.data;
     }
 
+    static async duplicarCiclo(id: number, data: any): Promise<any> {
+        const response = await apiClient.post(`/metas/ciclos/${id}/duplicar`, data);
+        return response.data;
+    }
+
     static async cambiarEstadoCiclo(id: number, data: any): Promise<any> {
         const response = await apiClient.patch(`/metas/ciclos/${id}/estado`, data);
         return response.data;
