@@ -68,7 +68,12 @@ export function InvoiceModal({
     const [showContactModal,     setShowContactModal]     = useState(false)
     const [showInstallmentModal, setShowInstallmentModal] = useState(false)
     const [cuotas,               setCuotas]               = useState<Cuota[]>([])
-    const [fechaEmisionOpcion,   setFechaEmisionOpcion]   = useState<'hoy' | 'pedido'>('pedido')
+    // Por defecto se emite con la fecha de HOY: es lo que espera SUNAT y evita
+    // que un pedido viejo se envíe con una emisión fuera de plazo sin que nadie
+    // lo note. Elegir la fecha del pedido sigue siendo posible, pero es una
+    // decisión explícita y se confirma antes de continuar.
+    const [fechaEmisionOpcion,   setFechaEmisionOpcion]   = useState<'hoy' | 'pedido'>('hoy')
+    const [showFechaConfirm,     setShowFechaConfirm]     = useState(false)
     const [fleteActivo,          setFleteActivo]          = useState(false)
     const [fleteMonto,           setFleteMonto]           = useState<string>("")
     const [fleteError,           setFleteError]           = useState<string>("")
@@ -130,7 +135,8 @@ export function InvoiceModal({
             setFleteMonto("")
             setFleteError("")
             setIsSubmitting(false)
-            setFechaEmisionOpcion('pedido')
+            setFechaEmisionOpcion('hoy')
+            setShowFechaConfirm(false)
             return
         }
 
@@ -237,6 +243,21 @@ export function InvoiceModal({
         setTipoDocError("")
         setFleteError("")
         setDescuentoError("")
+
+        // Si la emisión no cae el mismo día del pedido, se avisa antes de
+        // seguir — en los dos sentidos. Emitir hoy un pedido viejo y emitir con
+        // fecha vieja son decisiones distintas, y ninguna debería pasar por
+        // descuido.
+        if (!mismasFechas) {
+            setShowFechaConfirm(true)
+            return
+        }
+
+        setShowContactModal(true)
+    }
+
+    const confirmarFechaYContinuar = () => {
+        setShowFechaConfirm(false)
         setShowContactModal(true)
     }
 
@@ -255,7 +276,7 @@ export function InvoiceModal({
         )
     }
 
-    const canConfirm =handleFinalConfirm
+    const canConfirm =
         !isProcessing &&
         !!invoiceType &&
         !!sunatTransaction &&
@@ -611,6 +632,56 @@ export function InvoiceModal({
                     />
                 </>
             )}
+
+            <Dialog open={showFechaConfirm} onOpenChange={setShowFechaConfirm}>
+                <DialogContent className="sm:max-w-[460px]">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <AlertTriangle className="h-5 w-5 text-amber-500" />
+                            Confirma la fecha de emisión
+                        </DialogTitle>
+                    </DialogHeader>
+
+                    <div className="space-y-3">
+                        <div className="rounded-lg border border-border divide-y divide-border text-sm">
+                            <div className="flex items-center justify-between p-3">
+                                <span className="text-muted-foreground">Se emitirá con fecha</span>
+                                <span className="font-bold text-foreground">
+                                    {format(parseISO(fechaEmisionElegida), 'dd/MM/yyyy')}
+                                    <span className="ml-1.5 text-xs font-normal text-muted-foreground">
+                                        ({fechaEmisionOpcion === 'hoy' ? 'hoy' : 'fecha del pedido'})
+                                    </span>
+                                </span>
+                            </div>
+                            <div className="flex items-center justify-between p-3">
+                                <span className="text-muted-foreground">
+                                    {fechaEmisionOpcion === 'hoy' ? 'El pedido se realizó el' : 'Hoy es'}
+                                </span>
+                                <span className="font-medium text-foreground">
+                                    {fechaEmisionOpcion === 'hoy'
+                                        ? format(parseISO(fechaPedidoStr), 'dd/MM/yyyy')
+                                        : format(parseISO(hoyStr), 'dd/MM/yyyy')}
+                                </span>
+                            </div>
+                        </div>
+
+                        <p className="text-xs text-muted-foreground">
+                            {fechaEmisionOpcion === 'hoy'
+                                ? 'El comprobante quedará con la fecha de hoy, distinta a la del pedido.'
+                                : 'El comprobante quedará con una fecha anterior a la de hoy. Verifica que siga dentro del plazo de envío a SUNAT.'}
+                        </p>
+                    </div>
+
+                    <DialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0">
+                        <Button variant="outline" onClick={() => setShowFechaConfirm(false)} className="w-full sm:w-auto">
+                            Volver y cambiar
+                        </Button>
+                        <Button onClick={confirmarFechaYContinuar} className="bg-green-600 hover:bg-green-700 flex-1 sm:flex-none">
+                            <Check className="mr-2 h-4 w-4" /> Sí, continuar
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
 
             {selectedOrder && (
                 <ContactConfirmModal
