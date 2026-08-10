@@ -19,6 +19,7 @@ import LaboratoriosTab     from "@/components/reporte/metas/LaboratoriosTab"
 import ItemsPorLabTab      from "@/components/reporte/metas/ItemsPorLabTab"
 import VendedorDetailModal from "@/components/reporte/metas/VendedorDetailModal"
 import VendedorDashboardView from "@/components/reporte/metas/VendedorDashboardView"
+import { ExportMetasVendedoresPdf } from "@/components/reporte/metas/exportMetasVendedoresPdf"
 
 type AdminTab = "resumen" | "vendedores" | "laboratorios" | "productos"
 
@@ -115,6 +116,20 @@ export default function MetasDashboardPage() {
                         <RefreshCw className={`h-3.5 w-3.5 mr-1 ${loadingDashboard ? "animate-spin" : ""}`} />
                         Actualizar
                     </Button>
+                    <ExportMetasVendedoresPdf
+                        vendedores={dashboardData?.vendedores || []}
+                        ciclo={selectedCiclo}
+                        soloFacturado={soloFacturado}
+                        modo="resumen"
+                        disabled={loadingDashboard || !dashboardData}
+                    />
+                    <ExportMetasVendedoresPdf
+                        vendedores={dashboardData?.vendedores || []}
+                        ciclo={selectedCiclo}
+                        soloFacturado={soloFacturado}
+                        modo="detallado"
+                        disabled={loadingDashboard || !dashboardData}
+                    />
                 </div>
             </div>
 

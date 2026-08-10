@@ -18,6 +18,7 @@ import { useAuth } from "@/context/authContext"
 import apiClient from "@/app/api/client"
 import { ventasTotalesRequest } from "@/app/api/reports"
 import { Laboratorio } from "@/app/types/user-types"
+import { ExportVentasTotalesPdf } from "@/components/reporte/exportVentasTotalesPdf"
 
 interface ProductoVenta {
     Codigo_Art:   string
@@ -171,6 +172,22 @@ export default function VentasTotalesPage() {
     }
 
     const margenTotal = data ? margen(data.TotalUtilidad, data.TotalVentas) : null
+
+    /**
+     * Los filtros van impresos en la cabecera del PDF. Se arman con los nombres
+     * y no con los códigos: el archivo lo lee alguien que no tiene la pantalla
+     * al lado.
+     */
+    const filtroLabsTexto = selectedLabs.length === 0
+        ? 'Todos'
+        : catLaboratorios
+            .filter(l => selectedLabs.includes(l.IdLineaGe))
+            .map(l => l.Descripcion)
+            .join(', ')
+
+    const filtroVendsTexto = selectedVends.length === 0
+        ? 'Todos'
+        : selectedVends.join(', ')
 
     return (
         <div className="grid gap-6 p-4 md:p-6">
@@ -341,7 +358,7 @@ export default function VentasTotalesPage() {
                                         <span className="font-semibold">Periodo:</span> {data.Mes}/{data.Anio}
                                     </p>
                                 </div>
-                                <div className="flex gap-2 md:justify-end">
+                                <div className="flex flex-wrap gap-2 md:justify-end">
                                     <Button variant="outline" size="sm" className="flex-1 md:flex-none"
                                             onClick={() => setExpandidos(new Set(data.Laboratorios.map(l => l.Laboratorio)))}>
                                         Expandir todo
@@ -350,6 +367,21 @@ export default function VentasTotalesPage() {
                                             onClick={() => setExpandidos(new Set())}>
                                         Colapsar todo
                                     </Button>
+                                    {/* El PDF lleva siempre el reporte completo, no lo que esté
+                                        expandido en pantalla: si no, dos personas generan
+                                        archivos distintos según cómo dejaron la vista. */}
+                                    <ExportVentasTotalesPdf
+                                        data={data}
+                                        modo="resumen"
+                                        filtroLaboratorios={filtroLabsTexto}
+                                        filtroVendedores={filtroVendsTexto}
+                                    />
+                                    <ExportVentasTotalesPdf
+                                        data={data}
+                                        modo="detallado"
+                                        filtroLaboratorios={filtroLabsTexto}
+                                        filtroVendedores={filtroVendsTexto}
+                                    />
                                 </div>
                             </div>
 
