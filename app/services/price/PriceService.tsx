@@ -15,6 +15,12 @@ export class PriceService {
     return response.data;
   }
 
+  /** Unidades vendidas por artículo en los últimos 3 meses, para la columna de ventas. */
+  static async getVentasTresMeses(): Promise<any> {
+    const response = await apiClient.get('/price/ventas-3-meses');
+    return response.data;
+  }
+
   static async getPricesAll(params?: PriceListParams): Promise<any> {
     const response = await apiClient.get('/price/list-prices-lote/all', { params });
     return response.data;

@@ -4,10 +4,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Eye, DollarSign, History } from "lucide-react";
 import {PriceMethodsService} from "@/app/dashboard/lista-precios-lote/services/priceMethodsService";
+import { VentasSparkline } from "@/components/lista-precios-lote/VentasSparkline";
 
-export const PriceTable = ({ data, loading, onOpenLots, onOpenPrices, onOpenKardex }: any) => {
+export const PriceTable = ({ data, loading, onOpenLots, onOpenPrices, onOpenKardex, ventas, etiquetasVentas = [] }: any) => {
     const LoadingSkeletons = () => Array.from({length: 5}).map((_, i) => (
-        <tr key={i} className="border-b"><td className="p-4" colSpan={10}><Skeleton className="h-6 w-full"/></td></tr>
+        <tr key={i} className="border-b"><td className="p-4" colSpan={11}><Skeleton className="h-6 w-full"/></td></tr>
     ));
 
     return (
@@ -23,6 +24,7 @@ export const PriceTable = ({ data, loading, onOpenLots, onOpenPrices, onOpenKard
                         <th className="p-4 text-sm font-medium">Medida</th>
                         <th className="p-4 text-sm font-medium">Principio Activo</th>
                         <th className="p-4 text-sm font-medium">Stock</th>
+                        <th className="p-4 text-sm font-medium">Ventas (3 meses)</th>
                         <th className="p-4 text-sm font-medium">P. Contado</th>
                         <th className="p-4 text-sm font-medium">P. Crédito</th>
                         <th className="p-4 text-sm font-medium">Acciones</th>
@@ -38,6 +40,9 @@ export const PriceTable = ({ data, loading, onOpenLots, onOpenPrices, onOpenKard
                             <td className="p-4 text-sm">{item.prod_medida}</td>
                             <td className="p-4 text-sm">{PriceMethodsService.truncateOrReplace(item.prod_principio, 10)}</td>
                             <td className="p-4 text-sm text-right">{Number(item.kardex_saldoCant).toLocaleString("es-ES", {minimumFractionDigits: 2})}</td>
+                            <td className="p-4">
+                                <VentasSparkline ventas={ventas?.get(item.prod_codigo)} etiquetas={etiquetasVentas} />
+                            </td>
                             <td className="p-4 text-sm text-right font-mono">S/ {item.precio_contado}</td>
                             <td className="p-4 text-sm text-right font-mono">S/ {item.precio_credito}</td>
                             <td className="p-4">
@@ -48,7 +53,7 @@ export const PriceTable = ({ data, loading, onOpenLots, onOpenPrices, onOpenKard
                                 </div>
                             </td>
                         </tr>
-                    )) : <tr><td colSpan={10} className="text-center py-8 text-muted-foreground">No se encontraron resultados</td></tr>}
+                    )) : <tr><td colSpan={11} className="text-center py-8 text-muted-foreground">No se encontraron resultados</td></tr>}
                     </tbody>
                 </table>
             </div>
@@ -71,6 +76,10 @@ export const PriceTable = ({ data, loading, onOpenLots, onOpenPrices, onOpenKard
                                         <span className="text-xs text-muted-foreground">Presentación:</span>
                                         <p className="text-xs">{item.prod_presentacion}</p>
                                     </div>
+                                </div>
+                                <div>
+                                    <span className="text-xs text-muted-foreground">Ventas (3 meses):</span>
+                                    <div className="mt-1"><VentasSparkline ventas={ventas?.get(item.prod_codigo)} etiquetas={etiquetasVentas} compacto /></div>
                                 </div>
                                 <div className="grid grid-cols-2 gap-2">
                                     <div><span className="text-xs text-muted-foreground">P. Contado:</span><p className="text-xs font-mono">S/ {item.precio_contado}</p></div>

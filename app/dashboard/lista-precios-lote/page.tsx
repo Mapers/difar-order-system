@@ -6,6 +6,7 @@ import { useAuth } from '@/context/authContext';
 import { useLaboratoriesData } from "./hooks/useLaboratoriesData";
 import { usePriceList } from "./hooks/usePriceList";
 import { useProductModals } from "./hooks/useProductModals";
+import { useVentasTresMeses } from "./hooks/useVentasTresMeses";
 import ExportPdfButton from "@/app/dashboard/lista-precios-lote/export-pdf-button";
 import ExportExcelButton from "@/app/dashboard/lista-precios-lote/export-excel-button";
 import {PriceFilters} from "@/components/lista-precios-lote/PriceFilters";
@@ -23,6 +24,9 @@ export default function PricePage() {
 
   const listData = usePriceList(isAuthenticated, user, isAdmin());
   const modals = useProductModals();
+  // Carga en paralelo al listado: no depende de los filtros, así que refiltrar
+  // en pantalla no vuelve a pedirla.
+  const { ventas, etiquetas: etiquetasVentas } = useVentasTresMeses(isAuthenticated);
 
   useEffect(() => {
     const now = new Date();
@@ -99,6 +103,8 @@ export default function PricePage() {
                 onOpenLots={modals.lots.onOpen}
                 onOpenPrices={modals.prices.onOpen}
                 onOpenKardex={modals.kardex.onOpen}
+                ventas={ventas}
+                etiquetasVentas={etiquetasVentas}
             />
           </CardContent>
 

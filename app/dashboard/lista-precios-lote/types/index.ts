@@ -23,6 +23,18 @@ export interface PrecioLote {
     igv_id: number;
 }
 
+/** Ventas de los últimos 3 meses de un artículo. `meses` va del más antiguo al más reciente. */
+export interface VentasTresMeses {
+    meses: number[];
+    total_3m: number;
+}
+
+export interface VentasTresMesesResponse {
+    /** Los tres periodos en formato 'YYYY-MM', del más antiguo al más reciente. */
+    periodos: string[];
+    data: { cod_articulo: string; meses: number[]; total_3m: number }[];
+}
+
 export interface PriceListParams {
     laboratorio?: string,
     descripcion?: string,
