@@ -100,6 +100,18 @@ const ExportPdfButton = ({ payload, filters }: { payload: any; filters?: any }) 
       const response = await PriceService.getPricesAll(payload);
       const data = applyFilters(response.data || []);
 
+      // Endpoint aparte: si falla, la columna sale vacia en vez de perderse
+      // la exportacion entera.
+      const mapaVentas = new Map<string, number[]>()
+      try {
+        const resVentas = await PriceService.getVentasTresMeses()
+        for (const fila of (resVentas?.data?.data || [])) {
+          mapaVentas.set(String(fila.cod_articulo), (fila.meses || []).map(Number))
+        }
+      } catch (e) {
+        console.warn('No se pudieron cargar las ventas de 3 meses para el PDF:', e)
+      }
+
       const pdfDoc = await PDFDocument.create()
       const font = await pdfDoc.embedFont(StandardFonts.Helvetica)
       const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold)
@@ -131,11 +143,12 @@ const ExportPdfButton = ({ payload, filters }: { payload: any; filters?: any }) 
       const smallFontSize = isLandscape ? 6 : 4;
       const tinyFontSize = isLandscape ? 5.5 : 4;
 
-      // DESCRIPCIÓN, LOTES, UM, STOCK, P.CONTADO, P.CREDITO, B.CONTADO, B.CREDITO, BONIFICACIONES, (ESCALAS = resto)
+      // DESCRIPCIÓN, LOTES, UM, STOCK, VENTAS 3M, P.CONTADO, P.CREDITO, B.CONTADO, (B.CREDITO = resto)
+      // La ultima columna se lleva el ancho restante, por eso van 8 y no 9.
       const columnWidths = isLandscape
-          ? [150, 75, 45, 50, 60, 60, 60, 90, 90]
-          : [105, 55, 30, 35, 45, 45, 45, 65, 65];
-      const columns = ['DESCRIPCIÓN', 'LOTES', 'UM', 'STOCK', 'P.CONTADO', 'P.CREDITO', 'B.CONTADO', 'B.CREDITO', 'BONIFICACIONES', 'ESCALAS']
+          ? [190, 95, 40, 55, 105, 65, 65, 65]
+          : [130, 70, 28, 40,  80, 48, 48, 48];
+      const columns = ['DESCRIPCIÓN', 'LOTES', 'UM', 'STOCK', 'VENTAS 3M', 'P.CONTADO', 'P.CREDITO', 'B.CONTADO', 'B.CREDITO']
 
       const empresaNombre = "DROGUERIA DIFAR"
       const empresaRuc = "2056138401"
@@ -257,33 +270,18 @@ const ExportPdfButton = ({ payload, filters }: { payload: any; filters?: any }) 
         }
 
         const lotes = processLotes(item.lotes_raw)
-        const bonificaciones = processBonificaciones(item.bonificaciones_raw)
-        const escalas = processEscalas(item.escalas_raw)
 
         const descLines = splitTextIntoLines(item.prod_descripcion || '', columnWidths[0] - 5, font, baseFontSize)
-
-        const bonifLines: { text: string, type: string }[] = []
-        bonificaciones.forEach((bonif, index) => {
-          const bonifText = bonif.mismoProduct === 'S'
-              ? `${index + 1}. compra ${bonif.factor} y lleva ${bonif.cantidad} de ${item.prod_descripcion}`.toUpperCase()
-              : `${index + 1}. compra ${bonif.factor} y lleva ${bonif.cantidad} de ${bonif.descArticuloBonif}`.toUpperCase()
-
-          const lines = splitTextIntoLines(bonifText, columnWidths[8] - 5, font, tinyFontSize)
-          bonifLines.push(...lines.map(line => ({ text: line, type: 'bonif' })))
-        })
-
-        const escalaLines = escalas.map((escala, index) =>
-            `${index + 1}. De ${escala.minimo} a ${escala.maximo} - S/${escala.precio.toFixed(2)}`.toUpperCase()
-        )
 
         const lineHeight = isLandscape ? 7 : 5;
 
         const descHeight = descLines.length * lineHeight
         const lotesHeight = lotes.length * lineHeight
-        const bonifHeight = bonifLines.length * (lineHeight - 1)
-        const escalaHeight = escalaLines.length * (lineHeight - 1)
 
-        const maxHeight = Math.max(descHeight, lotesHeight, bonifHeight, escalaHeight, lineHeight)
+        // Las barras necesitan su propio alto minimo: si la fila trae una sola
+        // linea de texto, sin esto quedarian recortadas.
+        const barrasAlto = isLandscape ? 12 : 9
+        const maxHeight = Math.max(descHeight, lotesHeight, barrasAlto, lineHeight)
         const neededHeight = maxHeight + rowGap
 
         if (yPosition - neededHeight < minYPosition) {
@@ -348,64 +346,72 @@ const ExportPdfButton = ({ payload, filters }: { payload: any; filters?: any }) 
         })
         xPosition += columnWidths[3]
 
-        // PRECIO CONTADO (columna 4)
+        // VENTAS 3M (columna 4) — mini barras como en la pantalla, mas el total.
+        // La barra del mes mayor llega al tope y el resto se escala contra ese
+        // maximo; misma regla que VentasSparkline.
+        const mesesVenta = mapaVentas.get(String(item.prod_codigo)) || []
+        const totalVenta = mesesVenta.reduce((a, b) => a + b, 0)
+        const baseBarras = codigoY
+
+        if (totalVenta > 0) {
+          const maxMes    = Math.max(1, ...mesesVenta)
+          const anchoB    = isLandscape ? 3.5 : 2.5
+          const sepB      = 1.5
+          const minB      = 1.5
+          mesesVenta.forEach((cantidad, i) => {
+            const alto = cantidad <= 0 ? 0 : Math.max(minB, (cantidad / maxMes) * barrasAlto)
+            if (alto <= 0) return
+            currentPage.drawRectangle({
+              x: xPosition + i * (anchoB + sepB),
+              y: baseBarras,
+              width: anchoB,
+              height: alto,
+              color: C.stock,
+            })
+          })
+          const anchoBloque = 3 * anchoB + 2 * sepB + 4
+          currentPage.drawText(totalVenta.toFixed(2), {
+            x: xPosition + anchoBloque, y: baseBarras, size: baseFontSize, font: boldFont, color: C.stock,
+          })
+        } else {
+          currentPage.drawText('Sin ventas', {
+            x: xPosition, y: baseBarras, size: tinyFontSize, font, color: C.border,
+          })
+        }
+        xPosition += columnWidths[4]
+
+        // PRECIO CONTADO (columna 5)
         if (item.precio_contado) {
           currentPage.drawText(`S/ ${item.precio_contado}`, {
             x: xPosition, y: codigoY, size: baseFontSize, font, color: C.text,
           })
         }
-        xPosition += columnWidths[4]
+        xPosition += columnWidths[5]
 
-        // PRECIO CREDITO (columna 5)
+        // PRECIO CREDITO (columna 6)
         if (item.precio_credito) {
           currentPage.drawText(`S/ ${item.precio_credito}`, {
             x: xPosition, y: codigoY, size: baseFontSize, font, color: C.text,
           })
         }
-        xPosition += columnWidths[5]
+        xPosition += columnWidths[6]
 
-        // B.CONTADO (columna 6)
+        // B.CONTADO (columna 7)
         const precioBonifContado = Number(item.precio_por_mayor) > 0 ? `S/ ${item.precio_por_mayor}` : ''
         if (precioBonifContado) {
           currentPage.drawText(precioBonifContado, {
             x: xPosition, y: codigoY, size: baseFontSize, font, color: C.green,
           })
         }
-        xPosition += columnWidths[6]
+        xPosition += columnWidths[7]
 
-        // B.CREDITO (columna 7)
+        // B.CREDITO (columna 8 - usa el espacio restante)
         const precioBonifCredito = Number(item.precio_por_menor) > 0 ? `S/ ${item.precio_por_menor}` : ''
         if (precioBonifCredito) {
           currentPage.drawText(precioBonifCredito, {
             x: xPosition, y: codigoY, size: baseFontSize, font, color: C.dblue,
           })
         }
-        xPosition += columnWidths[7]
-
-        // BONIFICACIONES (columna 8)
-        const bonifStartY = yPosition - topPad - ((maxHeight - bonifHeight) / 2)
-        bonifLines.forEach((bonifLine, index) => {
-          currentPage.drawText(bonifLine.text, {
-            x: xPosition,
-            y: bonifStartY - (index * (lineHeight - 1)),
-            size: tinyFontSize,
-            font,
-            color: C.green,
-          })
-        })
-        xPosition += columnWidths[8]
-
-        // ESCALAS (columna 9 - usa el espacio restante)
-        const escalaStartY = yPosition - topPad - ((maxHeight - escalaHeight) / 2)
-        escalaLines.forEach((escalaText, index) => {
-          currentPage.drawText(escalaText, {
-            x: xPosition,
-            y: escalaStartY - (index * (lineHeight - 1)),
-            size: tinyFontSize,
-            font,
-            color: C.dblue,
-          })
-        })
 
         // separador inferior tenue
         const finalY = yPosition - maxHeight - rowGap

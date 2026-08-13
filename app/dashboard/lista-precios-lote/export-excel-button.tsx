@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { FileSpreadsheet, Loader2 } from 'lucide-react'
 import ExcelJS from 'exceljs'
 import { PriceService } from '@/app/services/price/PriceService'
+import { etiquetaPeriodo } from '@/app/dashboard/lista-precios-lote/hooks/useVentasTresMeses'
 import moment from 'moment'
 
 const HEADER_ARGB  = 'FF163161'
@@ -13,6 +14,8 @@ const ROW_ODD_ARGB = 'FFF2F4F8'
 const STOCK_ARGB   = 'FF1A56A0'
 const BONIF_ARGB   = 'FF1A6B3A'
 const ESCALA_ARGB  = 'FF1A3A8F'
+const VENTAS_ARGB  = 'FF1A56A0'
+
 
 const COLUMNS = [
     { header: 'LABORATORIO',     key: 'laboratorio',  width: 28, numFmt: '@' },
@@ -24,12 +27,16 @@ const COLUMNS = [
     { header: 'LOTES',           key: 'lotes',         width: 18, numFmt: '@' },
     { header: 'F. VENCIMIENTO',  key: 'vencimientos',  width: 14, numFmt: '@' },
     { header: 'STOCK',           key: 'stock',         width: 10, numFmt: '#,##0.00' },
+    // Las tres columnas de mes reciben el nombre real del periodo al escribir la
+    // cabecera; aca van con nombre generico porque COLUMNS es estatico.
+    { header: 'VENTAS 3M',       key: 'ventas3m',      width: 11, numFmt: '#,##0.00' },
+    { header: 'MES 1',           key: 'ventasM1',      width:  9, numFmt: '#,##0.00' },
+    { header: 'MES 2',           key: 'ventasM2',      width:  9, numFmt: '#,##0.00' },
+    { header: 'MES 3',           key: 'ventasM3',      width:  9, numFmt: '#,##0.00' },
     { header: 'P.CONTADO',       key: 'precioContado', width: 12, numFmt: '#,##0.00' },
     { header: 'P.CRÉDITO',       key: 'precioCredito', width: 12, numFmt: '#,##0.00' },
     { header: 'B.CONTADO',       key: 'bonifContado',  width: 12, numFmt: '#,##0.00' },
     { header: 'B.CRÉDITO',       key: 'bonifCredito',  width: 12, numFmt: '#,##0.00' },
-    { header: 'BONIFICACIONES',  key: 'bonificaciones',width: 40, numFmt: '@' },
-    { header: 'ESCALAS',         key: 'escalas',       width: 30, numFmt: '@' },
 ] as const
 
 /**
@@ -97,6 +104,24 @@ const ExportExcelButton = ({ payload, filters }: { payload: any; filters?: any }
             const response = await PriceService.getPricesAll(payload)
             const data = applyFilters(response.data || [])
 
+            // Endpoint aparte: si falla, el Excel sale con esas columnas en cero
+            // en vez de perderse la exportacion entera.
+            const mapaVentas = new Map<string, { meses: number[]; total_3m: number }>()
+            let etiquetasMes: string[] = []
+            try {
+                const resVentas = await PriceService.getVentasTresMeses()
+                const body = resVentas?.data ?? {}
+                etiquetasMes = (body.periodos || []).map(etiquetaPeriodo)
+                for (const fila of (body.data || [])) {
+                    mapaVentas.set(String(fila.cod_articulo), {
+                        meses: (fila.meses || []).map(Number),
+                        total_3m: Number(fila.total_3m || 0),
+                    })
+                }
+            } catch (e) {
+                console.warn('No se pudieron cargar las ventas de 3 meses para el Excel:', e)
+            }
+
             const workbook = new ExcelJS.Workbook()
             workbook.creator = 'DROGUERÍA DIFAR'
 
@@ -116,9 +141,13 @@ const ExportExcelButton = ({ payload, filters }: { payload: any; filters?: any }
             // Row 2: column headers
             ws.columns = COLUMNS.map(col => ({ key: col.key, width: col.width }))
             ws.getRow(2).height = 18
+            const headerMes: Record<string, number> = { ventasM1: 0, ventasM2: 1, ventasM3: 2 }
             COLUMNS.forEach((col, idx) => {
                 const cell = ws.getCell(2, idx + 1)
-                cell.value = col.header
+                const iMes = headerMes[col.key as string]
+                cell.value = iMes !== undefined && etiquetasMes[iMes]
+                    ? etiquetasMes[iMes].toUpperCase()
+                    : col.header
                 cell.font  = { bold: true, color: { argb: 'FFFFFFFF' }, size: 9 }
                 cell.fill  = { type: 'pattern', pattern: 'solid', fgColor: { argb: HEADER_ARGB } }
                 cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true }
@@ -144,13 +173,13 @@ const ExportExcelButton = ({ payload, filters }: { payload: any; filters?: any }
                 }
 
                 const { lotes, vencimientos } = parseLotes(item.lotes_raw)
-                const bonificaciones = parseBonificaciones(item.bonificaciones_raw, item.prod_descripcion)
-                const escalas        = parseEscalas(item.escalas_raw)
 
                 const precioContado  = item.precio_contado  ? Number(item.precio_contado)  : null
                 const precioCredito  = item.precio_credito  ? Number(item.precio_credito)  : null
                 const bonifContado   = Number(item.precio_por_mayor) > 0 ? Number(item.precio_por_mayor) : null
                 const bonifCredito   = Number(item.precio_por_menor) > 0 ? Number(item.precio_por_menor) : null
+
+                const v = mapaVentas.get(String(item.prod_codigo))
 
                 const dataRow = ws.addRow({
                     laboratorio  : item.laboratorio_Descripcion ?? '',
@@ -162,24 +191,21 @@ const ExportExcelButton = ({ payload, filters }: { payload: any; filters?: any }
                     lotes,
                     vencimientos,
                     stock        : Number(Number(item.kardex_saldoCant || 0).toFixed(2)),
+                    ventas3m     : Number(v?.total_3m ?? 0),
+                    ventasM1     : Number(v?.meses?.[0] ?? 0),
+                    ventasM2     : Number(v?.meses?.[1] ?? 0),
+                    ventasM3     : Number(v?.meses?.[2] ?? 0),
                     precioContado,
                     precioCredito,
                     bonifContado,
                     bonifCredito,
-                    bonificaciones,
-                    escalas,
                 })
 
                 const isOdd  = rowIndex % 2 !== 0
                 const bgArgb = isOdd ? ROW_ODD_ARGB : 'FFFFFFFF'
                 dataRow.height = 16
 
-                const lineCount = Math.max(
-                    lotes.split('\n').length,
-                    bonificaciones.split('\n').length,
-                    escalas.split('\n').length,
-                    1
-                )
+                const lineCount = Math.max(lotes.split('\n').length, 1)
                 if (lineCount > 1) dataRow.height = lineCount * 14
 
                 COLUMNS.forEach((col, idx) => {
@@ -187,14 +213,13 @@ const ExportExcelButton = ({ payload, filters }: { payload: any; filters?: any }
                     let textArgb = 'FF222222'
 
                     if (col.key === 'stock')         textArgb = STOCK_ARGB
-                    if (col.key === 'bonificaciones') textArgb = BONIF_ARGB
-                    if (col.key === 'escalas')        textArgb = ESCALA_ARGB
+                    if (col.key === 'ventas3m') textArgb = VENTAS_ARGB
                     if (col.key === 'bonifContado' || col.key === 'bonifCredito') textArgb = BONIF_ARGB
 
                     cell.font      = { size: 9, color: { argb: textArgb } }
                     cell.fill      = { type: 'pattern', pattern: 'solid', fgColor: { argb: bgArgb } }
                     cell.alignment = {
-                        horizontal: ['stock','precioContado','precioCredito','bonifContado','bonifCredito'].includes(col.key)
+                        horizontal: ['stock','ventas3m','ventasM1','ventasM2','ventasM3','precioContado','precioCredito','bonifContado','bonifCredito'].includes(col.key)
                             ? 'right' : 'left',
                         vertical  : 'top',
                         wrapText  : true,
@@ -207,6 +232,24 @@ const ExportExcelButton = ({ payload, filters }: { payload: any; filters?: any }
                 })
 
                 rowIndex++
+            }
+
+            // Barra dentro de la celda, nativa de Excel: la fila con mas ventas
+            // llega al ancho completo y el resto se escala sola. El numero sigue
+            // visible, la barra va detras. Se aplica al rango completo de datos;
+            // las filas separadoras de laboratorio no tienen valor numerico aqui,
+            // asi que la regla las ignora.
+            const colVentas = ws.getColumn(COLUMNS.findIndex(c => c.key === 'ventas3m') + 1)
+            if (ws.rowCount > 2) {
+                ws.addConditionalFormatting({
+                    ref: `${colVentas.letter}3:${colVentas.letter}${ws.rowCount}`,
+                    rules: [{
+                        type: 'dataBar',
+                        priority: 1,
+                        cfvo: [{ type: 'min' }, { type: 'max' }],
+                        color: { argb: VENTAS_ARGB },
+                    } as any],
+                })
             }
 
             // Auto column widths

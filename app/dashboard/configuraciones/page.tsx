@@ -3,7 +3,7 @@
 import { useState, useCallback } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import {FileText, Plus, Truck, Settings, CreditCard, Target, FlaskConical, Hash, Landmark, MessageCircle, Pill} from "lucide-react" // Se agregó Pill
+import {FileText, Plus, Truck, Settings, CreditCard, Target, FlaskConical, Hash, Landmark, MessageCircle, Pill, Calculator} from "lucide-react" // Se agregó Pill
 import AppConfigSection from "@/components/configuraciones/AppConfigSection";
 import SequentialSection from "@/components/configuraciones/SequentialSection";
 import ClientConditionsSection from "@/components/configuraciones/ClientConditionsSection";
@@ -12,6 +12,7 @@ import LaboratoriosSection from "@/components/configuraciones/Laboratoriossectio
 import CreditLineSection from "@/components/configuraciones/CreditLineSection";
 import WhatsappSection from "@/components/configuraciones/WhatsappSection";
 import SustitutosSection from "@/components/configuraciones/SustitutosSection";
+import CostosSection from "@/components/configuraciones/CostosSection";
 
 const sections = [
     {
@@ -48,6 +49,13 @@ const sections = [
         description: "Gestión de ciclos, laboratorios, vendedores y productos",
         icon: Target,
         color: "sky"
+    },
+    {
+        id: "costos",
+        title: "Costos por Artículo",
+        description: "Costo unitario por periodo que consume el reporte de ventas",
+        icon: Calculator,
+        color: "green"
     },
     {
         id: 'laboratorios',
@@ -199,6 +207,8 @@ export default function ConfiguracionesPage() {
                                                         ? "Configura la numeración para otros documentos internos."
                                                         : activeSection === "sustitutos"
                                                             ? "Administra los productos equivalentes o sustitutos para dispensación."
+                                                            : activeSection === "costos"
+                                                                ? "Carga el costo unitario por periodo. El reporte de ventas lo usa en vez del costo del kardex."
                                                             : activeSection === "whatsapp"
                                                                 ? "Registra los números de WhatsApp que recibirán notificaciones de ventas."
                                                                 : `Configura la numeración para ${activeSection === "secuenciales" ? "facturas y boletas" : "guías de remisión"}`}
@@ -229,6 +239,8 @@ export default function ConfiguracionesPage() {
                                 <WhatsappSection onOpenModalChange={handleSetOpenModalFn} />
                             ) : activeSection === 'sustitutos' ? (
                                 <SustitutosSection onOpenModalChange={handleSetOpenModalFn} />
+                            ) : activeSection === 'costos' ? (
+                                <CostosSection onOpenModalChange={handleSetOpenModalFn} />
                             ) : (
                                 <SequentialSection
                                     key={activeSection}

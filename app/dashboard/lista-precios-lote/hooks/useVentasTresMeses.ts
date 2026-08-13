@@ -6,7 +6,7 @@ import { VentasTresMeses } from "../types";
 const MESES_CORTO = ['', 'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun',
                      'Jul', 'Ago', 'Set', 'Oct', 'Nov', 'Dic'];
 
-function etiquetaPeriodo(periodo: string): string {
+export function etiquetaPeriodo(periodo: string): string {
     const [anio, mes] = String(periodo || '').split('-');
     const n = Number(mes);
     if (!n || n < 1 || n > 12) return periodo || '';
