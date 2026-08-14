@@ -282,7 +282,7 @@ export function GenerarSireMenu({ data = [], filters }: GenerarSireMenuProps) {
             <DropdownMenuTrigger asChild>
                 <Button variant="outline" className="flex items-center gap-2">
                     <FileDown className="h-4 w-4" />
-                    Generar
+                    Exportar SIRE
                     <ChevronDown className="h-4 w-4 opacity-50" />
                 </Button>
             </DropdownMenuTrigger>
