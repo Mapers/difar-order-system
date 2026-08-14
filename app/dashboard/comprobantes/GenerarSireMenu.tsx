@@ -23,7 +23,6 @@ interface FiltersComprobantes {
 }
 
 interface GenerarSireMenuProps {
-    /** Exactamente lo que se ve en la tabla: no se vuelve a consultar nada. */
     data: Comprobante[]
     filters?: FiltersComprobantes
 }
@@ -31,7 +30,6 @@ interface GenerarSireMenuProps {
 const RUC_EMPRESA     = '20481321892'
 const ENTIDAD_EMPRESA = 'DISTRIBUIDORA E IMPORTADORA FARMACEUTICA S.A.C.'
 
-/** Nombres de la fila 1 del modelo, en su orden exacto. */
 const CABECERA_XLSX = [
     '', 'RUC', 'ENTIDAD', 'PERIODO', '',
     'Fecha de emisión', 'Fecha Vcto/Pago', 'Tipo CP/Doc.', 'Serie del CDP',
@@ -46,7 +44,6 @@ const CABECERA_XLSX = [
     'DAM / CP', 'CAR SUNAT', 'Column1',
 ]
 
-/** Fila 2 del modelo: el número de campo oficial. Vacío donde no aplica. */
 const NUMEROS_CAMPO = [
     '', '1', '2', '3', '',
     '4', '5', '6', '', '7', '8',
@@ -60,15 +57,6 @@ const n2 = (v: any) => {
     return isNaN(x) ? 0 : Number(x.toFixed(2))
 }
 
-/**
- * El backend serializa las fechas como si fueran UTC, así que en Perú (UTC-5)
- * el navegador las corre 5 horas atrás y una fecha sin hora —fecha_emision es
- * un DATE— cae al día anterior. Contrastado contra la propuesta del SIRE de
- * julio: 296 de 307 comprobantes salían un día antes.
- *
- * El +5 es el mismo desfase que ya compensan los exports de PDF y Excel de
- * esta pantalla con `safeDate(c.fecha_envio, 5)`.
- */
 const aFechaLocal = (v: string | null | undefined): Date | null => {
     if (!v) return null
     try {
@@ -77,20 +65,17 @@ const aFechaLocal = (v: string | null | undefined): Date | null => {
     } catch { return null }
 }
 
-/** dd/mm/yyyy, que es como van las fechas en el TXT. */
 const fechaTxt = (v: string | null | undefined): string => {
     const d = aFechaLocal(v)
     return d ? format(d, 'dd/MM/yyyy') : ''
 }
 
-/** Serial de Excel: los días desde el 30/12/1899, como en el modelo. */
 const fechaSerial = (v: string | null | undefined): number | '' => {
     const d = aFechaLocal(v)
     if (!d) return ''
     return Math.floor((Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) - Date.UTC(1899, 11, 30)) / 86400000)
 }
 
-/** 6 = RUC, 1 = DNI, 0 = sin documento. */
 const tipoDocIdentidad = (numDoc: string | null | undefined): string => {
     const d = String(numDoc || '').trim()
     if (d.length === 11) return '6'
@@ -98,23 +83,13 @@ const tipoDocIdentidad = (numDoc: string | null | undefined): string => {
     return d ? '0' : '0'
 }
 
-/** El tipo del comprobante viene como número en el payload: 1, 3, 7. */
 const tipoCP = (t: any): string => String(t ?? '').padStart(2, '0')
 
 const esNotaCredito = (c: Comprobante) => Number(c.tipo_comprobante) === 7
 
-/**
- * Una fila del Registro de Ventas, en el orden del TXT (41 campos).
- * El XLSX usa los mismos valores, pero mueve el CUO al inicio y agrega una
- * columna vacía después del periodo, tal como el modelo.
- */
 function armarFila(c: Comprobante, cuo: number, periodo: string) {
     const esNC = esNotaCredito(c)
 
-    // Mismo criterio que los exports de PDF y Excel de esta misma pantalla:
-    // el SP ya devuelve las notas de crédito en negativo, así que el importe va
-    // en las columnas normales —base, IGV, total— y no en las de descuento.
-    // Los anulados exportan en cero, igual que hoy.
     const anulado   = Boolean(c.anulado)
     const biGravada = anulado ? 0 : n2(c.total_gravada)
     const igvIpm    = anulado ? 0 : n2(c.total_igv)
@@ -129,7 +104,7 @@ function armarFila(c: Comprobante, cuo: number, periodo: string) {
         entidad:        ENTIDAD_EMPRESA,
         periodo,
         cuo:            String(cuo),
-        fechaEmision:   c.fecha_emision ?? c.fecha_envio,
+        fechaEmision:   c.fecha_envio ?? c.fecha_emision,
         fechaVcto:      '',
         tipoCP:         tipoCP(c.tipo_comprobante),
         serie:          c.serie ?? '',
@@ -151,7 +126,6 @@ function armarFila(c: Comprobante, cuo: number, periodo: string) {
         icbper:         0,
         otrosTributos:  0,
         total,
-        // El payload trae la moneda como código numérico: 1 = soles, 2 = dólares.
         moneda:         Number(c.moneda) === 2 ? 'USD' : 'PEN',
         tipoCambio:     '',
         fechaDocMod:    esNC ? (c.ref_fecha ?? '') : '',
@@ -173,7 +147,6 @@ export function GenerarSireMenu({ data = [], filters }: GenerarSireMenuProps) {
     const [loadingTxt, setLoadingTxt] = useState(false)
     const [loadingXls, setLoadingXls] = useState(false)
 
-    /** AAAAMM desde el filtro de la pantalla; si no hay, el mes en curso. */
     const periodo = (() => {
         if (filters?.fechaDesde) {
             const [a, m] = filters.fechaDesde.split('-')
@@ -183,9 +156,6 @@ export function GenerarSireMenu({ data = [], filters }: GenerarSireMenuProps) {
         return `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}`
     })()
 
-    // Mismo filtro que usan los exports de esta pantalla: deja fuera los
-    // rechazados por SUNAT y las filas de "correlativo no utilizado", que no
-    // tienen idSunat y no son comprobantes.
     const exportables = data.filter(esExportableARegistroVentas)
 
     const filas = () => exportables.map((c, i) => armarFila(c, i + 1, periodo))
@@ -229,9 +199,7 @@ export function GenerarSireMenu({ data = [], filters }: GenerarSireMenuProps) {
                 f.dam, f.carSunat, '',
             ].join('|'))
 
-            // CRLF: es el salto de línea que espera el PLE.
             const contenido = lineas.join('\r\n') + '\r\n'
-            // LE + RUC + AAAAMM + 00 + código del Registro de Ventas + fijos.
             const nombre = `LE${RUC_EMPRESA}${periodo}00140400021112.txt`
             descargar(new Blob([contenido], { type: 'text/plain;charset=utf-8' }), nombre)
         } catch (error) {
@@ -259,7 +227,6 @@ export function GenerarSireMenu({ data = [], filters }: GenerarSireMenuProps) {
                 ws.addRow([
                     Number(f.cuo), f.ruc, f.entidad, f.periodo, '',
                     fechaSerial(f.fechaEmision), f.fechaVcto,
-                    // Sin el cero a la izquierda: el modelo trae 1 y 7, no 01 ni 07.
                     Number(f.tipoCP), f.serie, f.numero, f.numeroFinal,
                     Number(f.tipoDocIdent), f.nroDocIdent, f.cliente,
                     f.valorExport, f.biGravada, f.dsctoBI, f.igvIpm, f.dsctoIGV,
@@ -269,8 +236,6 @@ export function GenerarSireMenu({ data = [], filters }: GenerarSireMenuProps) {
                     fechaSerial(f.fechaDocMod), f.tipoCPMod, f.serieCPMod, f.nroCPMod,
                     f.idProyecto, f.tipoNota, f.estComp,
                     f.valorFob, f.valorGratuitas,
-                    // El modelo deja Tipo Operación vacío en el Excel, aunque en
-                    // el TXT vaya 101. Se respeta tal cual.
                     '',
                     f.dam, f.carSunat, '',
                 ])
