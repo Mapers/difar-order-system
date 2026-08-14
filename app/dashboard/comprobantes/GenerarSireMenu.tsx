@@ -59,6 +59,12 @@ const n2 = (v: any) => {
 
 const aFechaLocal = (v: string | null | undefined): Date | null => {
     if (!v) return null
+
+    const iso = String(v).match(/^(\d{4})-(\d{2})-(\d{2})/)
+    if (iso) {
+        return new Date(Number(iso[1]), Number(iso[2]) - 1, Number(iso[3]), 12, 0, 0)
+    }
+
     try {
         const d = addHours(parseISO(String(v)), 5)
         return isNaN(d.getTime()) ? null : d
