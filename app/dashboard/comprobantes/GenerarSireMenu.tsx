@@ -11,7 +11,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { format, parseISO } from 'date-fns'
+import { addHours, format, parseISO } from 'date-fns'
 import ExcelJS from 'exceljs'
 import { toast } from '@/app/hooks/useToast'
 import { Comprobante } from '@/app/types/order/order-interface'
@@ -60,20 +60,34 @@ const n2 = (v: any) => {
     return isNaN(x) ? 0 : Number(x.toFixed(2))
 }
 
+/**
+ * El backend serializa las fechas como si fueran UTC, así que en Perú (UTC-5)
+ * el navegador las corre 5 horas atrás y una fecha sin hora —fecha_emision es
+ * un DATE— cae al día anterior. Contrastado contra la propuesta del SIRE de
+ * julio: 296 de 307 comprobantes salían un día antes.
+ *
+ * El +5 es el mismo desfase que ya compensan los exports de PDF y Excel de
+ * esta pantalla con `safeDate(c.fecha_envio, 5)`.
+ */
+const aFechaLocal = (v: string | null | undefined): Date | null => {
+    if (!v) return null
+    try {
+        const d = addHours(parseISO(String(v)), 5)
+        return isNaN(d.getTime()) ? null : d
+    } catch { return null }
+}
+
 /** dd/mm/yyyy, que es como van las fechas en el TXT. */
 const fechaTxt = (v: string | null | undefined): string => {
-    if (!v) return ''
-    try { return format(parseISO(String(v)), 'dd/MM/yyyy') } catch { return '' }
+    const d = aFechaLocal(v)
+    return d ? format(d, 'dd/MM/yyyy') : ''
 }
 
 /** Serial de Excel: los días desde el 30/12/1899, como en el modelo. */
 const fechaSerial = (v: string | null | undefined): number | '' => {
-    if (!v) return ''
-    try {
-        const d = parseISO(String(v))
-        if (isNaN(d.getTime())) return ''
-        return Math.floor((Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) - Date.UTC(1899, 11, 30)) / 86400000)
-    } catch { return '' }
+    const d = aFechaLocal(v)
+    if (!d) return ''
+    return Math.floor((Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) - Date.UTC(1899, 11, 30)) / 86400000)
 }
 
 /** 6 = RUC, 1 = DNI, 0 = sin documento. */
