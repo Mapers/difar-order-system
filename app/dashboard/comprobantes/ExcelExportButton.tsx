@@ -9,6 +9,7 @@ import { Sequential } from '@/app/types/config-types'
 import apiClient from '@/app/api/client'
 import { esExportableARegistroVentas } from '@/app/utils/sunat'
 import ExcelJS from 'exceljs'
+import { DropdownMenuItem } from "@/components/ui/dropdown-menu"
 
 interface FiltersComprobantes {
     fechaDesde: string
@@ -16,6 +17,8 @@ interface FiltersComprobantes {
 }
 
 interface ExcelExportButtonProps {
+    /** Renderiza como opción de un menú desplegable en vez de botón suelto. */
+    asMenuItem?: boolean
     data             : Comprobante[]
     tiposComprobante?: Sequential[]
     filters?         : FiltersComprobantes
@@ -78,6 +81,7 @@ const COLUMNS = [
 ] as const
 
 export function ExcelExportButton({
+    asMenuItem       = false,
     data             = [],
     tiposComprobante = [],
     filters,
@@ -332,6 +336,22 @@ export function ExcelExportButton({
         } finally {
             setLoading(false)
         }
+    }
+
+    if (asMenuItem) {
+        return (
+            <DropdownMenuItem
+                onSelect={(e: Event) => { e.preventDefault(); exportExcel() }}
+                disabled={loading}
+                className="cursor-pointer gap-2"
+            >
+                {loading
+                    ? <Loader2 className="h-4 w-4 animate-spin" />
+                    : <FileSpreadsheet className="h-4 w-4" />
+                }
+                {loading ? 'Generando Excel...' : 'Exportar a Excel'}
+            </DropdownMenuItem>
+        )
     }
 
     return (

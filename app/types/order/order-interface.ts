@@ -36,6 +36,14 @@ export interface Comprobante {
     nc_serie?:   string | null
     nc_numero?:  string | null
     nc_fecha?:   string | null
+    /** Documento que corrige la N.C.; sale del docs_referenciado del raw_request. */
+    ref_serie?:     string | null
+    ref_numero?:    string | null
+    ref_fecha?:     string | null
+    total_exonerada?: string | number | null
+    total_inafecta?:  string | number | null
+    /** Motivo de la N.C.; es el "Tipo de Nota" del Registro de Ventas. */
+    motivo_sunat?:  string | null
     Vendedor?:      string | null
     Representante?: string | null
     Almacen?:       string | null

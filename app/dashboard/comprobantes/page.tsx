@@ -45,7 +45,8 @@ import {toast} from "@/app/hooks/useToast";
 import {CorregirDescripcionModal} from "@/app/dashboard/comprobantes/modals/CorregirDescripcionModal";
 import {ModificarCuotasModal} from "@/app/dashboard/comprobantes/modals/ModificarCuotasModal";
 import {ExportRegistroButton} from "@/app/dashboard/comprobantes/Exportregistrobutton"
-import {ExcelExportButton} from "@/app/dashboard/comprobantes/ExcelExportButton";
+import {ExportComprobantesMenu} from "@/app/dashboard/comprobantes/ExportComprobantesMenu";
+import {GenerarSireMenu} from "@/app/dashboard/comprobantes/GenerarSireMenu";
 import {ResultCounter} from "@/components/comprobantes/ResultCounter";
 import {ValidacionModal} from "@/app/dashboard/comprobantes/modals/ValidacionModal"
 import { ComprobantesDetailModal } from "@/app/dashboard/comprobantes/modals/ComprobantesDetailModal";
@@ -943,15 +944,13 @@ export default function ComprobantesPage() {
                       <FileSearch className="h-4 w-4"/>
                       Validar SUNAT
                     </Button>}
-                    {comprobantes.length > 0 && <ExcelExportButton
+                    {comprobantes.length > 0 && <ExportComprobantesMenu
                         data={comprobantes}
                         tiposComprobante={tiposComprobante}
                         filters={filters}
                     />}
-                    {comprobantes.length > 0 && <ExportRegistroButton
-                        type="comprobantes"
+                    {comprobantes.length > 0 && <GenerarSireMenu
                         data={comprobantes}
-                        tiposComprobante={tiposComprobante}
                         filters={filters}
                     />}
                     <Button onClick={fetchComprobantes} disabled={loadingComprobantes} className="flex items-center gap-2">

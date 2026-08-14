@@ -9,6 +9,7 @@ import { Comprobante, GuiaRemision } from '@/app/types/order/order-interface'
 import { Sequential } from '@/app/types/config-types'
 import { esExportableARegistroVentas } from '@/app/utils/sunat'
 import apiClient from "@/app/api/client";
+import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 
 type ReportType = 'comprobantes' | 'notas' | 'guias'
 
@@ -18,6 +19,8 @@ interface FiltersComprobantes {
 }
 
 interface ExportRegistroButtonProps {
+    /** Renderiza como opción de un menú desplegable en vez de botón suelto. */
+    asMenuItem?: boolean
     type             : ReportType
     data?            : Comprobante[]
     guias?           : GuiaRemision[]
@@ -160,6 +163,7 @@ function splitTextIntoLines(
 }
 
 export function ExportRegistroButton({
+                                         asMenuItem = false,
                                          type,
                                          data             = [],
                                          guias            = [],
@@ -807,6 +811,24 @@ export function ExportRegistroButton({
         } finally {
             setLoading(false)
         }
+    }
+
+    if (asMenuItem) {
+        return (
+            <DropdownMenuItem
+                // preventDefault mantiene el menú abierto mientras genera, para
+                // que el "Generando..." se alcance a ver.
+                onSelect={(e: Event) => { e.preventDefault(); generatePdf() }}
+                disabled={loading}
+                className="cursor-pointer gap-2"
+            >
+                {loading
+                    ? <Loader2 className="h-4 w-4 animate-spin" />
+                    : <FileText className="h-4 w-4" />
+                }
+                {loading ? 'Generando PDF...' : 'Exportar a PDF'}
+            </DropdownMenuItem>
+        )
     }
 
     return (
