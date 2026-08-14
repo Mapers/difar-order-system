@@ -35,6 +35,7 @@ function mapDocumento(row: any): DocumentoAplicable {
         motivo:           row.motivo || '',
         monto:            Number(row.monto) || 0,
         idCtaContable:    row.idCtaContable != null ? Number(row.idCtaContable) : null,
+        codContable:      row.codContable || '',
         codVend:          row.codVend || '',
         fechaEmision:     row.fechaEmision ? String(row.fechaEmision).slice(0, 10) : '',
         fechaVencimiento: row.fechaVencimiento ? String(row.fechaVencimiento).slice(0, 10) : '',
@@ -74,9 +75,6 @@ export function SeleccionarDocumentoModal({ open, modo, fechaAsiento, codCliente
                     setLista((res.data?.data?.data ?? []).map(mapDocumento))
                     setError(null)
                 })
-                // Antes esto era `.catch(() => setLista([]))`: un 404 por ruta
-                // sin registrar o un 500 del SP se veían igual que "no hay
-                // resultados", y no había forma de distinguirlos desde la UI.
                 .catch(err => {
                     setLista([])
                     const status = err?.response?.status

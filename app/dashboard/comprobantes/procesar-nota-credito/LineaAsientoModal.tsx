@@ -63,8 +63,6 @@ export function LineaAsientoModal({
     const set = <K extends keyof AsientoLinea>(field: K, value: AsientoLinea[K]) =>
         setForm(prev => ({ ...prev, [field]: value }))
 
-    // El documento solo entra por el picker: tiene que existir en el kardex de
-    // clientes con su provisión '00', o el SP rechaza el asiento completo.
     const docCargado = !!form.tipDoc && !!form.codCliente
     const esNC       = form.tipDoc === '07'
 
@@ -94,16 +92,12 @@ export function LineaAsientoModal({
             ...prev,
             tipDoc: doc.tipDoc, serie: doc.serie, numero: doc.numero,
             codCliente: doc.codCliente, razonSocial: doc.razonSocial,
-            ctaContable: doc.idCtaContable, codContable: '',
+            ctaContable: doc.idCtaContable, codContable: doc.codContable || '',
             fechaEmision: doc.fechaEmision, fechaVencimiento: doc.fechaVencimiento,
         }))
-        // N.C. al debe, factura/boleta al haber — así lo graba el sistema.
         const esNotaCredito = doc.tipDoc === '07'
         setSide(esNotaCredito ? 'cargo' : 'abono')
 
-        // El saldo del comprobante casi nunca es lo que se aplica: una factura
-        // de 1101.37 recibe la N.C. de 65.50. Se propone lo que falta para
-        // cuadrar, topado por el saldo disponible del documento.
         const porCuadrar = esNotaCredito || linea ? 0 : diferencia
         const sugerido   = porCuadrar > 0 ? Math.min(doc.monto, porCuadrar) : doc.monto
         setImporte(String(Number(sugerido.toFixed(2))))
@@ -142,7 +136,7 @@ export function LineaAsientoModal({
                         <Field className="col-span-4" label="Cta. contable">
                             <Input
                                 className="bg-muted font-mono text-muted-foreground"
-                                value={form.ctaContable ?? ''}
+                                value={form.codContable || (form.ctaContable ?? '')}
                                 readOnly
                                 placeholder="del cliente"
                             />

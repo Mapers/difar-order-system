@@ -37,22 +37,16 @@ export interface DocumentoAplicable {
     motivo:           string
     monto:            number
     idCtaContable:    number | null
+    codContable:      string
     codVend:          string
     fechaEmision:     string
     fechaVencimiento: string
 }
 
-// El asiento siempre se graba con este tipo de amortización — el SP lo fija
-// en '999' ("Aplicacion nota de credito"). Aquí solo se muestra.
 export const AMO_ASIENTO_LABEL = "APLICACIÓN DE NOTA DE CRÉDITO"
 
-// `diario encabezado.Glosa Registro` es varchar(50) y
-// `diario centralizacion.Concepto` es varchar(30): el SP trunca la glosa
-// a 30 al copiarla al concepto de cada línea.
 export const GLOSA_MAX     = 50
 export const CONCEPTO_MAX  = 30
-
-// ─── Combos (respuesta cruda de los SP sp_ws_combo_*) ───
 
 export interface ComboGlosaRow {
     Glosa: string

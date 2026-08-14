@@ -4,7 +4,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { FileText, Pencil, Trash2 } from "lucide-react"
-import { AMO_ASIENTO_LABEL, AsientoLinea } from "@/app/types/procesar-nota-credito-types"
+import { AMO_ASIENTO_LABEL, AsientoLinea, ComboCentroCostosRow } from "@/app/types/procesar-nota-credito-types"
 import { cn } from "@/lib/utils"
 
 const fmt = (n: number) => n.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
@@ -15,13 +15,16 @@ interface DetalleAsientoTableProps {
     totalAbono:   number
     diferencia:   number
     cuadrado:     boolean
+    centrosCosto: ComboCentroCostosRow[]
     onEditar:     (index: number) => void
     onEliminar:   (index: number) => void
 }
 
 export function DetalleAsientoTable({
-    lineas, totalCargo, totalAbono, diferencia, cuadrado, onEditar, onEliminar,
+    lineas, totalCargo, totalAbono, diferencia, cuadrado, centrosCosto, onEditar, onEliminar,
 }: DetalleAsientoTableProps) {
+    const descCentroCostos = (cod: string) =>
+        centrosCosto.find(c => c.CodCentroCostos === cod)?.Descripcion || cod
     return (
         <div>
             {lineas.length === 0 ? (
@@ -66,8 +69,8 @@ export function DetalleAsientoTable({
                                 <TableCell className={cn("text-right font-mono font-semibold", l.abono > 0 ? "text-red-700" : "text-muted-foreground")}>
                                     {fmt(l.abono)}
                                 </TableCell>
-                                <TableCell className="whitespace-nowrap font-mono text-xs">{l.ctaContable ?? '—'}</TableCell>
-                                <TableCell className="whitespace-nowrap text-xs text-muted-foreground">{l.centroCostos || '—'}</TableCell>
+                                <TableCell className="whitespace-nowrap font-mono text-xs">{l.codContable || l.ctaContable || '—'}</TableCell>
+                                <TableCell className="whitespace-nowrap text-xs text-muted-foreground">{l.centroCostos ? descCentroCostos(l.centroCostos) : '—'}</TableCell>
                                 <TableCell className="whitespace-nowrap text-xs text-muted-foreground">
                                     {AMO_ASIENTO_LABEL}
                                     <br />

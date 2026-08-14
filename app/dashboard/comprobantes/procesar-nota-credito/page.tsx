@@ -99,6 +99,7 @@ export default function ProcesarNotaCreditoPage() {
                     totalAbono={hook.totalAbono}
                     diferencia={hook.diferencia}
                     cuadrado={hook.cuadrado}
+                    centrosCosto={hook.combos.centrosCosto}
                     onEditar={abrirEditar}
                     onEliminar={hook.eliminarLinea}
                 />
