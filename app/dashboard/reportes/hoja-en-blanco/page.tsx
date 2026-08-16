@@ -9,7 +9,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
 import { MonthYearPicker } from "@/components/ui/month-year-picker"
 import {
-    AlertTriangle, Calendar as CalendarIcon, Check, ChevronDown, ChevronRight, FileText,
+    Calendar as CalendarIcon, Check, ChevronDown, FileText,
     Loader2, Package, Search, User, Users, X,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -18,73 +18,47 @@ import { useAuth } from "@/context/authContext"
 import apiClient from "@/app/api/client"
 import { hojaEnBlancoRequest, searchClientsRequest } from "@/app/api/reports"
 
-interface ProductoHB {
-    Codigo_Art:   string
-    NombreItem:   string
-    AbrevUnidMed: string
-    Cantidad:     number
-    Monto:        number
-    Costo:        number
-    Utilidad:     number
-    /** El lote despachado no tiene ningún ingreso costeado: el Costo es 0 por falta de dato. */
-    SinCosto:     boolean
-}
-
+/**
+ * Una fila por documento 0800, con las columnas de la exportación a PDF
+ * de Gestión de Comprobantes → Facturas y Boletas (Exportregistrobutton,
+ * "Registro Ventas"). El 0800 no tiene comprobante: F.Vcto. va en "—" y
+ * el bloque "Comprobante Original" no aplica.
+ */
 interface DocumentoHB {
-    Clave:      string
-    Serie:      string
-    Numero:     number
-    Fecha:      string
-    CodCliente: string
-    Cliente:    string
-    CodAlmacen: number
-    Almacen:    string
-    SinCosto:   boolean
-    TotalCantidad: number
-    TotalMonto:    number
-    TotalCosto:    number
-    TotalUtilidad: number
-    productos:  ProductoHB[]
-}
-
-interface VendedorHB {
-    CodVendedor: string
-    Vendedor:    string
-    TotalDocumentos: number
-    TotalCantidad:   number
-    TotalMonto:      number
-    TotalCosto:      number
-    TotalUtilidad:   number
-    documentos:  DocumentoHB[]
+    Fecha:         string
+    Doc:           string
+    Serie:         string
+    Numero:        number | string
+    CodCliente:    string
+    Cliente:       string
+    DI:            string
+    NroDI:         string
+    CodVendedor:   string
+    Vendedor:      string
+    Representante: string | null
+    NoGravado:     number
+    BImponible:    number
+    IGV:           number
+    Total:         number
 }
 
 interface HojaEnBlancoData {
     Anio: string
     Mes:  string
     TotalDocumentos: number
-    TotalCantidad:   number
-    TotalMonto:      number
-    TotalCosto:      number
-    TotalUtilidad:   number
-    Vendedores:      VendedorHB[]
+    TotalNoGravado:  number
+    TotalBImponible: number
+    TotalIGV:        number
+    TotalTotal:      number
+    Documentos:      DocumentoHB[]
 }
 
 const fmt     = (n: number) => n.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-const fmtCant = (n: number) => n.toLocaleString('es-PE', { maximumFractionDigits: 2 })
 const fmtDate = (d: string) => d ? String(d).slice(0, 10).split('-').reverse().join('/') : '—'
 
-/** Mismos acentos que Ventas Totales, con su variante para tema oscuro. */
-const ACENTO = {
-    monto:    'text-blue-700 dark:text-blue-400',
-    costo:    'text-red-700 dark:text-red-400',
-    utilidad: 'text-green-700 dark:text-green-400',
-} as const
-
-const TINTE = {
-    monto:    'bg-blue-50/30 dark:bg-blue-950/20',
-    costo:    'bg-red-50/30 dark:bg-red-950/20',
-    utilidad: 'bg-green-50/30 dark:bg-green-950/20',
-} as const
+/** Mismo acento azul de montos que Ventas Totales, con variante oscura. */
+const ACENTO_MONTO = 'text-blue-700 dark:text-blue-400'
+const TINTE_MONTO  = 'bg-blue-50/30 dark:bg-blue-950/20'
 
 export default function HojaEnBlancoPage() {
     const auth = useAuth()
@@ -108,8 +82,6 @@ export default function HojaEnBlancoPage() {
     const [data, setData]       = useState<HojaEnBlancoData | null>(null)
     const [loading, setLoading] = useState(false)
     const [buscado, setBuscado] = useState(false)
-    const [vendsAbiertos, setVendsAbiertos] = useState<Set<string>>(new Set())
-    const [docsAbiertos, setDocsAbiertos]   = useState<Set<string>>(new Set())
 
     useEffect(() => {
         if (!isManagerOrAdmin) return
@@ -145,20 +117,6 @@ export default function HojaEnBlancoPage() {
     const toggleVend = (cod: string) =>
         setSelectedVends(prev => prev.includes(cod) ? prev.filter(x => x !== cod) : [...prev, cod])
 
-    const toggleVendAbierto = (cod: string) =>
-        setVendsAbiertos(prev => {
-            const next = new Set(prev)
-            next.has(cod) ? next.delete(cod) : next.add(cod)
-            return next
-        })
-
-    const toggleDocAbierto = (clave: string) =>
-        setDocsAbiertos(prev => {
-            const next = new Set(prev)
-            next.has(clave) ? next.delete(clave) : next.add(clave)
-            return next
-        })
-
     async function handleBuscar() {
         // Alcance por rol: un vendedor solo ve lo suyo y un representante lo
         // de sus vendedores, aunque no exista el selector en pantalla.
@@ -182,10 +140,6 @@ export default function HojaEnBlancoPage() {
             })
             const payload: HojaEnBlancoData | null = res.data?.data ?? null
             setData(payload)
-            // Vendedores abiertos, documentos cerrados: el resumen por
-            // documento se ve de una y el detalle se pide.
-            setVendsAbiertos(new Set(payload?.Vendedores.map(v => v.CodVendedor) ?? []))
-            setDocsAbiertos(new Set())
         } catch (error: any) {
             setData(null)
             toast({
@@ -352,7 +306,7 @@ export default function HojaEnBlancoPage() {
                             <FileText className="h-10 w-10 opacity-40" />
                             <p className="text-sm">Elige un periodo y pulsa <b>Buscar</b> para generar el reporte.</p>
                         </div>
-                    ) : !data || data.Vendedores.length === 0 ? (
+                    ) : !data || data.Documentos.length === 0 ? (
                         <div className="flex flex-col items-center gap-2 py-16 text-center text-muted-foreground">
                             <Package className="h-10 w-10 opacity-40" />
                             <p className="text-sm">No hay despachos de la serie 0800 para los filtros seleccionados.</p>
@@ -360,194 +314,99 @@ export default function HojaEnBlancoPage() {
                     ) : (
                         <div className="space-y-4">
                             {/* Totales */}
-                            <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
-                                <TotalCard label="Documentos"     valor={String(data.TotalDocumentos)} />
-                                <TotalCard label="Cantidad"       valor={fmtCant(data.TotalCantidad)} />
-                                <TotalCard label="Monto (sin IGV)" valor={`S/ ${fmt(data.TotalMonto)}`}    acento={ACENTO.monto} />
-                                <TotalCard label="Costo"          valor={`S/ ${fmt(data.TotalCosto)}`}    acento={ACENTO.costo} />
-                                <TotalCard label="Utilidad"       valor={`S/ ${fmt(data.TotalUtilidad)}`} acento={data.TotalUtilidad < 0 ? ACENTO.costo : ACENTO.utilidad} />
+                            <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+                                <TotalCard label="Documentos"  valor={String(data.TotalDocumentos)} />
+                                <TotalCard label="B.Imponible" valor={`S/ ${fmt(data.TotalBImponible)}`} acento={ACENTO_MONTO} />
+                                <TotalCard label="IGV (18%)"   valor={`S/ ${fmt(data.TotalIGV)}`}        acento={ACENTO_MONTO} />
+                                <TotalCard label="Total"       valor={`S/ ${fmt(data.TotalTotal)}`}      acento={ACENTO_MONTO} />
                             </div>
 
-                            {data.Vendedores.map(vend => {
-                                const vendAbierto = vendsAbiertos.has(vend.CodVendedor)
-                                return (
-                                    <div key={vend.CodVendedor} className="overflow-hidden rounded-lg border border-border bg-background shadow-sm">
-                                        <button
-                                            type="button"
-                                            onClick={() => toggleVendAbierto(vend.CodVendedor)}
-                                            className="flex w-full items-center gap-2 bg-slate-800 p-3 text-left text-white transition-colors hover:bg-slate-700"
-                                        >
-                                            {vendAbierto
-                                                ? <ChevronDown className="h-4 w-4 shrink-0 text-slate-300" />
-                                                : <ChevronRight className="h-4 w-4 shrink-0 text-slate-300" />}
-                                            <span className="min-w-0 flex-1 text-sm font-bold md:text-base">
-                                                {vend.CodVendedor} · {vend.Vendedor}
-                                            </span>
-                                            <span className="w-fit whitespace-nowrap rounded-full border border-slate-600 bg-slate-700 px-3 py-1 text-xs font-medium">
-                                                {vend.TotalDocumentos} doc{vend.TotalDocumentos === 1 ? '' : 's'}
-                                            </span>
-                                        </button>
+                            {/* Escritorio: mismas columnas que el PDF de Facturas y Boletas */}
+                            <div className="hidden overflow-x-auto rounded-lg border border-border bg-background shadow-sm md:block">
+                                <table className="w-full text-left text-xs text-muted-foreground">
+                                    <thead className="border-b border-border bg-muted text-[10px] uppercase md:text-xs">
+                                        <tr>
+                                            <th className="px-3 py-2.5 font-bold">F.Emision</th>
+                                            <th className="px-3 py-2.5 font-bold">Doc</th>
+                                            <th className="px-3 py-2.5 font-bold">Serie</th>
+                                            <th className="px-3 py-2.5 font-bold">NroDesde</th>
+                                            <th className="px-3 py-2.5 font-bold">F.Vcto.</th>
+                                            <th className="px-3 py-2.5 font-bold">Cliente</th>
+                                            <th className="px-3 py-2.5 font-bold">Vendedor</th>
+                                            <th className="px-3 py-2.5 font-bold">Repres</th>
+                                            <th className="px-3 py-2.5 text-center font-bold">D.I.</th>
+                                            <th className="px-3 py-2.5 font-bold">Nº D.I.</th>
+                                            <th className="px-3 py-2.5 text-center font-bold">T/C</th>
+                                            <th className="px-3 py-2.5 text-right font-bold">No Grabado</th>
+                                            <th className={cn("px-3 py-2.5 text-right font-bold", ACENTO_MONTO)}>B.Imponible</th>
+                                            <th className={cn("px-3 py-2.5 text-right font-bold", ACENTO_MONTO)}>IGV</th>
+                                            <th className={cn("px-3 py-2.5 text-right font-bold", ACENTO_MONTO)}>Total</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {data.Documentos.map(doc => (
+                                            <tr key={`${doc.Serie}-${doc.Numero}-${doc.Fecha}-${doc.CodCliente}`} className="border-b border-border transition-colors last:border-0 hover:bg-muted">
+                                                <td className="px-3 py-2 font-mono">{fmtDate(doc.Fecha)}</td>
+                                                <td className="px-3 py-2 font-mono">{doc.Doc}</td>
+                                                <td className="px-3 py-2 font-mono">{doc.Serie}</td>
+                                                <td className="px-3 py-2 font-mono font-bold text-foreground">{doc.Numero}</td>
+                                                <td className="px-3 py-2 text-center">—</td>
+                                                <td className="px-3 py-2 font-medium text-foreground">{doc.Cliente}</td>
+                                                <td className="px-3 py-2">{doc.Vendedor}</td>
+                                                <td className="px-3 py-2">{doc.Representante || '—'}</td>
+                                                <td className="px-3 py-2 text-center">{doc.DI || '—'}</td>
+                                                <td className="px-3 py-2 font-mono">{doc.NroDI}</td>
+                                                <td className="px-3 py-2 text-center">S/</td>
+                                                <td className="px-3 py-2 text-right font-mono">{fmt(doc.NoGravado)}</td>
+                                                <td className={cn("px-3 py-2 text-right font-mono font-bold", ACENTO_MONTO, TINTE_MONTO)}>{fmt(doc.BImponible)}</td>
+                                                <td className="px-3 py-2 text-right font-mono">{fmt(doc.IGV)}</td>
+                                                <td className={cn("px-3 py-2 text-right font-mono font-bold", ACENTO_MONTO)}>{fmt(doc.Total)}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                    <tfoot>
+                                        <tr className="border-t-2 border-border bg-muted font-bold text-foreground">
+                                            <td className="px-3 py-2.5" colSpan={11}>TOTALES · {data.TotalDocumentos} documento{data.TotalDocumentos === 1 ? '' : 's'}</td>
+                                            <td className="px-3 py-2.5 text-right font-mono">{fmt(data.TotalNoGravado)}</td>
+                                            <td className={cn("px-3 py-2.5 text-right font-mono", ACENTO_MONTO)}>{fmt(data.TotalBImponible)}</td>
+                                            <td className={cn("px-3 py-2.5 text-right font-mono", ACENTO_MONTO)}>{fmt(data.TotalIGV)}</td>
+                                            <td className={cn("px-3 py-2.5 text-right font-mono", ACENTO_MONTO)}>{fmt(data.TotalTotal)}</td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
 
-                                        <div className="grid grid-cols-2 gap-x-4 gap-y-1 border-b border-border bg-muted/50 px-4 py-2.5 md:grid-cols-4">
-                                            <Resumen label="Cantidad"        valor={fmtCant(vend.TotalCantidad)} />
-                                            <Resumen label="Monto (sin IGV)" valor={fmt(vend.TotalMonto)}    acento={ACENTO.monto} />
-                                            <Resumen label="Costo"           valor={fmt(vend.TotalCosto)}    acento={ACENTO.costo} />
-                                            <Resumen label="Utilidad"        valor={fmt(vend.TotalUtilidad)} acento={vend.TotalUtilidad < 0 ? ACENTO.costo : ACENTO.utilidad} />
+                            {/* Móvil */}
+                            <div className="grid grid-cols-1 gap-3 md:hidden">
+                                {data.Documentos.map(doc => (
+                                    <div key={`${doc.Serie}-${doc.Numero}-${doc.Fecha}-${doc.CodCliente}`} className="flex flex-col gap-2 rounded-lg border border-border bg-background p-4 shadow-sm">
+                                        <div className="flex flex-wrap items-center gap-2">
+                                            <span className="font-mono text-sm font-bold text-foreground">{doc.Serie}-{doc.Numero}</span>
+                                            <Badge variant="outline" className="text-[10px]">{fmtDate(doc.Fecha)}</Badge>
+                                            <Badge variant="outline" className="border-slate-300 text-[10px] font-semibold text-slate-600 dark:border-slate-700 dark:text-slate-400">
+                                                Sin comprobante
+                                            </Badge>
                                         </div>
-
-                                        {vendAbierto && (
-                                            <div className="divide-y divide-border">
-                                                {vend.documentos.map(doc => {
-                                                    const docAbierto = docsAbiertos.has(doc.Clave)
-                                                    return (
-                                                        <div key={doc.Clave}>
-                                                            {/* Cabecera del documento */}
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => toggleDocAbierto(doc.Clave)}
-                                                                className="flex w-full flex-col gap-2 p-3 text-left transition-colors hover:bg-muted md:flex-row md:items-center"
-                                                            >
-                                                                <div className="flex min-w-0 flex-1 items-start gap-2">
-                                                                    {docAbierto
-                                                                        ? <ChevronDown className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
-                                                                        : <ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />}
-                                                                    <div className="min-w-0">
-                                                                        <div className="flex flex-wrap items-center gap-2">
-                                                                            <span className="font-mono text-sm font-bold text-foreground">
-                                                                                {doc.Serie}-{doc.Numero}
-                                                                            </span>
-                                                                            {/* Fijo, y verificado: la serie 0800 no llega a `kardex clientes`
-                                                                                ni se regulariza después con factura, así que no existe
-                                                                                estado de cobranza que consultar. Antes decía "Cancelado",
-                                                                                que era una afirmación sin respaldo. */}
-                                                                            <Badge variant="outline" className="border-slate-300 text-[10px] font-semibold text-slate-600 dark:border-slate-700 dark:text-slate-400">
-                                                                                Sin comprobante
-                                                                            </Badge>
-                                                                            <Badge variant="outline" className="text-[10px]">{fmtDate(doc.Fecha)}</Badge>
-                                                                            <Badge variant="secondary" className="text-[10px]">{doc.Almacen}</Badge>
-                                                                            {doc.SinCosto && (
-                                                                                <Badge className="border border-amber-200 bg-amber-50 text-[10px] font-semibold text-amber-700 hover:bg-amber-50 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-400 dark:hover:bg-amber-950/40">
-                                                                                    <AlertTriangle className="mr-1 h-3 w-3 shrink-0" /> Costo incompleto
-                                                                                </Badge>
-                                                                            )}
-                                                                        </div>
-                                                                        <div className="mt-0.5 truncate text-xs text-muted-foreground">
-                                                                            {doc.CodCliente} · {doc.Cliente}
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-                                                                <div className="grid shrink-0 grid-cols-2 gap-x-4 gap-y-1 pl-6 md:flex md:gap-5 md:pl-0">
-                                                                    <Resumen label="Cant."          valor={fmtCant(doc.TotalCantidad)} compacto />
-                                                                    <Resumen label="Monto (s/IGV)"  valor={fmt(doc.TotalMonto)}    acento={ACENTO.monto} compacto />
-                                                                    <Resumen label="Costo"          valor={fmt(doc.TotalCosto)}    acento={ACENTO.costo} compacto />
-                                                                    <Resumen label="Util."          valor={fmt(doc.TotalUtilidad)} acento={doc.TotalUtilidad < 0 ? ACENTO.costo : ACENTO.utilidad} compacto />
-                                                                </div>
-                                                            </button>
-
-                                                            {docAbierto && (
-                                                                <>
-                                                                    {/* Escritorio */}
-                                                                    <div className="hidden overflow-x-auto border-t border-border md:block">
-                                                                        <table className="w-full text-left text-xs text-muted-foreground">
-                                                                            <thead className="border-b border-border bg-muted text-[10px] uppercase md:text-xs">
-                                                                                <tr>
-                                                                                    <th className="px-3 py-2.5 font-bold">Producto</th>
-                                                                                    <th className="px-3 py-2.5 font-bold">Und.</th>
-                                                                                    <th className="px-3 py-2.5 text-right font-bold">Cantidad</th>
-                                                                                    <th className={cn("px-3 py-2.5 text-right font-bold", ACENTO.monto)}>Monto (sin IGV)</th>
-                                                                                    <th className={cn("px-3 py-2.5 text-right font-bold", ACENTO.costo)}>Costo</th>
-                                                                                    <th className={cn("px-3 py-2.5 text-right font-bold", ACENTO.utilidad)}>Utilidad</th>
-                                                                                </tr>
-                                                                            </thead>
-                                                                            <tbody>
-                                                                                {doc.productos.map(p => (
-                                                                                    <tr key={p.Codigo_Art} className="border-b border-border transition-colors last:border-0 hover:bg-muted">
-                                                                                        <td className="px-3 py-2 font-medium text-foreground">
-                                                                                            {p.Codigo_Art} · {p.NombreItem}
-                                                                                        </td>
-                                                                                        <td className="px-3 py-2">{p.AbrevUnidMed}</td>
-                                                                                        <td className="px-3 py-2 text-right font-mono">{fmtCant(p.Cantidad)}</td>
-                                                                                        <td className={cn("px-3 py-2 text-right font-mono font-bold", ACENTO.monto, TINTE.monto)}>{fmt(p.Monto)}</td>
-                                                                                        <td className="px-3 py-2 text-right font-mono">
-                                                                                            {p.SinCosto ? (
-                                                                                                <span className="inline-flex items-center gap-1 text-amber-600 dark:text-amber-500" title="El lote despachado no tiene ningún ingreso costeado">
-                                                                                                    <AlertTriangle className="h-3 w-3 shrink-0" /> s/costo
-                                                                                                </span>
-                                                                                            ) : fmt(p.Costo)}
-                                                                                        </td>
-                                                                                        <td className={cn(
-                                                                                            "px-3 py-2 text-right font-mono font-bold",
-                                                                                            p.SinCosto
-                                                                                                ? "text-muted-foreground"
-                                                                                                : cn(p.Utilidad < 0 ? ACENTO.costo : ACENTO.utilidad,
-                                                                                                     p.Utilidad < 0 ? TINTE.costo : TINTE.utilidad)
-                                                                                        )}>
-                                                                                            {p.SinCosto ? '—' : fmt(p.Utilidad)}
-                                                                                        </td>
-                                                                                    </tr>
-                                                                                ))}
-                                                                            </tbody>
-                                                                        </table>
-                                                                    </div>
-
-                                                                    {/* Móvil */}
-                                                                    <div className="grid grid-cols-1 gap-3 border-t border-border bg-muted p-3 md:hidden">
-                                                                        {doc.productos.map(p => (
-                                                                            <div key={p.Codigo_Art} className="flex flex-col gap-2 rounded-lg border border-border bg-background p-4 shadow-sm">
-                                                                                <span className="pr-2 text-sm font-bold leading-tight text-foreground">
-                                                                                    {p.Codigo_Art} · {p.NombreItem}
-                                                                                </span>
-                                                                                <div className="mt-1 border-t border-border pt-2">
-                                                                                    <FilaMovil label={`Cantidad (${p.AbrevUnidMed})`} valor={fmtCant(p.Cantidad)} />
-                                                                                    <FilaMovil label="Monto (sin IGV)" valor={`S/ ${fmt(p.Monto)}`} acento={ACENTO.monto} />
-                                                                                    <FilaMovil label="Costo"    valor={p.SinCosto ? 'Sin costear' : `S/ ${fmt(p.Costo)}`}
-                                                                                               acento={p.SinCosto ? 'text-amber-600 dark:text-amber-500' : undefined} />
-                                                                                    <FilaMovil label="Utilidad" valor={p.SinCosto ? '—' : `S/ ${fmt(p.Utilidad)}`}
-                                                                                               acento={p.SinCosto
-                                                                                                   ? 'text-muted-foreground'
-                                                                                                   : (p.Utilidad < 0 ? ACENTO.costo : ACENTO.utilidad)} />
-                                                                                </div>
-                                                                            </div>
-                                                                        ))}
-                                                                    </div>
-                                                                </>
-                                                            )}
-                                                        </div>
-                                                    )
-                                                })}
-                                            </div>
-                                        )}
+                                        <div className="truncate text-xs text-muted-foreground">
+                                            {doc.DI ? `${doc.DI} ${doc.NroDI}` : doc.NroDI} · {doc.Cliente}
+                                        </div>
+                                        <div className="mt-1 border-t border-border pt-2">
+                                            <FilaMovil label="Vendedor"    valor={doc.Vendedor} />
+                                            <FilaMovil label="Repres."     valor={doc.Representante || '—'} />
+                                            <FilaMovil label="B.Imponible" valor={`S/ ${fmt(doc.BImponible)}`} acento={ACENTO_MONTO} />
+                                            <FilaMovil label="IGV (18%)"   valor={`S/ ${fmt(doc.IGV)}`} />
+                                            <FilaMovil label="Total"       valor={`S/ ${fmt(doc.Total)}`} acento={ACENTO_MONTO} />
+                                        </div>
                                     </div>
-                                )
-                            })}
-
-                            {/* Total general */}
-                            <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 shadow-sm dark:border-emerald-900/50 dark:bg-emerald-950/30">
-                                <div className="mb-2 text-[11px] font-bold uppercase tracking-wide text-emerald-700 dark:text-emerald-400">
-                                    Total general · {data.TotalDocumentos} documento{data.TotalDocumentos === 1 ? '' : 's'}
-                                </div>
-                                <div className="grid grid-cols-2 gap-x-4 gap-y-1 md:grid-cols-4">
-                                    <Resumen label="Cantidad"        valor={fmtCant(data.TotalCantidad)} />
-                                    <Resumen label="Monto (sin IGV)" valor={fmt(data.TotalMonto)}    acento={ACENTO.monto} />
-                                    <Resumen label="Costo"           valor={fmt(data.TotalCosto)}    acento={ACENTO.costo} />
-                                    <Resumen label="Utilidad"        valor={fmt(data.TotalUtilidad)} acento={data.TotalUtilidad < 0 ? ACENTO.costo : ACENTO.utilidad} />
-                                </div>
+                                ))}
                             </div>
 
                             {/* De dónde salen los números, para que nadie los compare mal. */}
                             <div className="rounded-lg border border-border bg-background p-3 text-[11px] leading-relaxed text-muted-foreground">
                                 <p>
-                                    <b className="text-foreground">Monto sin IGV.</b> La serie 0800 registra la base imponible,
-                                    a diferencia de lo facturado, que se registra con impuesto incluido. No es comparable de
-                                    frente con Ventas Totales.
-                                </p>
-                                <p className="mt-1">
-                                    <b className="text-foreground">Costo del lote.</b> El costo se calcula con el costo real de
-                                    ingreso del lote despachado, no con el del kardex de salida. Las líneas marcadas
-                                    <span className="mx-1 inline-flex items-center gap-1 align-middle text-amber-600 dark:text-amber-500">
-                                        <AlertTriangle className="h-3 w-3 shrink-0" /> s/costo
-                                    </span>
-                                    corresponden a lotes sin ningún ingreso costeado y no suman a la utilidad.
+                                    <b className="text-foreground">IGV calculado.</b> La serie 0800 no emite comprobante y registra
+                                    la base imponible sin impuesto: el IGV se calcula al 18% y el Total es base + IGV. F.Vcto. y
+                                    No Grabado no existen para esta serie.
                                 </p>
                             </div>
                         </div>
@@ -563,21 +422,6 @@ function FilaMovil({ label, valor, acento }: { label: string; valor: string; ace
         <div className="flex items-center justify-between gap-2 py-0.5">
             <span className="text-[11px] font-bold uppercase text-muted-foreground">{label}</span>
             <span className={cn("font-mono text-sm font-semibold text-foreground", acento)}>{valor}</span>
-        </div>
-    )
-}
-
-function Resumen({ label, valor, acento, compacto }: {
-    label: string; valor: string; acento?: string; compacto?: boolean
-}) {
-    return (
-        <div className={cn(
-            "flex items-baseline justify-between gap-2",
-            !compacto && "md:flex-col md:items-start md:gap-0",
-            compacto && "md:flex-col md:items-end md:gap-0"
-        )}>
-            <span className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">{label}</span>
-            <span className={cn("font-mono text-sm font-bold text-foreground", acento)}>{valor}</span>
         </div>
     )
 }
