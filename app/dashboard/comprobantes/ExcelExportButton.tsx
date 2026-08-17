@@ -17,7 +17,6 @@ interface FiltersComprobantes {
 }
 
 interface ExcelExportButtonProps {
-    /** Renderiza como opción de un menú desplegable en vez de botón suelto. */
     asMenuItem?: boolean
     data             : Comprobante[]
     tiposComprobante?: Sequential[]
