@@ -264,7 +264,7 @@ export function MisPedidosDetailModal({ open, onOpenChange, nroPedido }: MisPedi
 
   const fakeCurrency = { value: pedido?.monedaPedido || 'PEN' } as any
 
-  const canAuthorize = auth.user?.idRol !== 1
+  const canAuthorize = auth.isAdmin()
     && pedido?.por_autorizar === 'S'
     && !pedido?.is_autorizado
 
