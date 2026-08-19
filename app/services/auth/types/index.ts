@@ -31,6 +31,7 @@ export interface JwtPayload {
         vendedores: VendedorRelacionado[];
         vendedorRelacion?: VendedorRelacionUnico | null;
         edicion_pedido: boolean;
+        recibo_cliente: boolean;
         simuladoPorRepresentante?: number | string | null;
     },
     menus: Menu[]
@@ -73,7 +74,7 @@ export interface User {
     vendedores: VendedorRelacionado[];
     vendedorRelacion?: VendedorRelacionUnico | null;
     edicion_pedido: boolean;
-    /** idRepresentante de origen cuando es un vendedor simulado por un representante */
+    recibo_cliente: boolean;
     simuladoPorRepresentante?: number | string | null;
 }
 

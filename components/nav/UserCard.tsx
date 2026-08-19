@@ -18,7 +18,7 @@ export function UserCard() {
   // Modo activo según el token
   const esVendedorSimulado = !!user?.simuladoPorRepresentante;
   const esRepresentante = !!user?.idRepresentante;
-  // Solo se puede alternar si hay contraparte
+
   const puedeAlternar =
     (esRepresentante && !!user?.vendedorRelacion?.idVendedor) || esVendedorSimulado;
 

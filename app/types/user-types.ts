@@ -8,6 +8,7 @@ export interface Usuario {
     telefono: string;
     activo: boolean;
     edicion_pedido: boolean;
+    recibo_cliente: boolean;
     id_rol: number;
     nombre_rol: string;
     tipo: string;

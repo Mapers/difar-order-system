@@ -50,6 +50,7 @@ export const decodeToken = (token: string | null | undefined): TokenDecodeResult
             idVendedor: decoded.usuario.idVendedor,
             idUsuarioWeb: decoded.usuario.idUsuarioWeb,
             edicion_pedido: decoded.usuario.edicion_pedido,
+            recibo_cliente: decoded.usuario.recibo_cliente ?? false,
             simuladoPorRepresentante: decoded.usuario.simuladoPorRepresentante ?? null
         }
         return {

@@ -24,7 +24,7 @@ export interface AppConfig {
 
 export type TipoFiltroWhatsapp = 'TODOS' | 'ZONA' | 'CLIENTE'
 
-export type ModuloWhatsapp = 'VENTAS' | 'VENCIMIENTOS'
+export type ModuloWhatsapp = 'VENTAS' | 'VENCIMIENTOS' | 'RECIBO'
 
 export interface WhatsappConfig {
     id_whatsapp: number

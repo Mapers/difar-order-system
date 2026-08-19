@@ -51,6 +51,7 @@ export default function UsuariosPage() {
   const [telefono, setTelefono] = useState('')
   const [activo, setActivo] = useState(true)
   const [edicionPedido, setEdicionPedido] = useState(false)
+  const [reciboCliente, setReciboCliente] = useState(false)
   const { toast } = useToast()
 
   const [activeTab, setActiveTab] = useState('usuarios-web')
@@ -157,6 +158,7 @@ export default function UsuariosPage() {
         id_rol: parseInt(selectedRol),
         activo,
         edicion_pedido: edicionPedido,
+        recibo_cliente: reciboCliente,
         dni,
         telefono,
         nombre_completo: selectedVendedor?.nombre_completo || selectedUsuarioNoWeb?.NombreUsuarios || '',
@@ -181,6 +183,7 @@ export default function UsuariosPage() {
       setUserType('')
       setActivo(true)
       setEdicionPedido(false)
+      setReciboCliente(false)
 
       fetchAllData()
     } catch (error: any) {
@@ -200,6 +203,7 @@ export default function UsuariosPage() {
         id_rol: parseInt(selectedRol),
         activo,
         edicion_pedido: edicionPedido,
+        recibo_cliente: reciboCliente,
         dni: selectedUsuario.dni,
         telefono: selectedUsuario.telefono
       })
@@ -428,6 +432,7 @@ export default function UsuariosPage() {
                       setSelectedRol(usuario.id_rol.toString())
                       setActivo(usuario.activo)
                       setEdicionPedido(usuario.edicion_pedido ?? false)
+                      setReciboCliente(usuario.recibo_cliente ?? false)
                     }}
                 >
                   <Edit className="h-4 w-4 mr-2" />
@@ -514,6 +519,16 @@ export default function UsuariosPage() {
                         type="checkbox"
                         checked={edicionPedido}
                         onChange={(e) => setEdicionPedido(e.target.checked)}
+                        className="h-4 w-4 rounded border-border text-blue-600 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <label className="text-sm font-medium">Recibo Cuenta Cliente</label>
+                    <input
+                        type="checkbox"
+                        checked={reciboCliente}
+                        onChange={(e) => setReciboCliente(e.target.checked)}
                         className="h-4 w-4 rounded border-border text-blue-600 focus:ring-blue-500"
                     />
                   </div>
@@ -955,6 +970,16 @@ export default function UsuariosPage() {
                         className="h-4 w-4 rounded border-border text-blue-600 focus:ring-blue-500"
                     />
                   </div>
+
+                  <div className="flex items-center space-x-2">
+                    <label className="text-sm font-medium">Recibo Cuenta Cliente</label>
+                    <input
+                        type="checkbox"
+                        checked={reciboCliente}
+                        onChange={(e) => setReciboCliente(e.target.checked)}
+                        className="h-4 w-4 rounded border-border text-blue-600 focus:ring-blue-500"
+                    />
+                  </div>
                 </div>
 
                 <div className="flex justify-end gap-2 mt-4">
@@ -1072,6 +1097,7 @@ export default function UsuariosPage() {
                                     setSelectedRol(usuario.id_rol.toString())
                                     setActivo(usuario.activo)
                                     setEdicionPedido(usuario.edicion_pedido ?? false)
+                                    setReciboCliente(usuario.recibo_cliente ?? false)
                                   }}
                                 >
                                   <Edit className="h-4 w-4 text-blue-600" />
@@ -1157,6 +1183,16 @@ export default function UsuariosPage() {
                                       type="checkbox"
                                       checked={edicionPedido}
                                       onChange={(e) => setEdicionPedido(e.target.checked)}
+                                      className="h-4 w-4 rounded border-border text-blue-600 focus:ring-blue-500"
+                                    />
+                                  </div>
+
+                                  <div className="flex items-center space-x-2">
+                                    <label className="text-sm font-medium">Recibo Cuenta Cliente</label>
+                                    <input
+                                      type="checkbox"
+                                      checked={reciboCliente}
+                                      onChange={(e) => setReciboCliente(e.target.checked)}
                                       className="h-4 w-4 rounded border-border text-blue-600 focus:ring-blue-500"
                                     />
                                   </div>

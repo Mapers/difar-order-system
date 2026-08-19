@@ -9,7 +9,7 @@ import {
     LineChart,
     GitBranch,
     Receipt, GoalIcon, UserCog, Notebook, Gift, Map, Settings, FileDiff, CalendarClock,
-    TrendingUp
+    TrendingUp, ReceiptText
 } from "lucide-react";
 
 export interface NavItem {
@@ -49,6 +49,7 @@ export const ICON_MAP: Record<string, React.ComponentType<{ className?: string }
     "/dashboard/reportes/metas": GoalIcon,
     "/dashboard/reportes/ventas-totales": TrendingUp,
     "/dashboard/reportes/hoja-en-blanco": FileText,
+    "/dashboard/recibo-cuenta-cliente": ReceiptText,
     "/dashboard/usuarios": UserCog,
     "/dashboard/roles": Notebook,
     "/dashboard/escalas-bonificaciones": Gift,

@@ -37,8 +37,29 @@ const toArr = (v: unknown): string[] => {
     return []
 }
 
+const LABEL_MODULO: Record<ModuloWhatsapp, string> = {
+    VENTAS: "Ventas",
+    VENCIMIENTOS: "Vencimientos",
+    RECIBO: "Recibo",
+}
+
+const DESCRIPCION_MODULO: Record<ModuloWhatsapp, string> = {
+    VENTAS: "Número que recibirá notificaciones de ventas.",
+    VENCIMIENTOS: "Número que recibirá cada día (9am) los comprobantes que vencen hoy.",
+    RECIBO: "Número que recibirá cada Recibo Cuenta Cliente emitido, con su PDF adjunto.",
+}
+
+const VACIO_MODULO: Record<ModuloWhatsapp, string> = {
+    VENTAS: "Registra un número de WhatsApp para recibir notificaciones de ventas.",
+    VENCIMIENTOS: "Registra un número de WhatsApp para recibir el aviso diario de comprobantes que vencen.",
+    RECIBO: "Registra un número de WhatsApp para recibir los recibos de cuenta cliente que se emitan.",
+}
+
+const SIN_FILTROS: ModuloWhatsapp[] = ["VENCIMIENTOS", "RECIBO"]
+const sinFiltros = (m: ModuloWhatsapp) => SIN_FILTROS.includes(m)
+
 export default function WhatsappSection({ onOpenModalChange }: WhatsappSectionProps) {
-    // Módulo activo: separa los números de Ventas vs Vencimientos.
+    // Módulo activo: separa los números de Ventas, Vencimientos y Recibo.
     const [modulo, setModulo] = useState<ModuloWhatsapp>("VENTAS")
     const [items, setItems] = useState<WhatsappConfig[]>([])
     const [loading, setLoading] = useState(true)
@@ -74,8 +95,7 @@ export default function WhatsappSection({ onOpenModalChange }: WhatsappSectionPr
     useEffect(() => { fetchItems(modulo) }, [modulo, fetchItems])
 
     const cargarOpciones = useCallback(async () => {
-        // Vencimientos no filtra por zona/cliente: no hace falta cargar catálogos.
-        if (modulo === "VENCIMIENTOS" || optsLoaded) return
+        if (sinFiltros(modulo) || optsLoaded) return
         setLoadingOpts(true)
         try {
             const [zRes, cRes] = await Promise.all([
@@ -141,7 +161,7 @@ export default function WhatsappSection({ onOpenModalChange }: WhatsappSectionPr
             nombre: form.nombre,
             descripcion: form.descripcion,
             modulo,
-            tipo_filtro: modulo === "VENCIMIENTOS" ? "TODOS" : tipoFiltro,
+            tipo_filtro: sinFiltros(modulo) ? "TODOS" : tipoFiltro,
             clientes_filtro: modulo === "VENTAS" && tipoFiltro === "CLIENTE" ? clientesSel : [],
             zonas_filtro: modulo === "VENTAS" && tipoFiltro === "ZONA" ? zonasSel : [],
         }
@@ -175,10 +195,12 @@ export default function WhatsappSection({ onOpenModalChange }: WhatsappSectionPr
     }
 
     const renderFiltroBadge = (item: WhatsappConfig) => {
-        if ((item.modulo || modulo) === "VENCIMIENTOS") {
+        const moduloItem = (item.modulo || modulo) as ModuloWhatsapp
+        if (sinFiltros(moduloItem)) {
             return (
                 <Badge variant="outline" className="text-xs gap-1">
-                    <Globe className="h-3 w-3" /> Vencimientos del día
+                    <Globe className="h-3 w-3" />
+                    {moduloItem === "RECIBO" ? "Todos los recibos" : "Vencimientos del día"}
                 </Badge>
             )
         }
@@ -206,9 +228,10 @@ export default function WhatsappSection({ onOpenModalChange }: WhatsappSectionPr
     return (
         <>
             <Tabs value={modulo} onValueChange={(v) => setModulo(v as ModuloWhatsapp)} className="mb-4">
-                <TabsList className="grid w-full max-w-md grid-cols-2">
+                <TabsList className="grid w-full max-w-md grid-cols-3">
                     <TabsTrigger value="VENTAS">Ventas</TabsTrigger>
                     <TabsTrigger value="VENCIMIENTOS">Vencimientos</TabsTrigger>
+                    <TabsTrigger value="RECIBO">Recibo</TabsTrigger>
                 </TabsList>
             </Tabs>
 
@@ -273,9 +296,7 @@ export default function WhatsappSection({ onOpenModalChange }: WhatsappSectionPr
                     <MessageCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                     <h3 className="text-lg font-medium text-foreground mb-2">No hay números registrados</h3>
                     <p className="text-sm text-muted-foreground">
-                        {modulo === "VENCIMIENTOS"
-                            ? "Registra un número de WhatsApp para recibir el aviso diario de comprobantes que vencen."
-                            : "Registra un número de WhatsApp para recibir notificaciones de ventas."}
+                        {VACIO_MODULO[modulo]}
                     </p>
                 </div>
             )}
@@ -283,11 +304,9 @@ export default function WhatsappSection({ onOpenModalChange }: WhatsappSectionPr
             <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
                 <DialogContent className="max-w-md">
                     <DialogHeader>
-                        <DialogTitle>{editando ? "Editar" : "Nuevo"} WhatsApp · {modulo === "VENCIMIENTOS" ? "Vencimientos" : "Ventas"}</DialogTitle>
+                        <DialogTitle>{editando ? "Editar" : "Nuevo"} WhatsApp · {LABEL_MODULO[modulo]}</DialogTitle>
                         <DialogDescription>
-                            {modulo === "VENCIMIENTOS"
-                                ? "Número que recibirá cada día (9am) los comprobantes que vencen hoy."
-                                : "Número que recibirá notificaciones de ventas."}
+                            {DESCRIPCION_MODULO[modulo]}
                         </DialogDescription>
                     </DialogHeader>
 
