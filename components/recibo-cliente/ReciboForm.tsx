@@ -55,6 +55,36 @@ const CAMPO =
     'bg-transparent border-0 border-b border-[#8aa0cf] outline-none px-1 py-0.5 ' +
     'text-[#12388f] placeholder:text-[#b9c4dd] focus:border-[#d21f27] focus:bg-[#f4f7ff]'
 
+const TIPO_NOTA_CREDITO = '07'
+
+function esNotaCredito(doc: DocumentoCliente) {
+    return String(doc.Tipo_Doc ?? '').trim().padStart(2, '0') === TIPO_NOTA_CREDITO
+}
+
+function consolidarPendientes(docs: DocumentoCliente[]): DocumentoCliente[] {
+    const porDocumento = new Map<string, { base: DocumentoCliente; saldo: number }>()
+
+    for (const d of docs) {
+        if (esNotaCredito(d)) continue
+
+        const clave = d.documento_completo || `${d.Tipo_Doc}-${d.SerieDoc}-${d.NumeroDoc}`
+        const saldo = Number(d.saldo_pendiente) || 0
+        const acumulado = porDocumento.get(clave)
+
+        if (!acumulado) {
+            porDocumento.set(clave, { base: d, saldo })
+            continue
+        }
+
+        acumulado.saldo += saldo
+        if (saldo > 0) acumulado.base = d
+    }
+
+    return [...porDocumento.values()]
+        .filter(x => x.saldo > 0.005)
+        .map(x => ({ ...x.base, saldo_pendiente: Number(x.saldo.toFixed(2)) }))
+}
+
 function Casilla({
     marcada, onToggle, children,
 }: {
@@ -129,7 +159,11 @@ export function ReciboForm({ onEmitido }: Props) {
         if (isVendedor() && user?.codigo) params.append('cod_vend', user.codigo)
 
         apiClient.get(`/planilla-cobranza/documentos-cliente?${params}`)
-            .then(res => { if (!cancelado) setDocumentos(res.data?.data?.data ?? []) })
+            .then(res => {
+                if (cancelado) return
+                const docs: DocumentoCliente[] = res.data?.data?.data ?? []
+                setDocumentos(consolidarPendientes(docs))
+            })
             .catch(() => {
                 if (cancelado) return
                 setDocumentos([])
@@ -257,6 +291,9 @@ export function ReciboForm({ onEmitido }: Props) {
 
         if (total <= 0) e.total = 'El total debe ser mayor a cero'
 
+        if (!firmaCliente) e.firmaCliente = 'Falta la firma del cliente'
+        if (!firmaVendedor) e.firmaVendedor = 'Falta la firma del vendedor'
+
         setErrors(e)
         return Object.keys(e).length === 0
     }
@@ -309,45 +346,19 @@ export function ReciboForm({ onEmitido }: Props) {
 
     return (
         <div className="mx-auto max-w-[820px]">
-            <div className="mb-3 flex flex-wrap justify-end gap-2">
-                <button
-                    type="button"
-                    onClick={limpiar}
-                    disabled={emitiendo}
-                    className="rounded-lg border border-[#12388f] bg-white px-3.5 py-2 text-[13px] font-semibold text-[#12388f] transition-colors hover:bg-[#12388f] hover:text-white disabled:opacity-40"
-                >
-                    Limpiar todo
-                </button>
-                <button
-                    type="button"
-                    onClick={handleEmitir}
-                    disabled={emitiendo}
-                    className="inline-flex items-center gap-2 rounded-lg border border-[#12388f] bg-[#12388f] px-3.5 py-2 text-[13px] font-semibold text-white transition-colors hover:bg-[#2b52a8] disabled:opacity-60"
-                >
-                    {emitiendo && <Loader2 className="h-4 w-4 animate-spin" />}
-                    Generar recibo
-                </button>
-            </div>
-
             <div className="rounded-md border border-[#cfd6e6] bg-[#fdfdf8] p-[clamp(14px,3.5vw,30px)] text-[#12388f] shadow-[0_8px_30px_rgba(20,40,90,.15)]">
 
                 <div className="flex flex-wrap justify-between gap-4 border-b-2 border-[#12388f] pb-2.5">
-                    <div className="flex flex-1 items-start gap-3 sm:min-w-[250px]">
-                        <div className="flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-full border-2 border-[#12388f] text-[20px] font-extrabold italic tracking-tighter">
-                            iA
-                        </div>
-                        <div>
-                            <div className="font-serif text-[clamp(30px,7vw,46px)] font-black leading-[.9] tracking-[2px]">
-                                DIFAR
-                            </div>
-                            <div className="mt-0.5 text-[11px] font-bold tracking-[.3px]">
-                                DISTRIBUIDORA E IMPORTADORA FARMACEUTICA S.A.C.
-                            </div>
-                            <div className="mt-[3px] text-[9.5px] leading-[1.35] text-[#2b52a8]">
-                                Ofc. Princip. Urb. Santa Edelmira - Los Eucaliptos 218<br />
-                                Dpto. 102 - Telf. 044-289196 - TRUJILLO<br />
-                                Jr. M. Villavicencio 783 P.J. Bolívar Bajo - Telf. 043-706762 · ANCASH - SANTA - CHIMBOTE
-                            </div>
+                    <div className="flex flex-1 flex-col gap-1 sm:min-w-[250px]">
+                        <img
+                            src="/difar-logo.png"
+                            alt="DIFAR — Distribuidora e Importadora Farmacéutica S.A.C."
+                            className="h-auto w-[clamp(180px,42vw,260px)]"
+                        />
+                        <div className="text-[9.5px] leading-[1.35] text-[#2b52a8]">
+                            Ofc. Princip. Urb. Santa Edelmira - Los Eucaliptos 218<br />
+                            Dpto. 102 - Telf. 044-289196 - TRUJILLO<br />
+                            Jr. M. Villavicencio 783 P.J. Bolívar Bajo - Telf. 043-706762 · ANCASH - SANTA - CHIMBOTE
                         </div>
                     </div>
 
@@ -539,20 +550,47 @@ export function ReciboForm({ onEmitido }: Props) {
                 </div>
 
                 <div className="mt-6 grid gap-4 sm:grid-cols-2">
-                    <FirmaPad
-                        key={`cliente-${versionFirmas}`}
-                        leyenda="FIRMA Y SELLO DEL CLIENTE"
-                        onChange={setFirmaCliente}
-                        disabled={emitiendo}
-                    />
-                    <FirmaPad
-                        key={`vendedor-${versionFirmas}`}
-                        leyenda="FIRMA DEL VENDEDOR"
-                        onChange={setFirmaVendedor}
-                        disabled={emitiendo}
-                    />
+                    <div>
+                        <FirmaPad
+                            key={`cliente-${versionFirmas}`}
+                            leyenda="FIRMA Y SELLO DEL CLIENTE *"
+                            onChange={setFirmaCliente}
+                            disabled={emitiendo}
+                        />
+                        {error('firmaCliente')}
+                    </div>
+
+                    <div>
+                        <FirmaPad
+                            key={`vendedor-${versionFirmas}`}
+                            leyenda="FIRMA DEL VENDEDOR *"
+                            onChange={setFirmaVendedor}
+                            disabled={emitiendo}
+                        />
+                        {error('firmaVendedor')}
+                    </div>
                 </div>
             </div>
+            <div className="mt-4 flex flex-wrap justify-end gap-2">
+                <button
+                    type="button"
+                    onClick={limpiar}
+                    disabled={emitiendo}
+                    className="rounded-lg border border-[#12388f] bg-white px-3.5 py-2 text-[13px] font-semibold text-[#12388f] transition-colors hover:bg-[#12388f] hover:text-white disabled:opacity-40"
+                >
+                    Limpiar todo
+                </button>
+                <button
+                    type="button"
+                    onClick={handleEmitir}
+                    disabled={emitiendo}
+                    className="inline-flex items-center gap-2 rounded-lg border border-[#12388f] bg-[#12388f] px-3.5 py-2 text-[13px] font-semibold text-white transition-colors hover:bg-[#2b52a8] disabled:opacity-60"
+                >
+                    {emitiendo && <Loader2 className="h-4 w-4 animate-spin" />}
+                    Generar recibo
+                </button>
+            </div>
+
         </div>
     )
 }
