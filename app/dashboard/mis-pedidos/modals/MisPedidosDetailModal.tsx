@@ -24,9 +24,10 @@ interface MisPedidosDetailModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   nroPedido: string
+  onAuthorized?: () => void
 }
 
-export function MisPedidosDetailModal({ open, onOpenChange, nroPedido }: MisPedidosDetailModalProps) {
+export function MisPedidosDetailModal({ open, onOpenChange, nroPedido, onAuthorized }: MisPedidosDetailModalProps) {
   const auth = useAuth()
   const [pedido, setPedido] = useState<Pedido | null>(null)
   const [detalles, setDetalles] = useState<PedidoDet[]>([])
@@ -98,6 +99,7 @@ export function MisPedidosDetailModal({ open, onOpenChange, nroPedido }: MisPedi
       })
       setPedido(prev => prev ? { ...prev, is_autorizado: authAction === 'authorize' ? 'S' : 'N' } : null)
       setAuthOpen(false)
+      onAuthorized?.()
     } finally {
       setAuthLoading(false)
     }

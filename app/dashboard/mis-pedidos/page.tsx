@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import {
   Eye,
+  X as XIcon,
   Printer,
   User,
   Package,
@@ -26,6 +27,7 @@ import { Label } from "@/components/ui/label"
 import {useEffect, useMemo, useState} from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { MisPedidosDetailModal } from "@/app/dashboard/mis-pedidos/modals/MisPedidosDetailModal"
+import { AuthorizationModal } from "@/components/modal/authorization-modal"
 import { Skeleton } from "@/components/ui/skeleton"
 import apiClient from "@/app/api/client"
 import {format, parseISO} from "date-fns";
@@ -177,6 +179,11 @@ export default function MyOrdersPage() {
   const [totalItems, setTotalItems] = useState(0)
   const [detailNroPedido, setDetailNroPedido] = useState("")
   const [isDetailOpen, setIsDetailOpen] = useState(false)
+
+  const [authPedido, setAuthPedido] = useState<any | null>(null)
+  const [authAction, setAuthAction] = useState<'authorize' | 'reject'>('authorize')
+  const [authOpen, setAuthOpen] = useState(false)
+  const [authLoading, setAuthLoading] = useState(false)
   const [activeTab, setActiveTab] = useState<'activos' | 'historicos'>('activos')
   const auth = useAuth();
 
@@ -222,6 +229,31 @@ export default function MyOrdersPage() {
   const handleTabChange = (value: string) => {
     setActiveTab(value as 'activos' | 'historicos')
     setCurrentPage(1)
+  }
+
+  const puedeAutorizar = (pedido: any) =>
+    auth.isAdmin() && pedido?.por_autorizar === 'S' && !pedido?.is_autorizado
+
+  const abrirAutorizacion = (pedido: any, accion: 'authorize' | 'reject') => {
+    setAuthPedido(pedido)
+    setAuthAction(accion)
+    setAuthOpen(true)
+  }
+
+  const handleAuthorize = async () => {
+    if (!authPedido) return
+    setAuthLoading(true)
+    try {
+      await apiClient.post('/pedidos/autorizar', {
+        nroPedido: authPedido.nroPedido,
+        status: authAction === 'authorize' ? 'S' : 'N'
+      })
+      setAuthOpen(false)
+      setAuthPedido(null)
+      await fetchOrders()
+    } finally {
+      setAuthLoading(false)
+    }
   }
 
   useEffect(() => {
@@ -529,6 +561,22 @@ export default function MyOrdersPage() {
                                               onClick={() => { setDetailNroPedido(pedido.nroPedido); setIsDetailOpen(true) }}>
                                         <Eye className="h-4 w-4" /> Ver Detalle
                                       </Button>
+                                      {puedeAutorizar(pedido) && (
+                                        <div className="flex gap-2 shrink-0">
+                                          <Button variant="outline" size="icon" title="Aprobar pedido"
+                                                  aria-label={`Aprobar pedido ${pedido.nroPedido}`}
+                                                  className="h-9 w-9 shrink-0 text-green-600 hover:bg-green-50 hover:text-green-700"
+                                                  onClick={() => abrirAutorizacion(pedido, 'authorize')}>
+                                            <Check className="h-4 w-4" />
+                                          </Button>
+                                          <Button variant="outline" size="icon" title="Rechazar pedido"
+                                                  aria-label={`Rechazar pedido ${pedido.nroPedido}`}
+                                                  className="h-9 w-9 shrink-0 text-red-600 hover:bg-red-50 hover:text-red-700"
+                                                  onClick={() => abrirAutorizacion(pedido, 'reject')}>
+                                            <XIcon className="h-4 w-4" />
+                                          </Button>
+                                        </div>
+                                      )}
                                       {/*<Button variant="outline" size="sm" className="flex items-center gap-2" disabled>*/}
                                       {/*  <Printer className="h-4 w-4" /> Imprimir*/}
                                       {/*</Button>*/}
@@ -601,11 +649,27 @@ export default function MyOrdersPage() {
                           </div>
                         </div>
 
-                        <div className="flex flex-col sm:flex-row gap-2 shrink-0">
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-2 shrink-0">
                           <Button variant="outline" size="sm" className="flex items-center gap-2"
                                   onClick={() => { setDetailNroPedido(pedido.nroPedido); setIsDetailOpen(true) }}>
                             <Eye className="h-4 w-4" /> Ver Detalle
                           </Button>
+                          {puedeAutorizar(pedido) && (
+                            <div className="flex gap-2 shrink-0">
+                              <Button variant="outline" size="icon" title="Aprobar pedido"
+                                      aria-label={`Aprobar pedido ${pedido.nroPedido}`}
+                                      className="h-9 w-9 shrink-0 text-green-600 hover:bg-green-50 hover:text-green-700"
+                                      onClick={() => abrirAutorizacion(pedido, 'authorize')}>
+                                <Check className="h-4 w-4" />
+                              </Button>
+                              <Button variant="outline" size="icon" title="Rechazar pedido"
+                                      aria-label={`Rechazar pedido ${pedido.nroPedido}`}
+                                      className="h-9 w-9 shrink-0 text-red-600 hover:bg-red-50 hover:text-red-700"
+                                      onClick={() => abrirAutorizacion(pedido, 'reject')}>
+                                <XIcon className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          )}
                           {/*<Button variant="outline" size="sm" className="flex items-center gap-2" disabled>*/}
                           {/*  <Printer className="h-4 w-4" /> Imprimir*/}
                           {/*</Button>*/}
@@ -629,6 +693,16 @@ export default function MyOrdersPage() {
         open={isDetailOpen}
         onOpenChange={setIsDetailOpen}
         nroPedido={detailNroPedido}
+        onAuthorized={fetchOrders}
+      />
+
+      <AuthorizationModal
+        open={authOpen}
+        onOpenChange={(v) => { setAuthOpen(v); if (!v) setAuthPedido(null) }}
+        pedido={authPedido}
+        action={authAction}
+        onConfirm={handleAuthorize}
+        loading={authLoading}
       />
     </div>
   )
