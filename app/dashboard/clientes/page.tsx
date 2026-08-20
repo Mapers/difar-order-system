@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { UbicacionClienteModal } from "@/components/clientes/UbicacionClienteModal"
 import { Search, Eye, Edit, Download, Plus, Filter, ChevronDown, Check, FileText, Phone, Mail, Building, CheckCircle, User, MapPin, ChevronLeft, ChevronRight, CreditCard, Activity, X } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Label } from "@/components/ui/label"
@@ -44,6 +45,8 @@ export default function ClientsPage() {
   const [openVendedor, setOpenVendedor] = useState(false)
   const [codClient, setCodClient] = useState<any>('')
 
+  const [ubicacionCliente, setUbicacionCliente] = useState<{ codigo: string; nombre: string } | null>(null)
+
   const handleEdit = (codigoCliente: string) => {
     setCodClient(codigoCliente)
     setShowCreateModal(true)
@@ -56,6 +59,10 @@ export default function ClientsPage() {
   const handleView = (codClient: string) => {
     setCodClient(codClient)
     setShowViewModal(true)
+  }
+
+  const handleVerUbicacion = (codigo: string, nombre: string) => {
+    setUbicacionCliente({ codigo, nombre })
   }
 
   const closeViewModal = () => {
@@ -492,6 +499,13 @@ export default function ClientsPage() {
                                   <Button variant="outline" size="sm" className="flex-1 text-xs" onClick={() => handleEdit(cliente.codigoInterno)}>
                                     <Edit className="mr-1 h-3 w-3" /> Editar
                                   </Button>
+                                  <Button variant="outline" size="sm"
+                                          className="shrink-0 px-2.5 text-xs text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800"
+                                          title="Ver ubicación en el mapa"
+                                          aria-label={`Ver ubicación de ${cliente.razonSocial}`}
+                                          onClick={() => handleVerUbicacion(cliente.codigoInterno, cliente.razonSocial)}>
+                                    <MapPin className="h-3.5 w-3.5" />
+                                  </Button>
                                 </div>
                               </div>
                             </CardContent>
@@ -636,6 +650,13 @@ export default function ClientsPage() {
                                     <div className="flex justify-end gap-2">
                                       <Button variant="outline" size="sm" onClick={() => handleView(client.codigoInterno)} className="bg-blue-50 text-blue-700 hover:bg-blue-100 text-xs">
                                         <Eye className="mr-1 h-3 w-3" /> Ver
+                                      </Button>
+                                      <Button variant="outline" size="sm"
+                                              className="px-2.5 text-xs text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800"
+                                              title="Ver ubicación en el mapa"
+                                              aria-label={`Ver ubicación de ${client.razonSocial}`}
+                                              onClick={() => handleVerUbicacion(client.codigoInterno, client.razonSocial)}>
+                                        <MapPin className="h-3.5 w-3.5" />
                                       </Button>
                                       <Button variant="outline" size="sm" onClick={() => handleEdit(client.codigoInterno)} className="text-xs">
                                         <Edit className="mr-1 h-3 w-3" /> Editar
@@ -806,6 +827,13 @@ export default function ClientsPage() {
               open={showViewModal}
               onOpenChange={(open) => { if (!open) closeViewModal(); }}
               codClient={codClient}
+          />
+
+          <UbicacionClienteModal
+              open={ubicacionCliente != null}
+              onOpenChange={(open) => { if (!open) setUbicacionCliente(null) }}
+              codigoCliente={ubicacionCliente?.codigo ?? null}
+              nombreCliente={ubicacionCliente?.nombre}
           />
 
         </Card>
