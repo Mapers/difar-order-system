@@ -1,12 +1,13 @@
 'use client'
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from '@/context/authContext';
 import { useLaboratoriesData } from "./hooks/useLaboratoriesData";
 import { usePriceList } from "./hooks/usePriceList";
 import { useProductModals } from "./hooks/useProductModals";
 import { useVentasTresMeses } from "./hooks/useVentasTresMeses";
+import { useImagenesProducto } from "./hooks/useImagenesProducto";
 import ExportPdfButton from "@/app/dashboard/lista-precios-lote/export-pdf-button";
 import ExportExcelButton from "@/app/dashboard/lista-precios-lote/export-excel-button";
 import {PriceFilters} from "@/components/lista-precios-lote/PriceFilters";
@@ -15,18 +16,26 @@ import {PriceModals} from "@/components/lista-precios-lote/PriceModals";
 import {PricePagination} from "@/components/lista-precios-lote/PricePagination";
 import {CreateProductModal} from "@/components/lista-precios-lote/CreateProductModal";
 import {QuickPriceEditModal} from "@/components/lista-precios-lote/QuickPriceEditModal";
+import {ArticuloImagenModal, ProductoImagen} from "@/components/lista-precios-lote/ArticuloImagenModal";
 
 export default function PricePage() {
-  const { user, isAuthenticated, isAdmin, hasRole } = useAuth();
+  const { user, isAuthenticated, isAdmin, hasRole, globalConfigs } = useAuth();
   const { laboratoriesRepres, loadingLab } = useLaboratoriesData();
 
   const [currentDateTime, setCurrentDateTime] = useState({ date: "", time: "" });
+  const [productoImagen, setProductoImagen] = useState<ProductoImagen | null>(null);
+
+  const imagenesActivas = useMemo(() => {
+    const config = globalConfigs.find(c => c.cod_config === 'IMAGEN_PROD');
+    return config?.est_config === 'A' && config?.llave_config === '1';
+  }, [globalConfigs]);
+
+  const puedeGestionarImagenes = imagenesActivas && isAdmin();
 
   const listData = usePriceList(isAuthenticated, user, isAdmin());
   const modals = useProductModals();
-  // Carga en paralelo al listado: no depende de los filtros, así que refiltrar
-  // en pantalla no vuelve a pedirla.
   const { ventas, etiquetas: etiquetasVentas } = useVentasTresMeses(isAuthenticated);
+  const { imagenes, actualizarImagen } = useImagenesProducto(imagenesActivas && isAuthenticated);
 
   useEffect(() => {
     const now = new Date();
@@ -105,6 +114,13 @@ export default function PricePage() {
                 onOpenKardex={modals.kardex.onOpen}
                 ventas={ventas}
                 etiquetasVentas={etiquetasVentas}
+                imagenesActivas={imagenesActivas}
+                imagenes={imagenes}
+                onOpenImagen={(item: any) => setProductoImagen({
+                  codigo: item.prod_codigo,
+                  descripcion: item.prod_descripcion,
+                  presentacion: item.prod_presentacion,
+                })}
             />
           </CardContent>
 
@@ -123,6 +139,18 @@ export default function PricePage() {
         </Card>
 
         <PriceModals modals={modals} user={user} isAdmin={isAdmin}  />
+
+        {imagenesActivas && (
+            <ArticuloImagenModal
+                open={!!productoImagen}
+                onOpenChange={(abierto) => { if (!abierto) setProductoImagen(null); }}
+                producto={productoImagen}
+                ruta={productoImagen ? (imagenes.get(productoImagen.codigo) ?? null) : null}
+                puedeGestionar={puedeGestionarImagenes}
+                usuarioMod={user?.nombreCompleto}
+                onImagenChange={actualizarImagen}
+            />
+        )}
       </div>
   );
 }

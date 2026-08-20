@@ -36,6 +36,29 @@ export class PriceService {
     return response.data;
   }
 
+  static async getImagenesArticulo(): Promise<any> {
+    const response = await apiClient.get('/articulos/imagenes');
+    return response.data;
+  }
+
+  static async guardarImagenArticulo(codigo: string, archivo: File, usuarioMod?: string): Promise<any> {
+    const formData = new FormData();
+    if (usuarioMod) formData.append('usuario_mod', usuarioMod);
+    formData.append('imagen', archivo);
+
+    const response = await apiClient.post(
+      `/articulos/${encodeURIComponent(codigo)}/imagen`,
+      formData,
+      { headers: { 'Content-Type': 'multipart/form-data' } }
+    );
+    return response.data;
+  }
+
+  static async eliminarImagenArticulo(codigo: string): Promise<any> {
+    const response = await apiClient.delete(`/articulos/${encodeURIComponent(codigo)}/imagen`);
+    return response.data;
+  }
+
   static async getProductLots(code: string, almacen?: number | null): Promise<any> {
     const response = await apiClient.get(`/price/list-prices-lote/${code}`, {
       params: almacen ? { almacen } : undefined,
