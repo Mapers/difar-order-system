@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
+import { cargarLogoPdf, dibujarCabeceraPdf } from "@/components/reporte/pdfCabecera";
 import { toast } from "@/app/hooks/useToast";
 
 interface ExportPdfProps {
@@ -49,58 +50,15 @@ export const ExportSaldoCobrarPdf: React.FC<ExportPdfProps> = ({ data, dateCorte
             let currentPage = pdfDoc.addPage([pageWidth, pageHeight]);
             let yPosition = pageHeight - margin;
 
-            let logoImage: any = null;
-            try {
-                const logoUrl = '/difar-logo.png';
-                const logoBytes = await fetch(logoUrl).then((res) => {
-                    if (!res.ok) throw new Error("No se pudo cargar la imagen");
-                    return res.arrayBuffer();
-                });
-                logoImage = await pdfDoc.embedPng(logoBytes);
-            } catch (error) {
-                console.warn("No se pudo cargar el logotipo para el PDF:", error);
-            }
+            const logoImage = await cargarLogoPdf(pdfDoc);
 
             const drawHeader = (page: any) => {
-                let titleXPos = margin;
-
-                if (logoImage) {
-                    const logoWidth = 50;
-                    const logoHeight = 30;
-                    page.drawImage(logoImage, {
-                        x: margin,
-                        y: pageHeight - margin - 15,
-                        width: logoWidth,
-                        height: logoHeight,
-                    });
-                    titleXPos = margin + logoWidth + 10;
-                }
-
-                page.drawText("DROGUERÍA DIFAR", {
-                    x: titleXPos,
-                    y: pageHeight - margin,
-                    size: 10,
-                    font: boldFont,
-                    color: rgb(0.3, 0.3, 0.3),
+                yPosition = dibujarCabeceraPdf({
+                    page, font, boldFont, logo: logoImage,
+                    pageWidth, pageHeight, margin,
+                    subtitulo: "SALDO DE DOCUMENTOS POR COBRAR",
+                    infoDerechaSec: `Impreso: ${new Date().toLocaleDateString('es-PE')}`,
                 });
-
-                page.drawText("SALDO DE DOCUMENTOS POR COBRAR", {
-                    x: titleXPos,
-                    y: pageHeight - margin - 15,
-                    size: 12,
-                    font: boldFont,
-                    color: rgb(0, 0, 0),
-                });
-
-                const dateText = `Impreso: ${new Date().toLocaleDateString('es-PE')}`;
-                page.drawText(dateText, {
-                    x: pageWidth - margin - font.widthOfTextAtSize(dateText, 8),
-                    y: pageHeight - margin,
-                    size: 8,
-                    font
-                });
-
-                yPosition = pageHeight - margin - 45;
             };
 
             const checkPageBreak = (needed: number) => {

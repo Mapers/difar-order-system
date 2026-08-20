@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
+import { cargarLogoPdf, dibujarCabeceraPdf } from "@/components/reporte/pdfCabecera";
 import { toast } from "@/app/hooks/useToast";
 import { IVendedorDashboard, ICiclo } from "@/app/types/metas-types";
 import {
@@ -58,16 +59,7 @@ export const ExportMetasVendedoresPdf: React.FC<ExportMetasVendedoresPdfProps> =
             let currentPage = pdfDoc.addPage([pageWidth, pageHeight]);
             let yPosition   = pageHeight - margin;
 
-            let logoImage: any = null;
-            try {
-                const logoBytes = await fetch('/difar-logo.png').then((res) => {
-                    if (!res.ok) throw new Error("No se pudo cargar la imagen");
-                    return res.arrayBuffer();
-                });
-                logoImage = await pdfDoc.embedPng(logoBytes);
-            } catch (error) {
-                console.warn("No se pudo cargar el logotipo para el PDF:", error);
-            }
+            const logoImage = await cargarLogoPdf(pdfDoc);
 
             const truncar = (texto: string, ancho: number, size: number, f = font): string => {
                 const limpio = sanitizar(texto);
@@ -84,51 +76,22 @@ export const ExportMetasVendedoresPdf: React.FC<ExportMetasVendedoresPdfProps> =
                 : 'Sin ciclo';
 
             const drawHeader = (page: any) => {
-                let titleXPos = margin;
-                if (logoImage) {
-                    page.drawImage(logoImage, { x: margin, y: pageHeight - margin - 15, width: 50, height: 30 });
-                    titleXPos = margin + 60;
-                }
-
-                page.drawText("DISTRIBUIDORA E IMPORTADORA FARMACEUTICA S.A.C.", {
-                    x: titleXPos, y: pageHeight - margin, size: 10, font: boldFont,
-                });
-                page.drawText("20481321892", {
-                    x: titleXPos, y: pageHeight - margin - 12, size: 9, font, color: rgb(0.3, 0.3, 0.3),
-                });
-                page.drawText(
-                    modo === 'resumen'
-                        ? "Metas Comerciales - Avance por Vendedor"
-                        : "Metas Comerciales - Avance por Vendedor y Laboratorio",
-                    { x: titleXPos, y: pageHeight - margin - 24, size: 10, font, color: rgb(0.3, 0.3, 0.3) }
-                );
-
-                const cicloLabel = `Ciclo: ${cicloTxt}`;
-                page.drawText(cicloLabel, {
-                    x: pageWidth - margin - boldFont.widthOfTextAtSize(cicloLabel, 9),
-                    y: pageHeight - margin, size: 9, font: boldFont,
-                });
-                const dateText = `Generado: ${new Date().toLocaleDateString()}`;
-                page.drawText(dateText, {
-                    x: pageWidth - margin - font.widthOfTextAtSize(dateText, 8),
-                    y: pageHeight - margin - 12, size: 8, font, color: rgb(0.3, 0.3, 0.3),
-                });
-
                 // El switch de la pantalla cambia la venta por completo: sin
                 // declararlo, dos PDFs del mismo ciclo con cifras distintas son
                 // imposibles de explicar.
                 const modoVenta = soloFacturado
                     ? 'Venta considerada: SOLO FACTURADA'
                     : 'Venta considerada: TODA la del periodo (incluye despachos sin comprobante)';
-                page.drawText(truncar(modoVenta, contentWidth, 8), {
-                    x: margin, y: pageHeight - margin - 40, size: 8, font, color: rgb(0.45, 0.45, 0.45),
-                });
 
-                yPosition = pageHeight - margin - 50;
-                page.drawLine({
-                    start: { x: margin, y: yPosition }, end: { x: pageWidth - margin, y: yPosition }, thickness: 1,
+                yPosition = dibujarCabeceraPdf({
+                    page, font, boldFont, logo: logoImage,
+                    pageWidth, pageHeight, margin,
+                    subtitulo: modo === 'resumen'
+                        ? "Metas Comerciales - Avance por Vendedor"
+                        : "Metas Comerciales - Avance por Vendedor y Laboratorio",
+                    infoDerecha: `Ciclo: ${cicloTxt}`,
+                    filtros: modoVenta,
                 });
-                yPosition -= 20;
             };
 
             const checkPageBreak = (needed: number): boolean => {

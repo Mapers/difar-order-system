@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
+import { cargarLogoPdf, dibujarCabeceraPdf } from "@/components/reporte/pdfCabecera";
 import { toast } from "@/app/hooks/useToast";
 import { Zone } from '@/app/types/report/report-interface';
 import { calcularTotal } from '@/app/utils/client';
@@ -49,86 +50,21 @@ const ExportCollectSellerPdfButton: React.FC<ExportPdfProps> = ({ data, disabled
 
             let currentPage = pdfDoc.addPage([pageWidth, pageHeight]);
             let yPosition = pageHeight - margin;
-            let pageNumber = 1;
 
             // Logo
-            let logoImage = null;
-            try {
-                const logoUrl = '/difar-logo.png'; // <- Cambia esto por la ruta de tu logo
-                const logoBytes = await fetch(logoUrl).then((res) => {
-                    if (!res.ok) throw new Error("No se pudo cargar la imagen");
-                    return res.arrayBuffer();
-                });
-                logoImage = await pdfDoc.embedPng(logoBytes);
-            } catch (error) {
-                console.warn("No se pudo cargar el logotipo para el PDF:", error);
-            }
+            const logoImage = await cargarLogoPdf(pdfDoc);
 
             const drawHeader = (page: any) => {
-                let titleXPos = margin;
-
-                if (logoImage) {
-                    const logoWidth = 50;
-                    const logoHeight = 30;
-                    page.drawImage(logoImage, {
-                        x: margin,
-                        y: pageHeight - margin - 15,
-                        width: logoWidth,
-                        height: logoHeight,
-                    });
-                    titleXPos = margin + logoWidth + 10;
-                }
-
-                page.drawText("DROGUERIA DIFAR", {
-                    x: titleXPos,
-                    y: pageHeight - margin,
-                    size: 12,
-                    font: boldFont,
-                    color: rgb(0, 0, 0),
+                yPosition = dibujarCabeceraPdf({
+                    page, font, boldFont, logo: logoImage,
+                    pageWidth, pageHeight, margin,
+                    subtitulo: "REPORTE DE COBRANZAS POR VENDEDOR",
                 });
-
-                page.drawText("REPORTE DE COBRANZAS POR VENDEDOR", {
-                    x: titleXPos,
-                    y: pageHeight - margin - 15,
-                    size: 10,
-                    font,
-                    color: rgb(0.3, 0.3, 0.3),
-                });
-
-                const now = new Date();
-                const dateText = `Fecha: ${now.toLocaleDateString()} ${now.toLocaleTimeString()}`;
-                const pageText = `Página: ${pageNumber}`;
-
-                page.drawText(dateText, {
-                    x: pageWidth - margin - font.widthOfTextAtSize(dateText, 8),
-                    y: pageHeight - margin,
-                    size: 8,
-                    font,
-                });
-
-                page.drawText(pageText, {
-                    x: pageWidth - margin - font.widthOfTextAtSize(pageText, 8),
-                    y: pageHeight - margin - 12,
-                    size: 8,
-                    font,
-                });
-
-                yPosition = pageHeight - margin - 40;
-
-                page.drawLine({
-                    start: { x: margin, y: yPosition },
-                    end: { x: pageWidth - margin, y: yPosition },
-                    thickness: 1,
-                    color: rgb(0, 0, 0),
-                });
-
-                yPosition -= 20;
             };
 
             const checkPageBreak = (neededHeight: number) => {
                 if (yPosition - neededHeight < margin) {
                     currentPage = pdfDoc.addPage([pageWidth, pageHeight]);
-                    pageNumber++;
                     drawHeader(currentPage);
                     return true;
                 }
@@ -284,6 +220,18 @@ const ExportCollectSellerPdfButton: React.FC<ExportPdfProps> = ({ data, disabled
                     yPosition -= 10;
                 }
             }
+
+            // Numeración al pie. Antes iba en la cabecera de cada página; al
+            // unificar la cabecera se movió acá, que es donde la ponen los
+            // demás reportes.
+            const paginas = pdfDoc.getPages();
+            paginas.forEach((pg, idx) => {
+                const txt = `Página ${idx + 1} de ${paginas.length}`;
+                pg.drawText(txt, {
+                    x: pageWidth - margin - font.widthOfTextAtSize(txt, 8),
+                    y: margin / 2, size: 8, font, color: rgb(0.5, 0.5, 0.5),
+                });
+            });
 
             const pdfBytes = await pdfDoc.save();
             const blob = new Blob([pdfBytes], { type: 'application/pdf' });

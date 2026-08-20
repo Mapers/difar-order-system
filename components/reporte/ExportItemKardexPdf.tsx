@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
+import { cargarLogoPdf, dibujarCabeceraPdf } from "@/components/reporte/pdfCabecera";
 import { toast } from "@/app/hooks/useToast";
 
 export interface KardexItemData {
@@ -60,54 +61,14 @@ export const ExportItemKardexPdf: React.FC<ExportPdfProps> = ({ data, startDate,
             let currentPage = pdfDoc.addPage([pageWidth, pageHeight]);
             let yPosition = pageHeight - margin;
 
-            let logoImage = null;
-            try {
-                const logoUrl = '/difar-logo.png';
-                const logoBytes = await fetch(logoUrl).then((res) => {
-                    if (!res.ok) throw new Error("No se pudo cargar la imagen");
-                    return res.arrayBuffer();
-                });
-                logoImage = await pdfDoc.embedPng(logoBytes);
-            } catch (error) {
-                console.warn("No se pudo cargar el logotipo para el PDF:", error);
-            }
+            const logoImage = await cargarLogoPdf(pdfDoc);
 
             const drawHeader = (page: any) => {
-                let titleXPos = margin;
-                if (logoImage) {
-                    const logoWidth = 50;
-                    const logoHeight = 30;
-                    page.drawImage(logoImage, {
-                        x: margin,
-                        y: pageHeight - margin - 15,
-                        width: logoWidth,
-                        height: logoHeight,
-                    });
-                    titleXPos = margin + logoWidth + 10;
-                }
-
-                page.drawText("DROGUERIA DIFAR", {
-                    x: titleXPos,
-                    y: pageHeight - margin,
-                    size: 12,
-                    font: boldFont,
-                    color: rgb(0, 0, 0),
+                yPosition = dibujarCabeceraPdf({
+                    page, font, boldFont, logo: logoImage,
+                    pageWidth, pageHeight, margin,
+                    subtitulo: "REGISTRO DE INVENTARIO PERMANENTE EN UNIDADES FISICAS",
                 });
-
-                page.drawText("REGISTRO DE INVENTARIO PERMANENTE EN UNIDADES FISICAS", {
-                    x: titleXPos,
-                    y: pageHeight - margin - 15,
-                    size: 10,
-                    font,
-                    color: rgb(0.3, 0.3, 0.3),
-                });
-
-                const dateText = `Fecha: ${new Date().toLocaleDateString()}`;
-                page.drawText(dateText, { x: pageWidth - margin - font.widthOfTextAtSize(dateText, 8), y: pageHeight - margin, size: 8, font });
-
-                yPosition = pageHeight - margin - 40;
-                page.drawLine({ start: { x: margin, y: yPosition }, end: { x: pageWidth - margin, y: yPosition }, thickness: 1 });
-                yPosition -= 20;
             };
 
             const cols = [45, 30, 45, 140, 45, 70, 70, 70];

@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { FileText, ChevronDown } from 'lucide-react'
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib'
+import { EMPRESA, cargarLogoPdf, dibujarCabeceraPdf } from "@/components/reporte/pdfCabecera"
 import { PriceService } from "@/app/services/price/PriceService";
 import moment from "moment";
 import {
@@ -116,17 +117,7 @@ const ExportPdfButton = ({ payload, filters }: { payload: any; filters?: any }) 
       const font = await pdfDoc.embedFont(StandardFonts.Helvetica)
       const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold)
 
-      let logoImage: any = null;
-      try {
-        const logoUrl = '/difar-logo.png';
-        const logoBytes = await fetch(logoUrl).then((res) => {
-          if (!res.ok) throw new Error("No se pudo cargar la imagen");
-          return res.arrayBuffer();
-        });
-        logoImage = await pdfDoc.embedPng(logoBytes);
-      } catch (error) {
-        console.warn("No se pudo cargar el logotipo para el PDF:", error);
-      }
+      const logoImage = await cargarLogoPdf(pdfDoc);
 
       // --- CONFIGURACIÓN DINÁMICA POR ORIENTACIÓN (mismo diseño en ambos) ---
       const isLandscape = orientation === 'horizontal';
@@ -150,8 +141,8 @@ const ExportPdfButton = ({ payload, filters }: { payload: any; filters?: any }) 
           : [130, 70, 28, 40,  80, 48, 48, 48];
       const columns = ['DESCRIPCIÓN', 'LOTES', 'UM', 'STOCK', 'VENTAS 3M', 'P.CONTADO', 'P.CREDITO', 'B.CONTADO', 'B.CREDITO']
 
-      const empresaNombre = "DROGUERIA DIFAR"
-      const empresaRuc = "2056138401"
+      const empresaNombre = EMPRESA.nombre
+      const empresaRuc = EMPRESA.ruc
 
       // Paleta homologada (azul marino corporativo)
       const C = {
@@ -184,37 +175,16 @@ const ExportPdfButton = ({ payload, filters }: { payload: any; filters?: any }) 
       let rowIndex = 0
 
       const drawHeaderBand = (page: any) => {
-        page.drawRectangle({ x: 0, y: pageHeight - headerH, width: pageWidth, height: headerH, color: C.primary })
-        page.drawRectangle({ x: 0, y: pageHeight - headerH - 2.5, width: pageWidth, height: 2.5, color: C.accent })
-
-        let titleXPos = margin
-        if (logoImage) {
-          const logoW = isLandscape ? 46 : 40
-          const logoH = isLandscape ? 28 : 24
-          const logoY = pageHeight - headerH / 2 - logoH / 2
-          // fondo blanco para que el logo sea visible sobre la banda azul
-          page.drawRectangle({ x: margin - 3, y: logoY - 2, width: logoW + 6, height: logoH + 4, color: C.white })
-          page.drawImage(logoImage, { x: margin, y: logoY, width: logoW, height: logoH })
-          titleXPos = margin + logoW + 12
-        }
-
-        const midY = pageHeight - headerH / 2
-        page.drawText(empresaNombre, { x: titleXPos, y: midY + 3, size: isLandscape ? 13 : 11, font: boldFont, color: C.white })
-        page.drawText(`RUC: ${empresaRuc}`, { x: titleXPos, y: midY - 10, size: isLandscape ? 8 : 6.5, font, color: C.headerSub })
-
-        const titleText = 'LISTA DE PRECIOS POR LOTE'
-        const titleSize = isLandscape ? 13 : 9.5
-        const titleWidth = boldFont.widthOfTextAtSize(titleText, titleSize)
-        page.drawText(titleText, { x: (pageWidth - titleWidth) / 2, y: midY - 3, size: titleSize, font: boldFont, color: C.white })
-
         const now = new Date()
-        const fechaText = `Fecha: ${now.toLocaleDateString()} ${now.toLocaleTimeString()}`
-        const paginaText = `Página: ${pageNumber}`
-        const dsize = isLandscape ? 8 : 6.5
-        const fechaW = font.widthOfTextAtSize(fechaText, dsize)
-        const paginaW = font.widthOfTextAtSize(paginaText, dsize)
-        page.drawText(fechaText, { x: pageWidth - margin - fechaW, y: midY + 3, size: dsize, font, color: C.white })
-        page.drawText(paginaText, { x: pageWidth - margin - paginaW, y: midY - 10, size: dsize, font, color: C.headerSub })
+        yPosition = dibujarCabeceraPdf({
+          page, font, boldFont, logo: logoImage,
+          pageWidth, pageHeight, margin,
+          subtitulo: 'LISTA DE PRECIOS POR LOTE',
+          infoDerecha: `Página: ${pageNumber}`,
+          infoDerechaSec: `Fecha: ${now.toLocaleDateString()} ${now.toLocaleTimeString()}`,
+          razonSocial: empresaNombre,
+          ruc: empresaRuc,
+        })
       }
 
       const drawColumnHeader = (page: any) => {
@@ -231,7 +201,6 @@ const ExportPdfButton = ({ payload, filters }: { payload: any; filters?: any }) 
 
       const drawHeader = (page: any) => {
         drawHeaderBand(page)
-        yPosition = pageHeight - headerH - 12
         drawColumnHeader(page)
       }
 

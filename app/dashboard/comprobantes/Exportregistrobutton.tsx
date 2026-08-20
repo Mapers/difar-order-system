@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { FileText, Loader2 } from 'lucide-react'
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib'
+import { EMPRESA, cargarLogoPdf, dibujarCabeceraPdf } from "@/components/reporte/pdfCabecera"
 import { format, parseISO, addHours } from 'date-fns'
 import { Comprobante, GuiaRemision } from '@/app/types/order/order-interface'
 import { Sequential } from '@/app/types/config-types'
@@ -169,8 +170,8 @@ export function ExportRegistroButton({
                                          guias            = [],
                                          tiposComprobante = [],
                                          mesLabel,
-                                         empresaNombre    = 'DROGUERÍA DIFAR',
-                                         empresaRuc       = '2056138401',
+                                         empresaNombre    = EMPRESA.nombre,
+                                         empresaRuc       = EMPRESA.ruc,
                                          filters,
                                      }: ExportRegistroButtonProps) {
 
@@ -229,14 +230,7 @@ export function ExportRegistroButton({
                 ?? `${format(new Date(), 'MMMM')} del ${format(new Date(), 'yyyy')}`
                     .replace(/^\w/, c => c.toUpperCase())
 
-            let logoImage: any = null
-            try {
-                const logoBytes = await fetch('/difar-logo.png').then(r => {
-                    if (!r.ok) throw new Error('no logo')
-                    return r.arrayBuffer()
-                })
-                logoImage = await pdfDoc.embedPng(logoBytes)
-            } catch { /* sin logo */ }
+            const logoImage = await cargarLogoPdf(pdfDoc)
 
             type RegistroVenta = {
                 Fecha            : string
@@ -444,46 +438,14 @@ export function ExportRegistroButton({
             let rowColorIdx = 0
 
             const drawHeader = (page: any) => {
-
-                const headerH = 58
-                fillRect(page, 0, pageHeight - headerH, pageWidth, headerH, C_HEADER_BG)
-
-                let titleXPos = margin
-                if (logoImage) {
-                    page.drawImage(logoImage, {
-                        x: margin, y: pageHeight - headerH + 12,
-                        width: 50, height: 30,
-                    })
-                    titleXPos = margin + 60
-                }
-
-                const hMid      = pageHeight - headerH / 2
-                page.drawText(empresaNombre, {
-                    x: titleXPos, y: hMid + 4,
-                    size: 13, font: boldFont, color: C_WHITE,
+                yPosition = dibujarCabeceraPdf({
+                    page, font, boldFont, logo: logoImage,
+                    pageWidth, pageHeight, margin,
+                    subtitulo: TITLES[type],
+                    infoDerecha: `Periodo: ${mesStr}`,
+                    razonSocial: empresaNombre,
+                    ruc: empresaRuc,
                 })
-                page.drawText(`RUC: ${empresaRuc}`, {
-                    x: titleXPos, y: hMid - 9,
-                    size: 7.5, font, color: rgb(0.68, 0.78, 0.90),
-                })
-
-                const titleText = TITLES[type]
-                const titleW    = boldFont.widthOfTextAtSize(titleText, 13)
-                page.drawText(titleText, {
-                    x: pageWidth - margin - titleW,
-                    y: hMid + 4,
-                    size: 13, font: boldFont, color: C_WHITE,
-                })
-
-                const periodoText = `Periodo: ${mesStr}`
-                const periodoW    = font.widthOfTextAtSize(periodoText, 8)
-                page.drawText(periodoText, {
-                    x: pageWidth - margin - periodoW,
-                    y: hMid - 9,
-                    size: 8, font, color: rgb(0.68, 0.78, 0.90),
-                })
-
-                yPosition = pageHeight - headerH
 
                 if (isFirstPage) {
                     const statsH      = 62

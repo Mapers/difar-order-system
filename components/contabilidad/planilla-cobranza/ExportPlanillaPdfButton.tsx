@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Printer, Loader2 } from 'lucide-react'
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib'
+import { cargarLogoPdf, dibujarCabeceraPdf } from "@/components/reporte/pdfCabecera"
 import { toast } from '@/app/hooks/useToast'
 import { PlanillaCabecera, PlanillaDetalle } from '@/app/types/planilla-types'
 import { fmtFecha, fmtHora, fmtMoney } from '@/lib/planilla.helper'
@@ -70,60 +71,21 @@ export default function ExportPlanillaPdfButton({ planilla, detalle }: Props) {
             let y          = PAGE_H - MARGIN
             let pageNumber = 1
 
-            // Logo
-            let logoImage: any = null
-            try {
-                const bytes = await fetch('/difar-logo.png').then(r => {
-                    if (!r.ok) throw new Error()
-                    return r.arrayBuffer()
-                })
-                logoImage = await pdfDoc.embedPng(bytes)
-            } catch { /* sin logo */ }
+            const logoImage = await cargarLogoPdf(pdfDoc)
 
             // ── Header de página ─────────────────────────────────────────
             const drawPageHeader = (p: typeof page) => {
-                let titleX = MARGIN
+                const now = new Date()
+                const impreso = `Impreso: ${now.toLocaleDateString('es-PE')} `
+                    + `${now.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' })}`
 
-                if (logoImage) {
-                    p.drawImage(logoImage, {
-                        x: MARGIN, y: PAGE_H - MARGIN - 8,
-                        width: 42, height: 26,
-                    })
-                    titleX = MARGIN + 52
-                }
-
-                p.drawText('DROGUERÍA DIFAR', {
-                    x: titleX, y: PAGE_H - MARGIN,
-                    size: 11, font: boldFont, color: CLR_META_VAL,
+                y = dibujarCabeceraPdf({
+                    page: p, font, boldFont, logo: logoImage,
+                    pageWidth: PAGE_W, pageHeight: PAGE_H, margin: MARGIN,
+                    subtitulo: 'PLANILLA DE COBRANZA',
+                    infoDerecha: `Página ${pageNumber}`,
+                    infoDerechaSec: impreso,
                 })
-                p.drawText('PLANILLA DE COBRANZA', {
-                    x: titleX, y: PAGE_H - MARGIN - 13,
-                    size: 8, font, color: CLR_META_LABEL,
-                })
-
-                // Fecha impresión + página (derecha)
-                const now       = new Date()
-                const dateStr   = `Impreso: ${now.toLocaleDateString('es-PE')} ${now.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' })}`
-                const pageStr   = `Página ${pageNumber}`
-                p.drawText(dateStr, {
-                    x: PAGE_W - MARGIN - font.widthOfTextAtSize(dateStr, 7),
-                    y: PAGE_H - MARGIN,
-                    size: 7, font, color: CLR_META_LABEL,
-                })
-                p.drawText(pageStr, {
-                    x: PAGE_W - MARGIN - font.widthOfTextAtSize(pageStr, 7),
-                    y: PAGE_H - MARGIN - 12,
-                    size: 7, font, color: CLR_META_LABEL,
-                })
-
-                // Línea separadora
-                y = PAGE_H - MARGIN - 34
-                p.drawLine({
-                    start: { x: MARGIN, y },
-                    end:   { x: PAGE_W - MARGIN, y },
-                    thickness: 1, color: CLR_SEP_HEAVY,
-                })
-                y -= 10
             }
 
             // ── Salto de página ──────────────────────────────────────────

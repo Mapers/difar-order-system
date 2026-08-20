@@ -4,6 +4,7 @@ import React, { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { FileText } from 'lucide-react'
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib'
+import { cargarLogoPdf, dibujarCabeceraPdf } from "@/components/reporte/pdfCabecera"
 import { toast } from '@/app/hooks/useToast'
 
 interface Producto {
@@ -54,48 +55,16 @@ export const ExportLibroPsicotropicosPdf: React.FC<Props> = ({
             let page      = pdfDoc.addPage([pageWidth, pageHeight])
             let y         = pageHeight - margin
 
-            // ── Logo ──────────────────────────────────────────────────────
-            let logoImage: any = null
-            try {
-                const bytes = await fetch('/difar-logo.png').then(r => {
-                    if (!r.ok) throw new Error()
-                    return r.arrayBuffer()
-                })
-                logoImage = await pdfDoc.embedPng(bytes)
-            } catch { /* sin logo */ }
+            const logoImage = await cargarLogoPdf(pdfDoc)
 
             // ── drawHeader (se repite en cada página nueva) ───────────────
             const drawHeader = () => {
-                let titleX = margin
-                if (logoImage) {
-                    page.drawImage(logoImage, { x: margin, y: pageHeight - margin - 15, width: 50, height: 30 })
-                    titleX = margin + 60
-                }
-
-                page.drawText('DROGUERÍA DIFAR', {
-                    x: titleX, y: pageHeight - margin,
-                    size: 10, font: boldFont, color: rgb(0.2, 0.2, 0.2)
+                y = dibujarCabeceraPdf({
+                    page, font, boldFont, logo: logoImage,
+                    pageWidth, pageHeight, margin,
+                    subtitulo: 'LIBRO DE CONTROL DE PSICOTRÓPICOS Y ESTUPEFACIENTES',
+                    infoDerechaSec: `Impreso: ${new Date().toLocaleDateString('es-PE')}`,
                 })
-                page.drawText('LIBRO DE CONTROL DE PSICOTRÓPICOS Y ESTUPEFACIENTES', {
-                    x: titleX, y: pageHeight - margin - 14,
-                    size: 9, font: boldFont, color: rgb(0, 0, 0)
-                })
-
-                const dateStr = `Impreso: ${new Date().toLocaleDateString('es-PE')}`
-                page.drawText(dateStr, {
-                    x: pageWidth - margin - font.widthOfTextAtSize(dateStr, 7),
-                    y: pageHeight - margin,
-                    size: 7, font, color: rgb(0.4, 0.4, 0.4)
-                })
-
-                // Línea separadora header
-                page.drawLine({
-                    start: { x: margin, y: pageHeight - margin - 22 },
-                    end:   { x: pageWidth - margin, y: pageHeight - margin - 22 },
-                    thickness: 0.5, color: rgb(0.7, 0.7, 0.7)
-                })
-
-                y = pageHeight - margin - 32
             }
 
             // ── Bloque de empresa (solo en la primera página) ─────────────

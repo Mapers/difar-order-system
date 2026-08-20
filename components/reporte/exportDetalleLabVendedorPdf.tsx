@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { FileText } from "lucide-react";
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
+import { cargarLogoPdf, dibujarCabeceraPdf } from "@/components/reporte/pdfCabecera";
 import { toast } from "@/app/hooks/useToast";
 import { formatDocumentoConTipo, formatFechaEmision, TotalesProductos } from "@/components/reporte/detalleLabVendedorShared";
 import { capPctCuota, estadoCuota, hexEstado, sinIgv } from "@/app/utils/cuotas-helpers";
@@ -72,37 +73,27 @@ export const ExportDetalleLabVendedorPdf: React.FC<ExportPdfProps> = ({
             let currentPage = pdfDoc.addPage([pageWidth, pageHeight]);
             let yPosition = pageHeight - margin;
 
-            let logoImage: any = null;
-            try {
-                const logoBytes = await fetch('/difar-logo.png').then(res => res.arrayBuffer());
-                logoImage = await pdfDoc.embedPng(logoBytes);
-            } catch { console.warn("Sin logo"); }
+            const logoImage = await cargarLogoPdf(pdfDoc);
 
             const vendData = data[0];
             const labData = vendData.Laboratorios[0];
 
             const drawPageHeader = (page: any, isFirst: boolean) => {
                 if (isFirst) {
-                    let titleXPos = margin;
-                    if (logoImage) {
-                        page.drawImage(logoImage, { x: margin, y: pageHeight - margin - 15, width: 50, height: 30 });
-                        titleXPos = margin + 60;
-                    }
-                    page.drawText("DISTRIBUIDORA E IMPORTADORA FARMACEUTICA S.A.C.", { x: titleXPos, y: pageHeight - margin, size: 10, font: boldFont });
-                    page.drawText("20481321892", { x: titleXPos, y: pageHeight - margin - 12, size: 10, font });
+                    // El laboratorio, el periodo y el vendedor eran cuatro
+                    // líneas sueltas bajo el título; ahora entran en los huecos
+                    // que la cabecera común ya tiene reservados.
+                    const titulo = viewMode === 'laboratorios'
+                        ? 'Ventas por Vendedor — Detalle por Laboratorio'
+                        : 'Ventas por Vendedor — Resumen por Productos';
 
-                    yPosition -= 40;
-                    const titulo = viewMode === 'laboratorios' ? 'Ventas por Vendedor — Detalle por Laboratorio' : 'Ventas por Vendedor — Resumen por Productos';
-                    page.drawText(titulo, { x: margin, y: yPosition, size: 12, font: boldFont });
-                    yPosition -= 15;
-                    page.drawText(`${labData.Laboratorio}`, { x: margin, y: yPosition, size: 10, font });
-                    yPosition -= 12;
-                    page.drawText(`${vendData.Mes}, ${vendData.Año}`, { x: margin, y: yPosition, size: 10, font });
-                    yPosition -= 15;
-                    page.drawText(`Vendedor: ${vendData.Vendedor}`, { x: margin, y: yPosition, size: 9, font: boldFont });
-                    yPosition -= 20;
-                    page.drawLine({ start: { x: margin, y: yPosition }, end: { x: pageWidth - margin, y: yPosition }, thickness: 1 });
-                    yPosition -= 15;
+                    yPosition = dibujarCabeceraPdf({
+                        page, font, boldFont, logo: logoImage,
+                        pageWidth, pageHeight, margin,
+                        subtitulo: titulo,
+                        infoDerecha: `${vendData.Mes}, ${vendData.Año}`,
+                        filtros: `${labData.Laboratorio}   |   Vendedor: ${vendData.Vendedor}`,
+                    });
                 } else {
                     yPosition -= 10;
                 }

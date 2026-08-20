@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Download, Loader2 } from "lucide-react";
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
+import { cargarLogoPdf, dibujarCabeceraPdf } from "@/components/reporte/pdfCabecera";
 import { toast } from "@/app/hooks/useToast";
 import { VendedorVencido } from "@/app/types/report-types";
 
@@ -77,61 +78,14 @@ export const ExportExpiredBalancesPdf: React.FC<ExportPdfProps> = ({ data, disab
                 danger: rgb(0.75, 0.1, 0.1)
             };
 
-            let logoImage = null;
-            try {
-                const logoUrl = '/difar-logo.png';
-                const logoBytes = await fetch(logoUrl).then((res) => {
-                    if (!res.ok) throw new Error("No se pudo cargar la imagen");
-                    return res.arrayBuffer();
-                });
-                logoImage = await pdfDoc.embedPng(logoBytes);
-            } catch (error) {
-                console.warn("No se pudo cargar el logotipo para el PDF:", error);
-            }
+            const logoImage = await cargarLogoPdf(pdfDoc);
 
             const drawHeader = (page: any) => {
-                let titleXPos = margin;
-
-                if (logoImage) {
-                    const logoWidth = 60;
-                    const logoHeight = 25;
-                    page.drawImage(logoImage, {
-                        x: margin,
-                        y: pageHeight - margin - logoHeight + 5,
-                        width: logoWidth,
-                        height: logoHeight,
-                    });
-                    titleXPos = margin + logoWidth + 15;
-                }
-
-                page.drawText("DROGUERÍA DIFAR", {
-                    x: titleXPos,
-                    y: pageHeight - margin - 5,
-                    size: 14,
-                    font: boldFont,
-                    color: colors.primary,
+                yPosition = dibujarCabeceraPdf({
+                    page, font, boldFont, logo: logoImage,
+                    pageWidth, pageHeight, margin,
+                    subtitulo: "REPORTE DE SALDOS POR COBRAR VENCIDOS",
                 });
-
-                page.drawText("REPORTE DE SALDOS POR COBRAR VENCIDOS", {
-                    x: titleXPos,
-                    y: pageHeight - margin - 18,
-                    size: 9,
-                    font,
-                    color: colors.textMuted,
-                });
-
-                const dateText = `Impreso el: ${new Date().toLocaleDateString('es-PE')} ${new Date().toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' })}`;
-                page.drawText(dateText, {
-                    x: pageWidth - margin - font.widthOfTextAtSize(dateText, 8),
-                    y: pageHeight - margin - 5,
-                    size: 8,
-                    font,
-                    color: colors.textMuted
-                });
-
-                yPosition = pageHeight - margin - 40;
-                page.drawLine({ start: { x: margin, y: yPosition }, end: { x: pageWidth - margin, y: yPosition }, thickness: 1, color: colors.border });
-                yPosition -= 20;
             };
 
             const checkPageBreak = (needed: number) => {

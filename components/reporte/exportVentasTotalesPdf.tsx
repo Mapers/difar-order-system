@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
+import { cargarLogoPdf, dibujarCabeceraPdf } from "@/components/reporte/pdfCabecera";
 import { toast } from "@/app/hooks/useToast";
 
 export interface VentasTotalesPdfProducto {
@@ -89,16 +90,7 @@ export const ExportVentasTotalesPdf: React.FC<ExportVentasTotalesPdfProps> = ({
             let currentPage = pdfDoc.addPage([pageWidth, pageHeight]);
             let yPosition   = pageHeight - margin;
 
-            let logoImage: any = null;
-            try {
-                const logoBytes = await fetch('/difar-logo.png').then((res) => {
-                    if (!res.ok) throw new Error("No se pudo cargar la imagen");
-                    return res.arrayBuffer();
-                });
-                logoImage = await pdfDoc.embedPng(logoBytes);
-            } catch (error) {
-                console.warn("No se pudo cargar el logotipo para el PDF:", error);
-            }
+            const logoImage = await cargarLogoPdf(pdfDoc);
 
             /** Corta el texto al ancho disponible. Sin esto se monta sobre la columna siguiente. */
             const truncar = (texto: string, ancho: number, size: number, f = font): string => {
@@ -112,53 +104,19 @@ export const ExportVentasTotalesPdf: React.FC<ExportVentasTotalesPdfProps> = ({
             };
 
             const drawHeader = (page: any) => {
-                let titleXPos = margin;
-                if (logoImage) {
-                    page.drawImage(logoImage, {
-                        x: margin, y: pageHeight - margin - 15, width: 50, height: 30,
-                    });
-                    titleXPos = margin + 60;
-                }
-
-                page.drawText(sanitizar(data.Empresa?.NombreRazSocial || 'DROGUERIA DIFAR'), {
-                    x: titleXPos, y: pageHeight - margin, size: 12, font: boldFont, color: rgb(0, 0, 0),
-                });
-
-                page.drawText(`RUC: ${data.Empresa?.RUC || '-'}`, {
-                    x: titleXPos, y: pageHeight - margin - 13, size: 9, font, color: rgb(0.3, 0.3, 0.3),
-                });
-
                 const subtitulo = modo === 'resumen'
                     ? 'Ventas Totales - Resumen por Laboratorio'
                     : 'Ventas Totales - Detalle por Producto';
-                page.drawText(subtitulo, {
-                    x: titleXPos, y: pageHeight - margin - 25, size: 10, font, color: rgb(0.3, 0.3, 0.3),
-                });
 
-                const periodoText = `Periodo: ${data.Mes}/${data.Anio}`;
-                page.drawText(periodoText, {
-                    x: pageWidth - margin - boldFont.widthOfTextAtSize(periodoText, 9),
-                    y: pageHeight - margin, size: 9, font: boldFont,
+                yPosition = dibujarCabeceraPdf({
+                    page, font, boldFont, logo: logoImage,
+                    pageWidth, pageHeight, margin,
+                    subtitulo,
+                    infoDerecha: `Periodo: ${data.Mes}/${data.Anio}`,
+                    filtros: `Laboratorios: ${filtroLaboratorios || 'Todos'}   |   Vendedores: ${filtroVendedores || 'Todos'}`,
+                    razonSocial: data.Empresa?.NombreRazSocial,
+                    ruc: data.Empresa?.RUC,
                 });
-
-                const dateText = `Generado: ${new Date().toLocaleDateString()}`;
-                page.drawText(dateText, {
-                    x: pageWidth - margin - font.widthOfTextAtSize(dateText, 8),
-                    y: pageHeight - margin - 13, size: 8, font, color: rgb(0.3, 0.3, 0.3),
-                });
-
-                // Los filtros van en la cabecera a propósito: sin ellos, dos PDFs
-                // del mismo periodo con cifras distintas son inexplicables.
-                const filtros = `Laboratorios: ${filtroLaboratorios || 'Todos'}   |   Vendedores: ${filtroVendedores || 'Todos'}`;
-                page.drawText(truncar(filtros, contentWidth, 8), {
-                    x: margin, y: pageHeight - margin - 40, size: 8, font, color: rgb(0.45, 0.45, 0.45),
-                });
-
-                yPosition = pageHeight - margin - 50;
-                page.drawLine({
-                    start: { x: margin, y: yPosition }, end: { x: pageWidth - margin, y: yPosition }, thickness: 1,
-                });
-                yPosition -= 20;
             };
 
             const nuevaPagina = () => {
