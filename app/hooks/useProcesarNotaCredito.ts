@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { format } from "date-fns"
 import { toast } from "@/app/hooks/useToast"
+import { useAuth } from "@/context/authContext"
 import {
     fetchComboAnio, fetchComboCentroCostos, fetchComboGlosa, fetchComboMes,
     fetchComboTipoAsiento, fetchSiguienteVoucher,
@@ -48,6 +49,7 @@ interface Combos {
 const COMBOS_VACIOS: Combos = { glosas: [], tiposAsiento: [], meses: [], anios: [], centrosCosto: [] }
 
 export function useProcesarNotaCredito() {
+    const { user } = useAuth()
     const [cabecera, setCabecera]         = useState<AsientoCabecera>(cabeceraInicial())
     const [lineas, setLineas]             = useState<AsientoLinea[]>([])
     const [numeroVoucher, setNumeroVoucher] = useState<number | null>(null)
@@ -150,10 +152,9 @@ export function useProcesarNotaCredito() {
                 destino:       cabecera.destino,
                 tipoAsientoId: Number(cabecera.tipoAsiento),
                 lineas,
+                idUsuarioWeb: user?.idUsuarioWeb ?? null,
             })
             toast({ title: "Éxito", description: "Nota de crédito aplicada correctamente" })
-            // Se limpia el detalle y se pide el siguiente correlativo: sin esto,
-            // volver a pulsar "Aceptar" grabaría un segundo asiento idéntico.
             setLineas([])
             await cargarVoucher(cabecera.anioRegistro)
             return true

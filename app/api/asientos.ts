@@ -35,3 +35,13 @@ export const buscarComprobantes = async (params: { codCliente: string; busqueda?
 export const guardarAsiento = async (payload: any): Promise<any> => {
     return apiClient.post('/asientos/guardar', payload)
 }
+
+export const listarHistorialNc = async (params?: {
+    fechaDesde?: string; fechaHasta?: string; busqueda?: string
+}): Promise<any> => {
+    return apiClient.get('/asientos/nc/historial', { params })
+}
+
+export const revertirProcesoNc = async (item: number): Promise<any> => {
+    return apiClient.put(`/asientos/nc/historial/${item}/revertir`)
+}

@@ -4,7 +4,9 @@ import { useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Plus } from "lucide-react"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { History, Plus } from "lucide-react"
+import { useAuth } from "@/context/authContext"
 import { useProcesarNotaCredito } from "@/app/hooks/useProcesarNotaCredito"
 import { AsientoLinea } from "@/app/types/procesar-nota-credito-types"
 import { CabeceraAsientoForm } from "./CabeceraAsientoForm"
@@ -12,6 +14,7 @@ import { DetalleAsientoTable } from "./DetalleAsientoTable"
 import { LineaAsientoModal } from "./LineaAsientoModal"
 import { ReiniciarVoucherDialog } from "./ReiniciarVoucherDialog"
 import { ConfirmarAplicacionDialog, FaseAplicacion } from "./ConfirmarAplicacionDialog"
+import { HistorialProcesos } from "./HistorialProcesos"
 
 function docRef(l?: AsientoLinea) {
     if (!l) return '—'
@@ -19,6 +22,7 @@ function docRef(l?: AsientoLinea) {
 }
 
 export default function ProcesarNotaCreditoPage() {
+    const auth = useAuth()
     const hook = useProcesarNotaCredito()
 
     const [lineaModalOpen, setLineaModalOpen] = useState(false)
@@ -26,6 +30,9 @@ export default function ProcesarNotaCreditoPage() {
     const [voucherDialogOpen, setVoucherDialogOpen] = useState(false)
     const [confirmOpen, setConfirmOpen]       = useState(false)
     const [fase, setFase]                     = useState<FaseAplicacion>('confirmar')
+    const [tab, setTab]                       = useState('procesar')
+
+    const puedeVerHistorial = (auth.user?.rolDescripcion ?? '').toLowerCase().includes('admin')
 
     const nc  = hook.lineas.find(l => l.tipDoc === '07') ?? hook.lineas.find(l => l.cargo > 0)
     const fac = hook.lineas.find(l => l.tipDoc === '01' || l.tipDoc === '03') ?? hook.lineas.find(l => l.abono > 0)
@@ -63,13 +70,8 @@ export default function ProcesarNotaCreditoPage() {
         setVoucherDialogOpen(false)
     }
 
-    return (
+    const contenidoProcesar = (
         <div className="grid gap-6">
-            <div className="flex flex-col gap-2">
-                <h1 className="text-3xl font-bold tracking-tight text-foreground">Procesar Nota de Crédito</h1>
-                <p className="text-muted-foreground">Registra el asiento contable que aplica una nota de crédito contra un comprobante.</p>
-            </div>
-
             <CabeceraAsientoForm
                 cabecera={hook.cabecera}
                 onChange={hook.setCabecera}
@@ -119,6 +121,37 @@ export default function ProcesarNotaCreditoPage() {
                     </Button>
                 </CardContent>
             </Card>
+        </div>
+    )
+
+    return (
+        <div className="grid gap-6">
+            <div className="flex flex-col gap-2">
+                <h1 className="text-3xl font-bold tracking-tight text-foreground">Procesar Nota de Crédito</h1>
+                <p className="text-muted-foreground">Registra el asiento contable que aplica una nota de crédito contra un comprobante.</p>
+            </div>
+
+            {puedeVerHistorial ? (
+                <Tabs value={tab} onValueChange={setTab} className="w-full">
+                    <TabsList>
+                        <TabsTrigger value="procesar">Procesar</TabsTrigger>
+                        <TabsTrigger value="historial" className="gap-1.5">
+                            <History className="h-4 w-4" />
+                            Historial de procesos
+                        </TabsTrigger>
+                    </TabsList>
+
+                    <TabsContent value="procesar" className="mt-4">
+                        {contenidoProcesar}
+                    </TabsContent>
+
+                    <TabsContent value="historial" className="mt-4">
+                        {/* Se carga solo al entrar al tab: sin esto pediría el
+                            historial en cada visita a la página. */}
+                        <HistorialProcesos habilitado={tab === 'historial'} />
+                    </TabsContent>
+                </Tabs>
+            ) : contenidoProcesar}
 
             <LineaAsientoModal
                 open={lineaModalOpen}

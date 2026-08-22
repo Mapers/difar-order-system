@@ -71,3 +71,26 @@ export interface ComboCentroCostosRow {
     Descripcion:     string
     Abreviado:       string
 }
+
+export interface ProcesoNcHistorial {
+    id_historial:   number
+    item:           number
+    numero_voucher: number | null
+    fecha_asiento:  string
+    moneda:         string | null
+    mes_registro:   string | null
+    anio_registro:  string | null
+    glosa:          string | null
+    destino:        number
+    tipo_asiento:   number
+    total_cargo:    string | number
+    total_abono:    string | number
+    nc_documento:   string | null
+    doc_aplicado:   string | null
+    cod_cliente:    string | null
+    cliente:        string | null
+    lineas_json:    any
+    id_usuario_web: number | null
+    fecha_proceso:  string
+    usuario:        string | null
+}
