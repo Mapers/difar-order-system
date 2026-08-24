@@ -34,12 +34,16 @@ export const QuickPriceEditModal = ({ filteredData = [] }: QuickPriceEditModalPr
 
     useEffect(() => {
         if (open) {
-            setRows(filteredData.map(item => ({
-                ...item,
-                isSaving: false,
-                isSuccess: false,
-                error: false
-            })));
+            setRows(
+                [...filteredData]
+                    .sort((a, b) => (a.nombre || '').localeCompare(b.nombre || '', 'es', { sensitivity: 'base' }))
+                    .map(item => ({
+                        ...item,
+                        isSaving: false,
+                        isSuccess: false,
+                        error: false
+                    }))
+            );
         }
     }, [open, filteredData]);
 
