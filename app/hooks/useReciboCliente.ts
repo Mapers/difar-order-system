@@ -94,8 +94,9 @@ export function useReciboCliente() {
 
             const aviso =
                 wp === 'OK' ? 'Enviado a Gerencia por WhatsApp.'
-                    : wp === 'SIN_DESTINO' ? 'No hay números configurados en el módulo RECIBO.'
-                        : 'No se pudo enviar el WhatsApp; el recibo quedó guardado.'
+                    : wp === 'PARCIAL' ? 'Enviado a Gerencia con el enlace al PDF; no se pudo adjuntar el archivo.'
+                        : wp === 'SIN_DESTINO' ? 'No hay números configurados en el módulo RECIBO.'
+                            : 'No se pudo enviar el WhatsApp; el recibo quedó guardado.'
 
             toast({
                 title: `✓ Recibo ${data.recibo.numero_recibo} generado`,
