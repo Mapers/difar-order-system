@@ -1,4 +1,4 @@
-import { ShoppingCart, CheckCircle2, ArrowLeftRight, AlertTriangle, FileWarning, FileClock } from "lucide-react";
+import { ShoppingCart, CheckCircle2, ArrowLeftRight, AlertTriangle, FileWarning, FileClock, FileCheck } from "lucide-react";
 import type { User } from "@/app/services/auth/types";
 import type { NotificationKind } from "./types";
 
@@ -105,6 +105,30 @@ export const NOTIFICATION_TYPES: NotificationTypeConfig[] = [
     // Se compara contra idUsuarioWeb y NO contra codigo: el borrador es del
     // usuario web, y codigo cambia cuando un representante simula a un
     // vendedor (authController.js:44-47). Mismo molde que transferResolved.
+    shouldReceive: ({ user }, payload) =>
+      user?.idUsuarioWeb != null &&
+      payload?.destinatario_codigo === `U${user.idUsuarioWeb}`,
+  },
+  {
+    kind: "reciboPermisoSolicitud",
+    socketEvent: "notification:reciboPermiso",
+    title: "Permiso para emitir recibo",
+    icon: FileCheck,
+    actionable: true,
+    showArrivalModal: true,
+    playSound: true,
+    persisted: true,
+    shouldReceive: ({ isAdmin }) => isAdmin(),
+  },
+  {
+    kind: "reciboPermisoResuelto",
+    socketEvent: "notification:reciboPermisoResuelto",
+    title: "Respuesta a tu solicitud",
+    icon: FileCheck,
+    actionable: false,
+    showArrivalModal: true,
+    playSound: true,
+    persisted: true,
     shouldReceive: ({ user }, payload) =>
       user?.idUsuarioWeb != null &&
       payload?.destinatario_codigo === `U${user.idUsuarioWeb}`,

@@ -7,6 +7,8 @@ import { TransferResolvedCard } from "./TransferResolvedCard";
 import { StockBajoCard } from "./StockBajoCard";
 import { SunatEstadoCard } from "./SunatEstadoCard";
 import { BorradorPendienteCard } from "./BorradorPendienteCard";
+import { ReciboPermisoCard } from "./ReciboPermisoCard";
+import { ReciboPermisoResueltoCard } from "./ReciboPermisoResueltoCard";
 
 /** Mapa visual kind → card de la lista. Agregar un tipo nuevo = una línea aquí. */
 export const NOTIFICATION_CARDS: Record<
@@ -20,4 +22,6 @@ export const NOTIFICATION_CARDS: Record<
   stockBajo: StockBajoCard,
   sunatEstado: SunatEstadoCard,
   borradorPendiente: BorradorPendienteCard,
+  reciboPermisoSolicitud: ReciboPermisoCard,
+  reciboPermisoResuelto: ReciboPermisoResueltoCard,
 };

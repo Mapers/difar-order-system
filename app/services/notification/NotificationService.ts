@@ -66,4 +66,18 @@ export class NotificationService {
     });
     return response.data;
   }
+
+  static async resolverPermisoRecibo(
+    idPermiso: string | number,
+    aprobar: boolean,
+    resueltoPor?: string | null,
+    resueltoNombre?: string | null,
+  ): Promise<any> {
+    const response = await apiClient.put(`/recibos/permiso/${idPermiso}/resolver`, {
+      aprobar,
+      resueltoPor: resueltoPor ?? null,
+      resueltoNombre: resueltoNombre ?? null,
+    });
+    return response.data;
+  }
 }

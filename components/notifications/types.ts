@@ -5,7 +5,9 @@ export type NotificationKind =
   | "transferResolved"
   | "stockBajo"
   | "sunatEstado"
-  | "borradorPendiente";
+  | "borradorPendiente"
+  | "reciboPermisoSolicitud"
+  | "reciboPermisoResuelto";
 
 export type NotificationStatus = "pending" | "approved" | "rejected";
 

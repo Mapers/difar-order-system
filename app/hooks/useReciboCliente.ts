@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import apiClient from '@/app/api/client'
 import { toast } from '@/app/hooks/useToast'
 import {
@@ -18,6 +18,30 @@ export function useReciboCliente() {
     const [historial, setHistorial] = useState<ReciboCabecera[]>([])
     const [loadingHistorial, setLoadingHistorial] = useState(false)
     const [emitiendo, setEmitiendo] = useState(false)
+    const [siguienteNumero, setSiguienteNumero] = useState<string | null>(null)
+
+    const cargarSiguienteNumero = useCallback(async () => {
+        try {
+            const res = await apiClient.get('/recibos/siguiente-correlativo')
+            setSiguienteNumero(res.data?.data?.numero ?? null)
+        } catch {
+            setSiguienteNumero(null)
+        }
+    }, [])
+
+    useEffect(() => { cargarSiguienteNumero() }, [cargarSiguienteNumero])
+
+    useEffect(() => {
+        const alVolver = () => {
+            if (document.visibilityState === 'visible') cargarSiguienteNumero()
+        }
+        document.addEventListener('visibilitychange', alVolver)
+        window.addEventListener('focus', alVolver)
+        return () => {
+            document.removeEventListener('visibilitychange', alVolver)
+            window.removeEventListener('focus', alVolver)
+        }
+    }, [cargarSiguienteNumero])
 
     const fetchHistorial = useCallback(async (
         filtros: FiltrosHistorial,
@@ -89,8 +113,9 @@ export function useReciboCliente() {
             return null
         } finally {
             setEmitiendo(false)
+            cargarSiguienteNumero()
         }
-    }, [])
+    }, [cargarSiguienteNumero])
 
     const obtenerRecibo = useCallback(async (idRecibo: number) => {
         try {
@@ -151,6 +176,8 @@ export function useReciboCliente() {
         historial,
         loadingHistorial,
         emitiendo,
+        siguienteNumero,
+        cargarSiguienteNumero,
         fetchHistorial,
         emitirRecibo,
         obtenerRecibo,

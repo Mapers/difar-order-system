@@ -110,7 +110,7 @@ function Casilla({
 
 export function ReciboForm({ onEmitido }: Props) {
     const { user, isVendedor, isRepresentante } = useAuth()
-    const { emitirRecibo, emitiendo } = useReciboCliente()
+    const { emitirRecibo, emitiendo, siguienteNumero } = useReciboCliente()
 
     const [clientes, setClientes] = useState<IClient[]>([])
     const [cargandoClientes, setCargandoClientes] = useState(false)
@@ -367,11 +367,19 @@ export function ReciboForm({ onEmitido }: Props) {
                             <span className="text-[clamp(16px,4vw,22px)] font-extrabold tracking-[2px]">RECIBO</span>
                             <span className="text-[clamp(18px,4.5vw,26px)] font-extrabold text-[#d21f27]">N°</span>
                             <span className="w-[120px] border-b border-[#e39aa0] pb-px text-[clamp(18px,4.5vw,26px)] font-extrabold tracking-wider text-[#d21f27]">
-                                <span className="text-[13px] font-semibold italic tracking-normal text-[#c9a2a6]">
-                                    al generar
-                                </span>
+                                {siguienteNumero ?? (
+                                    <span className="text-[13px] font-semibold italic tracking-normal text-[#c9a2a6]">
+                                        al generar
+                                    </span>
+                                )}
                             </span>
                         </div>
+
+                        {siguienteNumero && (
+                            <p className="mt-0.5 text-right text-[11px] font-semibold italic text-[#c9a2a6]">
+                                siguiente · referencial
+                            </p>
+                        )}
 
                         <div className="mt-1.5 flex flex-wrap justify-end gap-x-[18px] gap-y-2.5">
                             {CONCEPTOS.map(c => (
