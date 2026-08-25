@@ -44,23 +44,34 @@ const COLUMNS = [
  * Se devuelven los dos strings con la misma cantidad de líneas para que
  * las celdas queden alineadas fila a fila dentro del producto.
  */
-function parseLotes(raw: string): { lotes: string; vencimientos: string } {
-    if (!raw) return { lotes: '', vencimientos: '' }
+export interface LoteFila {
+    lote:  string
+    vcto:  string
+    stock: number | null
+}
 
-    const filas = raw.split(';').map(s => {
-        const [lote, fecha] = s.split('|')
+/**
+ * 'LOTE|YYYY-MM-DD|STOCK;LOTE|YYYY-MM-DD|STOCK' -> una fila por lote.
+ *
+ * El tercer campo lo agregó sp_lista_precios_all para poder abrir el export
+ * por lote. Se tolera que falte: si la BD todavía no tiene el SP nuevo, el
+ * stock queda en null y el export sigue saliendo, solo que sin esa columna.
+ */
+export function parseLotes(raw: string): LoteFila[] {
+    if (!raw) return []
+
+    return raw.split(';').map(s => {
+        const [lote, fecha, stock] = s.split('|')
         const vcto = moment(fecha, 'YYYY-MM-DD')
         return {
             lote: lote ?? '',
             // Sin esto, un lote sin fecha imprimía "Invalid date".
             vcto: fecha && vcto.isValid() ? vcto.format('DD/MM/YYYY') : '',
+            stock: stock !== undefined && stock !== '' && !isNaN(Number(stock))
+                ? Number(stock)
+                : null,
         }
     })
-
-    return {
-        lotes:        filas.map(f => f.lote).join('\n'),
-        vencimientos: filas.map(f => f.vcto).join('\n'),
-    }
 }
 
 function parseBonificaciones(raw: string, prodDesc: string): string {
@@ -172,7 +183,7 @@ const ExportExcelButton = ({ payload, filters }: { payload: any; filters?: any }
                     labRow.height     = 16
                 }
 
-                const { lotes, vencimientos } = parseLotes(item.lotes_raw)
+                const filasLote = parseLotes(item.lotes_raw)
 
                 const precioContado  = item.precio_contado  ? Number(item.precio_contado)  : null
                 const precioCredito  = item.precio_credito  ? Number(item.precio_credito)  : null
@@ -181,54 +192,71 @@ const ExportExcelButton = ({ payload, filters }: { payload: any; filters?: any }
 
                 const v = mapaVentas.get(String(item.prod_codigo))
 
-                const dataRow = ws.addRow({
-                    laboratorio  : item.laboratorio_Descripcion ?? '',
-                    codigo       : item.prod_codigo ?? '',
-                    descripcion  : item.prod_descripcion ?? '',
-                    presentacion : item.prod_presentacion ?? '',
-                    principio    : item.prod_principio ?? '',
-                    um           : item.prod_medida ?? '',
-                    lotes,
-                    vencimientos,
-                    stock        : Number(Number(item.kardex_saldoCant || 0).toFixed(2)),
-                    ventas3m     : Number(v?.total_3m ?? 0),
-                    ventasM1     : Number(v?.meses?.[0] ?? 0),
-                    ventasM2     : Number(v?.meses?.[1] ?? 0),
-                    ventasM3     : Number(v?.meses?.[2] ?? 0),
-                    precioContado,
-                    precioCredito,
-                    bonifContado,
-                    bonifCredito,
-                })
+                // Una fila por lote. Un producto sin lotes con saldo igual
+                // aparece, en una sola fila y con las columnas de lote vacías:
+                // si no, desaparecería del listado de precios.
+                const filas = filasLote.length > 0
+                    ? filasLote
+                    : [{ lote: '', vcto: '', stock: null } as LoteFila]
 
+                // El zebreado va por PRODUCTO, no por fila: así los lotes de un
+                // mismo producto comparten fondo y se leen como un bloque.
                 const isOdd  = rowIndex % 2 !== 0
                 const bgArgb = isOdd ? ROW_ODD_ARGB : 'FFFFFFFF'
-                dataRow.height = 16
 
-                const lineCount = Math.max(lotes.split('\n').length, 1)
-                if (lineCount > 1) dataRow.height = lineCount * 14
+                filas.forEach((f, iLote) => {
+                    const esPrimera = iLote === 0
 
-                COLUMNS.forEach((col, idx) => {
-                    const cell = dataRow.getCell(idx + 1)
-                    let textArgb = 'FF222222'
+                    const dataRow = ws.addRow({
+                        laboratorio  : item.laboratorio_Descripcion ?? '',
+                        codigo       : item.prod_codigo ?? '',
+                        descripcion  : item.prod_descripcion ?? '',
+                        presentacion : item.prod_presentacion ?? '',
+                        principio    : item.prod_principio ?? '',
+                        um           : item.prod_medida ?? '',
+                        lotes        : f.lote,
+                        vencimientos : f.vcto,
+                        // El stock es del lote. Si el SP todavía no lo manda,
+                        // se cae al total del producto y solo en la primera
+                        // fila, para que sumar la columna no dé de más.
+                        stock        : f.stock !== null
+                            ? Number(f.stock.toFixed(2))
+                            : (esPrimera ? Number(Number(item.kardex_saldoCant || 0).toFixed(2)) : null),
+                        // Las ventas son del producto, no del lote: repetirlas
+                        // en cada fila inflaría cualquier suma.
+                        ventas3m     : esPrimera ? Number(v?.total_3m ?? 0)   : null,
+                        ventasM1     : esPrimera ? Number(v?.meses?.[0] ?? 0) : null,
+                        ventasM2     : esPrimera ? Number(v?.meses?.[1] ?? 0) : null,
+                        ventasM3     : esPrimera ? Number(v?.meses?.[2] ?? 0) : null,
+                        precioContado,
+                        precioCredito,
+                        bonifContado,
+                        bonifCredito,
+                    })
 
-                    if (col.key === 'stock')         textArgb = STOCK_ARGB
-                    if (col.key === 'ventas3m') textArgb = VENTAS_ARGB
-                    if (col.key === 'bonifContado' || col.key === 'bonifCredito') textArgb = BONIF_ARGB
+                    dataRow.height = 16
 
-                    cell.font      = { size: 9, color: { argb: textArgb } }
-                    cell.fill      = { type: 'pattern', pattern: 'solid', fgColor: { argb: bgArgb } }
-                    cell.alignment = {
-                        horizontal: ['stock','ventas3m','ventasM1','ventasM2','ventasM3','precioContado','precioCredito','bonifContado','bonifCredito'].includes(col.key)
-                            ? 'right' : 'left',
-                        vertical  : 'top',
-                        wrapText  : true,
-                    }
-                    if (col.numFmt !== '@' && cell.value !== null) cell.numFmt = col.numFmt
+                    COLUMNS.forEach((col, idx) => {
+                        const cell = dataRow.getCell(idx + 1)
+                        let textArgb = 'FF222222'
 
-                    const cellStr = cell.value != null ? String(cell.value) : ''
-                    const firstLine = cellStr.split('\n')[0]
-                    if (firstLine.length > maxLen[idx]) maxLen[idx] = firstLine.length
+                        if (col.key === 'stock')         textArgb = STOCK_ARGB
+                        if (col.key === 'ventas3m') textArgb = VENTAS_ARGB
+                        if (col.key === 'bonifContado' || col.key === 'bonifCredito') textArgb = BONIF_ARGB
+
+                        cell.font      = { size: 9, color: { argb: textArgb } }
+                        cell.fill      = { type: 'pattern', pattern: 'solid', fgColor: { argb: bgArgb } }
+                        cell.alignment = {
+                            horizontal: ['stock','ventas3m','ventasM1','ventasM2','ventasM3','precioContado','precioCredito','bonifContado','bonifCredito'].includes(col.key)
+                                ? 'right' : 'left',
+                            vertical  : 'top',
+                            wrapText  : true,
+                        }
+                        if (col.numFmt !== '@' && cell.value !== null) cell.numFmt = col.numFmt
+
+                        const cellStr = cell.value != null ? String(cell.value) : ''
+                        if (cellStr.length > maxLen[idx]) maxLen[idx] = cellStr.length
+                    })
                 })
 
                 rowIndex++

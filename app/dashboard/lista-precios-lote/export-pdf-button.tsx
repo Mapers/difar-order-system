@@ -56,13 +56,22 @@ const ExportPdfButton = ({ payload, filters }: { payload: any; filters?: any }) 
     return lines.length > 0 ? lines : ['']
   }
 
+  /**
+   * 'LOTE|YYYY-MM-DD|STOCK;...' -> una entrada por lote.
+   *
+   * El tercer campo lo agregó sp_lista_precios_all para poder abrir el
+   * export por lote. Se tolera que falte: con el SP viejo el stock queda en
+   * null y se cae al total del producto.
+   */
   const processLotes = (lotesRaw: string) => {
     if (!lotesRaw) return []
     return lotesRaw.split(';').map(loteStr => {
-      const [lote, fecha] = loteStr.split('|')
+      const [lote, fecha, stock] = loteStr.split('|')
+      const f = moment(fecha, 'YYYY-MM-DD')
       return {
-        lote,
-        fecha: moment(fecha, 'YYYY-MM-DD').format('DD/MM/YYYY')
+        lote: lote ?? '',
+        fecha: fecha && f.isValid() ? f.format('DD/MM/YYYY') : '',
+        stock: stock !== undefined && stock !== '' && !isNaN(Number(stock)) ? Number(stock) : null,
       }
     })
   }
@@ -238,19 +247,37 @@ const ExportPdfButton = ({ payload, filters }: { payload: any; filters?: any }) 
           drawLabBand(currentPage, item.laboratorio_Descripcion)
         }
 
-        const lotes = processLotes(item.lotes_raw)
+        const lotesDelItem = processLotes(item.lotes_raw)
+
+        // Una fila por lote. Un producto sin lotes con saldo igual sale, en
+        // una sola fila y con la columna de lote vacía: si no, desaparecería
+        // de la lista de precios.
+        const filasLote = lotesDelItem.length > 0
+          ? lotesDelItem
+          : [{ lote: '', fecha: '', stock: null as number | null }]
+
+        // El zebreado se calcula una vez por PRODUCTO para que todos sus
+        // lotes compartan fondo y se lean como un bloque.
+        const zebraProducto = rowIndex % 2 === 1
+
+        for (let iLote = 0; iLote < filasLote.length; iLote++) {
+        const loteFila = filasLote[iLote]
+        const esPrimeraFila = iLote === 0
 
         const descLines = splitTextIntoLines(item.prod_descripcion || '', columnWidths[0] - 5, font, baseFontSize)
 
         const lineHeight = isLandscape ? 7 : 5;
 
         const descHeight = descLines.length * lineHeight
-        const lotesHeight = lotes.length * lineHeight
+        const lotesHeight = lineHeight
 
         // Las barras necesitan su propio alto minimo: si la fila trae una sola
         // linea de texto, sin esto quedarian recortadas.
         const barrasAlto = isLandscape ? 12 : 9
-        const maxHeight = Math.max(descHeight, lotesHeight, barrasAlto, lineHeight)
+        // barrasAlto solo cuenta en la primera fila, que es donde se dibujan
+        // las barras; si no, cada fila de lote quedaria igual de alta sin
+        // necesidad y el PDF crece de gusto.
+        const maxHeight = Math.max(descHeight, lotesHeight, esPrimeraFila ? barrasAlto : 0, lineHeight)
         const neededHeight = maxHeight + rowGap
 
         if (yPosition - neededHeight < minYPosition) {
@@ -261,8 +288,8 @@ const ExportPdfButton = ({ payload, filters }: { payload: any; filters?: any }) 
           rowIndex = 0
         }
 
-        // Fondo zebra (filas impares)
-        if (rowIndex % 2 === 1) {
+        // Fondo zebra (por producto, no por fila de lote)
+        if (zebraProducto) {
           currentPage.drawRectangle({
             x: margin,
             y: yPosition - maxHeight - rowGap,
@@ -288,18 +315,14 @@ const ExportPdfButton = ({ payload, filters }: { payload: any; filters?: any }) 
         })
         xPosition += columnWidths[0]
 
-        // LOTES (columna 1)
-        const lotesStartY = yPosition - topPad - ((maxHeight - lotesHeight) / 2)
-        lotes.forEach((lote, index) => {
-          const loteText = `${lote.lote} - ${lote.fecha}`
-          currentPage.drawText(loteText, {
-            x: xPosition,
-            y: lotesStartY - (index * lineHeight),
-            size: smallFontSize,
-            font,
-            color: C.text,
-          })
-        })
+        // LOTES (columna 1) — una fila del PDF = un lote
+        if (loteFila.lote) {
+          const lotesStartY = yPosition - topPad - ((maxHeight - lotesHeight) / 2)
+          currentPage.drawText(
+            loteFila.fecha ? `${loteFila.lote} - ${loteFila.fecha}` : loteFila.lote,
+            { x: xPosition, y: lotesStartY, size: smallFontSize, font, color: C.text }
+          )
+        }
         xPosition += columnWidths[1]
 
         // UM (columna 2)
@@ -308,17 +331,25 @@ const ExportPdfButton = ({ payload, filters }: { payload: any; filters?: any }) 
         })
         xPosition += columnWidths[2]
 
-        // STOCK (columna 3)
-        const stockValue = Number(item.kardex_saldoCant).toFixed(2) || '0.00'
-        currentPage.drawText(stockValue, {
-          x: xPosition, y: codigoY, size: baseFontSize, font: boldFont, color: C.stock,
-        })
+        // STOCK (columna 3) — el del lote. Si el SP todavía no lo manda, se
+        // cae al total del producto y solo en su primera fila, para que
+        // sumar la columna no dé de más.
+        const stockValue = loteFila.stock !== null
+          ? loteFila.stock.toFixed(2)
+          : (esPrimeraFila ? (Number(item.kardex_saldoCant) || 0).toFixed(2) : '')
+        if (stockValue) {
+          currentPage.drawText(stockValue, {
+            x: xPosition, y: codigoY, size: baseFontSize, font: boldFont, color: C.stock,
+          })
+        }
         xPosition += columnWidths[3]
 
         // VENTAS 3M (columna 4) — mini barras como en la pantalla, mas el total.
         // La barra del mes mayor llega al tope y el resto se escala contra ese
         // maximo; misma regla que VentasSparkline.
-        const mesesVenta = mapaVentas.get(String(item.prod_codigo)) || []
+        // Las ventas son del producto, no del lote: van solo en su primera
+        // fila para no repetir el dato ni inflar lo que alguien sume.
+        const mesesVenta = esPrimeraFila ? (mapaVentas.get(String(item.prod_codigo)) || []) : []
         const totalVenta = mesesVenta.reduce((a, b) => a + b, 0)
         const baseBarras = codigoY
 
@@ -342,7 +373,7 @@ const ExportPdfButton = ({ payload, filters }: { payload: any; filters?: any }) 
           currentPage.drawText(totalVenta.toFixed(2), {
             x: xPosition + anchoBloque, y: baseBarras, size: baseFontSize, font: boldFont, color: C.stock,
           })
-        } else {
+        } else if (esPrimeraFila) {
           currentPage.drawText('Sin ventas', {
             x: xPosition, y: baseBarras, size: tinyFontSize, font, color: C.border,
           })
@@ -392,6 +423,8 @@ const ExportPdfButton = ({ payload, filters }: { payload: any; filters?: any }) 
         })
 
         yPosition -= maxHeight + rowGap
+        }
+
         rowIndex++
       }
 
