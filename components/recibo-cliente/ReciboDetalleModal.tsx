@@ -2,19 +2,16 @@
 
 import { useEffect, useState } from 'react'
 import {
-    Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
+    Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
-import {
-    Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow,
-} from '@/components/ui/table'
-import { Download, FileText } from 'lucide-react'
+import { ExternalLink, FileText, FileWarning } from 'lucide-react'
+import { VouchersRecibo } from './VouchersRecibo'
 import { publicApi } from '@/app/api/client'
 import { useReciboCliente } from '@/app/hooks/useReciboCliente'
 import {
-    CONCEPTOS, TIPOS_LIQUIDACION, ReciboCabecera, ReciboDetalle, simboloMoneda,
+    CONCEPTOS, TIPOS_LIQUIDACION, ReciboCabecera, simboloMoneda,
 } from '@/app/types/recibo-cliente-types'
 
 interface Props {
@@ -31,7 +28,6 @@ export function ReciboDetalleModal({ open, onOpenChange, idRecibo }: Props) {
     const { obtenerRecibo } = useReciboCliente()
 
     const [recibo, setRecibo] = useState<ReciboCabecera | null>(null)
-    const [detalle, setDetalle] = useState<ReciboDetalle[]>([])
     const [loading, setLoading] = useState(false)
 
     useEffect(() => {
@@ -39,13 +35,11 @@ export function ReciboDetalleModal({ open, onOpenChange, idRecibo }: Props) {
 
         setLoading(true)
         setRecibo(null)
-        setDetalle([])
 
         obtenerRecibo(idRecibo)
             .then(data => {
                 if (!data) return
                 setRecibo(data.recibo)
-                setDetalle(data.detalle)
             })
             .finally(() => setLoading(false))
     }, [open, idRecibo, obtenerRecibo])
@@ -74,7 +68,7 @@ export function ReciboDetalleModal({ open, onOpenChange, idRecibo }: Props) {
                         )}
                     </DialogTitle>
                     <DialogDescription>
-                        Detalle del recibo emitido y descarga del documento para firmar.
+                        Detalle del recibo, vouchers adjuntos y vista previa del documento.
                     </DialogDescription>
                 </DialogHeader>
 
@@ -97,43 +91,10 @@ export function ReciboDetalleModal({ open, onOpenChange, idRecibo }: Props) {
                             {dato('Concepto', etiqueta(CONCEPTOS, recibo.concepto))}
                             {dato('Tipo de liquidación', etiqueta(TIPOS_LIQUIDACION, recibo.tipo_liquidacion))}
                             {recibo.tipo_liquidacion === 'PLANILLA' && dato('N° Planilla', recibo.numero_planilla)}
+                            {dato('Total', `${simbolo} ${Number(recibo.total).toFixed(2)}`)}
                         </div>
 
                         {recibo.detalle && dato('Por lo siguiente', recibo.detalle)}
-
-                        <div className="rounded-md border overflow-x-auto">
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Tipo</TableHead>
-                                        <TableHead>N°</TableHead>
-                                        <TableHead className="text-right">Importe</TableHead>
-                                        <TableHead>Observaciones</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {detalle.map(d => (
-                                        <TableRow key={d.id_detalle}>
-                                            <TableCell>{d.abre_documento || d.tipo_documento || '—'}</TableCell>
-                                            <TableCell>{d.documento_completo || '—'}</TableCell>
-                                            <TableCell className="text-right">
-                                                {simbolo} {Number(d.importe).toFixed(2)}
-                                            </TableCell>
-                                            <TableCell>{d.observaciones || '—'}</TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                                <TableFooter>
-                                    <TableRow>
-                                        <TableCell colSpan={2} className="text-right font-bold">TOTAL</TableCell>
-                                        <TableCell className="text-right font-bold">
-                                            {simbolo} {Number(recibo.total).toFixed(2)}
-                                        </TableCell>
-                                        <TableCell>{recibo.observacion || ''}</TableCell>
-                                    </TableRow>
-                                </TableFooter>
-                            </Table>
-                        </div>
 
                         {dato('La cantidad de', recibo.total_letras)}
 
@@ -149,22 +110,46 @@ export function ReciboDetalleModal({ open, onOpenChange, idRecibo }: Props) {
                                 WhatsApp: {recibo.whatsapp_detalle}
                             </p>
                         )}
+
+                        <VouchersRecibo
+                            idRecibo={idRecibo}
+                            anulado={recibo.estado === 'ANULADO'}
+                            idEmisor={recibo.id_usuario_web ?? null}
+                            abierto={open}
+                        />
+
+                        {urlPdf ? (
+                            <div className="rounded-lg border">
+                                <div className="flex items-center justify-between gap-2 border-b px-3 py-2">
+                                    <span className="text-sm font-semibold">Documento</span>
+                                    <a
+                                        href={urlPdf}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="flex items-center gap-1 text-xs font-medium text-sky-700 hover:underline sm:hidden"
+                                    >
+                                        <ExternalLink className="h-3.5 w-3.5" />
+                                        Abrir el PDF
+                                    </a>
+                                </div>
+                                <iframe
+                                    src={urlPdf}
+                                    title={`Recibo ${recibo.numero_recibo}`}
+                                    className="h-[420px] w-full rounded-b-lg sm:h-[520px]"
+                                />
+                            </div>
+                        ) : (
+                            <div className="flex flex-col items-center gap-2 rounded-lg border border-dashed px-6 py-8 text-center">
+                                <FileWarning className="h-8 w-8 text-muted-foreground" />
+                                <p className="text-sm font-medium">El PDF de este recibo no se generó</p>
+                                <p className="text-xs text-muted-foreground">
+                                    El recibo está guardado; solo falta el documento.
+                                </p>
+                            </div>
+                        )}
                     </div>
                 )}
 
-                <DialogFooter>
-                    <Button variant="outline" onClick={() => onOpenChange(false)}>
-                        Cerrar
-                    </Button>
-                    <Button
-                        disabled={!urlPdf}
-                        title={urlPdf ? undefined : 'El PDF no se pudo generar'}
-                        onClick={() => urlPdf && window.open(urlPdf, '_blank')}
-                    >
-                        <Download className="h-4 w-4 mr-2" />
-                        Descargar PDF
-                    </Button>
-                </DialogFooter>
             </DialogContent>
         </Dialog>
     )
