@@ -46,7 +46,7 @@ export function useProductModals() {
         setLotsModalOpen(true);
         setLoadingLots(true);
         try {
-            const response = await PriceService.getProductLots(product.prod_codigo);
+            const response = await PriceService.getProductLots(product.prod_codigo, null, true);
             setLotDetails(response.data || []);
         } catch (error) {
             setLotDetails([]);

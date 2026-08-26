@@ -59,9 +59,17 @@ export class PriceService {
     return response.data;
   }
 
-  static async getProductLots(code: string, almacen?: number | null): Promise<any> {
+  static async getProductLots(
+    code: string,
+    almacen?: number | null,
+    incluirNegativos = false,
+  ): Promise<any> {
+    const params: Record<string, string | number> = {};
+    if (almacen) params.almacen = almacen;
+    if (incluirNegativos) params.incluirNegativos = '1';
+
     const response = await apiClient.get(`/price/list-prices-lote/${code}`, {
-      params: almacen ? { almacen } : undefined,
+      params: Object.keys(params).length ? params : undefined,
     });
     return response.data;
   }

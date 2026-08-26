@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Edit } from "lucide-react";
+import { Edit, AlertTriangle } from "lucide-react";
 import { PriceMethodsService } from "@/app/dashboard/lista-precios-lote/services/priceMethodsService";
 
 const formatDateToDDMMYYYY = (dateString: string) => {
@@ -29,6 +29,12 @@ const IgvBadge = ({ tipo, afecto }: { tipo: string; afecto: number }) => {
 export const PriceModals = ({ modals, user, isAdmin }: any) => {
     const { lots, prices, kardex, selectedProduct } = modals;
 
+    const sumaLotes = (lots.data || [])
+        .reduce((total: number, l: any) => total + (Number(l.stock) || 0), 0);
+    const stockProducto = Number(selectedProduct?.kardex_saldoCant) || 0;
+    const descuadre = Math.abs(sumaLotes - stockProducto) > 0.005;
+    const hayNegativos = (lots.data || []).some((l: any) => Number(l.stock) < 0);
+
     return (
         <>
             <Dialog open={lots.open} onOpenChange={lots.setOpen}>
@@ -37,6 +43,33 @@ export const PriceModals = ({ modals, user, isAdmin }: any) => {
                         <DialogTitle>Detalles de Lotes - {selectedProduct?.prod_codigo}</DialogTitle>
                         <DialogDescription>{selectedProduct?.prod_descripcion}</DialogDescription>
                     </DialogHeader>
+                    {!lots.loading && (hayNegativos || descuadre) && (
+                        <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3">
+                            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+                            <div className="text-xs text-amber-800">
+                                {hayNegativos ? (
+                                    <>
+                                        <p className="font-semibold">Hay lotes con saldo negativo</p>
+                                        <p className="mt-1">
+                                            Un lote no puede tener saldo negativo: casi siempre es un código
+                                            mal digitado en un despacho. El stock del producto
+                                            ({stockProducto.toLocaleString("es-ES", { minimumFractionDigits: 2 })})
+                                            sí es correcto, porque descuenta esas salidas.
+                                        </p>
+                                    </>
+                                ) : (
+                                    <>
+                                        <p className="font-semibold">Los lotes no cuadran con el stock del producto</p>
+                                        <p className="mt-0.5">
+                                            Lotes listados: {sumaLotes.toLocaleString("es-ES", { minimumFractionDigits: 2 })} ·
+                                            Stock del producto: {stockProducto.toLocaleString("es-ES", { minimumFractionDigits: 2 })}
+                                        </p>
+                                    </>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
                     {lots.loading ? <Skeleton className="h-32 w-full" /> : (
                         <Table>
                             <TableHeader>
@@ -50,12 +83,21 @@ export const PriceModals = ({ modals, user, isAdmin }: any) => {
                             <TableBody>
                                 {lots.data.map((lot: any, idx: number) => {
                                     const status = PriceMethodsService.getExpirationStatus(lot.fechaVencimiento);
+
+                                    const negativo = Number(lot.stock) < 0;
+
                                     return (
-                                        <TableRow key={idx}>
+                                        <TableRow key={idx} className={negativo ? "bg-red-50" : undefined}>
                                             <TableCell className="font-mono">{lot.numeroLote}</TableCell>
-                                            <TableCell>{Number(lot.stock).toLocaleString("es-ES", { minimumFractionDigits: 2 })}</TableCell>
+                                            <TableCell className={negativo ? "font-semibold text-red-700" : undefined}>
+                                                {Number(lot.stock).toLocaleString("es-ES", { minimumFractionDigits: 2 })}
+                                            </TableCell>
                                             <TableCell>{formatDateToDDMMYYYY(lot.fechaVencimiento)}</TableCell>
-                                            <TableCell><Badge variant={status.variant}>{status.status}</Badge></TableCell>
+                                            <TableCell>
+                                                {negativo
+                                                    ? <Badge variant="destructive">LOTE INVÁLIDO</Badge>
+                                                    : <Badge variant={status.variant}>{status.status}</Badge>}
+                                            </TableCell>
                                         </TableRow>
                                     );
                                 })}
