@@ -15,11 +15,12 @@ interface Props {
     anulado: boolean
     idEmisor: number | null
     abierto: boolean
+    onCambio?: () => void
 }
 
 const esPdf = (v: ReciboVoucher) => /\.pdf$/i.test(v.ruta)
 
-export function VouchersRecibo({ idRecibo, anulado, idEmisor, abierto }: Props) {
+export function VouchersRecibo({ idRecibo, anulado, idEmisor, abierto, onCambio }: Props) {
     const { user, isAdmin } = useAuth()
     const { vouchers, cargando, subiendo, borrando, subir, eliminar } =
         useReciboVouchers(idRecibo, abierto)
@@ -37,7 +38,8 @@ export function VouchersRecibo({ idRecibo, anulado, idEmisor, abierto }: Props) 
 
     const alSubir = async (archivo?: File) => {
         if (!archivo || !user?.idUsuarioWeb) return
-        await subir(archivo, user.idUsuarioWeb)
+        const ok = await subir(archivo, user.idUsuarioWeb)
+        if (ok) onCambio?.()
     }
 
     return (
@@ -141,7 +143,7 @@ export function VouchersRecibo({ idRecibo, anulado, idEmisor, abierto }: Props) 
                                                     onClick={async () => {
                                                         if (!user?.idUsuarioWeb) return
                                                         const ok = await eliminar(v.id_voucher, user.idUsuarioWeb)
-                                                        if (ok) setConfirmar(null)
+                                                        if (ok) { setConfirmar(null); onCambio?.() }
                                                     }}
                                                 >
                                                     {borrando === v.id_voucher

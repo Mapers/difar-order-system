@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label'
 import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select'
-import { Ban, Download, Eye, FileText, Loader2, Search, X } from 'lucide-react'
+import { Ban, Download, Eye, FileText, Loader2, Paperclip, Search, X } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
 import { publicApi } from '@/app/api/client'
 import { useAuth } from '@/context/authContext'
@@ -52,6 +52,22 @@ function EstadoBadge({ estado }: { estado: EstadoRecibo }) {
     )
 }
 
+function VoucherBadge({ cantidad }: { cantidad: number }) {
+    const tiene = cantidad > 0
+
+    return (
+        <span
+            className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold ${
+                tiene ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'
+            }`}
+            title={tiene ? `${cantidad} voucher(s) adjunto(s)` : 'Sin voucher adjunto'}
+        >
+            <Paperclip className="h-3 w-3" />
+            {tiene ? cantidad : 'Sin voucher'}
+        </span>
+    )
+}
+
 export function HistorialRecibos() {
     const { user, isAdmin } = useAuth()
     const { historial, loadingHistorial, fetchHistorial, anularRecibo } = useReciboCliente()
@@ -59,6 +75,12 @@ export function HistorialRecibos() {
     const [filtros, setFiltros] = useState<FiltrosHistorial>(FILTROS_VACIOS)
     const [reciboVisto, setReciboVisto] = useState<number | null>(null)
     const [reciboAAnular, setReciboAAnular] = useState<ReciboCabecera | null>(null)
+
+    /* El badge de vouchers viene del listado, no del modal. Si dentro del
+       detalle se adjuntó o borró alguno, el listado quedó desactualizado y hay
+       que volver a pedirlo al cerrar. En un ref y no en estado: no repinta
+       nada por sí solo, solo recuerda que hubo cambio. */
+    const vouchersCambiaron = useRef(false)
 
     const idUsuarioFiltro = isAdmin() ? null : (user?.idUsuarioWeb ?? null)
 
@@ -240,6 +262,7 @@ export function HistorialRecibos() {
                                             <th className="px-3 py-3 text-left text-xs font-medium uppercase text-muted-foreground">Vendedor</th>
                                             <th className="px-3 py-3 text-left text-xs font-medium uppercase text-muted-foreground">Concepto</th>
                                             <th className="px-3 py-3 text-left text-xs font-medium uppercase text-muted-foreground">Docs</th>
+                                            <th className="px-3 py-3 text-left text-xs font-medium uppercase text-muted-foreground">Voucher</th>
                                             <th className="px-3 py-3 text-left text-xs font-medium uppercase text-muted-foreground">Total</th>
                                             <th className="px-3 py-3 text-left text-xs font-medium uppercase text-muted-foreground">Estado</th>
                                             <th className="px-3 py-3 text-left text-xs font-medium uppercase text-muted-foreground">Acciones</th>
@@ -269,6 +292,7 @@ export function HistorialRecibos() {
                                                     <td className="p-4 text-sm">{r.nombre_vendedor || '—'}</td>
                                                     <td className="p-4 text-sm">{etiquetaConcepto(r.concepto)}</td>
                                                     <td className="p-4 text-sm tabular-nums">{r.total_documentos ?? '—'}</td>
+                                                    <td className="p-4"><VoucherBadge cantidad={Number(r.total_vouchers ?? 0)} /></td>
                                                     <td className="p-4 text-sm font-medium tabular-nums">
                                                         {simboloMoneda(r.moneda)} {Number(r.total).toFixed(2)}
                                                     </td>
@@ -278,7 +302,7 @@ export function HistorialRecibos() {
                                             ))
                                         ) : (
                                             <tr>
-                                                <td colSpan={10} className="p-10 text-center">
+                                                <td colSpan={11} className="p-10 text-center">
                                                     <FileText className="mx-auto mb-3 h-10 w-10 text-muted-foreground" />
                                                     <p className="text-sm text-muted-foreground">
                                                         No hay recibos con esos filtros.
@@ -308,6 +332,7 @@ export function HistorialRecibos() {
                                                             {r.numero_recibo}
                                                         </span>
                                                         <EstadoBadge estado={r.estado} />
+                                                        <VoucherBadge cantidad={Number(r.total_vouchers ?? 0)} />
                                                     </div>
                                                     <p className="text-sm text-muted-foreground">
                                                         {fmtFecha(r.fecha_emision)}
@@ -358,8 +383,18 @@ export function HistorialRecibos() {
 
             <ReciboDetalleModal
                 open={reciboVisto != null}
-                onOpenChange={(v) => { if (!v) setReciboVisto(null) }}
+                onOpenChange={(v) => {
+                    if (v) return
+
+                    setReciboVisto(null)
+
+                    if (vouchersCambiaron.current) {
+                        vouchersCambiaron.current = false
+                        fetchHistorial(filtros, idUsuarioFiltro)
+                    }
+                }}
                 idRecibo={reciboVisto}
+                onVouchersCambiaron={() => { vouchersCambiaron.current = true }}
             />
 
             <AnularReciboDialog

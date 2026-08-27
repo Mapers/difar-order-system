@@ -18,13 +18,14 @@ interface Props {
     open: boolean
     onOpenChange: (v: boolean) => void
     idRecibo: number | null
+    onVouchersCambiaron?: () => void
 }
 
 function etiqueta(lista: { value: string; label: string }[], value?: string | null) {
     return lista.find(x => x.value === value)?.label ?? value ?? '—'
 }
 
-export function ReciboDetalleModal({ open, onOpenChange, idRecibo }: Props) {
+export function ReciboDetalleModal({ open, onOpenChange, idRecibo, onVouchersCambiaron }: Props) {
     const { obtenerRecibo } = useReciboCliente()
 
     const [recibo, setRecibo] = useState<ReciboCabecera | null>(null)
@@ -116,6 +117,7 @@ export function ReciboDetalleModal({ open, onOpenChange, idRecibo }: Props) {
                             anulado={recibo.estado === 'ANULADO'}
                             idEmisor={recibo.id_usuario_web ?? null}
                             abierto={open}
+                            onCambio={onVouchersCambiaron}
                         />
 
                         {urlPdf ? (

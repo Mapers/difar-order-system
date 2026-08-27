@@ -74,6 +74,7 @@ export interface ReciboCabecera {
     whatsapp_detalle: string | null
     fecha_registro: string | null
     total_documentos?: number
+    total_vouchers?: number
     tiene_firma_cliente?: number
     tiene_firma_vendedor?: number
     firma_cliente?: string | null
