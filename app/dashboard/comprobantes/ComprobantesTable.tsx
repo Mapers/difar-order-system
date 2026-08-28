@@ -3,7 +3,8 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import {
     Eye, MoreHorizontal, XCircle, Loader2, FileJson, Code,
-    AlertCircle, Info, Truck, MessageCircle, Mail, Activity, Lock, PenLine, CalendarClock, ArrowLeftRight, Warehouse
+    AlertCircle, Info, Truck, MessageCircle, Mail, Activity, Lock, PenLine, CalendarClock, ArrowLeftRight, Warehouse,
+    ClipboardCheck
 } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
@@ -27,12 +28,15 @@ interface ComprobantesTableProps {
     onModificarCuotas: (comprobante: Comprobante) => void
     onTransferirVendedor: (comprobante: Comprobante) => void
     onTransferirAlmacen: (comprobante: Comprobante) => void
+    onGestionarConformidad: (comprobante: Comprobante) => void
+    puedeGestionarConformidad: boolean
 }
 
 export function ComprobantesTable({
                                       comprobantes, loading, tiposComprobante, isAdmin, onViewPdf, onCancel,
                                       onSendEmail, onSendWhatsApp, onCheckStatus, onCorregirDescripcion,
-                                      onModificarCuotas, onTransferirVendedor, onTransferirAlmacen
+                                      onModificarCuotas, onTransferirVendedor, onTransferirAlmacen,
+                                      onGestionarConformidad, puedeGestionarConformidad
                                   }: ComprobantesTableProps) {
     const [showJsonModal,    setShowJsonModal]    = useState(false)
     const [jsonContent,      setJsonContent]      = useState("")
@@ -281,6 +285,14 @@ export function ComprobantesTable({
                                                             <Truck className="h-4 w-4" />
                                                         </Button>
                                                     )}
+                                                    {comprobante.tiene_conformidad === 1 && (
+                                                        <Button variant="ghost" size="icon"
+                                                                className="h-8 w-8 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
+                                                                onClick={() => onGestionarConformidad(comprobante)}
+                                                                title="Ver conformidad de entrega">
+                                                            <Eye className="h-4 w-4" />
+                                                        </Button>
+                                                    )}
                                                     <DropdownMenu>
                                                         <DropdownMenuTrigger asChild>
                                                             <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -294,6 +306,17 @@ export function ComprobantesTable({
                                                             <DropdownMenuItem onClick={() => handleViewJson('JSON Respuesta (Response)', comprobante.raw_response!)}>
                                                                 <FileJson className="mr-2 h-4 w-4 text-muted-foreground" /> JSON Respuesta
                                                             </DropdownMenuItem>
+                                                            {puedeGestionarConformidad && comprobante.idSunat != null && (
+                                                                <>
+                                                                    <DropdownMenuSeparator />
+                                                                    <DropdownMenuItem onClick={() => onGestionarConformidad(comprobante)}>
+                                                                        <ClipboardCheck className="mr-2 h-4 w-4 text-emerald-600" />
+                                                                        {comprobante.tiene_conformidad === 1
+                                                                            ? 'Cambiar conformidad'
+                                                                            : 'Subir conformidad'}
+                                                                    </DropdownMenuItem>
+                                                                </>
+                                                            )}
                                                             {isAdmin && (
                                                                 <>
                                                                     <DropdownMenuSeparator />

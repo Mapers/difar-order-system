@@ -31,6 +31,7 @@ import {CancelModal} from "@/app/dashboard/comprobantes/modals/CancelModal";
 import {TransferirVendedorModal} from "@/app/dashboard/comprobantes/modals/TransferirVendedorModal";
 import {TransferirAlmacenModal} from "@/app/dashboard/comprobantes/modals/TransferirAlmacenModal";
 import {PdfViewerModal} from "@/app/dashboard/comprobantes/modals/PdfViewerModal";
+import {ConformidadModal} from "@/app/dashboard/comprobantes/modals/ConformidadModal";
 import {ErrorModal} from "@/app/dashboard/comprobantes/modals/ErrorModal";
 import {GenerarGuiasModal} from "@/app/dashboard/comprobantes/modals/generar-guias-modal";
 import {EmailModal, WhatsAppModal} from "@/app/dashboard/comprobantes/modals/ActionModals";
@@ -124,6 +125,8 @@ export default function ComprobantesPage() {
   const [showPdfModal, setShowPdfModal] = useState(false)
   const [currentPdfUrl, setCurrentPdfUrl] = useState("")
 
+  const [comprobanteConformidad, setComprobanteConformidad] = useState<Comprobante | null>(null)
+
   const [showErrorModal, setShowErrorModal] = useState(false)
   const [selectedGuiaError, setSelectedGuiaError] = useState<GuiaRemision | null>(null)
 
@@ -163,6 +166,14 @@ export default function ComprobantesPage() {
 
   const auth = useAuth()
   const isAdmin = !(auth.isVendedor() || auth.isRepresentante())
+
+  const puedeGestionarConformidad = auth.isAdmin()
+
+  const marcarConformidad = useCallback((idSunat: number, tiene: boolean) => {
+    setComprobantes(prev => prev.map(c =>
+        c.idSunat === idSunat ? { ...c, tiene_conformidad: tiene ? 1 : 0 } : c
+    ))
+  }, [])
 
   const abortControllerRef = useRef<AbortController | null>(null)
 
@@ -972,6 +983,8 @@ export default function ComprobantesPage() {
                 onSendEmail={handleEmailCompr}
                 onSendWhatsApp={handleWhatsappCompr}
                 onCheckStatus={handleStatusCompr}
+                puedeGestionarConformidad={puedeGestionarConformidad}
+                onGestionarConformidad={setComprobanteConformidad}
                 onCorregirDescripcion={handleCorregirDescripcion}
                 onModificarCuotas={handleModificarCuotas}
                 onTransferirVendedor={handleTransferirVendedor}
@@ -1130,6 +1143,15 @@ export default function ComprobantesPage() {
             onConfirm={confirmTransferirAlmacen}
         />
         <PdfViewerModal open={showPdfModal} onOpenChange={setShowPdfModal} pdfUrl={currentPdfUrl} />
+
+        <ConformidadModal
+            open={comprobanteConformidad != null}
+            onOpenChange={(v) => { if (!v) setComprobanteConformidad(null) }}
+            comprobante={comprobanteConformidad}
+            puedeGestionar={puedeGestionarConformidad}
+            idUsuarioWeb={auth.user?.idUsuarioWeb ?? null}
+            onCambio={marcarConformidad}
+        />
         <ErrorModal open={showErrorModal} onOpenChange={setShowErrorModal} guia={selectedGuiaError} />
 
         {showGuiasModal && (

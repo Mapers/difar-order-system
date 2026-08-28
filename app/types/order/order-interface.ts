@@ -42,8 +42,8 @@ export interface Comprobante {
     ref_fecha?:     string | null
     total_exonerada?: string | number | null
     total_inafecta?:  string | number | null
-    /** Motivo de la N.C.; es el "Tipo de Nota" del Registro de Ventas. */
     motivo_sunat?:  string | null
+    tiene_conformidad?: number
     Vendedor?:      string | null
     Representante?: string | null
     Almacen?:       string | null
