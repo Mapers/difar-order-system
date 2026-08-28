@@ -33,6 +33,10 @@ export const mapClientFromApi = (data: any): IClient => ({
   itemLista: data.itemLista || "",
   otros: data.otros || "",
   idDistrito: data.idDistrito || "",
+  provinciaId: data.provinciaId ?? "",
+  situacion: data.situacion || "",
+  fechaRegistros: data.fechaRegistros || "",
+  idZona: data.idZona || "",
 });
 
 // cliente en evaluacion

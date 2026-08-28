@@ -23,6 +23,7 @@ import SolicitarClienteModal from "@/components/modal/SolicitarClienteModal"
 import ModalClientView from "@/components/modal/modalClientView"
 import SolicitudesTab from "@/components/clientes/SolicitudesTab"
 import { SkeletonCardClient, SkeletonClientRow } from "@/components/skeleton/ClientSkeleton"
+import ExportClientesExcelButton from "./export-clientes-excel"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 export default function ClientsPage() {
@@ -202,10 +203,7 @@ export default function ClientsPage() {
               </CardDescription>
             </div>
             <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
-              {/*<Button variant="outline" className="w-full sm:w-auto bg-transparent">*/}
-              {/*  <Download className="mr-2 h-4 w-4" />*/}
-              {/*  Exportar*/}
-              {/*</Button>*/}
+              <ExportClientesExcelButton clientes={filteredClients} />
               <Button onClick={handleCreateNewEvaluation} className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto">
                 <Plus className="mr-2 h-4 w-4" />
                 Nuevo cliente

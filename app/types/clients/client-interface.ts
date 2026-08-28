@@ -32,6 +32,10 @@ export interface IClient {
   itemLista?: string;
   otros?: string;
   idDistrito?: string | number;
+  provinciaId?: string | number;
+  situacion?: string;
+  fechaRegistros?: string;
+  idZona?: string;
 }
 
 
