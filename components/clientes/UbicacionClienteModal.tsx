@@ -14,6 +14,8 @@ import {
 import { MapPin, ExternalLink, AlertCircle, Building, MapPinOff } from "lucide-react"
 import apiClient from "@/app/api/client"
 import { MapaLeaflet, PuntoMapa } from "@/components/mapa/MapaLeaflet"
+import { ReferenciasClienteGaleria } from "@/components/clientes/ReferenciasClienteGaleria"
+import { useClienteReferenciasImagenes } from "@/app/hooks/useClienteReferenciasImagenes"
 
 export interface UbicacionCliente {
     codigo: string
@@ -36,6 +38,9 @@ export function UbicacionClienteModal({ open, onOpenChange, codigoCliente, nombr
     const [cliente, setCliente] = useState<UbicacionCliente | null>(null)
     const [cargando, setCargando] = useState(false)
     const [error, setError] = useState("")
+
+    const { imagenes } = useClienteReferenciasImagenes(codigoCliente, open)
+    const tieneImagenes = imagenes.length > 0
 
     useEffect(() => {
         if (!open || !codigoCliente) return
@@ -99,7 +104,7 @@ export function UbicacionClienteModal({ open, onOpenChange, codigoCliente, nombr
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-h-[95vh] max-w-3xl overflow-y-auto p-0">
+            <DialogContent className="max-h-[95vh] max-w-5xl overflow-y-auto p-0">
                 <DialogHeader className="px-4 pb-3 pt-5 sm:px-6 sm:pt-6">
                     <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
                         <MapPin className="h-5 w-5 shrink-0 text-blue-600" />
@@ -134,22 +139,37 @@ export function UbicacionClienteModal({ open, onOpenChange, codigoCliente, nombr
                 )}
 
                 <div className="px-4 pt-4 sm:px-6">
-                    {cargando && <Skeleton className="h-[300px] w-full rounded-lg sm:h-[380px]" />}
+                    <div className={`grid gap-4 ${tieneImagenes ? 'lg:grid-cols-3' : ''}`}>
+                        <div className={tieneImagenes ? 'lg:col-span-2' : ''}>
+                            {cargando && <Skeleton className="h-[300px] w-full rounded-lg sm:h-[380px]" />}
 
-                    {!cargando && destino && open && (
-                        <MapaLeaflet puntos={puntos} altura={340} className="sm:!h-[400px]" />
-                    )}
+                            {!cargando && destino && open && (
+                                <MapaLeaflet puntos={puntos} altura={340} className="sm:!h-[400px]" />
+                            )}
 
-                    {!cargando && !destino && !error && (
-                        <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border bg-muted/40 px-6 py-10 text-center">
-                            <MapPinOff className="mb-3 h-10 w-10 text-muted-foreground" />
-                            <p className="text-sm font-medium">Este cliente no tiene ubicación registrada</p>
-                            <p className="mt-1 max-w-sm text-xs text-muted-foreground">
-                                No hay coordenadas cargadas para su local. Puedes buscar la dirección
-                                en Google Maps con el botón de abajo.
-                            </p>
+                            {!cargando && !destino && !error && (
+                                <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border bg-muted/40 px-6 py-10 text-center">
+                                    <MapPinOff className="mb-3 h-10 w-10 text-muted-foreground" />
+                                    <p className="text-sm font-medium">Este cliente no tiene ubicación registrada</p>
+                                    <p className="mt-1 max-w-sm text-xs text-muted-foreground">
+                                        No hay coordenadas cargadas para su local. Puedes buscar la dirección
+                                        en Google Maps con el botón de abajo.
+                                    </p>
+                                </div>
+                            )}
                         </div>
-                    )}
+
+                        {tieneImagenes && (
+                            <div className="lg:max-h-[400px] lg:overflow-y-auto">
+                                <ReferenciasClienteGaleria
+                                    codigoCliente={codigoCliente}
+                                    abierto={open}
+                                    puedeGestionar={false}
+                                    compacta
+                                />
+                            </div>
+                        )}
+                    </div>
                 </div>
 
                 {!cargando && !error && (

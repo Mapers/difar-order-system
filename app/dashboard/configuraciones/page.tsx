@@ -3,13 +3,14 @@
 import { useState, useCallback } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import {FileText, Plus, Truck, Settings, CreditCard, Target, FlaskConical, Hash, Landmark, MessageCircle, Pill, Calculator} from "lucide-react" // Se agregó Pill
+import {FileText, Plus, Truck, Settings, CreditCard, Target, FlaskConical, Hash, Landmark, MessageCircle, Pill, Calculator, Images} from "lucide-react" // Se agregó Pill
 import AppConfigSection from "@/components/configuraciones/AppConfigSection";
 import SequentialSection from "@/components/configuraciones/SequentialSection";
 import ClientConditionsSection from "@/components/configuraciones/ClientConditionsSection";
 import MetasConfigSection from "@/components/configuraciones/MetasConfigSection";
 import LaboratoriosSection from "@/components/configuraciones/Laboratoriossection";
 import CreditLineSection from "@/components/configuraciones/CreditLineSection";
+import ClienteReferenciaSection from "@/components/configuraciones/ClienteReferenciaSection";
 import WhatsappSection from "@/components/configuraciones/WhatsappSection";
 import SustitutosSection from "@/components/configuraciones/SustitutosSection";
 import CostosSection from "@/components/configuraciones/CostosSection";
@@ -86,6 +87,13 @@ const sections = [
         color: "amber"
     },
     {
+        id: "cliente_referencias",
+        title: "Referencias de Dirección",
+        description: "Imágenes de la fachada y puntos de referencia por cliente",
+        icon: Images,
+        color: "rose"
+    },
+    {
         id: "whatsapp",
         title: "WhatsApp",
         description: "Números que recibirán notificaciones de ventas",
@@ -104,6 +112,7 @@ const iconColorMap: Record<string, string> = {
     laboratorios: 'text-sky-600',
     sustitutos: 'text-indigo-600',
     lineas_credito: "text-amber-600",
+    cliente_referencias: "text-rose-600",
     whatsapp: "text-green-600",
 }
 
@@ -117,6 +126,7 @@ const activeBgMap: Record<string, string> = {
     laboratorios: 'bg-sky-50 border-sky-500 text-sky-700',
     sustitutos: 'bg-indigo-50 border-indigo-500 text-indigo-700',
     lineas_credito: "bg-amber-50 border-amber-500 text-amber-700",
+    cliente_referencias: "bg-rose-50 border-rose-500 text-rose-700",
     whatsapp: "bg-green-50 border-green-500 text-green-700",
 }
 
@@ -130,6 +140,7 @@ const activeIconBg: Record<string, string> = {
     laboratorios: 'bg-sky-100 text-sky-600',
     sustitutos: 'bg-indigo-100 text-indigo-600',
     lineas_credito: "bg-amber-100 text-amber-600",
+    cliente_referencias: "bg-rose-100 text-rose-600",
     whatsapp: "bg-green-100 text-green-600",
 }
 
@@ -211,10 +222,12 @@ export default function ConfiguracionesPage() {
                                                                 ? "Carga el costo unitario por periodo. El reporte de ventas lo usa en vez del costo del kardex."
                                                             : activeSection === "whatsapp"
                                                                 ? "Registra los números de WhatsApp que recibirán notificaciones de ventas."
+                                                            : activeSection === "cliente_referencias"
+                                                                ? "Carga las imágenes de referencia de la dirección de cada cliente. Se ven junto al mapa en la página Clientes."
                                                                 : `Configura la numeración para ${activeSection === "secuenciales" ? "facturas y boletas" : "guías de remisión"}`}
                                 </CardDescription>
                             </div>
-                            {activeSection !== 'lineas_credito' && openModalFn !== null && (
+                            {activeSection !== 'lineas_credito' && activeSection !== 'cliente_referencias' && openModalFn !== null && (
                               <Button
                                 onClick={() => openModalFn()}
                                 className="flex items-center gap-2 w-full sm:w-auto"
@@ -231,6 +244,8 @@ export default function ConfiguracionesPage() {
                                 <ClientConditionsSection onOpenModalChange={handleSetOpenModalFn} />
                             ) : activeSection === 'lineas_credito' ? (
                                 <CreditLineSection onOpenModalChange={handleSetOpenModalFn} />
+                            ) : activeSection === 'cliente_referencias' ? (
+                                <ClienteReferenciaSection onOpenModalChange={handleSetOpenModalFn} />
                             ) : activeSection === "metas" ? (
                                 <MetasConfigSection onOpenModalChange={handleSetOpenModalFn} />
                             ) : activeSection === 'laboratorios' ? (
