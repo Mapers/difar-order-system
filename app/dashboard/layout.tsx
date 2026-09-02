@@ -8,6 +8,7 @@ import { TopBar } from "@/components/layout/TopBar"
 import { NotificationArrivalModal } from "@/components/notifications/NotificationArrivalModal"
 import { useAuth } from "@/context/authContext"
 import { SidebarProvider, useSidebar } from "@/context/sidebarContext"
+import { IvanWidget } from "@/components/ivan/IvanWidget"
 
 function DashboardContent({ children }: { children: React.ReactNode }) {
     const { isAuthenticated, loading } = useAuth()
@@ -29,6 +30,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                 <div className="p-4 pt-20 md:p-8 md:pt-8">{children}</div>
             </div>
             <NotificationArrivalModal />
+            <IvanWidget />
         </div>
     )
 }
