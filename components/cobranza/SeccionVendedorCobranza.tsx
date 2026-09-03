@@ -17,7 +17,7 @@ import { EvidenciaCobranzaModal } from './EvidenciaCobranzaModal'
 import { ActualizarGestionModal } from './ActualizarGestionModal'
 import { useCobranzaAsignacion } from '@/app/hooks/useCobranzaAsignacion'
 import {
-    CobranzaAsignada, ESTADOS_GESTION, ETIQUETA_ESTADO,
+    CobranzaAsignada, ESTADOS_FILTRO, ETIQUETA_ESTADO,
     estadoVisible, simboloMonedaCobranza,
 } from '@/app/types/cobranza-types'
 
@@ -144,7 +144,7 @@ export function SeccionVendedorCobranza() {
                         </SelectTrigger>
                         <SelectContent>
                             <SelectItem value={TODOS}>Todos los estados</SelectItem>
-                            {ESTADOS_GESTION.map(e => (
+                            {ESTADOS_FILTRO.map(e => (
                                 <SelectItem key={e.value} value={e.value}>{e.label}</SelectItem>
                             ))}
                         </SelectContent>

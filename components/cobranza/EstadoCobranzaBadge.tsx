@@ -8,7 +8,6 @@ const COLORES: Record<string, string> = {
     promesa_pago: 'bg-purple-50 text-purple-700',
     incobrable:   'bg-muted text-muted-foreground',
     pagado:       'bg-emerald-50 text-emerald-700',
-    vencido:      'bg-red-50 text-red-700',
 }
 
 export function EstadoCobranzaBadge({ estado }: { estado: string }) {

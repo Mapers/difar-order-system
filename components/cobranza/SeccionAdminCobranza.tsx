@@ -10,15 +10,16 @@ import { Skeleton } from '@/components/ui/skeleton'
 import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select'
-import { Eye, Loader2, Search, Trash2 } from 'lucide-react'
+import { Eye, Loader2, PenLine, Search, Trash2 } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
 import { useAuth } from '@/context/authContext'
 import { EstadoCobranzaBadge } from './EstadoCobranzaBadge'
 import { ConfirmarAsignacionModal } from './ConfirmarAsignacionModal'
 import { EvidenciaCobranzaModal } from './EvidenciaCobranzaModal'
+import { ActualizarGestionModal } from './ActualizarGestionModal'
 import { useCobranzaAsignacion } from '@/app/hooks/useCobranzaAsignacion'
 import {
-    CobranzaAsignada, ESTADOS_GESTION, FacturaPorAsignar, PAGINA_COBRANZA,
+    CobranzaAsignada, ESTADOS_FILTRO, FacturaPorAsignar,
     estadoVisible, simboloMonedaCobranza,
 } from '@/app/types/cobranza-types'
 
@@ -42,6 +43,10 @@ export function SeccionAdminCobranza() {
     const [seleccion, setSeleccion] = useState<Map<number, FacturaPorAsignar>>(new Map())
     const [confirmando, setConfirmando] = useState(false)
     const [verEvidencia, setVerEvidencia] = useState<CobranzaAsignada | null>(null)
+    /* El SP ya permitía a gerencia gestionar CUALQUIER cobranza —no solo la
+       suya—; lo que faltaba era el botón. El permiso lo valida la base, no
+       esta pantalla. */
+    const [gestionando, setGestionando] = useState<CobranzaAsignada | null>(null)
 
     useEffect(() => {
         const t = setTimeout(() => setBuscarAplicado(buscar.trim()), 400)
@@ -119,6 +124,18 @@ export function SeccionAdminCobranza() {
         await hook.retirar(c.id_asignacion, user.idUsuarioWeb)
     }
 
+    const guardarGestion = async (estado: string, comentario: string, archivo: File | null) => {
+        if (!gestionando || !user?.idUsuarioWeb) return
+
+        const ok = await hook.actualizarGestion(gestionando.id_asignacion, user.idUsuarioWeb, estado, comentario)
+        if (!ok) return
+
+        if (archivo) await hook.subirEvidencia(gestionando.id_asignacion, archivo, user.idUsuarioWeb)
+
+        setGestionando(null)
+        hook.fetchAsignadas(filtrosAsignadas, true)
+    }
+
     return (
         <div className="space-y-4">
             <div className="flex gap-1 border-b">
@@ -171,7 +188,7 @@ export function SeccionAdminCobranza() {
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectItem value={TODOS}>Todos los estados</SelectItem>
-                                {ESTADOS_GESTION.map(e => (
+                                {ESTADOS_FILTRO.map(e => (
                                     <SelectItem key={e.value} value={e.value}>{e.label}</SelectItem>
                                 ))}
                             </SelectContent>
@@ -337,6 +354,13 @@ export function SeccionAdminCobranza() {
                                                     <Eye className="h-4 w-4" />
                                                 </Button>
                                                 <Button
+                                                    variant="ghost" size="icon" className="h-8 w-8"
+                                                    onClick={() => setGestionando(c)}
+                                                    title="Actualizar gestión"
+                                                >
+                                                    <PenLine className="h-4 w-4" />
+                                                </Button>
+                                                <Button
                                                     variant="ghost" size="icon"
                                                     className="h-8 w-8 text-red-600 hover:bg-red-50"
                                                     onClick={() => retirar(c)}
@@ -402,10 +426,17 @@ export function SeccionAdminCobranza() {
                             <div className="mt-3 flex gap-2 border-t pt-3">
                                 <Button
                                     variant="outline" size="sm" className="flex-1 gap-1.5 text-xs"
+                                    onClick={() => setGestionando(c)}
+                                >
+                                    <PenLine className="h-3.5 w-3.5" /> Actualizar
+                                </Button>
+                                <Button
+                                    variant="outline" size="sm" className="shrink-0"
                                     disabled={Number(c.tiene_evidencia) !== 1}
                                     onClick={() => setVerEvidencia(c)}
+                                    title={Number(c.tiene_evidencia) === 1 ? 'Ver comprobante' : 'Sin comprobante'}
                                 >
-                                    <Eye className="h-3.5 w-3.5" /> Comprobante
+                                    <Eye className="h-3.5 w-3.5" />
                                 </Button>
                                 <Button
                                     variant="outline" size="sm"
@@ -459,6 +490,16 @@ export function SeccionAdminCobranza() {
                 onOpenChange={(v) => { if (!v) setVerEvidencia(null) }}
                 cobranza={verEvidencia}
                 obtenerEvidencia={hook.obtenerEvidencia}
+            />
+
+            <ActualizarGestionModal
+                open={gestionando != null}
+                onOpenChange={(v) => { if (!v) setGestionando(null) }}
+                cobranza={gestionando}
+                idUsuarioWeb={user?.idUsuarioWeb ?? null}
+                guardando={hook.guardando}
+                obtenerComentarios={hook.obtenerComentarios}
+                onGuardar={guardarGestion}
             />
         </div>
     )

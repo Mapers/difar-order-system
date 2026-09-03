@@ -7,6 +7,12 @@ export const ESTADOS_GESTION: { value: EstadoGestion; label: string }[] = [
     { value: 'incobrable',   label: 'Incobrable' },
 ]
 
+export const ESTADOS_FILTRO: { value: string; label: string }[] = [
+    ...ESTADOS_GESTION,
+    { value: 'vencido', label: 'Vencidas' },
+    { value: 'pagado',  label: 'Pagadas' },
+]
+
 export const ETIQUETA_ESTADO: Record<string, string> = {
     pendiente:    'Pendiente',
     en_gestion:   'En gestión',
