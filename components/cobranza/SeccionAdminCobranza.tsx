@@ -1,0 +1,465 @@
+'use client'
+
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { Card, CardContent } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Skeleton } from '@/components/ui/skeleton'
+import {
+    Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from '@/components/ui/select'
+import { Eye, Loader2, Search, Trash2 } from 'lucide-react'
+import { format, parseISO } from 'date-fns'
+import { useAuth } from '@/context/authContext'
+import { EstadoCobranzaBadge } from './EstadoCobranzaBadge'
+import { ConfirmarAsignacionModal } from './ConfirmarAsignacionModal'
+import { EvidenciaCobranzaModal } from './EvidenciaCobranzaModal'
+import { useCobranzaAsignacion } from '@/app/hooks/useCobranzaAsignacion'
+import {
+    CobranzaAsignada, ESTADOS_GESTION, FacturaPorAsignar, PAGINA_COBRANZA,
+    estadoVisible, simboloMonedaCobranza,
+} from '@/app/types/cobranza-types'
+
+const TODOS = '__todos__'
+
+function fmtFecha(f: string | null) {
+    if (!f) return '—'
+    try { return format(parseISO(f), 'dd/MM/yyyy') } catch { return f.slice(0, 10) }
+}
+
+export function SeccionAdminCobranza() {
+    const { user } = useAuth()
+    const hook = useCobranzaAsignacion()
+
+    const [tab, setTab] = useState<'porAsignar' | 'asignadas'>('porAsignar')
+
+    const [buscar, setBuscar] = useState('')
+    const [buscarAplicado, setBuscarAplicado] = useState('')
+    const [estadoFiltro, setEstadoFiltro] = useState('')
+
+    const [seleccion, setSeleccion] = useState<Map<number, FacturaPorAsignar>>(new Map())
+    const [confirmando, setConfirmando] = useState(false)
+    const [verEvidencia, setVerEvidencia] = useState<CobranzaAsignada | null>(null)
+
+    useEffect(() => {
+        const t = setTimeout(() => setBuscarAplicado(buscar.trim()), 400)
+        return () => clearTimeout(t)
+    }, [buscar])
+
+    const filtrosPorAsignar = { busqueda: buscarAplicado }
+    const filtrosAsignadas = { busqueda: buscarAplicado, estado: estadoFiltro }
+
+    useEffect(() => {
+        if (tab === 'porAsignar') hook.fetchPorAsignar({ busqueda: buscarAplicado }, true)
+        else hook.fetchAsignadas({ busqueda: buscarAplicado, estado: estadoFiltro }, true)
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [tab, buscarAplicado, estadoFiltro])
+
+    const centinelaRef = useRef<HTMLDivElement>(null)
+
+    const hayMasPorAsignar = hook.porAsignar.length < hook.totalPorAsignar
+    const hayMasAsignadas = hook.asignadas.length < hook.totalAsignadas
+    const hayMas = tab === 'porAsignar' ? hayMasPorAsignar : hayMasAsignadas
+    const cargando = tab === 'porAsignar' ? hook.cargandoPorAsignar : hook.cargandoAsignadas
+
+    const cargarMas = useCallback(() => {
+        if (cargando || !hayMas) return
+        if (tab === 'porAsignar') hook.fetchPorAsignar(filtrosPorAsignar, false)
+        else hook.fetchAsignadas(filtrosAsignadas, false)
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [cargando, hayMas, tab, buscarAplicado, estadoFiltro])
+
+    useEffect(() => {
+        const nodo = centinelaRef.current
+        if (!nodo) return
+
+        const obs = new IntersectionObserver(
+            (entradas) => { if (entradas[0].isIntersecting) cargarMas() },
+            { rootMargin: '200px' }
+        )
+        obs.observe(nodo)
+        return () => obs.disconnect()
+    }, [cargarMas])
+
+    const alternar = (f: FacturaPorAsignar, marcado: boolean) => {
+        setSeleccion(prev => {
+            const m = new Map(prev)
+            if (marcado) m.set(f.id_sunat, f)
+            else m.delete(f.id_sunat)
+            return m
+        })
+    }
+
+    const confirmarAsignacion = async (asignaciones: { id_sunat: number; cod_vendedor: string }[]) => {
+        if (!user?.idUsuarioWeb) return
+        const ok = await hook.asignar(asignaciones, user.idUsuarioWeb)
+        if (!ok) return
+
+        setSeleccion(new Map())
+        setConfirmando(false)
+        hook.fetchPorAsignar(filtrosPorAsignar, true)
+        setTab('asignadas')
+    }
+
+    const retirar = async (c: CobranzaAsignada) => {
+        if (!user?.idUsuarioWeb) return
+
+        const perdidas: string[] = []
+        if (Number(c.total_comentarios) > 0) perdidas.push(`${c.total_comentarios} comentario(s)`)
+        if (Number(c.tiene_evidencia) === 1) perdidas.push('el comprobante adjunto')
+
+        const detalle = perdidas.length > 0
+            ? `\n\nSe eliminarán también ${perdidas.join(' y ')}. Esto no se puede deshacer.`
+            : ''
+
+        if (!confirm(`¿Retirar ${c.serie}-${c.numero} de ${c.nombre_vendedor_asignado}?${detalle}`)) return
+
+        await hook.retirar(c.id_asignacion, user.idUsuarioWeb)
+    }
+
+    return (
+        <div className="space-y-4">
+            <div className="flex gap-1 border-b">
+                {([
+                    ['porAsignar', 'Por asignar', hook.totalPorAsignar],
+                    ['asignadas', 'Asignadas', hook.totalAsignadas],
+                ] as const).map(([id, titulo, total]) => (
+                    <button
+                        key={id}
+                        onClick={() => setTab(id)}
+                        className={`mr-5 flex items-center gap-2 border-b-2 px-1 pb-2.5 pt-2 text-sm font-semibold transition ${
+                            tab === id
+                                ? 'border-teal-600 text-teal-700'
+                                : 'border-transparent text-muted-foreground hover:text-foreground'
+                        }`}
+                    >
+                        {titulo}
+                        <span className={`rounded-full px-2 py-0.5 text-xs ${
+                            tab === id ? 'bg-teal-50 text-teal-700' : 'bg-muted text-muted-foreground'
+                        }`}>
+                            {total}
+                        </span>
+                    </button>
+                ))}
+            </div>
+
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+                <div className="flex-1 space-y-1">
+                    <Label className="text-xs text-muted-foreground">Buscar</Label>
+                    <div className="relative">
+                        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                            value={buscar}
+                            onChange={(e) => setBuscar(e.target.value)}
+                            placeholder="Cliente, RUC, serie o número..."
+                            className="pl-9 text-sm"
+                        />
+                    </div>
+                </div>
+
+                {tab === 'asignadas' && (
+                    <div className="space-y-1">
+                        <Label className="text-xs text-muted-foreground">Estado</Label>
+                        <Select
+                            value={estadoFiltro || TODOS}
+                            onValueChange={(v) => setEstadoFiltro(v === TODOS ? '' : v)}
+                        >
+                            <SelectTrigger className="w-full text-sm sm:w-48">
+                                <SelectValue placeholder="Todos" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value={TODOS}>Todos los estados</SelectItem>
+                                {ESTADOS_GESTION.map(e => (
+                                    <SelectItem key={e.value} value={e.value}>{e.label}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                )}
+
+                {tab === 'porAsignar' && (
+                    <Button
+                        onClick={() => setConfirmando(true)}
+                        disabled={seleccion.size === 0}
+                        className="bg-teal-700 hover:bg-teal-800"
+                    >
+                        Asignar a cobranza ({seleccion.size})
+                    </Button>
+                )}
+            </div>
+
+            {tab === 'porAsignar' ? (
+                <>
+                <Card className="hidden lg:block">
+                    <div className="overflow-x-auto">
+                        <table className="min-w-full divide-y divide-border text-sm">
+                            <thead className="bg-muted">
+                                <tr>
+                                    <th className="w-10 px-3 py-2"></th>
+                                    {['N° Factura', 'Cliente', 'Vendedor', 'Saldo', 'Vence'].map(h => (
+                                        <th key={h} className="px-3 py-2 text-left text-xs font-medium uppercase text-muted-foreground">
+                                            {h}
+                                        </th>
+                                    ))}
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-border">
+                                {hook.porAsignar.map(f => {
+                                    const vencida = f.fecha_vencimiento
+                                        ? new Date(f.fecha_vencimiento) < new Date()
+                                        : false
+                                    return (
+                                        <tr key={f.id_sunat} className={vencida ? 'bg-red-50/60' : ''}>
+                                            <td className="px-3 py-2">
+                                                <Checkbox
+                                                    checked={seleccion.has(f.id_sunat)}
+                                                    onCheckedChange={(v) => alternar(f, v === true)}
+                                                />
+                                            </td>
+                                            <td className="px-3 py-2 font-medium">{f.serie}-{f.numero}</td>
+                                            <td className="px-3 py-2">
+                                                <div className="max-w-[240px] truncate">{f.cliente_denominacion}</div>
+                                                <div className="text-xs text-muted-foreground">{f.cliente_numdoc}</div>
+                                            </td>
+                                            <td className="px-3 py-2 text-xs">{f.nombre_vendedor}</td>
+                                            <td className="px-3 py-2 tabular-nums">
+                                                {simboloMonedaCobranza(f.moneda)} {Number(f.saldo).toFixed(2)}
+                                            </td>
+                                            <td className="px-3 py-2 tabular-nums">{fmtFecha(f.fecha_vencimiento)}</td>
+                                        </tr>
+                                    )
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
+
+                </Card>
+
+                <div className="space-y-3 lg:hidden">
+                    {hook.porAsignar.map(f => {
+                        const vencida = f.fecha_vencimiento
+                            ? new Date(f.fecha_vencimiento) < new Date()
+                            : false
+                        return (
+                            <Card
+                                key={f.id_sunat}
+                                className={`p-4 ${vencida ? 'border-red-200 bg-red-50/40' : ''}`}
+                            >
+                                <div className="flex items-start gap-3">
+                                    <Checkbox
+                                        checked={seleccion.has(f.id_sunat)}
+                                        onCheckedChange={(v) => alternar(f, v === true)}
+                                        className="mt-1 shrink-0"
+                                    />
+                                    <div className="min-w-0 flex-1">
+                                        <p className="font-semibold">{f.serie}-{f.numero}</p>
+                                        <p className="truncate text-sm text-muted-foreground">
+                                            {f.cliente_denominacion}
+                                        </p>
+                                        <p className="text-xs text-muted-foreground">{f.cliente_numdoc}</p>
+                                    </div>
+                                </div>
+
+                                <div className="mt-3 grid grid-cols-2 gap-2 border-t pt-3 text-xs">
+                                    <div>
+                                        <p className="text-muted-foreground">Saldo</p>
+                                        <p className="font-semibold tabular-nums">
+                                            {simboloMonedaCobranza(f.moneda)} {Number(f.saldo).toFixed(2)}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <p className="text-muted-foreground">Vence</p>
+                                        <p className="tabular-nums">{fmtFecha(f.fecha_vencimiento)}</p>
+                                    </div>
+                                    <div className="col-span-2">
+                                        <p className="text-muted-foreground">Vendedor</p>
+                                        <p className="truncate">{f.nombre_vendedor}</p>
+                                    </div>
+                                </div>
+                            </Card>
+                        )
+                    })}
+                </div>
+
+                {!cargando && hook.porAsignar.length === 0 && (
+                    <Card className="py-10 text-center text-sm text-muted-foreground">
+                        No hay facturas pendientes de asignar con estos filtros.
+                    </Card>
+                )}
+                </>
+            ) : (
+                <>
+                <Card className="hidden lg:block">
+                    <div className="overflow-x-auto">
+                        <table className="min-w-full divide-y divide-border text-sm">
+                            <thead className="bg-muted">
+                                <tr>
+                                    {['N° Factura', 'Cliente', 'Asignado a', 'Asignada', 'Semana', 'Estado', 'Último comentario', ''].map(h => (
+                                        <th key={h} className="px-3 py-2 text-left text-xs font-medium uppercase text-muted-foreground">
+                                            {h}
+                                        </th>
+                                    ))}
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-border">
+                                {hook.asignadas.map(c => (
+                                    <tr key={c.id_asignacion} className={Number(c.esta_vencido) === 1 ? 'bg-red-50/60' : ''}>
+                                        <td className="px-3 py-2 font-medium">{c.serie}-{c.numero}</td>
+                                        <td className="px-3 py-2">
+                                            <div className="max-w-[220px] truncate">{c.cliente_denominacion}</div>
+                                        </td>
+                                        <td className="px-3 py-2 text-xs">
+                                            {c.nombre_vendedor_asignado}
+                                            {Number(c.fue_reasignada) === 1 && (
+                                                <span className="ml-1 rounded bg-amber-50 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700">
+                                                    reasignada
+                                                </span>
+                                            )}
+                                        </td>
+                                        <td className="px-3 py-2 tabular-nums">{fmtFecha(c.fecha_asignacion)}</td>
+                                        <td className="px-3 py-2 text-xs">{c.semana_asignacion}</td>
+                                        <td className="px-3 py-2"><EstadoCobranzaBadge estado={estadoVisible(c)} /></td>
+                                        <td className="px-3 py-2">
+                                            <span className="block max-w-[200px] truncate text-xs text-muted-foreground">
+                                                {c.ultimo_comentario || '—'}
+                                            </span>
+                                        </td>
+                                        <td className="px-3 py-2">
+                                            <div className="flex justify-end gap-1">
+                                                <Button
+                                                    variant="ghost" size="icon" className="h-8 w-8"
+                                                    disabled={Number(c.tiene_evidencia) !== 1}
+                                                    onClick={() => setVerEvidencia(c)}
+                                                    title={Number(c.tiene_evidencia) === 1 ? 'Ver comprobante' : 'Sin comprobante'}
+                                                >
+                                                    <Eye className="h-4 w-4" />
+                                                </Button>
+                                                <Button
+                                                    variant="ghost" size="icon"
+                                                    className="h-8 w-8 text-red-600 hover:bg-red-50"
+                                                    onClick={() => retirar(c)}
+                                                    disabled={hook.guardando}
+                                                    title="Retirar asignación"
+                                                >
+                                                    <Trash2 className="h-4 w-4" />
+                                                </Button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+
+                </Card>
+
+                <div className="space-y-3 lg:hidden">
+                    {hook.asignadas.map(c => (
+                        <Card
+                            key={c.id_asignacion}
+                            className={`p-4 ${Number(c.esta_vencido) === 1 ? 'border-red-200 bg-red-50/40' : ''}`}
+                        >
+                            <div className="flex items-start justify-between gap-2">
+                                <div className="min-w-0">
+                                    <p className="font-semibold">{c.serie}-{c.numero}</p>
+                                    <p className="truncate text-sm text-muted-foreground">
+                                        {c.cliente_denominacion}
+                                    </p>
+                                </div>
+                                <EstadoCobranzaBadge estado={estadoVisible(c)} />
+                            </div>
+
+                            <div className="mt-3 grid grid-cols-2 gap-2 border-t pt-3 text-xs">
+                                <div className="col-span-2">
+                                    <p className="text-muted-foreground">Asignado a</p>
+                                    <p className="truncate">
+                                        {c.nombre_vendedor_asignado}
+                                        {Number(c.fue_reasignada) === 1 && (
+                                            <span className="ml-1 rounded bg-amber-50 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700">
+                                                reasignada
+                                            </span>
+                                        )}
+                                    </p>
+                                </div>
+                                <div>
+                                    <p className="text-muted-foreground">Asignada</p>
+                                    <p className="tabular-nums">{fmtFecha(c.fecha_asignacion)}</p>
+                                </div>
+                                <div>
+                                    <p className="text-muted-foreground">Semana</p>
+                                    <p>{c.semana_asignacion || '—'}</p>
+                                </div>
+                                {c.ultimo_comentario && (
+                                    <div className="col-span-2">
+                                        <p className="text-muted-foreground">Último comentario</p>
+                                        <p className="line-clamp-2">{c.ultimo_comentario}</p>
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="mt-3 flex gap-2 border-t pt-3">
+                                <Button
+                                    variant="outline" size="sm" className="flex-1 gap-1.5 text-xs"
+                                    disabled={Number(c.tiene_evidencia) !== 1}
+                                    onClick={() => setVerEvidencia(c)}
+                                >
+                                    <Eye className="h-3.5 w-3.5" /> Comprobante
+                                </Button>
+                                <Button
+                                    variant="outline" size="sm"
+                                    className="shrink-0 text-red-600 hover:bg-red-50"
+                                    onClick={() => retirar(c)}
+                                    disabled={hook.guardando}
+                                    title="Retirar asignación"
+                                >
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                </Button>
+                            </div>
+                        </Card>
+                    ))}
+                </div>
+
+                {!cargando && hook.asignadas.length === 0 && (
+                    <Card className="py-10 text-center text-sm text-muted-foreground">
+                        Ninguna cobranza asignada coincide con estos filtros.
+                    </Card>
+                )}
+                </>
+            )}
+
+            {cargando && (
+                <div className="space-y-2">
+                    {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}
+                </div>
+            )}
+
+            <div ref={centinelaRef} className="h-4" />
+
+            {hayMas && !cargando && (
+                <div className="flex justify-center">
+                    <Button variant="outline" size="sm" onClick={cargarMas} className="gap-1.5">
+                        <Loader2 className="h-3.5 w-3.5" /> Cargar más
+                    </Button>
+                </div>
+            )}
+
+            <ConfirmarAsignacionModal
+                open={confirmando}
+                onOpenChange={setConfirmando}
+                seleccionadas={[...seleccion.values()]}
+                guardando={hook.guardando}
+                consultarVendedores={hook.consultarVendedores}
+                onConfirmar={confirmarAsignacion}
+            />
+
+            <EvidenciaCobranzaModal
+                open={verEvidencia != null}
+                onOpenChange={(v) => { if (!v) setVerEvidencia(null) }}
+                cobranza={verEvidencia}
+                obtenerEvidencia={hook.obtenerEvidencia}
+            />
+        </div>
+    )
+}
