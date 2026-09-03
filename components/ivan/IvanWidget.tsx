@@ -58,11 +58,13 @@ export function IvanWidget() {
     useEffect(() => () => abortRef.current?.abort(), [])
 
     useEffect(() => {
-        finRef.current?.scrollIntoView({ behavior: 'smooth' })
+        finRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
     }, [mensajes, herramienta])
 
     useEffect(() => {
-        if (abierto) inputRef.current?.focus()
+        if (abierto && window.matchMedia('(min-width: 640px)').matches) {
+            inputRef.current?.focus()
+        }
     }, [abierto])
 
     const enviar = async (textoForzado?: string) => {
@@ -190,9 +192,10 @@ export function IvanWidget() {
     if (!isAuthenticated) return null
 
     return (
-        <div className="fixed bottom-6 right-6 z-50 hidden lg:block">
+        <div className="fixed bottom-4 right-4 z-50 sm:bottom-6 sm:right-6">
             {abierto && (
-                <div className="mb-3 flex h-[540px] w-[400px] flex-col overflow-hidden rounded-xl border border-border bg-background shadow-2xl">
+                <div className="fixed inset-x-0 bottom-0 top-16 flex flex-col overflow-hidden border-t border-border bg-background shadow-2xl
+                                sm:inset-auto sm:bottom-20 sm:right-6 sm:top-auto sm:h-[540px] sm:w-[400px] sm:rounded-xl sm:border">
                     <div className="flex items-center justify-between bg-blue-600 px-4 py-3 text-white">
                         <div className="flex items-center gap-2">
                             <Bot className="h-5 w-5" />
@@ -273,7 +276,7 @@ export function IvanWidget() {
                             onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviar() } }}
                             placeholder="Pregunta por un cliente o un producto..."
                             disabled={pensando}
-                            className="text-sm"
+                            className="text-base sm:text-sm"
                         />
                         {pensando ? (
                             <Button
