@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/select'
 import { Eye, Loader2, PenLine, Search, Trash2 } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
+import apiClient from '@/app/api/client'
 import { useAuth } from '@/context/authContext'
 import { EstadoCobranzaBadge } from './EstadoCobranzaBadge'
 import { ConfirmarAsignacionModal } from './ConfirmarAsignacionModal'
@@ -19,7 +20,8 @@ import { EvidenciaCobranzaModal } from './EvidenciaCobranzaModal'
 import { ActualizarGestionModal } from './ActualizarGestionModal'
 import { useCobranzaAsignacion } from '@/app/hooks/useCobranzaAsignacion'
 import {
-    CobranzaAsignada, ESTADOS_FILTRO, FacturaPorAsignar,
+    CobranzaAsignada, ESTADOS_FILTRO, FacturaPorAsignar, FiltroVencimiento,
+    FILTROS_VENCIMIENTO, rangoDeVencimiento,
     estadoVisible, simboloMonedaCobranza,
 } from '@/app/types/cobranza-types'
 
@@ -39,6 +41,25 @@ export function SeccionAdminCobranza() {
     const [buscar, setBuscar] = useState('')
     const [buscarAplicado, setBuscarAplicado] = useState('')
     const [estadoFiltro, setEstadoFiltro] = useState('')
+    const [vendedorFiltro, setVendedorFiltro] = useState('')
+    const [vencFiltro, setVencFiltro] = useState<FiltroVencimiento>('todas')
+
+    const [vendedores, setVendedores] = useState<{ codigo: string; nombre: string }[]>([])
+
+    useEffect(() => {
+        let cancelado = false
+        apiClient.get('/usuarios/listar/vendedores')
+            .then(res => {
+                if (cancelado) return
+                const filas = res.data?.data?.data ?? []
+                setVendedores(filas.map((v: any) => ({
+                    codigo: v.Codigo_Vend,
+                    nombre: `${v.Nombres ?? ''} ${v.Apellidos ?? ''}`.trim() || v.Codigo_Vend,
+                })))
+            })
+            .catch(() => { if (!cancelado) setVendedores([]) })
+        return () => { cancelado = true }
+    }, [])
 
     const [seleccion, setSeleccion] = useState<Map<number, FacturaPorAsignar>>(new Map())
     const [confirmando, setConfirmando] = useState(false)
@@ -53,14 +74,16 @@ export function SeccionAdminCobranza() {
         return () => clearTimeout(t)
     }, [buscar])
 
-    const filtrosPorAsignar = { busqueda: buscarAplicado }
-    const filtrosAsignadas = { busqueda: buscarAplicado, estado: estadoFiltro }
+    const rango = rangoDeVencimiento(vencFiltro)
+
+    const filtrosPorAsignar = { busqueda: buscarAplicado, vendedor: vendedorFiltro, ...rango }
+    const filtrosAsignadas = { busqueda: buscarAplicado, vendedor: vendedorFiltro, estado: estadoFiltro, ...rango }
 
     useEffect(() => {
-        if (tab === 'porAsignar') hook.fetchPorAsignar({ busqueda: buscarAplicado }, true)
-        else hook.fetchAsignadas({ busqueda: buscarAplicado, estado: estadoFiltro }, true)
+        if (tab === 'porAsignar') hook.fetchPorAsignar(filtrosPorAsignar, true)
+        else hook.fetchAsignadas(filtrosAsignadas, true)
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [tab, buscarAplicado, estadoFiltro])
+    }, [tab, buscarAplicado, estadoFiltro, vendedorFiltro, vencFiltro])
 
     const centinelaRef = useRef<HTMLDivElement>(null)
 
@@ -74,7 +97,7 @@ export function SeccionAdminCobranza() {
         if (tab === 'porAsignar') hook.fetchPorAsignar(filtrosPorAsignar, false)
         else hook.fetchAsignadas(filtrosAsignadas, false)
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [cargando, hayMas, tab, buscarAplicado, estadoFiltro])
+    }, [cargando, hayMas, tab, buscarAplicado, estadoFiltro, vendedorFiltro, vencFiltro])
 
     useEffect(() => {
         const nodo = centinelaRef.current
@@ -174,6 +197,43 @@ export function SeccionAdminCobranza() {
                             className="pl-9 text-sm"
                         />
                     </div>
+                </div>
+
+                <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">Vendedor</Label>
+                    <Select
+                        value={vendedorFiltro || TODOS}
+                        onValueChange={(v) => setVendedorFiltro(v === TODOS ? '' : v)}
+                    >
+                        <SelectTrigger className="w-full text-sm sm:w-52">
+                            <SelectValue placeholder="Todos" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value={TODOS}>Todos los vendedores</SelectItem>
+                            {vendedores.map(v => (
+                                <SelectItem key={v.codigo} value={v.codigo}>
+                                    {v.codigo} · {v.nombre}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
+
+                <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">Vencimiento</Label>
+                    <Select
+                        value={vencFiltro}
+                        onValueChange={(v) => setVencFiltro(v as FiltroVencimiento)}
+                    >
+                        <SelectTrigger className="w-full text-sm sm:w-48">
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {FILTROS_VENCIMIENTO.map(f => (
+                                <SelectItem key={f.value} value={f.value}>{f.label}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
                 </div>
 
                 {tab === 'asignadas' && (

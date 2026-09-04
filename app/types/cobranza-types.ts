@@ -13,6 +13,42 @@ export const ESTADOS_FILTRO: { value: string; label: string }[] = [
     { value: 'pagado',  label: 'Pagadas' },
 ]
 
+export type FiltroVencimiento = 'todas' | 'vencidas' | 'v7' | 'v15' | 'v30'
+
+export const FILTROS_VENCIMIENTO: { value: FiltroVencimiento; label: string }[] = [
+    { value: 'todas',    label: 'Cualquier vencimiento' },
+    { value: 'vencidas', label: 'Ya vencidas' },
+    { value: 'v7',       label: 'Vencen en 7 días' },
+    { value: 'v15',      label: 'Vencen en 15 días' },
+    { value: 'v30',      label: 'Vencen en 30 días' },
+]
+
+const aISO = (d: Date) => d.toISOString().slice(0, 10)
+
+const sumarDias = (dias: number) => {
+    const d = new Date()
+    d.setDate(d.getDate() + dias)
+    return d
+}
+
+export function rangoDeVencimiento(filtro: FiltroVencimiento): {
+    fechaDesde?: string
+    fechaHasta?: string
+} {
+    switch (filtro) {
+        case 'vencidas':
+            return { fechaHasta: aISO(sumarDias(-1)) }
+        case 'v7':
+            return { fechaDesde: aISO(new Date()), fechaHasta: aISO(sumarDias(7)) }
+        case 'v15':
+            return { fechaDesde: aISO(new Date()), fechaHasta: aISO(sumarDias(15)) }
+        case 'v30':
+            return { fechaDesde: aISO(new Date()), fechaHasta: aISO(sumarDias(30)) }
+        default:
+            return {}
+    }
+}
+
 export const ETIQUETA_ESTADO: Record<string, string> = {
     pendiente:    'Pendiente',
     en_gestion:   'En gestión',

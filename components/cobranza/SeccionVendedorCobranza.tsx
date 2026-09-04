@@ -6,9 +6,6 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Skeleton } from '@/components/ui/skeleton'
-import {
-    Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from '@/components/ui/select'
 import { Eye, Loader2, PenLine, Search } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
 import { useAuth } from '@/context/authContext'
@@ -17,11 +14,9 @@ import { EvidenciaCobranzaModal } from './EvidenciaCobranzaModal'
 import { ActualizarGestionModal } from './ActualizarGestionModal'
 import { useCobranzaAsignacion } from '@/app/hooks/useCobranzaAsignacion'
 import {
-    CobranzaAsignada, ESTADOS_FILTRO, ETIQUETA_ESTADO,
+    CobranzaAsignada, ETIQUETA_ESTADO,
     estadoVisible, simboloMonedaCobranza,
 } from '@/app/types/cobranza-types'
-
-const TODOS = '__todos__'
 
 function fmtFecha(f: string | null) {
     if (!f) return '—'
@@ -34,7 +29,6 @@ export function SeccionVendedorCobranza() {
 
     const [buscar, setBuscar] = useState('')
     const [buscarAplicado, setBuscarAplicado] = useState('')
-    const [estadoFiltro, setEstadoFiltro] = useState('')
     const [gestionando, setGestionando] = useState<CobranzaAsignada | null>(null)
     const [verEvidencia, setVerEvidencia] = useState<CobranzaAsignada | null>(null)
 
@@ -45,13 +39,13 @@ export function SeccionVendedorCobranza() {
         return () => clearTimeout(t)
     }, [buscar])
 
-    const filtros = { vendedor: codVendedor, busqueda: buscarAplicado, estado: estadoFiltro }
+    const filtros = { vendedor: codVendedor, busqueda: buscarAplicado }
 
     const recargar = useCallback(() => {
         if (!codVendedor) return
-        hook.fetchAsignadas({ vendedor: codVendedor, busqueda: buscarAplicado, estado: estadoFiltro }, true)
+        hook.fetchAsignadas({ vendedor: codVendedor, busqueda: buscarAplicado }, true)
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [codVendedor, buscarAplicado, estadoFiltro])
+    }, [codVendedor, buscarAplicado])
 
     useEffect(() => { recargar() }, [recargar])
 
@@ -62,7 +56,7 @@ export function SeccionVendedorCobranza() {
         if (hook.cargandoAsignadas || !hayMas) return
         hook.fetchAsignadas(filtros, false)
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [hook.cargandoAsignadas, hayMas, codVendedor, buscarAplicado, estadoFiltro])
+    }, [hook.cargandoAsignadas, hayMas, codVendedor, buscarAplicado])
 
     useEffect(() => {
         const nodo = centinelaRef.current
@@ -119,36 +113,16 @@ export function SeccionVendedorCobranza() {
                 Contadores sobre las {hook.asignadas.length} filas cargadas de {hook.totalAsignadas}.
             </p>
 
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-                <div className="flex-1 space-y-1">
-                    <Label className="text-xs text-muted-foreground">Buscar</Label>
-                    <div className="relative">
-                        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                        <Input
-                            value={buscar}
-                            onChange={(e) => setBuscar(e.target.value)}
-                            placeholder="Cliente, RUC, serie o número..."
-                            className="pl-9 text-sm"
-                        />
-                    </div>
-                </div>
-
-                <div className="space-y-1">
-                    <Label className="text-xs text-muted-foreground">Estado</Label>
-                    <Select
-                        value={estadoFiltro || TODOS}
-                        onValueChange={(v) => setEstadoFiltro(v === TODOS ? '' : v)}
-                    >
-                        <SelectTrigger className="w-full text-sm sm:w-48">
-                            <SelectValue placeholder="Todos" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value={TODOS}>Todos los estados</SelectItem>
-                            {ESTADOS_FILTRO.map(e => (
-                                <SelectItem key={e.value} value={e.value}>{e.label}</SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
+            <div className="space-y-1 sm:max-w-sm">
+                <Label className="text-xs text-muted-foreground">Buscar</Label>
+                <div className="relative">
+                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                        value={buscar}
+                        onChange={(e) => setBuscar(e.target.value)}
+                        placeholder="Cliente, RUC, serie o número..."
+                        className="pl-9 text-sm"
+                    />
                 </div>
             </div>
 

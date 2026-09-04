@@ -19,6 +19,8 @@ interface FiltrosAsignadas {
     busqueda?: string
     vendedor?: string
     estado?: string
+    fechaDesde?: string
+    fechaHasta?: string
 }
 
 export function useCobranzaAsignacion() {

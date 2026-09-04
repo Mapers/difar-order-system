@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Bot, Loader2, Send, Square, X } from 'lucide-react'
 import { useAuth } from '@/context/authContext'
+import { TextoConComprobantes } from './TextoConComprobantes'
 import apiClient from '@/app/api/client'
 
 interface OpcionIvan {
@@ -294,9 +295,13 @@ export function IvanWidget() {
                                                 : 'border border-border bg-background text-foreground'
                                         }`}
                                     >
-                                        {m.texto || (pensando && i === mensajes.length - 1 && !herramienta
-                                            ? <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                                            : m.texto)}
+                                        {m.texto
+                                            ? (m.rol === 'ivan'
+                                                ? <TextoConComprobantes texto={m.texto} />
+                                                : m.texto)
+                                            : (pensando && i === mensajes.length - 1 && !herramienta
+                                                ? <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                                                : null)}
                                     </div>
                                 </div>
 
