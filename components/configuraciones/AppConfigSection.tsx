@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import apiClient from "@/app/api/client"
 import {AppConfig} from "@/app/types/config-types";
+import { invalidarVencimientoCorto } from "@/app/hooks/useVencimientoCorto";
 
 interface AppConfigSectionProps {
     onOpenModalChange: (fn: () => void) => void;
@@ -85,6 +86,8 @@ export default function AppConfigSection({ onOpenModalChange }: AppConfigSection
 
         setLoadingSave(true)
         try {
+            invalidarVencimientoCorto()
+
             if (configEditando) {
                 const res = await apiClient.put(`/admin/actualizar/configuraciones/${configEditando.id_config}`, nuevaConfig)
                 if (res.data.success) {

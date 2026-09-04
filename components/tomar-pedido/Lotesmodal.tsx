@@ -10,6 +10,7 @@ import { Package, CheckSquare, Loader2, CalendarDays, Boxes } from "lucide-react
 import { format, parseISO } from "date-fns"
 import { cn } from "@/lib/utils"
 import { ProductoConLotes } from "@/app/types/order/order-interface"
+import { VencimientoCortoBadge } from "./VencimientoCortoBadge"
 
 interface LotesModalProps {
     open: boolean
@@ -87,6 +88,7 @@ export default function LotesModal({ open, onOpenChange, editingLotes, loadingLo
                                                                 <Boxes className="h-3.5 w-3.5" />
                                                                 Stock: {stock}
                                                             </span>
+                                                            <VencimientoCortoBadge fechaISO={fechaISO} />
                                                         </div>
                                                     </Label>
                                                 )

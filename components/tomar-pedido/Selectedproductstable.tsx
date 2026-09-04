@@ -11,6 +11,7 @@ import { IItemDashboard } from "@/app/types/metas-types"
 import { format, parseISO } from "date-fns"
 import { ProductoConLotes } from "@/app/types/order/order-interface"
 import { getCurrencySymbol, parseLoteString } from "@/app/utils/order-helpers"
+import { VencimientoCortoBadge } from "./VencimientoCortoBadge"
 
 interface SelectedProductsTableProps {
     selectedProducts: ISelectedProduct[]
@@ -183,7 +184,10 @@ export default function SelectedProductsTable({
                                     </td>
                                     <td className={`px-4 py-3 whitespace-nowrap text-sm ${rowTextClass}`}>{item.product.Descripcion}</td>
                                     <td className={`px-4 py-3 whitespace-nowrap text-sm ${rowTextClass}`}>
-                                        {cod} - Vence: {fec.length > 0 && format(parseISO(fec), "dd/MM/yyyy")}
+                                        <div className="flex flex-wrap items-center gap-1.5">
+                                            <span>{cod} - Vence: {fec.length > 0 && format(parseISO(fec), "dd/MM/yyyy")}</span>
+                                            <VencimientoCortoBadge fechaISO={fec} />
+                                        </div>
                                     </td>
                                     <td className={`px-4 py-3 whitespace-nowrap text-sm ${rowTextClass} text-right`}>{stk}</td>
                                     <td className={`px-4 py-3 whitespace-nowrap text-sm ${rowTextClass} text-right font-medium`}>{item.quantity}</td>
@@ -289,6 +293,7 @@ export default function SelectedProductsTable({
                                         <Label className={`text-[10px] uppercase ${labelTextClass} font-semibold`}>Lote - Vencimiento</Label>
                                         <p className="font-medium text-xs mt-0.5">{cod}</p>
                                         <p className={`text-xs ${labelTextClass}`}>{fec.length > 0 ? format(parseISO(fec), "dd/MM/yyyy") : 'N/A'}</p>
+                                        <VencimientoCortoBadge fechaISO={fec} className="mt-1" />
                                     </div>
                                     <div>
                                         <Label className={`text-[10px] uppercase ${labelTextClass} font-semibold`}>Stock</Label>

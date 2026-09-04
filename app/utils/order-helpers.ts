@@ -1,3 +1,4 @@
+import { differenceInCalendarDays, differenceInMonths, parseISO, startOfDay } from "date-fns"
 import { ISelectedProduct } from "@/app/types/order/product-interface"
 
 export const calcularSubtotal = (productos: ISelectedProduct[]): number => {
@@ -36,4 +37,29 @@ export const getCurrencySymbol = (currencyValue?: string): string => {
 export const parseLoteString = (loteValue: string) => {
     const split = (loteValue || '||').split('|');
     return { cod: split[0], fec: split[1], stk: split[2] }
+}
+
+export interface EstadoVencimiento {
+    vencido: boolean
+    meses: number
+    corto: boolean
+}
+
+export const evaluarVencimientoLote = (
+    fechaISO: string | undefined | null,
+    mesesUmbral: number
+): EstadoVencimiento | null => {
+    if (!fechaISO) return null
+
+    const vence = parseISO(fechaISO)
+    if (Number.isNaN(vence.getTime())) return null
+
+    const hoy = startOfDay(new Date())
+
+    if (differenceInCalendarDays(vence, hoy) < 0) {
+        return { vencido: true, meses: 0, corto: true }
+    }
+
+    const meses = differenceInMonths(vence, hoy)
+    return { vencido: false, meses, corto: meses < mesesUmbral }
 }
