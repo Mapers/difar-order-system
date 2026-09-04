@@ -27,6 +27,8 @@ import {ComprobantesTable} from "@/app/dashboard/comprobantes/ComprobantesTable"
 import {ComprobantesStats} from "@/app/dashboard/comprobantes/ComprobantesStats";
 import {GuiasList} from "@/app/dashboard/comprobantes/GuiasList";
 import {InvoiceModal} from "@/app/dashboard/comprobantes/modals/InvoiceModal";
+import { StockInsuficienteDialog } from "@/components/comprobantes/StockInsuficienteDialog";
+import { leerErrorStock, type ErrorStock } from "@/app/utils/stock-error";
 import {CancelModal} from "@/app/dashboard/comprobantes/modals/CancelModal";
 import {TransferirVendedorModal} from "@/app/dashboard/comprobantes/modals/TransferirVendedorModal";
 import {TransferirAlmacenModal} from "@/app/dashboard/comprobantes/modals/TransferirAlmacenModal";
@@ -110,6 +112,7 @@ export default function ComprobantesPage() {
   const [showInvoiceModal, setShowInvoiceModal] = useState(false)
   const [invoiceType, setInvoiceType] = useState("1")
   const [isProcessingInvoice, setIsProcessingInvoice] = useState(false)
+  const [errorStock, setErrorStock] = useState<ErrorStock | null>(null)
 
   const [isCancelling, setIsCancelling] = useState(false)
   const [comprobanteToCancel, setComprobanteToCancel] = useState<Comprobante | null>(null)
@@ -420,7 +423,13 @@ export default function ComprobantesPage() {
       }
     } catch (error: any) {
       console.error(error)
-      toast({ title: "Error", description: error?.response?.data?.message || 'Error de servidor al generar comprobante', variant: "destructive" })
+
+      const stock = leerErrorStock(error)
+      if (stock) {
+        setErrorStock(stock)
+      } else {
+        toast({ title: "Error", description: error?.response?.data?.message || 'Error de servidor al generar comprobante', variant: "destructive" })
+      }
     } finally {
       setIsProcessingInvoice(false)
       setShowInvoiceModal(false)
@@ -1230,6 +1239,14 @@ export default function ComprobantesPage() {
           open={isDetailOpen}
           onOpenChange={setIsDetailOpen}
           nroPedido={detailNroPedido}
+        />
+
+        <StockInsuficienteDialog
+          open={errorStock !== null}
+          onOpenChange={(v) => { if (!v) setErrorStock(null) }}
+          mensaje={errorStock?.mensaje ?? ''}
+          resumen={errorStock?.resumen}
+          detalle={errorStock?.detalle ?? []}
         />
       </div>
   )

@@ -9,6 +9,8 @@ import {
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { useEffect, useRef, useState, useMemo, Fragment } from "react"
+import { StockInsuficienteDialog } from "@/components/comprobantes/StockInsuficienteDialog"
+import { leerErrorStock, type ErrorStock } from "@/app/utils/stock-error"
 import { Skeleton } from "@/components/ui/skeleton"
 import apiClient from "@/app/api/client"
 import { format, parseISO } from "date-fns"
@@ -129,6 +131,7 @@ export default function OrderStatusManagementPage() {
   const [isDetailOpen, setIsDetailOpen] = useState(false)
 
   const [loadingPreview, setLoadingPreview] = useState(false)
+  const [errorStock, setErrorStock] = useState<ErrorStock | null>(null)
   const [pdfPreviewBase64, setPdfPreviewBase64] = useState<string | null>(null)
   const [isPreviewOpen, setIsPreviewOpen] = useState(false)
   const [tiposComprobante,   setTiposComprobante]   = useState<Sequential[]>([])
@@ -365,13 +368,19 @@ export default function OrderStatusManagementPage() {
       )
       setPdfPreviewBase64(response.data.data.pdf_bytes)
       setIsPreviewOpen(true)
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error generando preview:', error)
-      toast({
-        title: 'Error',
-        description: error.response?.data?.message || 'Error al Cargar preview',
-        variant: 'destructive'
-      })
+
+      const stock = leerErrorStock(error)
+      if (stock) {
+        setErrorStock(stock)
+      } else {
+        toast({
+          title: 'Error',
+          description: error.response?.data?.message || 'Error al Cargar preview',
+          variant: 'destructive'
+        })
+      }
     } finally {
       setLoadingPreview(false)
     }
@@ -736,6 +745,14 @@ export default function OrderStatusManagementPage() {
           open={isDetailOpen}
           onOpenChange={setIsDetailOpen}
           nroPedido={detailNroPedido}
+        />
+
+        <StockInsuficienteDialog
+          open={errorStock !== null}
+          onOpenChange={(v) => { if (!v) setErrorStock(null) }}
+          mensaje={errorStock?.mensaje ?? ''}
+          resumen={errorStock?.resumen}
+          detalle={errorStock?.detalle ?? []}
         />
       </div>
   )
