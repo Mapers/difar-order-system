@@ -160,7 +160,7 @@ export function SeccionAdminCobranza() {
     }
 
     return (
-        <div className="space-y-4">
+        <div className="min-w-0 space-y-4">
             <div className="flex gap-1 border-b">
                 {([
                     ['porAsignar', 'Por asignar', hook.totalPorAsignar],
@@ -185,8 +185,8 @@ export function SeccionAdminCobranza() {
                 ))}
             </div>
 
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-                <div className="flex-1 space-y-1">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-end">
+                <div className="min-w-0 flex-1 space-y-1">
                     <Label className="text-xs text-muted-foreground">Buscar</Label>
                     <div className="relative">
                         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -205,7 +205,7 @@ export function SeccionAdminCobranza() {
                         value={vendedorFiltro || TODOS}
                         onValueChange={(v) => setVendedorFiltro(v === TODOS ? '' : v)}
                     >
-                        <SelectTrigger className="w-full text-sm sm:w-52">
+                        <SelectTrigger className="w-full text-sm lg:w-52">
                             <SelectValue placeholder="Todos" />
                         </SelectTrigger>
                         <SelectContent>
@@ -225,7 +225,7 @@ export function SeccionAdminCobranza() {
                         value={vencFiltro}
                         onValueChange={(v) => setVencFiltro(v as FiltroVencimiento)}
                     >
-                        <SelectTrigger className="w-full text-sm sm:w-48">
+                        <SelectTrigger className="w-full text-sm lg:w-48">
                             <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -243,7 +243,7 @@ export function SeccionAdminCobranza() {
                             value={estadoFiltro || TODOS}
                             onValueChange={(v) => setEstadoFiltro(v === TODOS ? '' : v)}
                         >
-                            <SelectTrigger className="w-full text-sm sm:w-48">
+                            <SelectTrigger className="w-full text-sm lg:w-48">
                                 <SelectValue placeholder="Todos" />
                             </SelectTrigger>
                             <SelectContent>
@@ -339,19 +339,19 @@ export function SeccionAdminCobranza() {
                                     </div>
                                 </div>
 
-                                <div className="mt-3 grid grid-cols-2 gap-2 border-t pt-3 text-xs">
+                                <div className="mt-3 grid grid-cols-2 gap-2 border-t pt-3 text-sm [&>div]:min-w-0">
                                     <div>
-                                        <p className="text-muted-foreground">Saldo</p>
+                                        <p className="text-xs text-muted-foreground">Saldo</p>
                                         <p className="font-semibold tabular-nums">
                                             {simboloMonedaCobranza(f.moneda)} {Number(f.saldo).toFixed(2)}
                                         </p>
                                     </div>
                                     <div>
-                                        <p className="text-muted-foreground">Vence</p>
+                                        <p className="text-xs text-muted-foreground">Vence</p>
                                         <p className="tabular-nums">{fmtFecha(f.fecha_vencimiento)}</p>
                                     </div>
                                     <div className="col-span-2">
-                                        <p className="text-muted-foreground">Vendedor</p>
+                                        <p className="text-xs text-muted-foreground">Vendedor</p>
                                         <p className="truncate">{f.nombre_vendedor}</p>
                                     </div>
                                 </div>
@@ -390,7 +390,7 @@ export function SeccionAdminCobranza() {
                                         <td className="px-3 py-2 text-xs">
                                             {c.nombre_vendedor_asignado}
                                             {Number(c.fue_reasignada) === 1 && (
-                                                <span className="ml-1 rounded bg-amber-50 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700">
+                                                <span className="ml-1 rounded bg-amber-50 px-1.5 py-0.5 text-xs font-semibold text-amber-700">
                                                     reasignada
                                                 </span>
                                             )}
@@ -455,37 +455,37 @@ export function SeccionAdminCobranza() {
                                 <EstadoCobranzaBadge estado={estadoVisible(c)} />
                             </div>
 
-                            <div className="mt-3 grid grid-cols-2 gap-2 border-t pt-3 text-xs">
+                            <div className="mt-3 grid grid-cols-2 gap-2 border-t pt-3 text-sm [&>div]:min-w-0">
                                 <div className="col-span-2">
-                                    <p className="text-muted-foreground">Asignado a</p>
+                                    <p className="text-xs text-muted-foreground">Asignado a</p>
                                     <p className="truncate">
                                         {c.nombre_vendedor_asignado}
                                         {Number(c.fue_reasignada) === 1 && (
-                                            <span className="ml-1 rounded bg-amber-50 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700">
+                                            <span className="ml-1 rounded bg-amber-50 px-1.5 py-0.5 text-xs font-semibold text-amber-700">
                                                 reasignada
                                             </span>
                                         )}
                                     </p>
                                 </div>
                                 <div>
-                                    <p className="text-muted-foreground">Asignada</p>
+                                    <p className="text-xs text-muted-foreground">Asignada</p>
                                     <p className="tabular-nums">{fmtFecha(c.fecha_asignacion)}</p>
                                 </div>
                                 <div>
-                                    <p className="text-muted-foreground">Semana</p>
+                                    <p className="text-xs text-muted-foreground">Semana</p>
                                     <p>{c.semana_asignacion || '—'}</p>
                                 </div>
                                 {c.ultimo_comentario && (
                                     <div className="col-span-2">
-                                        <p className="text-muted-foreground">Último comentario</p>
-                                        <p className="line-clamp-2">{c.ultimo_comentario}</p>
+                                        <p className="text-xs text-muted-foreground">Último comentario</p>
+                                        <p className="line-clamp-2 break-words">{c.ultimo_comentario}</p>
                                     </div>
                                 )}
                             </div>
 
                             <div className="mt-3 flex gap-2 border-t pt-3">
                                 <Button
-                                    variant="outline" size="sm" className="flex-1 gap-1.5 text-xs"
+                                    variant="outline" size="sm" className="flex-1 gap-1.5 text-sm"
                                     onClick={() => setGestionando(c)}
                                 >
                                     <PenLine className="h-3.5 w-3.5" /> Actualizar

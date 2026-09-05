@@ -105,7 +105,7 @@ export function ConfirmarAsignacionModal({
                                     </span>
                                 </span>
                                 {destinos[g.codigo] && destinos[g.codigo] !== g.codigo && (
-                                    <span className="rounded bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-700">
+                                    <span className="rounded bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-700">
                                         Reasignada
                                     </span>
                                 )}

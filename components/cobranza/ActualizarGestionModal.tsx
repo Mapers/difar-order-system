@@ -152,7 +152,7 @@ export function ActualizarGestionModal({
                         <div className="max-h-[180px] space-y-2 overflow-y-auto">
                             {bitacora.map(c => (
                                 <div key={c.id_comentario} className="border-b border-dashed pb-2 last:border-0">
-                                    <div className="mb-0.5 flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
+                                    <div className="mb-0.5 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                                         <span>{fmtFecha(c.fecha_registro)}</span>
                                         <span>·</span>
                                         <span>{c.usuario || '—'}</span>

@@ -25,7 +25,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
         <div className="flex min-h-screen bg-gradient-to-br">
             <SideNav />
             <MobileNav />
-            <div className={`flex-1 transition-all duration-300 ${collapsed ? "md:pl-20" : "md:pl-72"}`}>
+            <div className={`min-w-0 flex-1 transition-all duration-300 ${collapsed ? "md:pl-20" : "md:pl-72"}`}>
                 <TopBar />
                 <div className="p-4 pt-20 md:p-8 md:pt-8">{children}</div>
             </div>

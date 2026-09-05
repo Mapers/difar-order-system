@@ -98,18 +98,18 @@ export function SeccionVendedorCobranza() {
     }
 
     return (
-        <div className="space-y-4">
+        <div className="min-w-0 space-y-4">
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
                 {contadores.map(c => (
                     <Card key={c.estado} className="p-3">
                         <p className="text-xl font-bold tabular-nums">{c.n}</p>
-                        <p className="mt-0.5 text-[11px] text-muted-foreground">
+                        <p className="mt-0.5 text-xs text-muted-foreground">
                             {ETIQUETA_ESTADO[c.estado]}
                         </p>
                     </Card>
                 ))}
             </div>
-            <p className="-mt-2 text-[11px] text-muted-foreground">
+            <p className="-mt-2 text-xs text-muted-foreground">
                 Contadores sobre las {hook.asignadas.length} filas cargadas de {hook.totalAsignadas}.
             </p>
 
@@ -195,30 +195,30 @@ export function SeccionVendedorCobranza() {
                             <EstadoCobranzaBadge estado={estadoVisible(c)} />
                         </div>
 
-                        <div className="mt-3 grid grid-cols-2 gap-2 border-t pt-3 text-xs">
+                        <div className="mt-3 grid grid-cols-2 gap-2 border-t pt-3 text-sm [&>div]:min-w-0">
                             <div>
-                                <p className="text-muted-foreground">Saldo</p>
+                                <p className="text-xs text-muted-foreground">Saldo</p>
                                 <p className="font-semibold tabular-nums">
                                     {simboloMonedaCobranza(c.moneda)} {Number(c.saldo_actual).toFixed(2)}
                                 </p>
                             </div>
                             <div>
-                                <p className="text-muted-foreground">Vence</p>
+                                <p className="text-xs text-muted-foreground">Vence</p>
                                 <p className="tabular-nums">{fmtFecha(c.fecha_vencimiento)}</p>
                             </div>
                             <div>
-                                <p className="text-muted-foreground">Semana</p>
+                                <p className="text-xs text-muted-foreground">Semana</p>
                                 <p>{c.semana_asignacion || '—'}</p>
                             </div>
                             <div>
-                                <p className="text-muted-foreground">Comentarios</p>
+                                <p className="text-xs text-muted-foreground">Comentarios</p>
                                 <p>{c.total_comentarios}</p>
                             </div>
                         </div>
 
                         <div className="mt-3 flex gap-2 border-t pt-3">
                             <Button
-                                variant="outline" size="sm" className="flex-1 gap-1.5 text-xs"
+                                variant="outline" size="sm" className="flex-1 gap-1.5 text-sm"
                                 onClick={() => setGestionando(c)}
                             >
                                 <PenLine className="h-3.5 w-3.5" /> Actualizar

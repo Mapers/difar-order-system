@@ -10,7 +10,7 @@ export default function AsignacionCobranzasPage() {
     const { isVendedor, isAdmin } = useAuth()
 
     return (
-        <div className="grid w-full min-w-0 gap-6">
+        <div className="grid w-full min-w-0 gap-6 [&>*]:min-w-0">
             <div className="flex flex-col gap-2">
                 <h1 className="text-3xl font-bold tracking-tight text-foreground">
                     Asignación de Cobranzas
