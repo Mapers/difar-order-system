@@ -60,7 +60,7 @@ export function ReciboDetalleModal({ open, onOpenChange, idRecibo, onVouchersCam
             <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
-                        <FileText className="h-5 w-5 text-sky-600" />
+                        <FileText className="h-5 w-5 text-sky-600 dark:text-sky-400" />
                         Recibo {recibo?.numero_recibo ?? ''}
                         {recibo && (
                             <Badge variant={recibo.estado === 'ANULADO' ? 'destructive' : 'default'}>
@@ -100,14 +100,14 @@ export function ReciboDetalleModal({ open, onOpenChange, idRecibo, onVouchersCam
                         {dato('La cantidad de', recibo.total_letras)}
 
                         {recibo.estado === 'ANULADO' && (
-                            <div className="rounded-md border border-red-200 bg-red-50 p-3">
-                                <p className="text-xs font-semibold text-red-800">Motivo de anulación</p>
-                                <p className="text-sm text-red-700">{recibo.motivo_anulacion}</p>
+                            <div className="rounded-md border border-red-200 dark:border-red-900/60 bg-red-50 dark:bg-red-950/30 p-3">
+                                <p className="text-xs font-semibold text-red-800 dark:text-red-300">Motivo de anulación</p>
+                                <p className="text-sm text-red-700 dark:text-red-400">{recibo.motivo_anulacion}</p>
                             </div>
                         )}
 
                         {recibo.whatsapp_estado && recibo.whatsapp_estado !== 'OK' && (
-                            <p className="text-xs text-amber-700">
+                            <p className="text-xs text-amber-700 dark:text-amber-400">
                                 WhatsApp: {recibo.whatsapp_detalle}
                             </p>
                         )}
@@ -128,7 +128,7 @@ export function ReciboDetalleModal({ open, onOpenChange, idRecibo, onVouchersCam
                                         href={urlPdf}
                                         target="_blank"
                                         rel="noreferrer"
-                                        className="flex items-center gap-1 text-xs font-medium text-sky-700 hover:underline sm:hidden"
+                                        className="flex items-center gap-1 text-xs font-medium text-sky-700 dark:text-sky-400 hover:underline sm:hidden"
                                     >
                                         <ExternalLink className="h-3.5 w-3.5" />
                                         Abrir el PDF

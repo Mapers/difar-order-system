@@ -140,7 +140,7 @@ export function SeccionVendedorCobranza() {
                         </thead>
                         <tbody className="divide-y divide-border">
                             {hook.asignadas.map(c => (
-                                <tr key={c.id_asignacion} className={Number(c.esta_vencido) === 1 ? 'bg-red-50/60' : ''}>
+                                <tr key={c.id_asignacion} className={Number(c.esta_vencido) === 1 ? 'bg-red-50/60 dark:bg-red-950/20' : ''}>
                                     <td className="px-3 py-2 font-medium">{c.serie}-{c.numero}</td>
                                     <td className="px-3 py-2">
                                         <div className="max-w-[240px] truncate">{c.cliente_denominacion}</div>
@@ -183,7 +183,7 @@ export function SeccionVendedorCobranza() {
                 {hook.asignadas.map(c => (
                     <Card
                         key={c.id_asignacion}
-                        className={`p-4 ${Number(c.esta_vencido) === 1 ? 'border-red-200 bg-red-50/40' : ''}`}
+                        className={`p-4 ${Number(c.esta_vencido) === 1 ? 'border-red-200 dark:border-red-900/60 bg-red-50/40 dark:bg-red-950/20' : ''}`}
                     >
                         <div className="flex items-start justify-between gap-2">
                             <div className="min-w-0">

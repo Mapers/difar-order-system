@@ -24,7 +24,7 @@ export function BloqueoReciboOverlay({
             <div className="mx-4 w-full max-w-sm rounded-lg border bg-card p-6 text-center shadow-lg">
                 {pendiente ? (
                     <>
-                        <Loader2 className="mx-auto mb-3 h-10 w-10 animate-spin text-blue-600" />
+                        <Loader2 className="mx-auto mb-3 h-10 w-10 animate-spin text-blue-600 dark:text-blue-400" />
                         <h3 className="text-base font-semibold">Esperando aprobación</h3>
                         <p className="mt-1 text-sm text-muted-foreground">
                             Tu solicitud fue enviada a Gerencia.
@@ -38,7 +38,7 @@ export function BloqueoReciboOverlay({
                     <>
                         <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-muted">
                             {rechazada
-                                ? <XCircle className="h-6 w-6 text-red-600" />
+                                ? <XCircle className="h-6 w-6 text-red-600 dark:text-red-400" />
                                 : <Lock className="h-6 w-6 text-muted-foreground" />}
                         </div>
 

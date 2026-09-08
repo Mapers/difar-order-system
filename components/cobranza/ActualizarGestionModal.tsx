@@ -75,7 +75,7 @@ export function ActualizarGestionModal({
                 </DialogHeader>
 
                 {pagada && (
-                    <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">
+                    <div className="rounded-lg border border-emerald-200 dark:border-emerald-900/60 bg-emerald-50 dark:bg-emerald-950/30 p-3 text-sm text-emerald-800 dark:text-emerald-300">
                         Esta factura ya no tiene saldo pendiente: figura como <b>pagada</b> según el
                         kardex. No hace falta marcarla a mano.
                     </div>

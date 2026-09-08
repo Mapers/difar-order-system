@@ -91,7 +91,7 @@ export function VouchersRecibo({ idRecibo, anulado, idEmisor, abierto, onCambio 
                     setArrastrando(false)
                     alSubir(e.dataTransfer.files?.[0])
                 }}
-                className={`p-3 transition ${arrastrando ? 'bg-blue-50' : ''}`}
+                className={`p-3 transition ${arrastrando ? 'bg-blue-50 dark:bg-blue-950/30' : ''}`}
             >
                 {cargando && <Skeleton className="h-20 w-full" />}
 
@@ -117,7 +117,7 @@ export function VouchersRecibo({ idRecibo, anulado, idEmisor, abierto, onCambio 
                                     className="flex h-24 items-center justify-center bg-muted/40"
                                 >
                                     {esPdf(v)
-                                        ? <FileText className="h-8 w-8 text-red-600" />
+                                        ? <FileText className="h-8 w-8 text-red-600 dark:text-red-400" />
                                         : <img
                                             src={`${publicApi}${v.ruta}`}
                                             alt={v.nombre_archivo}
@@ -165,7 +165,7 @@ export function VouchersRecibo({ idRecibo, anulado, idEmisor, abierto, onCambio 
                                             type="button"
                                             title="Eliminar voucher"
                                             onClick={() => setConfirmar(v.id_voucher)}
-                                            className="absolute right-1 top-1 rounded bg-background/90 p-1 text-red-600 opacity-0 transition group-hover:opacity-100"
+                                            className="absolute right-1 top-1 rounded bg-background/90 p-1 text-red-600 dark:text-red-400 opacity-0 transition group-hover:opacity-100"
                                         >
                                             <Trash2 className="h-3.5 w-3.5" />
                                         </button>

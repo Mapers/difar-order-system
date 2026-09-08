@@ -62,13 +62,13 @@ export function EvidenciaCobranzaModal({ open, onOpenChange, cobranza, obtenerEv
 
                     {!cargando && url && esPdf(evidencia!.ruta) && (
                         <div className="flex flex-col items-center gap-2 px-6 py-10 text-center">
-                            <FileText className="h-12 w-12 text-red-600" />
+                            <FileText className="h-12 w-12 text-red-600 dark:text-red-400" />
                             <p className="max-w-full truncate text-sm font-medium">{evidencia!.nombre_archivo}</p>
                             <a
                                 href={url}
                                 target="_blank"
                                 rel="noreferrer"
-                                className="flex items-center gap-1 text-xs font-medium text-sky-700 hover:underline"
+                                className="flex items-center gap-1 text-xs font-medium text-sky-700 dark:text-sky-400 hover:underline"
                             >
                                 <ExternalLink className="h-3.5 w-3.5" /> Abrir el PDF
                             </a>

@@ -105,7 +105,7 @@ export function ConfirmarAsignacionModal({
                                     </span>
                                 </span>
                                 {destinos[g.codigo] && destinos[g.codigo] !== g.codigo && (
-                                    <span className="rounded bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-700">
+                                    <span className="rounded bg-amber-50 dark:bg-amber-950/30 px-2 py-0.5 text-xs font-semibold text-amber-700 dark:text-amber-400">
                                         Reasignada
                                     </span>
                                 )}
@@ -132,12 +132,12 @@ export function ConfirmarAsignacionModal({
                 </div>
 
                 {sinTelefono.length > 0 && (
-                    <div className="rounded-lg border border-amber-200 bg-amber-50 p-3">
-                        <p className="flex items-center gap-1.5 text-sm font-semibold text-amber-800">
+                    <div className="rounded-lg border border-amber-200 dark:border-amber-900/60 bg-amber-50 dark:bg-amber-950/30 p-3">
+                        <p className="flex items-center gap-1.5 text-sm font-semibold text-amber-800 dark:text-amber-300">
                             <AlertTriangle className="h-4 w-4" />
                             Sin WhatsApp
                         </p>
-                        <p className="mt-1 text-xs text-amber-700">
+                        <p className="mt-1 text-xs text-amber-700 dark:text-amber-400">
                             {sinTelefono.map(v => v.nombre).join(', ')}{' '}
                             {sinTelefono.length === 1 ? 'no tiene' : 'no tienen'} un número válido registrado.
                             La asignación se hará igual, pero {sinTelefono.length === 1 ? 'no recibirá' : 'no recibirán'} el aviso.

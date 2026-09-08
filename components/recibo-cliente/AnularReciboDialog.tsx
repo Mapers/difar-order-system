@@ -36,7 +36,7 @@ export function AnularReciboDialog({ open, onOpenChange, recibo, onConfirmar }: 
             <DialogContent className="max-w-md">
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
-                        <AlertTriangle className="h-5 w-5 text-red-600" />
+                        <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400" />
                         Anular recibo {recibo?.numero_recibo}
                     </DialogTitle>
                     <DialogDescription>
@@ -47,7 +47,7 @@ export function AnularReciboDialog({ open, onOpenChange, recibo, onConfirmar }: 
 
                 <div>
                     <Label htmlFor="motivo-anulacion">
-                        Motivo <span className="text-red-600">*</span>
+                        Motivo <span className="text-red-600 dark:text-red-400">*</span>
                     </Label>
                     <Textarea
                         id="motivo-anulacion"

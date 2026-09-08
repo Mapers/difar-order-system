@@ -19,6 +19,7 @@ import { ConfirmarAsignacionModal } from './ConfirmarAsignacionModal'
 import { EvidenciaCobranzaModal } from './EvidenciaCobranzaModal'
 import { ActualizarGestionModal } from './ActualizarGestionModal'
 import { useCobranzaAsignacion } from '@/app/hooks/useCobranzaAsignacion'
+import { ExportAsignadasPdfButton } from './ExportAsignadasPdfButton'
 import {
     CobranzaAsignada, ESTADOS_FILTRO, FacturaPorAsignar, FiltroVencimiento,
     FILTROS_VENCIMIENTO, rangoDeVencimiento,
@@ -78,6 +79,22 @@ export function SeccionAdminCobranza() {
 
     const filtrosPorAsignar = { busqueda: buscarAplicado, vendedor: vendedorFiltro, ...rango }
     const filtrosAsignadas = { busqueda: buscarAplicado, vendedor: vendedorFiltro, estado: estadoFiltro, ...rango }
+
+    const descripcionFiltros = (() => {
+        const partes: string[] = []
+        if (vendedorFiltro) {
+            const v = vendedores.find(x => x.codigo === vendedorFiltro)
+            partes.push(`Vendedor: ${v ? `${v.codigo} - ${v.nombre}` : vendedorFiltro}`)
+        }
+        if (vencFiltro !== 'todas') {
+            partes.push(FILTROS_VENCIMIENTO.find(f => f.value === vencFiltro)?.label ?? vencFiltro)
+        }
+        if (estadoFiltro) {
+            partes.push(`Estado: ${ESTADOS_FILTRO.find(e => e.value === estadoFiltro)?.label ?? estadoFiltro}`)
+        }
+        if (buscarAplicado) partes.push(`Búsqueda: "${buscarAplicado}"`)
+        return partes.length ? partes.join('  ·  ') : 'Todas las cobranzas asignadas'
+    })()
 
     useEffect(() => {
         if (tab === 'porAsignar') hook.fetchPorAsignar(filtrosPorAsignar, true)
@@ -171,13 +188,13 @@ export function SeccionAdminCobranza() {
                         onClick={() => setTab(id)}
                         className={`mr-5 flex items-center gap-2 border-b-2 px-1 pb-2.5 pt-2 text-sm font-semibold transition ${
                             tab === id
-                                ? 'border-teal-600 text-teal-700'
+                                ? 'border-teal-600 text-teal-700 dark:text-teal-400'
                                 : 'border-transparent text-muted-foreground hover:text-foreground'
                         }`}
                     >
                         {titulo}
                         <span className={`rounded-full px-2 py-0.5 text-xs ${
-                            tab === id ? 'bg-teal-50 text-teal-700' : 'bg-muted text-muted-foreground'
+                            tab === id ? 'bg-teal-50 dark:bg-teal-950/30 text-teal-700 dark:text-teal-400' : 'bg-muted text-muted-foreground'
                         }`}>
                             {total}
                         </span>
@@ -260,10 +277,17 @@ export function SeccionAdminCobranza() {
                     <Button
                         onClick={() => setConfirmando(true)}
                         disabled={seleccion.size === 0}
-                        className="bg-teal-700 hover:bg-teal-800"
+                        className="w-full bg-teal-700 hover:bg-teal-800 lg:w-auto"
                     >
                         Asignar a cobranza ({seleccion.size})
                     </Button>
+                )}
+
+                {tab === 'asignadas' && (
+                    <ExportAsignadasPdfButton
+                        filtros={filtrosAsignadas}
+                        descripcionFiltros={descripcionFiltros}
+                    />
                 )}
             </div>
 
@@ -288,7 +312,7 @@ export function SeccionAdminCobranza() {
                                         ? new Date(f.fecha_vencimiento) < new Date()
                                         : false
                                     return (
-                                        <tr key={f.id_sunat} className={vencida ? 'bg-red-50/60' : ''}>
+                                        <tr key={f.id_sunat} className={vencida ? 'bg-red-50/60 dark:bg-red-950/20' : ''}>
                                             <td className="px-3 py-2">
                                                 <Checkbox
                                                     checked={seleccion.has(f.id_sunat)}
@@ -322,7 +346,7 @@ export function SeccionAdminCobranza() {
                         return (
                             <Card
                                 key={f.id_sunat}
-                                className={`p-4 ${vencida ? 'border-red-200 bg-red-50/40' : ''}`}
+                                className={`p-4 ${vencida ? 'border-red-200 dark:border-red-900/60 bg-red-50/40 dark:bg-red-950/20' : ''}`}
                             >
                                 <div className="flex items-start gap-3">
                                     <Checkbox
@@ -382,7 +406,7 @@ export function SeccionAdminCobranza() {
                             </thead>
                             <tbody className="divide-y divide-border">
                                 {hook.asignadas.map(c => (
-                                    <tr key={c.id_asignacion} className={Number(c.esta_vencido) === 1 ? 'bg-red-50/60' : ''}>
+                                    <tr key={c.id_asignacion} className={Number(c.esta_vencido) === 1 ? 'bg-red-50/60 dark:bg-red-950/20' : ''}>
                                         <td className="px-3 py-2 font-medium">{c.serie}-{c.numero}</td>
                                         <td className="px-3 py-2">
                                             <div className="max-w-[220px] truncate">{c.cliente_denominacion}</div>
@@ -390,7 +414,7 @@ export function SeccionAdminCobranza() {
                                         <td className="px-3 py-2 text-xs">
                                             {c.nombre_vendedor_asignado}
                                             {Number(c.fue_reasignada) === 1 && (
-                                                <span className="ml-1 rounded bg-amber-50 px-1.5 py-0.5 text-xs font-semibold text-amber-700">
+                                                <span className="ml-1 rounded bg-amber-50 dark:bg-amber-950/30 px-1.5 py-0.5 text-xs font-semibold text-amber-700 dark:text-amber-400">
                                                     reasignada
                                                 </span>
                                             )}
@@ -422,7 +446,7 @@ export function SeccionAdminCobranza() {
                                                 </Button>
                                                 <Button
                                                     variant="ghost" size="icon"
-                                                    className="h-8 w-8 text-red-600 hover:bg-red-50"
+                                                    className="h-8 w-8 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30"
                                                     onClick={() => retirar(c)}
                                                     disabled={hook.guardando}
                                                     title="Retirar asignación"
@@ -443,7 +467,7 @@ export function SeccionAdminCobranza() {
                     {hook.asignadas.map(c => (
                         <Card
                             key={c.id_asignacion}
-                            className={`p-4 ${Number(c.esta_vencido) === 1 ? 'border-red-200 bg-red-50/40' : ''}`}
+                            className={`p-4 ${Number(c.esta_vencido) === 1 ? 'border-red-200 dark:border-red-900/60 bg-red-50/40 dark:bg-red-950/20' : ''}`}
                         >
                             <div className="flex items-start justify-between gap-2">
                                 <div className="min-w-0">
@@ -461,7 +485,7 @@ export function SeccionAdminCobranza() {
                                     <p className="truncate">
                                         {c.nombre_vendedor_asignado}
                                         {Number(c.fue_reasignada) === 1 && (
-                                            <span className="ml-1 rounded bg-amber-50 px-1.5 py-0.5 text-xs font-semibold text-amber-700">
+                                            <span className="ml-1 rounded bg-amber-50 dark:bg-amber-950/30 px-1.5 py-0.5 text-xs font-semibold text-amber-700 dark:text-amber-400">
                                                 reasignada
                                             </span>
                                         )}
@@ -500,7 +524,7 @@ export function SeccionAdminCobranza() {
                                 </Button>
                                 <Button
                                     variant="outline" size="sm"
-                                    className="shrink-0 text-red-600 hover:bg-red-50"
+                                    className="shrink-0 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30"
                                     onClick={() => retirar(c)}
                                     disabled={hook.guardando}
                                     title="Retirar asignación"

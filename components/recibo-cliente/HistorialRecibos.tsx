@@ -44,7 +44,7 @@ function EstadoBadge({ estado }: { estado: EstadoRecibo }) {
     return (
         <span
             className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${
-                anulado ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700'
+                anulado ? 'bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-400' : 'bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400'
             }`}
         >
             {anulado ? 'Anulado' : 'Emitido'}
@@ -58,7 +58,7 @@ function VoucherBadge({ cantidad }: { cantidad: number }) {
     return (
         <span
             className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold ${
-                tiene ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'
+                tiene ? 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400' : 'bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400'
             }`}
             title={tiene ? `${cantidad} voucher(s) adjunto(s)` : 'Sin voucher adjunto'}
         >
@@ -114,7 +114,7 @@ export function HistorialRecibos() {
             <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8 text-blue-600 hover:bg-blue-50 hover:text-blue-700"
+                className="h-8 w-8 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/30 hover:text-blue-700"
                 onClick={() => setReciboVisto(r.id_recibo)}
                 title="Ver detalle"
             >
@@ -124,7 +124,7 @@ export function HistorialRecibos() {
             <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8 text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700"
+                className="h-8 w-8 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 hover:text-emerald-700"
                 disabled={!urlPdf(r)}
                 onClick={() => abrirPdf(r)}
                 title={urlPdf(r) ? 'Descargar PDF' : 'El PDF no se pudo generar'}
@@ -136,7 +136,7 @@ export function HistorialRecibos() {
                 <Button
                     variant="ghost"
                     size="icon"
-                    className="h-8 w-8 text-red-600 hover:bg-red-50 hover:text-red-700"
+                    className="h-8 w-8 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-700"
                     onClick={() => setReciboAAnular(r)}
                     title="Anular recibo"
                 >
@@ -244,7 +244,7 @@ export function HistorialRecibos() {
 
             {loadingHistorial ? (
                 <div className="flex h-64 flex-col items-center justify-center">
-                    <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+                    <Loader2 className="h-8 w-8 animate-spin text-blue-600 dark:text-blue-400" />
                     <div>Buscando recibos...</div>
                 </div>
             ) : (
