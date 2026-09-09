@@ -15,9 +15,10 @@ interface Props {
     onOpenChange: (v: boolean) => void
     recibo: ReciboCabecera | null
     onConfirmar: (motivo: string) => void
+    puedeAnularDirecto?: boolean
 }
 
-export function AnularReciboDialog({ open, onOpenChange, recibo, onConfirmar }: Props) {
+export function AnularReciboDialog({ open, onOpenChange, recibo, onConfirmar, puedeAnularDirecto = true }: Props) {
     const [motivo, setMotivo] = useState('')
 
     useEffect(() => {
@@ -37,11 +38,12 @@ export function AnularReciboDialog({ open, onOpenChange, recibo, onConfirmar }: 
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
                         <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400" />
-                        Anular recibo {recibo?.numero_recibo}
+                        {puedeAnularDirecto ? 'Anular' : 'Solicitar anulación de'} recibo {recibo?.numero_recibo}
                     </DialogTitle>
                     <DialogDescription>
-                        El recibo no se borra: queda marcado como anulado y su PDF sale con la
-                        marca de agua correspondiente.
+                        {puedeAnularDirecto
+                            ? 'El recibo no se borra: queda marcado como anulado y su PDF sale con la marca de agua correspondiente.'
+                            : 'El recibo no se anula todavía. Gerencia verá tu solicitud con este motivo y decidirá; te avisaremos con la respuesta.'}
                     </DialogDescription>
                 </DialogHeader>
 
@@ -55,7 +57,9 @@ export function AnularReciboDialog({ open, onOpenChange, recibo, onConfirmar }: 
                         onChange={(e) => setMotivo(e.target.value)}
                         className="mt-1"
                         rows={3}
-                        placeholder="Por qué se anula este recibo"
+                        placeholder={puedeAnularDirecto
+                            ? 'Por qué se anula este recibo'
+                            : 'Explica por qué debe anularse. Gerencia lo leerá para decidir.'}
                     />
                 </div>
 
@@ -64,7 +68,7 @@ export function AnularReciboDialog({ open, onOpenChange, recibo, onConfirmar }: 
                         Cancelar
                     </Button>
                     <Button variant="destructive" onClick={confirmar} disabled={!motivo.trim()}>
-                        Anular recibo
+                        {puedeAnularDirecto ? 'Anular recibo' : 'Enviar solicitud'}
                     </Button>
                 </DialogFooter>
             </DialogContent>

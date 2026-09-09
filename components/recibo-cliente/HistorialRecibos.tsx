@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label'
 import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select'
-import { Ban, Download, Eye, FileText, Loader2, Paperclip, Search, X } from 'lucide-react'
+import { Ban, Clock, Download, Eye, FileText, Loader2, Paperclip, Search, X } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
 import { publicApi } from '@/app/api/client'
 import { useAuth } from '@/context/authContext'
@@ -86,11 +86,13 @@ function SaldoRecibo({ recibo }: { recibo: ReciboCabecera }) {
 
 export function HistorialRecibos() {
     const { user, isAdmin } = useAuth()
-    const { historial, loadingHistorial, fetchHistorial, anularRecibo } = useReciboCliente()
+    const { historial, loadingHistorial, fetchHistorial, anularRecibo,
+            solicitarAnulacion, fetchAnulacionesPendientes } = useReciboCliente()
 
     const [filtros, setFiltros] = useState<FiltrosHistorial>(FILTROS_VACIOS)
     const [reciboVisto, setReciboVisto] = useState<number | null>(null)
     const [reciboAAnular, setReciboAAnular] = useState<ReciboCabecera | null>(null)
+    const [anulacionesPendientes, setAnulacionesPendientes] = useState<Set<number>>(new Set())
 
     /* El badge de vouchers viene del listado, no del modal. Si dentro del
        detalle se adjuntó o borró alguno, el listado quedó desactualizado y hay
@@ -101,7 +103,9 @@ export function HistorialRecibos() {
     const idUsuarioFiltro = isAdmin() ? null : (user?.idUsuarioWeb ?? null)
 
     useEffect(() => {
-        if (user) fetchHistorial(filtros, idUsuarioFiltro)
+        if (!user) return
+        fetchHistorial(filtros, idUsuarioFiltro)
+        fetchAnulacionesPendientes(idUsuarioFiltro).then(setAnulacionesPendientes)
     }, [user])
 
     const buscar = () => fetchHistorial(filtros, idUsuarioFiltro)
@@ -114,7 +118,18 @@ export function HistorialRecibos() {
 
     const handleAnular = async (motivo: string) => {
         if (!reciboAAnular || !user) return
-        await anularRecibo(reciboAAnular.id_recibo, motivo, user.idUsuarioWeb)
+
+        if (isAdmin()) {
+            await anularRecibo(reciboAAnular.id_recibo, motivo, user.idUsuarioWeb)
+        } else {
+            const ok = await solicitarAnulacion(
+                reciboAAnular.id_recibo, motivo, user.idUsuarioWeb,
+                user.codigo ?? null, user.nombreCompleto ?? null,
+            )
+            if (ok) {
+                setAnulacionesPendientes(prev => new Set(prev).add(reciboAAnular.id_recibo))
+            }
+        }
         setReciboAAnular(null)
     }
 
@@ -149,15 +164,24 @@ export function HistorialRecibos() {
             </Button>
 
             {r.estado !== 'ANULADO' && (
-                <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-700"
-                    onClick={() => setReciboAAnular(r)}
-                    title="Anular recibo"
-                >
-                    <Ban className="h-4 w-4" />
-                </Button>
+                anulacionesPendientes.has(r.id_recibo) ? (
+                    <span
+                        className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700 dark:bg-amber-950/30 dark:text-amber-400"
+                        title="Gerencia debe aprobar esta anulación"
+                    >
+                        <Clock className="h-3 w-3" /> Por aprobar
+                    </span>
+                ) : (
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-700"
+                        onClick={() => setReciboAAnular(r)}
+                        title={isAdmin() ? 'Anular recibo' : 'Solicitar anulación'}
+                    >
+                        <Ban className="h-4 w-4" />
+                    </Button>
+                )
             )}
         </div>
     )
@@ -420,6 +444,7 @@ export function HistorialRecibos() {
             />
 
             <AnularReciboDialog
+                puedeAnularDirecto={isAdmin()}
                 open={reciboAAnular != null}
                 onOpenChange={(v) => { if (!v) setReciboAAnular(null) }}
                 recibo={reciboAAnular}

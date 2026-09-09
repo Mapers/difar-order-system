@@ -80,4 +80,20 @@ export class NotificationService {
     });
     return response.data;
   }
+
+  static async resolverAnulacionRecibo(
+    idSolicitud: string | number,
+    aprobar: boolean,
+    resueltoPor?: number | null,
+    resueltoNombre?: string | null,
+    motivoRechazo?: string | null,
+  ): Promise<any> {
+    const response = await apiClient.put(`/recibos/anulacion/${idSolicitud}/resolver`, {
+      aprobar,
+      resueltoPor: resueltoPor ?? null,
+      resueltoNombre: resueltoNombre ?? null,
+      motivoRechazo: motivoRechazo ?? null,
+    });
+    return response.data?.data;
+  }
 }

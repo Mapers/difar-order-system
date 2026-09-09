@@ -1,4 +1,4 @@
-import { ShoppingCart, CheckCircle2, ArrowLeftRight, AlertTriangle, FileWarning, FileClock, FileCheck } from "lucide-react";
+import { ShoppingCart, CheckCircle2, ArrowLeftRight, AlertTriangle, FileWarning, FileClock, FileCheck, Ban } from "lucide-react";
 import type { User } from "@/app/services/auth/types";
 import type { NotificationKind } from "./types";
 
@@ -119,6 +119,30 @@ export const NOTIFICATION_TYPES: NotificationTypeConfig[] = [
     playSound: true,
     persisted: true,
     shouldReceive: ({ isAdmin }) => isAdmin(),
+  },
+  {
+    kind: "reciboAnulacionSolicitud",
+    socketEvent: "notification:reciboAnulacion",
+    title: "Anulación de recibo",
+    icon: Ban,
+    actionable: true,
+    showArrivalModal: true,
+    playSound: true,
+    persisted: true,
+    shouldReceive: ({ isAdmin }) => isAdmin(),
+  },
+  {
+    kind: "reciboAnulacionResuelta",
+    socketEvent: "notification:reciboAnulacionResuelta",
+    title: "Respuesta a tu anulación",
+    icon: Ban,
+    actionable: false,
+    showArrivalModal: true,
+    playSound: true,
+    persisted: true,
+    shouldReceive: ({ user }, payload) =>
+      user?.idUsuarioWeb != null &&
+      payload?.destinatario_codigo === `U${user.idUsuarioWeb}`,
   },
   {
     kind: "reciboPermisoResuelto",

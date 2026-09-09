@@ -7,7 +7,9 @@ export type NotificationKind =
   | "sunatEstado"
   | "borradorPendiente"
   | "reciboPermisoSolicitud"
-  | "reciboPermisoResuelto";
+  | "reciboPermisoResuelto"
+  | "reciboAnulacionSolicitud"
+  | "reciboAnulacionResuelta";
 
 export type NotificationStatus = "pending" | "approved" | "rejected";
 

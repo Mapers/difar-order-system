@@ -139,6 +139,48 @@ export function useReciboCliente() {
         }
     }, [])
 
+    const solicitarAnulacion = useCallback(async (
+        idRecibo: number,
+        motivo: string,
+        idUsuarioWeb: number,
+        codVendedor: string | null,
+        nombreVendedor: string | null,
+    ) => {
+        try {
+            await apiClient.post(`/recibos/${idRecibo}/anulacion/solicitar`, {
+                motivo,
+                id_usuario_web: idUsuarioWeb,
+                cod_vendedor: codVendedor,
+                nombre_vendedor: nombreVendedor,
+            })
+            toast({
+                title: 'Solicitud enviada',
+                description: 'Gerencia debe aprobar la anulación. Te avisaremos con la respuesta.',
+                variant: 'success',
+            })
+            return true
+        } catch (error: any) {
+            toast({
+                title: 'No se pudo solicitar',
+                description: error?.response?.data?.message || 'Error al enviar la solicitud de anulación.',
+                variant: 'error',
+            })
+            return false
+        }
+    }, [])
+
+    const fetchAnulacionesPendientes = useCallback(async (idUsuarioWeb?: number | null) => {
+        try {
+            const res = await apiClient.get('/recibos/anulacion/pendientes', {
+                params: idUsuarioWeb ? { id_usuario_web: idUsuarioWeb } : undefined,
+            })
+            const filas = res.data?.data?.data ?? []
+            return new Set<number>(filas.map((f: any) => Number(f.id_recibo)))
+        } catch {
+            return new Set<number>()
+        }
+    }, [])
+
     const anularRecibo = useCallback(async (
         idRecibo: number,
         motivo: string,
@@ -183,5 +225,7 @@ export function useReciboCliente() {
         emitirRecibo,
         obtenerRecibo,
         anularRecibo,
+        solicitarAnulacion,
+        fetchAnulacionesPendientes,
     }
 }
