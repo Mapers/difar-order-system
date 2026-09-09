@@ -26,6 +26,7 @@ export interface LineaRecibo {
     numero_doc: string
     documento_completo: string
     importe: string
+    saldo_documento: number | null
     observaciones: string
     simbolo_moneda: string
 }
@@ -41,6 +42,7 @@ export interface ReciboDetalle {
     numero_doc: string | null
     documento_completo: string | null
     importe: number | string
+    saldo_documento: number | string | null
     observaciones: string | null
 }
 
@@ -74,6 +76,7 @@ export interface ReciboCabecera {
     whatsapp_detalle: string | null
     fecha_registro: string | null
     total_documentos?: number
+    total_saldo?: number | string | null
     total_vouchers?: number
     tiene_firma_cliente?: number
     tiene_firma_vendedor?: number
@@ -108,6 +111,7 @@ export interface NuevoRecibo {
         numero_doc: string | null
         documento_completo: string | null
         importe: number
+        saldo_documento: number | null
         observaciones: string | null
     }[]
 }
@@ -121,4 +125,15 @@ export interface FiltrosHistorial {
 
 export function simboloMoneda(moneda: MonedaRecibo | number | null | undefined): string {
     return Number(moneda) === 2 ? 'US$' : 'S/'
+}
+
+export function saldoDeLinea(
+    saldoDocumento: number | string | null | undefined,
+    importe: number | string | null | undefined,
+): number | null {
+    if (saldoDocumento === null || saldoDocumento === undefined || saldoDocumento === '') return null
+    const debia = Number(saldoDocumento)
+    const pagado = Number(importe) || 0
+    if (!Number.isFinite(debia)) return null
+    return Math.max(debia - pagado, 0)
 }

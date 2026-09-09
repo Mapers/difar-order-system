@@ -68,6 +68,22 @@ function VoucherBadge({ cantidad }: { cantidad: number }) {
     )
 }
 
+function SaldoRecibo({ recibo }: { recibo: ReciboCabecera }) {
+    const bruto = recibo.total_saldo
+    if (bruto === null || bruto === undefined || bruto === '') {
+        return <span className="text-muted-foreground">—</span>
+    }
+
+    const saldo = Number(bruto)
+    if (!Number.isFinite(saldo)) return <span className="text-muted-foreground">—</span>
+
+    return (
+        <span className={saldo > 0 ? 'font-semibold text-blue-600 dark:text-blue-400' : 'text-muted-foreground'}>
+            {simboloMoneda(recibo.moneda)} {saldo.toFixed(2)}
+        </span>
+    )
+}
+
 export function HistorialRecibos() {
     const { user, isAdmin } = useAuth()
     const { historial, loadingHistorial, fetchHistorial, anularRecibo } = useReciboCliente()
@@ -261,9 +277,9 @@ export function HistorialRecibos() {
                                             <th className="px-3 py-3 text-left text-xs font-medium uppercase text-muted-foreground">Zona</th>
                                             <th className="px-3 py-3 text-left text-xs font-medium uppercase text-muted-foreground">Vendedor</th>
                                             <th className="px-3 py-3 text-left text-xs font-medium uppercase text-muted-foreground">Concepto</th>
-                                            <th className="px-3 py-3 text-left text-xs font-medium uppercase text-muted-foreground">Docs</th>
-                                            <th className="px-3 py-3 text-left text-xs font-medium uppercase text-muted-foreground">Voucher</th>
+                                                                                        <th className="px-3 py-3 text-left text-xs font-medium uppercase text-muted-foreground">Voucher</th>
                                             <th className="px-3 py-3 text-left text-xs font-medium uppercase text-muted-foreground">Total</th>
+                                            <th className="px-3 py-3 text-left text-xs font-medium uppercase text-muted-foreground">Saldo</th>
                                             <th className="px-3 py-3 text-left text-xs font-medium uppercase text-muted-foreground">Estado</th>
                                             <th className="px-3 py-3 text-left text-xs font-medium uppercase text-muted-foreground">Acciones</th>
                                         </tr>
@@ -291,10 +307,12 @@ export function HistorialRecibos() {
                                                     <td className="p-4 text-sm">{r.zona || '—'}</td>
                                                     <td className="p-4 text-sm">{r.nombre_vendedor || '—'}</td>
                                                     <td className="p-4 text-sm">{etiquetaConcepto(r.concepto)}</td>
-                                                    <td className="p-4 text-sm tabular-nums">{r.total_documentos ?? '—'}</td>
                                                     <td className="p-4"><VoucherBadge cantidad={Number(r.total_vouchers ?? 0)} /></td>
                                                     <td className="p-4 text-sm font-medium tabular-nums">
                                                         {simboloMoneda(r.moneda)} {Number(r.total).toFixed(2)}
+                                                    </td>
+                                                    <td className="p-4 text-sm font-medium tabular-nums">
+                                                        <SaldoRecibo recibo={r} />
                                                     </td>
                                                     <td className="p-4"><EstadoBadge estado={r.estado} /></td>
                                                     <td className="p-4">{acciones(r)}</td>
@@ -343,6 +361,10 @@ export function HistorialRecibos() {
                                                         {simboloMoneda(r.moneda)} {Number(r.total).toFixed(2)}
                                                     </p>
                                                     <p className="text-xs text-muted-foreground">Total</p>
+                                                    <p className="mt-1 text-xs tabular-nums">
+                                                        <span className="text-muted-foreground">Saldo </span>
+                                                        <SaldoRecibo recibo={r} />
+                                                    </p>
                                                 </div>
                                             </div>
 

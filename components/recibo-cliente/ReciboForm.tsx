@@ -229,6 +229,7 @@ export function ReciboForm({ onEmitido }: Props) {
                 numero_doc: doc.NumeroDoc ?? '',
                 documento_completo: doc.documento_completo ?? '',
                 importe: String(doc.saldo_pendiente ?? 0),
+                saldo_documento: Number(doc.saldo_pendiente ?? 0),
                 observaciones: '',
                 simbolo_moneda: simboloDoc,
             }]
@@ -328,6 +329,7 @@ export function ReciboForm({ onEmitido }: Props) {
                 numero_doc: l.numero_doc || null,
                 documento_completo: l.documento_completo || null,
                 importe: parseFloat(l.importe) || 0,
+                saldo_documento: l.saldo_documento,
                 observaciones: l.observaciones || null,
             })),
         }

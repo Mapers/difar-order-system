@@ -1,6 +1,6 @@
 'use client'
 
-import { LineaRecibo } from '@/app/types/recibo-cliente-types'
+import { LineaRecibo, saldoDeLinea } from '@/app/types/recibo-cliente-types'
 
 interface Props {
     lineas: LineaRecibo[]
@@ -21,6 +21,9 @@ function lineaVacia(): LineaRecibo {
         numero_doc: '',
         documento_completo: '',
         importe: '',
+        /* Una linea libre no viene de un documento del kardex, asi que no hay
+           un "cuanto debia" contra el que medir. null y no 0: se pinta "—". */
+        saldo_documento: null,
         observaciones: '',
         simbolo_moneda: '',
     }
@@ -35,6 +38,9 @@ export function ReciboDetalleTabla({
     onObservacionChange,
 }: Props) {
     const total = lineas.reduce((s, l) => s + (parseFloat(l.importe) || 0), 0)
+
+    const saldos = lineas.map(l => saldoDeLinea(l.saldo_documento, l.importe)).filter(x => x !== null) as number[]
+    const totalSaldo = saldos.length === 0 ? null : saldos.reduce((s, n) => s + n, 0)
 
     const actualizar = (uid: string, campo: keyof LineaRecibo, valor: string) => {
         onChange(lineas.map(l => (l.uid === uid ? { ...l, [campo]: valor } : l)))
@@ -117,7 +123,6 @@ export function ReciboDetalleTabla({
                                             />
                                         </div>
                                     </td>
-
                                     <td className="border-[1.4px] border-[#12388f] p-0">
                                         <input
                                             value={l.observaciones}
@@ -169,6 +174,27 @@ export function ReciboDetalleTabla({
                             </td>
                             <td className="border-[1.4px] border-t-2 border-[#12388f]" />
                         </tr>
+
+                        {totalSaldo !== null && totalSaldo > 0.004 && (
+                            <tr>
+                                <td
+                                    colSpan={2}
+                                    className="border-[1.4px] border-[#12388f] px-2 py-2 text-right text-[14px] font-extrabold text-[#12388f]"
+                                >
+                                    SALDO {simbolo}
+                                </td>
+                                <td className="border-[1.4px] border-[#12388f] p-0">
+                                    <div className="flex items-center gap-1 px-1.5">
+                                        <span className="shrink-0 text-[12px] font-bold text-[#2b52a8]">{simbolo}</span>
+                                        <span className="w-full py-2 text-right text-[13px] font-extrabold tabular-nums text-[#12388f]">
+                                            {totalSaldo.toFixed(2)}
+                                        </span>
+                                    </div>
+                                </td>
+                                <td className="border-[1.4px] border-[#12388f]" />
+                                <td className="border-[1.4px] border-[#12388f]" />
+                            </tr>
+                        )}
                     </tfoot>
                 </table>
             </div>
