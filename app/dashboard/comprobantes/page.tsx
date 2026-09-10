@@ -117,6 +117,7 @@ export default function ComprobantesPage() {
   const [isCancelling, setIsCancelling] = useState(false)
   const [comprobanteToCancel, setComprobanteToCancel] = useState<Comprobante | null>(null)
   const [showCancelModal, setShowCancelModal] = useState(false)
+  const [cancelandoNC, setCancelandoNC] = useState(false)
 
   const [isTransferringVendedor, setIsTransferringVendedor] = useState(false)
   const [comprobanteToTransfer, setComprobanteToTransfer] = useState<Comprobante | null>(null)
@@ -438,6 +439,13 @@ export default function ComprobantesPage() {
 
   const handleCancelInvoice = (comprobante: Comprobante) => {
     setComprobanteToCancel(comprobante)
+    setCancelandoNC(false)
+    setShowCancelModal(true)
+  }
+
+  const handleCancelNotaCredito = (nota: Comprobante) => {
+    setComprobanteToCancel(nota)
+    setCancelandoNC(true)
     setShowCancelModal(true)
   }
 
@@ -445,7 +453,23 @@ export default function ComprobantesPage() {
     if (!comprobanteToCancel) return
     setIsCancelling(true)
     try {
-      const response = await apiClient.post(`/pedidos/anularCompr?idCabecera=${comprobanteToCancel.idComprobanteCab}&tipoCompr=${comprobanteToCancel.tipo_comprobante}&nroPedido=${comprobanteToCancel.nroPedido}`, {
+      if (cancelandoNC) {
+        const res = await apiClient.post(
+          `/pedidos/anularNotaCredito?idSunat=${comprobanteToCancel.idSunat}`,
+          { motivo }
+        )
+        if (res.data.success) {
+          toast({ title: "Éxito", description: "Nota de crédito anulada correctamente", variant: "default" })
+          fetchNotasCredito()
+          fetchComprobantes()
+          setShowCancelModal(false)
+        } else {
+          toast({ title: "Error", description: res.data.message || "No se pudo anular", variant: "destructive" })
+        }
+        return
+      }
+
+      const response = await apiClient.post(`/pedidos/anularCompr?idCabecera=${comprobanteToCancel.idComprobanteCab}&idSunat=${comprobanteToCancel.idSunat}&tipoCompr=${comprobanteToCancel.tipo_comprobante}&nroPedido=${comprobanteToCancel.nroPedido}`, {
         motivo: motivo,
         codOperacion: codOperacion
       })
@@ -1053,7 +1077,7 @@ export default function ComprobantesPage() {
                 tiposComprobante={tiposComprobante}
                 isAdmin={isAdmin}
                 onViewPdf={handleViewPdf}
-                onCancel={handleCancelInvoice}
+                onCancel={handleCancelNotaCredito}
                 onSendEmail={handleEmailCompr}
                 onSendWhatsApp={handleWhatsappCompr}
                 onCheckStatus={handleStatusCompr}
