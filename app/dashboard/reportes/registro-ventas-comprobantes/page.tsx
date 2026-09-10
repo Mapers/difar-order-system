@@ -25,6 +25,7 @@ import {
     fmtCantidad,
     fmtFechaCorta,
     fmtMonto,
+    fmtMontoMoneda,
     fmtPrecio,
 } from "@/components/reporte/registroVentasShared"
 
@@ -257,29 +258,29 @@ export default function RegistroVentasComprobantesPage() {
                                                         <td className="p-2 text-right text-xs font-mono">{fmtCantidad(l.cantidad)}</td>
                                                         <td className="p-2 text-xs">{l.unidad} {l.producto}</td>
                                                         <td className="p-2 text-right text-xs font-mono">{fmtPrecio(l.precio_unitario)}</td>
-                                                        <td className="p-2 text-right text-xs font-mono">{fmtMonto(l.no_afecto)}</td>
-                                                        <td className="p-2 text-right text-xs font-mono">{fmtMonto(l.afecto)}</td>
-                                                        <td className="p-2 text-right text-xs font-mono">{fmtMonto(l.igv)}</td>
-                                                        <td className="p-2 text-right text-xs font-mono">{fmtMonto(l.total)}</td>
+                                                        <td className="p-2 text-right text-xs font-mono">{fmtMontoMoneda(l.no_afecto, c.moneda)}</td>
+                                                        <td className="p-2 text-right text-xs font-mono">{fmtMontoMoneda(l.afecto, c.moneda)}</td>
+                                                        <td className="p-2 text-right text-xs font-mono">{fmtMontoMoneda(l.igv, c.moneda)}</td>
+                                                        <td className="p-2 text-right text-xs font-mono">{fmtMontoMoneda(l.total, c.moneda)}</td>
                                                     </tr>
                                                 ))}
 
                                                 <tr className="border-b-2 bg-muted/50">
                                                     <td className="p-2" colSpan={4} />
-                                                    <td className="p-2 text-right text-xs font-mono font-semibold">{fmtMonto(c.no_afecto)}</td>
-                                                    <td className="p-2 text-right text-xs font-mono font-semibold">{fmtMonto(c.afecto)}</td>
-                                                    <td className="p-2 text-right text-xs font-mono font-semibold">{fmtMonto(c.igv)}</td>
-                                                    <td className="p-2 text-right text-xs font-mono font-semibold">{fmtMonto(c.total)}</td>
+                                                    <td className="p-2 text-right text-xs font-mono font-semibold">{fmtMontoMoneda(c.no_afecto, c.moneda)}</td>
+                                                    <td className="p-2 text-right text-xs font-mono font-semibold">{fmtMontoMoneda(c.afecto, c.moneda)}</td>
+                                                    <td className="p-2 text-right text-xs font-mono font-semibold">{fmtMontoMoneda(c.igv, c.moneda)}</td>
+                                                    <td className="p-2 text-right text-xs font-mono font-semibold">{fmtMontoMoneda(c.total, c.moneda)}</td>
                                                 </tr>
                                             </React.Fragment>
                                         ))}
 
                                         <tr className="bg-blue-600 text-white">
                                             <td className="p-3 text-xs font-bold" colSpan={4}>TOTAL GENERAL</td>
-                                            <td className="p-3 text-right text-xs font-mono font-bold">{fmtMonto(agrupado.totales.no_afecto)}</td>
-                                            <td className="p-3 text-right text-xs font-mono font-bold">{fmtMonto(agrupado.totales.afecto)}</td>
-                                            <td className="p-3 text-right text-xs font-mono font-bold">{fmtMonto(agrupado.totales.igv)}</td>
-                                            <td className="p-3 text-right text-xs font-mono font-bold">{fmtMonto(agrupado.totales.total)}</td>
+                                            <td className="p-3 text-right text-xs font-mono font-bold">{fmtMontoMoneda(agrupado.totales.no_afecto, agrupado.monedaUnica)}</td>
+                                            <td className="p-3 text-right text-xs font-mono font-bold">{fmtMontoMoneda(agrupado.totales.afecto, agrupado.monedaUnica)}</td>
+                                            <td className="p-3 text-right text-xs font-mono font-bold">{fmtMontoMoneda(agrupado.totales.igv, agrupado.monedaUnica)}</td>
+                                            <td className="p-3 text-right text-xs font-mono font-bold">{fmtMontoMoneda(agrupado.totales.total, agrupado.monedaUnica)}</td>
                                         </tr>
                                     </tbody>
                                 </table>
@@ -313,20 +314,20 @@ export default function RegistroVentasComprobantesPage() {
                                                                 {fmtCantidad(l.cantidad)} × {fmtPrecio(l.precio_unitario)}
                                                             </p>
                                                         </div>
-                                                        <span className="shrink-0 text-xs font-mono">{fmtMonto(l.total)}</span>
+                                                        <span className="shrink-0 text-xs font-mono">{fmtMontoMoneda(l.total, c.moneda)}</span>
                                                     </div>
                                                 ))}
                                             </div>
 
                                             <div className="mt-2 grid grid-cols-2 gap-1 border-t pt-2 text-[11px]">
                                                 <span className="text-muted-foreground">No afecto</span>
-                                                <span className="text-right font-mono">{fmtMonto(c.no_afecto)}</span>
+                                                <span className="text-right font-mono">{fmtMontoMoneda(c.no_afecto, c.moneda)}</span>
                                                 <span className="text-muted-foreground">Afecto</span>
-                                                <span className="text-right font-mono">{fmtMonto(c.afecto)}</span>
+                                                <span className="text-right font-mono">{fmtMontoMoneda(c.afecto, c.moneda)}</span>
                                                 <span className="text-muted-foreground">IGV</span>
-                                                <span className="text-right font-mono">{fmtMonto(c.igv)}</span>
+                                                <span className="text-right font-mono">{fmtMontoMoneda(c.igv, c.moneda)}</span>
                                                 <span className="font-semibold">Total</span>
-                                                <span className="text-right font-mono font-semibold">{fmtMonto(c.total)}</span>
+                                                <span className="text-right font-mono font-semibold">{fmtMontoMoneda(c.total, c.moneda)}</span>
                                             </div>
                                         </CardContent>
                                     </Card>
@@ -335,7 +336,7 @@ export default function RegistroVentasComprobantesPage() {
                                 <div className="rounded-lg bg-blue-600 p-3 text-white">
                                     <div className="flex items-center justify-between">
                                         <span className="text-xs font-bold">TOTAL GENERAL</span>
-                                        <span className="font-mono text-sm font-bold">{fmtMonto(agrupado.totales.total)}</span>
+                                        <span className="font-mono text-sm font-bold">{fmtMontoMoneda(agrupado.totales.total, agrupado.monedaUnica)}</span>
                                     </div>
                                 </div>
                             </div>

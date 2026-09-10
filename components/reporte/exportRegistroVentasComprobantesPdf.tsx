@@ -8,6 +8,8 @@ import {
     fmtCantidad,
     fmtFechaCorta,
     fmtMonto,
+    fmtMontoMoneda,
+    simboloMonedaVenta,
     fmtPrecio,
 } from "@/components/reporte/registroVentasShared";
 import {
@@ -56,19 +58,16 @@ export const ExportRegistroVentasComprobantesPdf: React.FC<Props> = ({
 
             const logoImage = await cargarLogoPdf(pdfDoc);
 
-            // Anchos de las ocho columnas. Suman 514 de los 515.28 disponibles.
-            // El grueso se lo lleva PRODUCTO, que es lo que se lee; NO AFECTO no
-            // baja de 52 porque su encabezado mide 46.8 pt y no entra en menos.
             const anchos = {
                 fecha:     40,
                 documento: 62,
                 cantidad:  30,
-                producto: 170,
-                pu:        36,
-                noAfecto:  52,
-                afecto:    46,
-                igv:       36,
-                total:     42,
+                producto: 150,
+                pu:        40,
+                noAfecto:  48,
+                afecto:    48,
+                igv:       48,
+                total:     48,
             };
 
             let acumulado = margin;
@@ -96,18 +95,18 @@ export const ExportRegistroVentasComprobantesPdf: React.FC<Props> = ({
                 currentPage.drawRectangle({
                     x: margin, y: yPosition - 2, width: contentWidth, height: 12, color: rgb(0.95, 0.95, 0.95),
                 });
-                currentPage.drawText('COMPROBANTE', { x: x.fecha, y: yPosition, size: 8, font: boldFont });
-                currentPage.drawText('CANTIDAD',     { x: x.cantidad, y: yPosition, size: 8, font: boldFont });
+                currentPage.drawText('COMPROBANTE', { x: x.fecha, y: yPosition, size: 7, font: boldFont });
+                currentPage.drawText('CANT.',        { x: x.cantidad, y: yPosition, size: 7, font: boldFont });
                 const tp = 'PRODUCTO';
                 currentPage.drawText(tp, {
-                    x: x.producto + (anchos.producto - boldFont.widthOfTextAtSize(tp, 8)) / 2,
-                    y: yPosition, size: 8, font: boldFont,
+                    x: x.producto + (anchos.producto - boldFont.widthOfTextAtSize(tp, 7)) / 2,
+                    y: yPosition, size: 7, font: boldFont,
                 });
-                derecha('PU',        'pu',       yPosition, 8, boldFont);
-                derecha('NO AFECTO', 'noAfecto', yPosition, 8, boldFont);
-                derecha('AFECTO',    'afecto',   yPosition, 8, boldFont);
-                derecha('IGV',       'igv',      yPosition, 8, boldFont);
-                derecha('Total',     'total',    yPosition, 8, boldFont);
+                derecha('PU',        'pu',       yPosition, 7, boldFont);
+                derecha('NO AFECTO', 'noAfecto', yPosition, 7, boldFont);
+                derecha('AFECTO',    'afecto',   yPosition, 7, boldFont);
+                derecha('IGV',       'igv',      yPosition, 7, boldFont);
+                derecha('TOTAL',     'total',    yPosition, 7, boldFont);
                 yPosition -= 15;
             };
 
@@ -198,15 +197,15 @@ export const ExportRegistroVentasComprobantesPdf: React.FC<Props> = ({
                 for (const linea of comprobante.lineas) {
                     if (checkPageBreak(15)) { /* la cabecera de tabla ya se redibujó */ }
 
-                    derecha(fmtCantidad(linea.cantidad), 'cantidad', yPosition, 8);
-                    currentPage.drawText(truncar(`${linea.unidad} ${linea.producto}`.trim(), anchos.producto - 4, 8), {
-                        x: x.producto + 2, y: yPosition, size: 8, font,
+                    derecha(fmtCantidad(linea.cantidad), 'cantidad', yPosition, 7);
+                    currentPage.drawText(truncar(`${linea.unidad} ${linea.producto}`.trim(), anchos.producto - 4, 7), {
+                        x: x.producto + 2, y: yPosition, size: 7, font,
                     });
-                    derecha(fmtPrecio(linea.precio_unitario), 'pu',       yPosition, 8);
-                    derecha(fmtMonto(linea.no_afecto),        'noAfecto', yPosition, 8);
-                    derecha(fmtMonto(linea.afecto),           'afecto',   yPosition, 8);
-                    derecha(fmtMonto(linea.igv),              'igv',      yPosition, 8);
-                    derecha(fmtMonto(linea.total),            'total',    yPosition, 8);
+                    derecha(fmtPrecio(linea.precio_unitario),                       'pu',       yPosition, 7);
+                    derecha(fmtMontoMoneda(linea.no_afecto, comprobante.moneda),    'noAfecto', yPosition, 7);
+                    derecha(fmtMontoMoneda(linea.afecto,    comprobante.moneda),    'afecto',   yPosition, 7);
+                    derecha(fmtMontoMoneda(linea.igv,       comprobante.moneda),    'igv',      yPosition, 7);
+                    derecha(fmtMontoMoneda(linea.total,     comprobante.moneda),    'total',    yPosition, 7);
 
                     currentPage.drawLine({
                         start: { x: margin, y: yPosition - 5 }, end: { x: pageWidth - margin, y: yPosition - 5 },
@@ -218,14 +217,14 @@ export const ExportRegistroVentasComprobantesPdf: React.FC<Props> = ({
                 // ── Subtotal del comprobante ─────────────────────────────
                 checkPageBreak(20);
                 currentPage.drawText("TOTAL COMPROBANTE:", {
-                    x: margin + 5, y: yPosition, size: 9, font: boldFont,
+                    x: margin + 5, y: yPosition, size: 8, font: boldFont,
                     color: comprobante.anulado ? rojo : verde,
                 });
                 const color = comprobante.anulado ? rojo : verde;
-                derecha(fmtMonto(comprobante.no_afecto), 'noAfecto', yPosition, 9, boldFont, color);
-                derecha(fmtMonto(comprobante.afecto),    'afecto',   yPosition, 9, boldFont, color);
-                derecha(fmtMonto(comprobante.igv),       'igv',      yPosition, 9, boldFont, color);
-                derecha(fmtMonto(comprobante.total),     'total',    yPosition, 9, boldFont, color);
+                derecha(fmtMontoMoneda(comprobante.no_afecto, comprobante.moneda), 'noAfecto', yPosition, 7, boldFont, color);
+                derecha(fmtMontoMoneda(comprobante.afecto,    comprobante.moneda), 'afecto',   yPosition, 7, boldFont, color);
+                derecha(fmtMontoMoneda(comprobante.igv,       comprobante.moneda), 'igv',      yPosition, 7, boldFont, color);
+                derecha(fmtMontoMoneda(comprobante.total,     comprobante.moneda), 'total',    yPosition, 7, boldFont, color);
 
                 yPosition -= 30;
             }
@@ -246,10 +245,10 @@ export const ExportRegistroVentasComprobantesPdf: React.FC<Props> = ({
             });
 
             const resumenFinal =
-                `No afecto: S/ ${fmtMonto(data.totales.no_afecto)}     ` +
-                `Afecto: S/ ${fmtMonto(data.totales.afecto)}     ` +
-                `IGV: S/ ${fmtMonto(data.totales.igv)}     ` +
-                `Total: S/ ${fmtMonto(data.totales.total)}`;
+                `No afecto: ${fmtMontoMoneda(data.totales.no_afecto, data.monedaUnica)}     ` +
+                `Afecto: ${fmtMontoMoneda(data.totales.afecto, data.monedaUnica)}     ` +
+                `IGV: ${fmtMontoMoneda(data.totales.igv, data.monedaUnica)}     ` +
+                `Total: ${fmtMontoMoneda(data.totales.total, data.monedaUnica)}`;
             currentPage.drawText(resumenFinal, {
                 x: pageWidth - margin - boldFont.widthOfTextAtSize(resumenFinal, 9) - 10,
                 y: yPosition - 18, size: 9, font: boldFont, color: rgb(1, 1, 1),

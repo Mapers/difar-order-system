@@ -55,6 +55,7 @@ export interface RegistroVentaComprobante {
     vendedor:              string
     dias_credito:          number
     condicion_descripcion: string
+    moneda:                number | null
     anulado:               boolean
     lineas:                RegistroVentaLinea[]
     no_afecto:             number
@@ -67,6 +68,8 @@ export interface RegistroVentaAgrupado {
     empresa: { razonSocial: string; ruc: string }
     comprobantes: RegistroVentaComprobante[]
     totales: { no_afecto: number; afecto: number; igv: number; total: number }
+    /** null si los comprobantes mezclan monedas: el total no lleva símbolo. */
+    monedaUnica: number | null
 }
 
 const num = (valor: unknown): number => {
@@ -101,6 +104,7 @@ export function agruparRegistroVentas(filas: RegistroVentaFila[]): RegistroVenta
                 vendedor:              texto(fila.vendedor),
                 dias_credito:          num(fila.dias_credito),
                 condicion_descripcion: texto(fila.condicion_descripcion),
+                moneda:                fila.moneda ?? null,
                 anulado:               num(fila.anulado) === 1,
                 lineas:                [],
                 no_afecto: 0, afecto: 0, igv: 0, total: 0,
@@ -138,13 +142,24 @@ export function agruparRegistroVentas(filas: RegistroVentaFila[]): RegistroVenta
         { no_afecto: 0, afecto: 0, igv: 0, total: 0 }
     )
 
-    return { empresa, comprobantes, totales }
+    const monedas = new Set(comprobantes.map(c => Number(c.moneda ?? 1)))
+    const monedaUnica = monedas.size === 1 ? [...monedas][0] : null
+
+    return { empresa, comprobantes, totales, monedaUnica }
 }
 
 export const fmtMonto = (valor: number): string =>
     Number(valor || 0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")
 
 export const fmtPrecio = (valor: number): string => Number(valor || 0).toFixed(4)
+
+export const simboloMonedaVenta = (moneda: number | null | undefined): string =>
+    Number(moneda) === 2 ? 'US$' : 'S/'
+
+export const fmtMontoMoneda = (valor: number, moneda: number | null | undefined): string =>
+    moneda === null || moneda === undefined
+        ? fmtMonto(valor)
+        : `${simboloMonedaVenta(moneda)} ${fmtMonto(valor)}`
 
 export const fmtCantidad = (valor: number): string => {
     const n = Number(valor || 0)
