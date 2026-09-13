@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Printer, Loader2 } from 'lucide-react'
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib'
-import { cargarLogoPdf, dibujarCabeceraPdf } from "@/components/reporte/pdfCabecera"
+import { cargarLogoPdf, dibujarCabeceraPdf, sanitizarPdf } from "@/components/reporte/pdfCabecera"
 import { toast } from '@/app/hooks/useToast'
 import { PlanillaCabecera, PlanillaDetalle } from '@/app/types/planilla-types'
 import { fmtFecha, fmtHora, fmtMoney } from '@/lib/planilla.helper'
@@ -128,7 +128,9 @@ export default function ExportPlanillaPdfButton({ planilla, detalle }: Props) {
 
                 let x = MARGIN
                 COLS.forEach((col, i) => {
-                    const raw  = String(cells[i] ?? '')
+                    // Datos del backend pueden traer caracteres de control (ej. tab al inicio
+                    // de un nombre) que WinAnsi no puede codificar y rompían el PDF.
+                    const raw  = sanitizarPdf(String(cells[i] ?? ''))
                     // Truncar si no cabe
                     let text   = raw
                     const maxW = col.w - PAD_H * 2

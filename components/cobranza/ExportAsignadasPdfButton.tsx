@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Printer, Loader2 } from 'lucide-react'
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib'
-import { cargarLogoPdf, dibujarCabeceraPdf } from '@/components/reporte/pdfCabecera'
+import { cargarLogoPdf, dibujarCabeceraPdf, sanitizarPdf } from '@/components/reporte/pdfCabecera'
 import { format, parseISO } from 'date-fns'
 import apiClient from '@/app/api/client'
 import { toast } from '@/app/hooks/useToast'
@@ -146,7 +146,9 @@ export function ExportAsignadasPdfButton({ filtros, descripcionFiltros }: Props)
 
                 let x = MARGIN
                 COLS.forEach((col, i) => {
-                    const raw  = String(cells[i] ?? '')
+                    // Datos del backend pueden traer caracteres de control (ej. tab al inicio
+                    // de cliente_denominacion) que WinAnsi no puede codificar y rompían el PDF.
+                    const raw  = sanitizarPdf(String(cells[i] ?? ''))
                     let text   = raw
                     const maxW = col.w - PAD_H * 2
                     while (text.length > 0 && fnt.widthOfTextAtSize(text, size) > maxW) {
