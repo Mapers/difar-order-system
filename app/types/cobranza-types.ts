@@ -137,3 +137,11 @@ export function simboloMonedaCobranza(moneda: number | null | undefined) {
 export function estadoVisible(c: CobranzaAsignada): string {
     return Number(c.esta_pagado) === 1 ? 'pagado' : c.estado_gestion
 }
+
+// 'vencido' y 'pagado' son banderas (esta_vencido / esta_pagado), no valores
+// de estado_gestion, así que necesitan su propia comparación al filtrar.
+export function coincideEstado(c: CobranzaAsignada, estado: string): boolean {
+    if (estado === 'vencido') return Number(c.esta_vencido) === 1
+    if (estado === 'pagado') return Number(c.esta_pagado) === 1
+    return c.estado_gestion === estado
+}

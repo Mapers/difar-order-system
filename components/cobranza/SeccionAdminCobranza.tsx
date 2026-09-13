@@ -10,7 +10,8 @@ import { Skeleton } from '@/components/ui/skeleton'
 import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select'
-import { Eye, Loader2, PenLine, Search, Trash2 } from 'lucide-react'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { ChevronDown, Eye, Loader2, PenLine, Search, Trash2 } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
 import apiClient from '@/app/api/client'
 import { useAuth } from '@/context/authContext'
@@ -41,7 +42,7 @@ export function SeccionAdminCobranza() {
 
     const [buscar, setBuscar] = useState('')
     const [buscarAplicado, setBuscarAplicado] = useState('')
-    const [estadoFiltro, setEstadoFiltro] = useState('')
+    const [estadosFiltro, setEstadosFiltro] = useState<string[]>([])
     const [vendedorFiltro, setVendedorFiltro] = useState('')
     const [vencFiltro, setVencFiltro] = useState<FiltroVencimiento>('todas')
 
@@ -78,7 +79,7 @@ export function SeccionAdminCobranza() {
     const rango = rangoDeVencimiento(vencFiltro)
 
     const filtrosPorAsignar = { busqueda: buscarAplicado, vendedor: vendedorFiltro, ...rango }
-    const filtrosAsignadas = { busqueda: buscarAplicado, vendedor: vendedorFiltro, estado: estadoFiltro, ...rango }
+    const filtrosAsignadas = { busqueda: buscarAplicado, vendedor: vendedorFiltro, estados: estadosFiltro, ...rango }
 
     const descripcionFiltros = (() => {
         const partes: string[] = []
@@ -89,8 +90,9 @@ export function SeccionAdminCobranza() {
         if (vencFiltro !== 'todas') {
             partes.push(FILTROS_VENCIMIENTO.find(f => f.value === vencFiltro)?.label ?? vencFiltro)
         }
-        if (estadoFiltro) {
-            partes.push(`Estado: ${ESTADOS_FILTRO.find(e => e.value === estadoFiltro)?.label ?? estadoFiltro}`)
+        if (estadosFiltro.length > 0) {
+            const etiquetas = estadosFiltro.map(v => ESTADOS_FILTRO.find(e => e.value === v)?.label ?? v)
+            partes.push(`Estado: ${etiquetas.join(', ')}`)
         }
         if (buscarAplicado) partes.push(`Búsqueda: "${buscarAplicado}"`)
         return partes.length ? partes.join('  ·  ') : 'Todas las cobranzas asignadas'
@@ -100,7 +102,7 @@ export function SeccionAdminCobranza() {
         if (tab === 'porAsignar') hook.fetchPorAsignar(filtrosPorAsignar, true)
         else hook.fetchAsignadas(filtrosAsignadas, true)
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [tab, buscarAplicado, estadoFiltro, vendedorFiltro, vencFiltro])
+    }, [tab, buscarAplicado, estadosFiltro, vendedorFiltro, vencFiltro])
 
     const centinelaRef = useRef<HTMLDivElement>(null)
 
@@ -114,7 +116,7 @@ export function SeccionAdminCobranza() {
         if (tab === 'porAsignar') hook.fetchPorAsignar(filtrosPorAsignar, false)
         else hook.fetchAsignadas(filtrosAsignadas, false)
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [cargando, hayMas, tab, buscarAplicado, estadoFiltro, vendedorFiltro, vencFiltro])
+    }, [cargando, hayMas, tab, buscarAplicado, estadosFiltro, vendedorFiltro, vencFiltro])
 
     useEffect(() => {
         const nodo = centinelaRef.current
@@ -256,20 +258,54 @@ export function SeccionAdminCobranza() {
                 {tab === 'asignadas' && (
                     <div className="space-y-1">
                         <Label className="text-xs text-muted-foreground">Estado</Label>
-                        <Select
-                            value={estadoFiltro || TODOS}
-                            onValueChange={(v) => setEstadoFiltro(v === TODOS ? '' : v)}
-                        >
-                            <SelectTrigger className="w-full text-sm lg:w-48">
-                                <SelectValue placeholder="Todos" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value={TODOS}>Todos los estados</SelectItem>
-                                {ESTADOS_FILTRO.map(e => (
-                                    <SelectItem key={e.value} value={e.value}>{e.label}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button
+                                    variant="outline"
+                                    className="flex w-full justify-between text-sm font-normal lg:w-48"
+                                >
+                                    <span className="truncate">
+                                        {estadosFiltro.length === 0
+                                            ? 'Todos los estados'
+                                            : estadosFiltro.length === 1
+                                                ? (ESTADOS_FILTRO.find(e => e.value === estadosFiltro[0])?.label ?? estadosFiltro[0])
+                                                : `${estadosFiltro.length} estados seleccionados`}
+                                    </span>
+                                    <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-56 p-2" align="start">
+                                <div className="space-y-0.5">
+                                    {ESTADOS_FILTRO.map(e => (
+                                        <label
+                                            key={e.value}
+                                            className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-muted"
+                                        >
+                                            <Checkbox
+                                                checked={estadosFiltro.includes(e.value)}
+                                                onCheckedChange={(v) => {
+                                                    setEstadosFiltro(prev => (
+                                                        v === true
+                                                            ? [...prev, e.value]
+                                                            : prev.filter(x => x !== e.value)
+                                                    ))
+                                                }}
+                                            />
+                                            {e.label}
+                                        </label>
+                                    ))}
+                                </div>
+                                {estadosFiltro.length > 0 && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setEstadosFiltro([])}
+                                        className="mt-2 w-full rounded px-2 py-1 text-left text-xs text-muted-foreground hover:bg-muted"
+                                    >
+                                        Limpiar selección
+                                    </button>
+                                )}
+                            </PopoverContent>
+                        </Popover>
                     </div>
                 )}
 
@@ -295,11 +331,20 @@ export function SeccionAdminCobranza() {
                 <>
                 <Card className="hidden lg:block">
                     <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-border text-sm">
+                        <table className="w-full table-fixed divide-y divide-border text-sm [&_td]:align-top">
+                            <colgroup>
+                                <col className="w-10" />
+                                <col className="w-28" />
+                                <col />
+                                <col className="w-36" />
+                                <col className="w-32" />
+                                <col className="w-24" />
+                                <col className="w-24" />
+                            </colgroup>
                             <thead className="bg-muted">
                                 <tr>
-                                    <th className="w-10 px-3 py-2"></th>
-                                    {['N° Factura', 'Cliente', 'Vendedor', 'Saldo', 'Vence'].map(h => (
+                                    <th className="px-3 py-2"></th>
+                                    {['N° Factura', 'Cliente', 'Vendedor', 'Saldo', 'Emisión', 'Vence'].map(h => (
                                         <th key={h} className="px-3 py-2 text-left text-xs font-medium uppercase text-muted-foreground">
                                             {h}
                                         </th>
@@ -321,13 +366,16 @@ export function SeccionAdminCobranza() {
                                             </td>
                                             <td className="px-3 py-2 font-medium">{f.serie}-{f.numero}</td>
                                             <td className="px-3 py-2">
-                                                <div className="max-w-[240px] truncate">{f.cliente_denominacion}</div>
+                                                <div className="break-words leading-snug">{f.cliente_denominacion}</div>
                                                 <div className="text-xs text-muted-foreground">{f.cliente_numdoc}</div>
                                             </td>
-                                            <td className="px-3 py-2 text-xs">{f.nombre_vendedor}</td>
-                                            <td className="px-3 py-2 tabular-nums">
+                                            <td className="px-3 py-2 text-xs">
+                                                <div className="break-words leading-snug">{f.nombre_vendedor}</div>
+                                            </td>
+                                            <td className="whitespace-nowrap px-3 py-2 tabular-nums">
                                                 {simboloMonedaCobranza(f.moneda)} {Number(f.saldo).toFixed(2)}
                                             </td>
+                                            <td className="px-3 py-2 tabular-nums">{fmtFecha(f.fecha_emision)}</td>
                                             <td className="px-3 py-2 tabular-nums">{fmtFecha(f.fecha_vencimiento)}</td>
                                         </tr>
                                     )
@@ -356,7 +404,7 @@ export function SeccionAdminCobranza() {
                                     />
                                     <div className="min-w-0 flex-1">
                                         <p className="font-semibold">{f.serie}-{f.numero}</p>
-                                        <p className="truncate text-sm text-muted-foreground">
+                                        <p className="break-words text-sm text-muted-foreground">
                                             {f.cliente_denominacion}
                                         </p>
                                         <p className="text-xs text-muted-foreground">{f.cliente_numdoc}</p>
@@ -366,9 +414,13 @@ export function SeccionAdminCobranza() {
                                 <div className="mt-3 grid grid-cols-2 gap-2 border-t pt-3 text-sm [&>div]:min-w-0">
                                     <div>
                                         <p className="text-xs text-muted-foreground">Saldo</p>
-                                        <p className="font-semibold tabular-nums">
+                                        <p className="whitespace-nowrap font-semibold tabular-nums">
                                             {simboloMonedaCobranza(f.moneda)} {Number(f.saldo).toFixed(2)}
                                         </p>
+                                    </div>
+                                    <div>
+                                        <p className="text-xs text-muted-foreground">Emisión</p>
+                                        <p className="tabular-nums">{fmtFecha(f.fecha_emision)}</p>
                                     </div>
                                     <div>
                                         <p className="text-xs text-muted-foreground">Vence</p>
@@ -394,11 +446,25 @@ export function SeccionAdminCobranza() {
                 <>
                 <Card className="hidden lg:block">
                     <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-border text-sm">
+                        <table className="w-full table-fixed divide-y divide-border text-sm [&_td]:align-top">
+                            <colgroup>
+                                <col className="w-24" />
+                                <col />
+                                <col className="w-40" />
+                                <col className="w-32" />
+                                <col className="w-24" />
+                                <col className="hidden w-20" />
+                                <col className="w-24" />
+                                <col className="w-44" />
+                                <col className="w-28" />
+                            </colgroup>
                             <thead className="bg-muted">
                                 <tr>
-                                    {['N° Factura', 'Cliente', 'Asignado a', 'Asignada', 'Semana', 'Estado', 'Último comentario', ''].map(h => (
-                                        <th key={h} className="px-3 py-2 text-left text-xs font-medium uppercase text-muted-foreground">
+                                    {['N° Factura', 'Cliente', 'Asignado a', 'Saldo', 'Vence', 'Semana', 'Estado', 'Último comentario', ''].map(h => (
+                                        <th
+                                            key={h}
+                                            className={`px-3 py-2 text-left text-xs font-medium uppercase text-muted-foreground ${h === 'Semana' ? 'hidden' : ''}`}
+                                        >
                                             {h}
                                         </th>
                                     ))}
@@ -409,21 +475,26 @@ export function SeccionAdminCobranza() {
                                     <tr key={c.id_asignacion} className={Number(c.esta_vencido) === 1 ? 'bg-red-50/60 dark:bg-red-950/20' : ''}>
                                         <td className="px-3 py-2 font-medium">{c.serie}-{c.numero}</td>
                                         <td className="px-3 py-2">
-                                            <div className="max-w-[220px] truncate">{c.cliente_denominacion}</div>
+                                            <div className="break-words leading-snug">{c.cliente_denominacion}</div>
                                         </td>
                                         <td className="px-3 py-2 text-xs">
-                                            {c.nombre_vendedor_asignado}
-                                            {Number(c.fue_reasignada) === 1 && (
-                                                <span className="ml-1 rounded bg-amber-50 dark:bg-amber-950/30 px-1.5 py-0.5 text-xs font-semibold text-amber-700 dark:text-amber-400">
-                                                    reasignada
-                                                </span>
-                                            )}
+                                            <div className="break-words leading-snug">
+                                                {c.nombre_vendedor_asignado}
+                                                {Number(c.fue_reasignada) === 1 && (
+                                                    <span className="ml-1 rounded bg-amber-50 dark:bg-amber-950/30 px-1.5 py-0.5 text-xs font-semibold text-amber-700 dark:text-amber-400">
+                                                        reasignada
+                                                    </span>
+                                                )}
+                                            </div>
                                         </td>
-                                        <td className="px-3 py-2 tabular-nums">{fmtFecha(c.fecha_asignacion)}</td>
-                                        <td className="px-3 py-2 text-xs">{c.semana_asignacion}</td>
+                                        <td className="whitespace-nowrap px-3 py-2 tabular-nums">
+                                            {simboloMonedaCobranza(c.moneda)} {Number(c.saldo_actual).toFixed(2)}
+                                        </td>
+                                        <td className="px-3 py-2 tabular-nums">{fmtFecha(c.fecha_vencimiento)}</td>
+                                        <td className="hidden px-3 py-2 text-xs">{c.semana_asignacion}</td>
                                         <td className="px-3 py-2"><EstadoCobranzaBadge estado={estadoVisible(c)} /></td>
                                         <td className="px-3 py-2">
-                                            <span className="block max-w-[200px] truncate text-xs text-muted-foreground">
+                                            <span className="line-clamp-2 break-words text-xs text-muted-foreground">
                                                 {c.ultimo_comentario || '—'}
                                             </span>
                                         </td>
@@ -472,7 +543,7 @@ export function SeccionAdminCobranza() {
                             <div className="flex items-start justify-between gap-2">
                                 <div className="min-w-0">
                                     <p className="font-semibold">{c.serie}-{c.numero}</p>
-                                    <p className="truncate text-sm text-muted-foreground">
+                                    <p className="break-words text-sm text-muted-foreground">
                                         {c.cliente_denominacion}
                                     </p>
                                 </div>
@@ -482,7 +553,7 @@ export function SeccionAdminCobranza() {
                             <div className="mt-3 grid grid-cols-2 gap-2 border-t pt-3 text-sm [&>div]:min-w-0">
                                 <div className="col-span-2">
                                     <p className="text-xs text-muted-foreground">Asignado a</p>
-                                    <p className="truncate">
+                                    <p className="break-words">
                                         {c.nombre_vendedor_asignado}
                                         {Number(c.fue_reasignada) === 1 && (
                                             <span className="ml-1 rounded bg-amber-50 dark:bg-amber-950/30 px-1.5 py-0.5 text-xs font-semibold text-amber-700 dark:text-amber-400">
@@ -492,10 +563,16 @@ export function SeccionAdminCobranza() {
                                     </p>
                                 </div>
                                 <div>
-                                    <p className="text-xs text-muted-foreground">Asignada</p>
-                                    <p className="tabular-nums">{fmtFecha(c.fecha_asignacion)}</p>
+                                    <p className="text-xs text-muted-foreground">Saldo</p>
+                                    <p className="whitespace-nowrap font-semibold tabular-nums">
+                                        {simboloMonedaCobranza(c.moneda)} {Number(c.saldo_actual).toFixed(2)}
+                                    </p>
                                 </div>
                                 <div>
+                                    <p className="text-xs text-muted-foreground">Vence</p>
+                                    <p className="tabular-nums">{fmtFecha(c.fecha_vencimiento)}</p>
+                                </div>
+                                <div className="hidden">
                                     <p className="text-xs text-muted-foreground">Semana</p>
                                     <p>{c.semana_asignacion || '—'}</p>
                                 </div>
@@ -538,7 +615,9 @@ export function SeccionAdminCobranza() {
 
                 {!cargando && hook.asignadas.length === 0 && (
                     <Card className="py-10 text-center text-sm text-muted-foreground">
-                        Ninguna cobranza asignada coincide con estos filtros.
+                        {estadosFiltro.length === 0
+                            ? 'Selecciona uno o más estados para ver las cobranzas asignadas.'
+                            : 'Ninguna cobranza asignada coincide con estos filtros.'}
                     </Card>
                 )}
                 </>

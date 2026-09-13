@@ -6,6 +6,7 @@ import { toast } from '@/app/hooks/useToast'
 import {
     CobranzaAsignada, ComentarioCobranza, EvidenciaCobranza, FacturaPorAsignar,
     PAGINA_COBRANZA, VendedorNotificar, EVIDENCIA_MAX_BYTES, EVIDENCIA_TIPOS,
+    coincideEstado,
 } from '@/app/types/cobranza-types'
 
 interface FiltrosPorAsignar {
@@ -18,7 +19,7 @@ interface FiltrosPorAsignar {
 interface FiltrosAsignadas {
     busqueda?: string
     vendedor?: string
-    estado?: string
+    estados?: string[]
     fechaDesde?: string
     fechaHasta?: string
 }
@@ -38,6 +39,19 @@ export function useCobranzaAsignacion() {
     const offsetAsignadas = useRef(0)
     const enVuelo = useRef(false)
 
+    // El backend siempre pagina en el orden fijo del SP (por vencimiento), así
+    // que para poder ordenar por fecha de emisión traemos TODO lo que cumple
+    // los filtros de una sola vez, lo ordenamos aquí y paginamos "cargar más"
+    // en el cliente, sin volver a pedirle nada al servidor.
+    const todosPorAsignar = useRef<FacturaPorAsignar[]>([])
+
+    const ordenarPorEmision = (filas: FacturaPorAsignar[]) =>
+        [...filas].sort((a, b) => {
+            if (!a.fecha_emision) return 1
+            if (!b.fecha_emision) return -1
+            return b.fecha_emision.localeCompare(a.fecha_emision)
+        })
+
     const fetchPorAsignar = useCallback(async (filtros: FiltrosPorAsignar, reiniciar: boolean) => {
         if (enVuelo.current) return
         enVuelo.current = true
@@ -46,19 +60,23 @@ export function useCobranzaAsignacion() {
         setCargandoPorAsignar(true)
 
         try {
-            const params: Record<string, string> = {
-                limit: String(PAGINA_COBRANZA),
-                offset: String(offsetPorAsignar.current),
+            if (reiniciar) {
+                const params: Record<string, string> = { limit: '100000', offset: '0' }
+                Object.entries(filtros).forEach(([k, v]) => { if (v) params[k] = String(v) })
+
+                const res = await apiClient.get(`/cobranza/por-asignar?${new URLSearchParams(params)}`)
+                const data: FacturaPorAsignar[] = res.data?.data?.data ?? []
+                const total: number = res.data?.data?.total ?? data.length
+
+                todosPorAsignar.current = ordenarPorEmision(data)
+                setTotalPorAsignar(total)
             }
-            Object.entries(filtros).forEach(([k, v]) => { if (v) params[k] = String(v) })
 
-            const res = await apiClient.get(`/cobranza/por-asignar?${new URLSearchParams(params)}`)
-            const data: FacturaPorAsignar[] = res.data?.data?.data ?? []
-            const total: number = res.data?.data?.total ?? 0
-
-            setPorAsignar(prev => (reiniciar ? data : [...prev, ...data]))
-            setTotalPorAsignar(total)
-            offsetPorAsignar.current += data.length
+            const pagina = todosPorAsignar.current.slice(
+                offsetPorAsignar.current, offsetPorAsignar.current + PAGINA_COBRANZA
+            )
+            setPorAsignar(prev => (reiniciar ? pagina : [...prev, ...pagina]))
+            offsetPorAsignar.current += pagina.length
         } catch (error) {
             console.error('Error al listar facturas por asignar:', error)
             toast({ title: '', description: 'No se pudieron cargar las facturas por asignar.', variant: 'error' })
@@ -68,6 +86,12 @@ export function useCobranzaAsignacion() {
         }
     }, [])
 
+    // El backend solo filtra por UN estado a la vez, así que para el selector
+    // múltiple (checks) traemos todo lo que cumple busqueda/vendedor/fechas y
+    // filtramos por los estados marcados aquí, paginando "cargar más" en el
+    // cliente sin volver a pedirle nada al servidor.
+    const todosAsignadas = useRef<CobranzaAsignada[]>([])
+
     const fetchAsignadas = useCallback(async (filtros: FiltrosAsignadas, reiniciar: boolean) => {
         if (enVuelo.current) return
         enVuelo.current = true
@@ -76,19 +100,33 @@ export function useCobranzaAsignacion() {
         setCargandoAsignadas(true)
 
         try {
-            const params: Record<string, string> = {
-                limit: String(PAGINA_COBRANZA),
-                offset: String(offsetAsignadas.current),
+            if (reiniciar) {
+                const { estados, ...resto } = filtros
+
+                // Cuando el selector de estados existe pero no tiene nada marcado
+                // (vista de admin), no se debe traer ni mostrar ninguna fila.
+                if (estados !== undefined && estados.length === 0) {
+                    todosAsignadas.current = []
+                    setTotalAsignadas(0)
+                } else {
+                    const params: Record<string, string> = { limit: '100000', offset: '0' }
+                    Object.entries(resto).forEach(([k, v]) => { if (v) params[k] = String(v) })
+
+                    const res = await apiClient.get(`/cobranza/asignadas?${new URLSearchParams(params)}`)
+                    const data: CobranzaAsignada[] = res.data?.data?.data ?? []
+
+                    todosAsignadas.current = (estados && estados.length > 0)
+                        ? data.filter(c => estados.some(e => coincideEstado(c, e)))
+                        : data
+                    setTotalAsignadas(todosAsignadas.current.length)
+                }
             }
-            Object.entries(filtros).forEach(([k, v]) => { if (v) params[k] = String(v) })
 
-            const res = await apiClient.get(`/cobranza/asignadas?${new URLSearchParams(params)}`)
-            const data: CobranzaAsignada[] = res.data?.data?.data ?? []
-            const total: number = res.data?.data?.total ?? 0
-
-            setAsignadas(prev => (reiniciar ? data : [...prev, ...data]))
-            setTotalAsignadas(total)
-            offsetAsignadas.current += data.length
+            const pagina = todosAsignadas.current.slice(
+                offsetAsignadas.current, offsetAsignadas.current + PAGINA_COBRANZA
+            )
+            setAsignadas(prev => (reiniciar ? pagina : [...prev, ...pagina]))
+            offsetAsignadas.current += pagina.length
         } catch (error) {
             console.error('Error al listar cobranzas asignadas:', error)
             toast({ title: '', description: 'No se pudieron cargar las cobranzas asignadas.', variant: 'error' })
