@@ -3,20 +3,20 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Printer, Loader2 } from 'lucide-react'
-import { PDFDocument, StandardFonts, rgb } from 'pdf-lib'
-import { cargarLogoPdf, dibujarCabeceraPdf } from '@/components/reporte/pdfCabecera'
+import { PDFDocument, StandardFonts, rgb, PDFFont } from 'pdf-lib'
+import { cargarLogoPdf, dibujarCabeceraPdf, sanitizarPdf } from '@/components/reporte/pdfCabecera'
 import { format, parseISO } from 'date-fns'
 import apiClient from '@/app/api/client'
 import { toast } from '@/app/hooks/useToast'
 import {
-    CobranzaAsignada, ETIQUETA_ESTADO, estadoVisible, simboloMonedaCobranza,
+    CobranzaAsignada, ETIQUETA_ESTADO, coincideEstado, estadoVisible, simboloMonedaCobranza,
 } from '@/app/types/cobranza-types'
 
 interface Props {
     filtros: {
         busqueda?: string
         vendedor?: string
-        estado?: string
+        estados?: string[]
         fechaDesde?: string
         fechaHasta?: string
     }
@@ -62,21 +62,82 @@ const fmtFecha = (f: string | null) => {
 const fmtMonto = (n: number) =>
     n.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
+const recortarTexto = (raw: string, fnt: PDFFont, size: number, maxW: number): string => {
+    let texto = raw
+    while (texto.length > 0 && fnt.widthOfTextAtSize(texto, size) > maxW) {
+        texto = texto.slice(0, -1)
+    }
+    if (texto !== raw && texto.length > 0) texto = texto.slice(0, -1) + '…'
+    return texto
+}
+
+// A diferencia de recortarTexto, no corta el texto: lo reparte en tantas
+// líneas como haga falta para que el nombre del cliente salga completo.
+const partirEnLineas = (raw: string, fnt: PDFFont, size: number, maxW: number): string[] => {
+    const palabras = raw.split(' ').filter(Boolean)
+    if (palabras.length === 0) return ['']
+
+    const lineas: string[] = []
+    let actual = ''
+
+    const partirPalabraLarga = (palabra: string) => {
+        let trozo = ''
+        for (const car of palabra) {
+            const tentativo = trozo + car
+            if (fnt.widthOfTextAtSize(tentativo, size) > maxW && trozo) {
+                lineas.push(trozo)
+                trozo = car
+            } else {
+                trozo = tentativo
+            }
+        }
+        return trozo
+    }
+
+    for (const palabra of palabras) {
+        const tentativo = actual ? `${actual} ${palabra}` : palabra
+        if (fnt.widthOfTextAtSize(tentativo, size) <= maxW) {
+            actual = tentativo
+            continue
+        }
+        if (actual) lineas.push(actual)
+        actual = fnt.widthOfTextAtSize(palabra, size) > maxW ? partirPalabraLarga(palabra) : palabra
+    }
+    if (actual) lineas.push(actual)
+
+    return lineas.length > 0 ? lineas : ['']
+}
+
 export function ExportAsignadasPdfButton({ filtros, descripcionFiltros }: Props) {
     const [loading, setLoading] = useState(false)
 
     const generar = async () => {
+        const { estados, ...restoFiltros } = filtros
+
+        // Igual que en la tabla: si el selector de estados existe pero no tiene
+        // nada marcado, no se exporta nada en vez de exportar todo.
+        if (estados !== undefined && estados.length === 0) {
+            toast({ title: 'Sin registros', description: 'Selecciona uno o más estados para exportar.', variant: 'warning' })
+            return
+        }
+
         setLoading(true)
         try {
             const params: Record<string, string> = {
                 limit: String(LIMITE_EXPORTACION),
                 offset: '0',
             }
-            Object.entries(filtros).forEach(([k, v]) => { if (v) params[k] = String(v) })
+            Object.entries(restoFiltros).forEach(([k, v]) => { if (v) params[k] = String(v) })
 
             const res = await apiClient.get(`/cobranza/asignadas?${new URLSearchParams(params)}`)
-            const filas: CobranzaAsignada[] = res.data?.data?.data ?? []
-            const total: number = res.data?.data?.total ?? filas.length
+            // El backend solo filtra por un estado a la vez; con selección
+            // múltiple filtramos aquí sobre lo ya traído.
+            const todas: CobranzaAsignada[] = res.data?.data?.data ?? []
+            const totalSinTruncar: number = res.data?.data?.total ?? todas.length
+            const filas = (estados && estados.length > 0)
+                ? todas.filter(c => estados.some(e => coincideEstado(c, e)))
+                : todas
+            const truncado = totalSinTruncar > todas.length
 
             if (filas.length === 0) {
                 toast({ title: 'Sin registros', description: 'No hay cobranzas asignadas con esos filtros.', variant: 'warning' })
@@ -123,53 +184,61 @@ export function ExportAsignadasPdfButton({ filtros, descripcionFiltros }: Props)
             function drawTableRow(
                 p: typeof page,
                 rowY: number,
-                cells: string[],
+                cells: (string | string[])[],
                 isHeader: boolean,
                 isAlt = false,
                 vencido = false,
+                rowHeight = ROW_H,
             ) {
                 if (isHeader) {
                     p.drawRectangle({
-                        x: MARGIN, y: rowY - ROW_H + 2,
-                        width: CONTENT_W, height: ROW_H, color: CLR_HEADER_BG,
+                        x: MARGIN, y: rowY - rowHeight + 2,
+                        width: CONTENT_W, height: rowHeight, color: CLR_HEADER_BG,
                     })
                 } else if (isAlt) {
                     p.drawRectangle({
-                        x: MARGIN, y: rowY - ROW_H + 2,
-                        width: CONTENT_W, height: ROW_H, color: CLR_ROW_ALT,
+                        x: MARGIN, y: rowY - rowHeight + 2,
+                        width: CONTENT_W, height: rowHeight, color: CLR_ROW_ALT,
                     })
                 }
 
-                const fnt   = isHeader ? boldFont : font
-                const size  = 7
-                const color = isHeader ? CLR_HEADER_TEXT : (vencido ? CLR_VENCIDO : CLR_BODY)
+                const fnt  = isHeader ? boldFont : font
+                const size = 7
+                const maxW = (col: typeof COLS[number]) => col.w - PAD_H * 2
 
                 let x = MARGIN
                 COLS.forEach((col, i) => {
-                    const raw  = String(cells[i] ?? '')
-                    let text   = raw
-                    const maxW = col.w - PAD_H * 2
-                    while (text.length > 0 && fnt.widthOfTextAtSize(text, size) > maxW) {
-                        text = text.slice(0, -1)
-                    }
-                    if (text !== raw && text.length > 0) text = text.slice(0, -1) + '…'
+                    // El color de vencido solo se aplica a la columna Estado; el resto
+                    // de columnas siempre va en negro.
+                    const color = isHeader
+                        ? CLR_HEADER_TEXT
+                        : (vencido && col.h === 'Estado' ? CLR_VENCIDO : CLR_BODY)
 
-                    const textW = fnt.widthOfTextAtSize(text, size)
-                    const textX = col.align === 'right'
-                        ? x + col.w - textW - PAD_H
-                        : col.align === 'center'
-                            ? x + (col.w - textW) / 2
-                            : x + PAD_H
+                    // Datos del backend pueden traer caracteres de control (ej. tab al inicio
+                    // de cliente_denominacion) que WinAnsi no puede codificar y rompían el PDF.
+                    const valor = cells[i]
+                    const lineas = Array.isArray(valor)
+                        ? valor
+                        : [recortarTexto(sanitizarPdf(String(valor ?? '')), fnt, size, maxW(col))]
 
-                    p.drawText(text, { x: textX, y: rowY - ROW_H + 4, size, font: fnt, color })
+                    lineas.forEach((linea, lineaIdx) => {
+                        const textW = fnt.widthOfTextAtSize(linea, size)
+                        const textX = col.align === 'right'
+                            ? x + col.w - textW - PAD_H
+                            : col.align === 'center'
+                                ? x + (col.w - textW) / 2
+                                : x + PAD_H
+
+                        p.drawText(linea, { x: textX, y: rowY - ROW_H + 4 - lineaIdx * ROW_H, size, font: fnt, color })
+                    })
                     x += col.w
                 })
             }
 
-            const drawRowLine = (p: typeof page, rowY: number) => {
+            const drawRowLine = (p: typeof page, rowY: number, rowHeight = ROW_H) => {
                 p.drawLine({
-                    start: { x: MARGIN, y: rowY - ROW_H + 2 },
-                    end:   { x: PAGE_W - MARGIN, y: rowY - ROW_H + 2 },
+                    start: { x: MARGIN, y: rowY - rowHeight + 2 },
+                    end:   { x: PAGE_W - MARGIN, y: rowY - rowHeight + 2 },
                     thickness: 0.25, color: CLR_SEP_LIGHT,
                 })
             }
@@ -206,9 +275,9 @@ export function ExportAsignadasPdfButton({ filtros, descripcionFiltros }: Props)
             })
             y -= 30
 
-            if (total > filas.length) {
+            if (truncado) {
                 page.drawText(
-                    `Se muestran ${filas.length} de ${total} registros. Acota los filtros para ver el resto.`,
+                    `Se alcanzó el límite de exportación (${LIMITE_EXPORTACION}). Acota los filtros para ver el resto.`,
                     { x: MARGIN, y, size: 7, font, color: CLR_VENCIDO },
                 )
                 y -= 13
@@ -224,21 +293,25 @@ export function ExportAsignadasPdfButton({ filtros, descripcionFiltros }: Props)
             y -= ROW_H
 
             filas.forEach((c, idx) => {
-                checkBreak(ROW_H + 2)
+                const nombreCliente = sanitizarPdf(c.cliente_denominacion || '—')
+                const lineasCliente = partirEnLineas(nombreCliente, font, 7, COLS[2].w - PAD_H * 2)
+                const rowHeight = ROW_H * Math.max(1, lineasCliente.length)
+
+                checkBreak(rowHeight + 2)
                 const est = estadoVisible(c)
                 drawTableRow(page, y, [
                     String(idx + 1),
                     `${c.serie}-${c.numero}`,
-                    c.cliente_denominacion || '—',
+                    lineasCliente,
                     c.cliente_numdoc || '—',
                     c.nombre_vendedor_asignado || c.cod_vendedor_asignado || '—',
                     fmtFecha(c.fecha_vencimiento),
                     `${simboloMonedaCobranza(c.moneda)} ${fmtMonto(Number(c.saldo_actual || 0))}`,
                     ETIQUETA_ESTADO[est] ?? est,
-                ], false, idx % 2 === 1, Number(c.esta_vencido) === 1)
+                ], false, idx % 2 === 1, Number(c.esta_vencido) === 1, rowHeight)
 
-                drawRowLine(page, y)
-                y -= ROW_H
+                drawRowLine(page, y, rowHeight)
+                y -= rowHeight
             })
 
             // ── Totales por moneda ───────────────────────────────────────
