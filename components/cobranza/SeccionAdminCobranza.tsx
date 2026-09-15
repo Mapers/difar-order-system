@@ -364,7 +364,7 @@ export function SeccionAdminCobranza() {
                                                     onCheckedChange={(v) => alternar(f, v === true)}
                                                 />
                                             </td>
-                                            <td className="px-3 py-2 font-medium">{f.serie}-{f.numero}</td>
+                                            <td className="px-3 py-2 font-medium whitespace-nowrap">{f.serie}-{f.numero}</td>
                                             <td className="px-3 py-2">
                                                 <div className="break-words leading-snug">{f.cliente_denominacion}</div>
                                                 <div className="text-xs text-muted-foreground">{f.cliente_numdoc}</div>
@@ -448,7 +448,7 @@ export function SeccionAdminCobranza() {
                     <div className="overflow-x-auto">
                         <table className="w-full table-fixed divide-y divide-border text-sm [&_td]:align-top">
                             <colgroup>
-                                <col className="w-24" />
+                                <col className="w-28" />
                                 <col />
                                 <col className="w-40" />
                                 <col className="w-32" />
@@ -473,7 +473,7 @@ export function SeccionAdminCobranza() {
                             <tbody className="divide-y divide-border">
                                 {hook.asignadas.map(c => (
                                     <tr key={c.id_asignacion} className={Number(c.esta_vencido) === 1 ? 'bg-red-50/60 dark:bg-red-950/20' : ''}>
-                                        <td className="px-3 py-2 font-medium">{c.serie}-{c.numero}</td>
+                                        <td className="px-3 py-2 font-medium whitespace-nowrap">{c.serie}-{c.numero}</td>
                                         <td className="px-3 py-2">
                                             <div className="break-words leading-snug">{c.cliente_denominacion}</div>
                                         </td>
