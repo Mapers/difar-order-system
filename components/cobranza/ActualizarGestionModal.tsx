@@ -10,9 +10,11 @@ import { Textarea } from '@/components/ui/textarea'
 import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select'
-import { Loader2, Paperclip, Upload } from 'lucide-react'
+import { Layers, Loader2, Paperclip, Pencil, Upload } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
 import { EstadoCobranzaBadge } from './EstadoCobranzaBadge'
+import { UnificarImagenesModal } from './UnificarImagenesModal'
+import { EditarImagenModal } from './EditarImagenModal'
 import {
     CobranzaAsignada, ComentarioCobranza, EstadoGestion, ESTADOS_GESTION,
     simboloMonedaCobranza,
@@ -40,7 +42,20 @@ export function ActualizarGestionModal({
     const [comentario, setComentario] = useState('')
     const [archivo, setArchivo] = useState<File | null>(null)
     const [bitacora, setBitacora] = useState<ComentarioCobranza[]>([])
+    const [unificarOpen, setUnificarOpen] = useState(false)
+    const [editarOpen, setEditarOpen] = useState(false)
+    const [archivoPreviewUrl, setArchivoPreviewUrl] = useState<string | null>(null)
     const inputRef = useRef<HTMLInputElement>(null)
+
+    useEffect(() => {
+        if (!archivo || !archivo.type.startsWith('image/')) {
+            setArchivoPreviewUrl(null)
+            return
+        }
+        const url = URL.createObjectURL(archivo)
+        setArchivoPreviewUrl(url)
+        return () => URL.revokeObjectURL(url)
+    }, [archivo])
 
     useEffect(() => {
         if (!open || !cobranza) return
@@ -121,6 +136,17 @@ export function ActualizarGestionModal({
                             <Upload className="h-4 w-4" />
                             {archivo ? 'Cambiar archivo' : 'Adjuntar comprobante'}
                         </Button>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setUnificarOpen(true)}
+                            disabled={guardando}
+                            className="gap-1.5"
+                        >
+                            <Layers className="h-4 w-4" />
+                            Unir varias imágenes
+                        </Button>
                         {archivo && (
                             <span className="inline-flex max-w-full items-center gap-1 truncate rounded bg-muted px-2 py-1 text-xs">
                                 <Paperclip className="h-3 w-3 shrink-0" />
@@ -133,6 +159,25 @@ export function ActualizarGestionModal({
                             </span>
                         )}
                     </div>
+                    {archivoPreviewUrl && (
+                        <div className="space-y-1.5">
+                            <div className="flex justify-center rounded-lg border bg-muted/40 p-2">
+                                <img
+                                    src={archivoPreviewUrl}
+                                    alt="Vista previa del comprobante"
+                                    className="max-h-[220px] w-auto max-w-full rounded object-contain"
+                                />
+                            </div>
+                            <Button
+                                type="button" variant="outline" size="sm" className="gap-1.5"
+                                onClick={() => setEditarOpen(true)}
+                                disabled={guardando}
+                            >
+                                <Pencil className="h-3.5 w-3.5" />
+                                Recortar / resaltar
+                            </Button>
+                        </div>
+                    )}
                 </div>
 
                 <div className="space-y-2">
@@ -181,6 +226,18 @@ export function ActualizarGestionModal({
                     </Button>
                 </DialogFooter>
             </DialogContent>
+
+            <UnificarImagenesModal
+                open={unificarOpen}
+                onOpenChange={setUnificarOpen}
+                onConfirmar={(f) => setArchivo(f)}
+            />
+            <EditarImagenModal
+                open={editarOpen}
+                onOpenChange={setEditarOpen}
+                archivo={archivo}
+                onGuardar={(f) => setArchivo(f)}
+            />
         </Dialog>
     )
 }
