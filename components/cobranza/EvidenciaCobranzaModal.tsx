@@ -5,7 +5,7 @@ import {
     Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog'
 import { Skeleton } from '@/components/ui/skeleton'
-import { ExternalLink, FileText, ImageOff } from 'lucide-react'
+import { ExternalLink, FileText, ImageOff, Maximize2 } from 'lucide-react'
 import { publicApi } from '@/app/api/client'
 import { CobranzaAsignada, EvidenciaCobranza } from '@/app/types/cobranza-types'
 
@@ -21,6 +21,11 @@ const esPdf = (ruta: string) => /\.pdf$/i.test(ruta)
 export function EvidenciaCobranzaModal({ open, onOpenChange, cobranza, obtenerEvidencia }: Props) {
     const [evidencia, setEvidencia] = useState<EvidenciaCobranza | null>(null)
     const [cargando, setCargando] = useState(false)
+    const [ampliada, setAmpliada] = useState(false)
+
+    useEffect(() => {
+        if (!open) setAmpliada(false)
+    }, [open])
 
     useEffect(() => {
         if (!open || !cobranza) { setEvidencia(null); return }
@@ -53,11 +58,22 @@ export function EvidenciaCobranzaModal({ open, onOpenChange, cobranza, obtenerEv
                     {cargando && <Skeleton className="h-[200px] w-full" />}
 
                     {!cargando && url && !esPdf(evidencia!.ruta) && (
-                        <img
-                            src={url}
-                            alt={evidencia!.nombre_archivo}
-                            className="max-h-[320px] w-auto max-w-full rounded object-contain"
-                        />
+                        <div className="relative">
+                            <img
+                                src={url}
+                                alt={evidencia!.nombre_archivo}
+                                onClick={() => setAmpliada(true)}
+                                className="max-h-[320px] w-auto max-w-full cursor-zoom-in rounded object-contain"
+                            />
+                            <button
+                                type="button"
+                                onClick={() => setAmpliada(true)}
+                                className="absolute right-1.5 top-1.5 rounded-md bg-black/60 p-1.5 text-white hover:bg-black/75"
+                                aria-label="Maximizar comprobante"
+                            >
+                                <Maximize2 className="h-4 w-4" />
+                            </button>
+                        </div>
                     )}
 
                     {!cargando && url && esPdf(evidencia!.ruta) && (
@@ -89,6 +105,21 @@ export function EvidenciaCobranzaModal({ open, onOpenChange, cobranza, obtenerEv
                     </p>
                 )}
             </DialogContent>
+
+            {url && evidencia && !esPdf(evidencia.ruta) && (
+                <Dialog open={ampliada} onOpenChange={setAmpliada}>
+                    <DialogContent className="flex max-h-[96vh] max-w-[96vw] items-center justify-center border-none bg-transparent p-2 shadow-none sm:max-w-[96vw]">
+                        <DialogTitle className="sr-only">
+                            Comprobante ampliado — {cobranza ? `${cobranza.serie}-${cobranza.numero}` : ''}
+                        </DialogTitle>
+                        <img
+                            src={url}
+                            alt={evidencia.nombre_archivo}
+                            className="max-h-[92vh] max-w-full rounded-lg object-contain"
+                        />
+                    </DialogContent>
+                </Dialog>
+            )}
         </Dialog>
     )
 }
