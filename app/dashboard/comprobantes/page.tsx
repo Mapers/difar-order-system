@@ -459,7 +459,14 @@ export default function ComprobantesPage() {
           { motivo }
         )
         if (res.data.success) {
-          toast({ title: "Éxito", description: "Nota de crédito anulada correctamente", variant: "default" })
+          const pdfOk = res.data.data?.pdf_estampado !== false
+          toast({
+            title: pdfOk ? "Éxito" : "Atención",
+            description: pdfOk
+              ? "Nota de crédito anulada correctamente"
+              : res.data.message || "Nota de crédito anulada, pero el PDF quedó sin la marca de anulado",
+            variant: "default",
+          })
           fetchNotasCredito()
           fetchComprobantes()
           setShowCancelModal(false)
