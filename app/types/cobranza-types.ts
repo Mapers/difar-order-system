@@ -1,17 +1,16 @@
-export type EstadoGestion = 'pendiente' | 'en_gestion' | 'promesa_pago' | 'incobrable'
+export type EstadoGestion =
+    'pendiente' | 'en_gestion' | 'promesa_pago' | 'incobrable' | 'pagado' | 'vencido'
 
 export const ESTADOS_GESTION: { value: EstadoGestion; label: string }[] = [
     { value: 'pendiente',    label: 'Pendiente' },
     { value: 'en_gestion',   label: 'En gestión' },
     { value: 'promesa_pago', label: 'Promesa de pago' },
+    { value: 'vencido',      label: 'Vencido' },
+    { value: 'pagado',       label: 'Pagado' },
     { value: 'incobrable',   label: 'Incobrable' },
 ]
 
-export const ESTADOS_FILTRO: { value: string; label: string }[] = [
-    ...ESTADOS_GESTION,
-    { value: 'vencido', label: 'Vencidas' },
-    { value: 'pagado',  label: 'Pagadas' },
-]
+export const ESTADOS_FILTRO: { value: string; label: string }[] = ESTADOS_GESTION
 
 export type FiltroVencimiento = 'todas' | 'vencidas' | 'v7' | 'v15' | 'v30'
 
@@ -135,13 +134,15 @@ export function simboloMonedaCobranza(moneda: number | null | undefined) {
 }
 
 export function estadoVisible(c: CobranzaAsignada): string {
-    return Number(c.esta_pagado) === 1 ? 'pagado' : c.estado_gestion
+    return c.estado_gestion
 }
 
-// 'vencido' y 'pagado' son banderas (esta_vencido / esta_pagado), no valores
-// de estado_gestion, así que necesitan su propia comparación al filtrar.
 export function coincideEstado(c: CobranzaAsignada, estado: string): boolean {
-    if (estado === 'vencido') return Number(c.esta_vencido) === 1
-    if (estado === 'pagado') return Number(c.esta_pagado) === 1
     return c.estado_gestion === estado
+}
+
+export function avisoDescuadre(c: CobranzaAsignada): string | null {
+    if (c.estado_gestion !== 'pagado' || Number(c.esta_pagado) === 1) return null
+    return `Marcada como pagada, pero el kardex aún registra un saldo de ` +
+           `${simboloMonedaCobranza(c.moneda)} ${Number(c.saldo_actual).toFixed(2)}.`
 }

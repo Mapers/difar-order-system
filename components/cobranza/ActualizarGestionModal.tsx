@@ -89,10 +89,10 @@ export function ActualizarGestionModal({
                     </DialogDescription>
                 </DialogHeader>
 
-                {pagada && (
+                {pagada && estado !== 'pagado' && (
                     <div className="rounded-lg border border-emerald-200 dark:border-emerald-900/60 bg-emerald-50 dark:bg-emerald-950/30 p-3 text-sm text-emerald-800 dark:text-emerald-300">
-                        Esta factura ya no tiene saldo pendiente: figura como <b>pagada</b> según el
-                        kardex. No hace falta marcarla a mano.
+                        El kardex ya no registra saldo para esta factura. Si el cobro está
+                        confirmado, márcala como <b>Pagado</b>.
                     </div>
                 )}
 
@@ -106,9 +106,12 @@ export function ActualizarGestionModal({
                             ))}
                         </SelectContent>
                     </Select>
-                    <p className="text-xs text-muted-foreground">
-                        &quot;Pagado&quot; y &quot;vencido&quot; no se eligen aquí: salen del saldo real y de la fecha de vencimiento.
-                    </p>
+                    {estado === 'pagado' && !pagada && (
+                        <p className="text-xs text-amber-700 dark:text-amber-400">
+                            El kardex todavía registra un saldo de {simbolo}{' '}
+                            {Number(cobranza.saldo_actual).toFixed(2)} para esta factura.
+                        </p>
+                    )}
                 </div>
 
                 <div className="space-y-2">

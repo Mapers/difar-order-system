@@ -14,8 +14,8 @@ import { EvidenciaCobranzaModal } from './EvidenciaCobranzaModal'
 import { ActualizarGestionModal } from './ActualizarGestionModal'
 import { useCobranzaAsignacion } from '@/app/hooks/useCobranzaAsignacion'
 import {
-    CobranzaAsignada, ETIQUETA_ESTADO,
-    estadoVisible, simboloMonedaCobranza,
+    CobranzaAsignada, ESTADOS_GESTION, ETIQUETA_ESTADO,
+    estadoVisible, avisoDescuadre, simboloMonedaCobranza,
 } from '@/app/types/cobranza-types'
 
 function fmtFecha(f: string | null) {
@@ -69,9 +69,9 @@ export function SeccionVendedorCobranza() {
         return () => obs.disconnect()
     }, [cargarMas])
 
-    const contadores = ['pendiente', 'en_gestion', 'promesa_pago', 'incobrable', 'pagado'].map(k => ({
-        estado: k,
-        n: hook.asignadas.filter(c => estadoVisible(c) === k).length,
+    const contadores = ESTADOS_GESTION.map(e => ({
+        estado: e.value as string,
+        n: hook.asignadas.filter(c => estadoVisible(c) === e.value).length,
     }))
 
     const guardarGestion = async (estado: string, comentario: string, archivo: File | null) => {
@@ -160,7 +160,7 @@ export function SeccionVendedorCobranza() {
                                         {simboloMonedaCobranza(c.moneda)} {Number(c.saldo_actual).toFixed(2)}
                                     </td>
                                     <td className="px-3 py-2 tabular-nums">{fmtFecha(c.fecha_vencimiento)}</td>
-                                    <td className="px-3 py-2"><EstadoCobranzaBadge estado={estadoVisible(c)} /></td>
+                                    <td className="px-3 py-2"><EstadoCobranzaBadge estado={estadoVisible(c)} alerta={avisoDescuadre(c)} /></td>
                                     <td className="px-3 py-2">
                                         <div className="flex justify-end gap-1">
                                             <Button
@@ -201,7 +201,7 @@ export function SeccionVendedorCobranza() {
                                     {c.cliente_denominacion}
                                 </p>
                             </div>
-                            <EstadoCobranzaBadge estado={estadoVisible(c)} />
+                            <EstadoCobranzaBadge estado={estadoVisible(c)} alerta={avisoDescuadre(c)} />
                         </div>
 
                         <div className="mt-3 grid grid-cols-2 gap-2 border-t pt-3 text-sm [&>div]:min-w-0">

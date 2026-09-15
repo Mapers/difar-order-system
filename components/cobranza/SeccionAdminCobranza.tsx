@@ -24,7 +24,7 @@ import { ExportAsignadasPdfButton } from './ExportAsignadasPdfButton'
 import {
     CobranzaAsignada, ESTADOS_FILTRO, FacturaPorAsignar, FiltroVencimiento,
     FILTROS_VENCIMIENTO, rangoDeVencimiento,
-    estadoVisible, simboloMonedaCobranza,
+    estadoVisible, avisoDescuadre, simboloMonedaCobranza,
 } from '@/app/types/cobranza-types'
 
 const TODOS = '__todos__'
@@ -492,7 +492,7 @@ export function SeccionAdminCobranza() {
                                         </td>
                                         <td className="px-3 py-2 tabular-nums">{fmtFecha(c.fecha_vencimiento)}</td>
                                         <td className="hidden px-3 py-2 text-xs">{c.semana_asignacion}</td>
-                                        <td className="px-3 py-2"><EstadoCobranzaBadge estado={estadoVisible(c)} /></td>
+                                        <td className="px-3 py-2"><EstadoCobranzaBadge estado={estadoVisible(c)} alerta={avisoDescuadre(c)} /></td>
                                         <td className="px-3 py-2">
                                             <span className="line-clamp-2 break-words text-xs text-muted-foreground">
                                                 {c.ultimo_comentario || '—'}
@@ -547,7 +547,7 @@ export function SeccionAdminCobranza() {
                                         {c.cliente_denominacion}
                                     </p>
                                 </div>
-                                <EstadoCobranzaBadge estado={estadoVisible(c)} />
+                                <EstadoCobranzaBadge estado={estadoVisible(c)} alerta={avisoDescuadre(c)} />
                             </div>
 
                             <div className="mt-3 grid grid-cols-2 gap-2 border-t pt-3 text-sm [&>div]:min-w-0">
