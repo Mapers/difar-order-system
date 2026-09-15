@@ -233,7 +233,7 @@ export function UnificarImagenesModal({ open, onOpenChange, onConfirmar }: Props
                                 className="max-w-full rounded object-contain"
                             />
                         </div>
-                        <div className="flex items-center justify-between">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
                             <p className="text-xs text-muted-foreground">
                                 {(vistaPrevia.file.size / 1024).toFixed(0)} KB · {imagenes.length} imagen{imagenes.length !== 1 ? 'es' : ''} combinada{imagenes.length !== 1 ? 's' : ''}
                             </p>
