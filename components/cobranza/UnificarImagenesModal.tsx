@@ -1,13 +1,14 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import {
     Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft, Check, GripVertical, ImagePlus, Layers, Loader2, Pencil, Trash2 } from 'lucide-react'
 import { toast } from '@/app/hooks/useToast'
-import { EVIDENCIA_MAX_BYTES } from '@/app/types/cobranza-types'
+import { cn } from '@/lib/utils'
+import { CeldaUnion, Disposicion, unirImagenes } from './unirImagenes'
 import { EditarImagenModal } from './EditarImagenModal'
 
 interface Props {
@@ -22,108 +23,39 @@ interface ImagenPendiente {
     url: string
 }
 
+interface VistaPrevia {
+    file: File
+    url: string
+    celdas: CeldaUnion[]
+}
+
 const TIPOS_IMAGEN = ['image/jpeg', 'image/png', 'image/webp']
-const ANCHO_MAX = 1000
-const SEPARADOR = 14
 
-function cargarImagen(url: string): Promise<HTMLImageElement> {
-    return new Promise((resolve, reject) => {
-        const img = new Image()
-        img.onload = () => resolve(img)
-        img.onerror = () => reject(new Error('No se pudo leer una de las imágenes'))
-        img.src = url
-    })
-}
-
-function canvasABlob(canvas: HTMLCanvasElement, calidad: number): Promise<Blob> {
-    return new Promise((resolve, reject) => {
-        canvas.toBlob(
-            (b) => (b ? resolve(b) : reject(new Error('No se pudo generar la imagen'))),
-            'image/jpeg',
-            calidad,
-        )
-    })
-}
-
-function escalarCanvas(origen: HTMLCanvasElement, factor: number): HTMLCanvasElement {
-    const destino = document.createElement('canvas')
-    destino.width = Math.max(1, Math.round(origen.width * factor))
-    destino.height = Math.max(1, Math.round(origen.height * factor))
-    const ctx = destino.getContext('2d')!
-    ctx.drawImage(origen, 0, 0, destino.width, destino.height)
-    return destino
-}
-
-async function comprimir(canvas: HTMLCanvasElement): Promise<Blob> {
-    let calidad = 0.92
-    let blob = await canvasABlob(canvas, calidad)
-    while (blob.size > EVIDENCIA_MAX_BYTES && calidad > 0.4) {
-        calidad -= 0.12
-        blob = await canvasABlob(canvas, calidad)
-    }
-    if (blob.size > EVIDENCIA_MAX_BYTES) {
-        const reducido = escalarCanvas(canvas, 0.7)
-        blob = await comprimir(reducido)
-    }
-    return blob
-}
-
-async function unificarImagenes(imagenes: ImagenPendiente[]): Promise<File> {
-    const cargadas = await Promise.all(imagenes.map(async (i) => ({
-        img: await cargarImagen(i.url),
-    })))
-
-    const escalas = cargadas.map(({ img }) => Math.min(1, ANCHO_MAX / img.naturalWidth))
-    const anchos = cargadas.map(({ img }, i) => Math.round(img.naturalWidth * escalas[i]))
-    const altos = cargadas.map(({ img }, i) => Math.round(img.naturalHeight * escalas[i]))
-    const anchoCanvas = Math.max(...anchos)
-    const altoCanvas = altos.reduce((a, b) => a + b, 0) + SEPARADOR * (cargadas.length - 1)
-
-    const canvas = document.createElement('canvas')
-    canvas.width = anchoCanvas
-    canvas.height = altoCanvas
-    const ctx = canvas.getContext('2d')!
-    ctx.fillStyle = '#ffffff'
-    ctx.fillRect(0, 0, anchoCanvas, altoCanvas)
-
-    let y = 0
-    cargadas.forEach(({ img }, i) => {
-        const w = anchos[i]
-        const h = altos[i]
-        const x = Math.round((anchoCanvas - w) / 2)
-        ctx.drawImage(img, x, y, w, h)
-        y += h
-        if (i < cargadas.length - 1) {
-            ctx.strokeStyle = '#d1d5db'
-            ctx.lineWidth = 1
-            ctx.beginPath()
-            ctx.moveTo(0, y + SEPARADOR / 2)
-            ctx.lineTo(anchoCanvas, y + SEPARADOR / 2)
-            ctx.stroke()
-            y += SEPARADOR
-        }
-    })
-
-    const blob = await comprimir(canvas)
-    if (blob.size > EVIDENCIA_MAX_BYTES) {
-        throw new Error('La imagen unificada superó 5 MB incluso comprimida. Quita alguna imagen e inténtalo de nuevo.')
-    }
-    return new File([blob], `comprobante-unificado-${Date.now()}.jpg`, { type: 'image/jpeg' })
-}
+const DISPOSICIONES: { valor: Disposicion; etiqueta: string }[] = [
+    { valor: 'vertical', etiqueta: 'Vertical' },
+    { valor: 'horizontal', etiqueta: 'Horizontal' },
+    { valor: 'cuadricula', etiqueta: 'Cuadrícula' },
+]
 
 export function UnificarImagenesModal({ open, onOpenChange, onConfirmar }: Props) {
     const [imagenes, setImagenes] = useState<ImagenPendiente[]>([])
+    const [disposicion, setDisposicion] = useState<Disposicion>('vertical')
     const [procesando, setProcesando] = useState(false)
-    const [vistaPrevia, setVistaPrevia] = useState<{ file: File; url: string } | null>(null)
+    const [vistaPrevia, setVistaPrevia] = useState<VistaPrevia | null>(null)
+    const [seleccionSwap, setSeleccionSwap] = useState<number | null>(null)
+    const [arrastrandoId, setArrastrandoId] = useState<string | null>(null)
     const [editandoId, setEditandoId] = useState<string | null>(null)
     const [editandoVistaPrevia, setEditandoVistaPrevia] = useState(false)
     const inputRef = useRef<HTMLInputElement>(null)
+    const listaRef = useRef<HTMLDivElement>(null)
 
     const limpiarTodo = () => {
         imagenes.forEach(i => URL.revokeObjectURL(i.url))
         setImagenes([])
         if (vistaPrevia) URL.revokeObjectURL(vistaPrevia.url)
         setVistaPrevia(null)
+        setSeleccionSwap(null)
+        setDisposicion('vertical')
     }
 
     const limpiarYcerrar = (v: boolean) => {
@@ -165,32 +97,91 @@ export function UnificarImagenesModal({ open, onOpenChange, onConfirmar }: Props
         })
     }
 
-    const generarVistaPrevia = async () => {
-        if (imagenes.length === 0) return
+    const generar = useCallback(async (lista: ImagenPendiente[], disp: Disposicion) => {
+        if (lista.length === 0) return
         setProcesando(true)
         try {
-            const archivo = await unificarImagenes(imagenes)
-            setVistaPrevia({ file: archivo, url: URL.createObjectURL(archivo) })
+            const { archivo, celdas } = await unirImagenes(lista.map(i => i.url), disp)
+            setVistaPrevia(prev => {
+                if (prev) URL.revokeObjectURL(prev.url)
+                return { file: archivo, url: URL.createObjectURL(archivo), celdas }
+            })
+            setSeleccionSwap(null)
         } catch (error: any) {
             toast({ title: '', description: error?.message || 'No se pudieron unificar las imágenes.', variant: 'error' })
         } finally {
             setProcesando(false)
         }
+    }, [])
+
+    const cambiarDisposicion = (valor: Disposicion) => {
+        setDisposicion(valor)
+        if (vistaPrevia) generar(imagenes, valor)
     }
 
     const volverAEditar = () => {
         if (vistaPrevia) URL.revokeObjectURL(vistaPrevia.url)
         setVistaPrevia(null)
+        setSeleccionSwap(null)
     }
 
     const usarImagen = () => {
         if (!vistaPrevia) return
         onConfirmar(vistaPrevia.file)
+        URL.revokeObjectURL(vistaPrevia.url)
         imagenes.forEach(i => URL.revokeObjectURL(i.url))
         setImagenes([])
         setVistaPrevia(null)
+        setSeleccionSwap(null)
         onOpenChange(false)
     }
+
+    const tocarCelda = (indice: number) => {
+        if (procesando) return
+        if (seleccionSwap === null) { setSeleccionSwap(indice); return }
+        if (seleccionSwap === indice) { setSeleccionSwap(null); return }
+
+        const copia = [...imagenes]
+        const otro = copia[seleccionSwap]
+        copia[seleccionSwap] = copia[indice]
+        copia[indice] = otro
+        setImagenes(copia)
+        generar(copia, disposicion)
+    }
+
+    const inicioArrastre = (e: React.PointerEvent<HTMLButtonElement>, id: string) => {
+        if (procesando) return
+        e.currentTarget.setPointerCapture(e.pointerId)
+        setArrastrandoId(id)
+    }
+
+    const moverArrastre = (e: React.PointerEvent<HTMLButtonElement>) => {
+        if (!arrastrandoId || !listaRef.current) return
+        const filas = Array.from(listaRef.current.children) as HTMLElement[]
+        const encontrado = filas.findIndex((fila) => {
+            const r = fila.getBoundingClientRect()
+            return e.clientY < r.top + r.height / 2
+        })
+        const destino = encontrado === -1 ? filas.length - 1 : encontrado
+
+        setImagenes(prev => {
+            const actual = prev.findIndex(i => i.id === arrastrandoId)
+            if (actual < 0 || actual === destino) return prev
+            const copia = [...prev]
+            const [item] = copia.splice(actual, 1)
+            copia.splice(destino, 0, item)
+            return copia
+        })
+    }
+
+    const finArrastre = (e: React.PointerEvent<HTMLButtonElement>) => {
+        if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+            e.currentTarget.releasePointerCapture(e.pointerId)
+        }
+        setArrastrandoId(null)
+    }
+
+    const imagenEnEdicion = imagenes.find(i => i.id === editandoId) ?? null
 
     const guardarImagenEditada = (id: string, editado: File) => {
         setImagenes(prev => prev.map(i => {
@@ -203,11 +194,26 @@ export function UnificarImagenesModal({ open, onOpenChange, onConfirmar }: Props
     const guardarVistaPreviaEditada = (editado: File) => {
         setVistaPrevia(prev => {
             if (prev) URL.revokeObjectURL(prev.url)
-            return { file: editado, url: URL.createObjectURL(editado) }
+            return { file: editado, url: URL.createObjectURL(editado), celdas: prev?.celdas ?? [] }
         })
     }
 
-    const imagenEnEdicion = imagenes.find(i => i.id === editandoId) ?? null
+    const selectorDisposicion = (
+        <div className="inline-flex rounded-md border p-0.5">
+            {DISPOSICIONES.map(d => (
+                <Button
+                    key={d.valor}
+                    type="button"
+                    size="sm"
+                    variant={disposicion === d.valor ? 'default' : 'ghost'}
+                    disabled={procesando}
+                    onClick={() => cambiarDisposicion(d.valor)}
+                >
+                    {d.etiqueta}
+                </Button>
+            ))}
+        </div>
+    )
 
     return (
         <Dialog open={open} onOpenChange={limpiarYcerrar}>
@@ -219,26 +225,60 @@ export function UnificarImagenesModal({ open, onOpenChange, onConfirmar }: Props
                     </DialogTitle>
                     <DialogDescription>
                         {vistaPrevia
-                            ? 'Así queda la imagen unificada. Revísala antes de usarla.'
-                            : 'Agrega varias fotos del comprobante; se combinarán en una sola imagen, en el orden en que aparecen abajo, antes de subirla.'}
+                            ? 'Así queda la imagen unificada. Toca dos fotos para intercambiarlas.'
+                            : 'Agrega varias fotos del comprobante; se combinarán en una sola imagen, en el orden de la lista, antes de subirla.'}
                     </DialogDescription>
                 </DialogHeader>
 
+                <div className="flex flex-wrap items-center gap-2">
+                    {selectorDisposicion}
+                    {procesando && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
+                </div>
+
                 {vistaPrevia ? (
                     <div className="space-y-2">
-                        <div className="flex max-h-[420px] items-center justify-center overflow-auto rounded-lg border bg-muted/40 p-2">
-                            <img
-                                src={vistaPrevia.url}
-                                alt="Vista previa unificada"
-                                className="max-w-full rounded object-contain"
-                            />
+                        <div className="flex max-h-[420px] justify-center overflow-auto rounded-lg border bg-muted/40 p-2">
+                            <div className="relative inline-block max-w-full">
+                                <img
+                                    src={vistaPrevia.url}
+                                    alt="Vista previa unificada"
+                                    className="block max-w-full rounded"
+                                />
+                                {vistaPrevia.celdas.map((celda, i) => (
+                                    <button
+                                        key={i}
+                                        type="button"
+                                        onClick={() => tocarCelda(i)}
+                                        disabled={procesando}
+                                        title={`Imagen ${i + 1}`}
+                                        style={{
+                                            left: `${celda.x}%`,
+                                            top: `${celda.y}%`,
+                                            width: `${celda.w}%`,
+                                            height: `${celda.h}%`,
+                                        }}
+                                        className={cn(
+                                            'absolute rounded transition',
+                                            seleccionSwap === i
+                                                ? 'bg-sky-500/25 ring-2 ring-sky-500'
+                                                : 'hover:bg-sky-500/10',
+                                        )}
+                                    >
+                                        <span className="absolute left-1 top-1 rounded bg-black/60 px-1.5 text-[10px] font-semibold text-white">
+                                            {i + 1}
+                                        </span>
+                                    </button>
+                                ))}
+                            </div>
                         </div>
                         <div className="flex flex-wrap items-center justify-between gap-2">
                             <p className="text-xs text-muted-foreground">
                                 {(vistaPrevia.file.size / 1024).toFixed(0)} KB · {imagenes.length} imagen{imagenes.length !== 1 ? 'es' : ''} combinada{imagenes.length !== 1 ? 's' : ''}
+                                {seleccionSwap !== null && ` · imagen ${seleccionSwap + 1} marcada, toca otra para intercambiar`}
                             </p>
                             <Button
                                 type="button" variant="outline" size="sm" className="gap-1.5"
+                                disabled={procesando}
                                 onClick={() => setEditandoVistaPrevia(true)}
                             >
                                 <Pencil className="h-3.5 w-3.5" />
@@ -274,51 +314,72 @@ export function UnificarImagenesModal({ open, onOpenChange, onConfirmar }: Props
                                 Todavía no agregaste ninguna imagen.
                             </div>
                         ) : (
-                            <div className="space-y-2">
-                                {imagenes.map((img, idx) => (
-                                    <div key={img.id} className="flex items-center gap-2 rounded-lg border p-2">
-                                        <GripVertical className="h-4 w-4 shrink-0 text-muted-foreground" />
-                                        <img src={img.url} alt={img.file.name} className="h-12 w-12 shrink-0 rounded object-cover" />
-                                        <div className="min-w-0 flex-1">
-                                            <p className="truncate text-xs font-medium">{idx + 1}. {img.file.name}</p>
-                                            <p className="text-[11px] text-muted-foreground">
-                                                {(img.file.size / 1024).toFixed(0)} KB
-                                            </p>
+                            <>
+                                <div ref={listaRef} className="space-y-2">
+                                    {imagenes.map((img, idx) => (
+                                        <div
+                                            key={img.id}
+                                            className={cn(
+                                                'flex items-center gap-2 rounded-lg border p-2 transition',
+                                                arrastrandoId === img.id && 'opacity-70 ring-2 ring-sky-500',
+                                            )}
+                                        >
+                                            <button
+                                                type="button"
+                                                aria-label={`Mover ${img.file.name}`}
+                                                className="shrink-0 cursor-grab touch-none p-1 text-muted-foreground active:cursor-grabbing"
+                                                onPointerDown={(e) => inicioArrastre(e, img.id)}
+                                                onPointerMove={moverArrastre}
+                                                onPointerUp={finArrastre}
+                                                onPointerCancel={finArrastre}
+                                            >
+                                                <GripVertical className="h-4 w-4" />
+                                            </button>
+                                            <img src={img.url} alt={img.file.name} className="h-12 w-12 shrink-0 rounded object-cover" />
+                                            <div className="min-w-0 flex-1">
+                                                <p className="truncate text-xs font-medium">{idx + 1}. {img.file.name}</p>
+                                                <p className="text-[11px] text-muted-foreground">
+                                                    {(img.file.size / 1024).toFixed(0)} KB
+                                                </p>
+                                            </div>
+                                            <div className="flex shrink-0 items-center gap-0.5">
+                                                <Button
+                                                    type="button" variant="ghost" size="icon" className="h-7 w-7"
+                                                    disabled={procesando || idx === 0}
+                                                    onClick={() => mover(img.id, -1)}
+                                                >
+                                                    ↑
+                                                </Button>
+                                                <Button
+                                                    type="button" variant="ghost" size="icon" className="h-7 w-7"
+                                                    disabled={procesando || idx === imagenes.length - 1}
+                                                    onClick={() => mover(img.id, 1)}
+                                                >
+                                                    ↓
+                                                </Button>
+                                                <Button
+                                                    type="button" variant="ghost" size="icon" className="h-7 w-7"
+                                                    disabled={procesando}
+                                                    onClick={() => setEditandoId(img.id)}
+                                                >
+                                                    <Pencil className="h-3.5 w-3.5" />
+                                                </Button>
+                                                <Button
+                                                    type="button" variant="ghost" size="icon"
+                                                    className="h-7 w-7 text-destructive"
+                                                    disabled={procesando}
+                                                    onClick={() => quitar(img.id)}
+                                                >
+                                                    <Trash2 className="h-3.5 w-3.5" />
+                                                </Button>
+                                            </div>
                                         </div>
-                                        <div className="flex shrink-0 items-center gap-0.5">
-                                            <Button
-                                                type="button" variant="ghost" size="icon" className="h-7 w-7"
-                                                disabled={procesando || idx === 0}
-                                                onClick={() => mover(img.id, -1)}
-                                            >
-                                                ↑
-                                            </Button>
-                                            <Button
-                                                type="button" variant="ghost" size="icon" className="h-7 w-7"
-                                                disabled={procesando || idx === imagenes.length - 1}
-                                                onClick={() => mover(img.id, 1)}
-                                            >
-                                                ↓
-                                            </Button>
-                                            <Button
-                                                type="button" variant="ghost" size="icon" className="h-7 w-7"
-                                                disabled={procesando}
-                                                onClick={() => setEditandoId(img.id)}
-                                            >
-                                                <Pencil className="h-3.5 w-3.5" />
-                                            </Button>
-                                            <Button
-                                                type="button" variant="ghost" size="icon"
-                                                className="h-7 w-7 text-destructive"
-                                                disabled={procesando}
-                                                onClick={() => quitar(img.id)}
-                                            >
-                                                <Trash2 className="h-3.5 w-3.5" />
-                                            </Button>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
+                                    ))}
+                                </div>
+                                <p className="text-[11px] text-muted-foreground">
+                                    Arrastra el asa de la izquierda para cambiar el orden, o usa las flechas.
+                                </p>
+                            </>
                         )}
                     </>
                 )}
@@ -326,11 +387,11 @@ export function UnificarImagenesModal({ open, onOpenChange, onConfirmar }: Props
                 <DialogFooter>
                     {vistaPrevia ? (
                         <>
-                            <Button variant="outline" onClick={volverAEditar} className="gap-1.5">
+                            <Button variant="outline" onClick={volverAEditar} disabled={procesando} className="gap-1.5">
                                 <ArrowLeft className="h-4 w-4" />
                                 Volver a editar
                             </Button>
-                            <Button onClick={usarImagen} className="gap-1.5">
+                            <Button onClick={usarImagen} disabled={procesando} className="gap-1.5">
                                 <Check className="h-4 w-4" />
                                 Usar esta imagen
                             </Button>
@@ -340,7 +401,11 @@ export function UnificarImagenesModal({ open, onOpenChange, onConfirmar }: Props
                             <Button variant="outline" onClick={() => limpiarYcerrar(false)} disabled={procesando}>
                                 Cancelar
                             </Button>
-                            <Button onClick={generarVistaPrevia} disabled={procesando || imagenes.length === 0} className="gap-1.5">
+                            <Button
+                                onClick={() => generar(imagenes, disposicion)}
+                                disabled={procesando || imagenes.length === 0}
+                                className="gap-1.5"
+                            >
                                 {procesando && <Loader2 className="h-4 w-4 animate-spin" />}
                                 Ver vista previa {imagenes.length > 0 ? `(${imagenes.length})` : ''}
                             </Button>

@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Crop, Highlighter, Loader2, RotateCcw, Undo2 } from 'lucide-react'
 import { toast } from '@/app/hooks/useToast'
 import { cn } from '@/lib/utils'
+import { comprimirCanvas } from './unirImagenes'
 
 interface Props {
     open: boolean
@@ -21,7 +22,7 @@ type Modo = 'recortar' | 'resaltar'
 interface Snapshot {
     width: number
     height: number
-    data: ImageData
+    canvas: HTMLCanvasElement
 }
 
 interface Seleccion {
@@ -39,8 +40,16 @@ interface PreviaRecorte {
     h: number
 }
 
-const ANCHO_MAX_EDICION = 1400
+const LADO_MAX_EDICION = 4096
+const AREA_MAX_EDICION = 12_000_000
 const COLOR_RESALTADO = 'rgba(255, 214, 0, 0.45)'
+const MAX_HISTORIAL = 5
+
+function escalaDeEdicion(ancho: number, alto: number) {
+    const porLado = Math.min(1, LADO_MAX_EDICION / Math.max(ancho, alto))
+    const porArea = Math.min(1, Math.sqrt(AREA_MAX_EDICION / (ancho * alto)))
+    return Math.min(porLado, porArea)
+}
 
 function coordenadasCanvas(canvas: HTMLCanvasElement, clientX: number, clientY: number) {
     const rect = canvas.getBoundingClientRect()
@@ -58,6 +67,7 @@ export function EditarImagenModal({ open, onOpenChange, archivo, onGuardar }: Pr
     const historialRef = useRef<Snapshot[]>([])
     const dibujandoRef = useRef(false)
     const ultimoPuntoRef = useRef<{ x: number; y: number } | null>(null)
+    const inicioRef = useRef<{ x: number; y: number } | null>(null)
 
     const [modo, setModo] = useState<Modo>('recortar')
     const [seleccion, setSeleccion] = useState<Seleccion | null>(null)
@@ -81,8 +91,8 @@ export function EditarImagenModal({ open, onOpenChange, archivo, onGuardar }: Pr
         img.onload = () => {
             const canvas = canvasRef.current
             const overlay = overlayRef.current
-            if (!canvas || !overlay) return
-            const escala = Math.min(1, ANCHO_MAX_EDICION / Math.max(img.naturalWidth, img.naturalHeight))
+            if (!canvas || !overlay) { setCargando(false); return }
+            const escala = escalaDeEdicion(img.naturalWidth, img.naturalHeight)
             const w = Math.round(img.naturalWidth * escala)
             const h = Math.round(img.naturalHeight * escala)
             canvas.width = w
@@ -115,13 +125,12 @@ export function EditarImagenModal({ open, onOpenChange, archivo, onGuardar }: Pr
     const guardarSnapshot = () => {
         const canvas = canvasRef.current
         if (!canvas) return
-        const ctx = canvas.getContext('2d')!
-        historialRef.current.push({
-            width: canvas.width,
-            height: canvas.height,
-            data: ctx.getImageData(0, 0, canvas.width, canvas.height),
-        })
-        if (historialRef.current.length > 15) historialRef.current.shift()
+        const copia = document.createElement('canvas')
+        copia.width = canvas.width
+        copia.height = canvas.height
+        copia.getContext('2d')!.drawImage(canvas, 0, 0)
+        historialRef.current.push({ width: canvas.width, height: canvas.height, canvas: copia })
+        if (historialRef.current.length > MAX_HISTORIAL) historialRef.current.shift()
         setPuedeDeshacer(true)
     }
 
@@ -134,7 +143,7 @@ export function EditarImagenModal({ open, onOpenChange, archivo, onGuardar }: Pr
         canvas.height = previo.height
         overlay.width = previo.width
         overlay.height = previo.height
-        canvas.getContext('2d')!.putImageData(previo.data, 0, 0)
+        canvas.getContext('2d')!.drawImage(previo.canvas, 0, 0)
         setSeleccion(null)
         setPreviaRecorte(prev => { if (prev) URL.revokeObjectURL(prev.url); return null })
         setPuedeDeshacer(historialRef.current.length > 0)
@@ -152,8 +161,8 @@ export function EditarImagenModal({ open, onOpenChange, archivo, onGuardar }: Pr
         img.onload = () => {
             const canvas = canvasRef.current
             const overlay = overlayRef.current
-            if (!canvas || !overlay) return
-            const escala = Math.min(1, ANCHO_MAX_EDICION / Math.max(img.naturalWidth, img.naturalHeight))
+            if (!canvas || !overlay) { setCargando(false); return }
+            const escala = escalaDeEdicion(img.naturalWidth, img.naturalHeight)
             const w = Math.round(img.naturalWidth * escala)
             const h = Math.round(img.naturalHeight * escala)
             canvas.width = w
@@ -166,6 +175,11 @@ export function EditarImagenModal({ open, onOpenChange, archivo, onGuardar }: Pr
             ctx.drawImage(img, 0, 0, w, h)
             URL.revokeObjectURL(url)
             setCargando(false)
+        }
+        img.onerror = () => {
+            URL.revokeObjectURL(url)
+            setCargando(false)
+            toast({ title: '', description: 'No se pudo restablecer la imagen.', variant: 'error' })
         }
         img.src = url
     }
@@ -198,6 +212,8 @@ export function EditarImagenModal({ open, onOpenChange, archivo, onGuardar }: Pr
         e.currentTarget.setPointerCapture(e.pointerId)
 
         if (modo === 'recortar') {
+            limpiarOverlay()
+            inicioRef.current = { x, y }
             setSeleccion({ x0: x, y0: y, x1: x, y1: y })
         } else {
             guardarSnapshot()
@@ -206,7 +222,7 @@ export function EditarImagenModal({ open, onOpenChange, archivo, onGuardar }: Pr
             ctx.save()
             ctx.globalAlpha = 1
             ctx.fillStyle = COLOR_RESALTADO
-            const grosor = Math.max(canvas.width, canvas.height) * 0.045
+            const grosor = Math.min(canvas.width, canvas.height) * 0.045
             ctx.beginPath()
             ctx.arc(x, y, grosor / 2, 0, Math.PI * 2)
             ctx.fill()
@@ -221,15 +237,14 @@ export function EditarImagenModal({ open, onOpenChange, archivo, onGuardar }: Pr
         const { x, y } = coordenadasCanvas(canvas, e.clientX, e.clientY)
 
         if (modo === 'recortar') {
-            setSeleccion(prev => {
-                const nueva = prev ? { ...prev, x1: x, y1: y } : { x0: x, y0: y, x1: x, y1: y }
-                dibujarSeleccion(nueva)
-                return nueva
-            })
+            const inicio = inicioRef.current ?? { x, y }
+            const nueva = { x0: inicio.x, y0: inicio.y, x1: x, y1: y }
+            dibujarSeleccion(nueva)
+            setSeleccion(nueva)
         } else {
             const ctx = canvas.getContext('2d')!
             const ultimo = ultimoPuntoRef.current
-            const grosor = Math.max(canvas.width, canvas.height) * 0.045
+            const grosor = Math.min(canvas.width, canvas.height) * 0.045
             ctx.save()
             ctx.strokeStyle = COLOR_RESALTADO
             ctx.lineWidth = grosor
@@ -245,9 +260,13 @@ export function EditarImagenModal({ open, onOpenChange, archivo, onGuardar }: Pr
         }
     }
 
-    const onPointerUp = () => {
+    const onPointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+        if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+            e.currentTarget.releasePointerCapture(e.pointerId)
+        }
         dibujandoRef.current = false
         ultimoPuntoRef.current = null
+        inicioRef.current = null
     }
 
     const verVistaPreviaRecorte = () => {
@@ -267,10 +286,16 @@ export function EditarImagenModal({ open, onOpenChange, archivo, onGuardar }: Pr
         temp.height = h
         temp.getContext('2d')!.drawImage(canvas, x, y, w, h, 0, 0, w, h)
 
-        setPreviaRecorte(prev => {
-            if (prev) URL.revokeObjectURL(prev.url)
-            return { url: temp.toDataURL('image/png'), x, y, w, h }
-        })
+        temp.toBlob(blob => {
+            if (!blob) {
+                toast({ title: '', description: 'No se pudo generar la vista previa del recorte.', variant: 'error' })
+                return
+            }
+            setPreviaRecorte(prev => {
+                if (prev) URL.revokeObjectURL(prev.url)
+                return { url: URL.createObjectURL(blob), x, y, w, h }
+            })
+        }, 'image/png')
     }
 
     const volverASeleccionar = () => {
@@ -322,9 +347,7 @@ export function EditarImagenModal({ open, onOpenChange, archivo, onGuardar }: Pr
         if (!canvas) return
         setGuardando(true)
         try {
-            const blob: Blob = await new Promise((resolve, reject) => {
-                canvas.toBlob(b => (b ? resolve(b) : reject(new Error('No se pudo guardar la imagen'))), 'image/jpeg', 0.92)
-            })
+            const blob = await comprimirCanvas(canvas)
             const nombre = archivo?.name?.replace(/\.[^.]+$/, '') || 'imagen'
             onGuardar(new File([blob], `${nombre}-editada.jpg`, { type: 'image/jpeg' }))
             onOpenChange(false)
@@ -334,6 +357,10 @@ export function EditarImagenModal({ open, onOpenChange, archivo, onGuardar }: Pr
             setGuardando(false)
         }
     }
+
+    const seleccionUtil = !!seleccion
+        && Math.abs(seleccion.x1 - seleccion.x0) >= 10
+        && Math.abs(seleccion.y1 - seleccion.y0) >= 10
 
     const cerrar = (v: boolean) => {
         if (guardando) return
@@ -392,7 +419,10 @@ export function EditarImagenModal({ open, onOpenChange, archivo, onGuardar }: Pr
 
                         {modo === 'recortar' && seleccion && (
                             <>
-                                <Button type="button" size="sm" variant="outline" onClick={verVistaPreviaRecorte}>
+                                <Button
+                                    type="button" size="sm" variant="outline"
+                                    onClick={verVistaPreviaRecorte} disabled={!seleccionUtil}
+                                >
                                     Ver vista previa
                                 </Button>
                                 <Button type="button" size="sm" variant="ghost" onClick={quitarSeleccion}>
@@ -428,7 +458,7 @@ export function EditarImagenModal({ open, onOpenChange, archivo, onGuardar }: Pr
                         onPointerDown={onPointerDown}
                         onPointerMove={onPointerMove}
                         onPointerUp={onPointerUp}
-                        onPointerLeave={onPointerUp}
+                        onPointerCancel={onPointerUp}
                     >
                         {cargando && (
                             <div className="flex h-[240px] items-center justify-center">
