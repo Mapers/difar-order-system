@@ -6,6 +6,7 @@ export interface MetaColumn {
   width?: number
   /** valor pre-llenado desde la entidad (export). Si existe, la columna es de solo-referencia (no editable). */
   prefill?: (entity: any) => any
+  editable?: boolean
   /** obligatorio para que la fila se suba (import). */
   required?: boolean
   /** opciones de un desplegable (data validation de Excel). */
@@ -54,7 +55,7 @@ export async function downloadMetaTemplate(params: {
     const row = ws.addRow(rowValues)
     columns.forEach((c, i) => {
       const cell = row.getCell(i + 1)
-      if (c.prefill) {
+      if (c.prefill && !c.editable) {
         // columnas de referencia: fondo gris para indicar que no se editan
         cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: REF_FILL } }
       }

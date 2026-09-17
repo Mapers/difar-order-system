@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useMemo } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -18,6 +18,8 @@ import apiClient from "@/app/api/client"
 import { useAuth } from "@/context/authContext"
 import {fetchGetAllClients} from "@/app/api/takeOrders";
 import {IClient} from "@/app/types/order/client-interface";
+import MultiSelectFilter, { OptionItem } from "@/components/configuraciones/MultiSelectFilter"
+import CreditLineExcelButtons from "@/components/configuraciones/CreditLineExcelButtons"
 
 interface LineasCreditoSectionProps {
     onOpenModalChange: (fn: () => void) => void;
@@ -35,6 +37,7 @@ export default function CreditLineSection({ onOpenModalChange }: LineasCreditoSe
     const [loadingSave, setLoadingSave] = useState(false)
     const [searchQuery, setSearchQuery] = useState("")
     const [debouncedQuery, setDebouncedQuery] = useState("")
+    const [vendedoresSel, setVendedoresSel] = useState<string[]>([])
     const [page, setPage] = useState(1)
 
     const [isModalOpen, setIsModalOpen] = useState(false)
@@ -50,7 +53,23 @@ export default function CreditLineSection({ onOpenModalChange }: LineasCreditoSe
         return () => clearTimeout(timer)
     }, [searchQuery])
 
+    const vendedorOptions: OptionItem[] = useMemo(() => {
+        const nombres = new Set<string>()
+        data.forEach(c => {
+            const v = (c.Vendedor || "").trim()
+            if (v) nombres.add(v)
+        })
+        return Array.from(nombres)
+            .sort((a, b) => a.localeCompare(b, "es"))
+            .map(v => ({ value: v, label: v }))
+    }, [data])
+
+    useEffect(() => { setPage(1) }, [vendedoresSel])
+
     const filteredData = data.filter(item => {
+        if (vendedoresSel.length > 0 && !vendedoresSel.includes((item.Vendedor || "").trim())) {
+            return false;
+        }
         if (!debouncedQuery) return true;
         const q = debouncedQuery.toLowerCase();
         return (
@@ -129,19 +148,41 @@ export default function CreditLineSection({ onOpenModalChange }: LineasCreditoSe
 
     return (
         <>
-            <div className="flex items-center gap-3 mb-4 p-3 bg-muted rounded-lg border border-border">
-                <Search className="h-4 w-4 text-muted-foreground" />
-                <Input
-                    placeholder="Buscar por nombre, RUC o código de cliente..."
-                    value={searchQuery}
-                    onChange={e => setSearchQuery(e.target.value)}
-                    className="bg-background border-border h-9 text-sm"
-                />
+            <div className="flex flex-wrap items-center gap-3 mb-4 p-3 bg-muted rounded-lg border border-border">
+                <div className="flex min-w-0 flex-1 basis-[240px] items-center gap-2">
+                    <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
+                    <Input
+                        placeholder="Buscar por nombre, RUC o código de cliente..."
+                        value={searchQuery}
+                        onChange={e => setSearchQuery(e.target.value)}
+                        className="bg-background border-border h-9 text-sm"
+                    />
+                </div>
+
+                <div className="w-full sm:w-64">
+                    <MultiSelectFilter
+                        options={vendedorOptions}
+                        selected={vendedoresSel}
+                        onChange={setVendedoresSel}
+                        placeholder="Todos los vendedores"
+                        searchPlaceholder="Buscar vendedor..."
+                        emptyText="No se encontraron vendedores"
+                        loading={loading}
+                    />
+                </div>
+
                 {data.length > 0 && (
                     <Badge variant="outline" className="text-xs whitespace-nowrap">
                         {filteredData.length} cliente{filteredData.length === 1 ? '' : 's'}
                     </Badge>
                 )}
+
+                <div className="ml-auto flex items-center gap-2">
+                    <CreditLineExcelButtons
+                        clientes={filteredData}
+                        onDone={loadInitialData}
+                    />
+                </div>
             </div>
 
             {loading ? (
