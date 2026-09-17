@@ -35,7 +35,7 @@ function fmtFecha(f: string | null) {
 }
 
 export function SeccionAdminCobranza() {
-    const { user } = useAuth()
+    const { user, isAdmin } = useAuth()
     const hook = useCobranzaAsignacion()
 
     const [tab, setTab] = useState<'porAsignar' | 'asignadas'>('porAsignar')
@@ -164,6 +164,13 @@ export function SeccionAdminCobranza() {
         if (!confirm(`¿Retirar ${c.serie}-${c.numero} de ${c.nombre_vendedor_asignado}?${detalle}`)) return
 
         await hook.retirar(c.id_asignacion, user.idUsuarioWeb)
+    }
+
+    const eliminarEvidencia = async (idAsignacion: number) => {
+        if (!user?.idUsuarioWeb) return false
+        const ok = await hook.eliminarEvidencia(idAsignacion, user.idUsuarioWeb)
+        if (ok) hook.fetchAsignadas(filtrosAsignadas, true)
+        return ok
     }
 
     const guardarGestion = async (estado: string, comentario: string, archivo: File | null) => {
@@ -653,6 +660,7 @@ export function SeccionAdminCobranza() {
                 onOpenChange={(v) => { if (!v) setVerEvidencia(null) }}
                 cobranza={verEvidencia}
                 obtenerEvidencia={hook.obtenerEvidencia}
+                onEliminar={isAdmin() ? eliminarEvidencia : undefined}
             />
 
             <ActualizarGestionModal

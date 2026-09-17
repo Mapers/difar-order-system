@@ -4,8 +4,9 @@ import { useEffect, useState } from 'react'
 import {
     Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
-import { ExternalLink, FileText, ImageOff, Maximize2 } from 'lucide-react'
+import { ExternalLink, FileText, ImageOff, Loader2, Maximize2, Trash2 } from 'lucide-react'
 import { publicApi } from '@/app/api/client'
 import { CobranzaAsignada, EvidenciaCobranza } from '@/app/types/cobranza-types'
 
@@ -14,14 +15,16 @@ interface Props {
     onOpenChange: (open: boolean) => void
     cobranza: CobranzaAsignada | null
     obtenerEvidencia: (idAsignacion: number) => Promise<EvidenciaCobranza | null>
+    onEliminar?: (idAsignacion: number) => Promise<boolean>
 }
 
 const esPdf = (ruta: string) => /\.pdf$/i.test(ruta)
 
-export function EvidenciaCobranzaModal({ open, onOpenChange, cobranza, obtenerEvidencia }: Props) {
+export function EvidenciaCobranzaModal({ open, onOpenChange, cobranza, obtenerEvidencia, onEliminar }: Props) {
     const [evidencia, setEvidencia] = useState<EvidenciaCobranza | null>(null)
     const [cargando, setCargando] = useState(false)
     const [ampliada, setAmpliada] = useState(false)
+    const [eliminando, setEliminando] = useState(false)
 
     useEffect(() => {
         if (!open) setAmpliada(false)
@@ -41,6 +44,20 @@ export function EvidenciaCobranzaModal({ open, onOpenChange, cobranza, obtenerEv
     }, [open, cobranza, obtenerEvidencia])
 
     const url = evidencia ? `${publicApi}${evidencia.ruta}` : null
+
+    const eliminar = async () => {
+        if (!onEliminar || !cobranza || !evidencia) return
+        const rotulo = `${cobranza.serie}-${cobranza.numero}`
+        if (!confirm(`¿Eliminar el comprobante de ${rotulo}? El archivo se borra y no se puede recuperar.`)) return
+
+        setEliminando(true)
+        const ok = await onEliminar(cobranza.id_asignacion)
+        setEliminando(false)
+        if (ok) {
+            setEvidencia(null)
+            onOpenChange(false)
+        }
+    }
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
@@ -100,9 +117,26 @@ export function EvidenciaCobranzaModal({ open, onOpenChange, cobranza, obtenerEv
                 </div>
 
                 {evidencia && (
-                    <p className="text-xs text-muted-foreground">
-                        Subido por {evidencia.usuario || '—'}
-                    </p>
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                        <p className="text-xs text-muted-foreground">
+                            Subido por {evidencia.usuario || '—'}
+                        </p>
+                        {onEliminar && (
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                disabled={eliminando}
+                                onClick={eliminar}
+                                className="gap-1.5 text-destructive hover:text-destructive"
+                            >
+                                {eliminando
+                                    ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                    : <Trash2 className="h-3.5 w-3.5" />}
+                                Eliminar comprobante
+                            </Button>
+                        )}
+                    </div>
                 )}
             </DialogContent>
 

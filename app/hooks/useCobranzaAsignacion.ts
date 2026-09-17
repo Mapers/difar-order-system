@@ -251,6 +251,26 @@ export function useCobranzaAsignacion() {
         }
     }, [])
 
+    const eliminarEvidencia = useCallback(async (idAsignacion: number, idUsuarioWeb: number) => {
+        setGuardando(true)
+        try {
+            await apiClient.delete(`/cobranza/${idAsignacion}/evidencia`, {
+                params: { id_usuario_web: idUsuarioWeb },
+            })
+            toast({ title: '', description: 'Comprobante eliminado.', variant: 'success' })
+            return true
+        } catch (error: any) {
+            toast({
+                title: '',
+                description: error?.response?.data?.message || 'No se pudo eliminar el comprobante.',
+                variant: 'error',
+            })
+            return false
+        } finally {
+            setGuardando(false)
+        }
+    }, [])
+
     const obtenerComentarios = useCallback(async (idAsignacion: number): Promise<ComentarioCobranza[]> => {
         try {
             const res = await apiClient.get(`/cobranza/${idAsignacion}/comentarios`)
@@ -274,6 +294,6 @@ export function useCobranzaAsignacion() {
         asignadas, totalAsignadas, cargandoAsignadas, fetchAsignadas,
         guardando,
         consultarVendedores, asignar, retirar, actualizarGestion,
-        subirEvidencia, obtenerComentarios, obtenerEvidencia,
+        subirEvidencia, eliminarEvidencia, obtenerComentarios, obtenerEvidencia,
     }
 }
