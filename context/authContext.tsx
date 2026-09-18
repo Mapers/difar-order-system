@@ -39,7 +39,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         localStorage.removeItem('lastActivityTime');
     }, []);
 
-    const fetchGlobalConfigs = useCallback(async () => {
+    // checkToken() (más abajo) solo llama a fetchGlobalConfigs() UNA VEZ, al montar
+    // el AuthProvider (login o refresh de página). Ningún otro lugar de la app la
+    // vuelve a llamar. Antes, si esa única llamada fallaba (red, backend lento,
+    // etc.), globalConfigs se quedaba vacío para el resto de la sesión, y cualquier
+    // pantalla que espera globalConfigs.length > 0 antes de cargar datos —como
+    // Lista de Clientes— se quedaba esperando para siempre hasta que el usuario
+    // recargaba la página a mano. Por eso ahora reintenta sola unas pocas veces.
+    const fetchGlobalConfigs = useCallback(async (intentosRestantes = 3): Promise<void> => {
         try {
             const response = await apiClient.get('/admin/listar/configuraciones');
             if (response.data && response.data.data) {
@@ -47,6 +54,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             }
         } catch (error) {
             console.error("Error al cargar configuraciones globales", error);
+            if (intentosRestantes > 1) {
+                setTimeout(() => { fetchGlobalConfigs(intentosRestantes - 1); }, 1500);
+            }
         }
     }, []);
 
