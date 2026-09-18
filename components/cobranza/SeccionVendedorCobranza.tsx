@@ -15,7 +15,7 @@ import { ActualizarGestionModal } from './ActualizarGestionModal'
 import { useCobranzaAsignacion } from '@/app/hooks/useCobranzaAsignacion'
 import {
     CobranzaAsignada, ESTADOS_GESTION, ETIQUETA_ESTADO,
-    estadoVisible, avisoDescuadre, simboloMonedaCobranza,
+    estadoVisible, avisoDescuadre, fmtMontoCobranza, simboloMonedaCobranza,
 } from '@/app/types/cobranza-types'
 
 function fmtFecha(f: string | null) {
@@ -157,7 +157,7 @@ export function SeccionVendedorCobranza() {
                                     </td>
                                     <td className="px-3 py-2 text-xs">{c.semana_asignacion}</td>
                                     <td className="whitespace-nowrap px-3 py-2 tabular-nums">
-                                        {simboloMonedaCobranza(c.moneda)} {Number(c.saldo_actual).toFixed(2)}
+                                        {simboloMonedaCobranza(c.moneda)} {fmtMontoCobranza(c.saldo_actual)}
                                     </td>
                                     <td className="px-3 py-2 tabular-nums">{fmtFecha(c.fecha_vencimiento)}</td>
                                     <td className="px-3 py-2"><EstadoCobranzaBadge estado={estadoVisible(c)} alerta={avisoDescuadre(c)} /></td>
@@ -208,7 +208,7 @@ export function SeccionVendedorCobranza() {
                             <div>
                                 <p className="text-xs text-muted-foreground">Saldo</p>
                                 <p className="whitespace-nowrap font-semibold tabular-nums">
-                                    {simboloMonedaCobranza(c.moneda)} {Number(c.saldo_actual).toFixed(2)}
+                                    {simboloMonedaCobranza(c.moneda)} {fmtMontoCobranza(c.saldo_actual)}
                                 </p>
                             </div>
                             <div>
@@ -251,7 +251,7 @@ export function SeccionVendedorCobranza() {
                 </Card>
             )}
 
-            {hook.cargandoAsignadas && (
+            {hook.cargandoAsignadas && hook.asignadas.length === 0 && (
                 <div className="space-y-2">
                     {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}
                 </div>
@@ -259,10 +259,15 @@ export function SeccionVendedorCobranza() {
 
             <div ref={centinelaRef} className="h-4" />
 
-            {hayMas && !hook.cargandoAsignadas && (
+            {hayMas && (
                 <div className="flex justify-center">
-                    <Button variant="outline" size="sm" onClick={cargarMas} className="gap-1.5">
-                        <Loader2 className="h-3.5 w-3.5" /> Cargar más
+                    <Button
+                        variant="outline" size="sm" onClick={cargarMas}
+                        disabled={hook.cargandoAsignadas}
+                        className="gap-1.5"
+                    >
+                        <Loader2 className={`h-3.5 w-3.5 ${hook.cargandoAsignadas ? 'animate-spin' : ''}`} />
+                        Cargar más
                     </Button>
                 </div>
             )}
@@ -274,6 +279,7 @@ export function SeccionVendedorCobranza() {
                 idUsuarioWeb={user?.idUsuarioWeb ?? null}
                 guardando={hook.guardando}
                 obtenerComentarios={hook.obtenerComentarios}
+                obtenerEvidencia={hook.obtenerEvidencia}
                 onGuardar={guardarGestion}
             />
 

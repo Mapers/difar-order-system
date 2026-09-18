@@ -133,6 +133,13 @@ export function simboloMonedaCobranza(moneda: number | null | undefined) {
     return Number(moneda) === 2 ? 'US$' : 'S/'
 }
 
+export function fmtMontoCobranza(monto: number | string | null | undefined) {
+    return Number(monto || 0).toLocaleString('es-PE', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+    })
+}
+
 export function estadoVisible(c: CobranzaAsignada): string {
     return c.estado_gestion
 }

@@ -11,6 +11,10 @@ import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import {
+    AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+    AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { ChevronDown, Eye, Loader2, PenLine, Search, Trash2 } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
 import apiClient from '@/app/api/client'
@@ -24,7 +28,7 @@ import { ExportAsignadasPdfButton } from './ExportAsignadasPdfButton'
 import {
     CobranzaAsignada, ESTADOS_FILTRO, FacturaPorAsignar, FiltroVencimiento,
     FILTROS_VENCIMIENTO, rangoDeVencimiento,
-    estadoVisible, avisoDescuadre, simboloMonedaCobranza,
+    estadoVisible, avisoDescuadre, fmtMontoCobranza, simboloMonedaCobranza,
 } from '@/app/types/cobranza-types'
 
 const TODOS = '__todos__'
@@ -70,6 +74,8 @@ export function SeccionAdminCobranza() {
        suya—; lo que faltaba era el botón. El permiso lo valida la base, no
        esta pantalla. */
     const [gestionando, setGestionando] = useState<CobranzaAsignada | null>(null)
+    const [confirmarRetiro, setConfirmarRetiro] = useState<CobranzaAsignada | null>(null)
+    const [retirandoId, setRetirandoId] = useState<number | null>(null)
 
     useEffect(() => {
         const t = setTimeout(() => setBuscarAplicado(buscar.trim()), 400)
@@ -139,6 +145,17 @@ export function SeccionAdminCobranza() {
         })
     }
 
+    const todasCargadasSeleccionadas = hook.porAsignar.length > 0
+        && hook.porAsignar.every(f => seleccion.has(f.id_sunat))
+
+    const alternarTodos = (marcado: boolean) => {
+        setSeleccion(prev => {
+            const m = new Map(prev)
+            hook.porAsignar.forEach(f => { if (marcado) m.set(f.id_sunat, f); else m.delete(f.id_sunat) })
+            return m
+        })
+    }
+
     const confirmarAsignacion = async (asignaciones: { id_sunat: number; cod_vendedor: string }[]) => {
         if (!user?.idUsuarioWeb) return
         const ok = await hook.asignar(asignaciones, user.idUsuarioWeb)
@@ -152,18 +169,10 @@ export function SeccionAdminCobranza() {
 
     const retirar = async (c: CobranzaAsignada) => {
         if (!user?.idUsuarioWeb) return
-
-        const perdidas: string[] = []
-        if (Number(c.total_comentarios) > 0) perdidas.push(`${c.total_comentarios} comentario(s)`)
-        if (Number(c.tiene_evidencia) === 1) perdidas.push('el comprobante adjunto')
-
-        const detalle = perdidas.length > 0
-            ? `\n\nSe eliminarán también ${perdidas.join(' y ')}. Esto no se puede deshacer.`
-            : ''
-
-        if (!confirm(`¿Retirar ${c.serie}-${c.numero} de ${c.nombre_vendedor_asignado}?${detalle}`)) return
-
+        setConfirmarRetiro(null)
+        setRetirandoId(c.id_asignacion)
         await hook.retirar(c.id_asignacion, user.idUsuarioWeb)
+        setRetirandoId(null)
     }
 
     const eliminarEvidencia = async (idAsignacion: number) => {
@@ -317,13 +326,23 @@ export function SeccionAdminCobranza() {
                 )}
 
                 {tab === 'porAsignar' && (
-                    <Button
-                        onClick={() => setConfirmando(true)}
-                        disabled={seleccion.size === 0}
-                        className="w-full bg-teal-700 hover:bg-teal-800 lg:w-auto"
-                    >
-                        Asignar a cobranza ({seleccion.size})
-                    </Button>
+                    <div className="flex w-full flex-wrap items-center gap-2 lg:w-auto">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => alternarTodos(!todasCargadasSeleccionadas)}
+                            disabled={hook.porAsignar.length === 0}
+                        >
+                            {todasCargadasSeleccionadas ? 'Quitar selección' : `Seleccionar las ${hook.porAsignar.length} cargadas`}
+                        </Button>
+                        <Button
+                            onClick={() => setConfirmando(true)}
+                            disabled={seleccion.size === 0}
+                            className="flex-1 bg-teal-700 hover:bg-teal-800 lg:flex-none"
+                        >
+                            Asignar a cobranza ({seleccion.size})
+                        </Button>
+                    </div>
                 )}
 
                 {tab === 'asignadas' && (
@@ -350,7 +369,14 @@ export function SeccionAdminCobranza() {
                             </colgroup>
                             <thead className="bg-muted">
                                 <tr>
-                                    <th className="px-3 py-2"></th>
+                                    <th className="px-3 py-2">
+                                        <Checkbox
+                                            checked={todasCargadasSeleccionadas}
+                                            onCheckedChange={(v) => alternarTodos(v === true)}
+                                            disabled={hook.porAsignar.length === 0}
+                                            aria-label="Seleccionar todas las filas cargadas"
+                                        />
+                                    </th>
                                     {['N° Factura', 'Cliente', 'Vendedor', 'Saldo', 'Emisión', 'Vence'].map(h => (
                                         <th key={h} className="px-3 py-2 text-left text-xs font-medium uppercase text-muted-foreground">
                                             {h}
@@ -380,7 +406,7 @@ export function SeccionAdminCobranza() {
                                                 <div className="break-words leading-snug">{f.nombre_vendedor}</div>
                                             </td>
                                             <td className="whitespace-nowrap px-3 py-2 tabular-nums">
-                                                {simboloMonedaCobranza(f.moneda)} {Number(f.saldo).toFixed(2)}
+                                                {simboloMonedaCobranza(f.moneda)} {fmtMontoCobranza(f.saldo)}
                                             </td>
                                             <td className="px-3 py-2 tabular-nums">{fmtFecha(f.fecha_emision)}</td>
                                             <td className="px-3 py-2 tabular-nums">{fmtFecha(f.fecha_vencimiento)}</td>
@@ -422,7 +448,7 @@ export function SeccionAdminCobranza() {
                                     <div>
                                         <p className="text-xs text-muted-foreground">Saldo</p>
                                         <p className="whitespace-nowrap font-semibold tabular-nums">
-                                            {simboloMonedaCobranza(f.moneda)} {Number(f.saldo).toFixed(2)}
+                                            {simboloMonedaCobranza(f.moneda)} {fmtMontoCobranza(f.saldo)}
                                         </p>
                                     </div>
                                     <div>
@@ -495,7 +521,7 @@ export function SeccionAdminCobranza() {
                                             </div>
                                         </td>
                                         <td className="whitespace-nowrap px-3 py-2 tabular-nums">
-                                            {simboloMonedaCobranza(c.moneda)} {Number(c.saldo_actual).toFixed(2)}
+                                            {simboloMonedaCobranza(c.moneda)} {fmtMontoCobranza(c.saldo_actual)}
                                         </td>
                                         <td className="px-3 py-2 tabular-nums">{fmtFecha(c.fecha_vencimiento)}</td>
                                         <td className="hidden px-3 py-2 text-xs">{c.semana_asignacion}</td>
@@ -525,11 +551,13 @@ export function SeccionAdminCobranza() {
                                                 <Button
                                                     variant="ghost" size="icon"
                                                     className="h-8 w-8 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30"
-                                                    onClick={() => retirar(c)}
-                                                    disabled={hook.guardando}
+                                                    onClick={() => setConfirmarRetiro(c)}
+                                                    disabled={retirandoId === c.id_asignacion}
                                                     title="Retirar asignación"
                                                 >
-                                                    <Trash2 className="h-4 w-4" />
+                                                    {retirandoId === c.id_asignacion
+                                                        ? <Loader2 className="h-4 w-4 animate-spin" />
+                                                        : <Trash2 className="h-4 w-4" />}
                                                 </Button>
                                             </div>
                                         </td>
@@ -572,7 +600,7 @@ export function SeccionAdminCobranza() {
                                 <div>
                                     <p className="text-xs text-muted-foreground">Saldo</p>
                                     <p className="whitespace-nowrap font-semibold tabular-nums">
-                                        {simboloMonedaCobranza(c.moneda)} {Number(c.saldo_actual).toFixed(2)}
+                                        {simboloMonedaCobranza(c.moneda)} {fmtMontoCobranza(c.saldo_actual)}
                                     </p>
                                 </div>
                                 <div>
@@ -609,11 +637,13 @@ export function SeccionAdminCobranza() {
                                 <Button
                                     variant="outline" size="sm"
                                     className="shrink-0 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30"
-                                    onClick={() => retirar(c)}
-                                    disabled={hook.guardando}
+                                    onClick={() => setConfirmarRetiro(c)}
+                                    disabled={retirandoId === c.id_asignacion}
                                     title="Retirar asignación"
                                 >
-                                    <Trash2 className="h-3.5 w-3.5" />
+                                    {retirandoId === c.id_asignacion
+                                        ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                        : <Trash2 className="h-3.5 w-3.5" />}
                                 </Button>
                             </div>
                         </Card>
@@ -630,7 +660,7 @@ export function SeccionAdminCobranza() {
                 </>
             )}
 
-            {cargando && (
+            {cargando && (tab === 'porAsignar' ? hook.porAsignar.length === 0 : hook.asignadas.length === 0) && (
                 <div className="space-y-2">
                     {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}
                 </div>
@@ -638,13 +668,47 @@ export function SeccionAdminCobranza() {
 
             <div ref={centinelaRef} className="h-4" />
 
-            {hayMas && !cargando && (
+            {hayMas && (
                 <div className="flex justify-center">
-                    <Button variant="outline" size="sm" onClick={cargarMas} className="gap-1.5">
-                        <Loader2 className="h-3.5 w-3.5" /> Cargar más
+                    <Button
+                        variant="outline" size="sm" onClick={cargarMas}
+                        disabled={cargando}
+                        className="gap-1.5"
+                    >
+                        <Loader2 className={`h-3.5 w-3.5 ${cargando ? 'animate-spin' : ''}`} />
+                        Cargar más
                     </Button>
                 </div>
             )}
+
+            <AlertDialog open={confirmarRetiro != null} onOpenChange={(v) => { if (!v) setConfirmarRetiro(null) }}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>
+                            {confirmarRetiro && `¿Retirar ${confirmarRetiro.serie}-${confirmarRetiro.numero} de ${confirmarRetiro.nombre_vendedor_asignado}?`}
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                            {confirmarRetiro && (() => {
+                                const perdidas: string[] = []
+                                if (Number(confirmarRetiro.total_comentarios) > 0) perdidas.push(`${confirmarRetiro.total_comentarios} comentario(s)`)
+                                if (Number(confirmarRetiro.tiene_evidencia) === 1) perdidas.push('el comprobante adjunto')
+                                return perdidas.length > 0
+                                    ? `Se eliminarán también ${perdidas.join(' y ')}. Esto no se puede deshacer.`
+                                    : 'Esto no se puede deshacer.'
+                            })()}
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={() => confirmarRetiro && retirar(confirmarRetiro)}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                            Retirar
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
 
             <ConfirmarAsignacionModal
                 open={confirmando}
@@ -670,6 +734,7 @@ export function SeccionAdminCobranza() {
                 idUsuarioWeb={user?.idUsuarioWeb ?? null}
                 guardando={hook.guardando}
                 obtenerComentarios={hook.obtenerComentarios}
+                obtenerEvidencia={hook.obtenerEvidencia}
                 onGuardar={guardarGestion}
             />
         </div>

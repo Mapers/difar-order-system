@@ -4,11 +4,16 @@ import { useEffect, useState } from 'react'
 import {
     Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog'
+import {
+    AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+    AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { ExternalLink, FileText, ImageOff, Loader2, Maximize2, Trash2 } from 'lucide-react'
 import { publicApi } from '@/app/api/client'
 import { CobranzaAsignada, EvidenciaCobranza } from '@/app/types/cobranza-types'
+import { ImagenAmpliadaModal } from './ImagenAmpliadaModal'
 
 interface Props {
     open: boolean
@@ -25,6 +30,7 @@ export function EvidenciaCobranzaModal({ open, onOpenChange, cobranza, obtenerEv
     const [cargando, setCargando] = useState(false)
     const [ampliada, setAmpliada] = useState(false)
     const [eliminando, setEliminando] = useState(false)
+    const [confirmarEliminar, setConfirmarEliminar] = useState(false)
 
     useEffect(() => {
         if (!open) setAmpliada(false)
@@ -47,9 +53,7 @@ export function EvidenciaCobranzaModal({ open, onOpenChange, cobranza, obtenerEv
 
     const eliminar = async () => {
         if (!onEliminar || !cobranza || !evidencia) return
-        const rotulo = `${cobranza.serie}-${cobranza.numero}`
-        if (!confirm(`¿Eliminar el comprobante de ${rotulo}? El archivo se borra y no se puede recuperar.`)) return
-
+        setConfirmarEliminar(false)
         setEliminando(true)
         const ok = await onEliminar(cobranza.id_asignacion)
         setEliminando(false)
@@ -61,7 +65,8 @@ export function EvidenciaCobranzaModal({ open, onOpenChange, cobranza, obtenerEv
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-h-[95vh] max-w-lg overflow-y-auto">
+            <DialogContent className="flex max-h-[95dvh] max-w-lg flex-col overflow-hidden p-0">
+                <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-6">
                 <DialogHeader>
                     <DialogTitle className="text-base sm:text-lg">
                         Comprobante — {cobranza ? `${cobranza.serie}-${cobranza.numero}` : ''}
@@ -127,7 +132,7 @@ export function EvidenciaCobranzaModal({ open, onOpenChange, cobranza, obtenerEv
                                 variant="outline"
                                 size="sm"
                                 disabled={eliminando}
-                                onClick={eliminar}
+                                onClick={() => setConfirmarEliminar(true)}
                                 className="gap-1.5 text-destructive hover:text-destructive"
                             >
                                 {eliminando
@@ -138,22 +143,37 @@ export function EvidenciaCobranzaModal({ open, onOpenChange, cobranza, obtenerEv
                         )}
                     </div>
                 )}
+                </div>
             </DialogContent>
 
-            {url && evidencia && !esPdf(evidencia.ruta) && (
-                <Dialog open={ampliada} onOpenChange={setAmpliada}>
-                    <DialogContent className="flex max-h-[96vh] max-w-[96vw] items-center justify-center border-none bg-transparent p-2 shadow-none sm:max-w-[96vw]">
-                        <DialogTitle className="sr-only">
-                            Comprobante ampliado — {cobranza ? `${cobranza.serie}-${cobranza.numero}` : ''}
-                        </DialogTitle>
-                        <img
-                            src={url}
-                            alt={evidencia.nombre_archivo}
-                            className="max-h-[92vh] max-w-full rounded-lg object-contain"
-                        />
-                    </DialogContent>
-                </Dialog>
-            )}
+            <ImagenAmpliadaModal
+                open={ampliada}
+                onOpenChange={setAmpliada}
+                src={url && evidencia && !esPdf(evidencia.ruta) ? url : null}
+                alt={evidencia?.nombre_archivo}
+                titulo={`Comprobante ampliado — ${cobranza ? `${cobranza.serie}-${cobranza.numero}` : ''}`}
+            />
+
+            <AlertDialog open={confirmarEliminar} onOpenChange={setConfirmarEliminar}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>¿Eliminar el comprobante?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            {cobranza ? `El comprobante de ${cobranza.serie}-${cobranza.numero}` : 'El comprobante'} se
+                            borra y no se puede recuperar.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={eliminar}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                            Eliminar
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </Dialog>
     )
 }

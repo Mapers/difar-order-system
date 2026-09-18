@@ -86,7 +86,8 @@ export function ConfirmarAsignacionModal({
 
     return (
         <Dialog open={open} onOpenChange={(v) => { if (!guardando) onOpenChange(v) }}>
-            <DialogContent className="max-h-[95vh] max-w-lg overflow-y-auto">
+            <DialogContent className="flex max-h-[95dvh] max-w-lg flex-col overflow-hidden p-0">
+                <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-6">
                 <DialogHeader>
                     <DialogTitle>Confirmar asignación</DialogTitle>
                     <DialogDescription>
@@ -154,6 +155,7 @@ export function ConfirmarAsignacionModal({
                         Confirmar y avisar
                     </Button>
                 </DialogFooter>
+                </div>
             </DialogContent>
         </Dialog>
     )

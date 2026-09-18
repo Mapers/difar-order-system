@@ -5,7 +5,9 @@ import {
     Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { Crop, Highlighter, Loader2, RotateCcw, Undo2 } from 'lucide-react'
+import {
+    Crop, Highlighter, Loader2, RotateCcw, Undo2, ZoomIn, ZoomOut,
+} from 'lucide-react'
 import { toast } from '@/app/hooks/useToast'
 import { cn } from '@/lib/utils'
 import { comprimirCanvas } from './unirImagenes'
@@ -44,6 +46,9 @@ const LADO_MAX_EDICION = 4096
 const AREA_MAX_EDICION = 12_000_000
 const COLOR_RESALTADO = 'rgba(255, 214, 0, 0.45)'
 const MAX_HISTORIAL = 5
+const ZOOM_MIN = 1
+const ZOOM_MAX = 4
+const ZOOM_PASO = 0.5
 
 function escalaDeEdicion(ancho: number, alto: number) {
     const porLado = Math.min(1, LADO_MAX_EDICION / Math.max(ancho, alto))
@@ -64,10 +69,12 @@ function coordenadasCanvas(canvas: HTMLCanvasElement, clientX: number, clientY: 
 export function EditarImagenModal({ open, onOpenChange, archivo, onGuardar }: Props) {
     const canvasRef = useRef<HTMLCanvasElement>(null)
     const overlayRef = useRef<HTMLCanvasElement>(null)
+    const contenedorRef = useRef<HTMLDivElement>(null)
     const historialRef = useRef<Snapshot[]>([])
     const dibujandoRef = useRef(false)
     const ultimoPuntoRef = useRef<{ x: number; y: number } | null>(null)
     const inicioRef = useRef<{ x: number; y: number } | null>(null)
+    const panRef = useRef<{ x: number; y: number; scrollLeft: number; scrollTop: number } | null>(null)
 
     const [modo, setModo] = useState<Modo>('recortar')
     const [seleccion, setSeleccion] = useState<Seleccion | null>(null)
@@ -75,6 +82,8 @@ export function EditarImagenModal({ open, onOpenChange, archivo, onGuardar }: Pr
     const [cargando, setCargando] = useState(false)
     const [guardando, setGuardando] = useState(false)
     const [puedeDeshacer, setPuedeDeshacer] = useState(false)
+    const [zoomEdicion, setZoomEdicion] = useState(1)
+    const [baseDisplaySize, setBaseDisplaySize] = useState<{ w: number; h: number } | null>(null)
 
     useEffect(() => {
         if (!open || !archivo) return
@@ -116,6 +125,43 @@ export function EditarImagenModal({ open, onOpenChange, archivo, onGuardar }: Pr
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [open, archivo])
 
+    const medirYResetZoom = () => {
+        const canvas = canvasRef.current
+        const overlay = overlayRef.current
+        if (!canvas) return
+        canvas.style.width = ''
+        canvas.style.height = ''
+        canvas.style.maxWidth = ''
+        canvas.style.maxHeight = ''
+        if (overlay) {
+            overlay.style.width = ''
+            overlay.style.height = ''
+            overlay.style.maxWidth = ''
+            overlay.style.maxHeight = ''
+        }
+        const rect = canvas.getBoundingClientRect()
+        setBaseDisplaySize({ w: rect.width, h: rect.height })
+        setZoomEdicion(1)
+    }
+
+    useEffect(() => {
+        if (!cargando) medirYResetZoom()
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [cargando])
+
+    const cambiarZoom = (delta: number) => {
+        setZoomEdicion(z => Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, Math.round((z + delta) * 100) / 100)))
+    }
+
+    const estiloZoom: React.CSSProperties | undefined = (baseDisplaySize && zoomEdicion !== 1)
+        ? {
+            width: baseDisplaySize.w * zoomEdicion,
+            height: baseDisplaySize.h * zoomEdicion,
+            maxWidth: 'none',
+            maxHeight: 'none',
+        }
+        : undefined
+
     const limpiarOverlay = () => {
         const overlay = overlayRef.current
         if (!overlay) return
@@ -147,6 +193,7 @@ export function EditarImagenModal({ open, onOpenChange, archivo, onGuardar }: Pr
         setSeleccion(null)
         setPreviaRecorte(prev => { if (prev) URL.revokeObjectURL(prev.url); return null })
         setPuedeDeshacer(historialRef.current.length > 0)
+        medirYResetZoom()
     }
 
     const restablecer = () => {
@@ -206,7 +253,7 @@ export function EditarImagenModal({ open, onOpenChange, archivo, onGuardar }: Pr
 
     const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
         const canvas = canvasRef.current
-        if (!canvas || cargando) return
+        if (!canvas || cargando || dibujandoRef.current || panRef.current) return
         const { x, y } = coordenadasCanvas(canvas, e.clientX, e.clientY)
         dibujandoRef.current = true
         e.currentTarget.setPointerCapture(e.pointerId)
@@ -269,6 +316,35 @@ export function EditarImagenModal({ open, onOpenChange, archivo, onGuardar }: Pr
         inicioRef.current = null
     }
 
+    const centroideToques = (t: React.TouchList) => {
+        const a = t[0]
+        const b = t[1]
+        return { x: (a.clientX + b.clientX) / 2, y: (a.clientY + b.clientY) / 2 }
+    }
+
+    const onTouchStartContenedor = (e: React.TouchEvent) => {
+        if (e.touches.length !== 2) return
+        const el = contenedorRef.current
+        if (!el) return
+        // Dos dedos = recorrer la imagen ampliada; cancela cualquier trazo en curso.
+        dibujandoRef.current = false
+        ultimoPuntoRef.current = null
+        inicioRef.current = null
+        const c = centroideToques(e.touches)
+        panRef.current = { x: c.x, y: c.y, scrollLeft: el.scrollLeft, scrollTop: el.scrollTop }
+    }
+
+    const onTouchMoveContenedor = (e: React.TouchEvent) => {
+        if (e.touches.length !== 2 || !panRef.current) return
+        const el = contenedorRef.current
+        if (!el) return
+        const c = centroideToques(e.touches)
+        el.scrollLeft = panRef.current.scrollLeft - (c.x - panRef.current.x)
+        el.scrollTop = panRef.current.scrollTop - (c.y - panRef.current.y)
+    }
+
+    const onTouchEndContenedor = () => { panRef.current = null }
+
     const verVistaPreviaRecorte = () => {
         const canvas = canvasRef.current
         if (!canvas || !seleccion) return
@@ -328,6 +404,7 @@ export function EditarImagenModal({ open, onOpenChange, archivo, onGuardar }: Pr
         URL.revokeObjectURL(previaRecorte.url)
         setPreviaRecorte(null)
         setSeleccion(null)
+        medirYResetZoom()
     }
 
     const quitarSeleccion = () => {
@@ -370,7 +447,8 @@ export function EditarImagenModal({ open, onOpenChange, archivo, onGuardar }: Pr
 
     return (
         <Dialog open={open} onOpenChange={cerrar}>
-            <DialogContent className="max-h-[95vh] max-w-2xl overflow-y-auto">
+            <DialogContent className="flex max-h-[95dvh] max-w-2xl flex-col overflow-hidden p-0">
+                <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-6">
                 <DialogHeader>
                     <DialogTitle className="text-base sm:text-lg">Editar imagen</DialogTitle>
                     <DialogDescription>
@@ -383,11 +461,11 @@ export function EditarImagenModal({ open, onOpenChange, archivo, onGuardar }: Pr
                 </DialogHeader>
 
                 {previaRecorte && (
-                    <div className="flex max-h-[60vh] items-center justify-center overflow-auto rounded-lg border bg-muted/40 p-2">
+                    <div className="flex max-h-[60dvh] items-center justify-center overflow-auto rounded-lg border bg-muted/40 p-2">
                         <img
                             src={previaRecorte.url}
                             alt="Vista previa del recorte"
-                            className="max-h-[56vh] max-w-full rounded object-contain"
+                            className="max-h-[56dvh] max-w-full rounded object-contain"
                         />
                     </div>
                 )}
@@ -449,9 +527,45 @@ export function EditarImagenModal({ open, onOpenChange, archivo, onGuardar }: Pr
                         </div>
                     </div>
 
+                    <div className="mt-2 flex items-center justify-center gap-1.5">
+                        <Button
+                            type="button" size="icon" variant="outline" className="h-10 w-10"
+                            onClick={() => cambiarZoom(-ZOOM_PASO)}
+                            disabled={cargando || zoomEdicion <= ZOOM_MIN}
+                            aria-label="Alejar"
+                        >
+                            <ZoomOut className="h-4 w-4" />
+                        </Button>
+                        <span className="min-w-[3.5rem] text-center text-xs tabular-nums text-muted-foreground">
+                            {Math.round(zoomEdicion * 100)}%
+                        </span>
+                        <Button
+                            type="button" size="icon" variant="outline" className="h-10 w-10"
+                            onClick={() => cambiarZoom(ZOOM_PASO)}
+                            disabled={cargando || zoomEdicion >= ZOOM_MAX}
+                            aria-label="Acercar"
+                        >
+                            <ZoomIn className="h-4 w-4" />
+                        </Button>
+                        {zoomEdicion !== 1 && (
+                            <Button
+                                type="button" size="sm" variant="ghost" className="h-10 gap-1 text-xs"
+                                onClick={() => setZoomEdicion(1)}
+                            >
+                                Ajustar
+                            </Button>
+                        )}
+                    </div>
+                    {zoomEdicion !== 1 && (
+                        <p className="mt-1 text-center text-[11px] text-muted-foreground">
+                            Deslizá con dos dedos (o arrastrá la barra de scroll) para recorrer la imagen ampliada.
+                        </p>
+                    )}
+
                     <div
+                        ref={contenedorRef}
                         className={cn(
-                            'relative mx-auto mt-2 flex max-h-[60vh] w-full items-center justify-center overflow-auto rounded-lg border bg-muted/40 p-2',
+                            'relative mx-auto mt-2 flex max-h-[60dvh] w-full overflow-auto rounded-lg border bg-muted/40 p-2',
                             modo === 'recortar' ? 'cursor-crosshair' : 'cursor-cell',
                         )}
                         style={{ touchAction: 'none' }}
@@ -459,17 +573,22 @@ export function EditarImagenModal({ open, onOpenChange, archivo, onGuardar }: Pr
                         onPointerMove={onPointerMove}
                         onPointerUp={onPointerUp}
                         onPointerCancel={onPointerUp}
+                        onTouchStart={onTouchStartContenedor}
+                        onTouchMove={onTouchMoveContenedor}
+                        onTouchEnd={onTouchEndContenedor}
+                        onTouchCancel={onTouchEndContenedor}
                     >
                         {cargando && (
-                            <div className="flex h-[240px] items-center justify-center">
+                            <div className="m-auto flex h-[240px] items-center justify-center">
                                 <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                             </div>
                         )}
-                        <div className="relative" style={{ display: cargando ? 'none' : 'block' }}>
-                            <canvas ref={canvasRef} className="max-h-[56vh] max-w-full rounded" />
+                        <div className="relative m-auto shrink-0" style={{ display: cargando ? 'none' : 'block' }}>
+                            <canvas ref={canvasRef} className="max-h-[56dvh] max-w-full rounded" style={estiloZoom} />
                             <canvas
                                 ref={overlayRef}
-                                className="pointer-events-none absolute inset-0 max-h-[56vh] max-w-full rounded"
+                                className="pointer-events-none absolute inset-0 max-h-[56dvh] max-w-full rounded"
+                                style={estiloZoom}
                             />
                         </div>
                     </div>
@@ -497,6 +616,7 @@ export function EditarImagenModal({ open, onOpenChange, archivo, onGuardar }: Pr
                         </>
                     )}
                 </DialogFooter>
+                </div>
             </DialogContent>
         </Dialog>
     )

@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import {
     Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog'
@@ -15,6 +15,7 @@ interface Props {
     open: boolean
     onOpenChange: (open: boolean) => void
     onConfirmar: (archivo: File) => void
+    cargarInicial?: () => Promise<File | null>
 }
 
 interface ImagenPendiente {
@@ -37,8 +38,9 @@ const DISPOSICIONES: { valor: Disposicion; etiqueta: string }[] = [
     { valor: 'cuadricula', etiqueta: 'Cuadrícula' },
 ]
 
-export function UnificarImagenesModal({ open, onOpenChange, onConfirmar }: Props) {
+export function UnificarImagenesModal({ open, onOpenChange, onConfirmar, cargarInicial }: Props) {
     const [imagenes, setImagenes] = useState<ImagenPendiente[]>([])
+    const [cargandoInicial, setCargandoInicial] = useState(false)
     const [disposicion, setDisposicion] = useState<Disposicion>('vertical')
     const [procesando, setProcesando] = useState(false)
     const [vistaPrevia, setVistaPrevia] = useState<VistaPrevia | null>(null)
@@ -48,6 +50,21 @@ export function UnificarImagenesModal({ open, onOpenChange, onConfirmar }: Props
     const [editandoVistaPrevia, setEditandoVistaPrevia] = useState(false)
     const inputRef = useRef<HTMLInputElement>(null)
     const listaRef = useRef<HTMLDivElement>(null)
+
+    useEffect(() => {
+        if (!open || !cargarInicial) return
+        setCargandoInicial(true)
+        let cancelado = false
+        cargarInicial().then((file) => {
+            if (cancelado || !file) return
+            setImagenes(prev => {
+                if (prev.length > 0) return prev
+                return [{ id: `${file.name}-${file.lastModified}-inicial`, file, url: URL.createObjectURL(file) }]
+            })
+        }).finally(() => { if (!cancelado) setCargandoInicial(false) })
+        return () => { cancelado = true }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [open])
 
     const limpiarTodo = () => {
         imagenes.forEach(i => URL.revokeObjectURL(i.url))
@@ -217,7 +234,8 @@ export function UnificarImagenesModal({ open, onOpenChange, onConfirmar }: Props
 
     return (
         <Dialog open={open} onOpenChange={limpiarYcerrar}>
-            <DialogContent className="max-h-[95vh] max-w-lg overflow-y-auto">
+            <DialogContent className="flex max-h-[95dvh] max-w-lg flex-col overflow-hidden p-0">
+                <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-6">
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
                         <Layers className="h-4 w-4" />
@@ -311,7 +329,9 @@ export function UnificarImagenesModal({ open, onOpenChange, onConfirmar }: Props
 
                         {imagenes.length === 0 ? (
                             <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
-                                Todavía no agregaste ninguna imagen.
+                                {cargandoInicial
+                                    ? <Loader2 className="mx-auto h-5 w-5 animate-spin" />
+                                    : 'Todavía no agregaste ninguna imagen.'}
                             </div>
                         ) : (
                             <>
@@ -412,6 +432,7 @@ export function UnificarImagenesModal({ open, onOpenChange, onConfirmar }: Props
                         </>
                     )}
                 </DialogFooter>
+                </div>
             </DialogContent>
 
             <EditarImagenModal

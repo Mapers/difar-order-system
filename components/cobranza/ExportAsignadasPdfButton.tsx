@@ -166,6 +166,7 @@ async function descargarImagenComoJpg(url: string, anchoMax: number): Promise<Ui
 export function ExportAsignadasPdfButton({ filtros, descripcionFiltros }: Props) {
     const [loading, setLoading] = useState(false)
     const [confirmOpen, setConfirmOpen] = useState(false)
+    const [progreso, setProgreso] = useState<{ actual: number; total: number } | null>(null)
 
     const generar = async (incluirComprobantes: boolean) => {
         setConfirmOpen(false)
@@ -410,7 +411,10 @@ export function ExportAsignadasPdfButton({ filtros, descripcionFiltros }: Props)
                 const aIncluir = candidatas.slice(0, LIMITE_COMPROBANTES)
 
                 const items: { fila: CobranzaAsignada; img: PDFImage }[] = []
+                let procesados = 0
                 for (const fila of aIncluir) {
+                    procesados++
+                    setProgreso({ actual: procesados, total: aIncluir.length })
                     try {
                         const res = await apiClient.get(`/cobranza/${fila.id_asignacion}/evidencia`)
                         const ev: EvidenciaCobranza | null = res.data?.data?.data ?? null
@@ -513,6 +517,7 @@ export function ExportAsignadasPdfButton({ filtros, descripcionFiltros }: Props)
             toast({ title: 'Error', description: 'No se pudo generar el PDF.', variant: 'destructive' })
         } finally {
             setLoading(false)
+            setProgreso(null)
         }
     }
 
@@ -528,7 +533,9 @@ export function ExportAsignadasPdfButton({ filtros, descripcionFiltros }: Props)
                 {loading
                     ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
                     : <Printer className="h-3.5 w-3.5" />}
-                {loading ? 'Generando...' : 'Exportar PDF'}
+                {loading
+                    ? (progreso ? `Comprobante ${progreso.actual}/${progreso.total}...` : 'Generando...')
+                    : 'Exportar PDF'}
             </Button>
 
             <Dialog open={confirmOpen} onOpenChange={(v) => { if (!loading) setConfirmOpen(v) }}>

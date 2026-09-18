@@ -37,7 +37,8 @@ export function useCobranzaAsignacion() {
 
     const offsetPorAsignar = useRef(0)
     const offsetAsignadas = useRef(0)
-    const enVuelo = useRef(false)
+    const enVueloPorAsignar = useRef(false)
+    const enVueloAsignadas = useRef(false)
 
     // El backend siempre pagina en el orden fijo del SP (por vencimiento), así
     // que para poder ordenar por fecha de emisión traemos TODO lo que cumple
@@ -53,8 +54,8 @@ export function useCobranzaAsignacion() {
         })
 
     const fetchPorAsignar = useCallback(async (filtros: FiltrosPorAsignar, reiniciar: boolean) => {
-        if (enVuelo.current) return
-        enVuelo.current = true
+        if (enVueloPorAsignar.current) return
+        enVueloPorAsignar.current = true
 
         if (reiniciar) offsetPorAsignar.current = 0
         setCargandoPorAsignar(true)
@@ -82,7 +83,7 @@ export function useCobranzaAsignacion() {
             toast({ title: '', description: 'No se pudieron cargar las facturas por asignar.', variant: 'error' })
         } finally {
             setCargandoPorAsignar(false)
-            enVuelo.current = false
+            enVueloPorAsignar.current = false
         }
     }, [])
 
@@ -93,8 +94,8 @@ export function useCobranzaAsignacion() {
     const todosAsignadas = useRef<CobranzaAsignada[]>([])
 
     const fetchAsignadas = useCallback(async (filtros: FiltrosAsignadas, reiniciar: boolean) => {
-        if (enVuelo.current) return
-        enVuelo.current = true
+        if (enVueloAsignadas.current) return
+        enVueloAsignadas.current = true
 
         if (reiniciar) offsetAsignadas.current = 0
         setCargandoAsignadas(true)
@@ -132,7 +133,7 @@ export function useCobranzaAsignacion() {
             toast({ title: '', description: 'No se pudieron cargar las cobranzas asignadas.', variant: 'error' })
         } finally {
             setCargandoAsignadas(false)
-            enVuelo.current = false
+            enVueloAsignadas.current = false
         }
     }, [])
 
