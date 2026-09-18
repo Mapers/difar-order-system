@@ -1,8 +1,12 @@
 'use client'
-import React from "react"
+import React, { useState } from "react"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
+import {
+    AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+    AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
-import { BookOpen, X } from "lucide-react"
+import { BookOpen, Trash2, X } from "lucide-react"
 import { format } from "date-fns"
 import { OrderDraft } from "@/app/hooks/useOrderDrafts"
 
@@ -12,11 +16,19 @@ interface DraftsModalProps {
     savedDrafts: OrderDraft[]
     deleteDraft: (id: string) => void
     applyDraft: (draft: OrderDraft) => void
+    limpiarTodos?: () => Promise<boolean>
 }
 
 export default function DraftsModal({
-                                        showDraftsDialog, setShowDraftsDialog, savedDrafts, deleteDraft, applyDraft
+                                        showDraftsDialog, setShowDraftsDialog, savedDrafts, deleteDraft, applyDraft, limpiarTodos
                                     }: DraftsModalProps) {
+    const [confirmarVaciar, setConfirmarVaciar] = useState(false)
+
+    const handleVaciarTodos = async () => {
+        setConfirmarVaciar(false)
+        await limpiarTodos?.()
+    }
+
     return (
         <Dialog open={showDraftsDialog} onOpenChange={setShowDraftsDialog}>
             <DialogContent className="p-0 gap-0 flex flex-col [&>button]:hidden overflow-hidden
@@ -34,9 +46,20 @@ export default function DraftsModal({
                             <p className="text-[11px] text-muted-foreground">{savedDrafts.length} borrador{savedDrafts.length !== 1 ? 'es' : ''} guardado{savedDrafts.length !== 1 ? 's' : ''}</p>
                         </div>
                     </div>
-                    <button onClick={() => setShowDraftsDialog(false)} className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded-md hover:bg-muted">
-                        <X className="h-5 w-5" />
-                    </button>
+                    <div className="flex items-center gap-1">
+                        {limpiarTodos && savedDrafts.length > 0 && (
+                            <button
+                                onClick={() => setConfirmarVaciar(true)}
+                                className="text-muted-foreground hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors p-1.5 rounded-md"
+                                title="Vaciar todos los borradores"
+                            >
+                                <Trash2 className="h-4 w-4" />
+                            </button>
+                        )}
+                        <button onClick={() => setShowDraftsDialog(false)} className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded-md hover:bg-muted">
+                            <X className="h-5 w-5" />
+                        </button>
+                    </div>
                 </div>
 
                 <div className="flex-1 overflow-y-auto bg-muted p-3 space-y-2.5">
@@ -48,7 +71,11 @@ export default function DraftsModal({
                         </div>
                     ) : savedDrafts.map(draft => {
                         const savedDate = new Date(draft.savedAt)
-                        const total = draft.selectedProducts.reduce((sum, item) => {
+                        // Defensivo: un borrador viejo, malformado o de prueba puede no
+                        // traer selectedProducts. Sin este default, un solo registro así
+                        // tira abajo toda la pantalla (crash del render, no solo del modal).
+                        const productos = draft.selectedProducts ?? []
+                        const total = productos.reduce((sum, item) => {
                             const pu = item.isBonification ? 0 : item.appliedScale?.precio_escala ?? item.finalPrice ?? 0
                             return sum + Number(pu) * item.quantity
                         }, 0)
@@ -79,7 +106,7 @@ export default function DraftsModal({
                                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-2.5 px-4 py-3">
                                     <div>
                                         <p className="text-[10px] text-muted-foreground uppercase font-medium tracking-wide">Productos</p>
-                                        <p className="text-sm font-semibold text-foreground mt-0.5">{draft.selectedProducts.length}</p>
+                                        <p className="text-sm font-semibold text-foreground mt-0.5">{productos.length}</p>
                                     </div>
                                     <div>
                                         <p className="text-[10px] text-muted-foreground uppercase font-medium tracking-wide">Total</p>
@@ -97,21 +124,21 @@ export default function DraftsModal({
                                     </div>
                                 </div>
 
-                                {draft.selectedProducts.length > 0 && (
+                                {productos.length > 0 && (
                                     <div className="px-4 pb-2">
                                         <div className="bg-muted rounded-lg divide-y divide-border overflow-hidden">
-                                            {draft.selectedProducts.slice(0, 3).map((item, i) => (
+                                            {productos.slice(0, 3).map((item, i) => (
                                                 <div key={i} className="flex items-center justify-between px-3 py-1.5 gap-2">
-                                                    <p className="text-[11px] text-muted-foreground truncate flex-1">{item.product.NombreItem}</p>
+                                                    <p className="text-[11px] text-muted-foreground truncate flex-1">{item.product?.NombreItem ?? '—'}</p>
                                                     <div className="flex items-center gap-2 shrink-0 text-[11px]">
                                                         <span className="text-muted-foreground">×{item.quantity}</span>
                                                         <span className="font-medium text-muted-foreground">{sym}{((item.finalPrice ?? 0) * item.quantity).toFixed(2)}</span>
                                                     </div>
                                                 </div>
                                             ))}
-                                            {draft.selectedProducts.length > 3 && (
+                                            {productos.length > 3 && (
                                                 <div className="px-3 py-1.5 text-[11px] text-muted-foreground italic">
-                                                    +{draft.selectedProducts.length - 3} producto(s) más...
+                                                    +{productos.length - 3} producto(s) más...
                                                 </div>
                                             )}
                                         </div>
@@ -137,6 +164,26 @@ export default function DraftsModal({
                     })}
                 </div>
             </DialogContent>
+
+            <AlertDialog open={confirmarVaciar} onOpenChange={setConfirmarVaciar}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>¿Vaciar todos los borradores?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Se van a borrar los {savedDrafts.length} pedido{savedDrafts.length !== 1 ? 's' : ''} pendiente{savedDrafts.length !== 1 ? 's' : ''}. Esto no se puede deshacer.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={handleVaciarTodos}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                            Vaciar todo
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </Dialog>
     )
 }

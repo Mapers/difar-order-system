@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 
 interface UseAutoSaveDraftArgs<T> {
     /** Estado a persistir. Se serializa para detectar cambios reales. */
@@ -11,25 +11,31 @@ interface UseAutoSaveDraftArgs<T> {
     upsert: (id: string | null, state: T) => Promise<string | null>
     /** Se llama con el id la primera vez que se crea el borrador. */
     onCreated: (id: string) => void
-    /** ms de espera tras el último cambio. */
-    delay?: number
+    /** Se llama cada vez que un guardado automático termina bien (ej: avisarle al usuario con un toast). */
+    onSaved?: () => void
 }
 
 /**
- * Autoguardado con debounce para el tomador de pedidos.
+ * Guardado del borrador del tomador de pedidos al detectar que la pestaña
+ * se va a segundo plano (minimizar, cambiar de app, contestar una llamada,
+ * apagar pantalla, cerrar la pestaña).
  *
- * Tres cosas que no son obvias y por las que este hook existe:
+ * Antes esto guardaba con un debounce de 1.5s tras cada cambio. El problema:
+ * en el celular, apenas la pestaña pasa a segundo plano el navegador frena o
+ * congela los temporizadores, así que ese debounce muchas veces no llegaba a
+ * dispararse — la última acción del pedido se perdía igual. Ahora, en lugar
+ * de esperar un tiempo fijo, se escucha directamente el momento en que el
+ * navegador oculta la pestaña (evento `visibilitychange` / `pagehide`, la
+ * Page Visibility API) y se guarda ahí mismo, sin esperar nada.
  *
- * 1. Compara el JSON serializado, no la referencia. getOrderStateForDraft()
- *    devuelve un objeto nuevo en cada render, así que un useEffect sobre el
- *    objeto dispararía en cada render aunque nada haya cambiado.
+ * Dos cosas que no son obvias y por las que sigue existiendo este hook:
  *
- * 2. Guarda una firma del estado ya persistido (lastSaved). Sirve para no
- *    re-guardar un borrador recién cargado, que es idéntico a lo que está
- *    en la BD.
+ * 1. Compara el JSON serializado del estado contra el último guardado, para
+ *    no mandar un PUT si no hay nada nuevo que persistir.
  *
- * 3. Serializa los envíos (inFlight). Sin eso, dos PUT concurrentes pueden
- *    llegar fuera de orden y dejar guardado un estado viejo.
+ * 2. Serializa los envíos (inFlight): si el usuario oculta y vuelve a
+ *    mostrar la pestaña rápido, dos guardados no deben pisarse fuera de
+ *    orden.
  */
 export function useAutoSaveDraft<T>({
     state,
@@ -37,70 +43,68 @@ export function useAutoSaveDraft<T>({
     draftId,
     upsert,
     onCreated,
-    delay = 1500,
+    onSaved,
 }: UseAutoSaveDraftArgs<T>) {
-    const lastSaved = useRef<string | null>(null)
-    const inFlight  = useRef(false)
-    const pending   = useRef<string | null>(null)
-    const timer     = useRef<ReturnType<typeof setTimeout> | null>(null)
+    const lastSaved  = useRef<string | null>(null)
+    const inFlight    = useRef(false)
+    const cancelado    = useRef(false)
 
-    // Refs para leer los valores frescos dentro del timeout sin reprogramarlo
-    // cada vez que cambia una función.
+    // Refs para leer los valores frescos dentro del listener sin tener que
+    // reprogramarlo cada vez que cambia algo.
     const upsertRef    = useRef(upsert)
     const onCreatedRef = useRef(onCreated)
-    const stateRef     = useRef(state)
-    const draftIdRef   = useRef(draftId)
+    const onSavedRef   = useRef(onSaved)
+    const stateRef      = useRef(state)
+    const draftIdRef    = useRef(draftId)
+    const enabledRef    = useRef(enabled)
     upsertRef.current    = upsert
     onCreatedRef.current = onCreated
+    onSavedRef.current   = onSaved
     stateRef.current     = state
     draftIdRef.current   = draftId
+    enabledRef.current   = enabled
 
-    const json = JSON.stringify(state)
-
-    useEffect(() => {
-        if (!enabled) return
+    const guardarAhora = useCallback(async () => {
+        if (cancelado.current || !enabledRef.current || inFlight.current) return
+        const json = JSON.stringify(stateRef.current)
         if (lastSaved.current === json) return
 
-        if (timer.current) clearTimeout(timer.current)
-        timer.current = setTimeout(async () => {
-            if (inFlight.current) {
-                // Ya hay un guardado en vuelo: lo dejamos anotado y el propio
-                // guardado en curso se encarga al terminar.
-                pending.current = json
-                return
+        inFlight.current = true
+        try {
+            const id = await upsertRef.current(draftIdRef.current, stateRef.current)
+            if (id) {
+                lastSaved.current = json
+                // Comparar contra el id vigente, no solo chequear que había uno:
+                // si el borrador desapareció y upsert lo recreó, el id cambió y
+                // hay que propagarlo.
+                if (id !== draftIdRef.current) onCreatedRef.current(id)
+                onSavedRef.current?.()
             }
-
-            const run = async (snapshot: string) => {
-                inFlight.current = true
-                try {
-                    const id = await upsertRef.current(draftIdRef.current, stateRef.current)
-                    if (id) {
-                        lastSaved.current = snapshot
-                        // Comparar contra el id vigente, no solo chequear que
-                        // había uno: si el borrador desapareció y upsert lo
-                        // recreó, el id cambió y hay que propagarlo. Con un
-                        // `if (!draftIdRef.current)` el id viejo quedaría fijo
-                        // y cada autoguardado recrearía el borrador de nuevo.
-                        if (id !== draftIdRef.current) onCreatedRef.current(id)
-                    }
-                } finally {
-                    inFlight.current = false
-                }
-                // Si entró un cambio mientras guardábamos, lo persistimos ahora.
-                if (pending.current && pending.current !== lastSaved.current) {
-                    const next = pending.current
-                    pending.current = null
-                    await run(next)
-                }
-            }
-
-            await run(json)
-        }, delay)
-
-        return () => {
-            if (timer.current) clearTimeout(timer.current)
+        } finally {
+            inFlight.current = false
         }
-    }, [json, enabled, delay])
+    }, [])
+
+    useEffect(() => {
+        const onHidden = () => {
+            if (document.visibilityState === 'hidden') guardarAhora()
+        }
+        document.addEventListener('visibilitychange', onHidden)
+        // pagehide cubre el caso en que la pestaña se cierra directamente,
+        // sin pasar antes por "hidden" (algunos navegadores móviles).
+        window.addEventListener('pagehide', guardarAhora)
+        return () => {
+            document.removeEventListener('visibilitychange', onHidden)
+            window.removeEventListener('pagehide', guardarAhora)
+            // OJO: a propósito NO se guarda acá en el cleanup del efecto.
+            // Este efecto se re-ejecuta en CUALQUIER remount del componente
+            // (navegar a otra sección y volver, hot-reload en desarrollo,
+            // etc.), y draftId vive en useState del componente — se resetea
+            // a null en cada remount. Guardar acá con draftId en null creaba
+            // un borrador NUEVO en cada remount en vez de actualizar el que
+            // ya existía, y los borradores se iban acumulando.
+        }
+    }, [guardarAhora])
 
     /**
      * Marca un estado como ya persistido sin llamar a la API.
@@ -111,11 +115,10 @@ export function useAutoSaveDraft<T>({
         lastSaved.current = JSON.stringify(s)
     }
 
-    /** Corta cualquier guardado pendiente (ej: el pedido ya se confirmó). */
+    /** Corta cualquier guardado futuro (ej: el pedido ya se confirmó). */
     const cancel = () => {
-        if (timer.current) clearTimeout(timer.current)
-        pending.current = null
+        cancelado.current = true
     }
 
-    return { markSaved, cancel }
+    return { markSaved, cancel, guardarAhora }
 }

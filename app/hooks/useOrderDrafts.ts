@@ -118,6 +118,19 @@ export function useOrderDrafts() {
         }
     }
 
+    /** Borra TODOS los borradores pendientes del usuario. No se puede deshacer. */
+    const limpiarTodos = async (): Promise<boolean> => {
+        if (!idUsuarioWeb) return false
+        try {
+            await DraftService.limpiar(idUsuarioWeb)
+            setSavedDrafts([])
+            return true
+        } catch (e) {
+            console.error('Error al vaciar borradores:', e)
+            return false
+        }
+    }
+
     return {
         savedDrafts,
         loading,
@@ -125,5 +138,6 @@ export function useOrderDrafts() {
         updateDraft,
         upsertDraft,
         deleteDraft,
+        limpiarTodos,
     }
 }

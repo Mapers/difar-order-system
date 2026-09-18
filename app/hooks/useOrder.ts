@@ -875,24 +875,28 @@ export function useOrderPage() {
     });
 
     const loadStateFromDraft = (draft: any) => {
-        // Restaurar los estados
-        setCurrentStep(draft.currentStep);
-        setSearch(draft.search);
-        setSelectedClient(draft.selectedClient);
+        // Defensivo: un borrador viejo, malformado o de prueba puede no traer
+        // alguno de estos campos. Sin los || de respaldo, selectedProducts
+        // (u otro array/objeto esperado) queda undefined y el primer .map()
+        // o .length que lo toque más adelante (en ProductStep, SummaryStep,
+        // etc.) tira abajo toda la pantalla.
+        setCurrentStep(draft.currentStep ?? 0);
+        setSearch(draft.search || { client: '', product: '', condition: '' });
+        setSelectedClient(draft.selectedClient || null);
         setClient(draft.selectedClient?.codigo || "");
         setClientName(draft.selectedClient?.Nombre || "");
-        setSeller(draft.seller);
-        setSellerSearch(draft.sellerSearch);
-        setNameZone(draft.nameZone);
-        setUnidadTerritorio(draft.unidadTerritorio);
-        setContactoPedido(draft.contactoPedido);
-        setReferenciaDireccion(draft.referenciaDireccion);
-        setCondition(draft.condition);
-        setCurrency(draft.currency);
-        setSelectedProducts(draft.selectedProducts);
-        setProductosConLotes(draft.productosConLotes);
-        setNote(draft.note);
-        setEditedClientData(draft.editedClientData);
+        setSeller(draft.seller || null);
+        setSellerSearch(draft.sellerSearch || '');
+        setNameZone(draft.nameZone || '');
+        setUnidadTerritorio(draft.unidadTerritorio || null);
+        setContactoPedido(draft.contactoPedido || '');
+        setReferenciaDireccion(draft.referenciaDireccion || '');
+        setCondition(draft.condition || null);
+        setCurrency(draft.currency || null);
+        setSelectedProducts(draft.selectedProducts || []);
+        setProductosConLotes(draft.productosConLotes || []);
+        setNote(draft.note || '');
+        setEditedClientData(draft.editedClientData || null);
         setSelectedAlmacen(draft.selectedAlmacen || null);
     };
 

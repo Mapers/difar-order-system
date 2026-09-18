@@ -1,7 +1,13 @@
 'use client'
-import React, {useState} from "react"
+import React, {useEffect, useMemo, useState} from "react"
 import { Card, CardContent } from "@/components/ui/card"
-import {User, Package, FileText, BookOpen} from "lucide-react"
+import {
+    AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+    AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import {User, Package, FileText, BookOpen, Clock, ArrowRight, Sparkles} from "lucide-react"
+import { formatDistanceToNow } from "date-fns"
+import { es } from "date-fns/locale"
 import { StepProgress } from "@/components/step-progress"
 import { LaboratorioModal } from "@/components/tomar-pedido/laboratorio-modal"
 import AlternativeProductsModal from "@/components/tomar-pedido/AlternativeProductsModal"
@@ -39,7 +45,7 @@ export default function OrderPage() {
       : (user?.codigo ?? null)
   const metasMap = useMetasItems(codVendedor)
 
-  const { savedDrafts, saveDraft, upsertDraft, deleteDraft } = useOrderDrafts()
+  const { savedDrafts, loading: cargandoDrafts, saveDraft, upsertDraft, deleteDraft, limpiarTodos } = useOrderDrafts()
   const [showDraftsDialog, setShowDraftsDialog] = useState(false)
   const [activeDraftId, setActiveDraftId] = useState<string | null>(null)
   // Una vez confirmado el pedido, el borrador se borra: cualquier autoguardado
@@ -56,6 +62,12 @@ export default function OrderPage() {
     draftId: activeDraftId,
     upsert: upsertDraft,
     onCreated: setActiveDraftId,
+    onSaved: () => {
+      toast({
+        title: "Pedido guardado",
+        description: "Se guardó como pendiente para que lo continúes cuando quieras.",
+      })
+    },
   })
 
   const handleSaveDraft = async () => {
@@ -80,6 +92,17 @@ export default function OrderPage() {
     }
   }
 
+  // "Vaciar todos" borra los borradores en el servidor, pero si el que
+  // estabas editando ahora mismo era uno de ellos, activeDraftId se queda
+  // apuntando a un id que ya no existe. Sin esto, el siguiente autoguardado
+  // sigue intentando actualizar ese borrador fantasma y no queda nada
+  // persistido.
+  const handleLimpiarTodosBorradores = async () => {
+    const ok = await limpiarTodos()
+    if (ok) setActiveDraftId(null)
+    return ok
+  }
+
   const handleApplyDraft = (draft: OrderDraft) => {
     order.loadStateFromDraft(draft)
     setActiveDraftId(draft.id)
@@ -92,6 +115,48 @@ export default function OrderPage() {
       title: "Borrador cargado",
       description: "Se han restaurado los datos del pedido.",
     })
+  }
+
+  // Aviso de "pedido pendiente" al entrar a la pantalla: si el celular mató
+  // la pestaña (minimizar, llamada, WhatsApp, apagar pantalla) el pedido se
+  // guardó solo al perder el foco (ver useAutoSaveDraft), pero al volver la
+  // app arranca de cero y nada avisaba que había algo para retomar. Se ofrece
+  // el borrador más reciente en cuanto se detecta, en vez de obligar a
+  // encontrarlo a mano en "Borradores".
+  // El borrador que se está editando ahora mismo (activeDraftId) no es un
+  // "pendiente" a la espera de retomarse: es el pedido en curso. Sin este
+  // filtro, apenas lo cargás vuelve a listarse en "Borradores" como si nada
+  // se hubiera abierto, y el badge sigue contando algo que ya estás llenando.
+  const draftsPendientes = useMemo(
+      () => savedDrafts.filter(d => d.id !== activeDraftId),
+      [savedDrafts, activeDraftId]
+  )
+
+  const draftMasReciente = useMemo(() => {
+    if (draftsPendientes.length === 0) return null
+    return [...draftsPendientes].sort((a, b) => b.savedAt - a.savedAt)[0]
+  }, [draftsPendientes])
+
+  const [showResumePrompt, setShowResumePrompt] = useState(false)
+  const [resumePromptDismissed, setResumePromptDismissed] = useState(false)
+
+  useEffect(() => {
+    if (resumePromptDismissed) return
+    if (activeDraftId) return
+    if (order.selectedClient) return
+    if (draftMasReciente) setShowResumePrompt(true)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draftMasReciente, activeDraftId, resumePromptDismissed])
+
+  const handleResumeDraft = () => {
+    if (!draftMasReciente) return
+    handleApplyDraft(draftMasReciente)
+    setShowResumePrompt(false)
+  }
+
+  const handleDismissResumePrompt = () => {
+    setShowResumePrompt(false)
+    setResumePromptDismissed(true)
   }
 
   const cleanupDraft = () => {
@@ -115,7 +180,7 @@ export default function OrderPage() {
             <p className="text-muted-foreground">Crea un nuevo pedido siguiendo los pasos.</p>
           </div>
 
-          {savedDrafts.length > 0 && (
+          {draftsPendientes.length > 0 && (
               <Button
                   variant="outline"
                   onClick={() => setShowDraftsDialog(true)}
@@ -124,7 +189,7 @@ export default function OrderPage() {
                 <BookOpen className="h-4 w-4 mr-2" />
                 Borradores
                 <span className="ml-2 bg-amber-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
-                    {savedDrafts.length}
+                    {draftsPendientes.length}
                 </span>
               </Button>
           )}
@@ -296,10 +361,73 @@ export default function OrderPage() {
         <DraftsModal
             showDraftsDialog={showDraftsDialog}
             setShowDraftsDialog={setShowDraftsDialog}
-            savedDrafts={savedDrafts}
+            savedDrafts={draftsPendientes}
             deleteDraft={deleteDraft}
             applyDraft={handleApplyDraft}
+            limpiarTodos={handleLimpiarTodosBorradores}
         />
+
+        <AlertDialog open={showResumePrompt} onOpenChange={(v) => { if (!v) handleDismissResumePrompt() }}>
+          <AlertDialogContent className="max-w-md gap-0 overflow-hidden p-0">
+            <div className="bg-gradient-to-br from-amber-50 to-orange-50 px-6 pb-5 pt-6 dark:from-amber-950/30 dark:to-orange-950/20">
+              <AlertDialogHeader className="items-center text-center sm:items-center sm:text-center">
+                <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-amber-100 text-amber-600 shadow-sm dark:bg-amber-900/40 dark:text-amber-400">
+                  <Clock className="h-7 w-7" />
+                </div>
+                <AlertDialogTitle className="text-xl">Tenés un pedido pendiente</AlertDialogTitle>
+                <AlertDialogDescription className="text-sm">
+                  Se interrumpió antes de terminarlo. ¿Querés continuarlo donde lo dejaste?
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+            </div>
+
+            {draftMasReciente && (
+                <div className="mx-6 -mt-2 mb-1 space-y-2.5 rounded-xl border bg-background p-4 text-sm shadow-sm">
+                  <div className="flex items-center gap-2.5">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400">
+                      <User className="h-4 w-4" />
+                    </div>
+                    <span className="min-w-0 truncate font-semibold text-foreground">
+                      {draftMasReciente.nombre || 'Cliente sin nombre'}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2.5">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400">
+                      <Package className="h-4 w-4" />
+                    </div>
+                    <span className="text-muted-foreground">
+                      {draftMasReciente.selectedProducts?.length || 0} producto{draftMasReciente.selectedProducts?.length === 1 ? '' : 's'} agregado{draftMasReciente.selectedProducts?.length === 1 ? '' : 's'}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2.5">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
+                      <Clock className="h-4 w-4" />
+                    </div>
+                    <span className="text-muted-foreground">
+                      Guardado {formatDistanceToNow(draftMasReciente.savedAt, { addSuffix: true, locale: es })}
+                    </span>
+                  </div>
+                </div>
+            )}
+
+            <AlertDialogFooter className="flex-col gap-2 px-6 pb-6 pt-3 sm:flex-row">
+              <AlertDialogCancel
+                  onClick={handleDismissResumePrompt}
+                  className="w-full sm:w-auto"
+              >
+                Empezar nuevo pedido
+              </AlertDialogCancel>
+              <AlertDialogAction
+                  onClick={handleResumeDraft}
+                  className="w-full gap-1.5 bg-amber-600 text-white hover:bg-amber-700 sm:w-auto"
+              >
+                <Sparkles className="h-4 w-4" />
+                Continuar pedido
+                <ArrowRight className="h-4 w-4" />
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
           <AlmacenModal
               open={order.showAlmacenModal}
