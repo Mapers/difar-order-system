@@ -22,6 +22,14 @@ interface SelectedProductsTableProps {
     onEditClick?: (index: number) => void
     showActions?: boolean
     metasMap?: Map<string, IItemDashboard> | null
+    /** 'table' (por defecto) alterna tabla en desktop / tarjetas en mobile,
+     * igual que siempre. 'cards' fuerza las tarjetas también en desktop —
+     * pensado para contenedores angostos (ej. un widget a media pantalla)
+     * donde la tabla horizontal quedaría apretada o con scroll. */
+    variant?: 'table' | 'cards'
+    /** Oculta el total propio de la vista de tarjetas, para no duplicarlo
+     * cuando el total ya se muestra afuera (ej. en el footer del widget). */
+    showTotal?: boolean
 }
 
 function MetaBar({ codArticulo, metasMap }: { codArticulo: string; metasMap: Map<string, IItemDashboard> | null | undefined }) {
@@ -93,7 +101,7 @@ const productNameWithIgv = (item: ISelectedProduct) => {
 export default function SelectedProductsTable({
                                                   selectedProducts, productosConLotes, currencyValue,
                                                   onRemoveItem, onChangeLote, onEditClick, showActions = true,
-                                                  metasMap,
+                                                  metasMap, variant = 'table', showTotal = true,
                                               }: SelectedProductsTableProps) {
     const sym = getCurrencySymbol(currencyValue)
 
@@ -116,11 +124,18 @@ export default function SelectedProductsTable({
     const renderPrice = (item: ISelectedProduct) => {
         const precioOriginal = item.finalPrice
         const precioEscala = item.appliedScale?.precio_escala
+        const label = igvLabel(item.product)
+        const isGravado = !item.product || item.product.afecto_igv === 1 || item.product.afecto_igv === undefined
         return (
             <div className="flex flex-col items-end">
-                <span className={item.appliedScale ? "line-through text-muted-foreground text-xs" : ""}>
-                    {sym}{Number(precioOriginal).toFixed(2)}
-                </span>
+                <div className="flex items-center gap-1">
+                    <span className={`text-[10px] font-medium ${isGravado ? "text-green-600" : "text-muted-foreground"}`}>
+                        {label}
+                    </span>
+                    <span className={item.appliedScale ? "line-through text-muted-foreground text-xs" : ""}>
+                        {sym}{Number(precioOriginal).toFixed(2)}
+                    </span>
+                </div>
                 {item.appliedScale && (
                     <span className="text-purple-600 font-medium text-sm">{sym}{Number(precioEscala).toFixed(2)}</span>
                 )}
@@ -131,22 +146,44 @@ export default function SelectedProductsTable({
         )
     }
 
-    const renderSubtotal = (item: ISelectedProduct, subtotal: number) => {
-        const label = igvLabel(item.product)
+    const renderSubtotal = (item: ISelectedProduct, subtotal: number) => (
+        <span className="font-medium">{sym}{subtotal.toFixed(2)}</span>
+    )
+
+    // Variantes "partidas" de renderPrice/renderSubtotal para la grilla de
+    // 3 filas explícitas del modo tarjeta (ver más abajo): al ser filas de
+    // grid reales, el monto principal de cada columna queda garantizado a
+    // la misma altura sin importar si alguna columna tiene o no una
+    // segunda línea (escala, bonificación, IGV).
+    const renderPriceMain = (item: ISelectedProduct) => {
         const isGravado = !item.product || item.product.afecto_igv === 1 || item.product.afecto_igv === undefined
         return (
-            <div className="flex flex-col items-end">
-                <span className="font-medium">{sym}{subtotal.toFixed(2)}</span>
-                <span className={`text-[10px] font-medium ${isGravado ? "text-green-600" : "text-muted-foreground"}`}>
-                    {label}
+            <span className="inline-flex items-center gap-1 justify-end">
+                <span className={`text-[9px] font-medium ${isGravado ? "text-green-600" : "text-muted-foreground"}`}>
+                    {igvLabel(item.product)}
                 </span>
-            </div>
+                <span className={item.appliedScale ? "line-through text-muted-foreground text-xs" : "font-medium"}>
+                    {sym}{Number(item.finalPrice).toFixed(2)}
+                </span>
+            </span>
         )
     }
+    const renderPriceCaption = (item: ISelectedProduct) => {
+        if (item.appliedScale) {
+            return <span className="text-purple-600 font-medium text-xs">{sym}{Number(item.appliedScale.precio_escala).toFixed(2)}</span>
+        }
+        if (item.isBonification) {
+            return <span className="text-green-600 text-xs">{sym}0.00</span>
+        }
+        return null
+    }
+    const renderSubtotalMain = (subtotal: number) => (
+        <span className="font-medium">{sym}{subtotal.toFixed(2)}</span>
+    )
 
     return (
         <>
-            <div className="hidden sm:block border rounded-md overflow-hidden">
+            <div className={`${variant === 'cards' ? 'hidden' : 'hidden sm:block'} border rounded-md overflow-hidden`}>
                 <div className="overflow-x-auto">
                     <table className="min-w-full divide-y divide-border">
                         <thead className="bg-muted">
@@ -235,24 +272,22 @@ export default function SelectedProductsTable({
                 </div>
             </div>
 
-            <div className="block sm:hidden space-y-3">
+            <div className={variant === 'cards' ? 'block space-y-3' : 'block sm:hidden space-y-3'}>
                 {selectedProducts.map((item, index) => {
                     const pu = item.isBonification ? 0 : item.appliedScale?.precio_escala ?? item.finalPrice
                     const subtotal = pu * item.quantity
-                    const { cod, fec, stk } = parseLoteString(
-                        productosConLotes.find(x => x.prod_codigo === item.product.Codigo_Art)?.loteSeleccionado || '||'
-                    )
+                    const { cod, fec, stk } = parseLoteString(item.lote || '||')
 
                     let cardBgClass = "bg-background"
                     let overlayBgClass = "bg-background/80"
-                    let borderClass = ""
+                    let borderClass = variant === 'cards' ? "border-l-4 border-l-violet-300" : ""
                     let cardTextClass = ""
                     if (item.isAuthorize) { cardBgClass = "bg-blue-50"; overlayBgClass = "bg-blue-50/80"; borderClass = "border-l-4 border-l-blue-500"; cardTextClass = "text-blue-900" }
                     else if (item.isEdit) { cardBgClass = "bg-green-50"; overlayBgClass = "bg-green-50/80"; borderClass = "border-l-4 border-l-green-500"; cardTextClass = "text-green-900" }
                     const labelTextClass = cardTextClass || "text-muted-foreground"
 
                     return (
-                        <Card key={index} className={`p-4 relative ${cardBgClass} ${borderClass} ${cardTextClass}`}>
+                        <Card key={index} className={`p-4 relative ${cardBgClass} ${borderClass} ${cardTextClass} ${variant === 'cards' ? 'shadow-sm transition-shadow hover:shadow-md' : ''}`}>
                             {showActions && (
                                 <div className={`absolute top-2 right-2 flex items-center gap-1 ${overlayBgClass} rounded-md backdrop-blur-sm p-1`}>
                                     {onEditClick && (
@@ -274,9 +309,9 @@ export default function SelectedProductsTable({
                                 </div>
                             )}
 
-                            <div className="space-y-3 pt-6 sm:pt-0">
+                            <div className={`space-y-3 ${variant === 'cards' ? 'pt-6' : 'pt-6 sm:pt-0'}`}>
                                 <div className="flex justify-between items-start">
-                                    <div className="flex-1 min-w-0 pr-16">
+                                    <div className="flex-1 min-w-0 pr-24">
                                         <div className="flex flex-wrap gap-1 mb-2">{renderBadges(item)}</div>
                                         <h4 className="font-medium text-sm line-clamp-2">{productNameWithIgv(item)}</h4>
                                         {item.product.afecto_igv === 0 && (
@@ -288,41 +323,74 @@ export default function SelectedProductsTable({
                                     </div>
                                 </div>
 
-                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm bg-muted/50 p-3 rounded-md border border-border">
-                                    <div className="col-span-2 sm:col-span-1">
-                                        <Label className={`text-[10px] uppercase ${labelTextClass} font-semibold`}>Lote - Vencimiento</Label>
-                                        <p className="font-medium text-xs mt-0.5">{cod}</p>
-                                        <p className={`text-xs ${labelTextClass}`}>{fec.length > 0 ? format(parseISO(fec), "dd/MM/yyyy") : 'N/A'}</p>
-                                        <VencimientoCortoBadge fechaISO={fec} className="mt-1" />
-                                    </div>
-                                    <div>
+                                {variant === 'cards' ? (
+                                    // Grilla con 3 filas explícitas (etiquetas / valores / notas) en
+                                    // vez de 5 columnas apiladas cada una por su cuenta: así el monto
+                                    // de "Precio Unit." y el de "Subtotal" quedan garantizados a la
+                                    // misma altura, sin importar que Subtotal siempre traiga una
+                                    // segunda línea (+IGV) y Precio Unit a veces no.
+                                    <div className="grid grid-cols-2 sm:grid-cols-6 gap-x-4 gap-y-1 text-sm bg-muted/50 p-3 rounded-md border border-border">
+                                        <Label className={`col-span-2 text-[10px] uppercase ${labelTextClass} font-semibold`}>Lote - Vencimiento</Label>
                                         <Label className={`text-[10px] uppercase ${labelTextClass} font-semibold`}>Stock</Label>
-                                        <p className="font-medium text-xs mt-0.5">{stk}</p>
-                                    </div>
-                                    <div>
                                         <Label className={`text-[10px] uppercase ${labelTextClass} font-semibold`}>Cantidad</Label>
-                                        <p className="font-medium text-sm text-blue-700 mt-0.5">{item.quantity}</p>
+                                        <Label className={`text-[10px] uppercase ${labelTextClass} font-semibold text-right`}>Precio Unit.</Label>
+                                        <Label className={`text-[10px] uppercase ${labelTextClass} font-semibold text-right`}>Subtotal</Label>
+
+                                        <p className="col-span-2 font-medium text-xs">{cod}</p>
+                                        <p className="font-medium text-xs">{stk || 'N/A'}</p>
+                                        <p className="font-medium text-sm text-blue-700">{item.quantity}</p>
+                                        <div className="text-right tabular-nums">{renderPriceMain(item)}</div>
+                                        <div className="text-right tabular-nums">{renderSubtotalMain(subtotal)}</div>
+
+                                        <div className="col-span-2 flex items-center gap-2">
+                                            <p className={`text-xs ${labelTextClass}`}>
+                                                {fec.length > 0 ? format(parseISO(fec), "dd/MM/yyyy") : 'N/A'}
+                                            </p>
+                                            <VencimientoCortoBadge fechaISO={fec} />
+                                        </div>
+                                        <div />
+                                        <div className="text-right tabular-nums">{renderPriceCaption(item)}</div>
+                                        <div />
                                     </div>
-                                    <div>
-                                        <Label className={`text-[10px] uppercase ${labelTextClass} font-semibold`}>Precio Unit.</Label>
-                                        <div className="mt-0.5">{renderPrice(item)}</div>
+                                ) : (
+                                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm bg-muted/50 p-3 rounded-md border border-border">
+                                        <div className="col-span-2 sm:col-span-1">
+                                            <Label className={`text-[10px] uppercase ${labelTextClass} font-semibold`}>Lote - Vencimiento</Label>
+                                            <p className="font-medium text-xs mt-0.5">{cod}</p>
+                                            <p className={`text-xs ${labelTextClass}`}>{fec.length > 0 ? format(parseISO(fec), "dd/MM/yyyy") : 'N/A'}</p>
+                                            <VencimientoCortoBadge fechaISO={fec} className="mt-1" />
+                                        </div>
+                                        <div>
+                                            <Label className={`text-[10px] uppercase ${labelTextClass} font-semibold`}>Stock</Label>
+                                            <p className="font-medium text-xs mt-0.5">{stk || 'N/A'}</p>
+                                        </div>
+                                        <div>
+                                            <Label className={`text-[10px] uppercase ${labelTextClass} font-semibold`}>Cantidad</Label>
+                                            <p className="font-medium text-sm text-blue-700 mt-0.5">{item.quantity}</p>
+                                        </div>
+                                        <div>
+                                            <Label className={`text-[10px] uppercase ${labelTextClass} font-semibold`}>Precio Unit.</Label>
+                                            <div className="mt-0.5">{renderPrice(item)}</div>
+                                        </div>
+                                        <div>
+                                            <Label className={`text-[10px] uppercase ${labelTextClass} font-semibold`}>Subtotal</Label>
+                                            <div className="mt-0.5">{renderSubtotal(item, subtotal)}</div>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <Label className={`text-[10px] uppercase ${labelTextClass} font-semibold`}>Subtotal</Label>
-                                        <div className="mt-0.5">{renderSubtotal(item, subtotal)}</div>
-                                    </div>
-                                </div>
+                                )}
                             </div>
                         </Card>
                     )
                 })}
 
-                <div className="bg-muted rounded-lg border border-border p-4 shadow-sm">
-                    <div className="flex justify-between items-center">
-                        <span className="font-semibold text-foreground">Total Pedido:</span>
-                        <span className="font-bold text-xl text-blue-700">{sym}{total.toFixed(2)}</span>
+                {showTotal && (
+                    <div className="bg-muted rounded-lg border border-border p-4 shadow-sm">
+                        <div className="flex justify-between items-center">
+                            <span className="font-semibold text-foreground">Total Pedido:</span>
+                            <span className="font-bold text-xl text-blue-700">{sym}{total.toFixed(2)}</span>
+                        </div>
                     </div>
-                </div>
+                )}
             </div>
         </>
     )

@@ -23,7 +23,7 @@ export default function PriceSelector({
     const sym = currency?.value === "PEN" ? "S/." : "$"
 
     return (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 mt-3 [&>*]:min-w-0">
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(100px,1fr))] gap-2 mt-3">
 
             <button type="button" onClick={() => onPriceTypeChange('contado')}
                     className={`relative rounded-xl p-2 sm:p-3 text-center transition-all border-2 ${priceType === 'contado' ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 shadow-sm' : 'border-border bg-muted'}`}>

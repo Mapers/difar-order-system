@@ -382,16 +382,14 @@ export function useOrderPage() {
         })
     }
 
-    const handleConfirmarLotes = () => {
+    const applyLotesSelection = (lotesToApply: ProductoConLotes[], index: number) => {
         setSelectedProducts(prev => {
             const newMap = [...prev]
-            editingLotes.forEach((editItem) => {
-                const found = newMap.find((_, i) =>
-                    i === selectedIndexLote
-                )
+            lotesToApply.forEach((editItem) => {
+                const found = newMap.find((_, i) => i === index)
 
                 if (found) {
-                    newMap[selectedIndexLote] = {
+                    newMap[index] = {
                         lote: editItem.loteSeleccionado,
                         product: found!.product,
                         finalPrice: found?.finalPrice,
@@ -407,6 +405,10 @@ export function useOrderPage() {
             })
             return newMap
         })
+    }
+
+    const handleConfirmarLotes = () => {
+        applyLotesSelection(editingLotes, selectedIndexLote)
         setShowLotesModal(false)
         setEditingLotes([])
     }
@@ -775,6 +777,16 @@ export function useOrderPage() {
             fetchAlmacenes()
         }
     }, [user])
+
+    // Si el vendedor solo tiene un almacén asignado, no tiene sentido
+    // pedirle que lo "elija": se preselecciona solo. Con 2+ almacenes sí
+    // hace falta la elección explícita.
+    useEffect(() => {
+        if (!selectedAlmacen && almacenes.length === 1) {
+            setSelectedAlmacen(almacenes[0])
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [almacenes])
 
     useEffect(() => {
         if (search.client) {
