@@ -324,34 +324,69 @@ export default function SelectedProductsTable({
                                 </div>
 
                                 {variant === 'cards' ? (
-                                    // Grilla con 3 filas explícitas (etiquetas / valores / notas) en
-                                    // vez de 5 columnas apiladas cada una por su cuenta: así el monto
-                                    // de "Precio Unit." y el de "Subtotal" quedan garantizados a la
-                                    // misma altura, sin importar que Subtotal siempre traiga una
-                                    // segunda línea (+IGV) y Precio Unit a veces no.
-                                    <div className="grid grid-cols-2 sm:grid-cols-6 gap-x-4 gap-y-1 text-sm bg-muted/50 p-3 rounded-md border border-border">
-                                        <Label className={`col-span-2 text-[10px] uppercase ${labelTextClass} font-semibold`}>Lote - Vencimiento</Label>
-                                        <Label className={`text-[10px] uppercase ${labelTextClass} font-semibold`}>Stock</Label>
-                                        <Label className={`text-[10px] uppercase ${labelTextClass} font-semibold`}>Cantidad</Label>
-                                        <Label className={`text-[10px] uppercase ${labelTextClass} font-semibold text-right`}>Precio Unit.</Label>
-                                        <Label className={`text-[10px] uppercase ${labelTextClass} font-semibold text-right`}>Subtotal</Label>
-
-                                        <p className="col-span-2 font-medium text-xs">{cod}</p>
-                                        <p className="font-medium text-xs">{stk || 'N/A'}</p>
-                                        <p className="font-medium text-sm text-blue-700">{item.quantity}</p>
-                                        <div className="text-right tabular-nums">{renderPriceMain(item)}</div>
-                                        <div className="text-right tabular-nums">{renderSubtotalMain(subtotal)}</div>
-
-                                        <div className="col-span-2 flex items-center gap-2">
-                                            <p className={`text-xs ${labelTextClass}`}>
-                                                {fec.length > 0 ? format(parseISO(fec), "dd/MM/yyyy") : 'N/A'}
-                                            </p>
-                                            <VencimientoCortoBadge fechaISO={fec} />
+                                    <>
+                                        {/* Móvil: mismo diseño "campo con su etiqueta emparejada" que la
+                                            variante de tabla — evita depender de 6 columnas para que
+                                            etiqueta y valor no se desarmen al colapsar a 2 columnas. */}
+                                        <div className="grid grid-cols-2 gap-4 text-sm bg-muted/50 p-3 rounded-md border border-border sm:hidden">
+                                            <div className="col-span-2">
+                                                <Label className={`text-[10px] uppercase ${labelTextClass} font-semibold`}>Lote - Vencimiento</Label>
+                                                <p className="font-medium text-xs mt-0.5">{cod}</p>
+                                                <div className="flex items-center gap-2 mt-0.5">
+                                                    <p className={`text-xs ${labelTextClass}`}>{fec.length > 0 ? format(parseISO(fec), "dd/MM/yyyy") : 'N/A'}</p>
+                                                    <VencimientoCortoBadge fechaISO={fec} />
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <Label className={`text-[10px] uppercase ${labelTextClass} font-semibold`}>Stock</Label>
+                                                <p className="font-medium text-xs mt-0.5">{stk || 'N/A'}</p>
+                                            </div>
+                                            <div>
+                                                <Label className={`text-[10px] uppercase ${labelTextClass} font-semibold`}>Cantidad</Label>
+                                                <p className="font-medium text-sm text-blue-700 mt-0.5">{item.quantity}</p>
+                                            </div>
+                                            <div>
+                                                <Label className={`text-[10px] uppercase ${labelTextClass} font-semibold`}>Precio Unit.</Label>
+                                                <div className="mt-0.5 flex flex-col items-start gap-0.5">
+                                                    {renderPriceMain(item)}
+                                                    {renderPriceCaption(item)}
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <Label className={`text-[10px] uppercase ${labelTextClass} font-semibold`}>Subtotal</Label>
+                                                <div className="mt-0.5">{renderSubtotalMain(subtotal)}</div>
+                                            </div>
                                         </div>
-                                        <div />
-                                        <div className="text-right tabular-nums">{renderPriceCaption(item)}</div>
-                                        <div />
-                                    </div>
+
+                                        {/* Desktop/tablet: grilla con 3 filas explícitas (etiquetas /
+                                            valores / notas) para que el monto de "Precio Unit." y el de
+                                            "Subtotal" queden garantizados a la misma altura, sin importar
+                                            que uno traiga una segunda línea y el otro no. Necesita las 6
+                                            columnas reales para no desarmarse, por eso solo corre desde sm:. */}
+                                        <div className="hidden sm:grid grid-cols-6 gap-x-4 gap-y-1 text-sm bg-muted/50 p-3 rounded-md border border-border">
+                                            <Label className={`col-span-2 text-[10px] uppercase ${labelTextClass} font-semibold`}>Lote - Vencimiento</Label>
+                                            <Label className={`text-[10px] uppercase ${labelTextClass} font-semibold`}>Stock</Label>
+                                            <Label className={`text-[10px] uppercase ${labelTextClass} font-semibold`}>Cantidad</Label>
+                                            <Label className={`text-[10px] uppercase ${labelTextClass} font-semibold text-right`}>Precio Unit.</Label>
+                                            <Label className={`text-[10px] uppercase ${labelTextClass} font-semibold text-right`}>Subtotal</Label>
+
+                                            <p className="col-span-2 font-medium text-xs">{cod}</p>
+                                            <p className="font-medium text-xs">{stk || 'N/A'}</p>
+                                            <p className="font-medium text-sm text-blue-700">{item.quantity}</p>
+                                            <div className="text-right tabular-nums">{renderPriceMain(item)}</div>
+                                            <div className="text-right tabular-nums">{renderSubtotalMain(subtotal)}</div>
+
+                                            <div className="col-span-2 flex items-center gap-2">
+                                                <p className={`text-xs ${labelTextClass}`}>
+                                                    {fec.length > 0 ? format(parseISO(fec), "dd/MM/yyyy") : 'N/A'}
+                                                </p>
+                                                <VencimientoCortoBadge fechaISO={fec} />
+                                            </div>
+                                            <div />
+                                            <div className="text-right tabular-nums">{renderPriceCaption(item)}</div>
+                                            <div />
+                                        </div>
+                                    </>
                                 ) : (
                                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm bg-muted/50 p-3 rounded-md border border-border">
                                         <div className="col-span-2 sm:col-span-1">
