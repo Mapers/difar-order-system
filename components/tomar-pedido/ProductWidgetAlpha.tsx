@@ -4,6 +4,10 @@ import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import {
+    AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+    AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import {
     ShoppingCart, Filter, Minus, Plus, Trash, Package, AlertCircle,
     Warehouse, FileText, Check, RefreshCw, Eraser,
 } from "lucide-react"
@@ -101,6 +105,10 @@ export default function ProductWidgetAlpha({
     const [editQuantity, setEditQuantity] = useState<number | "">(1)
     const [confirmOpen, setConfirmOpen] = useState(false)
     const [showNote, setShowNote] = useState(false)
+    // Confirmación antes de quitar un producto individual de la grilla
+    // (desktop y mobile comparten el mismo diálogo, ya que ambos renderizan
+    // la misma tabla con variant="cards").
+    const [removingIndex, setRemovingIndex] = useState<number | null>(null)
 
     const safeQuantity = typeof quantity === "number" ? quantity : 0
     const sym = getCurrencySymbol(currency?.value)
@@ -417,7 +425,7 @@ export default function ProductWidgetAlpha({
 
                         <SelectedProductsTable
                             selectedProducts={selectedProducts} productosConLotes={productosConLotes}
-                            currencyValue={currency?.value} onRemoveItem={onRemoveItem}
+                            currencyValue={currency?.value} onRemoveItem={(index) => setRemovingIndex(index)}
                             onChangeLote={onChangeLote} onEditClick={handleEditClick}
                             metasMap={metasMap} variant="cards" showTotal={false}
                         />
@@ -461,6 +469,32 @@ export default function ProductWidgetAlpha({
         {orderActionsBar}
 
         <ClearAllDialog isOpen={showClearAllDialog} onClose={() => setShowClearAllDialog(false)} onConfirm={() => { onClearAll(); setShowClearAllDialog(false) }} />
+
+        <AlertDialog open={removingIndex !== null} onOpenChange={(v) => { if (!v) setRemovingIndex(null) }}>
+            <AlertDialogContent className="sm:max-w-md">
+                <AlertDialogHeader>
+                    <AlertDialogTitle className="flex items-center gap-2 text-red-600 dark:text-red-400">
+                        <Trash className="h-5 w-5" />
+                        Quitar producto
+                    </AlertDialogTitle>
+                    <AlertDialogDescription>
+                        {removingIndex !== null && selectedProducts[removingIndex]
+                            ? <>¿Seguro que deseas quitar <span className="font-medium text-foreground">{selectedProducts[removingIndex].product.NombreItem}</span> del pedido?</>
+                            : '¿Seguro que deseas quitar este producto del pedido?'}
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction
+                        onClick={() => { if (removingIndex !== null) onRemoveItem(removingIndex); setRemovingIndex(null) }}
+                        className="bg-red-600 hover:bg-red-700 text-white"
+                    >
+                        Sí, quitar
+                    </AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
+
         <EditQuantityDialog
             isOpen={editingProductIndex !== null}
             onClose={() => setEditingProductIndex(null)}
