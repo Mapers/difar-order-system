@@ -1,12 +1,10 @@
 'use client'
-import React, {useEffect, useMemo, useRef, useState} from "react"
+import React, {useState} from "react"
 import {
     AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
     AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import {User, Package, BookOpen, Clock, ArrowRight, Sparkles, Save, Eraser} from "lucide-react"
-import { formatDistanceToNow } from "date-fns"
-import { es } from "date-fns/locale"
+import {Sparkles, Eraser} from "lucide-react"
 import { LaboratorioModal } from "@/components/tomar-pedido/laboratorio-modal"
 import AlternativeProductsModal from "@/components/tomar-pedido/AlternativeProductsModal"
 import { useLaboratoriesData } from "@/app/dashboard/lista-precios-lote/hooks/useLaboratoriesData"
@@ -20,11 +18,6 @@ import LotesModal from "@/components/tomar-pedido/Lotesmodal";
 import AutoCreateClientModal from "@/components/tomar-pedido/Autocreateclientmodal";
 import ClientDataConfirmModal from "@/components/tomar-pedido/Clientdataconfirmmodal";
 import ProductDetailsModal from "@/components/tomar-pedido/Productdetailsmodal";
-import DraftsModal from "@/components/tomar-pedido/DraftsModal";
-import {OrderDraft, useOrderDrafts} from "@/app/hooks/useOrderDrafts";
-import {useAutoSaveDraft} from "@/app/hooks/useAutoSaveDraft";
-import {toast} from "@/app/hooks/useToast";
-import {Button} from "@/components/ui/button";
 import AlmacenModal from "@/components/tomar-pedido/AlmacenModal";
 
 // Tomar Pedido Alpha v2: ya no es un wizard por pasos. Es una sola sección
@@ -33,6 +26,14 @@ import AlmacenModal from "@/components/tomar-pedido/AlmacenModal";
 // (cliente, vendedor, producto) son autocompletados inline en vez de abrir
 // un modal aparte. Reutiliza el mismo hook useOrderPage que el módulo
 // original: no modifica /dashboard/tomar-pedido.
+//
+// A diferencia del módulo original, esta versión Alpha NO incluye guardado
+// de borradores (ni el botón "Guardar como borrador", ni el auto-guardado
+// en segundo plano, ni el aviso de "pedido pendiente" al volver a entrar).
+// Se retiró a pedido explícito, solo para esta sección — si en algún
+// momento se quiere reincorporar, el patrón de referencia (useOrderDrafts +
+// useAutoSaveDraft + DraftsModal + el AlertDialog de "pedido pendiente")
+// sigue intacto y funcionando en app/dashboard/tomar-pedido/page.tsx.
 export default function OrderPageAlpha() {
   const { laboratories } = useLaboratoriesData()
   const order = useOrderPage()
@@ -42,115 +43,6 @@ export default function OrderPageAlpha() {
       ? (order.seller?.codigo ?? null)
       : (user?.codigo ?? null)
   const metasMap = useMetasItems(codVendedor)
-
-  const { savedDrafts, upsertDraft, deleteDraft, limpiarTodos } = useOrderDrafts()
-  const [showDraftsDialog, setShowDraftsDialog] = useState(false)
-  const [activeDraftId, setActiveDraftId] = useState<string | null>(null)
-  const [orderConfirmed, setOrderConfirmed] = useState(false)
-
-  const draftState = order.getOrderStateForDraft()
-
-  const { markSaved, cancel: cancelAutoSave } = useAutoSaveDraft({
-    state: draftState,
-    enabled: !!order.selectedClient && !orderConfirmed,
-    draftId: activeDraftId,
-    upsert: upsertDraft,
-    onCreated: setActiveDraftId,
-    onSaved: () => {
-      toast({
-        title: "Pedido guardado",
-        description: "Se guardó como pendiente para que lo continúes cuando quieras.",
-      })
-    },
-  })
-
-  const handleSaveDraft = async () => {
-    const currentState = order.getOrderStateForDraft()
-    const id = await upsertDraft(activeDraftId, currentState)
-    if (id) {
-      setActiveDraftId(id)
-      markSaved(currentState)
-      toast({
-        title: "Borrador guardado",
-        description: "El pedido se ha guardado en tus pendientes.",
-        variant: "success",
-      })
-    } else {
-      toast({
-        title: "Error al guardar",
-        description: "No se pudo guardar el borrador. Verifica tu sesión.",
-        variant: "error",
-      })
-    }
-  }
-
-  const handleLimpiarTodosBorradores = async () => {
-    const ok = await limpiarTodos()
-    if (ok) setActiveDraftId(null)
-    return ok
-  }
-
-  const handleApplyDraft = (draft: OrderDraft) => {
-    order.loadStateFromDraft(draft)
-    setActiveDraftId(draft.id)
-    setShowDraftsDialog(false)
-    const { id, savedAt, ...rest } = draft
-    markSaved(rest as typeof draftState)
-    toast({
-      title: "Borrador cargado",
-      description: "Se han restaurado los datos del pedido.",
-    })
-  }
-
-  const draftsPendientes = useMemo(
-      () => savedDrafts.filter(d => d.id !== activeDraftId),
-      [savedDrafts, activeDraftId]
-  )
-
-  const draftMasReciente = useMemo(() => {
-    if (draftsPendientes.length === 0) return null
-    return [...draftsPendientes].sort((a, b) => b.savedAt - a.savedAt)[0]
-  }, [draftsPendientes])
-
-  const [showResumePrompt, setShowResumePrompt] = useState(false)
-  // Se muestra como máximo una vez por visita a la página — el ref (no
-  // estado) asegura que ningún cambio posterior (cambiar de cliente,
-  // refetch de borradores, etc.) lo vuelva a disparar en esta sesión.
-  const hasShownResumePromptRef = useRef(false)
-
-  useEffect(() => {
-    if (hasShownResumePromptRef.current) return
-    if (activeDraftId) return
-    if (order.selectedClient) return
-    if (draftMasReciente) {
-      hasShownResumePromptRef.current = true
-      setShowResumePrompt(true)
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [draftMasReciente, activeDraftId])
-
-  const handleResumeDraft = () => {
-    if (!draftMasReciente) return
-    handleApplyDraft(draftMasReciente)
-    setShowResumePrompt(false)
-  }
-
-  const handleDismissResumePrompt = () => {
-    setShowResumePrompt(false)
-  }
-
-  const cleanupDraft = () => {
-    setOrderConfirmed(true)
-    cancelAutoSave()
-    if (activeDraftId) deleteDraft(activeDraftId)
-  }
-
-  const handleSaveOrderWithCleanup = (extraAction?: () => void) => {
-    order.handleSaveOrder(() => {
-      cleanupDraft()
-      extraAction?.()
-    })
-  }
 
   // Ya no hay pasos: la validez de "puedo confirmar" depende solo de que
   // los productos estén completos (mismas reglas que useOrder.isStepValid
@@ -190,36 +82,10 @@ export default function OrderPageAlpha() {
             </div>
             <p className="text-muted-foreground text-sm sm:text-base">Cliente y productos en una sola pantalla, sin pasos.</p>
           </div>
-
-          <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
-            {order.selectedClient && (
-                <Button
-                    type="button" variant="outline" onClick={handleSaveDraft}
-                    className="flex-1 sm:flex-none bg-amber-50 hover:bg-amber-100 text-amber-700 border-amber-200"
-                >
-                  <Save className="h-4 w-4 mr-2" />
-                  Guardar como borrador
-                </Button>
-            )}
-
-            {draftsPendientes.length > 0 && (
-                <Button
-                    variant="outline"
-                    onClick={() => setShowDraftsDialog(true)}
-                    className="flex-1 sm:flex-none bg-amber-50 hover:bg-amber-100 text-amber-700 border-amber-200"
-                >
-                  <BookOpen className="h-4 w-4 mr-2" />
-                  Borradores
-                  <span className="ml-2 bg-amber-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
-                      {draftsPendientes.length}
-                  </span>
-                </Button>
-            )}
-          </div>
         </div>
 
         <div className={showSummary ? "grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-6 items-start" : "grid grid-cols-1 gap-6 max-w-4xl mx-auto w-full"}>
-        <form onSubmit={(e) => order.handleSubmit(e, cleanupDraft)} className="min-w-0">
+        <form onSubmit={(e) => order.handleSubmit(e)} className="min-w-0">
           <div className="grid grid-cols-1 gap-6">
             <ClientWidgetAlpha
                 search={order.search}
@@ -292,7 +158,7 @@ export default function OrderPageAlpha() {
                 note={order.note}
                 onNoteChange={order.setNote}
                 isLoadingSave={order.isLoadingSave}
-                onConfirmOrder={() => handleSaveOrderWithCleanup()}
+                onConfirmOrder={() => order.handleSaveOrder()}
                 selectedAlmacen={order.selectedAlmacen}
                 almacenes={order.almacenes}
                 loadingAlmacenes={order.loading.almacenes}
@@ -347,8 +213,8 @@ export default function OrderPageAlpha() {
         <ClientDataConfirmModal
             open={order.showClientDataConfirmModal}
             onOpenChange={order.setShowClientDataConfirmModal}
-            onSaveOrder={() => handleSaveOrderWithCleanup()}
-            onSaveOrderAndUpdateClient={() => handleSaveOrderWithCleanup(order.updateClientData)}
+            onSaveOrder={() => order.handleSaveOrder()}
+            onSaveOrderAndUpdateClient={() => order.handleSaveOrder(order.updateClientData)}
         />
 
         <ProductDetailsModal
@@ -376,77 +242,6 @@ export default function OrderPageAlpha() {
             onSelectAlternative={order.proceedWithProductSelection}
             onProceedWithOriginal={order.proceedWithProductSelection}
         />
-
-        <DraftsModal
-            showDraftsDialog={showDraftsDialog}
-            setShowDraftsDialog={setShowDraftsDialog}
-            savedDrafts={draftsPendientes}
-            deleteDraft={deleteDraft}
-            applyDraft={handleApplyDraft}
-            limpiarTodos={handleLimpiarTodosBorradores}
-        />
-
-        <AlertDialog open={showResumePrompt} onOpenChange={(v) => { if (!v) handleDismissResumePrompt() }}>
-          <AlertDialogContent className="max-w-md gap-0 overflow-hidden p-0">
-            <div className="bg-gradient-to-br from-amber-50 to-orange-50 px-6 pb-5 pt-6 dark:from-amber-950/30 dark:to-orange-950/20">
-              <AlertDialogHeader className="items-center text-center sm:items-center sm:text-center">
-                <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-amber-100 text-amber-600 shadow-sm dark:bg-amber-900/40 dark:text-amber-400">
-                  <Clock className="h-7 w-7" />
-                </div>
-                <AlertDialogTitle className="text-xl">Tenés un pedido pendiente</AlertDialogTitle>
-                <AlertDialogDescription className="text-sm">
-                  Se interrumpió antes de terminarlo. ¿Querés continuarlo donde lo dejaste?
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-            </div>
-
-            {draftMasReciente && (
-                <div className="mx-6 -mt-2 mb-1 space-y-2.5 rounded-xl border bg-background p-4 text-sm shadow-sm">
-                  <div className="flex items-center gap-2.5">
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400">
-                      <User className="h-4 w-4" />
-                    </div>
-                    <span className="min-w-0 truncate font-semibold text-foreground">
-                      {draftMasReciente.nombre || 'Cliente sin nombre'}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2.5">
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400">
-                      <Package className="h-4 w-4" />
-                    </div>
-                    <span className="text-muted-foreground">
-                      {draftMasReciente.selectedProducts?.length || 0} producto{draftMasReciente.selectedProducts?.length === 1 ? '' : 's'} agregado{draftMasReciente.selectedProducts?.length === 1 ? '' : 's'}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2.5">
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
-                      <Clock className="h-4 w-4" />
-                    </div>
-                    <span className="text-muted-foreground">
-                      Guardado {formatDistanceToNow(draftMasReciente.savedAt, { addSuffix: true, locale: es })}
-                    </span>
-                  </div>
-                </div>
-            )}
-
-            <AlertDialogFooter className="flex-col gap-2 px-6 pb-6 pt-3 sm:flex-row">
-              <AlertDialogCancel
-                  onClick={handleDismissResumePrompt}
-                  className="w-full sm:w-auto"
-              >
-                Empezar nuevo pedido
-              </AlertDialogCancel>
-              <AlertDialogAction
-                  onClick={handleResumeDraft}
-                  className="w-full gap-1.5 bg-amber-600 text-white hover:bg-amber-700 sm:w-auto"
-              >
-                <Sparkles className="h-4 w-4" />
-                Continuar pedido
-                <ArrowRight className="h-4 w-4" />
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
 
         <AlertDialog open={showClearOrderDialog} onOpenChange={setShowClearOrderDialog}>
           <AlertDialogContent className="sm:max-w-md">
