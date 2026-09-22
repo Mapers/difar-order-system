@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { ComboSelect } from "@/components/ui/combo-select"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Loader2, Check, Pencil } from "lucide-react"
 import apiClient from "@/app/api/client"
@@ -116,18 +116,16 @@ export default function ModalEditarKardex({ open, onClose, item, onSaved }: Prop
                     <div className="grid grid-cols-3 gap-3">
                         <div className="flex flex-col gap-1">
                             <Label className="text-[11px]">Tipo Documento <span className="text-red-500">*</span></Label>
-                            <Select value={tipoDoc} onValueChange={v => setTipoDoc(v)}>
-                                <SelectTrigger className="h-8 text-xs">
-                                    <SelectValue placeholder="Seleccionar..." />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {tiposDoc.map(t => (
-                                        <SelectItem key={t.Cod_Tipo} value={t.Cod_Tipo}>
-                                            {t.Descripcion}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                            <ComboSelect<TipoDocumento>
+                                value={tipoDoc}
+                                onChange={t => setTipoDoc(t.Cod_Tipo)}
+                                items={tiposDoc}
+                                getKey={t => t.Cod_Tipo}
+                                getLabel={t => t.Descripcion}
+                                searchPlaceholder="Buscar tipo de documento..."
+                                emptyText="No se encontraron tipos de documento"
+                                triggerClassName="h-8 text-xs"
+                            />
                         </div>
                         <div className="flex flex-col gap-1">
                             <Label className="text-[11px]">Serie</Label>
