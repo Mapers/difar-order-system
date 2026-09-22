@@ -69,6 +69,8 @@ const FORM_INICIAL: FormRegistro = {
 
 const MAX_VOUCHERS = 3
 const VOUCHER_ACCEPT = 'image/jpeg,image/png,image/webp,application/pdf'
+const VOUCHER_TIPOS = VOUCHER_ACCEPT.split(',')
+const VOUCHER_MAX_BYTES = 5 * 1024 * 1024
 
 interface Props {
     tiposComprobante: TipoComprobante[]
@@ -201,14 +203,46 @@ export default function SeccionVendedor({
 
     const handleVoucherChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = Array.from(e.target.files || [])
+        if (voucherInputRef.current) voucherInputRef.current.value = ''
+
         const disponibles = MAX_VOUCHERS - vouchers.length
         if (disponibles <= 0) {
             toast({ title: 'Límite alcanzado', description: `Máximo ${MAX_VOUCHERS} vouchers por registro.`, variant: 'warning' })
             return
         }
-        const nuevos = files.slice(0, disponibles)
-        setVouchers(prev => [...prev, ...nuevos])
-        if (voucherInputRef.current) voucherInputRef.current.value = ''
+
+        const validos: File[] = []
+        for (const file of files) {
+            if (!VOUCHER_TIPOS.includes(file.type)) {
+                toast({
+                    title: 'Archivo no permitido',
+                    description: `${file.name} no es JPG, PNG, WEBP ni PDF. Las fotos de iPhone (HEIC) hay que convertirlas antes.`,
+                    variant: 'warning',
+                })
+                continue
+            }
+            if (file.size > VOUCHER_MAX_BYTES) {
+                toast({
+                    title: 'Archivo muy pesado',
+                    description: `${file.name} pesa ${(file.size / 1024 / 1024).toFixed(1)} MB y el máximo es 5 MB.`,
+                    variant: 'warning',
+                })
+                continue
+            }
+            validos.push(file)
+        }
+
+        if (validos.length === 0) return
+
+        if (validos.length > disponibles) {
+            toast({
+                title: 'Límite alcanzado',
+                description: `Se agregaron ${disponibles} de ${validos.length}: el máximo es ${MAX_VOUCHERS} por registro.`,
+                variant: 'warning',
+            })
+        }
+
+        setVouchers(prev => [...prev, ...validos.slice(0, disponibles)])
     }
 
     const removeVoucher = (idx: number) => {
