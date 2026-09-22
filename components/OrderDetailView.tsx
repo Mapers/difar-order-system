@@ -2,14 +2,14 @@
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Skeleton } from "@/components/ui/skeleton"
 import {
     ArrowLeft, Printer, FileDown, Edit, X, Save, Plus, Trash,
-    Pen, ArrowBigDownDash, Gift, Search, Minus, CheckCircle, XCircle, Check, ChevronDown, User, MapPin
+    Pen, ArrowBigDownDash, Gift, Search, Minus, CheckCircle, XCircle, Check, ChevronDown, User, MapPin,
+    ClipboardList, Package, Hash, CalendarDays, CreditCard, Wallet, UserRound, FileText, Mail, Phone
 } from "lucide-react"
 import Link from "next/link"
 import {
@@ -242,9 +242,19 @@ export default function OrderDetailView({
                                 </Button>
                             </Link>
                         )}
-                        <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">
-                            Pedido #{pedido.nroPedido}
-                        </h1>
+                        <div className="flex items-center gap-3">
+                            <span className="hidden sm:flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-teal-100 text-teal-700">
+                                <ClipboardList className="h-5 w-5" />
+                            </span>
+                            <div className="flex items-center gap-2.5 flex-wrap">
+                                <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">
+                                    Pedido #{pedido.nroPedido}
+                                </h1>
+                                <Badge className={`${stateInfo?.color} flex items-center gap-1 text-xs`}>
+                                    {stateInfo?.name || 'Desconocido'}
+                                </Badge>
+                            </div>
+                        </div>
                     </div>
 
                     <div className="flex items-center gap-2">
@@ -291,22 +301,33 @@ export default function OrderDetailView({
             </div>
 
             <div className="grid gap-6 md:grid-cols-2">
-                <Card className="shadow-md bg-background">
+                <Card className="shadow-md bg-background overflow-hidden">
                     <CardHeader className="border-b bg-muted">
-                        <CardTitle className="text-xl font-semibold text-teal-700">Información del Pedido</CardTitle>
+                        <CardTitle className="flex items-center gap-2.5 text-xl font-semibold text-teal-700">
+                            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-teal-100 text-teal-700">
+                                <ClipboardList className="h-4 w-4" />
+                            </span>
+                            Información del Pedido
+                        </CardTitle>
                     </CardHeader>
                     <CardContent className="p-6">
                         <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <p className="text-sm font-medium text-muted-foreground">Número de Pedido:</p>
-                                <p className="font-medium">{pedido.nroPedido}</p>
+                                <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground/80">
+                                    <Hash className="h-3 w-3" /> Número de Pedido:
+                                </p>
+                                <p className="font-medium text-sm">{pedido.nroPedido}</p>
                             </div>
                             <div>
-                                <p className="text-sm font-medium text-muted-foreground">Fecha:</p>
-                                <p>{new Date(pedido.fechaPedido).toLocaleDateString()}</p>
+                                <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground/80">
+                                    <CalendarDays className="h-3 w-3" /> Fecha:
+                                </p>
+                                <p className="text-sm">{new Date(pedido.fechaPedido).toLocaleDateString()}</p>
                             </div>
                             <div className="col-span-2 sm:col-span-1">
-                                <p className="text-sm font-medium text-muted-foreground mb-1">Condición:</p>
+                                <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground/80 mb-1">
+                                    <CreditCard className="h-3 w-3" /> Condición:
+                                </p>
                                 {isEditing && onConditionChange ? (
                                     <Popover
                                         open={isConditionOpen}
@@ -350,47 +371,64 @@ export default function OrderDetailView({
                                         </PopoverContent>
                                     </Popover>
                                 ) : (
-                                    <p>{pedido.condicionPedido}</p>
+                                    <p className="text-sm">{pedido.condicionPedido}</p>
                                 )}
                             </div>
                             <div>
-                                <p className="text-sm font-medium text-muted-foreground">Moneda:</p>
-                                <p>{pedido.monedaPedido === 'PEN' ? 'Soles (S/)' : 'Dólares ($)'}</p>
+                                <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground/80">
+                                    <Wallet className="h-3 w-3" /> Moneda:
+                                </p>
+                                <p className="text-sm">{pedido.monedaPedido === 'PEN' ? 'Soles (S/)' : 'Dólares ($)'}</p>
                             </div>
                             <div>
-                                <p className="text-sm font-medium text-muted-foreground">Vendedor:</p>
-                                <p>{pedido.nombreVendedor || 'No especificado'}</p>
+                                <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground/80">
+                                    <UserRound className="h-3 w-3" /> Vendedor:
+                                </p>
+                                <p className="text-sm">{pedido.nombreVendedor || 'No especificado'}</p>
                             </div>
                             <div>
-                                <p className="text-sm font-medium text-muted-foreground">Estado:</p>
+                                <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground/80">
+                                    <CheckCircle className="h-3 w-3" /> Estado:
+                                </p>
                                 <Badge className={`${stateInfo?.color} flex items-center gap-1 text-xs`}>
                                     {stateInfo?.name || 'Desconocido'}
                                 </Badge>
                             </div>
                             {pedido.notaPedido && (
                                 <div className="col-span-2">
-                                    <p className="text-sm font-medium text-muted-foreground">Notas:</p>
-                                    <p>{pedido.notaPedido}</p>
+                                    <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground/80">
+                                        <FileText className="h-3 w-3" /> Notas:
+                                    </p>
+                                    <p className="text-sm">{pedido.notaPedido}</p>
                                 </div>
                             )}
                         </div>
                     </CardContent>
                 </Card>
 
-                <Card className="shadow-md bg-background">
+                <Card className="shadow-md bg-background overflow-hidden">
                     <CardHeader className="border-b bg-muted">
-                        <CardTitle className="text-xl font-semibold text-teal-700">Información del Cliente</CardTitle>
+                        <CardTitle className="flex items-center gap-2.5 text-xl font-semibold text-teal-700">
+                            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-teal-100 text-teal-700">
+                                <User className="h-4 w-4" />
+                            </span>
+                            Información del Cliente
+                        </CardTitle>
                     </CardHeader>
                     <CardContent className="p-6">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="md:col-span-2 flex justify-between items-start">
                                 <div>
-                                    <p className="text-sm font-medium text-muted-foreground mb-1">Razón Social:</p>
-                                    <p className="font-medium text-lg text-foreground">
+                                    <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground/80 mb-1">
+                                        <ClipboardList className="h-3 w-3" /> Razón Social:
+                                    </p>
+                                    <p className="font-semibold text-sm text-foreground">
                                         {isEditing && selectedClient ? selectedClient.NombreComercial : (pedido.nombreComercial || 'No especificada')}
                                     </p>
-                                    <p className="text-sm font-medium text-muted-foreground mb-1">Cliente:</p>
-                                    <p className="font-medium text-lg text-foreground">
+                                    <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground/80 mb-1 mt-2">
+                                        <UserRound className="h-3 w-3" /> Cliente:
+                                    </p>
+                                    <p className="font-semibold text-base text-foreground">
                                         {isEditing && selectedClient ? selectedClient.Nombre : (pedido.nombreCliente || 'No especificada')}
                                     </p>
                                     <p className="text-xs text-muted-foreground">
@@ -472,27 +510,37 @@ export default function OrderDetailView({
                                 )}
                             </div>
                             <div>
-                                <p className="text-sm font-medium text-muted-foreground">Correo Electrónico:</p>
-                                <p>{pedido.correo || 'No especificado'}</p>
+                                <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground/80">
+                                    <Mail className="h-3 w-3" /> Correo Electrónico:
+                                </p>
+                                <p className="text-sm">{pedido.correo || 'No especificado'}</p>
                             </div>
                             <div>
-                                <p className="text-sm font-medium text-muted-foreground">Teléfono:</p>
-                                <p>{pedido.telefonoPedido || 'No especificado'}</p>
+                                <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground/80">
+                                    <Phone className="h-3 w-3" /> Teléfono:
+                                </p>
+                                <p className="text-sm">{pedido.telefonoPedido || 'No especificado'}</p>
                             </div>
                             {pedido.contactoPedido && (
                                 <div>
-                                    <p className="text-sm font-medium text-muted-foreground">Contacto Adicional:</p>
-                                    <p>{pedido.contactoPedido}</p>
+                                    <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground/80">
+                                        <UserRound className="h-3 w-3" /> Contacto Adicional:
+                                    </p>
+                                    <p className="text-sm">{pedido.contactoPedido}</p>
                                 </div>
                             )}
                             <div className="md:col-span-2">
-                                <p className="text-sm font-medium text-muted-foreground">Dirección de Entrega:</p>
-                                <p>{pedido.direccionEntrega || 'No especificada'}</p>
+                                <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground/80">
+                                    <MapPin className="h-3 w-3" /> Dirección de Entrega:
+                                </p>
+                                <p className="text-sm">{pedido.direccionEntrega || 'No especificada'}</p>
                             </div>
                             {pedido.referenciaDireccion && (
                                 <div className="md:col-span-2">
-                                    <p className="text-sm font-medium text-muted-foreground">Referencia:</p>
-                                    <p>{pedido.referenciaDireccion}</p>
+                                    <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground/80">
+                                        <MapPin className="h-3 w-3" /> Referencia:
+                                    </p>
+                                    <p className="text-sm">{pedido.referenciaDireccion}</p>
                                 </div>
                             )}
                         </div>
@@ -500,10 +548,15 @@ export default function OrderDetailView({
                 </Card>
             </div>
 
-            <Card className="shadow-md bg-background">
+            <Card className="shadow-md bg-background overflow-hidden">
                 <CardHeader className="border-b bg-muted">
                     <div className="flex justify-between items-center">
-                        <CardTitle className="text-xl font-semibold text-teal-700">Productos</CardTitle>
+                        <CardTitle className="flex items-center gap-2.5 text-xl font-semibold text-teal-700">
+                            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-teal-100 text-teal-700">
+                                <Package className="h-4 w-4" />
+                            </span>
+                            Productos
+                        </CardTitle>
 
                         {isEditing && canAddProduct && onOpenAddModal && (
                             <Dialog open={openAddModal} onOpenChange={onOpenAddModal}>
@@ -524,132 +577,94 @@ export default function OrderDetailView({
                     </div>
                 </CardHeader>
 
-                <CardContent className="p-0">
-                    <div className="rounded-md border m-4 hidden md:block overflow-x-auto">
-                        <Table>
-                            <TableHeader className="bg-muted">
-                                <TableRow>
-                                    <TableHead>Código</TableHead>
-                                    <TableHead>Producto</TableHead>
-                                    <TableHead>Laboratorio</TableHead>
-                                    <TableHead>Lote - Fec.Venc</TableHead>
-                                    <TableHead className="text-right">Cant.</TableHead>
-                                    <TableHead className="text-right">P. Unit.</TableHead>
-                                    <TableHead className="text-right">Subtotal</TableHead>
-                                    {isEditing && <TableHead className="text-right">Acc.</TableHead>}
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {activeDetalles.length > 0 ? activeDetalles.map((item, index) => (
-                                    <TableRow key={item.idPedidodet || index} className="hover:bg-muted">
-                                        <TableCell className="text-sm">{item.codigoitemPedido}</TableCell>
-                                        <TableCell><ProductName item={item} /></TableCell>
-                                        <TableCell className="text-sm">{item.laboratorio || 'N/A'}</TableCell>
-                                        <TableCell className="text-sm">
-                                            {item.cod_lote || '—'} · {item.fec_venc_lote || '—'}
-                                        </TableCell>
-                                        <TableCell className="text-right">
-                                            {isEditing && onQuantityChange ? (
-                                                <Input type="number" min="1" value={item.cantPedido}
-                                                       onChange={e => onQuantityChange(index, Number(e.target.value))}
-                                                       className="w-20 text-right ml-auto" />
-                                            ) : Number(item.cantPedido)}
-                                        </TableCell>
-                                        <TableCell className="text-right text-sm">
-                                            {currency} {Number(item.precioPedido).toFixed(2)}
-                                        </TableCell>
-                                        <TableCell className="text-right">
-                                            <SubtotalCell item={item} moneda={pedido.monedaPedido} />
-                                        </TableCell>
-                                        {isEditing && onRemoveItem && (
-                                            <TableCell className="text-right">
-                                                <Button variant="ghost" size="sm" onClick={() => onRemoveItem(index)}
-                                                        className="text-red-600 hover:text-red-800 h-8 w-8 p-0">
+                <CardContent className="p-4">
+                    {activeDetalles.length > 0 ? (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+                            {activeDetalles.map((item, index) => (
+                                <Card key={item.idPedidodet || index}
+                                      className="flex flex-col overflow-hidden border shadow-sm transition-shadow hover:shadow-md">
+                                    <CardContent className="flex flex-1 flex-col p-0">
+                                        <div className="flex items-start justify-between gap-2 border-b border-border bg-muted/40 p-3.5">
+                                            <div className="min-w-0 flex items-start gap-2.5">
+                                                <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-teal-100 text-teal-700">
+                                                    <Package className="h-4 w-4" />
+                                                </div>
+                                                <div className="min-w-0">
+                                                    <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground truncate">
+                                                        {item.codigoitemPedido}
+                                                    </p>
+                                                    <div className="font-semibold text-sm text-foreground leading-snug line-clamp-2">
+                                                        <ProductName item={item} />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            {isEditing && onRemoveItem && (
+                                                <Button variant="ghost" size="icon"
+                                                        onClick={() => onRemoveItem(index)}
+                                                        className="h-8 w-8 shrink-0 text-red-600 hover:text-red-800 hover:bg-red-50">
                                                     <Trash className="h-4 w-4" />
                                                 </Button>
-                                            </TableCell>
-                                        )}
-                                    </TableRow>
-                                )) : (
-                                    <TableRow>
-                                        <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
-                                            No se encontraron productos en este pedido
-                                        </TableCell>
-                                    </TableRow>
-                                )}
-                            </TableBody>
-                        </Table>
-                    </div>
+                                            )}
+                                        </div>
 
-                    <div className="md:hidden space-y-3 p-4">
-                        {activeDetalles.length > 0 ? activeDetalles.map((item, index) => (
-                            <Card key={item.idPedidodet || index} className="shadow-sm border">
-                                <CardContent className="p-4 space-y-3">
-                                    <div className="flex justify-between items-start">
-                                        <div>
-                                            <p className="text-xs text-muted-foreground">Código</p>
-                                            <p className="font-semibold text-sm">{item.codigoitemPedido}</p>
+                                        <div className="flex flex-1 flex-col gap-3 p-3.5">
+                                            <div className="flex flex-col gap-1 text-xs text-muted-foreground">
+                                                <div className="flex items-center gap-1.5">
+                                                    <span className="font-medium text-foreground/70">Lab:</span>
+                                                    <span className="truncate">{item.laboratorio || 'N/A'}</span>
+                                                </div>
+                                                <div className="flex items-center gap-1.5">
+                                                    <span className="font-medium text-foreground/70">Lote:</span>
+                                                    <span className="truncate">{item.cod_lote || '—'} · {item.fec_venc_lote || '—'}</span>
+                                                </div>
+                                            </div>
+
+                                            <div className="grid grid-cols-2 gap-3">
+                                                <div>
+                                                    <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Cantidad</p>
+                                                    {isEditing && onQuantityChange ? (
+                                                        <Input type="number" min="1" value={item.cantPedido}
+                                                               onChange={e => onQuantityChange(index, Number(e.target.value))}
+                                                               className="w-full mt-1 h-8" />
+                                                    ) : <p className="font-semibold text-sm text-foreground">{Number(item.cantPedido)}</p>}
+                                                </div>
+                                                <div>
+                                                    <p className="text-[10px] uppercase tracking-wide text-muted-foreground">P. Unit.</p>
+                                                    <p className="font-semibold text-sm text-foreground">
+                                                        {currency} {Number(item.precioPedido).toFixed(2)}
+                                                    </p>
+                                                </div>
+                                            </div>
+
+                                            <div className="mt-auto flex items-end justify-between gap-2 border-t border-border pt-3">
+                                                <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Subtotal</p>
+                                                <SubtotalCell item={item} moneda={pedido.monedaPedido} />
+                                            </div>
                                         </div>
-                                        {isEditing && onRemoveItem && (
-                                            <Button variant="ghost" size="sm" onClick={() => onRemoveItem(index)}
-                                                    className="text-red-600 hover:text-red-800 h-8 w-8 p-0">
-                                                <Trash className="h-4 w-4" />
-                                            </Button>
-                                        )}
-                                    </div>
-                                    <div>
-                                        <p className="text-xs text-muted-foreground">Producto</p>
-                                        <ProductName item={item} />
-                                    </div>
-                                    <div>
-                                        <p className="text-xs text-muted-foreground">Laboratorio</p>
-                                        <p className="text-sm font-medium">{item.laboratorio || 'N/A'}</p>
-                                    </div>
-                                    <div>
-                                        <p className="text-xs text-muted-foreground">Lote - Vencimiento</p>
-                                        <p className="text-sm">{item.cod_lote || '—'} · {item.fec_venc_lote || '—'}</p>
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-3">
-                                        <div>
-                                            <p className="text-xs text-muted-foreground">Cantidad</p>
-                                            {isEditing && onQuantityChange ? (
-                                                <Input type="number" min="1" value={item.cantPedido}
-                                                       onChange={e => onQuantityChange(index, Number(e.target.value))}
-                                                       className="w-full mt-1" />
-                                            ) : <p className="font-semibold text-sm">{Number(item.cantPedido)}</p>}
-                                        </div>
-                                        <div>
-                                            <p className="text-xs text-muted-foreground">Precio Unit.</p>
-                                            <p className="font-semibold text-sm">{currency} {Number(item.precioPedido).toFixed(2)}</p>
-                                        </div>
-                                    </div>
-                                    <div className="border-t pt-2 flex justify-between items-center">
-                                        <p className="text-xs text-muted-foreground">Subtotal</p>
-                                        <SubtotalCell item={item} moneda={pedido.monedaPedido} />
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        )) : (
-                            <p className="text-center py-8 text-muted-foreground">No se encontraron productos</p>
-                        )}
-                    </div>
+                                    </CardContent>
+                                </Card>
+                            ))}
+                        </div>
+                    ) : (
+                        <p className="text-center py-8 text-muted-foreground">No se encontraron productos en este pedido</p>
+                    )}
                 </CardContent>
 
                 <CardFooter className="flex justify-end items-end border-t bg-muted p-4 flex-wrap gap-4">
-                    <div className="w-full max-w-sm space-y-1.5">
+                    <div className="w-full max-w-sm space-y-1.5 rounded-xl border border-border bg-background p-4 shadow-sm">
                         {totales.baseGravada > 0 && (
                             <div className="flex justify-between text-sm">
                                 <span className="text-muted-foreground flex items-center gap-1.5">
                                     <span className="w-2 h-2 rounded-full bg-green-500 inline-block" />
                                     Subtotal:
                                 </span>
-                                <span>{currency} {totales.baseGravada.toFixed(2)}</span>
+                                <span className="font-medium">{currency} {totales.baseGravada.toFixed(2)}</span>
                             </div>
                         )}
                         {totales.igv > 0 && (
                             <div className="flex justify-between text-sm">
                                 <span className="text-muted-foreground pl-3.5">IGV (18%):</span>
-                                <span>{currency} {totales.igv.toFixed(2)}</span>
+                                <span className="font-medium">{currency} {totales.igv.toFixed(2)}</span>
                             </div>
                         )}
                         {totales.baseExonerada > 0 && (
@@ -658,7 +673,7 @@ export default function OrderDetailView({
                                     <span className="w-2 h-2 rounded-full bg-yellow-400 inline-block" />
                                     Subtotal:
                                 </span>
-                                <span>{currency} {totales.baseExonerada.toFixed(2)}</span>
+                                <span className="font-medium">{currency} {totales.baseExonerada.toFixed(2)}</span>
                             </div>
                         )}
                         {totales.baseInafecta > 0 && (
@@ -667,7 +682,7 @@ export default function OrderDetailView({
                                     <span className="w-2 h-2 rounded-full bg-blue-400 inline-block" />
                                     Subtotal:
                                 </span>
-                                <span>{currency} {totales.baseInafecta.toFixed(2)}</span>
+                                <span className="font-medium">{currency} {totales.baseInafecta.toFixed(2)}</span>
                             </div>
                         )}
                         <div className="border-t pt-1.5 flex justify-between font-bold text-lg text-teal-900">

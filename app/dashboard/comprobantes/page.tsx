@@ -1,7 +1,7 @@
 'use client'
 
 import {useState, useEffect, useCallback, useRef} from "react"
-import {Search, FileText, AlertTriangle, Truck, Loader2, FileDiff, X, FileSearch, Users, ChevronDown, Check} from "lucide-react"
+import {Search, FileText, AlertTriangle, Truck, Loader2, FileDiff, X, FileSearch, Users, ChevronDown, Check, LayoutGrid, List} from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -23,9 +23,12 @@ import {
   TipoDocSunat
 } from "@/app/types/order/order-interface";
 import {PendientesList} from "@/app/dashboard/comprobantes/PendientesList";
+import {PendientesGrid} from "@/app/dashboard/comprobantes/PendientesGrid";
 import {ComprobantesTable} from "@/app/dashboard/comprobantes/ComprobantesTable";
+import {ComprobantesGrid} from "@/app/dashboard/comprobantes/ComprobantesGrid";
 import {ComprobantesStats} from "@/app/dashboard/comprobantes/ComprobantesStats";
 import {GuiasList} from "@/app/dashboard/comprobantes/GuiasList";
+import {GuiasGrid} from "@/app/dashboard/comprobantes/GuiasGrid";
 import {InvoiceModal} from "@/app/dashboard/comprobantes/modals/InvoiceModal";
 import { StockInsuficienteDialog } from "@/components/comprobantes/StockInsuficienteDialog";
 import { leerErrorStock, type ErrorStock } from "@/app/utils/stock-error";
@@ -39,6 +42,7 @@ import {GenerarGuiasModal} from "@/app/dashboard/comprobantes/modals/generar-gui
 import {EmailModal, WhatsAppModal} from "@/app/dashboard/comprobantes/modals/ActionModals";
 import {StatusModal} from "@/app/dashboard/comprobantes/modals/StatusModal";
 import {CreditNotesTable} from "@/app/dashboard/comprobantes/CreditNotesTable";
+import {CreditNotesGrid} from "@/app/dashboard/comprobantes/CreditNotesGrid";
 import {GenerarNotaCreditoModal} from "@/app/dashboard/comprobantes/modals/GenerarNotaCreditoModal";
 import {Cuota} from "@/app/dashboard/comprobantes/modals/InstallmentModal";
 import {Sequential} from "@/app/types/config-types";
@@ -53,6 +57,33 @@ import {GenerarSireMenu} from "@/app/dashboard/comprobantes/GenerarSireMenu";
 import {ResultCounter} from "@/components/comprobantes/ResultCounter";
 import {ValidacionModal} from "@/app/dashboard/comprobantes/modals/ValidacionModal"
 import { ComprobantesDetailModal } from "@/app/dashboard/comprobantes/modals/ComprobantesDetailModal";
+
+function ViewToggle({ value, onChange }: { value: 'tarjetas' | 'tabla', onChange: (v: 'tarjetas' | 'tabla') => void }) {
+  return (
+      <div className="inline-flex items-center rounded-lg border border-border bg-muted p-0.5">
+        <button
+            type="button"
+            onClick={() => onChange('tarjetas')}
+            className={cn(
+                "flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors",
+                value === 'tarjetas' ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
+            )}
+        >
+          <LayoutGrid className="h-3.5 w-3.5" /> Tarjetas
+        </button>
+        <button
+            type="button"
+            onClick={() => onChange('tabla')}
+            className={cn(
+                "flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors",
+                value === 'tabla' ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
+            )}
+        >
+          <List className="h-3.5 w-3.5" /> Tabla
+        </button>
+      </div>
+  )
+}
 
 function useDebounce(value: string, delay: number = 500) {
   const [debounced, setDebounced] = useState(value)
@@ -162,6 +193,11 @@ export default function ComprobantesPage() {
 
   const [detailNroPedido, setDetailNroPedido] = useState("")
   const [isDetailOpen, setIsDetailOpen] = useState(false)
+
+  const [vistaComprobantes, setVistaComprobantes] = useState<'tarjetas' | 'tabla'>('tabla')
+  const [vistaNotas, setVistaNotas] = useState<'tarjetas' | 'tabla'>('tabla')
+  const [vistaGuias, setVistaGuias] = useState<'tarjetas' | 'tabla'>('tabla')
+  const [vistaPendientes, setVistaPendientes] = useState<'tarjetas' | 'tabla'>('tabla')
 
   const handleNotaCreditoGenerada = async () => {
     await fetchNotasCredito()
@@ -841,8 +877,8 @@ export default function ComprobantesPage() {
                     <CardDescription>Estos pedidos están completados y listos para ser facturados</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="mb-4">
-                      <div className="relative">
+                    <div className="mb-4 flex flex-wrap items-center gap-3">
+                      <div className="relative flex-1 min-w-[200px]">
                         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-3 w-3 sm:h-4 sm:w-4" />
                         <Input
                             placeholder="Buscar pendientes..."
@@ -851,14 +887,25 @@ export default function ComprobantesPage() {
                             className="pl-8 sm:pl-10 text-xs sm:text-sm"
                         />
                       </div>
+                      <ViewToggle value={vistaPendientes} onChange={setVistaPendientes} />
                     </div>
-                    <PendientesList
-                        pedidos={pedidosPendientes}
-                        loading={loadingPedidos}
-                        onInvoice={handleInvoiceOrder}
-                        onDelete={handleDeletePendiente}
-                        onViewDetail={(nroPedido) => { setDetailNroPedido(nroPedido); setIsDetailOpen(true) }}
-                    />
+                    {vistaPendientes === 'tarjetas' ? (
+                        <PendientesGrid
+                            pedidos={pedidosPendientes}
+                            loading={loadingPedidos}
+                            onInvoice={handleInvoiceOrder}
+                            onDelete={handleDeletePendiente}
+                            onViewDetail={(nroPedido) => { setDetailNroPedido(nroPedido); setIsDetailOpen(true) }}
+                        />
+                    ) : (
+                        <PendientesList
+                            pedidos={pedidosPendientes}
+                            loading={loadingPedidos}
+                            onInvoice={handleInvoiceOrder}
+                            onDelete={handleDeletePendiente}
+                            onViewDetail={(nroPedido) => { setDetailNroPedido(nroPedido); setIsDetailOpen(true) }}
+                        />
+                    )}
                   </CardContent>
                 </Card>
               </TabsContent>
@@ -988,7 +1035,10 @@ export default function ComprobantesPage() {
                   )}
 
                   <div className="flex flex-wrap items-center justify-between gap-2">
-                    <ResultCounter count={comprobantes.length} label="Comprobantes recuperados" />
+                    <div className="flex flex-wrap items-center gap-3">
+                      <ResultCounter count={comprobantes.length} label="Comprobantes recuperados" />
+                      <ViewToggle value={vistaComprobantes} onChange={setVistaComprobantes} />
+                    </div>
                     <div className="flex flex-wrap items-center gap-2">
                     {comprobantes.length > 0 && <Button variant="outline" onClick={() => setShowValidacionModal(true)}
                              className="flex items-center gap-2">
@@ -1013,23 +1063,43 @@ export default function ComprobantesPage() {
               </CardContent>
             </Card>
 
-            <ComprobantesTable
-                comprobantes={comprobantes}
-                loading={loadingComprobantes}
-                tiposComprobante={tiposComprobante}
-                isAdmin={isAdmin}
-                onViewPdf={handleViewPdf}
-                onCancel={handleCancelInvoice}
-                onSendEmail={handleEmailCompr}
-                onSendWhatsApp={handleWhatsappCompr}
-                onCheckStatus={handleStatusCompr}
-                puedeGestionarConformidad={puedeGestionarConformidad}
-                onGestionarConformidad={setComprobanteConformidad}
-                onCorregirDescripcion={handleCorregirDescripcion}
-                onModificarCuotas={handleModificarCuotas}
-                onTransferirVendedor={handleTransferirVendedor}
-                onTransferirAlmacen={handleTransferirAlmacen}
-            />
+            {vistaComprobantes === 'tarjetas' ? (
+                <ComprobantesGrid
+                    comprobantes={comprobantes}
+                    loading={loadingComprobantes}
+                    tiposComprobante={tiposComprobante}
+                    isAdmin={isAdmin}
+                    onViewPdf={handleViewPdf}
+                    onCancel={handleCancelInvoice}
+                    onSendEmail={handleEmailCompr}
+                    onSendWhatsApp={handleWhatsappCompr}
+                    onCheckStatus={handleStatusCompr}
+                    puedeGestionarConformidad={puedeGestionarConformidad}
+                    onGestionarConformidad={setComprobanteConformidad}
+                    onCorregirDescripcion={handleCorregirDescripcion}
+                    onModificarCuotas={handleModificarCuotas}
+                    onTransferirVendedor={handleTransferirVendedor}
+                    onTransferirAlmacen={handleTransferirAlmacen}
+                />
+            ) : (
+                <ComprobantesTable
+                    comprobantes={comprobantes}
+                    loading={loadingComprobantes}
+                    tiposComprobante={tiposComprobante}
+                    isAdmin={isAdmin}
+                    onViewPdf={handleViewPdf}
+                    onCancel={handleCancelInvoice}
+                    onSendEmail={handleEmailCompr}
+                    onSendWhatsApp={handleWhatsappCompr}
+                    onCheckStatus={handleStatusCompr}
+                    puedeGestionarConformidad={puedeGestionarConformidad}
+                    onGestionarConformidad={setComprobanteConformidad}
+                    onCorregirDescripcion={handleCorregirDescripcion}
+                    onModificarCuotas={handleModificarCuotas}
+                    onTransferirVendedor={handleTransferirVendedor}
+                    onTransferirAlmacen={handleTransferirAlmacen}
+                />
+            )}
             <ComprobantesStats totales={totales} />
           </TabsContent>
 
@@ -1061,7 +1131,10 @@ export default function ComprobantesPage() {
                     </div>
                   </div>
                   <div className="flex flex-wrap items-center justify-between gap-2">
-                    <ResultCounter count={notasCredito.length} label="Notas de crédito recuperadas" />
+                    <div className="flex flex-wrap items-center gap-3">
+                      <ResultCounter count={notasCredito.length} label="Notas de crédito recuperadas" />
+                      <ViewToggle value={vistaNotas} onChange={setVistaNotas} />
+                    </div>
                     <div className="flex flex-wrap items-center gap-2">
                     {isAdmin && (
                       <Button onClick={() => setShowNotaCreditoModal(true)} variant="outline">
@@ -1078,17 +1151,31 @@ export default function ComprobantesPage() {
               </CardContent>
             </Card>
 
-            <CreditNotesTable
-                notas={notasCredito}
-                loading={loadingNotas}
-                tiposComprobante={tiposComprobante}
-                isAdmin={isAdmin}
-                onViewPdf={handleViewPdf}
-                onCancel={handleCancelNotaCredito}
-                onSendEmail={handleEmailCompr}
-                onSendWhatsApp={handleWhatsappCompr}
-                onCheckStatus={handleStatusCompr}
-            />
+            {vistaNotas === 'tarjetas' ? (
+                <CreditNotesGrid
+                    notas={notasCredito}
+                    loading={loadingNotas}
+                    tiposComprobante={tiposComprobante}
+                    isAdmin={isAdmin}
+                    onViewPdf={handleViewPdf}
+                    onCancel={handleCancelNotaCredito}
+                    onSendEmail={handleEmailCompr}
+                    onSendWhatsApp={handleWhatsappCompr}
+                    onCheckStatus={handleStatusCompr}
+                />
+            ) : (
+                <CreditNotesTable
+                    notas={notasCredito}
+                    loading={loadingNotas}
+                    tiposComprobante={tiposComprobante}
+                    isAdmin={isAdmin}
+                    onViewPdf={handleViewPdf}
+                    onCancel={handleCancelNotaCredito}
+                    onSendEmail={handleEmailCompr}
+                    onSendWhatsApp={handleWhatsappCompr}
+                    onCheckStatus={handleStatusCompr}
+                />
+            )}
           </TabsContent>
 
           {/* ── TAB: GUÍAS ── */}
@@ -1119,7 +1206,10 @@ export default function ComprobantesPage() {
                     </div>
                   </div>
                   <div className="flex flex-wrap items-center justify-between gap-2">
-                    <ResultCounter count={guiasRemision.length} label="Guías recuperadas" />
+                    <div className="flex flex-wrap items-center gap-3">
+                      <ResultCounter count={guiasRemision.length} label="Guías recuperadas" />
+                      <ViewToggle value={vistaGuias} onChange={setVistaGuias} />
+                    </div>
                     <div className="flex flex-wrap items-center gap-2">
                     {isAdmin && (
                       <Button onClick={() => { setSelectedOrder(null); setShowGuiasModal(true) }} variant="outline">
@@ -1136,17 +1226,31 @@ export default function ComprobantesPage() {
               </CardContent>
             </Card>
 
-            <GuiasList
-                guias={guiasRemision}
-                loading={loadingGuias}
-                isAdmin={isAdmin}
-                onViewPdf={handleViewPdfGuia}
-                onViewPdfInvoice={handleViewPdf}
-                onErrorView={handleOpenErrorModal}
-                onSendEmail={handleEmailGuia}
-                onSendWhatsApp={handleWhatsappGuia}
-                onCheckStatus={handleStatusGuia}
-            />
+            {vistaGuias === 'tarjetas' ? (
+                <GuiasGrid
+                    guias={guiasRemision}
+                    loading={loadingGuias}
+                    isAdmin={isAdmin}
+                    onViewPdf={handleViewPdfGuia}
+                    onViewPdfInvoice={handleViewPdf}
+                    onErrorView={handleOpenErrorModal}
+                    onSendEmail={handleEmailGuia}
+                    onSendWhatsApp={handleWhatsappGuia}
+                    onCheckStatus={handleStatusGuia}
+                />
+            ) : (
+                <GuiasList
+                    guias={guiasRemision}
+                    loading={loadingGuias}
+                    isAdmin={isAdmin}
+                    onViewPdf={handleViewPdfGuia}
+                    onViewPdfInvoice={handleViewPdf}
+                    onErrorView={handleOpenErrorModal}
+                    onSendEmail={handleEmailGuia}
+                    onSendWhatsApp={handleWhatsappGuia}
+                    onCheckStatus={handleStatusGuia}
+                />
+            )}
           </TabsContent>
         </Tabs>
 

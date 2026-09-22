@@ -1,0 +1,311 @@
+import { useState } from "react"
+import { Card, CardContent } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import {Eye, MoreHorizontal, AlertTriangle, Loader2, FileJson, Code, AlertCircle, Receipt, CalendarDays} from "lucide-react"
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu"
+import {Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter} from "@/components/ui/dialog"
+import { format, parseISO } from "date-fns"
+import { cn } from "@/lib/utils"
+import {GuiaRemision} from "@/app/types/order/order-interface";
+import { Mail, MessageCircle, Activity } from "lucide-react"
+import {RelatedComprobanteModal} from "@/app/dashboard/comprobantes/modals/RelatedComprobanteModal";
+import { getEstadoSunatDestacable } from "@/app/utils/sunat";
+
+interface GuiasGridProps {
+    guias: GuiaRemision[]
+    loading: boolean
+    isAdmin: boolean
+    onViewPdf: (base64: string) => void
+    onErrorView: (guia: GuiaRemision) => void
+    onSendEmail: (guia: GuiaRemision) => void
+    onSendWhatsApp: (guia: GuiaRemision) => void
+    onCheckStatus: (guia: GuiaRemision) => void
+    onViewPdfInvoice: (url: string) => void
+}
+
+// Vista alternativa a GuiasList: mismos datos y acciones, en tarjetas
+// (3 por fila en desktop) en vez de tabla.
+export function GuiasGrid({
+                              guias, loading, isAdmin, onViewPdf, onErrorView,
+                              onSendEmail, onSendWhatsApp, onCheckStatus, onViewPdfInvoice
+}: GuiasGridProps) {
+    const [showJsonModal, setShowJsonModal] = useState(false)
+    const [jsonContent, setJsonContent] = useState("")
+    const [jsonTitle, setJsonTitle] = useState("")
+    const [showReasonModal, setShowReasonModal] = useState(false)
+    const [selectedReason, setSelectedReason] = useState("")
+    const [showComprobanteModal, setShowComprobanteModal] = useState(false)
+    const [selectedGuiaForComp, setSelectedGuiaForComp] = useState<GuiaRemision | null>(null)
+
+    const tieneErrorSunat = (guia: GuiaRemision) =>
+        guia.sunat_responsecode != null && guia.sunat_responsecode !== '0'
+
+    const getEstadoBadge = (guia: GuiaRemision) => {
+        if (!guia.idGuiaRemCab) {
+            return (
+                <Badge variant="outline" className="text-muted-foreground border-border">
+                    No utilizado
+                </Badge>
+            )
+        }
+
+        if (guia.anulado) {
+            return (
+                <div className="flex items-center gap-1">
+                    <Badge variant="destructive">Compr. Anulado</Badge>
+                    {guia.motivo_anulado && (
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 text-red-500 hover:text-red-700 hover:bg-red-50"
+                            onClick={() => handleViewReason(guia.motivo_anulado!)}
+                            title="Ver motivo"
+                        >
+                            <AlertCircle className="h-4 w-4" />
+                        </Button>
+                    )}
+                </div>
+            )
+        }
+
+        const estadoSunat = getEstadoSunatDestacable(guia.estado_sunat)
+        if (estadoSunat) {
+            const { Icon } = estadoSunat
+            return (
+                <div className="flex items-center gap-1">
+                    <Badge variant="outline" className={estadoSunat.badgeClass}>
+                        <Icon className="mr-1 h-3 w-3" />
+                        {estadoSunat.label}
+                    </Badge>
+                    {guia.estado_sunat_desc && (
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6"
+                            onClick={() => handleViewReason(guia.estado_sunat_desc!)}
+                            title="Ver detalle de SUNAT"
+                        >
+                            <AlertCircle className="h-4 w-4" />
+                        </Button>
+                    )}
+                </div>
+            )
+        }
+
+        if (tieneErrorSunat(guia)) {
+            return (
+                <Button variant="ghost" size="sm"
+                        onClick={() => onErrorView(guia)}
+                        className="h-auto p-0 hover:bg-transparent text-red-600 hover:text-red-700 font-normal text-xs flex items-center gap-1">
+                    <AlertTriangle className="h-3 w-3" />
+                    <span className="underline decoration-dotted underline-offset-2">Ver Error SUNAT</span>
+                </Button>
+            )
+        }
+
+        return <Badge className="bg-green-100 text-green-800 hover:bg-green-200 border-green-200">Activo</Badge>
+    }
+
+    const handleViewComprobante = (guia: GuiaRemision) => {
+        setSelectedGuiaForComp(guia)
+        setShowComprobanteModal(true)
+    }
+
+    const handleViewReason = (reason: string) => {
+        setSelectedReason(reason || "Sin motivo especificado.")
+        setShowReasonModal(true)
+    }
+
+    const handleViewJson = (title: string, content: string) => {
+        setJsonTitle(title)
+        try {
+            const parsed = typeof content === 'string' ? JSON.parse(content) : content
+            setJsonContent(JSON.stringify(parsed, null, 2))
+        } catch (error) {
+            setJsonContent(content || "Sin contenido disponible")
+        }
+        setShowJsonModal(true)
+    }
+
+    if (loading) {
+        return (
+            <div className="flex justify-center items-center h-64">
+                <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+            </div>
+        )
+    }
+
+    if (guias.length === 0) {
+        return <div className="text-center py-12 text-muted-foreground">No se encontraron guías de remisión</div>
+    }
+
+    return (
+        <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+                {guias.map((guia) => (
+                    <Card
+                        key={guia.idGuiaRemCab ?? `${guia.serie}-${Number(guia.numero)}`}
+                        className={cn(
+                            "flex flex-col overflow-hidden border shadow-sm transition-shadow hover:shadow-md",
+                            !guia.idGuiaRemCab && "opacity-60"
+                        )}
+                    >
+                        <CardContent className="flex flex-1 flex-col p-0">
+                            <div className="flex items-start justify-between gap-2 border-b border-border bg-muted/40 p-4">
+                                <div className="min-w-0 flex items-start gap-2.5">
+                                    <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-orange-100 text-orange-600">
+                                        <Receipt className="h-4 w-4" />
+                                    </div>
+                                    <div className="min-w-0">
+                                        <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground truncate">
+                                            Guía de Remisión
+                                        </p>
+                                        <p className="font-bold text-sm text-foreground truncate">
+                                            {guia.serie}-{Number(guia.numero)}
+                                        </p>
+                                    </div>
+                                </div>
+                                {getEstadoBadge(guia)}
+                            </div>
+
+                            <div className="flex flex-1 flex-col gap-3 p-4">
+                                <div>
+                                    <p
+                                        className="font-semibold text-sm text-foreground line-clamp-2 leading-snug"
+                                        title={guia.cliente_denominacion ?? ''}
+                                    >
+                                        {guia.cliente_denominacion ?? '—'}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground mt-0.5">
+                                        {guia.cliente_num_doc ?? '—'}
+                                    </p>
+                                </div>
+
+                                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                                    <CalendarDays className="h-3.5 w-3.5 shrink-0" />
+                                    <span className="truncate">
+                                        {guia.fecha_emision ? format(parseISO(guia.fecha_emision), "dd/MM/yyyy") : '—'}
+                                    </span>
+                                </div>
+
+                                {tieneErrorSunat(guia) && guia.sunat_description && (
+                                    <div className="bg-red-50 border border-red-200 rounded-md p-2.5">
+                                        <div className="flex items-center gap-1.5 mb-1">
+                                            <AlertTriangle className="h-3.5 w-3.5 text-red-600 shrink-0" />
+                                            <p className="font-medium text-red-800 text-xs">Error SUNAT</p>
+                                        </div>
+                                        <p className="text-xs text-red-700 line-clamp-2">{guia.sunat_description}</p>
+                                    </div>
+                                )}
+
+                                {guia.idGuiaRemCab && (
+                                    <div className="mt-auto flex items-center justify-end gap-1 border-t border-border pt-3">
+                                        <Button variant="ghost" size="icon"
+                                                className="h-9 w-9 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                                onClick={() => onViewPdf(guia.pdf_zip_base64!)} title="Ver PDF">
+                                            <Eye className="h-4 w-4" />
+                                        </Button>
+                                        {(guia.idComprobanteCab && guia.comprobante_serie != null) && (
+                                            <Button variant="ghost" size="icon"
+                                                    className="h-9 w-9 text-green-600 hover:text-green-700 hover:bg-green-50"
+                                                    onClick={() => handleViewComprobante(guia)}
+                                                    title="Ver Comprobante Asociado">
+                                                <Receipt className="h-4 w-4" />
+                                            </Button>
+                                        )}
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button variant="ghost" size="icon" className="h-9 w-9">
+                                                    <MoreHorizontal className="h-4 w-4" />
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end" className="w-56">
+                                                <DropdownMenuItem onClick={() => handleViewJson('JSON Solicitud (Request)', guia.raw_request!)}>
+                                                    <Code className="mr-2 h-4 w-4 text-muted-foreground" /> JSON Solicitud
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem onClick={() => handleViewJson('JSON Respuesta (Response)', guia.raw_response!)}>
+                                                    <FileJson className="mr-2 h-4 w-4 text-muted-foreground" /> JSON Respuesta
+                                                </DropdownMenuItem>
+                                                {isAdmin && (
+                                                    <>
+                                                        <DropdownMenuSeparator />
+                                                        <DropdownMenuItem onClick={() => onSendEmail(guia)}>
+                                                            <Mail className="mr-2 h-4 w-4 text-blue-500" /> Enviar por Correo
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem onClick={() => onSendWhatsApp(guia)}>
+                                                            <MessageCircle className="mr-2 h-4 w-4 text-green-500" /> Enviar por WhatsApp
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem onClick={() => onCheckStatus(guia)}>
+                                                            <Activity className="mr-2 h-4 w-4 text-orange-500" /> Ver Estado SUNAT
+                                                        </DropdownMenuItem>
+                                                    </>
+                                                )}
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+                                    </div>
+                                )}
+                            </div>
+                        </CardContent>
+                    </Card>
+                ))}
+            </div>
+
+            <Dialog open={showJsonModal} onOpenChange={setShowJsonModal}>
+                <DialogContent className="sm:max-w-[800px] h-[80vh] flex flex-col">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <FileJson className="h-5 w-5 text-blue-600" />
+                            {jsonTitle}
+                        </DialogTitle>
+                        <DialogDescription>
+                            Visualización de datos crudos de la transacción.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="flex-1 w-full overflow-hidden rounded-md border bg-slate-950 p-4 text-white">
+                        <pre className="h-full w-full overflow-auto text-xs font-mono">
+                            {jsonContent}
+                        </pre>
+                    </div>
+                    <div className="flex justify-end">
+                        <Button variant="outline" onClick={() => setShowJsonModal(false)}>Cerrar</Button>
+                    </div>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={showReasonModal} onOpenChange={setShowReasonModal}>
+                <DialogContent className="sm:max-w-[500px]">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <AlertCircle className="h-5 w-5" />
+                            Motivo de Anulación del Comprobante
+                        </DialogTitle>
+                    </DialogHeader>
+
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-4 mt-2">
+                        <p className="text-sm text-red-900 whitespace-pre-wrap leading-relaxed">
+                            {selectedReason}
+                        </p>
+                    </div>
+
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setShowReasonModal(false)}>Cerrar</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <RelatedComprobanteModal
+                open={showComprobanteModal}
+                onOpenChange={setShowComprobanteModal}
+                guia={selectedGuiaForComp}
+                onViewPdf={onViewPdfInvoice}
+            />
+        </>
+    )
+}
