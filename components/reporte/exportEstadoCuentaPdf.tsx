@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Download, FileText } from "lucide-react";
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
-import { cargarLogoPdf, dibujarCabeceraPdf } from "@/components/reporte/pdfCabecera";
+import { cargarLogoPdf, dibujarCabeceraPdf, truncarPdf } from "@/components/reporte/pdfCabecera";
 import { toast } from "@/app/hooks/useToast";
 
 interface ExportPdfProps {
@@ -55,31 +55,36 @@ export const ExportEstadoCuentaPdf: React.FC<ExportPdfProps> = ({ data, disabled
                 // siguientes serían ruido que le quita sitio al detalle.
                 if (isFirstPage) {
                     page.drawRectangle({
-                        x: margin, y: yPosition - 55, width: contentWidth, height: 60,
+                        x: margin, y: yPosition - 85, width: contentWidth, height: 90,
                         color: rgb(0.96, 0.96, 0.96), borderColor: rgb(0.8, 0.8, 0.8), borderWidth: 1,
                     });
 
-                    const direccionCorta = data.Direccion && data.Direccion.length > 85
-                        ? data.Direccion.substring(0, 85) + "..."
-                        : data.Direccion;
+                    const xIzq = margin + 10;
+                    const xDer = margin + 350;
+                    const anchoIzq = xDer - xIzq - 10;
+                    const anchoDer = pageWidth - margin - xDer - 10;
 
-                    page.drawText(`CLIENTE: ${data.Cliente}`, {
-                        x: margin + 10, y: yPosition - 15, size: 8, font: boldFont,
-                    });
-                    page.drawText(`DOCUMENTO: ${data.RUC}`, {
-                        x: margin + 350, y: yPosition - 15, size: 8, font: boldFont,
-                    });
-                    page.drawText(`DIRECCIÓN: ${direccionCorta}`, {
-                        x: margin + 10, y: yPosition - 30, size: 8, font,
-                    });
-                    page.drawText(`${formatDateStr(data.FechaCorte)}`, {
-                        x: margin + 10, y: yPosition - 45, size: 8, font: boldFont, color: rgb(0.8, 0.1, 0.1),
-                    });
-                    page.drawText(`TELÉFONO: ${data.Telefono || '-'}`, {
-                        x: margin + 350, y: yPosition - 45, size: 8, font,
+                    const izq = (texto: string, y: number, f: any = font) =>
+                        page.drawText(truncarPdf(texto, anchoIzq, 8, f), { x: xIzq, y, size: 8, font: f });
+                    const der = (texto: string, y: number, f: any = font) =>
+                        page.drawText(truncarPdf(texto, anchoDer, 8, f), { x: xDer, y, size: 8, font: f });
+
+                    izq(`CLIENTE: ${data.Cliente}`, yPosition - 15, boldFont);
+                    der(`DOCUMENTO: ${data.RUC}`, yPosition - 15, boldFont);
+
+                    izq(`DIRECCIÓN: ${data.Direccion || '-'}`, yPosition - 30);
+                    der(`DISTRITO: ${data.Distrito || '-'}`, yPosition - 30);
+
+                    izq(`CORREO: ${data.Correo || '-'}`, yPosition - 45);
+                    der(`TELÉFONO: ${data.Telefono || '-'}`, yPosition - 45);
+
+                    izq(`VENDEDOR: ${data.Vendedor || '-'}`, yPosition - 60);
+
+                    page.drawText(`FECHA DE CORTE: ${formatDateStr(data.FechaCorte)}`, {
+                        x: xIzq, y: yPosition - 75, size: 8, font: boldFont, color: rgb(0.8, 0.1, 0.1),
                     });
 
-                    yPosition -= 75;
+                    yPosition -= 105;
                 }
 
                 const colHeaders = ["Fecha", "Descripción", "Moneda", "Provisión", "Amortización", "Saldo S/.", "Saldo US$"];
@@ -211,6 +216,54 @@ export const ExportEstadoCuentaPdf: React.FC<ExportPdfProps> = ({ data, disabled
 
             const txtTotalDolares = formatMoney(data.TotalDolares);
             currentPage.drawText(txtTotalDolares, { x: margin + cols[0] + cols[1] + cols[2] + cols[3] + cols[4] + cols[5] + cols[6] - boldFont.widthOfTextAtSize(txtTotalDolares, 9) - 5, y: yPosition, size: 9, font: boldFont, color: rgb(0, 0, 0) });
+
+            const altoCierre = 170;
+
+            if (yPosition - altoCierre < margin + 20) {
+                currentPage = pdfDoc.addPage([pageWidth, pageHeight]);
+                yPosition = dibujarCabeceraPdf({
+                    page: currentPage, font, boldFont, logo: logoImage,
+                    pageWidth, pageHeight, margin,
+                    subtitulo: "ESTADO DE CUENTA CLIENTE",
+                    infoDerechaSec: `Impreso: ${new Date().toLocaleDateString('es-PE')}`,
+                });
+            } else {
+                yPosition -= 35;
+            }
+
+            currentPage.drawText("OBSERVACIONES:", {
+                x: margin, y: yPosition, size: 8, font: boldFont,
+            });
+            yPosition -= 18;
+
+            for (let i = 0; i < 3; i++) {
+                currentPage.drawLine({
+                    start: { x: margin, y: yPosition },
+                    end:   { x: pageWidth - margin, y: yPosition },
+                    thickness: 0.5,
+                    color: rgb(0.45, 0.45, 0.45),
+                    dashArray: [1.5, 2],
+                });
+                yPosition -= 18;
+            }
+
+            yPosition -= 22;
+
+            const anchoFirma = 220;
+            const altoFirma  = 70;
+            const xFirma     = pageWidth - margin - anchoFirma;
+
+            currentPage.drawRectangle({
+                x: xFirma, y: yPosition - altoFirma, width: anchoFirma, height: altoFirma,
+                borderColor: rgb(0.6, 0.6, 0.6), borderWidth: 0.5,
+            });
+
+            const pieFirma = "FIRMA Y SELLO DEL CLIENTE";
+            currentPage.drawText(pieFirma, {
+                x: xFirma + (anchoFirma - font.widthOfTextAtSize(pieFirma, 7)) / 2,
+                y: yPosition - altoFirma - 12,
+                size: 7, font, color: rgb(0.35, 0.35, 0.35),
+            });
 
             const pages = pdfDoc.getPages();
             pages.forEach((page, idx) => {
