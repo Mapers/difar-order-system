@@ -31,6 +31,10 @@ import {
 } from "@/app/types/amortizacion-types"
 
 import ModalBuscarAmortizacion from "@/components/contabilidad/cliente-conbranza/Modalbuscaramortizacion";
+import {
+    SeleccionarDocumentoModal,
+    DocumentoCliente,
+} from "@/components/contabilidad/planilla-cobranza/SeleccionarDocumentoModal";
 import ModalKardex from "@/components/contabilidad/cliente-conbranza/Modalkardex";
 import ModalMayor from "@/components/contabilidad/cliente-conbranza/Modalmayor";
 
@@ -81,7 +85,6 @@ export default function ClienteCobranzaPage() {
     const [tiposDoc, setTiposDoc] = useState<TipoDocumento[]>([])
     const [empresas,   setEmpresas]   = useState<EmpresaOption[]>([])
 
-    const [tipoDocSearch, setTipoDocSearch] = useState("")
     const [tipoAmortSearch, setTipoAmortSearch] = useState("")
     const [entidadSearch, setEntidadSearch] = useState("")
 
@@ -98,6 +101,9 @@ export default function ClienteCobranzaPage() {
     const [loadingSellers, setLoadingSellers] = useState(false)
 
     const [buscarOpen, setBuscarOpen] = useState(false)
+    const [docModalOpen, setDocModalOpen] = useState(false)
+
+    const [siguientePlanilla, setSiguientePlanilla] = useState("")
     const [kardexOpen, setKardexOpen] = useState(false)
     const [mayorOpen, setMayorOpen] = useState(false)
     const [selectedAmortForModal, setSelectedAmortForModal] = useState<AmortizacionListItem | null>(null)
@@ -112,6 +118,7 @@ export default function ClienteCobranzaPage() {
             fetchClients()
             fetchVendedores()
             fetchCombos()
+            fetchSiguientePlanilla()
         }
     }, [user])
 
@@ -170,6 +177,15 @@ export default function ClienteCobranzaPage() {
         }
     }
 
+    const fetchSiguientePlanilla = async () => {
+        try {
+            const res = await apiClient.get('/amortizacion/siguiente-planilla')
+            setSiguientePlanilla(res.data?.data?.data?.numero ?? "")
+        } catch {
+            setSiguientePlanilla("")
+        }
+    }
+
     const fetchCombos = async () => {
         try {
             const [resTipos, resEntidades, resDocs, resEmpresas] = await Promise.all([
@@ -205,7 +221,29 @@ export default function ClienteCobranzaPage() {
 
     const handleClientSelect = (client: IClient | null) => {
         setSelectedClient(client)
-        setForm(prev => ({ ...prev, Cod_Clie: client?.codigo ?? "" }))
+        setForm(prev => ({
+            ...prev,
+            Cod_Clie:        client?.codigo ?? "",
+            TipoDoc:         "",
+            SerieDoc:        "",
+            NumeroDoc:       "",
+            Importe_Amortiz: "",
+        }))
+    }
+
+    const handleDocumentoSelect = (doc: DocumentoCliente) => {
+        setForm(prev => ({
+            ...prev,
+            TipoDoc:         doc.Tipo_Doc,
+            SerieDoc:        doc.SerieDoc,
+            NumeroDoc:       String(doc.NumeroDoc ?? ""),
+            Importe_Amortiz: String(doc.saldo_pendiente ?? ""),
+            Moneda:          doc.Tipo_Moneda || prev.Moneda,
+        }))
+        toast({
+            title: "Documento cargado",
+            description: `${doc.Abre_Doc} ${doc.SerieDoc}-${doc.NumeroDoc}`,
+        })
     }
 
     const handleSellerSelect = (seller: Seller | null) => {
@@ -220,14 +258,13 @@ export default function ClienteCobranzaPage() {
         setSelectedSeller(null)
         setClientSearch("")
         setSellerSearch("")
-        setTipoDocSearch("")
         setTipoAmortSearch("")
         setEntidadSearch("")
     }
 
     const buildPayload = () => ({
         id_amort_clie:      isEditing ? form.Id_Amort_Clie : null,
-        nroPlanilla:        form.NroPlanilla,
+        nroPlanilla:        isEditing ? form.NroPlanilla : null,
         cod_clie:           form.Cod_Clie,
         tipo_doc:           form.TipoDoc,
         serie_doc:          form.SerieDoc,
@@ -247,6 +284,14 @@ export default function ClienteCobranzaPage() {
         !!(form.Cod_Clie && form.TipoDoc && form.SerieDoc && form.Fecha_Mvto && form.Importe_Amortiz)
 
     const handleGuardarClick = () => {
+        if (isEditing) {
+            toast({
+                title: "Edición no disponible",
+                description: "Por ahora no se puede modificar un cobro ya registrado. Elimínalo y vuelve a cargarlo.",
+                variant: "warning",
+            })
+            return
+        }
         if (!isFormValid()) {
             toast({ title: "Guardar", description: "Complete los campos obligatorios.", variant: "warning" })
             return
@@ -267,6 +312,7 @@ export default function ClienteCobranzaPage() {
                 description: "Registro agregado correctamente."
             })
             resetForm()
+            fetchSiguientePlanilla()
         } catch (error: any) {
             toast({
                 title: "Error",
@@ -314,9 +360,6 @@ export default function ClienteCobranzaPage() {
     }
 
     const selectedTipoDoc = tiposDoc.find(t => t.Cod_Tipo === form.TipoDoc) ?? null
-    const tiposDocFiltered = tipoDocSearch
-        ? tiposDoc.filter(t => t.Descripcion?.toUpperCase().includes(tipoDocSearch.toUpperCase()))
-        : tiposDoc
 
     const selectedTipoAmort = tiposAmort.find(t => t.Cod_Tipo_Amort === form.Tipo_Amort) ?? null
     const tiposAmortFiltered = tipoAmortSearch
@@ -343,7 +386,7 @@ export default function ClienteCobranzaPage() {
                         </span>
                         {isEditing && (
                             <span className="text-[11px] bg-amber-100 text-amber-700 border border-amber-200 px-2.5 py-1 rounded-full font-medium">
-                                Modo Edición
+                                Solo lectura
                             </span>
                         )}
                         <Button
@@ -434,11 +477,17 @@ export default function ClienteCobranzaPage() {
                             <div className="flex flex-col gap-1">
                                 <Label className="text-sm">Nro. Planilla</Label>
                                 <Input
-                                    placeholder="0000"
-                                    value={form.NroPlanilla}
-                                    onChange={e => handleChange('NroPlanilla', e.target.value)}
-                                    disabled={isEditing}
+                                    readOnly
+                                    tabIndex={-1}
+                                    className="bg-muted cursor-not-allowed font-mono"
+                                    value={isEditing ? (form.NroPlanilla || '—') : (siguientePlanilla || '—')}
+                                    placeholder="—"
                                 />
+                                {!isEditing && (
+                                    <p className="text-xs text-muted-foreground">
+                                        Se asigna al guardar. Si alguien guarda antes que tú, te tocará el siguiente.
+                                    </p>
+                                )}
                             </div>
                             <div className="flex flex-col gap-1 md:col-span-2">
                                 <Label className="text-sm">
@@ -470,89 +519,73 @@ export default function ClienteCobranzaPage() {
                         icon={FileText}
                         accent="violet"
                         title="Documento"
-                        description="Datos del comprobante que sustenta el movimiento"
+                        description="Documento del kardex que se esta amortizando"
                     >
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div className="flex flex-col gap-1">
-                                <Label className="text-sm">
-                                    Tipo Documento <span className="text-red-500">*</span>
-                                </Label>
-                                {selectedTipoDoc ? (
-                                    <div className="flex items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 p-2.5">
-                                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-600">
-                                            <FileText className="h-4 w-4 text-white" />
-                                        </div>
-                                        <div className="min-w-0 flex-1">
-                                            <p className="text-sm font-semibold text-blue-900 truncate leading-tight">
-                                                {selectedTipoDoc.Descripcion}
-                                            </p>
-                                            <p className="text-xs text-blue-600 truncate font-mono">
-                                                {selectedTipoDoc.Cod_Tipo}
-                                            </p>
-                                        </div>
-                                        <Button
-                                            type="button"
-                                            size="sm"
-                                            variant="outline"
-                                            onClick={() => handleChange('TipoDoc', '')}
-                                            className="h-7 px-2.5 text-xs text-blue-600 border-blue-200 hover:bg-blue-100 bg-background shrink-0"
-                                        >
-                                            Cambiar
-                                        </Button>
-                                    </div>
-                                ) : (
-                                    <InlineAutocomplete<TipoDocumento>
-                                        variant="tile"
-                                        tileAccent="blue"
-                                        tileIcon={FileText}
-                                        tileTitle="Tipo de documento"
-                                        tileDescription="Elige el comprobante"
-                                        placeholder="Buscar tipo de documento..."
-                                        value={tipoDocSearch}
-                                        onValueChange={setTipoDocSearch}
-                                        items={tiposDocFiltered}
-                                        getKey={t => t.Cod_Tipo}
-                                        getItemLabel={t => t.Descripcion}
-                                        onSelect={t => handleChange('TipoDoc', t.Cod_Tipo)}
-                                        emptyMessage="No se encontraron tipos de documento"
-                                        idleMessage="Escribe para buscar"
-                                        renderItem={t => (
-                                            <div className="flex items-center gap-3 px-3 py-2.5">
-                                                <div className="bg-blue-100 p-2 rounded-full shrink-0">
-                                                    <FileText className="h-4 w-4 text-blue-600" />
-                                                </div>
-                                                <div className="flex-1 min-w-0">
-                                                    <p className="font-semibold text-sm text-foreground truncate">
-                                                        {t.Descripcion}
-                                                    </p>
-                                                    <p className="text-xs text-muted-foreground font-mono">
-                                                        {t.Cod_Tipo}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        )}
+                        <div className="flex flex-col gap-3">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                className="justify-start gap-2 h-auto py-3 border-violet-200 text-violet-700 hover:bg-violet-50"
+                                onClick={() => {
+                                    if (!form.Cod_Clie) {
+                                        toast({
+                                            title: "Selecciona un cliente",
+                                            description: "Primero elige el cliente para poder buscar sus documentos.",
+                                            variant: "warning",
+                                        })
+                                        return
+                                    }
+                                    setDocModalOpen(true)
+                                }}
+                            >
+                                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-violet-100">
+                                    <Search className="h-4 w-4 text-violet-600" />
+                                </div>
+                                <div className="min-w-0 text-left">
+                                    <p className="text-sm font-semibold leading-tight">
+                                        {form.SerieDoc ? 'Cambiar documento' : 'Buscar documento del cliente'}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground mt-0.5">
+                                        Se toman del kardex: tipo, serie, número, moneda y saldo
+                                    </p>
+                                </div>
+                            </Button>
+
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div className="flex flex-col gap-1">
+                                    <Label className="text-sm">
+                                        Tipo Documento <span className="text-red-500">*</span>
+                                    </Label>
+                                    <Input
+                                        readOnly
+                                        tabIndex={-1}
+                                        className="bg-muted cursor-not-allowed"
+                                        value={selectedTipoDoc?.Descripcion ?? form.TipoDoc}
+                                        placeholder="—"
                                     />
-                                )}
-                            </div>
-                            <div className="flex flex-col gap-1">
-                                <Label className="text-sm">
-                                    Serie <span className="text-red-500">*</span>
-                                </Label>
-                                <Input
-                                    placeholder="Ej: F001"
-                                    value={form.SerieDoc}
-                                    onChange={e => handleChange('SerieDoc', e.target.value)}
-                                    maxLength={10}
-                                />
-                            </div>
-                            <div className="flex flex-col gap-1">
-                                <Label className="text-sm">Número</Label>
-                                <Input
-                                    placeholder="Ej: 00001234"
-                                    value={form.NumeroDoc}
-                                    onChange={e => handleChange('NumeroDoc', e.target.value)}
-                                    maxLength={20}
-                                />
+                                </div>
+                                <div className="flex flex-col gap-1">
+                                    <Label className="text-sm">
+                                        Serie <span className="text-red-500">*</span>
+                                    </Label>
+                                    <Input
+                                        readOnly
+                                        tabIndex={-1}
+                                        className="bg-muted cursor-not-allowed font-mono"
+                                        value={form.SerieDoc}
+                                        placeholder="—"
+                                    />
+                                </div>
+                                <div className="flex flex-col gap-1">
+                                    <Label className="text-sm">Número</Label>
+                                    <Input
+                                        readOnly
+                                        tabIndex={-1}
+                                        className="bg-muted cursor-not-allowed font-mono"
+                                        value={form.NumeroDoc}
+                                        placeholder="—"
+                                    />
+                                </div>
                             </div>
                         </div>
                     </FormSection>
@@ -579,7 +612,7 @@ export default function ClienteCobranzaPage() {
                                 </div>
                                 <div className="flex flex-col gap-1">
                                     <Label className="text-sm">
-                                        Importe <span className="text-red-500">*</span>
+                                        Importe {form.Moneda === 'NSO' ? '(S/.)' : `(${form.Moneda})`} <span className="text-red-500">*</span>
                                     </Label>
                                     <Input
                                         type="number"
@@ -589,6 +622,9 @@ export default function ClienteCobranzaPage() {
                                         value={form.Importe_Amortiz}
                                         onChange={e => handleChange('Importe_Amortiz', e.target.value)}
                                     />
+                                    <p className="text-xs text-muted-foreground">
+                                        Se precarga con el saldo del documento. Puedes bajarlo si es un pago parcial.
+                                    </p>
                                 </div>
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -821,14 +857,24 @@ export default function ClienteCobranzaPage() {
                             size="sm"
                             className="gap-1.5 bg-emerald-600 hover:bg-emerald-700 ml-auto"
                             onClick={handleGuardarClick}
-                            disabled={isSaving}
+                            disabled={isSaving || isEditing}
+                            title={isEditing ? 'La edición de cobros está deshabilitada' : undefined}
                         >
                             {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                            {isEditing ? 'Actualizar' : 'Guardar'}
+                            Guardar
                         </Button>
                     </div>
                 </CardContent>
             </Card>
+
+            <SeleccionarDocumentoModal
+                open={docModalOpen}
+                onOpenChange={setDocModalOpen}
+                codCliente={form.Cod_Clie}
+                codVendedor={form.Cod_Vend || undefined}
+                soloVigentes={false}
+                onSelect={handleDocumentoSelect}
+            />
 
             <ModalBuscarAmortizacion
                 open={buscarOpen}

@@ -17,7 +17,7 @@ import {
     Send, Plus, ChevronDown, ChevronRight,
     CheckCircle2, AlertCircle,
     RefreshCw, FileText, Loader2, MapPin,
-    DollarSign, Eye, X, Upload, Image as ImageIcon, Paperclip,
+    DollarSign, Eye, X, Upload, Image as ImageIcon, Paperclip, User, Layers,
 } from 'lucide-react'
 import { toast } from '@/app/hooks/useToast'
 import DetalleVendedor from './DetalleVendedor'
@@ -35,13 +35,14 @@ import MiniTabla from "@/components/contabilidad/planilla-cobranza/Minitabla";
 import {useAuth} from "@/context/authContext";
 import { fetchGetAllClients } from "@/app/api/takeOrders"
 import { IClient } from "@/app/types/order/client-interface"
-import { Combobox } from "@/app/dashboard/mis-pedidos/page"
+import InlineAutocomplete from "@/components/tomar-pedido/InlineAutocomplete"
 import {
     DocumentoCliente,
     SeleccionarDocumentoModal
 } from "@/components/contabilidad/planilla-cobranza/SeleccionarDocumentoModal";
 import {publicApi} from "@/app/api/client";
 import {Voucher, VouchersModal} from "@/components/contabilidad/planilla-cobranza/VouchersModal";
+import { UnificarImagenesModal } from "@/components/cobranza/UnificarImagenesModal";
 
 interface FormRegistro {
     codigo_cliente:   string
@@ -124,6 +125,7 @@ export default function SeccionVendedor({
     const fc = (f: keyof FormRegistro, v: string) => setFormReg(p => ({ ...p, [f]: v }))
 
     const [vouchers,    setVouchers]    = useState<File[]>([])
+    const [unirModalOpen, setUnirModalOpen] = useState(false)
     const voucherInputRef               = useRef<HTMLInputElement>(null)
 
     const [docModalOpen, setDocModalOpen] = useState(false)
@@ -243,6 +245,23 @@ export default function SeccionVendedor({
         }
 
         setVouchers(prev => [...prev, ...validos.slice(0, disponibles)])
+    }
+
+    const handleImagenUnificada = (file: File) => {
+        if (vouchers.length >= MAX_VOUCHERS) {
+            toast({ title: 'Límite alcanzado', description: `Máximo ${MAX_VOUCHERS} vouchers por registro.`, variant: 'warning' })
+            return
+        }
+        if (file.size > VOUCHER_MAX_BYTES) {
+            toast({
+                title: 'Archivo muy pesado',
+                description: `La imagen unificada pesa ${(file.size / 1024 / 1024).toFixed(1)} MB y el máximo es 5 MB.`,
+                variant: 'warning',
+            })
+            return
+        }
+        setVouchers(prev => [...prev, file])
+        toast({ title: 'Imagen unificada', description: 'Se agregó como un voucher más.' })
     }
 
     const removeVoucher = (idx: number) => {
@@ -547,17 +566,66 @@ export default function SeccionVendedor({
                                             <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                                                 Buscar Cliente (Nombre o RUC/DNI) <span className="text-red-500">*</span>
                                             </label>
-                                            <Combobox<IClient>
-                                                items={clientsFiltered}
-                                                value={selectedClient?.codigo ?? ""}
-                                                onSearchChange={setClientSearch}
-                                                onSelect={handleClientSelect}
-                                                getItemKey={c => c.codigo}
-                                                getItemLabel={c => `${c.Nombre} — ${c.RUC ?? 'S/N'}`}
-                                                placeholder={loadingClients ? "Cargando clientes..." : "Escribe para buscar un cliente..."}
-                                                emptyText="No se encontraron clientes"
-                                                searchText="Buscar..."
-                                            />
+                                            {selectedClient ? (
+                                                <div className="flex items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 p-2.5">
+                                                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-600">
+                                                        <User className="h-4 w-4 text-white" />
+                                                    </div>
+                                                    <div className="min-w-0 flex-1">
+                                                        <p className="text-sm font-semibold text-blue-900 truncate leading-tight">
+                                                            {selectedClient.Nombre}
+                                                        </p>
+                                                        <p className="text-xs text-blue-600 truncate">
+                                                            {selectedClient.RUC ? `RUC: ${selectedClient.RUC}` : selectedClient.codigo}
+                                                        </p>
+                                                    </div>
+                                                    <Button
+                                                        type="button"
+                                                        size="sm"
+                                                        variant="outline"
+                                                        onClick={() => handleClientSelect(null)}
+                                                        className="h-7 px-2.5 text-xs text-blue-600 border-blue-200 hover:bg-blue-100 bg-background shrink-0"
+                                                    >
+                                                        Cambiar
+                                                    </Button>
+                                                </div>
+                                            ) : (
+                                                <InlineAutocomplete<IClient>
+                                                    variant="tile"
+                                                    tileAccent="blue"
+                                                    tileIcon={User}
+                                                    tileTitle="Buscar cliente"
+                                                    tileDescription="Por RUC o nombre"
+                                                    placeholder="RUC o nombre del cliente..."
+                                                    value={clientSearch}
+                                                    onValueChange={setClientSearch}
+                                                    loading={loadingClients}
+                                                    items={clientsFiltered}
+                                                    pageSize={30}
+                                                    getKey={c => c.codigo}
+                                                    getItemLabel={c => c.Nombre}
+                                                    onSelect={handleClientSelect}
+                                                    emptyMessage="No se encontraron clientes"
+                                                    idleMessage="Escribe para buscar clientes"
+                                                    renderItem={c => (
+                                                        <div className="flex items-start gap-3 px-3 py-2.5">
+                                                            <div className="bg-blue-100 p-2 rounded-full shrink-0 mt-0.5">
+                                                                <User className="h-4 w-4 text-blue-600" />
+                                                            </div>
+                                                            <div className="flex flex-col flex-1 min-w-0 gap-0.5">
+                                                                <span className="font-semibold text-sm text-foreground line-clamp-1 leading-tight">
+                                                                    {c.Nombre}
+                                                                </span>
+                                                                {c.RUC && (
+                                                                    <span className="text-xs text-muted-foreground">
+                                                                        <span className="font-medium">RUC:</span> {c.RUC}
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                />
+                                            )}
                                         </div>
                                         <div className="flex flex-col gap-1.5 md:col-span-1">
                                             <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
@@ -764,17 +832,41 @@ export default function SeccionVendedor({
                                                     className="hidden"
                                                     onChange={handleVoucherChange}
                                                 />
-                                                <button
-                                                    type="button"
-                                                    onClick={() => voucherInputRef.current?.click()}
-                                                    className="w-full h-14 border-2 border-dashed border-border rounded-lg
-                                                        flex items-center justify-center gap-2
-                                                        text-xs text-muted-foreground hover:border-sky-400 hover:text-sky-600
-                                                        hover:bg-sky-50/50 transition-all"
-                                                >
-                                                    <Upload className="h-4 w-4" />
-                                                    Subir voucher (jpg, png, pdf) · máx. {MAX_VOUCHERS - vouchers.length} más
-                                                </button>
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => voucherInputRef.current?.click()}
+                                                        className="h-14 border-2 border-dashed border-border rounded-lg
+                                                            flex items-center justify-center gap-2 px-3
+                                                            text-xs text-muted-foreground hover:border-sky-400 hover:text-sky-600
+                                                            hover:bg-sky-50/50 transition-all"
+                                                    >
+                                                        <Upload className="h-4 w-4 shrink-0" />
+                                                        <span className="text-left leading-tight">
+                                                            Subir voucher (jpg, png, pdf)
+                                                            <span className="block text-[10px] opacity-70">
+                                                                máx. {MAX_VOUCHERS - vouchers.length} más
+                                                            </span>
+                                                        </span>
+                                                    </button>
+
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setUnirModalOpen(true)}
+                                                        className="h-14 border-2 border-dashed border-violet-200 rounded-lg
+                                                            flex items-center justify-center gap-2 px-3
+                                                            text-xs text-violet-600 hover:border-violet-400
+                                                            hover:bg-violet-50/50 transition-all"
+                                                    >
+                                                        <Layers className="h-4 w-4 shrink-0" />
+                                                        <span className="text-left leading-tight">
+                                                            Unir varias fotos
+                                                            <span className="block text-[10px] opacity-70">
+                                                                recortar y ordenar
+                                                            </span>
+                                                        </span>
+                                                    </button>
+                                                </div>
                                             </>
                                         )}
                                     </div>
@@ -971,6 +1063,12 @@ export default function SeccionVendedor({
                     })}
                 </div>
             )}
+
+            <UnificarImagenesModal
+                open={unirModalOpen}
+                onOpenChange={setUnirModalOpen}
+                onConfirmar={handleImagenUnificada}
+            />
 
             <VouchersModal
                 open={vouchersModal.open}
