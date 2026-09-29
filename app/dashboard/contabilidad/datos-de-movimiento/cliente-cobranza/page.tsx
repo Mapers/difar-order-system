@@ -219,11 +219,23 @@ export default function ClienteCobranzaPage() {
         setForm(prev => ({ ...prev, [field]: value }))
     }
 
+    const resolverVendedorDeCliente = (client: IClient): Seller | null => {
+        const codigo = String(client.codigoVendedor ?? "").trim().toUpperCase()
+        if (!codigo) return null
+
+        return sellers.find(s => String(s.codigo ?? "").trim().toUpperCase() === codigo) ?? null
+    }
+
     const handleClientSelect = (client: IClient | null) => {
         setSelectedClient(client)
+        const vendedor = client ? resolverVendedorDeCliente(client) : null
+        setSelectedSeller(vendedor)
+        setSellerSearch("")
+
         setForm(prev => ({
             ...prev,
             Cod_Clie:        client?.codigo ?? "",
+            Cod_Vend:        vendedor?.codigo ?? "",
             TipoDoc:         "",
             SerieDoc:        "",
             NumeroDoc:       "",
