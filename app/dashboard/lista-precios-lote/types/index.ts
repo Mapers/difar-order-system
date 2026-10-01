@@ -40,6 +40,7 @@ export interface PriceListParams {
     descripcion?: string,
     codVendedor?: string,
     codRepres?: string,
+    almacen?: number | null,
 }
 
 export interface LoteInfo {

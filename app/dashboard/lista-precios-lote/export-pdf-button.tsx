@@ -6,6 +6,7 @@ import { FileText, ChevronDown } from 'lucide-react'
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib'
 import { EMPRESA, cargarLogoPdf, dibujarCabeceraPdf } from "@/components/reporte/pdfCabecera"
 import { PriceService } from "@/app/services/price/PriceService";
+import { datosPorAlmacen, GrupoAlmacen } from "@/app/dashboard/lista-precios-lote/services/almacenesExport";
 import moment from "moment";
 import {
   DropdownMenu,
@@ -14,7 +15,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
-const ExportPdfButton = ({ payload, filters }: { payload: any; filters?: any }) => {
+const ExportPdfButton = ({ payload, filters, porAlmacen = false }: { payload: any; filters?: any; porAlmacen?: boolean }) => {
   const [loading, setLoading] = useState(false)
 
   const applyFilters = (items: any[]) => {
@@ -107,8 +108,19 @@ const ExportPdfButton = ({ payload, filters }: { payload: any; filters?: any }) 
     setLoading(true)
 
     try {
-      const response = await PriceService.getPricesAll(payload);
-      const data = applyFilters(response.data || []);
+      let data: any[] = []
+      let grupos: GrupoAlmacen[] = []
+
+      if (porAlmacen) {
+        grupos = await datosPorAlmacen(payload, applyFilters)
+        if (grupos.length === 0) {
+          alert('Ningún almacén tiene productos con los filtros aplicados.')
+          return
+        }
+      } else {
+        const response = await PriceService.getPricesAll(payload);
+        data = applyFilters(response.data || []);
+      }
 
       // Endpoint aparte: si falla, la columna sale vacia en vez de perderse
       // la exportacion entera.
@@ -225,15 +237,47 @@ const ExportPdfButton = ({ payload, filters }: { payload: any; filters?: any }) 
         yPosition -= labBandH + 6
       }
 
+      const drawAlmacenBand = (page: any, text: string) => {
+        const h = labBandH + (isLandscape ? 6 : 5)
+        page.drawRectangle({ x: margin, y: yPosition - h, width: contentWidth, height: h, color: C.primary })
+        page.drawText((text || '').toUpperCase(), {
+          x: margin + 6,
+          y: yPosition - h + (isLandscape ? 7 : 6),
+          size: isLandscape ? 11 : 9,
+          font: boldFont,
+          color: C.white,
+        })
+        yPosition -= h + 8
+      }
+
+      const secuencia: any[] = porAlmacen
+        ? grupos.flatMap(g => [{ __almacen: g.almacen }, ...g.data])
+        : data
+
+      let primerAlmacen = true
+
       drawHeader(currentPage)
 
-      if (!data.length) {
+      if (!secuencia.length) {
         currentPage.drawText('No se encontraron productos con stock disponible.', {
           x: margin, y: yPosition - 20, size: baseFontSize + 2, font, color: C.muted,
         })
       }
 
-      for (const item of data) {
+      for (const item of secuencia) {
+        if (item.__almacen) {
+          if (!primerAlmacen) {
+            currentPage = addNewPage()
+            pageNumber++
+            drawHeader(currentPage)
+          }
+          primerAlmacen = false
+          currentLab = 0
+          rowIndex = 0
+          drawAlmacenBand(currentPage, `Almacén ${item.__almacen.IdAlmacen}: ${item.__almacen.Descripcion}`)
+          continue
+        }
+
         if (item.laboratorio_id !== currentLab) {
           currentLab = item.laboratorio_id
           rowIndex = 0
@@ -432,7 +476,7 @@ const ExportPdfButton = ({ payload, filters }: { payload: any; filters?: any }) 
       const blob = new Blob([pdfBytes], { type: 'application/pdf' })
       const link = document.createElement('a')
       link.href = window.URL.createObjectURL(blob)
-      link.download = `lista-precios-${orientation}-${new Date().toISOString().split('T')[0]}.pdf`
+      link.download = `lista-precios${porAlmacen ? '-por-almacen' : ''}-${orientation}-${new Date().toISOString().split('T')[0]}.pdf`
       link.click()
 
     } catch (error) {

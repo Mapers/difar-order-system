@@ -17,6 +17,8 @@ import {PricePagination} from "@/components/lista-precios-lote/PricePagination";
 import {CreateProductModal} from "@/components/lista-precios-lote/CreateProductModal";
 import {QuickPriceEditModal} from "@/components/lista-precios-lote/QuickPriceEditModal";
 import {ArticuloImagenModal, ProductoImagen} from "@/components/lista-precios-lote/ArticuloImagenModal";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 
 export default function PricePage() {
   const { user, isAuthenticated, isAdmin, hasRole, globalConfigs } = useAuth();
@@ -24,6 +26,7 @@ export default function PricePage() {
 
   const [currentDateTime, setCurrentDateTime] = useState({ date: "", time: "" });
   const [productoImagen, setProductoImagen] = useState<ProductoImagen | null>(null);
+  const [exportarPorAlmacen, setExportarPorAlmacen] = useState(false);
 
   const imagenesActivas = useMemo(() => {
     const config = globalConfigs.find(c => c.cod_config === 'IMAGEN_PROD');
@@ -95,9 +98,27 @@ export default function PricePage() {
                   Mostrando {listData.paginatedData.length} de {listData.filteredPricesLot.length} productos
                 </CardDescription>
               </div>
-              <div className="flex items-center gap-3">
-                <ExportExcelButton payload={listData.exportPayload} filters={listData.exportFilters} />
-                <ExportPdfButton payload={listData.exportPayload} filters={listData.exportFilters} />
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                      id="exportar-por-almacen"
+                      checked={exportarPorAlmacen}
+                      onCheckedChange={v => setExportarPorAlmacen(v === true)}
+                  />
+                  <Label htmlFor="exportar-por-almacen" className="text-sm font-normal cursor-pointer">
+                    Exportar por almacén
+                  </Label>
+                </div>
+                <ExportExcelButton
+                    payload={listData.exportPayload}
+                    filters={listData.exportFilters}
+                    porAlmacen={exportarPorAlmacen}
+                />
+                <ExportPdfButton
+                    payload={listData.exportPayload}
+                    filters={listData.exportFilters}
+                    porAlmacen={exportarPorAlmacen}
+                />
                 <div className="text-sm text-muted-foreground text-right hidden sm:block">
                   {currentDateTime.date} | {currentDateTime.time}
                 </div>
