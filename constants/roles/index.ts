@@ -8,6 +8,8 @@ import {
     BarChart2,
     LineChart,
     GitBranch,
+    BookOpen,
+    Wallet,
     Receipt, GoalIcon, UserCog, Notebook, Gift, Map, Settings, FileDiff, CalendarClock,
     TrendingUp, ReceiptText
 } from "lucide-react";
@@ -42,6 +44,8 @@ export const ICON_MAP: Record<string, React.ComponentType<{ className?: string }
     "/dashboard/comprobantes": Receipt,
     "/dashboard/comprobantes/procesar-nota-credito": FileDiff,
     "/dashboard/cronograma": CalendarClock,
+    "/dashboard/contabilidad/libro-caja-bancos": Wallet,
+    "/dashboard/contabilidad/movimiento-subcuenta": BookOpen,
     "/dashboard/reportes": BarChart2,
     "/dashboard/reportes/documento-cliente": LineChart,
     "/dashboard/reportes/cobrar-cliente": LineChart,
