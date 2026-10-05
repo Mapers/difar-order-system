@@ -27,8 +27,14 @@ export async function listarAlmacenes(): Promise<AlmacenOption[]> {
 export async function datosPorAlmacen(
     payload: any,
     aplicarFiltros: (items: any[]) => any[],
+    soloIds?: number[] | null,
 ): Promise<GrupoAlmacen[]> {
-    const almacenes = await listarAlmacenes()
+    const todos = await listarAlmacenes()
+
+    const almacenes = soloIds && soloIds.length > 0
+        ? todos.filter(a => soloIds.includes(a.IdAlmacen))
+        : todos
+
     const grupos: GrupoAlmacen[] = []
 
     for (const almacen of almacenes) {

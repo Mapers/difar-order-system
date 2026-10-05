@@ -15,7 +15,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
-const ExportPdfButton = ({ payload, filters, porAlmacen = false }: { payload: any; filters?: any; porAlmacen?: boolean }) => {
+const ExportPdfButton = ({ payload, filters, porAlmacen = false, almacenSel = null }: { payload: any; filters?: any; porAlmacen?: boolean; almacenSel?: number | null }) => {
   const [loading, setLoading] = useState(false)
 
   const applyFilters = (items: any[]) => {
@@ -108,13 +108,19 @@ const ExportPdfButton = ({ payload, filters, porAlmacen = false }: { payload: an
     setLoading(true)
 
     try {
+      const agrupar = porAlmacen || almacenSel != null
+
       let data: any[] = []
       let grupos: GrupoAlmacen[] = []
 
-      if (porAlmacen) {
-        grupos = await datosPorAlmacen(payload, applyFilters)
+      if (agrupar) {
+        grupos = await datosPorAlmacen(
+          payload, applyFilters, almacenSel != null ? [almacenSel] : null,
+        )
         if (grupos.length === 0) {
-          alert('Ningún almacén tiene productos con los filtros aplicados.')
+          alert(almacenSel != null
+            ? 'Ese almacén no tiene productos con los filtros aplicados.'
+            : 'Ningún almacén tiene productos con los filtros aplicados.')
           return
         }
       } else {
@@ -250,7 +256,7 @@ const ExportPdfButton = ({ payload, filters, porAlmacen = false }: { payload: an
         yPosition -= h + 8
       }
 
-      const secuencia: any[] = porAlmacen
+      const secuencia: any[] = agrupar
         ? grupos.flatMap(g => [{ __almacen: g.almacen }, ...g.data])
         : data
 
@@ -476,7 +482,7 @@ const ExportPdfButton = ({ payload, filters, porAlmacen = false }: { payload: an
       const blob = new Blob([pdfBytes], { type: 'application/pdf' })
       const link = document.createElement('a')
       link.href = window.URL.createObjectURL(blob)
-      link.download = `lista-precios${porAlmacen ? '-por-almacen' : ''}-${orientation}-${new Date().toISOString().split('T')[0]}.pdf`
+      link.download = `lista-precios${almacenSel != null ? `-alm${almacenSel}` : porAlmacen ? '-por-almacen' : ''}-${orientation}-${new Date().toISOString().split('T')[0]}.pdf`
       link.click()
 
     } catch (error) {

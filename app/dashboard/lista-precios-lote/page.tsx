@@ -19,6 +19,8 @@ import {QuickPriceEditModal} from "@/components/lista-precios-lote/QuickPriceEdi
 import {ArticuloImagenModal, ProductoImagen} from "@/components/lista-precios-lote/ArticuloImagenModal";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { AlmacenOption, listarAlmacenes } from "@/app/dashboard/lista-precios-lote/services/almacenesExport";
 
 export default function PricePage() {
   const { user, isAuthenticated, isAdmin, hasRole, globalConfigs } = useAuth();
@@ -27,6 +29,8 @@ export default function PricePage() {
   const [currentDateTime, setCurrentDateTime] = useState({ date: "", time: "" });
   const [productoImagen, setProductoImagen] = useState<ProductoImagen | null>(null);
   const [exportarPorAlmacen, setExportarPorAlmacen] = useState(false);
+  const [almacenExport, setAlmacenExport] = useState<number | null>(null);
+  const [almacenesExport, setAlmacenesExport] = useState<AlmacenOption[]>([]);
 
   const imagenesActivas = useMemo(() => {
     const config = globalConfigs.find(c => c.cod_config === 'IMAGEN_PROD');
@@ -39,6 +43,10 @@ export default function PricePage() {
   const modals = useProductModals();
   const { ventas, etiquetas: etiquetasVentas } = useVentasTresMeses(isAuthenticated);
   const { imagenes, actualizarImagen } = useImagenesProducto(imagenesActivas && isAuthenticated);
+
+  useEffect(() => {
+    listarAlmacenes().then(setAlmacenesExport).catch(() => setAlmacenesExport([]));
+  }, []);
 
   useEffect(() => {
     const now = new Date();
@@ -100,24 +108,54 @@ export default function PricePage() {
               </div>
               <div className="flex flex-wrap items-center gap-3">
                 <div className="flex items-center gap-2">
+                  <Label htmlFor="almacen-export" className="text-sm font-normal whitespace-nowrap">
+                    Almacén
+                  </Label>
+                  <Select
+                      value={almacenExport != null ? String(almacenExport) : 'todos'}
+                      onValueChange={v => setAlmacenExport(v === 'todos' ? null : Number(v))}
+                  >
+                    <SelectTrigger id="almacen-export" className="h-9 w-[190px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="todos">Todos los almacenes</SelectItem>
+                      {almacenesExport.map(a => (
+                        <SelectItem key={a.IdAlmacen} value={String(a.IdAlmacen)}>
+                          {a.Descripcion}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="flex items-center gap-2">
                   <Checkbox
                       id="exportar-por-almacen"
                       checked={exportarPorAlmacen}
+                      disabled={almacenExport != null}
                       onCheckedChange={v => setExportarPorAlmacen(v === true)}
                   />
-                  <Label htmlFor="exportar-por-almacen" className="text-sm font-normal cursor-pointer">
-                    Exportar por almacén
+                  <Label
+                      htmlFor="exportar-por-almacen"
+                      className={`text-sm font-normal ${almacenExport != null ? 'opacity-50' : 'cursor-pointer'}`}
+                      title={almacenExport != null ? 'Ya estás exportando un solo almacén' : undefined}
+                  >
+                    Separar por almacén
                   </Label>
                 </div>
+
                 <ExportExcelButton
                     payload={listData.exportPayload}
                     filters={listData.exportFilters}
                     porAlmacen={exportarPorAlmacen}
+                    almacenSel={almacenExport}
                 />
                 <ExportPdfButton
                     payload={listData.exportPayload}
                     filters={listData.exportFilters}
                     porAlmacen={exportarPorAlmacen}
+                    almacenSel={almacenExport}
                 />
                 <div className="text-sm text-muted-foreground text-right hidden sm:block">
                   {currentDateTime.date} | {currentDateTime.time}

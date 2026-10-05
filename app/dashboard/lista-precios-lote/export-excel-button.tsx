@@ -252,7 +252,7 @@ function construirHoja(
             })
 }
 
-const ExportExcelButton = ({ payload, filters, porAlmacen = false }: { payload: any; filters?: any; porAlmacen?: boolean }) => {
+const ExportExcelButton = ({ payload, filters, porAlmacen = false, almacenSel = null }: { payload: any; filters?: any; porAlmacen?: boolean; almacenSel?: number | null }) => {
     const [loading, setLoading] = useState(false)
 
     const applyFilters = (items: any[]) => {
@@ -273,8 +273,10 @@ const ExportExcelButton = ({ payload, filters, porAlmacen = false }: { payload: 
         setLoading(true)
 
         try {
+            const agrupar = porAlmacen || almacenSel != null
+
             let data: any[] = []
-            if (!porAlmacen) {
+            if (!agrupar) {
                 const response = await PriceService.getPricesAll(payload)
                 data = applyFilters(response.data || [])
             }
@@ -324,7 +326,7 @@ const ExportExcelButton = ({ payload, filters, porAlmacen = false }: { payload: 
             const blob   = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
             const link   = document.createElement('a')
             link.href    = URL.createObjectURL(blob)
-            link.download = `lista-precios-lote${porAlmacen ? '-por-almacen' : ''}-${new Date().toISOString().split('T')[0]}.xlsx`
+            link.download = `lista-precios-lote${almacenSel != null ? `-alm${almacenSel}` : porAlmacen ? '-por-almacen' : ''}-${new Date().toISOString().split('T')[0]}.xlsx`
             link.click()
             URL.revokeObjectURL(link.href)
 
