@@ -15,6 +15,7 @@ import {
     Loader2, Save, Plus, Trash2, FolderOpen, Lock, AlertCircle, X, RefreshCw,
 } from "lucide-react"
 import { useLibroCaja, FilaEdicion } from "./useLibroCaja"
+import { PersonaPicker } from "./PersonaPicker"
 
 const money = (v: number) =>
     Number(v ?? 0).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
@@ -152,6 +153,7 @@ export default function LibroCajaBancosPage() {
                                                 cat={cat}
                                                 cerrado={c.cerrado}
                                                 setCampo={c.setCampo}
+                                                setPersona={c.setPersona}
                                                 quitar={c.quitarFilaNueva}
                                             />
                                         ))}
@@ -182,7 +184,7 @@ export default function LibroCajaBancosPage() {
                                 <Button
                                     variant="outline" size="sm" className="gap-1.5 text-amber-700 border-amber-200 hover:bg-amber-50"
                                     onClick={() => setConfirmEliminarLineas(true)}
-                                    disabled={c.cerrado || marcadas === 0}
+                                    disabled={c.cerrado || c.guardando || marcadas === 0}
                                     title={marcadas === 0 ? 'Marca la casilla E de las líneas que quieras eliminar' : undefined}
                                 >
                                     <Trash2 className="h-4 w-4" /> Eliminar marcadas ({marcadas})
@@ -230,8 +232,9 @@ export default function LibroCajaBancosPage() {
                     <AlertDialogHeader>
                         <AlertDialogTitle>Eliminar líneas marcadas</AlertDialogTitle>
                         <AlertDialogDescription>
-                            Se eliminarán {marcadas} línea{marcadas !== 1 ? 's' : ''} del voucher y se
-                            regenerará el asiento contable. Esta acción no se puede deshacer.
+                            Se guardará el voucher y después se eliminarán {marcadas} línea
+                            {marcadas !== 1 ? 's' : ''}, regenerando el asiento contable.
+                            Esta acción no se puede deshacer.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
@@ -290,12 +293,13 @@ function Dato({ etiqueta, valor, mono = false }: { etiqueta: string; valor: stri
 }
 
 function Fila({
-    f, cat, cerrado, setCampo, quitar,
+    f, cat, cerrado, setCampo, setPersona, quitar,
 }: {
     f: FilaEdicion
     cat: ReturnType<typeof useLibroCaja>['catalogos']
     cerrado: boolean
     setCampo: (key: number, campo: keyof FilaEdicion, valor: string | boolean) => void
+    setPersona: (key: number, codigo: string, nombre: string) => void
     quitar: (key: number) => void
 }) {
     const ro = cerrado
@@ -339,16 +343,12 @@ function Fila({
             </td>
 
             <td className="py-1 px-1">
-                <Input
-                    className={cls}
-                    value={f.persona} readOnly={ro}
-                    placeholder="Código"
-                    title={f.personaNombre || undefined}
-                    onChange={e => setCampo(f.key, 'persona', e.target.value)}
+                <PersonaPicker
+                    codigo={f.persona}
+                    nombre={f.personaNombre}
+                    disabled={ro}
+                    onSelect={(codigo, nombre) => setPersona(f.key, codigo, nombre)}
                 />
-                {f.personaNombre && (
-                    <p className="text-[10px] text-muted-foreground truncate mt-0.5">{f.personaNombre}</p>
-                )}
             </td>
 
             <td className="py-1 px-1">
@@ -359,13 +359,19 @@ function Fila({
             <td className="py-1 px-1">
                 <Input className={`${cls} text-right`} type="number" step="0.01" min={0}
                        value={f.ingreso} readOnly={ro}
-                       onChange={e => setCampo(f.key, 'ingreso', e.target.value)} />
+                       onChange={e => {
+                           setCampo(f.key, 'ingreso', e.target.value)
+                           if (Number(e.target.value) > 0) setCampo(f.key, 'egreso', '')
+                       }} />
             </td>
 
             <td className="py-1 px-1">
                 <Input className={`${cls} text-right`} type="number" step="0.01" min={0}
                        value={f.egreso} readOnly={ro}
-                       onChange={e => setCampo(f.key, 'egreso', e.target.value)} />
+                       onChange={e => {
+                           setCampo(f.key, 'egreso', e.target.value)
+                           if (Number(e.target.value) > 0) setCampo(f.key, 'ingreso', '')
+                       }} />
             </td>
 
             <td className="py-1 px-1">

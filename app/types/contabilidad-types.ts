@@ -93,6 +93,7 @@ export interface PersonaEmpresa {
     Codigo: string
     Nombre: string
     Relacion?: string | null
+    RelacionDescripcion?: string | null
 }
 
 export interface CajaVoucherCabecera {

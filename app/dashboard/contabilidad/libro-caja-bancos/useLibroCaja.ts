@@ -149,6 +149,11 @@ export function useLibroCaja() {
         setFilas(prev => prev.map(f => (f.key === key ? { ...f, [campo]: valor } : f)))
     }
 
+    const setPersona = (key: number, codigo: string, nombre: string) => {
+        setFilas(prev => prev.map(f =>
+            f.key === key ? { ...f, persona: codigo, personaNombre: nombre } : f))
+    }
+
     const agregarFila = () => {
         if (cerrado) return
         setFilas(prev => [...prev, {
@@ -196,6 +201,17 @@ export function useLibroCaja() {
             return
         }
 
+        const ambosImportes = filas.find(f =>
+            !f.eliminar && Number(f.ingreso) > 0 && Number(f.egreso) > 0)
+        if (ambosImportes) {
+            toast({
+                title: "Ingreso y Egreso en la misma línea",
+                description: "Cada línea es un ingreso o un egreso, no las dos cosas. Separalas en dos líneas.",
+                variant: "warning",
+            })
+            return
+        }
+
         setGuardando(true)
         try {
             await CajaBancosService.guardar(cabecera.Item, usuario, filas.map(aPayload))
@@ -214,9 +230,34 @@ export function useLibroCaja() {
 
     const eliminarMarcadas = async () => {
         if (!cabecera) return
+        if (cerrado) {
+            toast({
+                title: "Cierre contable",
+                description: "Este voucher está dentro del cierre contable y no se puede modificar.",
+                variant: "warning",
+            })
+            return
+        }
+
+        setGuardando(true)
         try {
-            await CajaBancosService.eliminarLineasMarcadas(cabecera.Item, usuario)
-            toast({ title: "Líneas eliminadas", description: "Se quitaron las líneas marcadas." })
+            await CajaBancosService.guardar(cabecera.Item, usuario, filas.map(aPayload))
+
+            const res: any = await CajaBancosService.eliminarLineasMarcadas(cabecera.Item, usuario)
+            const eliminadas = Number(res?.Eliminadas ?? 0)
+
+            if (eliminadas > 0) {
+                toast({
+                    title: "Líneas eliminadas",
+                    description: `Se quitaron ${eliminadas} línea${eliminadas !== 1 ? 's' : ''} y se regeneró el asiento.`,
+                })
+            } else {
+                toast({
+                    title: "No se eliminó nada",
+                    description: "Marca la casilla E de las líneas que quieras eliminar.",
+                    variant: "warning",
+                })
+            }
             await abrir(false)
         } catch (e: any) {
             toast({
@@ -224,6 +265,8 @@ export function useLibroCaja() {
                 description: e?.response?.data?.message || "No se pudieron eliminar las líneas.",
                 variant: "destructive",
             })
+        } finally {
+            setGuardando(false)
         }
     }
 
@@ -249,7 +292,7 @@ export function useLibroCaja() {
         caja, setCaja, fecha, setFecha,
         cabecera, filas, cerrado, hayCambios,
         cargando, guardando, error,
-        abrir, setCampo, agregarFila, quitarFilaNueva,
+        abrir, setCampo, setPersona, agregarFila, quitarFilaNueva,
         totales, guardar, eliminarMarcadas, eliminarVoucher,
         usuario,
     }
