@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,11 +17,28 @@ export const CreateProductModal = ({ laboratories, user, onProductCreated }: any
     const [prices, setPrices] = useState({
         PUContado: "", PUCredito: "", PUPorMayor: "", PUPorMenor: ""
     });
+
+    const [laboratorioFiltro, setLaboratorioFiltro] = useState("");
+    const [lineas, setLineas] = useState<any[]>([]);
+    const [cargandoLineas, setCargandoLineas] = useState(false);
+
     const [escalas, setEscalas] = useState<any[]>([]);
     const [bonos, setBonos] = useState<any[]>([]);
 
+    useEffect(() => {
+        if (!open) return;
+        setCargandoLineas(true);
+        apiClient.get('/price/lineas-lote', {
+            params: laboratorioFiltro ? { laboratorio: laboratorioFiltro } : undefined,
+        })
+            .then(res => setLineas(res.data?.data?.data ?? []))
+            .catch(() => setLineas([]))
+            .finally(() => setCargandoLineas(false));
+    }, [laboratorioFiltro, open]);
+
     const resetForm = () => {
         setProduct({ Codigo_Art: "", NombreItem: "", SubLinea: "", Presentacion: "", Medida: "", PrincipioAdictivo: "" });
+        setLaboratorioFiltro("");
         setPrices({ PUContado: "", PUCredito: "", PUPorMayor: "", PUPorMenor: "" });
         setEscalas([]);
         setBonos([]);
@@ -33,6 +50,11 @@ export const CreateProductModal = ({ laboratories, user, onProductCreated }: any
 
         if (!product.Codigo_Art || !product.NombreItem) {
             setAlertInfo({ type: 'error', message: "El código y el nombre del artículo son obligatorios." });
+            return;
+        }
+
+        if (!product.SubLinea) {
+            setAlertInfo({ type: 'error', message: "La línea (lote) es obligatoria: sin ella el producto no aparecería en los listados." });
             return;
         }
 
@@ -101,9 +123,27 @@ export const CreateProductModal = ({ laboratories, user, onProductCreated }: any
                             <div className="space-y-1">
                                 <Label>Laboratorio</Label>
                                 <select className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm"
-                                        value={product.SubLinea} onChange={e=>setProduct({...product, SubLinea: e.target.value})}>
-                                    <option value="">Seleccionar...</option>
+                                        value={laboratorioFiltro}
+                                        onChange={e => {
+                                            setLaboratorioFiltro(e.target.value);
+                                            setProduct({ ...product, SubLinea: "" });
+                                        }}>
+                                    <option value="">Todos</option>
                                     {laboratories?.map((l:any) => <option key={l.IdLineaGe} value={l.IdLineaGe}>{l.Descripcion}</option>)}
+                                </select>
+                            </div>
+                            <div className="space-y-1">
+                                <Label>Línea (lote) *</Label>
+                                <select className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm"
+                                        value={product.SubLinea}
+                                        disabled={cargandoLineas}
+                                        onChange={e=>setProduct({...product, SubLinea: e.target.value})}>
+                                    <option value="">{cargandoLineas ? "Cargando..." : "Seleccionar..."}</option>
+                                    {lineas.map((l:any) => (
+                                        <option key={l.IdLote} value={l.IdLote}>
+                                            {l.Descripcion}{!laboratorioFiltro && l.LaboratorioDescripcion ? ` · ${l.LaboratorioDescripcion}` : ''}
+                                        </option>
+                                    ))}
                                 </select>
                             </div>
                             <div className="space-y-1"><Label>Presentación</Label><Input value={product.Presentacion} onChange={e=>setProduct({...product, Presentacion: e.target.value})}/></div>
