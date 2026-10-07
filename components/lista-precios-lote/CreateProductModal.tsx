@@ -22,6 +22,10 @@ export const CreateProductModal = ({ laboratories, user, onProductCreated }: any
     const [lineas, setLineas] = useState<any[]>([]);
     const [cargandoLineas, setCargandoLineas] = useState(false);
 
+    const [sugerencia, setSugerencia] = useState<any>(null);
+    const [codigoEnUso, setCodigoEnUso] = useState<any>(null);
+    const [verificando, setVerificando] = useState(false);
+
     const [escalas, setEscalas] = useState<any[]>([]);
     const [bonos, setBonos] = useState<any[]>([]);
 
@@ -36,9 +40,41 @@ export const CreateProductModal = ({ laboratories, user, onProductCreated }: any
             .finally(() => setCargandoLineas(false));
     }, [laboratorioFiltro, open]);
 
+    useEffect(() => {
+        if (!open || !product.SubLinea) { setSugerencia(null); return; }
+        apiClient.get('/price/codigo-sugerido', { params: { idLote: product.SubLinea } })
+            .then(res => {
+                const d = res.data?.data ?? null;
+                setSugerencia(d);
+                if (d?.codigo_sugerido && !product.Codigo_Art) {
+                    setProduct(prev => ({ ...prev, Codigo_Art: d.codigo_sugerido }));
+                }
+            })
+            .catch(() => setSugerencia(null));
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [product.SubLinea, open]);
+
+    /** Verifica contra la base que el codigo no exista ya. */
+    useEffect(() => {
+        const codigo = product.Codigo_Art.trim();
+        if (!open || codigo.length < 4) { setCodigoEnUso(null); return; }
+
+        setVerificando(true);
+        const t = setTimeout(() => {
+            apiClient.get('/price/codigo-existe', { params: { codigo } })
+                .then(res => setCodigoEnUso(res.data?.data?.existe ? res.data.data : null))
+                .catch(() => setCodigoEnUso(null))
+                .finally(() => setVerificando(false));
+        }, 400);
+        return () => { clearTimeout(t); setVerificando(false); };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [product.Codigo_Art, open]);
+
     const resetForm = () => {
         setProduct({ Codigo_Art: "", NombreItem: "", SubLinea: "", Presentacion: "", Medida: "", PrincipioAdictivo: "" });
         setLaboratorioFiltro("");
+        setSugerencia(null);
+        setCodigoEnUso(null);
         setPrices({ PUContado: "", PUCredito: "", PUPorMayor: "", PUPorMenor: "" });
         setEscalas([]);
         setBonos([]);
@@ -55,6 +91,14 @@ export const CreateProductModal = ({ laboratories, user, onProductCreated }: any
 
         if (!product.SubLinea) {
             setAlertInfo({ type: 'error', message: "La línea (lote) es obligatoria: sin ella el producto no aparecería en los listados." });
+            return;
+        }
+
+        if (codigoEnUso) {
+            setAlertInfo({
+                type: 'error',
+                message: `El código ${product.Codigo_Art} ya lo usa "${codigoEnUso.nombreItem}". Elige otro.`,
+            });
             return;
         }
 
@@ -118,7 +162,59 @@ export const CreateProductModal = ({ laboratories, user, onProductCreated }: any
                     <section>
                         <h3 className="text-sm font-bold text-muted-foreground uppercase mb-3">1. Datos Generales</h3>
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                            <div className="space-y-1"><Label>Código Art. *</Label><Input value={product.Codigo_Art} onChange={e=>setProduct({...product, Codigo_Art: e.target.value})} maxLength={9}/></div>
+                            <div className="space-y-1">
+                                <Label>Código Art. *</Label>
+                                <Input
+                                    value={product.Codigo_Art}
+                                    onChange={e=>setProduct({...product, Codigo_Art: e.target.value})}
+                                    maxLength={9}
+                                    className={codigoEnUso ? 'border-red-400 focus-visible:ring-red-400' : undefined}
+                                />
+                                {!product.SubLinea && (
+                                    <p className="text-[11px] text-muted-foreground">
+                                        Elige la línea y se sugiere el código.
+                                    </p>
+                                )}
+                                {codigoEnUso ? (
+                                    <p className="text-[11px] text-red-600">
+                                        Ya existe: {codigoEnUso.nombreItem}
+                                        {codigoEnUso.linea ? ` (${codigoEnUso.linea})` : ''}
+                                    </p>
+                                ) : verificando ? (
+                                    <p className="text-[11px] text-muted-foreground">Verificando…</p>
+                                ) : product.Codigo_Art.trim().length >= 4 && (
+                                    <p className="text-[11px] text-emerald-600">Código disponible</p>
+                                )}
+                                {/* El prefijo tiene que corresponder a la línea elegida: los 4
+                                    primeros dígitos la identifican. */}
+                                {sugerencia?.prefijo
+                                    && product.Codigo_Art.trim().length >= 4
+                                    && product.Codigo_Art.trim().slice(0, 4) !== sugerencia.prefijo && (
+                                    <p className="text-[11px] text-amber-600">
+                                        El prefijo de esta línea es {sugerencia.prefijo}.
+                                    </p>
+                                )}
+                                {sugerencia?.codigo_sugerido
+                                    && product.Codigo_Art !== sugerencia.codigo_sugerido && (
+                                    <button
+                                        type="button"
+                                        className="text-[11px] text-blue-600 hover:underline"
+                                        onClick={() => setProduct({ ...product, Codigo_Art: sugerencia.codigo_sugerido })}
+                                    >
+                                        Usar {sugerencia.codigo_sugerido}
+                                    </button>
+                                )}
+                                {sugerencia && !sugerencia.prefijo && (
+                                    <p className="text-[11px] text-amber-600">
+                                        Esta línea no tiene productos todavía: hay que escribir el código a mano.
+                                    </p>
+                                )}
+                                {Number(sugerencia?.prefijos_distintos ?? 0) > 1 && (
+                                    <p className="text-[11px] text-amber-600">
+                                        Ojo: esta línea tiene códigos con {sugerencia.prefijos_distintos} prefijos distintos.
+                                    </p>
+                                )}
+                            </div>
                             <div className="space-y-1 md:col-span-2"><Label>Nombre del Ítem *</Label><Input value={product.NombreItem} onChange={e=>setProduct({...product, NombreItem: e.target.value})}/></div>
                             <div className="space-y-1">
                                 <Label>Laboratorio</Label>
