@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { crearFiltroDuplicados } from './dedupRegistroVentas'
 import { Button } from '@/components/ui/button'
 import { FileText, Loader2 } from 'lucide-react'
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib'
@@ -292,10 +293,13 @@ export function ExportRegistroButton({
             const filasComprobantes: FilaUnificada[] = []
 
             if (type === 'comprobantes') {
+                const filtro = crearFiltroDuplicados()
+
                 if (usarSP && registroVentas.length > 0) {
                     const s = (v: any) => (v === null || v === undefined) ? '—' : String(v)
 
                     for (const rv of registroVentas) {
+                        if (!filtro.aceptar(rv.Serie, rv.NroDesde)) continue
                         const hasOriginal = !!(rv.SerieDocOriginal && rv.NumeroDocOriginal)
                         const tcStr       = rv.TC ? String(rv.TC) : '1.00'
 
@@ -339,6 +343,7 @@ export function ExportRegistroButton({
                     if (!esExportableARegistroVentas(c)) {
                         continue
                     }
+                    if (!filtro.aceptar(c.serie, c.numero)) continue
 
                     const base    = Number(c.total_gravada) || 0
                     const igv     = Number(c.total_igv) || 0
@@ -385,6 +390,10 @@ export function ExportRegistroButton({
                             '—',
                         ],
                     })
+                }
+
+                if (filtro.omitidos > 0) {
+                    console.info(`Registro de ventas: se omitieron ${filtro.omitidos} documentos repetidos (misma serie y número).`)
                 }
 
                 filasComprobantes.sort((a, b) => a.fechaOrden - b.fechaOrden)

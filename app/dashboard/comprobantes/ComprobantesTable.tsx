@@ -19,7 +19,8 @@ interface ComprobantesTableProps {
     loading: boolean
     tiposComprobante: Sequential[]
     isAdmin: boolean
-    onViewPdf: (url: string) => void
+    onViewPdf: (serie: string, numero: string) => void
+    onViewPdfUrl: (url: string) => void
     onCancel: (comprobante: Comprobante) => void
     onSendEmail: (comprobante: Comprobante) => void
     onSendWhatsApp: (comprobante: Comprobante) => void
@@ -33,7 +34,7 @@ interface ComprobantesTableProps {
 }
 
 export function ComprobantesTable({
-                                      comprobantes, loading, tiposComprobante, isAdmin, onViewPdf, onCancel,
+                                      comprobantes, loading, tiposComprobante, isAdmin, onViewPdf, onViewPdfUrl, onCancel,
                                       onSendEmail, onSendWhatsApp, onCheckStatus, onCorregirDescripcion,
                                       onModificarCuotas, onTransferirVendedor, onTransferirAlmacen,
                                       onGestionarConformidad, puedeGestionarConformidad
@@ -42,6 +43,17 @@ export function ComprobantesTable({
     const [jsonContent,      setJsonContent]      = useState("")
     const [jsonTitle,        setJsonTitle]        = useState("")
     const [showReasonModal,  setShowReasonModal]  = useState(false)
+    const handleViewJson = (title: string, content: string) => {
+        setJsonTitle(title)
+        try {
+            const parsed = typeof content === 'string' ? JSON.parse(content) : content
+            setJsonContent(JSON.stringify(parsed, null, 2))
+        } catch {
+            setJsonContent(content || "Sin contenido disponible")
+        }
+        setShowJsonModal(true)
+    }
+
     const [showMotivoNCModal, setShowMotivoNCModal] = useState(false)
     const [selectedReason,   setSelectedReason]   = useState("")
     const [showGuidesModal,  setShowGuidesModal]  = useState(false)
@@ -53,11 +65,7 @@ export function ComprobantesTable({
     }
 
     const handleVerPdf = (comprobante: Comprobante) => {
-        if (comprobante.enlace) {
-            onViewPdf(comprobante.enlace)
-        } else if (comprobante.enlace_pdf) {
-            onViewPdf(`data:application/pdf;base64,${comprobante.enlace_pdf}`)
-        }
+        onViewPdf(comprobante.serie, comprobante.numero)
     }
 
     const handleViewReason = (reason: string) => {
@@ -195,17 +203,6 @@ export function ComprobantesTable({
                 </span>
             </div>
         )
-    }
-
-    const handleViewJson = (title: string, content: string) => {
-        setJsonTitle(title)
-        try {
-            const parsed = typeof content === 'string' ? JSON.parse(content) : content
-            setJsonContent(JSON.stringify(parsed, null, 2))
-        } catch {
-            setJsonContent(content || "Sin contenido disponible")
-        }
-        setShowJsonModal(true)
     }
 
     if (loading) {
@@ -565,7 +562,7 @@ export function ComprobantesTable({
                 open={showGuidesModal}
                 onOpenChange={setShowGuidesModal}
                 comprobante={selectedComprobanteForGuides}
-                onViewPdf={onViewPdf}
+                onViewPdf={onViewPdfUrl}
             />
         </>
     )

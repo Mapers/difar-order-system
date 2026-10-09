@@ -36,6 +36,7 @@ import {CancelModal} from "@/app/dashboard/comprobantes/modals/CancelModal";
 import {TransferirVendedorModal} from "@/app/dashboard/comprobantes/modals/TransferirVendedorModal";
 import {TransferirAlmacenModal} from "@/app/dashboard/comprobantes/modals/TransferirAlmacenModal";
 import {PdfViewerModal} from "@/app/dashboard/comprobantes/modals/PdfViewerModal";
+import {ComprobantePdfModal} from "@/app/dashboard/comprobantes/modals/ComprobantePdfModal";
 import {ConformidadModal} from "@/app/dashboard/comprobantes/modals/ConformidadModal";
 import {ErrorModal} from "@/app/dashboard/comprobantes/modals/ErrorModal";
 import {GenerarGuiasModal} from "@/app/dashboard/comprobantes/modals/generar-guias-modal";
@@ -608,7 +609,15 @@ export default function ComprobantesPage() {
     }
   }
 
-  const handleViewPdf = (url: string) => {
+  const [pdfComprobante,     setPdfComprobante]     = useState('')
+  const [showComprobantePdf, setShowComprobantePdf] = useState(false)
+
+  const handleViewPdf = (serie: string, numero: string) => {
+    setPdfComprobante(`${serie}-${numero}`)
+    setShowComprobantePdf(true)
+  }
+
+  const handleViewPdfUrl = (url: string) => {
     setCurrentPdfUrl(url)
     setShowPdfModal(true)
   }
@@ -1070,6 +1079,7 @@ export default function ComprobantesPage() {
                     tiposComprobante={tiposComprobante}
                     isAdmin={isAdmin}
                     onViewPdf={handleViewPdf}
+                    onViewPdfUrl={handleViewPdfUrl}
                     onCancel={handleCancelInvoice}
                     onSendEmail={handleEmailCompr}
                     onSendWhatsApp={handleWhatsappCompr}
@@ -1088,6 +1098,7 @@ export default function ComprobantesPage() {
                     tiposComprobante={tiposComprobante}
                     isAdmin={isAdmin}
                     onViewPdf={handleViewPdf}
+                    onViewPdfUrl={handleViewPdfUrl}
                     onCancel={handleCancelInvoice}
                     onSendEmail={handleEmailCompr}
                     onSendWhatsApp={handleWhatsappCompr}
@@ -1232,7 +1243,7 @@ export default function ComprobantesPage() {
                     loading={loadingGuias}
                     isAdmin={isAdmin}
                     onViewPdf={handleViewPdfGuia}
-                    onViewPdfInvoice={handleViewPdf}
+                    onViewPdfInvoice={handleViewPdfUrl}
                     onErrorView={handleOpenErrorModal}
                     onSendEmail={handleEmailGuia}
                     onSendWhatsApp={handleWhatsappGuia}
@@ -1244,7 +1255,7 @@ export default function ComprobantesPage() {
                     loading={loadingGuias}
                     isAdmin={isAdmin}
                     onViewPdf={handleViewPdfGuia}
-                    onViewPdfInvoice={handleViewPdf}
+                    onViewPdfInvoice={handleViewPdfUrl}
                     onErrorView={handleOpenErrorModal}
                     onSendEmail={handleEmailGuia}
                     onSendWhatsApp={handleWhatsappGuia}
@@ -1287,6 +1298,16 @@ export default function ComprobantesPage() {
             onConfirm={confirmTransferirAlmacen}
         />
         <PdfViewerModal open={showPdfModal} onOpenChange={setShowPdfModal} pdfUrl={currentPdfUrl} />
+
+        {/* Comprobantes y notas de crédito: el PDF se pide al abrir, por serie
+            y número. Las guías siguen con PdfViewerModal porque su base64 llega
+            por otro endpoint. */}
+        <ComprobantePdfModal
+            open={showComprobantePdf}
+            onOpenChange={setShowComprobantePdf}
+            numeroComprobante={pdfComprobante}
+            fileName={`${pdfComprobante}.pdf`}
+        />
 
         <ConformidadModal
             open={comprobanteConformidad != null}

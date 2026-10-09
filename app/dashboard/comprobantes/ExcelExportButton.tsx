@@ -9,6 +9,7 @@ import { Sequential } from '@/app/types/config-types'
 import apiClient from '@/app/api/client'
 import { esExportableARegistroVentas } from '@/app/utils/sunat'
 import ExcelJS from 'exceljs'
+import { crearFiltroDuplicados } from './dedupRegistroVentas'
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu"
 
 interface FiltersComprobantes {
@@ -125,9 +126,12 @@ export function ExcelExportButton({
 
             const filas: Fila[] = []
 
+            const filtro = crearFiltroDuplicados()
+
             if (usarSP && registroVentas.length > 0) {
                 const s = (v: any) => (v === null || v === undefined) ? '—' : String(v)
                 for (const rv of registroVentas) {
+                    if (!filtro.aceptar(rv.Serie, rv.NroDesde)) continue
                     const hasOriginal = !!(rv.SerieDocOriginal && rv.NumeroDocOriginal)
                     filas.push({
                         fechaOrden: parseFecha(rv.Fecha),
@@ -159,6 +163,7 @@ export function ExcelExportButton({
 
             for (const c of data) {
                 if (!esExportableARegistroVentas(c)) continue
+                if (!filtro.aceptar(c.serie, c.numero)) continue
                 const base    = Number(c.total_gravada || 0)
                 const igv     = Number(c.total_igv || 0)
                 const totalN  = Number(c.total) || 0
@@ -195,6 +200,12 @@ export function ExcelExportButton({
             }
 
             filas.sort((a, b) => a.fechaOrden - b.fechaOrden)
+
+            // No se descartan filas en silencio: en un registro de ventas el
+            // usuario tiene que saber que hubo repetidos.
+            if (filtro.omitidos > 0) {
+                console.info(`Registro de ventas: se omitieron ${filtro.omitidos} documentos repetidos (misma serie y número).`)
+            }
 
             // ── Build workbook ──────────────────────────────────────────
             const workbook  = new ExcelJS.Workbook()

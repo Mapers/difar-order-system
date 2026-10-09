@@ -15,10 +15,10 @@ export interface Comprobante {
     tipo_comprobante:      number  | null
     anulado:               boolean
     condicionCredito:      string | null
-    enlace:                string  | null
-    enlace_pdf:            string  | null
-    enlace_cdr:            string  | null
-    enlace_xml:            string  | null
+    enlace?:               string  | null
+    enlace_pdf?:           string  | null
+    enlace_cdr?:           string  | null
+    enlace_xml?:           string  | null
     tieneGuia:             number
     raw_request:           string  | null
     raw_response:          string  | null
@@ -60,10 +60,10 @@ export interface GuiaRemision {
     peso_bruto_total:     string | null
     tipo_comprobante:     number | null
     anulado:              boolean
-    enlace:               string | null
-    enlace_pdf:           string | null
-    enlace_cdr:           string | null
-    enlace_xml:           string | null
+    enlace?:              string | null
+    enlace_pdf?:          string | null
+    enlace_cdr?:          string | null
+    enlace_xml?:          string | null
     pdf_zip_base64:       string | null
     sunat_description:    string | null
     sunat_soap_error:     string | null

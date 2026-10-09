@@ -28,7 +28,7 @@ interface CreditNotesGridProps {
     loading: boolean
     tiposComprobante: Sequential[]
     isAdmin: boolean
-    onViewPdf: (url: string) => void
+    onViewPdf: (serie: string, numero: string) => void
     onCancel: (nota: Comprobante) => void
     onSendEmail: (nota: Comprobante) => void
     onSendWhatsApp: (nota: Comprobante) => void
@@ -48,9 +48,20 @@ export function CreditNotesGrid({
                                      onSendWhatsApp,
                                      onCheckStatus
                                  }: CreditNotesGridProps) {
-    const [showJsonModal, setShowJsonModal] = useState(false)
-    const [jsonContent, setJsonContent] = useState("")
-    const [jsonTitle, setJsonTitle] = useState("")
+    const [showJsonModal,    setShowJsonModal]    = useState(false)
+    const [jsonContent,      setJsonContent]      = useState("")
+    const [jsonTitle,        setJsonTitle]        = useState("")
+
+    const handleViewJson = (title: string, content: string | null) => {
+        setJsonTitle(title)
+        try {
+            const parsed = typeof content === 'string' ? JSON.parse(content) : content
+            setJsonContent(JSON.stringify(parsed, null, 2))
+        } catch {
+            setJsonContent(content || "Sin contenido disponible")
+        }
+        setShowJsonModal(true)
+    }
 
     const [showReasonModal, setShowReasonModal] = useState(false)
     const [showMotivoNCModal, setShowMotivoNCModal] = useState(false)
@@ -151,17 +162,6 @@ export function CreditNotesGrid({
         </div>
     }
 
-    const handleViewJson = (title: string, content: string | null) => {
-        setJsonTitle(title)
-        try {
-            const parsed = typeof content === 'string' ? JSON.parse(content) : content
-            setJsonContent(JSON.stringify(parsed, null, 2))
-        } catch (error) {
-            setJsonContent(content || "Sin contenido disponible")
-        }
-        setShowJsonModal(true)
-    }
-
     if (loading) {
         return (
             <div className="flex justify-center items-center h-64">
@@ -254,8 +254,7 @@ export function CreditNotesGrid({
                                             <div className="flex items-center gap-1">
                                                 <Button variant="ghost" size="icon"
                                                         className="h-9 w-9 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                                                        onClick={() => { if (nota.enlace) onViewPdf(nota.enlace); else if (nota.enlace_pdf) onViewPdf(`data:application/pdf;base64,${nota.enlace_pdf}`) }}
-                                                        disabled={!nota.enlace && !nota.enlace_pdf}
+                                                        onClick={() => onViewPdf(nota.serie, nota.numero)}
                                                         title="Ver PDF">
                                                     <Eye className="h-4 w-4" />
                                                 </Button>
@@ -266,10 +265,10 @@ export function CreditNotesGrid({
                                                         </Button>
                                                     </DropdownMenuTrigger>
                                                     <DropdownMenuContent align="end" className="w-56">
-                                                        <DropdownMenuItem onClick={() => handleViewJson('JSON Solicitud (Request)', nota.raw_request)}>
+                                                        <DropdownMenuItem onClick={() => handleViewJson('JSON Solicitud (Request)', nota.raw_request!)}>
                                                             <Code className="mr-2 h-4 w-4 text-muted-foreground" /> JSON Solicitud
                                                         </DropdownMenuItem>
-                                                        <DropdownMenuItem onClick={() => handleViewJson('JSON Respuesta (Response)', nota.raw_response)}>
+                                                        <DropdownMenuItem onClick={() => handleViewJson('JSON Respuesta (Response)', nota.raw_response!)}>
                                                             <FileJson className="mr-2 h-4 w-4 text-muted-foreground" /> JSON Respuesta
                                                         </DropdownMenuItem>
                                                         {isAdmin && (

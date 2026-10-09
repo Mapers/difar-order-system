@@ -20,7 +20,8 @@ interface ComprobantesGridProps {
     loading: boolean
     tiposComprobante: Sequential[]
     isAdmin: boolean
-    onViewPdf: (url: string) => void
+    onViewPdf: (serie: string, numero: string) => void
+    onViewPdfUrl: (url: string) => void
     onCancel: (comprobante: Comprobante) => void
     onSendEmail: (comprobante: Comprobante) => void
     onSendWhatsApp: (comprobante: Comprobante) => void
@@ -37,7 +38,7 @@ interface ComprobantesGridProps {
 // (3 por fila en desktop) en vez de tabla. Mismo contrato de props para
 // poder alternar entre ambas sin tocar la página que las usa.
 export function ComprobantesGrid({
-                                      comprobantes, loading, tiposComprobante, isAdmin, onViewPdf, onCancel,
+                                      comprobantes, loading, tiposComprobante, isAdmin, onViewPdf, onViewPdfUrl, onCancel,
                                       onSendEmail, onSendWhatsApp, onCheckStatus, onCorregirDescripcion,
                                       onModificarCuotas, onTransferirVendedor, onTransferirAlmacen,
                                       onGestionarConformidad, puedeGestionarConformidad
@@ -46,6 +47,17 @@ export function ComprobantesGrid({
     const [jsonContent,      setJsonContent]      = useState("")
     const [jsonTitle,        setJsonTitle]        = useState("")
     const [showReasonModal,  setShowReasonModal]  = useState(false)
+    const handleViewJson = (title: string, content: string) => {
+        setJsonTitle(title)
+        try {
+            const parsed = typeof content === 'string' ? JSON.parse(content) : content
+            setJsonContent(JSON.stringify(parsed, null, 2))
+        } catch {
+            setJsonContent(content || "Sin contenido disponible")
+        }
+        setShowJsonModal(true)
+    }
+
     const [showMotivoNCModal, setShowMotivoNCModal] = useState(false)
     const [selectedReason,   setSelectedReason]   = useState("")
     const [showGuidesModal,  setShowGuidesModal]  = useState(false)
@@ -57,11 +69,7 @@ export function ComprobantesGrid({
     }
 
     const handleVerPdf = (comprobante: Comprobante) => {
-        if (comprobante.enlace) {
-            onViewPdf(comprobante.enlace)
-        } else if (comprobante.enlace_pdf) {
-            onViewPdf(`data:application/pdf;base64,${comprobante.enlace_pdf}`)
-        }
+        onViewPdf(comprobante.serie, comprobante.numero)
     }
 
     const handleViewReason = (reason: string) => {
@@ -77,17 +85,6 @@ export function ComprobantesGrid({
     const handleViewGuides = (comprobante: Comprobante) => {
         setSelectedComprobanteForGuides(comprobante)
         setShowGuidesModal(true)
-    }
-
-    const handleViewJson = (title: string, content: string) => {
-        setJsonTitle(title)
-        try {
-            const parsed = typeof content === 'string' ? JSON.parse(content) : content
-            setJsonContent(JSON.stringify(parsed, null, 2))
-        } catch {
-            setJsonContent(content || "Sin contenido disponible")
-        }
-        setShowJsonModal(true)
     }
 
     const getEstadoConfig = (comprobante: Comprobante): {
@@ -441,7 +438,7 @@ export function ComprobantesGrid({
                 open={showGuidesModal}
                 onOpenChange={setShowGuidesModal}
                 comprobante={selectedComprobanteForGuides}
-                onViewPdf={onViewPdf}
+                onViewPdf={onViewPdfUrl}
             />
         </>
     )

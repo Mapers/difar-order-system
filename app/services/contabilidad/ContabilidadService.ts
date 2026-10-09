@@ -1,5 +1,12 @@
 import apiClient from '@/app/api/client'
 import {
+    ArticuloCompras,
+    ComprasCabeceraPayload,
+    ComprasCatalogos,
+    ComprasDetallePayload,
+    ComprasDocumento,
+    ComprasResumen,
+    ProveedorCompras,
     CajaCatalogos,
     CajaDetallePayload,
     CajaVoucher,
@@ -90,6 +97,97 @@ export const CajaBancosService = {
 
     eliminarVoucher: async (item: number) => {
         const res = await apiClient.delete(`/contabilidad/caja/voucher/${item}`)
+        return res.data?.data ?? null
+    },
+}
+
+// ─── Registro Compras Inventarios ─────────────────────────────────────────────
+
+export const ComprasService = {
+    catalogos: async (): Promise<ComprasCatalogos> => {
+        const res = await apiClient.get('/contabilidad/compras/catalogos')
+        const d = res.data?.data ?? {}
+
+        const porTexto = (campo: string) => (a: any, b: any) =>
+            String(a?.[campo] ?? '').localeCompare(String(b?.[campo] ?? ''), 'es')
+
+        return {
+            tiposDoc:            [...(d.tiposDoc ?? [])].sort(porTexto('Descripcion')),
+            monedas:             [...(d.monedas ?? [])].sort(porTexto('Descripcion')),
+            meses:               [...(d.meses ?? [])].sort(porTexto('Numero')),
+            anios:               [...(d.anios ?? [])].sort(porTexto('Anio')),
+            tasasIgv:            [...(d.tasasIgv ?? [])].sort((a: any, b: any) => Number(a.Tasa) - Number(b.Tasa)),
+            condiciones:         [...(d.condiciones ?? [])].sort((a: any, b: any) => Number(a.DiasCdto) - Number(b.DiasCdto)),
+            almacenes:           [...(d.almacenes ?? [])].sort(porTexto('Descripcion')),
+            tiposPago:           [...(d.tiposPago ?? [])].sort(porTexto('Cod_Tipo_Amort')),
+            centrosCosto:        [...(d.centrosCosto ?? [])].sort(porTexto('Descripcion')),
+            clasificacionBienes: [...(d.clasificacionBienes ?? [])].sort(porTexto('DescripcionBienes')),
+            usuarios:            [...(d.usuarios ?? [])].sort(porTexto('NombreUsuarios')),
+            cuentas:             [...(d.cuentas ?? [])].sort(porTexto('Cod_Contab')),
+            unidadesCosto:       [...(d.unidadesCosto ?? [])].sort(porTexto('Descripcion')),
+            fechaCierre:         d.fechaCierre ?? null,
+        }
+    },
+
+    buscarProveedores: async (busqueda: string): Promise<ProveedorCompras[]> => {
+        const res = await apiClient.get('/contabilidad/compras/proveedores', {
+            params: busqueda ? { busqueda } : undefined,
+        })
+        return res.data?.data?.data ?? []
+    },
+
+    buscarArticulos: async (busqueda: string): Promise<ArticuloCompras[]> => {
+        const res = await apiClient.get('/contabilidad/compras/articulos', {
+            params: busqueda ? { busqueda } : undefined,
+        })
+        return res.data?.data?.data ?? []
+    },
+
+    valoresIniciales: async (anio?: string, periodo?: string): Promise<any> => {
+        const res = await apiClient.get('/contabilidad/compras/valores-iniciales', {
+            params: { anio: anio || undefined, periodo: periodo || undefined },
+        })
+        return res.data?.data ?? null
+    },
+
+    buscarDocumentos: async (anio: string, periodo?: string, texto?: string): Promise<ComprasResumen[]> => {
+        const res = await apiClient.get('/contabilidad/compras/documentos', {
+            params: { anio, periodo: periodo || undefined, texto: texto || undefined },
+        })
+        return res.data?.data?.data ?? []
+    },
+
+    obtenerDocumento: async (clave: number): Promise<ComprasDocumento> => {
+        const res = await apiClient.get(`/contabilidad/compras/documento/${clave}`)
+        const d = res.data?.data ?? {}
+        return {
+            cabecera: d.cabecera ?? null,
+            detalle:  d.detalle ?? [],
+            totales:  d.totales ?? null,
+        }
+    },
+
+    guardar: async (
+        clave: number | null,
+        cabecera: ComprasCabeceraPayload,
+        detalle: ComprasDetallePayload[],
+        usuario: number | null,
+    ) => {
+        const res = await apiClient.post('/contabilidad/compras/guardar', {
+            clave, usuario, cabecera, detalle,
+        })
+        return res.data?.data ?? null
+    },
+
+    eliminarLineasMarcadas: async (clave: number, usuario: number | null) => {
+        const res = await apiClient.delete(`/contabilidad/compras/documento/${clave}/detalle`, {
+            params: { usuario: usuario ?? undefined },
+        })
+        return res.data?.data ?? null
+    },
+
+    eliminarDocumento: async (clave: number) => {
+        const res = await apiClient.delete(`/contabilidad/compras/documento/${clave}`)
         return res.data?.data ?? null
     },
 }
