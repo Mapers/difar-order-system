@@ -255,7 +255,8 @@ export function ExportRegistroButton({
             }
 
             let registroVentas: RegistroVenta[] = []
-            const usarSP = type === 'comprobantes' && filters?.fechaDesde && filters?.fechaHasta
+            const USAR_REGISTRO_VENTAS_SP = false
+            const usarSP = USAR_REGISTRO_VENTAS_SP && type === 'comprobantes' && filters?.fechaDesde && filters?.fechaHasta
 
             if (usarSP) {
                 try {

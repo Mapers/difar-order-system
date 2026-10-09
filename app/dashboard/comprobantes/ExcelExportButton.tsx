@@ -95,7 +95,8 @@ export function ExcelExportButton({
 
         try {
             let registroVentas: RegistroVenta[] = []
-            const usarSP = filters?.fechaDesde && filters?.fechaHasta
+            const USAR_REGISTRO_VENTAS_SP = false
+            const usarSP = USAR_REGISTRO_VENTAS_SP && filters?.fechaDesde && filters?.fechaHasta
 
             if (usarSP) {
                 try {
