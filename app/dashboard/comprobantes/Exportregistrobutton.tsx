@@ -414,9 +414,9 @@ export function ExportRegistroButton({
             } else if (type === 'notas') {
                 for (const c of data) {
                     if (!c.anulado) {
-                        totBase      += calcBase(c.total)
+                        totBase      += c.total_gravada != null ? Number(c.total_gravada) : calcBase(c.total)
                         totNoGrabado += Number(c.no_gravadas || 0)
-                        totIGV       += calcIGV(c.total)
+                        totIGV       += c.total_igv     != null ? Number(c.total_igv)     : calcIGV(c.total)
                         totTotal     += Number(c.total) || 0
                     }
                 }
@@ -643,10 +643,10 @@ export function ExportRegistroButton({
                         drawHeader(currentPage)
                     }
 
-                    const base    = calcBase(c.total)
-                    const igv     = calcIGV(c.total)
-                    const total   = Number(c.total) || 0
                     const anulado = c.anulado
+                    const base    = c.total_gravada != null ? Number(c.total_gravada) : calcBase(c.total)
+                    const igv     = c.total_igv     != null ? Number(c.total_igv)     : calcIGV(c.total)
+                    const total   = Number(c.total) || 0
                     const moneda  = c.moneda === 1 ? 'S/' : '$'
                     const tiDI    = c.tipo_comprobante === 1 ? 'RUC' : 'DNI'
 
@@ -661,9 +661,9 @@ export function ExportRegistroButton({
                         c.cliente_numdoc ?? '—',
                         moneda,
                         (anulado ? 0 : Number(c.no_gravadas || 0)).toFixed(2),
-                        fmtMoney(base),
-                        fmtMoney(igv),
-                        fmtMoney(total),
+                        fmtMoney(anulado ? 0 : base),
+                        fmtMoney(anulado ? 0 : igv),
+                        fmtMoney(anulado ? 0 : total),
                     ], anulado)
                 }
             }
