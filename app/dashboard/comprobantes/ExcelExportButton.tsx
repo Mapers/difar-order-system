@@ -95,7 +95,7 @@ export function ExcelExportButton({
 
         try {
             let registroVentas: RegistroVenta[] = []
-            const USAR_REGISTRO_VENTAS_SP = false
+            const USAR_REGISTRO_VENTAS_SP = true
             const usarSP = USAR_REGISTRO_VENTAS_SP && filters?.fechaDesde && filters?.fechaHasta
 
             if (usarSP) {
@@ -128,39 +128,6 @@ export function ExcelExportButton({
             const filas: Fila[] = []
 
             const filtro = crearFiltroDuplicados()
-
-            if (usarSP && registroVentas.length > 0) {
-                const s = (v: any) => (v === null || v === undefined) ? '—' : String(v)
-                for (const rv of registroVentas) {
-                    if (!filtro.aceptar(rv.Serie, rv.NroDesde)) continue
-                    const hasOriginal = !!(rv.SerieDocOriginal && rv.NumeroDocOriginal)
-                    filas.push({
-                        fechaOrden: parseFecha(rv.Fecha),
-                        anulado   : false,
-                        negativo  : false,
-                        row: {
-                            fEmision    : safeDate(rv.Fecha),
-                            doc         : s(rv.Doc),
-                            serie       : s(rv.Serie),
-                            nroDesde    : s(rv.NroDesde),
-                            fVcto       : safeDate(rv.FVcto),
-                            cliente     : s(rv.Cliente),
-                            di          : s(rv.DI),
-                            nroDi       : s(rv.NroDI),
-                            tc          : rv.TC ? String(rv.TC) : '1.00',
-                            noGrabado   : isNaN(Number(rv.NoGrabado))  ? 0 : Number(Number(rv.NoGrabado).toFixed(2)),
-                            bImponible  : isNaN(Number(rv.BImponible)) ? 0 : Number(Number(rv.BImponible).toFixed(2)),
-                            igv         : isNaN(Number(rv.IGV))        ? 0 : Number(Number(rv.IGV).toFixed(2)),
-                            total       : isNaN(Number(rv.Total))      ? 0 : Number(Number(rv.Total).toFixed(2)),
-                            fEmisionOrig: hasOriginal ? safeDate(rv.FechaDocOriginal) : '—',
-                            serieOrig   : hasOriginal ? s(rv.SerieDocOriginal)        : '—',
-                            numeroOrig  : hasOriginal ? s(rv.NumeroDocOriginal)       : '—',
-                            vendedor    : s(rv.Vendedor),
-                            representante: s(rv.Representante),
-                        },
-                    })
-                }
-            }
 
             for (const c of data) {
                 if (!esExportableARegistroVentas(c)) continue
@@ -198,6 +165,39 @@ export function ExcelExportButton({
                         representante: c.Representante || '—',
                     },
                 })
+            }
+
+            if (usarSP && registroVentas.length > 0) {
+                const s = (v: any) => (v === null || v === undefined) ? '—' : String(v)
+                for (const rv of registroVentas) {
+                    if (!filtro.aceptar(rv.Serie, rv.NroDesde)) continue
+                    const hasOriginal = !!(rv.SerieDocOriginal && rv.NumeroDocOriginal)
+                    filas.push({
+                        fechaOrden: parseFecha(rv.Fecha),
+                        anulado   : false,
+                        negativo  : false,
+                        row: {
+                            fEmision    : safeDate(rv.Fecha),
+                            doc         : s(rv.Doc),
+                            serie       : s(rv.Serie),
+                            nroDesde    : s(rv.NroDesde),
+                            fVcto       : safeDate(rv.FVcto),
+                            cliente     : s(rv.Cliente),
+                            di          : s(rv.DI),
+                            nroDi       : s(rv.NroDI),
+                            tc          : rv.TC ? String(rv.TC) : '1.00',
+                            noGrabado   : isNaN(Number(rv.NoGrabado))  ? 0 : Number(Number(rv.NoGrabado).toFixed(2)),
+                            bImponible  : isNaN(Number(rv.BImponible)) ? 0 : Number(Number(rv.BImponible).toFixed(2)),
+                            igv         : isNaN(Number(rv.IGV))        ? 0 : Number(Number(rv.IGV).toFixed(2)),
+                            total       : isNaN(Number(rv.Total))      ? 0 : Number(Number(rv.Total).toFixed(2)),
+                            fEmisionOrig: hasOriginal ? safeDate(rv.FechaDocOriginal) : '—',
+                            serieOrig   : hasOriginal ? s(rv.SerieDocOriginal)        : '—',
+                            numeroOrig  : hasOriginal ? s(rv.NumeroDocOriginal)       : '—',
+                            vendedor    : s(rv.Vendedor),
+                            representante: s(rv.Representante),
+                        },
+                    })
+                }
             }
 
             filas.sort((a, b) => a.fechaOrden - b.fechaOrden)

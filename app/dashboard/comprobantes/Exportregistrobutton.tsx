@@ -255,7 +255,7 @@ export function ExportRegistroButton({
             }
 
             let registroVentas: RegistroVenta[] = []
-            const USAR_REGISTRO_VENTAS_SP = false
+            const USAR_REGISTRO_VENTAS_SP = true
             const usarSP = USAR_REGISTRO_VENTAS_SP && type === 'comprobantes' && filters?.fechaDesde && filters?.fechaHasta
 
             if (usarSP) {
@@ -295,50 +295,6 @@ export function ExportRegistroButton({
 
             if (type === 'comprobantes') {
                 const filtro = crearFiltroDuplicados()
-
-                if (usarSP && registroVentas.length > 0) {
-                    const s = (v: any) => (v === null || v === undefined) ? '—' : String(v)
-
-                    for (const rv of registroVentas) {
-                        if (!filtro.aceptar(rv.Serie, rv.NroDesde)) continue
-                        const hasOriginal = !!(rv.SerieDocOriginal && rv.NumeroDocOriginal)
-                        const tcStr       = rv.TC ? String(rv.TC) : '1.00'
-
-                        const bImp  = isNaN(Number(rv.BImponible)) ? 0 : Number(Number(rv.BImponible).toFixed(2))
-                        const igvN  = isNaN(Number(rv.IGV))        ? 0 : Number(Number(rv.IGV).toFixed(2))
-                        const totN  = isNaN(Number(rv.Total))      ? 0 : Number(Number(rv.Total).toFixed(2))
-
-                        filasComprobantes.push({
-                            fechaOrden: parseFecha(rv.Fecha),
-                            anulado   : false,
-                            negativo  : false,
-                            noGrabado : isNaN(Number(rv.NoGrabado)) ? 0 : Number(Number(rv.NoGrabado).toFixed(2)),
-                            bImponible: bImp,
-                            igv       : igvN,
-                            total     : totN,
-                            cells: [
-                                safeDate(rv.Fecha),
-                                s(rv.Doc),
-                                s(rv.Serie),
-                                s(rv.NroDesde),
-                                safeDate(rv.FVcto),
-                                s(rv.Cliente),
-                                s(rv.Vendedor),
-                                s(rv.Representante),
-                                s(rv.DI),
-                                s(rv.NroDI),
-                                tcStr,
-                                isNaN(Number(rv.NoGrabado))  ? '0.00' : Number(rv.NoGrabado).toFixed(2),
-                                bImp.toFixed(2),
-                                igvN.toFixed(2),
-                                totN.toFixed(2),
-                                hasOriginal ? safeDate(rv.FechaDocOriginal) : '—',
-                                hasOriginal ? s(rv.SerieDocOriginal)        : '—',
-                                hasOriginal ? s(rv.NumeroDocOriginal)       : '—',
-                            ],
-                        })
-                    }
-                }
 
                 for (const c of data) {
                     if (!esExportableARegistroVentas(c)) {
@@ -391,6 +347,50 @@ export function ExportRegistroButton({
                             '—',
                         ],
                     })
+                }
+
+                if (usarSP && registroVentas.length > 0) {
+                    const s = (v: any) => (v === null || v === undefined) ? '—' : String(v)
+
+                    for (const rv of registroVentas) {
+                        if (!filtro.aceptar(rv.Serie, rv.NroDesde)) continue
+                        const hasOriginal = !!(rv.SerieDocOriginal && rv.NumeroDocOriginal)
+                        const tcStr       = rv.TC ? String(rv.TC) : '1.00'
+
+                        const bImp  = isNaN(Number(rv.BImponible)) ? 0 : Number(Number(rv.BImponible).toFixed(2))
+                        const igvN  = isNaN(Number(rv.IGV))        ? 0 : Number(Number(rv.IGV).toFixed(2))
+                        const totN  = isNaN(Number(rv.Total))      ? 0 : Number(Number(rv.Total).toFixed(2))
+
+                        filasComprobantes.push({
+                            fechaOrden: parseFecha(rv.Fecha),
+                            anulado   : false,
+                            negativo  : false,
+                            noGrabado : isNaN(Number(rv.NoGrabado)) ? 0 : Number(Number(rv.NoGrabado).toFixed(2)),
+                            bImponible: bImp,
+                            igv       : igvN,
+                            total     : totN,
+                            cells: [
+                                safeDate(rv.Fecha),
+                                s(rv.Doc),
+                                s(rv.Serie),
+                                s(rv.NroDesde),
+                                safeDate(rv.FVcto),
+                                s(rv.Cliente),
+                                s(rv.Vendedor),
+                                s(rv.Representante),
+                                s(rv.DI),
+                                s(rv.NroDI),
+                                tcStr,
+                                isNaN(Number(rv.NoGrabado))  ? '0.00' : Number(rv.NoGrabado).toFixed(2),
+                                bImp.toFixed(2),
+                                igvN.toFixed(2),
+                                totN.toFixed(2),
+                                hasOriginal ? safeDate(rv.FechaDocOriginal) : '—',
+                                hasOriginal ? s(rv.SerieDocOriginal)        : '—',
+                                hasOriginal ? s(rv.NumeroDocOriginal)       : '—',
+                            ],
+                        })
+                    }
                 }
 
                 if (filtro.omitidos > 0) {
