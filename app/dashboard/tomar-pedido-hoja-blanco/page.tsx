@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { ArrowLeftRight, BookOpen, Building2, CalendarClock, Coins, Eraser, FilePlus2, FileText, Hash, Loader2, MessageSquareText, Package, Percent, Plus, Printer, Receipt, Save, Search, Target, Trash2, User, UserCheck } from "lucide-react"
+import { ArrowLeftRight, BookOpen, Building2, CalendarClock, Coins, Eraser, FilePlus2, FileText, Hash, Loader2, MessageSquareText, Package, Pencil, Percent, Plus, Printer, Receipt, Save, Search, Target, Trash2, User, UserCheck } from "lucide-react"
 import InlineAutocomplete from "@/components/tomar-pedido/InlineAutocomplete"
 import { cn } from "@/lib/utils"
 import { toast } from "@/app/hooks/useToast"
@@ -22,6 +22,7 @@ import {
     AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
     AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import ComprobantePreviewModal, { ComprobantePreviewData } from "@/components/tomar-pedido-hoja-blanco/ComprobantePreviewModal"
 import AlmacenModal from "@/components/tomar-pedido/AlmacenModal"
 import ProductSearchDialog from "@/components/tomar-pedido/product-step/ProductSearchDialog"
@@ -52,9 +53,8 @@ import ProductSearchDialog from "@/components/tomar-pedido/product-step/ProductS
  *   - IGV / Centro de costos → GET /contabilidad/compras/catalogos
  *                     (sp_ws_regcompras_catalogos: tasasIgv, centrosCosto)
  *
- * Serie, Número y Cuenta contable todavia no tienen endpoint en el backend
- * (no existe SP sobre serie_docs ni uno que devuelva las cuentas 70 con
- * IdCtaContable) — quedan con datos de prueba, claramente marcados abajo.
+ * Serie, Número, Cuenta contable y Lote → /hoja-blanco/* (SP sp_ws_hoja_blanco_*,
+ * ver sistema-difar/documentacion/api-hoja-blanco.md).
  *
  * Estado: en validación. El guardado del comprobante es simulado (no hay
  * endpoint real todavia). No confundir con "Hoja en Blanco"
@@ -81,26 +81,35 @@ const aMonedaContable = (moneda: string) => MONEDA_CONTABLE[moneda] ?? "NSO"
 
 interface Operacion { Codigo_Op: string; Operacion: string; Motivo: number }
 interface CentroCosto { Cod_CC: string; Descripcion: string }
+interface SerieDoc { idSerieDoc: number; Nro_Serie: string; tipoDocumento: string | null; docElectronico: number }
+interface CuentaVenta { IdCtaContable: number; Cod_Contab: string; Descricpion: string }
+interface LoteItem { Lote: string; VctoItem: string | null; Saldo: string | number | null }
 
-// ---------------------------------------------------------------------
-// Datos de prueba SOLO para lo que aun no tiene endpoint en el backend
-// (ver Hoja Blanco/04_data_prueba/seed_data_prueba.sql)
-// ---------------------------------------------------------------------
-const SERIES_POR_DOC: Record<string, string[]> = {
-    [DOC_FACTURA]: ["0001"],
-    [DOC_BOLETA]: ["0002"],
-    [DOC_NOTA_CREDITO]: ["0001"],
-    [DOC_NOTA_DEBITO]: ["0001"],
+// Serie: como Access se listan todas las series de la empresa (las NC usan
+// F001/F002 y hay boletas en R001). Primero van las del tipo elegido; las
+// NC/ND toman por defecto una serie de factura.
+const tipoSerieDe = (tipoDoc: string) => (tipoDoc === DOC_NOTA_CREDITO || tipoDoc === DOC_NOTA_DEBITO ? DOC_FACTURA : tipoDoc)
+const seriePorDefecto = (series: SerieDoc[], tipoDoc: string) =>
+    series.find((s) => s.tipoDocumento === tipoSerieDe(tipoDoc))?.Nro_Serie ?? ""
+
+// Cuenta por defecto de las lineas afectas: 7010101, la que usan todas las
+// ventas afectas registradas. Para no afectas no hay una cuenta usada: se elige a mano.
+const COD_CUENTA_AFECTA = "7010101"
+
+// guardar: maximo de lineas (NroItemDetalle de Access) y marca de origen (transf_v)
+const MAX_LINEAS = 17
+const ORIGEN_WEB = "HOJA_BLANCO"
+const DE_MONEDA_CONTABLE: Record<string, string> = { NSO: "PEN", USD: "USD" }
+const primerDiaMes = () => `${hoy().slice(0, 8)}01`
+const fechaCorta = (f: string | null | undefined) => (f ? String(f).slice(0, 10).split("-").reverse().join("/") : "")
+const mensajeApi = (e: any, porDefecto: string) => e?.response?.data?.message || porDefecto
+
+interface ComprobanteFila {
+    Ide: number; TipoDocumento: string; DocumentoDescripcion: string | null; Serie: string; Numero: number
+    Fecha: string; CodigoClie: string; ClienteNombre: string | null; Moneda: string; Total: string | number; Origen: string | null
 }
-const CUENTAS = [
-    { IdCtaContable: 3, Cod_Contab: "701101", Descricpion: "Ventas - Mercaderias Afectas" },
-    { IdCtaContable: 4, Cod_Contab: "701211", Descricpion: "Ventas - Mercaderias Exoneradas" },
-]
-
-// Cuenta contable por defecto segun si la linea es afecta o no al IGV
-const CUENTA_AFECTA = "3"
-const CUENTA_NO_AFECTA = "4"
-const cuentaPorDefecto = (afecto: boolean) => (afecto ? CUENTA_AFECTA : CUENTA_NO_AFECTA)
+const cuentaPorDefecto = (afecto: boolean, cuentas: CuentaVenta[]) =>
+    afecto ? String(cuentas.find((c) => c.Cod_Contab === COD_CUENTA_AFECTA)?.IdCtaContable ?? "") : ""
 
 // Centro de costos por defecto: el que se llama igual que el almacen (CHIMBOTE → CHIMBOTE)
 const normalizar = (t: string) => (t || "").trim().toUpperCase()
@@ -109,19 +118,23 @@ const centroPorAlmacen = (almacen: IAlmacen | null, centros: CentroCosto[]) =>
 
 interface LineaDetalle {
     idArticulo: string
+    CodigoArticulo: string
     Articulo: string
     Cantidad: number
     PU: number
     Afecto: boolean
     CuentaContab: string
     CentroCostos: string
+    Lote: string
+    // Lotes con saldo del articulo en el almacen (null = cargando)
+    Lotes: LoteItem[] | null
     // true cuando el usuario eligio el valor a mano: ya no se reasigna automaticamente
     CuentaManual: boolean
     CentroManual: boolean
 }
-const lineaVacia = (centro = ""): LineaDetalle => ({
-    idArticulo: "", Articulo: "", Cantidad: 1, PU: 0, Afecto: true,
-    CuentaContab: cuentaPorDefecto(true), CentroCostos: centro, CuentaManual: false, CentroManual: false,
+const lineaVacia = (centro = "", cuenta = ""): LineaDetalle => ({
+    idArticulo: "", CodigoArticulo: "", Articulo: "", Cantidad: 1, PU: 0, Afecto: true,
+    CuentaContab: cuenta, CentroCostos: centro, Lote: "", Lotes: [], CuentaManual: false, CentroManual: false,
 })
 const hoy = () => new Date().toISOString().slice(0, 10)
 
@@ -144,6 +157,14 @@ export default function TomarPedidoHojaBlancoPage() {
     const [loadingAlmacenes, setLoadingAlmacenes] = useState(false)
     const [selectedAlmacen, setSelectedAlmacen] = useState<IAlmacen | null>(null)
     const [almacenModalOpen, setAlmacenModalOpen] = useState(false)
+    const [series, setSeries] = useState<SerieDoc[]>([])
+    const [cuentas, setCuentas] = useState<CuentaVenta[]>([])
+    const [loadingCuentas, setLoadingCuentas] = useState(true)
+    // MAX(fechacostos.Fecha): no se registra ni elimina en o antes de esta fecha
+    const [fechaCierre, setFechaCierre] = useState<string | null>(null)
+    // Comprobante abierto: null = nuevo; con valor, Guardar edita y se puede eliminar
+    const [ide, setIde] = useState<number | null>(null)
+    const [origenAbierto, setOrigenAbierto] = useState<string | null>(null)
 
     useEffect(() => {
         const sellerCode = auth.isAdmin() ? "" : (auth.user?.codigo || "")
@@ -183,6 +204,7 @@ export default function TomarPedidoHojaBlancoPage() {
                 const c = res.data?.data?.data || res.data?.data || {}
                 setTasasIgv((c.tasasIgv || []).map((t: any) => ({ Tasa: Number(t.Tasa) })))
                 setCentrosCosto(c.centrosCosto || [])
+                setFechaCierre(c.fechaCierre ? String(c.fechaCierre).slice(0, 10) : null)
             })
             .catch(() => toast({ title: "Error", description: "No se pudo cargar las tasas de IGV y centros de costo.", variant: "destructive" }))
 
@@ -191,13 +213,33 @@ export default function TomarPedidoHojaBlancoPage() {
             .then((res) => setAlmacenes(res.data?.data?.data || res.data?.data || []))
             .catch(() => toast({ title: "Error", description: "No se pudo cargar la lista de almacenes.", variant: "destructive" }))
             .finally(() => setLoadingAlmacenes(false))
+
+        apiClient.get("/hoja-blanco/series")
+            .then((res) => {
+                const todas: SerieDoc[] = res.data?.data?.data || []
+                setSeries(todas)
+                setSerie((actual) => actual || seriePorDefecto(todas, DOC_FACTURA))
+            })
+            .catch(() => toast({ title: "Error", description: "No se pudo cargar las series.", variant: "destructive" }))
+
+        apiClient.get("/hoja-blanco/cuentas-ventas")
+            .then((res) => {
+                const todas: CuentaVenta[] = res.data?.data?.data || []
+                setCuentas(todas)
+                // Lineas que aun no tienen cuenta elegida a mano reciben la de afectas
+                setDetalle((prev) => prev.map((l) => (l.CuentaManual || l.CuentaContab ? l : { ...l, CuentaContab: cuentaPorDefecto(l.Afecto, todas) })))
+            })
+            .catch(() => toast({ title: "Error", description: "No se pudo cargar las cuentas contables.", variant: "destructive" }))
+            .finally(() => setLoadingCuentas(false))
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
     // ── Cabecera ──
     const [tipoDoc, setTipoDoc] = useState(DOC_FACTURA)
-    const [serie, setSerie] = useState("0001")
-    const [numero] = useState(1) // simulado: en produccion vendria de sp_ventas_siguiente_numero
+    const [serie, setSerie] = useState("")
+    // sp_ws_hoja_blanco_siguiente_numero: MAX(Numero) + 1 en registro de ventas para tipo + serie
+    const [numero, setNumero] = useState<number | null>(null)
+    const [loadingNumero, setLoadingNumero] = useState(false)
     const [fecha, setFecha] = useState(hoy())
     const [codCliente, setCodCliente] = useState("")
     const [codVendedor, setCodVendedor] = useState("")
@@ -217,6 +259,35 @@ export default function TomarPedidoHojaBlancoPage() {
 
     const esNotaCreditoDebito = tipoDoc === DOC_NOTA_CREDITO || tipoDoc === DOC_NOTA_DEBITO
     const diasCredito = condicionesReal.find((c) => c.CodigoCondicion === condicion)?.DiasCdto ?? 0
+
+    // Todas las series, primero las del tipo de documento elegido
+    const seriesOrdenadas = useMemo(() => {
+        const tipo = tipoSerieDe(tipoDoc)
+        return [...series].sort((a, b) => Number(b.tipoDocumento === tipo) - Number(a.tipoDocumento === tipo))
+    }, [series, tipoDoc])
+
+    // Número: se recalcula al cambiar tipo de documento o serie (no al editar uno abierto)
+    useEffect(() => {
+        if (ide !== null) return
+        setNumero(null)
+        if (!tipoDoc || !serie) return
+        let vigente = true
+        setLoadingNumero(true)
+        apiClient.get("/hoja-blanco/siguiente-numero", { params: { tipoDoc, serie } })
+            .then((res) => { if (vigente) setNumero(Number(res.data?.data?.siguiente_numero) || null) })
+            .catch(() => { if (vigente) toast({ title: "Error", description: "No se pudo obtener el número del comprobante.", variant: "destructive" }) })
+            .finally(() => { if (vigente) setLoadingNumero(false) })
+        return () => { vigente = false }
+    }, [tipoDoc, serie, ide])
+
+    // Comprobantes de Access (transf_v nulo) o de esta pantalla se pueden editar;
+    // los escritos por otros procesos (ej. comprobante electronico) solo se consultan.
+    const soloLectura = ide !== null && origenAbierto !== null && origenAbierto !== ORIGEN_WEB
+    // Como "Modificar" de Access: un comprobante abierto queda en consulta hasta presionar Modificar
+    const [modoEdicion, setModoEdicion] = useState(false)
+    const bloqueado = ide !== null && (soloLectura || !modoEdicion)
+    const serieElectronica = series.find((s) => s.Nro_Serie === serie)?.docElectronico === 1
+    const numeroTexto = numero === null ? "" : String(numero).padStart(6, "0")
 
     // ── Buscador de productos real (mismo componente de Tomar Pedido) ──
     const [productSearchOpen, setProductSearchOpen] = useState(false)
@@ -252,12 +323,37 @@ export default function TomarPedidoHojaBlancoPage() {
 
     const handleProductSelect = (product: IProduct) => {
         if (activeRowIndex === null) return
-        cambiarAfecto(activeRowIndex, product.afecto_igv !== 0, {
+        const idx = activeRowIndex
+        const codigo = String(product.Codigo_Art)
+        cambiarAfecto(idx, product.afecto_igv !== 0, {
             idArticulo: String(product.IdArticulo),
+            CodigoArticulo: codigo,
             Articulo: `${product.Codigo_Art} - ${product.NombreItem}`,
             PU: Number(product.PUContado),
+            Lote: "",
+            Lotes: null,
         })
         setProductSearchOpen(false)
+        if (selectedAlmacen) cargarLotes(idx, codigo, selectedAlmacen.IdAlmacen)
+    }
+
+    // Lotes con saldo del articulo en el almacen; se propone el que vence primero.
+    // Si la linea ya tiene lote (comprobante abierto) se conserva aunque hoy no tenga saldo.
+    const cargarLotes = (idx: number, codigo: string, almacen: number) => {
+        apiClient.get("/hoja-blanco/lotes", { params: { codigoArt: codigo, almacen } })
+            .then((res) => {
+                const lotes: LoteItem[] = res.data?.data?.data || []
+                setDetalle((prev) => prev.map((l, i) => {
+                    if (i !== idx || l.CodigoArticulo !== codigo) return l
+                    if (!l.Lote) return { ...l, Lotes: lotes, Lote: lotes[0]?.Lote ?? "" }
+                    const conActual = lotes.some((x) => x.Lote === l.Lote) ? lotes : [{ Lote: l.Lote, VctoItem: null, Saldo: null }, ...lotes]
+                    return { ...l, Lotes: conActual }
+                }))
+            })
+            .catch(() => {
+                setDetalle((prev) => prev.map((l, i) => (i !== idx || l.CodigoArticulo !== codigo ? l : { ...l, Lotes: [] })))
+                toast({ title: "Error", description: "No se pudo cargar los lotes del producto.", variant: "destructive" })
+            })
     }
 
     const setLinea = (idx: number, patch: Partial<LineaDetalle>) => {
@@ -268,14 +364,14 @@ export default function TomarPedidoHojaBlancoPage() {
         })
     }
     // Cambia el afecto de la linea y, si la cuenta no fue elegida a mano, la ajusta
-    // (afecto → cuenta de afectas; no afecto → cuenta de exoneradas).
+    // (afecto → 7010101; no afecto → sin cuenta, se elige a mano).
     // Igual que Tomar Pedido: si el buscador no trae afecto_igv, el producto es gravado.
     const cambiarAfecto = (idx: number, afecto: boolean, extra: Partial<LineaDetalle> = {}) => {
         setDetalle((prev) => prev.map((l, i) => (i !== idx ? l : {
             ...l,
             ...extra,
             Afecto: afecto,
-            CuentaContab: l.CuentaManual ? l.CuentaContab : cuentaPorDefecto(afecto),
+            CuentaContab: l.CuentaManual ? l.CuentaContab : cuentaPorDefecto(afecto, cuentas),
         })))
     }
 
@@ -286,7 +382,7 @@ export default function TomarPedidoHojaBlancoPage() {
         setDetalle((prev) => prev.map((l) => (l.CentroManual ? l : { ...l, CentroCostos: centroAlmacen })))
     }, [centroAlmacen])
 
-    const agregarLinea = () => setDetalle((prev) => [...prev, lineaVacia(centroAlmacen)])
+    const agregarLinea = () => setDetalle((prev) => [...prev, lineaVacia(centroAlmacen, cuentaPorDefecto(true, cuentas))])
     const quitarLinea = (idx: number) => setDetalle((prev) => prev.filter((_, i) => i !== idx))
 
     const totales = useMemo(() => {
@@ -316,7 +412,7 @@ export default function TomarPedidoHojaBlancoPage() {
         return {
             documento: docSeleccionado?.Descripcion ?? "",
             serie,
-            numero: String(numero).padStart(6, "0"),
+            numero: numeroTexto,
             fecha,
             clienteNombre: cliente?.Nombre ?? "",
             clienteDocumento: cliente?.RUC ?? "",
@@ -361,8 +457,15 @@ export default function TomarPedidoHojaBlancoPage() {
     // ── Limpiar (hoja en blanco) ──
     const [confirmLimpiarOpen, setConfirmLimpiarOpen] = useState(false)
     const limpiarFormulario = () => {
+        reiniciarFormulario()
+        toast({ title: "Formulario limpio", description: "Puedes empezar un nuevo comprobante." })
+    }
+    const reiniciarFormulario = () => {
+        setIde(null)
+        setOrigenAbierto(null)
+        setModoEdicion(false)
         setTipoDoc(DOC_FACTURA)
-        setSerie(SERIES_POR_DOC[DOC_FACTURA][0])
+        setSerie(seriePorDefecto(series, DOC_FACTURA))
         setFecha(hoy())
         setCodCliente("")
         setCodVendedor("")
@@ -376,64 +479,214 @@ export default function TomarPedidoHojaBlancoPage() {
         setNumeroDocOriginal("")
         setFechaDocOriginal("")
         setSelectedAlmacen(null)
-        setDetalle([lineaVacia()])
-        toast({ title: "Formulario limpio", description: "Puedes empezar un nuevo comprobante." })
+        setDetalle([lineaVacia("", cuentaPorDefecto(true, cuentas))])
     }
 
+    // ── Guardar: POST /hoja-blanco/comprobantes (nuevo) o PUT /:ide (edición) ──
+    // sp_ws_hoja_blanco_guardar graba guia remision encabezado/detalle y centraliza:
+    // registro de ventas, kardex clientes, mayor auxiliar y kardex de inventarios.
     async function handleGuardar() {
+        if (soloLectura) {
+            toast({ title: "Solo consulta", description: "Este comprobante lo registró otro proceso y no se puede modificar aquí.", variant: "destructive" })
+            return
+        }
+        if (bloqueado) {
+            toast({ title: "Comprobante en consulta", description: "Presiona Modificar para editarlo.", variant: "destructive" })
+            return
+        }
         if (!tipoDoc || !serie || !codCliente || !codVendedor || !condicion || !operacion || !moneda || tasaIgv === null) {
             toast({ title: "Complete informacion", description: "Documento, serie, cliente, vendedor, condicion, operacion, moneda e IGV son obligatorios.", variant: "destructive" })
             return
         }
-        if (detalle.every((l) => !l.idArticulo)) {
+        if (!selectedAlmacen) {
+            toast({ title: "Falta el almacén", description: "Selecciona el almacén de despacho.", variant: "destructive" })
+            return
+        }
+        if (fechaCierre && fecha <= fechaCierre) {
+            toast({ title: "Periodo cerrado", description: `La fecha debe ser posterior al cierre contable (${fechaCorta(fechaCierre)}).`, variant: "destructive" })
+            return
+        }
+        if (esNotaCreditoDebito && (!tipoDocOriginal || !fechaDocOriginal || !serieDocOriginal || !numeroDocOriginal)) {
+            toast({ title: "Documento de referencia", description: "Complete el documento, fecha, serie y número de referencia de la nota.", variant: "destructive" })
+            return
+        }
+        const lineas = detalle.filter((l) => l.idArticulo)
+        if (lineas.length === 0) {
             toast({ title: "Falta el detalle", description: "Agregue al menos un item.", variant: "destructive" })
             return
         }
-        if (detalle.some((l) => l.idArticulo && !(l.Cantidad > 0))) {
+        if (lineas.length > MAX_LINEAS) {
+            toast({ title: "Demasiados items", description: `El límite es ${MAX_LINEAS} items por comprobante.`, variant: "destructive" })
+            return
+        }
+        if (lineas.some((l) => !(l.Cantidad > 0))) {
             toast({ title: "Cantidad inválida", description: "Todos los items deben tener una cantidad mayor a 0.", variant: "destructive" })
             return
         }
-        setGuardando(true)
-        // Cuerpo con los nombres y codigos de `reg ventas encabezado` / `reg ventas detalle`.
-        // La moneda va convertida a codigo contable (PEN → NSO).
+        if (lineas.some((l) => !l.CuentaContab)) {
+            toast({ title: "Falta la cuenta contable", description: "Todos los items deben tener cuenta contable.", variant: "destructive" })
+            return
+        }
+
+        // Nombres de api-hoja-blanco.md. Moneda PEN → NSO; afecto lleva el precio
+        // en PUIncluidoIGV y no afecto en PUNoAfecto.
         const payload = {
-            Tipo_Doc: tipoDoc,
-            Serie: serie,
-            Numero: numero,
-            Fecha_Emision: fecha,
-            Cod_Clie: codCliente,
-            CodVend: codVendedor,
-            Condision: condicion,
-            ConceptoSalida: operacion,
-            Moneda: aMonedaContable(moneda),
-            TasaIGV: tasaIgv,
-            Observaciones: observaciones,
-            Almacen: selectedAlmacen?.IdAlmacen ?? null,
-            TipoDocOriginal: esNotaCreditoDebito ? tipoDocOriginal || null : null,
-            SerieDocOriginal: esNotaCreditoDebito ? serieDocOriginal || null : null,
-            NumeroDocOriginal: esNotaCreditoDebito ? numeroDocOriginal || null : null,
-            FechaDocOriginal: esNotaCreditoDebito ? fechaDocOriginal || null : null,
-            detalle: detalle.filter((l) => l.idArticulo).map((l) => ({
+            tipoDocumento: tipoDoc,
+            serie,
+            numero: ide !== null ? numero : null, // nuevo: lo calcula el SP al guardar
+            fecha,
+            codigoClie: codCliente,
+            codigoAlmacen: selectedAlmacen.IdAlmacen,
+            condicion,
+            operacion,
+            moneda: aMonedaContable(moneda),
+            tasaIgv,
+            observaciones,
+            codVend: codVendedor,
+            docReferencia: esNotaCreditoDebito ? tipoDocOriginal : null,
+            fechaDocRef: esNotaCreditoDebito ? fechaDocOriginal : null,
+            serieDocRef: esNotaCreditoDebito ? serieDocOriginal : null,
+            numeroDocRef: esNotaCreditoDebito ? numeroDocOriginal : null,
+            usuario: auth.user?.idUsuarioWeb ?? null,
+            detalle: lineas.map((l) => ({
                 idArticulo: Number(l.idArticulo),
-                Articulo: l.Articulo,
+                CodigoArticulo: l.CodigoArticulo || null,
                 Cantidad: l.Cantidad,
-                PU: l.PU,
-                Afecto: l.Afecto ? 1 : 0,
-                CuentaContab: l.CuentaContab ? Number(l.CuentaContab) : null,
-                CentroCostos: l.CentroCostos || null,
+                PUIncluidoIGV: l.Afecto ? Number(l.PU || 0) : 0,
+                PUNoAfecto: l.Afecto ? 0 : Number(l.PU || 0),
+                CtaContb: Number(l.CuentaContab),
+                Centro_Costos: l.CentroCostos || null,
+                Lote: l.Lote || null,
             })),
         }
-        // TODO: reemplazar por la llamada real cuando exista el endpoint
-        // (equivalente a sp_ventas_guardar_completo, ver Hoja Blanco/03_sp/06_sp_ventas_guardar_completo.sql):
-        //   await apiClient.post("<endpoint guardar>", payload)
-        void payload
-        await new Promise((r) => setTimeout(r, 500))
-        setGuardando(false)
-        toast({
-            title: "Comprobante guardado (demo)",
-            description: `${tipoDoc} ${serie}-${String(numero).padStart(6, "0")} · Total ${fmt(totales.total)} — centralizacion simulada, pendiente conectar al backend real.`,
-        })
+
+        setGuardando(true)
+        try {
+            const res = ide !== null
+                ? await apiClient.put(`/hoja-blanco/comprobantes/${ide}`, payload)
+                : await apiClient.post("/hoja-blanco/comprobantes", payload)
+            const r = res.data?.data
+            toast({
+                title: ide !== null ? "Comprobante actualizado" : "Comprobante guardado",
+                description: r ? `${r.Serie}-${String(r.Numero).padStart(6, "0")} · Total ${simbolo} ${fmt(Number(r.Total))}` : undefined,
+            })
+            if (r?.Ide) await abrirComprobante(Number(r.Ide))
+        } catch (e) {
+            toast({ title: "No se pudo guardar", description: mensajeApi(e, "Error al guardar el comprobante."), variant: "destructive" })
+        } finally {
+            setGuardando(false)
+        }
     }
+
+    // ── Abrir: GET /hoja-blanco/comprobantes/:ide → carga cabecera y detalle ──
+    const [abriendo, setAbriendo] = useState(false)
+    async function abrirComprobante(id: number) {
+        setAbriendo(true)
+        try {
+            const res = await apiClient.get(`/hoja-blanco/comprobantes/${id}`)
+            const cab = res.data?.data?.cabecera
+            const det: any[] = res.data?.data?.detalle || []
+            if (!cab) throw new Error()
+
+            const almacen = almacenes.find((a) => Number(a.IdAlmacen) === Number(cab.CodigoAlmacen)) ?? null
+            setIde(Number(cab.Ide))
+            setOrigenAbierto(cab.Origen ?? null)
+            setModoEdicion(false)
+            setTipoDoc(cab.TipoDocumento ?? "")
+            setSerie(cab.Serie ?? "")
+            setNumero(cab.Numero != null ? Number(cab.Numero) : null)
+            setFecha(cab.Fecha ? String(cab.Fecha).slice(0, 10) : hoy())
+            setCodCliente(cab.CodigoClie ?? "")
+            setCodVendedor(cab.CodVend ?? "")
+            setCondicion(cab.CondisionVenta ?? "")
+            setOperacion(cab.Operacion ?? "")
+            setMoneda(DE_MONEDA_CONTABLE[cab.Moneda] ?? "PEN")
+            setTasaIgv(cab.TasaIGV != null ? Number(cab.TasaIGV) : null)
+            setObservaciones(cab.Observaciones ?? "")
+            setTipoDocOriginal(cab.Doc_Referencia ?? "")
+            setFechaDocOriginal(cab.Fecha_Doc_Ref ? String(cab.Fecha_Doc_Ref).slice(0, 10) : "")
+            setSerieDocOriginal(cab.Serie_Doc_Ref ?? "")
+            setNumeroDocOriginal(cab.Numero_Doc_ref != null ? String(cab.Numero_Doc_ref) : "")
+            setSelectedAlmacen(almacen)
+
+            const lineas: LineaDetalle[] = det.map((d) => {
+                const afecto = Number(d.PUNoAfecto || 0) === 0
+                return {
+                    idArticulo: d.idArticulo != null ? String(d.idArticulo) : "",
+                    CodigoArticulo: d.CodigoArticulo ?? "",
+                    Articulo: `${d.CodigoArticulo ?? ""} - ${d.NombreItem ?? ""}`,
+                    Cantidad: Number(d.Cantidad || 0),
+                    PU: Number(afecto ? d.PUIncluidoIGV : d.PUNoAfecto) || 0,
+                    Afecto: afecto,
+                    CuentaContab: d.CtaContb != null ? String(d.CtaContb) : "",
+                    CentroCostos: d.Centro_Costos ?? "",
+                    Lote: d.Lote ?? "",
+                    Lotes: d.CodigoArticulo && almacen ? null : [],
+                    // Lo guardado se respeta: no se reasigna automaticamente
+                    CuentaManual: true,
+                    CentroManual: true,
+                }
+            })
+            setDetalle(lineas.length ? lineas : [lineaVacia(centroPorAlmacen(almacen, centrosCosto), cuentaPorDefecto(true, cuentas))])
+            if (almacen) lineas.forEach((l, i) => { if (l.CodigoArticulo) cargarLotes(i, l.CodigoArticulo, almacen.IdAlmacen) })
+            setBuscarOpen(false)
+        } catch (e) {
+            toast({ title: "No se pudo abrir", description: mensajeApi(e, "Error al obtener el comprobante."), variant: "destructive" })
+        } finally {
+            setAbriendo(false)
+        }
+    }
+
+    // ── Eliminar: DELETE /hoja-blanco/comprobantes/:ide (borra, no anula; valida cierre) ──
+    const [confirmEliminarOpen, setConfirmEliminarOpen] = useState(false)
+    const [eliminando, setEliminando] = useState(false)
+    async function eliminarComprobante() {
+        if (ide === null) return
+        setEliminando(true)
+        try {
+            await apiClient.delete(`/hoja-blanco/comprobantes/${ide}`)
+            toast({ title: "Comprobante eliminado", description: `${serie}-${numeroTexto}` })
+            reiniciarFormulario()
+        } catch (e) {
+            toast({ title: "No se pudo eliminar", description: mensajeApi(e, "Error al eliminar el comprobante."), variant: "destructive" })
+        } finally {
+            setEliminando(false)
+        }
+    }
+
+    // ── Buscar: GET /hoja-blanco/comprobantes?fechaIni&fechaFin&tipoDoc ──
+    const [buscarOpen, setBuscarOpen] = useState(false)
+    const [buscarDesde, setBuscarDesde] = useState(primerDiaMes())
+    const [buscarHasta, setBuscarHasta] = useState(hoy())
+    const [buscarTipo, setBuscarTipo] = useState("")
+    const [buscarTexto, setBuscarTexto] = useState("")
+    const [resultados, setResultados] = useState<ComprobanteFila[] | null>(null)
+    const [buscando, setBuscando] = useState(false)
+    async function buscarComprobantes() {
+        if (!buscarDesde || !buscarHasta) {
+            toast({ title: "Rango de fechas", description: "Ingrese las dos fechas.", variant: "destructive" })
+            return
+        }
+        setBuscando(true)
+        try {
+            const res = await apiClient.get("/hoja-blanco/comprobantes", {
+                params: { fechaIni: buscarDesde, fechaFin: buscarHasta, tipoDoc: buscarTipo || undefined },
+            })
+            const filas: ComprobanteFila[] = res.data?.data?.data || []
+            setResultados([...filas].sort((a, b) => String(b.Fecha).localeCompare(String(a.Fecha)) || b.Numero - a.Numero))
+        } catch (e) {
+            setResultados([])
+            toast({ title: "No se pudo buscar", description: mensajeApi(e, "Error al listar los comprobantes."), variant: "destructive" })
+        } finally {
+            setBuscando(false)
+        }
+    }
+    const resultadosFiltrados = useMemo(() => {
+        const q = buscarTexto.trim().toLowerCase()
+        if (!resultados || !q) return resultados ?? []
+        return resultados.filter((r) =>
+            `${r.Serie}-${r.Numero} ${r.CodigoClie} ${r.ClienteNombre ?? ""}`.toLowerCase().includes(q))
+    }, [resultados, buscarTexto])
 
     return (
         <div className="grid gap-6 p-4 md:p-6">
@@ -441,17 +694,60 @@ export default function TomarPedidoHojaBlancoPage() {
                 <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight text-foreground md:text-3xl">
                     <FilePlus2 className="h-6 w-6 text-blue-600" /> Tomar Pedido Hoja en Blanco
                 </h1>
-                <p className="text-sm text-muted-foreground md:text-base">
-                    Registro de Ventas — formulario migrado de Access (Facturas/Boleta/NC/ND). En validación, catálogos reales de Tomar Pedido.
-                </p>
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <p className="text-sm text-muted-foreground md:text-base">
+                        Registro de Ventas — formulario migrado de Access (Facturas/Boleta/NC/ND). En validación.
+                    </p>
+                    <Button type="button" variant="outline" onClick={() => setBuscarOpen(true)} className="shrink-0 border-blue-200 text-blue-700 hover:bg-blue-50 dark:border-blue-900/60 dark:text-blue-400">
+                        <Search className="mr-2 h-4 w-4" /> Buscar comprobante
+                    </Button>
+                </div>
             </div>
+
+            {ide !== null && (
+                <div className={cn(
+                    "flex flex-col gap-3 rounded-xl border p-3 sm:flex-row sm:items-center sm:justify-between",
+                    soloLectura ? "border-amber-300 bg-amber-50 dark:border-amber-900/60 dark:bg-amber-950/30" : "border-blue-200 bg-blue-50 dark:border-blue-900/60 dark:bg-blue-950/30",
+                )}>
+                    <div className="min-w-0">
+                        <p className={cn("text-sm font-semibold", soloLectura ? "text-amber-900 dark:text-amber-200" : "text-blue-900 dark:text-blue-200")}>
+                            {bloqueado ? "Consultando" : "Editando"} {docSeleccionado?.Descripcion ?? tipoDoc} {serie}-{numeroTexto}
+                        </p>
+                        <p className={cn("text-xs", soloLectura ? "text-amber-700 dark:text-amber-400" : "text-blue-700 dark:text-blue-400")}>
+                            {soloLectura
+                                ? "Registrado por otro proceso (comprobante electrónico): solo consulta."
+                                : `${origenAbierto === ORIGEN_WEB ? "Registrado desde esta pantalla" : "Registrado desde Access"}. ${modoEdicion
+                                    ? "Guardar cambios reemplaza el comprobante y vuelve a centralizarlo."
+                                    : "Presiona Modificar para editarlo."}`}
+                        </p>
+                    </div>
+                    <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
+                        {!soloLectura && !modoEdicion && (
+                            <Button type="button" size="sm" onClick={() => setModoEdicion(true)} className="bg-blue-600 hover:bg-blue-700">
+                                <Pencil className="mr-2 h-4 w-4" /> Modificar
+                            </Button>
+                        )}
+                        {modoEdicion && (
+                            // Descarta los cambios: vuelve a cargar el comprobante guardado
+                            <Button type="button" size="sm" variant="outline" onClick={() => ide !== null && abrirComprobante(ide)} disabled={abriendo || guardando} className="bg-background">
+                                Cancelar edición
+                            </Button>
+                        )}
+                        <Button type="button" size="sm" variant="outline" onClick={() => setConfirmLimpiarOpen(true)} className="bg-background">
+                            <FilePlus2 className="mr-2 h-4 w-4" /> Nuevo comprobante
+                        </Button>
+                    </div>
+                </div>
+            )}
 
             {/* ── Cabecera ── */}
             <Card className="shadow-md">
                 <CardHeader className="border-b border-border bg-muted p-4 md:p-5">
                     <CardTitle className="text-base">Datos del comprobante</CardTitle>
                 </CardHeader>
-                <CardContent className="grid gap-4 p-4 md:p-6">
+                <CardContent className="p-4 md:p-6">
+                    {/* En consulta (comprobante abierto sin Modificar) la cabecera queda bloqueada */}
+                    <fieldset disabled={bloqueado} className="m-0 grid min-w-0 gap-4 border-0 p-0">
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
                         <ComboTile
                             label="Documento"
@@ -460,7 +756,7 @@ export default function TomarPedidoHojaBlancoPage() {
                             items={tiposDocumento}
                             getKey={(i) => i.Cod_Tipo}
                             getLabel={(i) => i.Descripcion}
-                            onSelect={(it) => { setTipoDoc(it.Cod_Tipo); setSerie(SERIES_POR_DOC[it.Cod_Tipo]?.[0] || "") }}
+                            onSelect={(it) => { setTipoDoc(it.Cod_Tipo); setSerie(seriePorDefecto(series, it.Cod_Tipo)) }}
                             onClear={() => { setTipoDoc(""); setSerie("") }}
                             icon={FileText}
                             accent="violet"
@@ -471,10 +767,15 @@ export default function TomarPedidoHojaBlancoPage() {
                             label="Serie"
                             required
                             value={serie}
-                            items={SERIES_POR_DOC[tipoDoc] || []}
-                            getKey={(i) => i}
-                            getLabel={(i) => `Serie ${i}`}
-                            onSelect={(it) => setSerie(it)}
+                            items={seriesOrdenadas}
+                            getKey={(i) => i.Nro_Serie}
+                            getLabel={(i) => `Serie ${i.Nro_Serie}`}
+                            getSub={(i) => {
+                                const doc = tiposDocumento.find((t) => t.Cod_Tipo === i.tipoDocumento)?.Descripcion
+                                return `${doc ?? "Sin tipo"}${i.docElectronico ? " · electrónica" : ""}`
+                            }}
+                            loading={series.length === 0}
+                            onSelect={(it) => setSerie(it.Nro_Serie)}
                             onClear={() => setSerie("")}
                             icon={Hash}
                             accent="violet"
@@ -482,7 +783,12 @@ export default function TomarPedidoHojaBlancoPage() {
                             description={tipoDoc ? "Serie del comprobante" : "Elige primero el documento"}
                         />
                         <Campo label="Número">
-                            <Input value={String(numero).padStart(6, "0")} disabled className="bg-muted font-mono" />
+                            <Input
+                                value={loadingNumero ? "Calculando..." : numeroTexto}
+                                placeholder={serie ? "" : "Elige la serie"}
+                                disabled
+                                className="bg-muted font-mono"
+                            />
                         </Campo>
                         <Campo label="Fecha (*)">
                             <Input type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} />
@@ -650,6 +956,7 @@ export default function TomarPedidoHojaBlancoPage() {
                             </div>
                         </div>
                     )}
+                    </fieldset>
                 </CardContent>
             </Card>
 
@@ -682,13 +989,13 @@ export default function TomarPedidoHojaBlancoPage() {
                                 </p>
                             </div>
                         </div>
-                        <Button type="button" size="sm" variant="outline" onClick={solicitarCambioAlmacen} className="shrink-0 bg-background">
+                        <Button type="button" size="sm" variant="outline" onClick={solicitarCambioAlmacen} disabled={bloqueado} className="shrink-0 bg-background">
                             <Building2 className="mr-2 h-4 w-4" /> {selectedAlmacen ? "Cambiar almacén" : "Seleccionar almacén"}
                         </Button>
                     </div>
 
                     {/* Sin almacén el detalle queda deshabilitado (fieldset deshabilita todos los controles internos) */}
-                    <fieldset disabled={!selectedAlmacen} className={cn("m-0 flex min-w-0 flex-col gap-3 border-0 p-0", !selectedAlmacen && "opacity-50")}>
+                    <fieldset disabled={!selectedAlmacen || bloqueado} className={cn("m-0 flex min-w-0 flex-col gap-3 border-0 p-0", !selectedAlmacen && "opacity-50")}>
                         {detalle.map((l, idx) => {
                             const importe = Number(l.Cantidad || 0) * Number(l.PU || 0)
                             const [codigoArt, ...resto] = l.Articulo.split(" - ")
@@ -751,8 +1058,8 @@ export default function TomarPedidoHojaBlancoPage() {
                                         </div>
                                     </div>
 
-                                    {/* Fila 2: cantidad, precio, contabilidad, importe */}
-                                    <div className="mt-3 grid grid-cols-2 gap-3 md:pl-10 lg:grid-cols-[110px_140px_minmax(0,1fr)_minmax(0,1fr)_160px] lg:items-end">
+                                    {/* Fila 2: cantidad, precio, lote, contabilidad, importe */}
+                                    <div className="mt-3 grid grid-cols-2 gap-3 md:pl-10 lg:grid-cols-[110px_140px_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_160px] lg:items-end">
                                         <div className="flex min-w-0 flex-col gap-1.5">
                                             <Label className="text-xs font-semibold text-muted-foreground">Cantidad</Label>
                                             <Input
@@ -774,19 +1081,46 @@ export default function TomarPedidoHojaBlancoPage() {
                                             <Label className="text-xs font-semibold text-muted-foreground">{l.Afecto ? "PU con IGV" : "PU sin IGV"} ({simbolo})</Label>
                                             <Input type="number" min={0} step="0.01" value={l.PU} onChange={(e) => setLinea(idx, { PU: Number(e.target.value) })} className="h-10 text-right font-mono" />
                                         </div>
+                                        <div className="col-span-2 flex min-w-0 flex-col gap-1 lg:col-span-1">
+                                            <ComboTile
+                                                label="Lote"
+                                                value={l.Lote}
+                                                items={l.Lotes ?? []}
+                                                getKey={(i) => i.Lote}
+                                                getLabel={(i) => `Lote ${i.Lote}`}
+                                                getSub={(i) => i.Saldo === null
+                                                    ? "Lote guardado · sin saldo actual"
+                                                    : `${i.VctoItem ? `Vence ${fechaCorta(i.VctoItem)}` : "Sin vencimiento"} · Saldo ${Number(i.Saldo)}`}
+                                                loading={l.Lotes === null}
+                                                onSelect={(it) => setLinea(idx, { Lote: it.Lote })}
+                                                onClear={() => setLinea(idx, { Lote: "" })}
+                                                icon={Package}
+                                                accent="violet"
+                                                title="Lote"
+                                                description={!l.idArticulo ? "Elige primero el producto" : l.Lotes?.length === 0 ? "Sin lotes con saldo" : "Vence primero arriba"}
+                                            />
+                                            {(() => {
+                                                const crudo = l.Lotes?.find((x) => x.Lote === l.Lote)?.Saldo
+                                                const saldo = crudo === null || crudo === undefined ? NaN : Number(crudo)
+                                                return ide === null && Number.isFinite(saldo) && l.Cantidad > saldo ? (
+                                                    <p className="text-xs font-medium text-amber-600 dark:text-amber-400">La cantidad supera el saldo del lote ({saldo}).</p>
+                                                ) : null
+                                            })()}
+                                        </div>
                                         <div className="col-span-2 lg:col-span-1">
                                             <ComboTile
                                                 label="Cuenta contable"
                                                 value={l.CuentaContab}
-                                                items={CUENTAS}
+                                                items={cuentas}
                                                 getKey={(i) => String(i.IdCtaContable)}
                                                 getLabel={(i) => i.Descricpion}
                                                 getSub={(i) => i.Cod_Contab}
+                                                loading={loadingCuentas}
                                                 onSelect={(it) => setLinea(idx, { CuentaContab: String(it.IdCtaContable), CuentaManual: true })}
                                                 onClear={() => setLinea(idx, { CuentaContab: "" })}
-                                                confirmarCambio={{
+                                                confirmarCambio={l.CuentaManual ? undefined : {
                                                     titulo: "¿Cambiar la cuenta contable?",
-                                                    descripcion: `Se asignó automáticamente la cuenta de ventas ${l.Afecto ? "afectas" : "exoneradas"} según el IGV del item. Si la cambias, ya no se ajustará sola.`,
+                                                    descripcion: `Se asignó automáticamente la cuenta ${COD_CUENTA_AFECTA} de ventas afectas. Si la cambias, ya no se ajustará sola.`,
                                                 }}
                                                 icon={BookOpen}
                                                 accent="blue"
@@ -863,7 +1197,7 @@ export default function TomarPedidoHojaBlancoPage() {
                         <p className="text-xs font-semibold uppercase tracking-wider text-blue-100">Total a pagar</p>
                         <p className="mt-1 font-mono text-3xl font-bold tracking-tight md:text-4xl">{simbolo} {fmt(totales.total)}</p>
                         <p className="mt-1 truncate text-xs text-blue-100">
-                            {docSeleccionado?.Descripcion ?? "Sin documento"} {serie && `· ${serie}-${String(numero).padStart(6, "0")}`}
+                            {docSeleccionado?.Descripcion ?? "Sin documento"} {serie && `· ${serie}-${numeroTexto}`}
                         </p>
                     </div>
                 </div>
@@ -871,17 +1205,25 @@ export default function TomarPedidoHojaBlancoPage() {
                 {/* Acciones: Guardar / Imprimir a la izquierda, Limpiar a la derecha */}
                 <div className="flex flex-col-reverse gap-2 border-t border-border bg-muted/40 p-4 sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex flex-col gap-2 sm:flex-row">
-                        <Button type="button" onClick={handleGuardar} disabled={guardando} className="bg-blue-600 font-semibold shadow-sm hover:bg-blue-700 sm:min-w-[140px]">
+                        <Button type="button" onClick={handleGuardar} disabled={guardando || abriendo || bloqueado} className="bg-blue-600 font-semibold shadow-sm hover:bg-blue-700 sm:min-w-[140px]">
                             {guardando ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                            {guardando ? "Guardando..." : "Guardar"}
+                            {guardando ? "Guardando..." : ide !== null ? "Guardar cambios" : "Guardar"}
                         </Button>
                         <Button type="button" variant="outline" onClick={() => setPreviewOpen(true)} className="border-blue-200 text-blue-700 hover:bg-blue-50 hover:text-blue-800 dark:border-blue-900/60 dark:text-blue-400 dark:hover:bg-blue-950/40 sm:min-w-[140px]">
                             <Printer className="mr-2 h-4 w-4" /> Imprimir
                         </Button>
                     </div>
-                    <Button type="button" variant="outline" onClick={() => setConfirmLimpiarOpen(true)} className="border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 dark:border-red-900/60 dark:text-red-400 dark:hover:bg-red-950/40 sm:min-w-[140px]">
-                        <Eraser className="mr-2 h-4 w-4" /> Limpiar
-                    </Button>
+                    <div className="flex flex-col gap-2 sm:flex-row">
+                        {ide !== null && !soloLectura && (
+                            <Button type="button" variant="outline" onClick={() => setConfirmEliminarOpen(true)} disabled={eliminando || guardando} className="border-red-300 bg-red-600 text-white hover:bg-red-700 hover:text-white sm:min-w-[140px]">
+                                {eliminando ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
+                                {eliminando ? "Eliminando..." : "Eliminar"}
+                            </Button>
+                        )}
+                        <Button type="button" variant="outline" onClick={() => setConfirmLimpiarOpen(true)} className="border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 dark:border-red-900/60 dark:text-red-400 dark:hover:bg-red-950/40 sm:min-w-[140px]">
+                            <Eraser className="mr-2 h-4 w-4" /> Limpiar
+                        </Button>
+                    </div>
                 </div>
             </Card>
 
@@ -895,6 +1237,94 @@ export default function TomarPedidoHojaBlancoPage() {
                 textoConfirmar="Sí, limpiar todo"
                 onConfirm={limpiarFormulario}
             />
+            <ConfirmacionAnimada
+                open={confirmEliminarOpen}
+                onOpenChange={setConfirmEliminarOpen}
+                icon={Trash2}
+                titulo="¿Eliminar el comprobante?"
+                descripcion={`Se borrará ${serie}-${numeroTexto} junto con su registro en el libro de ventas, la cuenta del cliente, el asiento contable y el movimiento de kardex. No se anula: se elimina y no se puede deshacer.${serieElectronica
+                    ? ` ATENCIÓN: la serie ${serie} es electrónica. Si el comprobante ya se envió a SUNAT, borrarlo aquí no lo anula allá: corresponde comunicación de baja o nota de crédito.`
+                    : ""}`}
+                textoConfirmar="Sí, eliminar"
+                onConfirm={eliminarComprobante}
+            />
+            <Dialog open={buscarOpen} onOpenChange={setBuscarOpen}>
+                <DialogContent className="flex max-h-[90vh] max-w-4xl flex-col gap-4">
+                    <DialogHeader>
+                        <DialogTitle>Buscar comprobante</DialogTitle>
+                        <DialogDescription>Comprobantes de venta registrados desde Access o desde esta pantalla.</DialogDescription>
+                    </DialogHeader>
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_1fr_1fr_auto] sm:items-end">
+                        <Campo label="Desde">
+                            <Input type="date" value={buscarDesde} onChange={(e) => setBuscarDesde(e.target.value)} />
+                        </Campo>
+                        <Campo label="Hasta">
+                            <Input type="date" value={buscarHasta} onChange={(e) => setBuscarHasta(e.target.value)} />
+                        </Campo>
+                        <Campo label="Documento">
+                            <select
+                                value={buscarTipo}
+                                onChange={(e) => setBuscarTipo(e.target.value)}
+                                className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+                            >
+                                <option value="">Todos</option>
+                                {tiposDocumento.map((t) => <option key={t.Cod_Tipo} value={t.Cod_Tipo}>{t.Descripcion}</option>)}
+                            </select>
+                        </Campo>
+                        <Button type="button" onClick={buscarComprobantes} disabled={buscando} className="bg-blue-600 hover:bg-blue-700">
+                            {buscando ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Search className="mr-2 h-4 w-4" />} Buscar
+                        </Button>
+                    </div>
+                    {resultados !== null && (
+                        <Input value={buscarTexto} onChange={(e) => setBuscarTexto(e.target.value)} placeholder="Filtrar por serie-número, código o nombre del cliente..." />
+                    )}
+                    <div className="min-h-0 flex-1 overflow-auto rounded-lg border border-border">
+                        {resultados === null ? (
+                            <p className="p-6 text-center text-sm text-muted-foreground">Elige el rango de fechas y presiona Buscar.</p>
+                        ) : resultadosFiltrados.length === 0 ? (
+                            <p className="p-6 text-center text-sm text-muted-foreground">No se encontraron comprobantes.</p>
+                        ) : (
+                            <table className="w-full text-sm">
+                                <thead className="sticky top-0 bg-muted text-xs uppercase text-muted-foreground">
+                                    <tr>
+                                        <th className="px-3 py-2 text-left">Fecha</th>
+                                        <th className="px-3 py-2 text-left">Comprobante</th>
+                                        <th className="px-3 py-2 text-left">Cliente</th>
+                                        <th className="px-3 py-2 text-right">Total</th>
+                                        <th className="px-3 py-2 text-left">Origen</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {resultadosFiltrados.map((r) => (
+                                        <tr
+                                            key={r.Ide}
+                                            onClick={() => !abriendo && abrirComprobante(r.Ide)}
+                                            className="cursor-pointer border-t border-border hover:bg-blue-50 dark:hover:bg-blue-950/30"
+                                        >
+                                            <td className="whitespace-nowrap px-3 py-2">{fechaCorta(r.Fecha)}</td>
+                                            <td className="whitespace-nowrap px-3 py-2">
+                                                <span className="font-medium">{r.DocumentoDescripcion ?? r.TipoDocumento}</span>{" "}
+                                                <span className="font-mono">{r.Serie}-{String(r.Numero).padStart(6, "0")}</span>
+                                            </td>
+                                            <td className="px-3 py-2">
+                                                <p className="truncate">{r.ClienteNombre ?? ""}</p>
+                                                <p className="font-mono text-xs text-muted-foreground">{r.CodigoClie}</p>
+                                            </td>
+                                            <td className="whitespace-nowrap px-3 py-2 text-right font-mono">
+                                                {r.Moneda === "USD" ? "US$" : "S/"} {fmt(Number(r.Total))}
+                                            </td>
+                                            <td className="whitespace-nowrap px-3 py-2 text-xs">
+                                                {r.Origen === null ? "Access" : r.Origen === ORIGEN_WEB ? "Web" : "Otro proceso"}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        )}
+                    </div>
+                    {abriendo && <p className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Abriendo comprobante...</p>}
+                </DialogContent>
+            </Dialog>
             <ConfirmacionAnimada
                 open={confirmAlmacenOpen}
                 onOpenChange={setConfirmAlmacenOpen}
@@ -916,7 +1346,7 @@ export default function TomarPedidoHojaBlancoPage() {
                 onSelectAlmacen={(alm) => {
                     // Cambio real de almacén → el detalle del almacén anterior ya no aplica
                     if (selectedAlmacen && alm.IdAlmacen !== selectedAlmacen.IdAlmacen) {
-                        setDetalle([lineaVacia(centroPorAlmacen(alm, centrosCosto))])
+                        setDetalle([lineaVacia(centroPorAlmacen(alm, centrosCosto), cuentaPorDefecto(true, cuentas))])
                         toast({ title: "Almacén cambiado", description: `Detalle limpiado. Ahora despachando desde ${alm.Descripcion}.` })
                     }
                     setSelectedAlmacen(alm)
