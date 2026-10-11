@@ -12,7 +12,7 @@ import {
     Wallet,
     ShoppingBag,
     Receipt, GoalIcon, UserCog, Notebook, Gift, Map, Settings, FileDiff, CalendarClock,
-    TrendingUp, ReceiptText
+    TrendingUp, ReceiptText, FilePlus2
 } from "lucide-react";
 
 export interface NavItem {
@@ -44,6 +44,7 @@ export const ICON_MAP: Record<string, React.ComponentType<{ className?: string }
     "/dashboard/estados-pedidos": GitBranch,
     "/dashboard/comprobantes": Receipt,
     "/dashboard/comprobantes/procesar-nota-credito": FileDiff,
+    "/dashboard/tomar-pedido-hoja-blanco": FilePlus2,
     "/dashboard/cronograma": CalendarClock,
     "/dashboard/contabilidad/libro-caja-bancos": Wallet,
     "/dashboard/contabilidad/registro-compras": ShoppingBag,

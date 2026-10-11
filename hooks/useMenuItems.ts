@@ -1,8 +1,8 @@
 import { useMemo } from "react";
-import { Home, LineChart, Sparkles } from "lucide-react";
+import { Home, LineChart, Sparkles, FilePlus2 } from "lucide-react";
 import { useAuth } from "@/context/authContext";
 import { ICON_MAP } from "@/constants/roles";
-import { SHOW_TOMAR_PEDIDO_ALPHA } from "@/constants/featureFlags";
+import { SHOW_TOMAR_PEDIDO_ALPHA, SHOW_TOMAR_PEDIDO_HOJA_BLANCO } from "@/constants/featureFlags";
 
 type NavIcon = React.ComponentType<{ className?: string }>;
 
@@ -68,6 +68,23 @@ export function useMenuItems(): NavItem[] {
       };
       const insertAt = tomarPedidoIndex >= 0 ? tomarPedidoIndex + 1 : items.length;
       items.splice(insertAt, 0, alphaItem);
+    }
+
+    // Item de desarrollo, no viene del backend: formulario de Registro de
+    // Ventas migrado de Access ("Facturas"), en validacion. Se inyecta
+    // justo debajo de "Comprobantes". No confundir con "Hoja en Blanco"
+    // (reporte de despachos serie 0800, dentro de Reportes) - son pantallas
+    // distintas.
+    if (SHOW_TOMAR_PEDIDO_HOJA_BLANCO) {
+      const comprobantesIndex = items.findIndex((item) => item.href === "/dashboard/comprobantes");
+      const hojaBlancaItem = {
+        id: "tomar-pedido-hoja-blanco",
+        title: "Tomar Pedido Hoja en Blanco",
+        href: "/dashboard/tomar-pedido-hoja-blanco",
+        icon: FilePlus2,
+      };
+      const insertHojaBlancaAt = comprobantesIndex >= 0 ? comprobantesIndex + 1 : items.length;
+      items.splice(insertHojaBlancaAt, 0, hojaBlancaItem);
     }
 
     return items;
