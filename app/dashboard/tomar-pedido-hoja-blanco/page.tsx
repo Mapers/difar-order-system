@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { ArrowLeftRight, BookOpen, Building2, CalendarClock, Coins, Eraser, FilePlus2, FileText, Hash, Loader2, Package, Percent, Plus, Printer, Receipt, Save, Search, Target, Trash2, User, UserCheck } from "lucide-react"
+import { ArrowLeftRight, BookOpen, Building2, CalendarClock, Coins, Eraser, FilePlus2, FileText, Hash, Loader2, MessageSquareText, Package, Percent, Plus, Printer, Receipt, Save, Search, Target, Trash2, User, UserCheck } from "lucide-react"
 import InlineAutocomplete from "@/components/tomar-pedido/InlineAutocomplete"
 import { cn } from "@/lib/utils"
 import { toast } from "@/app/hooks/useToast"
@@ -42,14 +42,19 @@ import ProductSearchDialog from "@/components/tomar-pedido/product-step/ProductS
  *   - Vendedores    → GET /usuarios/listar/vendedores
  *   - Almacenes     → GET /admin/listar/almacenes (AlmacenModal)
  *   - Productos     → getProductsLabRequest, filtrado por almacen (ProductSearchDialog)
- *   - Moneda        → constants/index.ts (monedas)
+ *   - Moneda        → constants/index.ts (monedas, PEN/USD como el resto de
+ *                     la web); al guardar se convierte a NSO/USD
+ *                     (mtipomoneda), igual que sp_ws_procesar_pedido_a_registro_ventas
  *   - Documento     → fetchTypeDocuments (mismo de Consulta Documento Clientes),
  *                     filtrado a los tipos de venta (codigos SUNAT)
+ *   - Operación     → GET /admin/listar/operaciones (sp_GetTipoOperacion),
+ *                     solo operaciones de venta (Motivo = 1)
+ *   - IGV / Centro de costos → GET /contabilidad/compras/catalogos
+ *                     (sp_ws_regcompras_catalogos: tasasIgv, centrosCosto)
  *
- * Serie/Operación/IGV/CtaContb/Centro Costos todavia no tienen
- * microservicio propio en este sistema (son especificos de Registro de
- * Ventas/Contabilidad, modulo que no existe aun) — quedan con datos de
- * prueba, claramente marcados abajo.
+ * Serie, Número y Cuenta contable todavia no tienen endpoint en el backend
+ * (no existe SP sobre serie_docs ni uno que devuelva las cuentas 70 con
+ * IdCtaContable) — quedan con datos de prueba, claramente marcados abajo.
  *
  * Estado: en validación. El guardado del comprobante es simulado (no hay
  * endpoint real todavia). No confundir con "Hoja en Blanco"
@@ -57,35 +62,50 @@ import ProductSearchDialog from "@/components/tomar-pedido/product-step/ProductS
  * la serie 0800 ya existente: son pantallas distintas.
  */
 
-// ---------------------------------------------------------------------
-// Datos de prueba SOLO para catalogos sin microservicio propio todavia
-// (ver Hoja Blanco/04_data_prueba/seed_data_prueba.sql)
-// ---------------------------------------------------------------------
 // Codigos SUNAT de /reportes/typedocuments que aplican a Registro de Ventas
 const DOC_FACTURA = "01"
 const DOC_BOLETA = "03"
 const DOC_NOTA_CREDITO = "07"
 const DOC_NOTA_DEBITO = "08"
 const TIPOS_DOC_VENTA = [DOC_FACTURA, DOC_BOLETA, DOC_NOTA_CREDITO, DOC_NOTA_DEBITO]
+
+// mtipooperaciones: "01" = VENTA (Motivo 1 = venta)
+const OPERACION_VENTA = "01"
+const MOTIVO_VENTA = 1
+const IGV_POR_DEFECTO = 0.18
+
+// La web maneja PEN/USD (pedidocab, SUNAT); las tablas contables
+// (reg ventas encabezado.Moneda → mtipomoneda) solo aceptan NSO/USD.
+const MONEDA_CONTABLE: Record<string, string> = { PEN: "NSO", USD: "USD" }
+const aMonedaContable = (moneda: string) => MONEDA_CONTABLE[moneda] ?? "NSO"
+
+interface Operacion { Codigo_Op: string; Operacion: string; Motivo: number }
+interface CentroCosto { Cod_CC: string; Descripcion: string }
+
+// ---------------------------------------------------------------------
+// Datos de prueba SOLO para lo que aun no tiene endpoint en el backend
+// (ver Hoja Blanco/04_data_prueba/seed_data_prueba.sql)
+// ---------------------------------------------------------------------
 const SERIES_POR_DOC: Record<string, string[]> = {
     [DOC_FACTURA]: ["0001"],
     [DOC_BOLETA]: ["0002"],
     [DOC_NOTA_CREDITO]: ["0001"],
     [DOC_NOTA_DEBITO]: ["0001"],
 }
-const TASAS_IGV = [{ Tasa: 0.18, Descripcion: "18.00%" }]
-const OPERACIONES = [
-    { Codigo_Op: "VTA", Operacion: "Venta" },
-    { Codigo_Op: "DEV", Operacion: "Devolucion" },
-]
-const CENTROS_COSTO = [
-    { Cod_CC: "001", Descripcion: "Sucursal Chimbote" },
-    { Cod_CC: "002", Descripcion: "Sucursal Lima" },
-]
 const CUENTAS = [
     { IdCtaContable: 3, Cod_Contab: "701101", Descricpion: "Ventas - Mercaderias Afectas" },
     { IdCtaContable: 4, Cod_Contab: "701211", Descricpion: "Ventas - Mercaderias Exoneradas" },
 ]
+
+// Cuenta contable por defecto segun si la linea es afecta o no al IGV
+const CUENTA_AFECTA = "3"
+const CUENTA_NO_AFECTA = "4"
+const cuentaPorDefecto = (afecto: boolean) => (afecto ? CUENTA_AFECTA : CUENTA_NO_AFECTA)
+
+// Centro de costos por defecto: el que se llama igual que el almacen (CHIMBOTE → CHIMBOTE)
+const normalizar = (t: string) => (t || "").trim().toUpperCase()
+const centroPorAlmacen = (almacen: IAlmacen | null, centros: CentroCosto[]) =>
+    almacen ? centros.find((c) => normalizar(c.Descripcion) === normalizar(almacen.Descripcion))?.Cod_CC ?? "" : ""
 
 interface LineaDetalle {
     idArticulo: string
@@ -95,8 +115,14 @@ interface LineaDetalle {
     Afecto: boolean
     CuentaContab: string
     CentroCostos: string
+    // true cuando el usuario eligio el valor a mano: ya no se reasigna automaticamente
+    CuentaManual: boolean
+    CentroManual: boolean
 }
-const lineaVacia = (): LineaDetalle => ({ idArticulo: "", Articulo: "", Cantidad: 1, PU: 0, Afecto: true, CuentaContab: "", CentroCostos: "" })
+const lineaVacia = (centro = ""): LineaDetalle => ({
+    idArticulo: "", Articulo: "", Cantidad: 1, PU: 0, Afecto: true,
+    CuentaContab: cuentaPorDefecto(true), CentroCostos: centro, CuentaManual: false, CentroManual: false,
+})
 const hoy = () => new Date().toISOString().slice(0, 10)
 
 function fmt(n: number) {
@@ -111,6 +137,9 @@ export default function TomarPedidoHojaBlancoPage() {
     const [condicionesReal, setCondicionesReal] = useState<ICondicion[]>([])
     const [vendedoresReal, setVendedoresReal] = useState<any[]>([])
     const [tiposDocumento, setTiposDocumento] = useState<TypeDocument[]>([])
+    const [operaciones, setOperaciones] = useState<Operacion[]>([])
+    const [tasasIgv, setTasasIgv] = useState<{ Tasa: number }[]>([])
+    const [centrosCosto, setCentrosCosto] = useState<CentroCosto[]>([])
     const [almacenes, setAlmacenes] = useState<IAlmacen[]>([])
     const [loadingAlmacenes, setLoadingAlmacenes] = useState(false)
     const [selectedAlmacen, setSelectedAlmacen] = useState<IAlmacen | null>(null)
@@ -134,9 +163,28 @@ export default function TomarPedidoHojaBlancoPage() {
             .then((res) => setCondicionesReal(res.data?.data?.data || res.data?.data || []))
             .catch(() => toast({ title: "Error", description: "No se pudo cargar las condiciones de pago.", variant: "destructive" }))
 
+        // sp_listar_vendedores trae tambien los inactivos: solo Estado = 'A'
         apiClient.get("/usuarios/listar/vendedores")
-            .then((res) => setVendedoresReal(res.data?.data?.data || res.data?.data || []))
+            .then((res) => {
+                const todos: any[] = res.data?.data?.data || res.data?.data || []
+                setVendedoresReal(todos.filter((v) => v.Estado === "A"))
+            })
             .catch(() => toast({ title: "Error", description: "No se pudo cargar la lista de vendedores.", variant: "destructive" }))
+
+        apiClient.get("/admin/listar/operaciones")
+            .then((res) => {
+                const todas: Operacion[] = res.data?.data?.data || res.data?.data || []
+                setOperaciones(todas.filter((o) => Number(o.Motivo) === MOTIVO_VENTA))
+            })
+            .catch(() => toast({ title: "Error", description: "No se pudo cargar las operaciones.", variant: "destructive" }))
+
+        apiClient.get("/contabilidad/compras/catalogos")
+            .then((res) => {
+                const c = res.data?.data?.data || res.data?.data || {}
+                setTasasIgv((c.tasasIgv || []).map((t: any) => ({ Tasa: Number(t.Tasa) })))
+                setCentrosCosto(c.centrosCosto || [])
+            })
+            .catch(() => toast({ title: "Error", description: "No se pudo cargar las tasas de IGV y centros de costo.", variant: "destructive" }))
 
         setLoadingAlmacenes(true)
         apiClient.get("/admin/listar/almacenes")
@@ -154,9 +202,11 @@ export default function TomarPedidoHojaBlancoPage() {
     const [codCliente, setCodCliente] = useState("")
     const [codVendedor, setCodVendedor] = useState("")
     const [condicion, setCondicion] = useState("")
-    const [operacion, setOperacion] = useState("VTA")
+    const [operacion, setOperacion] = useState(OPERACION_VENTA)
     const [moneda, setMoneda] = useState("PEN")
-    const [tasaIgv, setTasaIgv] = useState(0.18)
+    // null = sin seleccionar (0 es una tasa valida: exonerado/inafecto)
+    const [tasaIgv, setTasaIgv] = useState<number | null>(IGV_POR_DEFECTO)
+    const tasaIgvCalculo = tasaIgv ?? 0
     const [observaciones, setObservaciones] = useState("Venta")
     const [tipoDocOriginal, setTipoDocOriginal] = useState("")
     const [serieDocOriginal, setSerieDocOriginal] = useState("")
@@ -202,12 +252,10 @@ export default function TomarPedidoHojaBlancoPage() {
 
     const handleProductSelect = (product: IProduct) => {
         if (activeRowIndex === null) return
-        setLinea(activeRowIndex, {
+        cambiarAfecto(activeRowIndex, product.afecto_igv !== 0, {
             idArticulo: String(product.IdArticulo),
             Articulo: `${product.Codigo_Art} - ${product.NombreItem}`,
             PU: Number(product.PUContado),
-            // Igual que Tomar Pedido: si el buscador no trae afecto_igv, el producto es gravado
-            Afecto: product.afecto_igv !== 0,
         })
         setProductSearchOpen(false)
     }
@@ -219,7 +267,26 @@ export default function TomarPedidoHojaBlancoPage() {
             return copia
         })
     }
-    const agregarLinea = () => setDetalle((prev) => [...prev, lineaVacia()])
+    // Cambia el afecto de la linea y, si la cuenta no fue elegida a mano, la ajusta
+    // (afecto → cuenta de afectas; no afecto → cuenta de exoneradas).
+    // Igual que Tomar Pedido: si el buscador no trae afecto_igv, el producto es gravado.
+    const cambiarAfecto = (idx: number, afecto: boolean, extra: Partial<LineaDetalle> = {}) => {
+        setDetalle((prev) => prev.map((l, i) => (i !== idx ? l : {
+            ...l,
+            ...extra,
+            Afecto: afecto,
+            CuentaContab: l.CuentaManual ? l.CuentaContab : cuentaPorDefecto(afecto),
+        })))
+    }
+
+    // Centro de costos del almacen seleccionado; se aplica a las lineas que no fueron cambiadas a mano
+    const centroAlmacen = centroPorAlmacen(selectedAlmacen, centrosCosto)
+    useEffect(() => {
+        if (!centroAlmacen) return
+        setDetalle((prev) => prev.map((l) => (l.CentroManual ? l : { ...l, CentroCostos: centroAlmacen })))
+    }, [centroAlmacen])
+
+    const agregarLinea = () => setDetalle((prev) => [...prev, lineaVacia(centroAlmacen)])
     const quitarLinea = (idx: number) => setDetalle((prev) => prev.filter((_, i) => i !== idx))
 
     const totales = useMemo(() => {
@@ -230,11 +297,11 @@ export default function TomarPedidoHojaBlancoPage() {
             if (l.Afecto) afecto += importe
             else noAfecto += importe
         })
-        const vva = Math.round((afecto / (1 + tasaIgv)) * 100) / 100
+        const vva = Math.round((afecto / (1 + tasaIgvCalculo)) * 100) / 100
         const igv = Math.round((afecto - vva) * 100) / 100
         const vvna = Math.round(noAfecto * 100) / 100
         return { vva, igv, vvna, total: Math.round((vva + igv + vvna) * 100) / 100 }
-    }, [detalle, tasaIgv])
+    }, [detalle, tasaIgvCalculo])
 
     const simbolo = moneda === "USD" ? "US$" : "S/"
     const itemsConProducto = detalle.filter((l) => l.idArticulo).length
@@ -261,13 +328,13 @@ export default function TomarPedidoHojaBlancoPage() {
             moneda: monedas.find((m) => m.value === moneda)?.label ?? "",
             monedaCodigo: moneda,
             simbolo,
-            operacion: OPERACIONES.find((o) => o.Codigo_Op === operacion)?.Operacion ?? "",
+            operacion: operaciones.find((o) => o.Codigo_Op === operacion)?.Operacion ?? "",
             almacen: selectedAlmacen ? `${selectedAlmacen.Codigo_Alm} - ${selectedAlmacen.Descripcion}` : "",
             observaciones,
             referencia: esNotaCreditoDebito && (docOriginal || serieDocOriginal || numeroDocOriginal)
                 ? `${docOriginal?.Descripcion ?? ""} ${serieDocOriginal}-${numeroDocOriginal}${fechaDocOriginal ? ` del ${fechaDocOriginal.split("-").reverse().join("/")}` : ""}`.trim()
                 : undefined,
-            tasaIgv,
+            tasaIgv: tasaIgvCalculo,
             lineas: detalle.filter((l) => l.idArticulo).map((l) => {
                 const [codigo, ...resto] = l.Articulo.split(" - ")
                 return {
@@ -282,7 +349,7 @@ export default function TomarPedidoHojaBlancoPage() {
         }
     }, [clientes, codCliente, vendedoresReal, codVendedor, tiposDocumento, tipoDocOriginal, docSeleccionado, serie, numero, fecha,
         condicionesReal, condicion, diasCredito, moneda, simbolo, operacion, selectedAlmacen, observaciones, esNotaCreditoDebito,
-        serieDocOriginal, numeroDocOriginal, fechaDocOriginal, tasaIgv, detalle, totales])
+        serieDocOriginal, numeroDocOriginal, fechaDocOriginal, tasaIgv, detalle, totales, operaciones])
 
     // ── Cambio de almacén: si ya hay productos, confirmar antes (se limpia el detalle) ──
     const [confirmAlmacenOpen, setConfirmAlmacenOpen] = useState(false)
@@ -300,9 +367,9 @@ export default function TomarPedidoHojaBlancoPage() {
         setCodCliente("")
         setCodVendedor("")
         setCondicion("")
-        setOperacion("VTA")
+        setOperacion(OPERACION_VENTA)
         setMoneda("PEN")
-        setTasaIgv(0.18)
+        setTasaIgv(IGV_POR_DEFECTO)
         setObservaciones("Venta")
         setTipoDocOriginal("")
         setSerieDocOriginal("")
@@ -314,7 +381,7 @@ export default function TomarPedidoHojaBlancoPage() {
     }
 
     async function handleGuardar() {
-        if (!tipoDoc || !serie || !codCliente || !codVendedor || !condicion || !operacion || !moneda || !tasaIgv) {
+        if (!tipoDoc || !serie || !codCliente || !codVendedor || !condicion || !operacion || !moneda || tasaIgv === null) {
             toast({ title: "Complete informacion", description: "Documento, serie, cliente, vendedor, condicion, operacion, moneda e IGV son obligatorios.", variant: "destructive" })
             return
         }
@@ -327,8 +394,39 @@ export default function TomarPedidoHojaBlancoPage() {
             return
         }
         setGuardando(true)
+        // Cuerpo con los nombres y codigos de `reg ventas encabezado` / `reg ventas detalle`.
+        // La moneda va convertida a codigo contable (PEN → NSO).
+        const payload = {
+            Tipo_Doc: tipoDoc,
+            Serie: serie,
+            Numero: numero,
+            Fecha_Emision: fecha,
+            Cod_Clie: codCliente,
+            CodVend: codVendedor,
+            Condision: condicion,
+            ConceptoSalida: operacion,
+            Moneda: aMonedaContable(moneda),
+            TasaIGV: tasaIgv,
+            Observaciones: observaciones,
+            Almacen: selectedAlmacen?.IdAlmacen ?? null,
+            TipoDocOriginal: esNotaCreditoDebito ? tipoDocOriginal || null : null,
+            SerieDocOriginal: esNotaCreditoDebito ? serieDocOriginal || null : null,
+            NumeroDocOriginal: esNotaCreditoDebito ? numeroDocOriginal || null : null,
+            FechaDocOriginal: esNotaCreditoDebito ? fechaDocOriginal || null : null,
+            detalle: detalle.filter((l) => l.idArticulo).map((l) => ({
+                idArticulo: Number(l.idArticulo),
+                Articulo: l.Articulo,
+                Cantidad: l.Cantidad,
+                PU: l.PU,
+                Afecto: l.Afecto ? 1 : 0,
+                CuentaContab: l.CuentaContab ? Number(l.CuentaContab) : null,
+                CentroCostos: l.CentroCostos || null,
+            })),
+        }
         // TODO: reemplazar por la llamada real cuando exista el endpoint
-        // (equivalente a sp_ventas_guardar_completo, ver Hoja Blanco/03_sp/06_sp_ventas_guardar_completo.sql)
+        // (equivalente a sp_ventas_guardar_completo, ver Hoja Blanco/03_sp/06_sp_ventas_guardar_completo.sql):
+        //   await apiClient.post("<endpoint guardar>", payload)
+        void payload
         await new Promise((r) => setTimeout(r, 500))
         setGuardando(false)
         toast({
@@ -442,9 +540,10 @@ export default function TomarPedidoHojaBlancoPage() {
                             label="Operación"
                             required
                             value={operacion}
-                            items={OPERACIONES}
+                            items={operaciones}
                             getKey={(i) => i.Codigo_Op}
                             getLabel={(i) => i.Operacion}
+                            loading={operaciones.length === 0}
                             onSelect={(it) => setOperacion(it.Codigo_Op)}
                             onClear={() => setOperacion("")}
                             icon={ArrowLeftRight}
@@ -472,25 +571,52 @@ export default function TomarPedidoHojaBlancoPage() {
                         <ComboTile
                             label="IGV"
                             required
-                            value={String(tasaIgv)}
-                            items={TASAS_IGV}
+                            value={tasaIgv === null ? "" : String(tasaIgv)}
+                            items={tasasIgv}
                             getKey={(i) => String(i.Tasa)}
-                            getLabel={(i) => i.Descripcion}
-                            getSub={() => "Tasa IGV"}
+                            getLabel={(i) => `${(i.Tasa * 100).toFixed(2)}%`}
+                            getSub={(i) => (i.Tasa === 0 ? "Exonerado / inafecto" : "Tasa IGV")}
+                            loading={tasasIgv.length === 0}
                             onSelect={(it) => setTasaIgv(it.Tasa)}
-                            onClear={() => setTasaIgv(0)}
+                            onClear={() => setTasaIgv(null)}
                             icon={Percent}
                             accent="blue"
                             title="Tasa de IGV"
                             description="Impuesto aplicado"
                         />
-                        <div className="flex min-w-0 flex-col gap-1.5 sm:col-span-2">
-                            <Label className="text-sm font-semibold text-foreground">Observaciones</Label>
-                            <Input value={observaciones} onChange={(e) => setObservaciones(e.target.value)} />
+                        <div className="flex min-w-0 flex-col gap-1.5">
+                            <Label className="text-sm font-semibold text-foreground">Días crédito</Label>
+                            <div className="flex items-center gap-2 rounded-xl border border-border bg-muted/50 p-2.5">
+                                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-200 dark:bg-slate-800">
+                                    <CalendarClock className="h-4 w-4 text-slate-600 dark:text-slate-300" />
+                                </div>
+                                <div className="min-w-0">
+                                    <p className="text-sm font-semibold leading-tight text-foreground">{diasCredito} {Number(diasCredito) === 1 ? "día" : "días"}</p>
+                                    <p className="text-xs text-muted-foreground">Según la condición</p>
+                                </div>
+                            </div>
                         </div>
-                        <Campo label="Días Crédito">
-                            <Input value={diasCredito} disabled className="bg-muted" />
-                        </Campo>
+                        {/* reg ventas encabezado.Observaciones es varchar(100) */}
+                        <div className="flex min-w-0 flex-col gap-1.5 sm:col-span-2">
+                            <div className="flex items-center justify-between">
+                                <Label htmlFor="observaciones" className="text-sm font-semibold text-foreground">Observaciones</Label>
+                                <span className={cn("text-xs tabular-nums", observaciones.length >= 90 ? "font-semibold text-amber-600 dark:text-amber-400" : "text-muted-foreground")}>
+                                    {observaciones.length}/100
+                                </span>
+                            </div>
+                            <div className="relative">
+                                <MessageSquareText className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                                <textarea
+                                    id="observaciones"
+                                    value={observaciones}
+                                    maxLength={100}
+                                    rows={2}
+                                    onChange={(e) => setObservaciones(e.target.value)}
+                                    placeholder="Notas del comprobante (opcional)"
+                                    className="block w-full resize-none rounded-xl border border-border bg-background py-2.5 pl-9 pr-3 text-sm leading-relaxed text-foreground shadow-sm transition-colors placeholder:text-muted-foreground hover:border-blue-300 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:hover:border-blue-800"
+                                />
+                            </div>
+                        </div>
                     </div>
 
                     {esNotaCreditoDebito && (
@@ -607,7 +733,7 @@ export default function TomarPedidoHojaBlancoPage() {
                                         <div className="flex items-center justify-between gap-2 md:justify-end">
                                             <button
                                                 type="button"
-                                                onClick={() => setLinea(idx, { Afecto: !l.Afecto })}
+                                                onClick={() => cambiarAfecto(idx, !l.Afecto)}
                                                 title="Afecto al IGV"
                                                 className={cn(
                                                     "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors disabled:cursor-not-allowed",
@@ -656,8 +782,12 @@ export default function TomarPedidoHojaBlancoPage() {
                                                 getKey={(i) => String(i.IdCtaContable)}
                                                 getLabel={(i) => i.Descricpion}
                                                 getSub={(i) => i.Cod_Contab}
-                                                onSelect={(it) => setLinea(idx, { CuentaContab: String(it.IdCtaContable) })}
+                                                onSelect={(it) => setLinea(idx, { CuentaContab: String(it.IdCtaContable), CuentaManual: true })}
                                                 onClear={() => setLinea(idx, { CuentaContab: "" })}
+                                                confirmarCambio={{
+                                                    titulo: "¿Cambiar la cuenta contable?",
+                                                    descripcion: `Se asignó automáticamente la cuenta de ventas ${l.Afecto ? "afectas" : "exoneradas"} según el IGV del item. Si la cambias, ya no se ajustará sola.`,
+                                                }}
                                                 icon={BookOpen}
                                                 accent="blue"
                                                 title="Cuenta contable"
@@ -668,11 +798,16 @@ export default function TomarPedidoHojaBlancoPage() {
                                             <ComboTile
                                                 label="Centro de costos"
                                                 value={l.CentroCostos}
-                                                items={CENTROS_COSTO}
+                                                items={centrosCosto}
                                                 getKey={(i) => i.Cod_CC}
                                                 getLabel={(i) => i.Descripcion}
-                                                onSelect={(it) => setLinea(idx, { CentroCostos: it.Cod_CC })}
+                                                loading={centrosCosto.length === 0}
+                                                onSelect={(it) => setLinea(idx, { CentroCostos: it.Cod_CC, CentroManual: true })}
                                                 onClear={() => setLinea(idx, { CentroCostos: "" })}
+                                                confirmarCambio={{
+                                                    titulo: "¿Cambiar el centro de costos?",
+                                                    descripcion: `Se asignó automáticamente según el almacén${selectedAlmacen ? ` (${selectedAlmacen.Descripcion})` : ""}. Si lo cambias, ya no se ajustará solo.`,
+                                                }}
                                                 icon={Target}
                                                 accent="violet"
                                                 title="Centro de costos"
@@ -720,7 +855,7 @@ export default function TomarPedidoHojaBlancoPage() {
                         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                             <TotalCard label="VVNA" hint="Valor venta no afecto" valor={`${simbolo} ${fmt(totales.vvna)}`} />
                             <TotalCard label="VVA" hint="Valor venta afecto" valor={`${simbolo} ${fmt(totales.vva)}`} />
-                            <TotalCard label="IGV" hint={`Impuesto ${(tasaIgv * 100).toFixed(0)}%`} valor={`${simbolo} ${fmt(totales.igv)}`} />
+                            <TotalCard label="IGV" hint={tasaIgv === null ? "Sin tasa" : `Impuesto ${(tasaIgv * 100).toFixed(tasaIgv * 100 % 1 ? 1 : 0)}%`} valor={`${simbolo} ${fmt(totales.igv)}`} />
                         </div>
                     </div>
 
@@ -781,7 +916,7 @@ export default function TomarPedidoHojaBlancoPage() {
                 onSelectAlmacen={(alm) => {
                     // Cambio real de almacén → el detalle del almacén anterior ya no aplica
                     if (selectedAlmacen && alm.IdAlmacen !== selectedAlmacen.IdAlmacen) {
-                        setDetalle([lineaVacia()])
+                        setDetalle([lineaVacia(centroPorAlmacen(alm, centrosCosto))])
                         toast({ title: "Almacén cambiado", description: `Detalle limpiado. Ahora despachando desde ${alm.Descripcion}.` })
                     }
                     setSelectedAlmacen(alm)
@@ -834,7 +969,7 @@ const TILE_ACCENTS = {
 
 function ComboTile<T>({
     label, required, value, items, getKey, getLabel, getSub, onSelect, onClear,
-    icon: Icon, accent = "blue", title, description, placeholder, loading, pageSize,
+    icon: Icon, accent = "blue", title, description, placeholder, loading, pageSize, confirmarCambio,
 }: {
     label: string
     required?: boolean
@@ -852,8 +987,12 @@ function ComboTile<T>({
     placeholder?: string
     loading?: boolean
     pageSize?: number
+    /** Si se pasa, "Cambiar" pide confirmacion antes de liberar el valor */
+    confirmarCambio?: { titulo: string; descripcion: string }
 }) {
     const [search, setSearch] = useState("")
+    const [confirmOpen, setConfirmOpen] = useState(false)
+    const liberar = () => { setSearch(""); onClear() }
     const colors = TILE_ACCENTS[accent]
     const selected = items.find((i) => getKey(i) === value)
     const subDe = getSub ?? getKey
@@ -883,7 +1022,7 @@ function ComboTile<T>({
                         type="button"
                         size="sm"
                         variant="outline"
-                        onClick={() => { setSearch(""); onClear() }}
+                        onClick={() => (confirmarCambio ? setConfirmOpen(true) : liberar())}
                         className={cn("h-7 shrink-0 bg-background px-2.5 text-xs", colors.button)}
                     >
                         Cambiar
@@ -920,6 +1059,18 @@ function ComboTile<T>({
                     )}
                 />
             )}
+            {confirmarCambio && (
+                <ConfirmacionAnimada
+                    open={confirmOpen}
+                    onOpenChange={setConfirmOpen}
+                    icon={Icon}
+                    tono="aviso"
+                    titulo={confirmarCambio.titulo}
+                    descripcion={confirmarCambio.descripcion}
+                    textoConfirmar="Sí, cambiar"
+                    onConfirm={liberar}
+                />
+            )}
         </div>
     )
 }
@@ -927,7 +1078,7 @@ function ComboTile<T>({
 // Confirmación con ícono animado (onda + balanceo), usada para Limpiar y
 // para Cambiar almacén.
 function ConfirmacionAnimada({
-    open, onOpenChange, icon: Icon, titulo, descripcion, textoConfirmar, onConfirm,
+    open, onOpenChange, icon: Icon, titulo, descripcion, textoConfirmar, onConfirm, tono = "peligro",
 }: {
     open: boolean
     onOpenChange: (open: boolean) => void
@@ -936,15 +1087,20 @@ function ConfirmacionAnimada({
     descripcion: string
     textoConfirmar: string
     onConfirm: () => void
+    /** peligro (rojo): borra datos · aviso (ámbar): cambia un valor asignado automáticamente */
+    tono?: "peligro" | "aviso"
 }) {
+    const c = tono === "aviso"
+        ? { onda: "bg-amber-400/40", fondo: "bg-amber-100 dark:bg-amber-950/60", icono: "text-amber-600 dark:text-amber-400", boton: "bg-amber-500 hover:bg-amber-600" }
+        : { onda: "bg-red-400/40", fondo: "bg-red-100 dark:bg-red-950/60", icono: "text-red-600 dark:text-red-400", boton: "bg-red-600 hover:bg-red-700" }
     return (
         <AlertDialog open={open} onOpenChange={onOpenChange}>
             <AlertDialogContent className="max-w-md overflow-hidden">
                 <div className="flex flex-col items-center gap-3 pt-2 text-center">
                     <div className="relative flex h-16 w-16 items-center justify-center">
-                        <span className="absolute inset-0 animate-ping rounded-full bg-red-400/40" />
-                        <span className="relative flex h-16 w-16 items-center justify-center rounded-full bg-red-100 dark:bg-red-950/60">
-                            <Icon className="h-7 w-7 animate-[wiggle_0.9s_ease-in-out_infinite] text-red-600 dark:text-red-400" />
+                        <span className={cn("absolute inset-0 animate-ping rounded-full", c.onda)} />
+                        <span className={cn("relative flex h-16 w-16 items-center justify-center rounded-full", c.fondo)}>
+                            <Icon className={cn("h-7 w-7 animate-[wiggle_0.9s_ease-in-out_infinite]", c.icono)} />
                         </span>
                     </div>
                     <AlertDialogHeader className="items-center sm:text-center">
@@ -954,7 +1110,7 @@ function ConfirmacionAnimada({
                 </div>
                 <AlertDialogFooter className="gap-2 sm:justify-center">
                     <AlertDialogCancel className="mt-0">Cancelar</AlertDialogCancel>
-                    <AlertDialogAction onClick={onConfirm} className="bg-red-600 text-white hover:bg-red-700">
+                    <AlertDialogAction onClick={onConfirm} className={cn("text-white", c.boton)}>
                         {textoConfirmar}
                     </AlertDialogAction>
                 </AlertDialogFooter>
