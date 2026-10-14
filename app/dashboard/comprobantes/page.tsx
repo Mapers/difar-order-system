@@ -1,6 +1,6 @@
 'use client'
 
-import {useState, useEffect, useCallback, useRef} from "react"
+import {useState, useEffect, useCallback, useRef, useMemo} from "react"
 import {Search, FileText, AlertTriangle, Truck, Loader2, FileDiff, X, FileSearch, Users, ChevronDown, Check, LayoutGrid, List} from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -97,6 +97,20 @@ function useDebounce(value: string, delay: number = 500) {
 
 export default function ComprobantesPage() {
   const [comprobantes, setComprobantes] = useState<Comprobante[]>([])
+
+  // El listado del SP trae facturas, boletas Y notas de crédito en un mismo
+  // UNION (las NC llegan con tipoNC = 'nota_credito'). Una NC ANULADA no
+  // aporta nada a esta pantalla: no se puede gestionar ni acredita importe,
+  // así que se oculta del grid.
+  //
+  // Se filtra acá y NO en el SP a propósito: el export sí tiene que seguir
+  // listándola, en 0, porque un registro de ventas no puede saltarse un
+  // correlativo. Por eso ExportComprobantesMenu y GenerarSireMenu reciben
+  // `comprobantes` sin filtrar y solo el grid recibe este derivado.
+  const comprobantesVisibles = useMemo(
+      () => comprobantes.filter(c => !(c.tipoNC === 'nota_credito' && c.anulado)),
+      [comprobantes],
+  )
   const [totales, setTotales] = useState({ totalFacturas: 0, totalBoletas: 0, totalNotasCredito: 0 })
   const [pedidosPendientes, setPedidosPendientes] = useState<Pedido[]>([])
   const [guiasRemision, setGuiasRemision] = useState<GuiaRemision[]>([])
@@ -1074,7 +1088,7 @@ export default function ComprobantesPage() {
 
             {vistaComprobantes === 'tarjetas' ? (
                 <ComprobantesGrid
-                    comprobantes={comprobantes}
+                    comprobantes={comprobantesVisibles}
                     loading={loadingComprobantes}
                     tiposComprobante={tiposComprobante}
                     isAdmin={isAdmin}
@@ -1093,7 +1107,7 @@ export default function ComprobantesPage() {
                 />
             ) : (
                 <ComprobantesTable
-                    comprobantes={comprobantes}
+                    comprobantes={comprobantesVisibles}
                     loading={loadingComprobantes}
                     tiposComprobante={tiposComprobante}
                     isAdmin={isAdmin}
