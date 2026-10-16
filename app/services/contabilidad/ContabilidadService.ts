@@ -15,6 +15,15 @@ import {
     SubcuentaContable,
     SubctaMvtoParams,
     SubctaMvtoReporte,
+
+    ComprasRevisionResultado,
+    ComprasRevisionFila,
+    ComprasSaldoFila,
+    ComprasPago,
+    ComprasPagosDatos,
+    ComprasPagoPayload,
+    ComprasTransporteDatos,
+    ComprasTransportePayload,
 } from '@/app/types/contabilidad-types'
 
 export const ContabilidadService = {
@@ -188,6 +197,64 @@ export const ComprasService = {
 
     eliminarDocumento: async (clave: number) => {
         const res = await apiClient.delete(`/contabilidad/compras/documento/${clave}`)
+        return res.data?.data ?? null
+    },
+
+    revisar: async (clave: number): Promise<ComprasRevisionResultado | null> => {
+        const res = await apiClient.post(`/contabilidad/compras/documento/${clave}/revisar`)
+        return res.data?.data ?? null
+    },
+
+    reporteRevision: async (anio: string): Promise<ComprasRevisionFila[]> => {
+        const res = await apiClient.get('/contabilidad/compras/reporte-revision', { params: { anio } })
+        return res.data?.data ?? []
+    },
+
+    saldoComprobante: async (clave: number): Promise<ComprasSaldoFila[]> => {
+        const res = await apiClient.get(`/contabilidad/compras/documento/${clave}/saldo`)
+        return res.data?.data ?? []
+    },
+
+    datosImpresion: async (clave: number): Promise<Record<string, unknown>[]> => {
+        const res = await apiClient.get(`/contabilidad/compras/documento/${clave}/impresion`)
+        return res.data?.data ?? []
+    },
+
+    pagosObtener: async (clave: number): Promise<ComprasPagosDatos> => {
+        const res = await apiClient.get(`/contabilidad/compras/documento/${clave}/pagos`)
+        const d = res.data?.data ?? {}
+        const pagos: ComprasPago[] = d.pagos ?? []
+        return {
+            cabecera: d.cabecera ?? null,
+            pagos: [...pagos].sort((a, b) =>
+                String(a.compFechapago).localeCompare(String(b.compFechapago))
+                || a.idregcompraspagos - b.idregcompraspagos),
+            tiposPago:    [...(d.tiposPago ?? [])].sort((a: any, b: any) =>
+                String(a.Descripcion).localeCompare(String(b.Descripcion), 'es')),
+            centrosCosto: [...(d.centrosCosto ?? [])].sort((a: any, b: any) =>
+                String(a.Descripcion).localeCompare(String(b.Descripcion), 'es')),
+        }
+    },
+
+    pagosGuardar: async (clave: number, pagos: ComprasPagoPayload[]) => {
+        const res = await apiClient.post(`/contabilidad/compras/documento/${clave}/pagos`, { pagos })
+        return res.data?.data ?? null
+    },
+
+    transporteObtener: async (clave: number): Promise<ComprasTransporteDatos> => {
+        const res = await apiClient.get(`/contabilidad/compras/documento/${clave}/transporte`)
+        const d = res.data?.data ?? {}
+        return {
+            filas:    [...(d.filas ?? [])].sort((a: any, b: any) => a.idTransporte - b.idTransporte),
+            unidades: [...(d.unidades ?? [])].sort((a: any, b: any) =>
+                String(a.NroPlaca).localeCompare(String(b.NroPlaca), 'es')),
+            ciudades: [...(d.ciudades ?? [])].sort((a: string, b: string) => a.localeCompare(b, 'es')),
+            lineas:   [...(d.lineas ?? [])].sort((a: any, b: any) => a.Id_Compras_Detalle - b.Id_Compras_Detalle),
+        }
+    },
+
+    transporteGuardar: async (clave: number, filas: ComprasTransportePayload[]) => {
+        const res = await apiClient.post(`/contabilidad/compras/documento/${clave}/transporte`, { filas })
         return res.data?.data ?? null
     },
 }

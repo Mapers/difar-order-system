@@ -13,10 +13,16 @@ import {
 } from "@/components/ui/alert-dialog"
 import {
     Loader2, Save, Plus, Trash2, Lock, AlertCircle, X, Search, ChevronDown, Check,
+    ClipboardCheck, Wallet, Truck, Printer,
 } from "lucide-react"
 import { ComprasService } from "@/app/services/contabilidad/ContabilidadService"
+import { toast } from "@/app/hooks/useToast"
 import { useRegistroCompras, CabeceraEdicion, FilaCompra } from "./useRegistroCompras"
 import { BuscadorRemoto } from "./BuscadorRemoto"
+import { BuscadorDocumentos } from "./BuscadorDocumentos"
+import { SaldoDialog } from "./SaldoDialog"
+import { PagosDialog } from "./PagosDialog"
+import { TransporteDialog } from "./TransporteDialog"
 
 const money = (v: number) =>
     Number(v ?? 0).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
@@ -28,6 +34,11 @@ export default function RegistroComprasPage() {
     const [confirmEliminarLineas, setConfirmEliminarLineas] = useState(false)
     const [buscarClave, setBuscarClave] = useState("")
     const [otrosAbierto, setOtrosAbierto] = useState(false)
+    const [buscadorAbierto, setBuscadorAbierto] = useState(false)
+    const [saldoAbierto, setSaldoAbierto] = useState(false)
+    const [pagosAbierto, setPagosAbierto] = useState(false)
+    const [transpAbierto, setTranspAbierto] = useState(false)
+    const [revisando, setRevisando] = useState(false)
 
     const marcadas = c.filas.filter(f => f.eliminar && f.id !== null).length
     const ro = c.cerrado
@@ -49,6 +60,47 @@ export default function RegistroComprasPage() {
     const docTitulo = c.cab.serie || c.cab.numero
         ? `${c.cab.serie}-${c.cab.numero}`
         : 'Sin número'
+
+    const revisar = async () => {
+        if (!c.clave) return
+        setRevisando(true)
+        try {
+            const r = await ComprasService.revisar(c.clave)
+            toast({
+                title: "Documento revisado",
+                description: r
+                    ? `Registro de compras: ${r.RegistroCompras} · centros de costo: ${r.MvtosCentroCostos} · presupuesto: ${r.EjecucionPpto}`
+                    : undefined,
+            })
+            await c.abrir(c.clave)
+        } catch (e: any) {
+            toast({
+                title: "Error",
+                description: e?.response?.data?.message || "No se pudo revisar el documento.",
+                variant: "destructive",
+            })
+        } finally {
+            setRevisando(false)
+        }
+    }
+
+    const imprimir = async () => {
+        if (!c.clave) return
+        try {
+            const filas = await ComprasService.datosImpresion(c.clave)
+            if (filas.length === 0) {
+                toast({ title: "Nada que imprimir", description: "El documento no tiene líneas.", variant: "warning" })
+                return
+            }
+            abrirVentanaImpresion(filas as Record<string, unknown>[])
+        } catch (e: any) {
+            toast({
+                title: "Error",
+                description: e?.response?.data?.message || "No se pudieron obtener los datos de impresión.",
+                variant: "destructive",
+            })
+        }
+    }
 
     return (
         <div className="pb-10">
@@ -93,6 +145,14 @@ export default function RegistroComprasPage() {
                                     : <Search className="h-4 w-4" />}
                             </Button>
                         </div>
+
+                        <Button
+                            onClick={() => setBuscadorAbierto(true)}
+                            variant="outline" size="sm" className="gap-1.5"
+                            title="Buscar por período, proveedor, serie o número"
+                        >
+                            <Search className="h-4 w-4" /> Buscar
+                        </Button>
 
                         <Button onClick={c.nuevo} variant="outline" size="sm" className="gap-1.5">
                             <Plus className="h-4 w-4" /> Nueva
@@ -414,15 +474,40 @@ export default function RegistroComprasPage() {
                         </>
                     )}
 
-                    {c.clave && !ro && (
-                        <div className="mt-4 flex justify-end">
-                            <Button
-                                variant="ghost" size="sm"
-                                className="gap-1.5 text-red-700 hover:bg-red-50 hover:text-red-800"
-                                onClick={() => setConfirmEliminarDoc(true)}
-                            >
-                                <X className="h-4 w-4" /> Eliminar este documento
+                    {c.clave && (
+                        <div className="mt-4 flex flex-wrap items-center gap-2 border-t pt-4">
+                            <Button variant="outline" size="sm" className="gap-1.5"
+                                    onClick={revisar} disabled={ro || revisando}
+                                    title="Rehace el registro contable sumando el detalle">
+                                {revisando ? <Loader2 className="h-4 w-4 animate-spin" /> : <ClipboardCheck className="h-4 w-4" />}
+                                Revisa
                             </Button>
+                            <Button variant="outline" size="sm" className="gap-1.5"
+                                    onClick={() => setSaldoAbierto(true)}>
+                                <Wallet className="h-4 w-4" /> Saldo del comprobante
+                            </Button>
+                            <Button variant="outline" size="sm" className="gap-1.5"
+                                    onClick={() => setPagosAbierto(true)} disabled={ro || c.esContado}
+                                    title={c.esContado ? 'El documento es al contado' : 'Pagos a cuenta'}>
+                                <Wallet className="h-4 w-4" /> Pagos a cuenta
+                            </Button>
+                            <Button variant="outline" size="sm" className="gap-1.5"
+                                    onClick={() => setTranspAbierto(true)} disabled={ro}>
+                                <Truck className="h-4 w-4" /> Transporte
+                            </Button>
+                            <Button variant="outline" size="sm" className="gap-1.5" onClick={imprimir}>
+                                <Printer className="h-4 w-4" /> Imprimir
+                            </Button>
+
+                            {!ro && (
+                                <Button
+                                    variant="ghost" size="sm"
+                                    className="ml-auto gap-1.5 text-red-700 hover:bg-red-50 hover:text-red-800"
+                                    onClick={() => setConfirmEliminarDoc(true)}
+                                >
+                                    <X className="h-4 w-4" /> Eliminar este documento
+                                </Button>
+                            )}
                         </div>
                     )}
                 </section>
@@ -445,6 +530,31 @@ export default function RegistroComprasPage() {
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+
+            <SaldoDialog
+                abierto={saldoAbierto} onCerrar={() => setSaldoAbierto(false)}
+                clave={c.clave} titulo={docTitulo}
+            />
+
+            <PagosDialog
+                abierto={pagosAbierto} onCerrar={() => setPagosAbierto(false)}
+                clave={c.clave} titulo={docTitulo}
+                onGuardado={() => { if (c.clave) c.abrir(c.clave) }}
+            />
+
+            <TransporteDialog
+                abierto={transpAbierto} onCerrar={() => setTranspAbierto(false)}
+                clave={c.clave} titulo={docTitulo}
+            />
+
+            <BuscadorDocumentos
+                abierto={buscadorAbierto}
+                onCerrar={() => setBuscadorAbierto(false)}
+                onElegir={(clave) => { setBuscadorAbierto(false); setBuscarClave(String(clave)); c.abrir(clave) }}
+                catalogos={cat}
+                anioInicial={c.cab.anio}
+                periodoInicial={c.cab.periodo}
+            />
 
             <AlertDialog open={confirmEliminarDoc} onOpenChange={setConfirmEliminarDoc}>
                 <AlertDialogContent>
@@ -700,4 +810,91 @@ function CampoTarjeta({
             {children}
         </div>
     )
+}
+
+function abrirVentanaImpresion(filas: Record<string, unknown>[]) {
+    const v = window.open('', '_blank', 'width=900,height=700')
+    if (!v) {
+        toast({
+            title: "El navegador bloqueó la ventana",
+            description: "Permití las ventanas emergentes para este sitio e intentá de nuevo.",
+            variant: "warning",
+        })
+        return
+    }
+
+    const t = (x: unknown) => String(x ?? '')
+    const esc = (x: unknown) =>
+        t(x).replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]!))
+    const n = (x: unknown) =>
+        Number(x ?? 0).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    const f = (x: unknown) => {
+        if (!x) return ''
+        const d = new Date(String(x))
+        return isNaN(d.getTime()) ? '' : d.toLocaleDateString('es-PE', { timeZone: 'UTC' })
+    }
+
+    const c = filas[0]
+    const total = filas.reduce((a, r) => a + Number(r.TotalItem ?? 0), 0)
+
+    v.document.write(`<!doctype html>
+<html lang="es"><head><meta charset="utf-8">
+<title>Compra ${esc(c.SerieDoc)}-${esc(c.NumeroDoc)}</title>
+<style>
+  *{box-sizing:border-box}
+  body{font:12px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:#111;margin:28px}
+  h1{font-size:15px;margin:0 0 2px}
+  .sub{color:#555;font-size:11px;margin-bottom:16px}
+  .caja{border:1px solid #ddd;border-radius:6px;padding:10px 12px;margin-bottom:16px}
+  .campos{display:grid;grid-template-columns:repeat(4,1fr);gap:8px 16px}
+  .campo span{display:block;font-size:10px;color:#666;text-transform:uppercase;letter-spacing:.03em}
+  .campo b{font-weight:600}
+  table{width:100%;border-collapse:collapse;font-size:11px}
+  th{text-align:left;background:#f4f4f5;border-bottom:1px solid #ddd;padding:6px 8px;font-size:10px;
+     text-transform:uppercase;letter-spacing:.03em;color:#555}
+  td{border-bottom:1px solid #eee;padding:5px 8px;vertical-align:top}
+  .num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+  tfoot td{border-top:2px solid #ccc;border-bottom:none;font-weight:700;padding-top:8px}
+  @media print{body{margin:12mm} .noprint{display:none}}
+</style></head><body>
+<h1>${esc(c.NombreRazSocial)}</h1>
+<div class="sub">RUC ${esc(c.RUC)} · Registro de compras</div>
+
+<div class="caja"><div class="campos">
+  <div class="campo"><span>Documento</span><b>${esc(c.TipoDoc)} ${esc(c.SerieDoc)}-${esc(c.NumeroDoc)}</b></div>
+  <div class="campo"><span>Fecha</span><b>${f(c.Fecha_Emision)}</b></div>
+  <div class="campo"><span>Proveedor</span><b>${esc(c.Nombre)}</b></div>
+  <div class="campo"><span>Condición</span><b>${esc(c.CondicionDoc)}</b></div>
+  <div class="campo"><span>Moneda</span><b>${esc(c.Moneda)}</b></div>
+  <div class="campo"><span>Almacén</span><b>${esc(c.Almacen)}</b></div>
+  <div class="campo"><span>Clave</span><b>${esc(c.Clave)}</b></div>
+</div></div>
+
+<table>
+  <thead><tr>
+    <th>Artículo</th><th>Und</th><th class="num">Cantidad</th>
+    <th class="num">P. unit.</th><th class="num">Total</th><th>Lote</th><th>Vence</th>
+  </tr></thead>
+  <tbody>
+    ${filas.map(r => `<tr>
+      <td>${esc(r.NombreItem)}</td>
+      <td>${esc(r.Und)}</td>
+      <td class="num">${n(r.Cantidad)}</td>
+      <td class="num">${n(r.PUItem)}</td>
+      <td class="num">${n(r.TotalItem)}</td>
+      <td>${esc(r.Lote)}</td>
+      <td>${f(r.VctoArt)}</td>
+    </tr>`).join('')}
+  </tbody>
+  <tfoot><tr>
+    <td colspan="4">Total</td>
+    <td class="num">${n(total)}</td>
+    <td colspan="2"></td>
+  </tr></tfoot>
+</table>
+</body></html>`)
+    v.document.close()
+    v.focus()
+    // El print va tras el load para que la hoja de estilos ya esté aplicada.
+    v.onload = () => v.print()
 }

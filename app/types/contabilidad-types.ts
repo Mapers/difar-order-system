@@ -347,3 +347,124 @@ export interface ComprasDetallePayload {
 }
 
 export const CONDICION_CONTADO = '01'
+
+export interface ComprasRevisionResultado {
+    Clave:             number
+    RegistroCompras:   number
+    MvtosCentroCostos: number
+    EjecucionPpto:     number
+}
+
+export interface ComprasRevisionFila {
+    Anio:                  string
+    Mes:                   string
+    NroRegistro:           number | null
+    Nombre:                string | null
+    Tipo_Doc:              string
+    SerieDoc:              string
+    NumeroDoc:             number
+    ImporteTotal:          number
+    Exonerado:             number
+    Inafecto:              number
+    SumaDeImporteAfecto:   number | null
+    SumaDeImporteNoAfecto: number | null
+    NombreRazSocial:       string | null
+    RUC:                   string | null
+    Clave:                 number
+}
+
+export interface ComprasSaldoFila {
+    Cod_Prov:    string
+    Nombre:      string | null
+    Tipo_Doc:    string
+    Abreviatura: string | null
+    SerieDoc:    string
+    NumeroDoc:   number
+    [k: string]: unknown
+}
+
+export interface ComprasPagoCabecera {
+    Clave:              number
+    Empresa:            string
+    Cod_Prov:           string
+    Proveedor:          string | null
+    Tipo_Doc:           string
+    SerieDoc:           string
+    NumeroDoc:          number
+    Fecha_Emision:      string
+    Moneda:             string
+    ImporteTotal:       number
+    saldoDocprov:       number
+    SumaDeAmortizacion: number
+    Saldo:              number
+}
+
+export interface ComprasPago {
+    idregcompraspagos:      number
+    clave:                  number
+    compFechapago:          string
+    compTipopago:           string
+    TipoPagoDescripcion:    string | null
+    compCentroCosto:        number | null
+    CentroCostoDescripcion: string | null
+    compObservaciones:      string | null
+    compMoneda:             string
+    compImporte:            number
+    tcVta:                  number | null
+}
+
+export interface ComprasPagosDatos {
+    cabecera:     ComprasPagoCabecera | null
+    pagos:        ComprasPago[]
+    tiposPago:    { Cod_Tipo_Amort: string; Descripcion: string }[]
+    centrosCosto: { idCentroCostos: number; Cod_CC: string; Descripcion: string }[]
+}
+
+export interface ComprasPagoPayload {
+    id:            number | null
+    fecha:         string
+    tipoPago:      string
+    centroCosto:   number | null
+    observaciones: string | null
+    importe:       number
+    eliminar:      boolean
+}
+
+export interface ComprasTransporteFila {
+    idTransporte:     number
+    IdUndTransporte:  number | null
+    NroPlaca:         string | null
+    MarcaUndTransp:   string | null
+    ciudadTransporte: string | null
+    kmTransporte:     string | null
+    observTransporte: string | null
+    idDetalle:        number | null
+    ingresos:         number | null
+    egresos:          number | null
+    moneda:           string | null
+    fechaMvto:        string | null
+    ctaContable:      number | null
+}
+
+export interface ComprasTransporteDatos {
+    filas:    ComprasTransporteFila[]
+    unidades: { IdUndTransporte: number; NroPlaca: string; MarcaUndTransp: string | null }[]
+    ciudades: string[]
+    lineas:   {
+        Id_Compras_Detalle: number
+        Articulo:           string
+        NombreItem:         string | null
+        Egreso:             number
+        CuentaContab:       number | null
+    }[]
+}
+
+export interface ComprasTransportePayload {
+    id:            number | null
+    idUnd:         number | null
+    ciudad:        string | null
+    km:            string | null
+    observaciones: string | null
+    idDetalle:     number | null
+    eliminar:      boolean
+}

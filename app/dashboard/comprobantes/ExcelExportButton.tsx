@@ -131,6 +131,8 @@ export function ExcelExportButton({
 
             for (const c of data) {
                 if (!esExportableARegistroVentas(c)) continue
+
+                if (c.tipoNC === 'nota_credito' && c.anulado) continue
                 if (!filtro.aceptar(c.serie, c.numero)) continue
                 const base    = Number(c.total_gravada || 0)
                 const igv     = Number(c.total_igv || 0)
