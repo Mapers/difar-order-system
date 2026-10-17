@@ -25,7 +25,70 @@ const Miniatura = ({ item, ruta, className = "", onOpenImagen }: any) => (
     </button>
 );
 
-export const PriceTable = ({ data, loading, onOpenLots, onOpenPrices, onOpenKardex, ventas, etiquetasVentas = [], imagenesActivas = false, imagenes, onOpenImagen }: any) => {
+const precioBonif = (valor: any) => Number(valor) > 0
+    ? <span className="text-green-700 dark:text-green-400">S/ {valor}</span>
+    : <span className="text-muted-foreground/50">—</span>;
+
+/**
+ * Tarjeta de la vista en cards de escritorio. No lleva imagen del producto:
+ * esa se queda solo en la tabla. El stock va en naranja por debajo del
+ * umbral de stock escaso y en rojo cuando no hay.
+ */
+const PriceCard = ({ item, ventas, etiquetasVentas, umbralEscaso, onOpenLots, onOpenPrices, onOpenKardex }: any) => {
+    const stock = Number(item.kardex_saldoCant);
+    const colorStock = !(stock > 0)
+        ? "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300"
+        : stock < umbralEscaso
+            ? "bg-orange-100 text-orange-700 dark:bg-orange-950 dark:text-orange-300"
+            : "bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-300";
+
+    return (
+        <Card className="flex flex-col border border-border transition-shadow hover:shadow-md">
+            <CardContent className="flex flex-1 flex-col gap-2 p-4">
+                <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                        <p className="font-mono text-xs font-bold text-blue-600">{item.prod_codigo}</p>
+                        <p className="truncate text-[11px] font-semibold uppercase text-muted-foreground">{item.laboratorio_Descripcion}</p>
+                    </div>
+                    <span className={`shrink-0 whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-bold ${colorStock}`}>
+                        {stock.toLocaleString("es-ES", {minimumFractionDigits: 2})} {item.prod_medida?.toLowerCase()}
+                    </span>
+                </div>
+
+                <div>
+                    <p className="text-sm font-bold leading-tight">{item.prod_descripcion}</p>
+                    {item.prod_principio && <p className="text-[11px] uppercase text-muted-foreground">{item.prod_principio}</p>}
+                </div>
+                {item.prod_presentacion && <p className="text-xs text-muted-foreground">{item.prod_presentacion}</p>}
+
+                <div className="mt-auto flex items-center justify-between gap-2 border-t border-dashed pt-2">
+                    <span className="text-[11px] uppercase tracking-wide text-muted-foreground">Ventas 3 meses</span>
+                    <VentasSparkline ventas={ventas?.get(item.prod_codigo)} etiquetas={etiquetasVentas} compacto />
+                </div>
+
+                <div className="grid grid-cols-[auto_1fr_1fr] items-center gap-x-3 gap-y-1 rounded-lg bg-muted/50 px-3 py-2 text-right font-mono text-sm">
+                    <span />
+                    <span className="font-sans text-[11px] uppercase text-muted-foreground">Contado</span>
+                    <span className="font-sans text-[11px] uppercase text-muted-foreground">Crédito</span>
+                    <span className="text-left font-sans text-xs font-semibold text-muted-foreground">Precio</span>
+                    <span className="font-semibold">S/ {item.precio_contado}</span>
+                    <span className="font-semibold">S/ {item.precio_credito}</span>
+                    <span className="text-left font-sans text-xs font-semibold text-green-700 dark:text-green-400">Bonif.</span>
+                    <span className="font-semibold">{precioBonif(item.precio_bonif_cont)}</span>
+                    <span className="font-semibold">{precioBonif(item.precio_bonif_cred)}</span>
+                </div>
+
+                <div className="grid grid-cols-3 gap-2">
+                    <Button variant="outline" size="sm" onClick={() => onOpenLots(item)}><Eye className="h-4 w-4"/> Lotes</Button>
+                    <Button variant="outline" size="sm" onClick={() => onOpenPrices(item)}><DollarSign className="h-4 w-4"/> Precios</Button>
+                    <Button variant="outline" size="sm" onClick={() => onOpenKardex(item)}><History className="h-4 w-4"/> Kardex</Button>
+                </div>
+            </CardContent>
+        </Card>
+    );
+};
+
+export const PriceTable = ({ data, loading, onOpenLots, onOpenPrices, onOpenKardex, ventas, etiquetasVentas = [], imagenesActivas = false, imagenes, onOpenImagen, vista = "tabla", umbralEscaso = 10 }: any) => {
     const totalColumnas = imagenesActivas ? 12 : 11;
 
     const LoadingSkeletons = () => Array.from({length: 5}).map((_, i) => (
@@ -35,7 +98,34 @@ export const PriceTable = ({ data, loading, onOpenLots, onOpenPrices, onOpenKard
 
     return (
         <>
-            <div className="hidden lg:block overflow-x-auto">
+            {vista === "cards" && (
+                <div className="hidden lg:block bg-muted/30 p-4">
+                    {loading ? (
+                        <div className="grid grid-cols-2 gap-4 xl:grid-cols-3">
+                            {Array.from({length: 6}).map((_, i) => <Skeleton key={i} className="h-72 w-full"/>)}
+                        </div>
+                    ) : data.length > 0 ? (
+                        <div className="grid grid-cols-2 gap-4 xl:grid-cols-3">
+                            {data.map((item: any, idx: number) => (
+                                <PriceCard
+                                    key={`${item.prod_codigo}-${idx}`}
+                                    item={item}
+                                    ventas={ventas}
+                                    etiquetasVentas={etiquetasVentas}
+                                    umbralEscaso={umbralEscaso}
+                                    onOpenLots={onOpenLots}
+                                    onOpenPrices={onOpenPrices}
+                                    onOpenKardex={onOpenKardex}
+                                />
+                            ))}
+                        </div>
+                    ) : (
+                        <p className="py-8 text-center text-muted-foreground">No se encontraron resultados</p>
+                    )}
+                </div>
+            )}
+
+            <div className={`${vista === "cards" ? "hidden" : "hidden lg:block"} overflow-x-auto`}>
                 <table className="w-full border-collapse">
                     <thead>
                     <tr className="border-b bg-muted text-left">
