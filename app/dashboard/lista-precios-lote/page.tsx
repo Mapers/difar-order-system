@@ -17,6 +17,7 @@ import {PricePagination} from "@/components/lista-precios-lote/PricePagination";
 import {CreateProductModal} from "@/components/lista-precios-lote/CreateProductModal";
 import {QuickPriceEditModal} from "@/components/lista-precios-lote/QuickPriceEditModal";
 import {ArticuloImagenModal, ProductoImagen} from "@/components/lista-precios-lote/ArticuloImagenModal";
+import {ExportPorVencerModal} from "@/components/lista-precios-lote/ExportPorVencerModal";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -156,6 +157,16 @@ export default function PricePage() {
                     filters={listData.exportFilters}
                     porAlmacen={exportarPorAlmacen}
                     almacenSel={almacenExport}
+                />
+                <ExportPorVencerModal
+                    payload={listData.exportPayload}
+                    filters={listData.exportFilters}
+                    porAlmacen={exportarPorAlmacen}
+                    almacenSel={almacenExport}
+                    laboratorios={laboratoriesRepres
+                        .filter((l: any) => listData.selectedLabs.includes(l.IdLineaGe))
+                        .map((l: any) => l.Descripcion)}
+                    almacenNombre={almacenesExport.find(a => a.IdAlmacen === almacenExport)?.Descripcion ?? null}
                 />
                 <div className="text-sm text-muted-foreground text-right hidden sm:block">
                   {currentDateTime.date} | {currentDateTime.time}

@@ -2,12 +2,12 @@ import moment from 'moment'
 import { PriceService } from '@/app/services/price/PriceService'
 import { datosPorAlmacen, DatosExport } from '@/app/dashboard/lista-precios-lote/services/almacenesExport'
 
-export interface FiltroPorVencer {
-    meses: number
-    incluirVencidos: boolean
-    excluirSinStock: boolean
-    /** null = no se filtra por stock escaso */
-    stockEscaso: number | null
+/** Los filtros de la pantalla que también aplican al export por vencer. */
+export interface FiltrosPantalla {
+    excludeNoStock: boolean
+    lowStockThreshold: string
+    searchTerm: string
+    selectedPrinciple: string
 }
 
 /** Desde hoy hasta la misma fecha dentro de N meses, ambos días incluidos. */
@@ -19,29 +19,36 @@ export function rangoVencimiento(meses: number, hoy: moment.Moment = moment()) {
 }
 
 /**
- * Deja en cada producto solo los lotes que vencen dentro del rango, y saca
- * los productos que se quedan sin lotes. lotes_raw se reescribe con los
- * segmentos que pasan, así los generadores de Excel y PDF no cambian.
+ * Deja en cada producto solo los lotes que vencen dentro de los próximos N
+ * meses y saca los productos que se quedan sin lotes. lotes_raw se reescribe
+ * con los segmentos que pasan, así los generadores de Excel y PDF no cambian.
  *
- * Un lote sin fecha de vencimiento no entra: no se puede decir que vence.
+ * Los lotes ya vencidos y los que no tienen fecha no entran.
  */
-export function filtrarPorVencer(items: any[], f: FiltroPorVencer, hoy?: moment.Moment): any[] {
-    const { desde, hasta } = rangoVencimiento(f.meses, hoy)
+export function filtrarPorVencer(items: any[], meses: number, filtros: FiltrosPantalla, hoy?: moment.Moment): any[] {
+    const { desde, hasta } = rangoVencimiento(meses, hoy)
+    const stockEscaso = Number(filtros.lowStockThreshold)
+    const q = filtros.searchTerm?.toLowerCase()
 
     return items.flatMap(item => {
         const stockProducto = Number(item.kardex_saldoCant)
-        if (f.excluirSinStock && !(stockProducto > 0)) return []
-        if (f.stockEscaso != null && !(stockProducto < f.stockEscaso)) return []
+        if (filtros.excludeNoStock && !(stockProducto > 0)) return []
+        if (stockEscaso > 0 && !(stockProducto < stockEscaso)) return []
+        if (filtros.selectedPrinciple && item.prod_principio !== filtros.selectedPrinciple) return []
+        if (q && !(
+            item.prod_codigo?.toLowerCase().includes(q)
+            || item.prod_descripcion?.toLowerCase().includes(q)
+            || item.prod_principio?.toLowerCase().includes(q)
+        )) return []
 
         const lotes = String(item.lotes_raw ?? '').split(';').filter(seg => {
             const [, fecha, stock] = seg.split('|')
             const vcto = moment(fecha, 'YYYY-MM-DD')
             if (!fecha || !vcto.isValid()) return false
-            if (vcto.isAfter(hasta)) return false
-            if (!f.incluirVencidos && vcto.isBefore(desde)) return false
+            if (vcto.isBefore(desde) || vcto.isAfter(hasta)) return false
             // El stock por lote puede no venir (SP viejo): en ese caso manda
             // el filtro por stock del producto de arriba.
-            if (f.excluirSinStock && stock !== undefined && stock !== '' && !(Number(stock) > 0)) return false
+            if (filtros.excludeNoStock && stock !== undefined && stock !== '' && !(Number(stock) > 0)) return false
             return true
         })
 
@@ -50,37 +57,21 @@ export function filtrarPorVencer(items: any[], f: FiltroPorVencer, hoy?: moment.
 }
 
 /**
- * Trae los productos para el export por vencer.
- *
- * - Separado por almacén: un grupo por almacén (los elegidos, o todos).
- * - Sin separar y con almacenes elegidos: se juntan en una sola lista, así
- *   que un producto aparece una vez por cada almacén donde tenga lotes.
- * - Sin separar y sin almacenes: la lista general, como el export normal.
- *
- * Devuelve null si no queda nada que exportar.
+ * Trae los productos para el export por vencer con los mismos criterios de
+ * almacén que los botones de Excel y PDF. Devuelve null si no queda nada.
  */
-export async function obtenerDatosPorVencer({ laboratorios, almacenes, separarPorAlmacen, filtro }: {
-    laboratorios: number[]
-    almacenes: number[]
-    separarPorAlmacen: boolean
-    filtro: FiltroPorVencer
+export async function obtenerDatosPorVencer({ payload, meses, filtros, porAlmacen, almacenSel }: {
+    payload: any
+    meses: number
+    filtros: FiltrosPantalla
+    porAlmacen: boolean
+    almacenSel: number | null
 }): Promise<DatosExport | null> {
-    const payload = { descripcion: '', laboratorio: laboratorios.join(',') }
-    const filtrar = (items: any[]) => filtrarPorVencer(items, filtro)
+    const filtrar = (items: any[]) => filtrarPorVencer(items, meses, filtros)
 
-    if (separarPorAlmacen || almacenes.length > 0) {
-        const grupos = await datosPorAlmacen(payload, filtrar, almacenes.length > 0 ? almacenes : null)
-        if (grupos.length === 0) return null
-        if (separarPorAlmacen) return { grupos }
-
-        // Al juntar almacenes se reordena por laboratorio para que el export
-        // no repita la banda de un mismo laboratorio varias veces.
-        const data = grupos
-            .flatMap(g => g.data)
-            .sort((a, b) =>
-                String(a.laboratorio_Descripcion ?? '').localeCompare(String(b.laboratorio_Descripcion ?? ''))
-                || String(a.prod_descripcion ?? '').localeCompare(String(b.prod_descripcion ?? '')))
-        return { data }
+    if (porAlmacen || almacenSel != null) {
+        const grupos = await datosPorAlmacen(payload, filtrar, almacenSel != null ? [almacenSel] : null)
+        return grupos.length > 0 ? { grupos } : null
     }
 
     const response = await PriceService.getPricesAll(payload)
