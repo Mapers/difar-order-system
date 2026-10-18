@@ -25,6 +25,11 @@ import SolicitudesTab from "@/components/clientes/SolicitudesTab"
 import { SkeletonCardClient, SkeletonClientRow } from "@/components/skeleton/ClientSkeleton"
 import ExportClientesExcelButton from "./export-clientes-excel"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { ClienteCard } from "@/components/clientes/ClienteCard"
+import { LayoutGrid, List } from "lucide-react"
+
+type VistaClientes = "tabla" | "cards"
+const VISTA_STORAGE_KEY = "clientes:vista"
 
 export default function ClientsPage() {
   const { user, isAuthenticated, globalConfigs, isVendedor, isRepresentante, isAdmin } = useAuth();
@@ -47,6 +52,21 @@ export default function ClientsPage() {
   const [codClient, setCodClient] = useState<any>('')
 
   const [ubicacionCliente, setUbicacionCliente] = useState<{ codigo: string; nombre: string } | null>(null)
+  const [vista, setVista] = useState<VistaClientes>("cards")
+
+  // La vista elegida se recuerda en este navegador. La primera vez, o si el
+  // storage no está disponible, se muestra en cards.
+  useEffect(() => {
+    try {
+      const guardada = localStorage.getItem(VISTA_STORAGE_KEY)
+      if (guardada === "tabla" || guardada === "cards") setVista(guardada)
+    } catch {}
+  }, [])
+
+  const cambiarVista = (v: VistaClientes) => {
+    setVista(v)
+    try { localStorage.setItem(VISTA_STORAGE_KEY, v) } catch {}
+  }
 
   const handleEdit = (codigoCliente: string) => {
     setCodClient(codigoCliente)
@@ -371,7 +391,53 @@ export default function ClientsPage() {
                   Mostrando {paginatedData.length} de {filteredClients.length} cliente{filteredClients.length !== 1 ? "s" : ""}
                   <span className="hidden sm:inline"> (Página {currentPage} de {totalPages})</span>
                 </p>
+                <div className="hidden lg:flex items-center rounded-lg border bg-muted p-0.5" role="group" aria-label="Vista de clientes">
+                  {([["tabla", "Tabla", List], ["cards", "Cards", LayoutGrid]] as const).map(([valor, texto, Icono]) => (
+                      <button
+                          key={valor}
+                          type="button"
+                          onClick={() => cambiarVista(valor)}
+                          aria-pressed={vista === valor}
+                          className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm transition-colors ${
+                              vista === valor
+                                  ? "bg-background font-semibold text-blue-700 shadow-sm dark:text-blue-400"
+                                  : "text-muted-foreground hover:text-foreground"
+                          }`}
+                      >
+                        <Icono className="h-4 w-4" />
+                        {texto}
+                      </button>
+                  ))}
+                </div>
               </div>
+
+              {/* VISTA DESKTOP (CARDS) */}
+              {vista === "cards" && (
+                  <div className="hidden lg:block">
+                    {loading || !isAuthenticated ? (
+                        <div className="grid grid-cols-2 gap-4 xl:grid-cols-3">
+                          {Array.from({ length: 6 }).map((_, index) => <SkeletonCardClient key={index} />)}
+                        </div>
+                    ) : paginatedData.length > 0 ? (
+                        <div className="grid grid-cols-2 gap-4 xl:grid-cols-3">
+                          {paginatedData.map((cliente: any, index: number) => (
+                              <ClienteCard
+                                  key={cliente.codigoInterno + index}
+                                  cliente={cliente}
+                                  vistaTablaClientes={vistaTablaClientes}
+                                  onView={handleView}
+                                  onEdit={handleEdit}
+                                  onUbicacion={handleVerUbicacion}
+                              />
+                          ))}
+                        </div>
+                    ) : (
+                        <div className="py-8 text-center text-muted-foreground border rounded-lg">
+                          {error ? 'Error al cargar los cliente-cobranza' : 'No se encontraron cliente-cobranza'}
+                        </div>
+                    )}
+                  </div>
+              )}
 
               {/* VISTA MOBILE (CARDS) */}
               <div className="block lg:hidden space-y-4">
@@ -525,7 +591,7 @@ export default function ClientsPage() {
               </div>
 
               {/* VISTA DESKTOP (TABLA RESPONSIVA) */}
-              <div className="hidden lg:block w-full max-w-full rounded-lg border bg-background shadow-sm overflow-hidden">
+              <div className={`${vista === "cards" ? "hidden" : "hidden lg:block"} w-full max-w-full rounded-lg border bg-background shadow-sm overflow-hidden`}>
                 <div className="w-full overflow-x-auto relative scrollbar-thin scrollbar-thumb-gray-300">
                   <Table className="w-full min-w-max">
                     <TableHeader className="bg-muted">
