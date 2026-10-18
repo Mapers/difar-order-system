@@ -57,8 +57,12 @@ export function useMenuItems(): NavItem[] {
     // SHOW_TOMAR_PEDIDO_ALPHA está en true (para validar en local sin
     // exponerlo a todos), o si el usuario logueado es la cuenta de pruebas
     // "web-aws" (visible siempre para esa cuenta, sin tocar el flag global).
+    // Si el backend ya trae la ruta en el menú no se inyecta: tendría el mismo
+    // href y las dos entradas se marcarían activas a la vez.
+    const yaEnMenu = (href: string) => items.some((item) => item.href === href);
+
     const esUsuarioDePruebas = user?.nombreCompleto?.trim().toLowerCase() === "web-aws";
-    if (SHOW_TOMAR_PEDIDO_ALPHA || esUsuarioDePruebas) {
+    if ((SHOW_TOMAR_PEDIDO_ALPHA || esUsuarioDePruebas) && !yaEnMenu("/dashboard/tomar-pedido-alpha")) {
       const tomarPedidoIndex = items.findIndex((item) => item.href === "/dashboard/tomar-pedido");
       const alphaItem = {
         id: "tomar-pedido-alpha",
@@ -75,7 +79,7 @@ export function useMenuItems(): NavItem[] {
     // justo debajo de "Comprobantes". No confundir con "Hoja en Blanco"
     // (reporte de despachos serie 0800, dentro de Reportes) - son pantallas
     // distintas.
-    if (SHOW_TOMAR_PEDIDO_HOJA_BLANCO) {
+    if (SHOW_TOMAR_PEDIDO_HOJA_BLANCO && !yaEnMenu("/dashboard/tomar-pedido-hoja-blanco")) {
       const comprobantesIndex = items.findIndex((item) => item.href === "/dashboard/comprobantes");
       const hojaBlancaItem = {
         id: "tomar-pedido-hoja-blanco",
