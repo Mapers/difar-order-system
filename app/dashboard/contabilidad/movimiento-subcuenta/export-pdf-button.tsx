@@ -1,201 +1,277 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { FileText, Loader2 } from 'lucide-react'
-import { PDFDocument, StandardFonts, rgb } from 'pdf-lib'
-import { cargarLogoPdf, dibujarCabeceraPdf, truncarPdf } from '@/components/reporte/pdfCabecera'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Switch } from '@/components/ui/switch'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Check, Download, ExternalLink, FileText, Loader2, Palette, RotateCcw, Type } from 'lucide-react'
 import { toast } from '@/app/hooks/useToast'
+import { cn } from '@/lib/utils'
 import { SubctaMvtoCabecera, SubctaMvtoDetalle } from '@/app/types/contabilidad-types'
-
-const money = (v: number | string | null | undefined) =>
-    Number(v ?? 0).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-
-const fechaDMY = (f: string) => {
-    if (!f) return ''
-    const [a, m, d] = String(f).slice(0, 10).split('-')
-    return a && m && d ? `${d}/${m}/${a}` : String(f)
-}
+import {
+    ColumnaOpcional, generarPdfSubcta, OPCIONES_PDF_DEFECTO, OpcionesPdfSubcta, TEMAS_PDF,
+} from './pdfSubcuenta'
 
 interface Props {
     cabecera: SubctaMvtoCabecera
     detalle:  SubctaMvtoDetalle[]
 }
 
+const COLUMNAS: { clave: ColumnaOpcional; nombre: string }[] = [
+    { clave: 'libro',     nombre: 'Libro' },
+    { clave: 'documento', nombre: 'Documento' },
+    { clave: 'saldo',     nombre: 'Saldo acumulado' },
+    { clave: 'item',      nombre: 'Item' },
+]
+
+const nombrePorDefecto = (cab: SubctaMvtoCabecera) =>
+    `mvto-subcuenta-${cab.Cuenta}-${new Date().toISOString().split('T')[0]}`
+
+/**
+ * Exportar PDF del movimiento de sub cuenta. Abre un modal con la vista
+ * previa del PDF y opciones para editarlo (título, nota, color, orientación,
+ * tamaño de letra, columnas) antes de descargarlo o imprimirlo.
+ */
 const ExportSubctaMvtoPdf: React.FC<Props> = ({ cabecera, detalle }) => {
-    const [loading, setLoading] = useState(false)
+    const [open, setOpen] = useState(false)
+    const [op, setOp] = useState<OpcionesPdfSubcta>(OPCIONES_PDF_DEFECTO)
+    const [archivo, setArchivo] = useState(() => nombrePorDefecto(cabecera))
+    const [url, setUrl] = useState<string | null>(null)
+    const [generando, setGenerando] = useState(false)
+    const urlRef = useRef<string | null>(null)
 
-    const generar = async () => {
-        if (loading) return
-        setLoading(true)
-
-        try {
-            const pdfDoc   = await PDFDocument.create()
-            const font     = await pdfDoc.embedFont(StandardFonts.Helvetica)
-            const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold)
-            const logo     = await cargarLogoPdf(pdfDoc)
-
-            // Horizontal: son 7 columnas y el concepto es largo.
-            const pageWidth    = 841.89
-            const pageHeight   = 595.28
-            const margin       = 40
-            const contentWidth = pageWidth - margin * 2
-
-            // Fecha, Libro, Documento, Concepto, Ingreso, Salida, Item
-            const cols  = [62, 34, 96, 316, 86, 86, 42]
-            const heads = ['Fecha', 'Libro', 'Documento', 'Concepto del registro', 'Ingreso', 'Salida', 'Item']
-            const derecha = [false, false, false, false, true, true, true]
-
-            let page = pdfDoc.addPage([pageWidth, pageHeight])
-            let y = 0
-            let saldo = Number(cabecera.SaldoInicial ?? 0)
-
-            const dibujarCabecera = (p: any) => {
-                y = dibujarCabeceraPdf({
-                    page: p, font, boldFont, logo,
-                    pageWidth, pageHeight, margin,
-                    subtitulo: 'MOVIMIENTO DE SUB CUENTA CONTABLE',
-                    razonSocial: cabecera.Empresa,
-                    ruc: cabecera.Ruc,
-                    infoDerechaSec: `Impreso: ${new Date().toLocaleDateString('es-PE')}`,
-                })
-
-                p.drawText(truncarPdf(cabecera.SubCuenta, contentWidth, 10, boldFont), {
-                    x: margin, y, size: 10, font: boldFont,
-                })
-                y -= 13
-                p.drawText(`${cabecera.Periodo}  ·  ${cabecera.Moneda}`, {
-                    x: margin, y, size: 8, font, color: rgb(0.3, 0.3, 0.3),
-                })
-                y -= 16
-
-                // Fila de títulos de columna
-                p.drawRectangle({
-                    x: margin, y: y - 14, width: contentWidth, height: 16,
-                    color: rgb(0.086, 0.192, 0.361),
-                })
-                let x = margin + 3
-                heads.forEach((h, i) => {
-                    const ancho = boldFont.widthOfTextAtSize(h, 8)
-                    p.drawText(h, {
-                        x: derecha[i] ? x + cols[i] - ancho - 6 : x,
-                        y: y - 10, size: 8, font: boldFont, color: rgb(1, 1, 1),
-                    })
-                    x += cols[i]
-                })
-                y -= 24
+    // Cada vez que cambia una opción se regenera la vista previa. Se espera
+    // un momento para no generar el PDF por cada tecla del título.
+    useEffect(() => {
+        if (!open) return
+        let cancelado = false
+        setGenerando(true)
+        const t = setTimeout(async () => {
+            try {
+                const bytes = await generarPdfSubcta(cabecera, detalle, op)
+                if (cancelado) return
+                const nueva = URL.createObjectURL(new Blob([bytes], { type: 'application/pdf' }))
+                if (urlRef.current) URL.revokeObjectURL(urlRef.current)
+                urlRef.current = nueva
+                setUrl(nueva)
+            } catch (error) {
+                console.error('Error al generar el PDF del movimiento de sub cuenta:', error)
+                if (!cancelado) toast({ title: "Error", description: "No se pudo generar la vista previa.", variant: "destructive" })
+            } finally {
+                if (!cancelado) setGenerando(false)
             }
+        }, 350)
+        return () => { cancelado = true; clearTimeout(t) }
+    }, [open, op, cabecera, detalle])
 
-            const saltarPagina = () => {
-                page = pdfDoc.addPage([pageWidth, pageHeight])
-                dibujarCabecera(page)
-            }
+    useEffect(() => () => { if (urlRef.current) URL.revokeObjectURL(urlRef.current) }, [])
 
-            dibujarCabecera(page)
+    const set = <K extends keyof OpcionesPdfSubcta>(k: K, v: OpcionesPdfSubcta[K]) => setOp(p => ({ ...p, [k]: v }))
 
-            // Saldo inicial como primera línea, igual que en la pantalla.
-            page.drawText('Saldo inicial', { x: margin + 3, y, size: 8, font: boldFont })
-            const txtIni = money(cabecera.SaldoInicial)
-            page.drawText(txtIni, {
-                x: pageWidth - margin - cols[6] - 6 - font.widthOfTextAtSize(txtIni, 8),
-                y, size: 8, font: boldFont,
-            })
-            y -= 14
+    const descargar = () => {
+        if (!url) return
+        const link = document.createElement('a')
+        link.href = url
+        link.download = `${(archivo.trim() || nombrePorDefecto(cabecera)).replace(/\.pdf$/i, '')}.pdf`
+        link.click()
+    }
 
-            for (const d of detalle) {
-                if (y < margin + 70) saltarPagina()
-
-                saldo += Number(d.Ingreso ?? 0) - Number(d.Salida ?? 0)
-
-                const celdas = [
-                    fechaDMY(d.Fecha),
-                    d.Libro ?? '',
-                    d.Documento ?? '',
-                    d.Concepto ?? '',
-                    Number(d.Ingreso) ? money(d.Ingreso) : '',
-                    Number(d.Salida) ? money(d.Salida) : '',
-                    String(d.Item ?? ''),
-                ]
-
-                let x = margin + 3
-                celdas.forEach((texto, i) => {
-                    const recortado = truncarPdf(texto, cols[i] - 8, 7.5, font)
-                    const ancho = font.widthOfTextAtSize(recortado, 7.5)
-                    page.drawText(recortado, {
-                        x: derecha[i] ? x + cols[i] - ancho - 6 : x,
-                        y, size: 7.5, font,
-                    })
-                    x += cols[i]
-                })
-                y -= 11
-            }
-
-            // Pie: Totales, Saldo Inicial y Saldo Final, como el pie de grupo
-            // del reporte de Access.
-            if (y < margin + 70) saltarPagina()
-            y -= 6
-            page.drawLine({
-                start: { x: margin, y }, end: { x: pageWidth - margin, y },
-                thickness: 0.7, color: rgb(0.4, 0.4, 0.4),
-            })
-            y -= 14
-
-            const xIngreso = margin + cols[0] + cols[1] + cols[2] + cols[3]
-            const dibujarPie = (etiqueta: string, valores: { x: number; ancho: number; texto: string }[]) => {
-                page.drawText(etiqueta, { x: margin + 3, y, size: 8, font: boldFont })
-                valores.forEach(v => {
-                    page.drawText(v.texto, {
-                        x: v.x + v.ancho - 6 - boldFont.widthOfTextAtSize(v.texto, 8),
-                        y, size: 8, font: boldFont,
-                    })
-                })
-                y -= 13
-            }
-
-            dibujarPie('Totales:', [
-                { x: xIngreso,            ancho: cols[4], texto: money(cabecera.TotalIngreso) },
-                { x: xIngreso + cols[4],  ancho: cols[5], texto: money(cabecera.TotalSalida) },
-            ])
-            dibujarPie('Saldo Inicial:', [
-                { x: xIngreso + cols[4],  ancho: cols[5], texto: money(cabecera.SaldoInicial) },
-            ])
-            dibujarPie('Saldo Final:', [
-                { x: xIngreso + cols[4],  ancho: cols[5], texto: money(cabecera.SaldoFinal) },
-            ])
-
-            const paginas = pdfDoc.getPages()
-            paginas.forEach((p, i) => {
-                const txt = `Página ${i + 1} de ${paginas.length}`
-                p.drawText(txt, {
-                    x: pageWidth - margin - font.widthOfTextAtSize(txt, 8),
-                    y: margin / 2, size: 8, font,
-                })
-            })
-
-            const bytes = await pdfDoc.save()
-            const link = document.createElement('a')
-            link.href = window.URL.createObjectURL(new Blob([bytes], { type: 'application/pdf' }))
-            link.download = `mvto-subcuenta-${cabecera.Cuenta}-${new Date().toISOString().split('T')[0]}.pdf`
-            link.click()
-            window.URL.revokeObjectURL(link.href)
-        } catch (error) {
-            console.error('Error al generar el PDF del movimiento de sub cuenta:', error)
-            toast({ title: "Error", description: "Ocurrió un error al generar el PDF.", variant: "destructive" })
-        } finally {
-            setLoading(false)
-        }
+    const restablecer = () => {
+        setOp(OPCIONES_PDF_DEFECTO)
+        setArchivo(nombrePorDefecto(cabecera))
     }
 
     return (
-        <Button
-            variant="outline"
-            onClick={generar}
-            disabled={loading}
-            className="shrink-0 gap-2 text-blue-700 border-blue-200 hover:bg-blue-50 bg-background"
-        >
-            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
-            {loading ? 'Generando...' : 'Exportar PDF'}
-        </Button>
+        <>
+            <Button
+                variant="outline"
+                onClick={() => setOpen(true)}
+                className="shrink-0 gap-2 text-blue-700 border-blue-200 hover:bg-blue-50 bg-background"
+            >
+                <FileText className="h-4 w-4" />
+                Exportar PDF
+            </Button>
+
+            <Dialog open={open} onOpenChange={setOpen}>
+                <DialogContent className="flex h-[92vh] w-[96vw] max-w-6xl flex-col gap-0 overflow-hidden p-0">
+                    <DialogHeader className="border-b px-5 py-4 text-left">
+                        <DialogTitle className="flex items-center gap-2.5">
+                            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-600 to-violet-600 text-white">
+                                <FileText className="h-4 w-4" />
+                            </span>
+                            Exportar PDF
+                        </DialogTitle>
+                        <DialogDescription>
+                            {cabecera.SubCuenta} · {cabecera.Periodo}. Ajusta el diseño y revisa la vista previa antes de descargar.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="grid min-h-0 flex-1 grid-cols-1 md:grid-cols-[320px_1fr]">
+                        {/* Opciones */}
+                        <div className="min-h-0 space-y-5 overflow-y-auto border-b p-5 md:border-b-0 md:border-r">
+                            <Seccion icono={Type} titulo="Textos">
+                                <div className="space-y-1.5">
+                                    <Label className="text-xs">Título del reporte</Label>
+                                    <Input value={op.titulo} maxLength={80} onChange={e => set('titulo', e.target.value)} />
+                                </div>
+                                <div className="space-y-1.5">
+                                    <Label className="text-xs">Nota u observación <span className="text-muted-foreground">(opcional)</span></Label>
+                                    <Input value={op.nota} maxLength={140} placeholder="Ej: Conciliado con estado de cuenta"
+                                           onChange={e => set('nota', e.target.value)} />
+                                </div>
+                                <div className="space-y-1.5">
+                                    <Label className="text-xs">Nombre del archivo</Label>
+                                    <div className="flex items-center gap-1.5">
+                                        <Input value={archivo} onChange={e => setArchivo(e.target.value)} />
+                                        <span className="text-xs text-muted-foreground">.pdf</span>
+                                    </div>
+                                </div>
+                            </Seccion>
+
+                            <Seccion icono={Palette} titulo="Color y formato">
+                                <div className="space-y-1.5">
+                                    <Label className="text-xs">Color</Label>
+                                    <div className="flex flex-wrap items-center gap-2">
+                                        {TEMAS_PDF.map(t => (
+                                            <button
+                                                key={t.color}
+                                                type="button"
+                                                title={t.nombre}
+                                                onClick={() => set('color', t.color)}
+                                                className={cn(
+                                                    'flex h-8 w-8 items-center justify-center rounded-full ring-offset-2 ring-offset-background transition',
+                                                    op.color.toLowerCase() === t.color ? 'ring-2 ring-foreground/60' : 'hover:scale-110',
+                                                )}
+                                                style={{ backgroundColor: t.color }}
+                                            >
+                                                {op.color.toLowerCase() === t.color && <Check className="h-4 w-4 text-white" />}
+                                            </button>
+                                        ))}
+                                        <label title="Otro color" className="relative flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border-2 border-dashed text-xs text-muted-foreground">
+                                            +
+                                            <input type="color" value={op.color} onChange={e => set('color', e.target.value)}
+                                                   className="absolute inset-0 h-full w-full cursor-pointer opacity-0" />
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <Opciones
+                                    etiqueta="Orientación"
+                                    valor={op.orientacion}
+                                    onChange={v => set('orientacion', v)}
+                                    opciones={[{ v: 'horizontal', t: 'Horizontal' }, { v: 'vertical', t: 'Vertical' }]}
+                                />
+                                <Opciones
+                                    etiqueta="Tamaño de letra"
+                                    valor={op.tamanoLetra}
+                                    onChange={v => set('tamanoLetra', v)}
+                                    opciones={[{ v: 'pequena', t: 'Pequeña' }, { v: 'normal', t: 'Normal' }, { v: 'grande', t: 'Grande' }]}
+                                />
+                            </Seccion>
+
+                            <Seccion icono={FileText} titulo="Contenido">
+                                <div className="space-y-2">
+                                    <Label className="text-xs">Columnas</Label>
+                                    <div className="grid grid-cols-2 gap-2">
+                                        {COLUMNAS.map(c => (
+                                            <label key={c.clave} className="flex cursor-pointer items-center gap-2 text-sm">
+                                                <Checkbox
+                                                    checked={op.columnas[c.clave]}
+                                                    onCheckedChange={v => set('columnas', { ...op.columnas, [c.clave]: v === true })}
+                                                />
+                                                {c.nombre}
+                                            </label>
+                                        ))}
+                                    </div>
+                                    <p className="text-[11px] text-muted-foreground">Fecha, concepto, ingreso y salida siempre se incluyen.</p>
+                                </div>
+                                <Interruptor etiqueta="Resumen de saldos arriba" valor={op.mostrarResumen} onChange={v => set('mostrarResumen', v)} />
+                                <Interruptor etiqueta="Ingresos y salidas en color" valor={op.colorImportes} onChange={v => set('colorImportes', v)} />
+                                <Interruptor etiqueta="Filas alternadas (cebra)" valor={op.zebra} onChange={v => set('zebra', v)} />
+                            </Seccion>
+                        </div>
+
+                        {/* Vista previa */}
+                        <div className="relative min-h-[300px] bg-muted/50">
+                            {url && <iframe title="Vista previa del PDF" src={`${url}#toolbar=0&navpanes=0`} className="h-full w-full" />}
+                            {generando && (
+                                <div className="absolute inset-0 flex items-center justify-center bg-background/60 backdrop-blur-[1px]">
+                                    <span className="flex items-center gap-2 rounded-full border bg-background px-4 py-2 text-sm shadow-sm">
+                                        <Loader2 className="h-4 w-4 animate-spin" /> Actualizando vista previa…
+                                    </span>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2 border-t bg-muted/30 px-5 py-3">
+                        <Button variant="ghost" size="sm" className="gap-1.5" onClick={restablecer}>
+                            <RotateCcw className="h-4 w-4" /> Restablecer
+                        </Button>
+                        <div className="ml-auto flex flex-wrap gap-2">
+                            <Button variant="outline" onClick={() => setOpen(false)}>Cerrar</Button>
+                            <Button variant="outline" className="gap-1.5" disabled={!url || generando}
+                                    onClick={() => url && window.open(url, '_blank')}
+                                    title="Abre el PDF en otra pestaña para imprimirlo">
+                                <ExternalLink className="h-4 w-4" /> Abrir / Imprimir
+                            </Button>
+                            <Button className="gap-1.5 bg-blue-600 text-white shadow-md shadow-blue-600/30 hover:bg-blue-700"
+                                    disabled={!url || generando} onClick={descargar}>
+                                <Download className="h-4 w-4" /> Descargar PDF
+                            </Button>
+                        </div>
+                    </div>
+                </DialogContent>
+            </Dialog>
+        </>
+    )
+}
+
+function Seccion({ icono: Icono, titulo, children }: { icono: React.ComponentType<{ className?: string }>; titulo: string; children: React.ReactNode }) {
+    return (
+        <section className="space-y-3">
+            <h3 className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                <Icono className="h-3.5 w-3.5" /> {titulo}
+            </h3>
+            {children}
+        </section>
+    )
+}
+
+function Opciones<T extends string>({ etiqueta, valor, onChange, opciones }: {
+    etiqueta: string; valor: T; onChange: (v: T) => void; opciones: { v: T; t: string }[]
+}) {
+    return (
+        <div className="space-y-1.5">
+            <Label className="text-xs">{etiqueta}</Label>
+            <div className="flex rounded-lg border bg-muted p-0.5">
+                {opciones.map(o => (
+                    <button
+                        key={o.v}
+                        type="button"
+                        onClick={() => onChange(o.v)}
+                        className={cn(
+                            'flex-1 rounded-md px-2 py-1.5 text-xs transition-colors',
+                            valor === o.v ? 'bg-background font-semibold text-blue-700 shadow-sm dark:text-blue-400' : 'text-muted-foreground hover:text-foreground',
+                        )}
+                    >
+                        {o.t}
+                    </button>
+                ))}
+            </div>
+        </div>
+    )
+}
+
+function Interruptor({ etiqueta, valor, onChange }: { etiqueta: string; valor: boolean; onChange: (v: boolean) => void }) {
+    return (
+        <label className="flex cursor-pointer items-center justify-between gap-3 text-sm">
+            {etiqueta}
+            <Switch checked={valor} onCheckedChange={onChange} />
+        </label>
     )
 }
 
