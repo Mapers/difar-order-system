@@ -124,9 +124,11 @@ export default function ClienteCobranzaPage() {
 
     useEffect(() => {
         if (clientSearch) {
+            const q = clientSearch.toUpperCase()
             setClientsFiltered(clients.filter(c =>
                 c.RUC?.includes(clientSearch) ||
-                c.Nombre?.toUpperCase().includes(clientSearch.toUpperCase())
+                c.Nombre?.toUpperCase().includes(q) ||
+                c.NombreComercial?.toUpperCase().includes(q)
             ))
         } else {
             setClientsFiltered(clients)
@@ -454,8 +456,8 @@ export default function ClienteCobranzaPage() {
                                         tileAccent="blue"
                                         tileIcon={User}
                                         tileTitle="Buscar cliente"
-                                        tileDescription="Por RUC o nombre"
-                                        placeholder="RUC o nombre del cliente..."
+                                        tileDescription="Por RUC, nombre o nombre comercial"
+                                        placeholder="RUC, nombre o nombre comercial..."
                                         value={clientSearch}
                                         onValueChange={setClientSearch}
                                         loading={loadingClients}
@@ -475,6 +477,11 @@ export default function ClienteCobranzaPage() {
                                                     <span className="font-semibold text-sm text-foreground line-clamp-1 leading-tight">
                                                         {c.Nombre}
                                                     </span>
+                                                    {c.NombreComercial && c.NombreComercial.trim().toUpperCase() !== c.Nombre?.trim().toUpperCase() && (
+                                                        <span className="text-xs text-muted-foreground line-clamp-1">
+                                                            {c.NombreComercial}
+                                                        </span>
+                                                    )}
                                                     {c.RUC && (
                                                         <span className="text-xs text-muted-foreground">
                                                             <span className="font-medium">RUC:</span> {c.RUC}
