@@ -100,14 +100,26 @@ export async function generarPdfSubcta(
         { clave: 'libro',     titulo: 'Libro',                 ancho: 30, derecha: false },
         { clave: 'documento', titulo: 'Documento',             ancho: 90, derecha: false },
         { clave: 'concepto',  titulo: 'Concepto del registro', ancho: 0,  derecha: false },
-        { clave: 'ingreso',   titulo: 'Ingreso',               ancho: 72, derecha: true  },
-        { clave: 'salida',    titulo: 'Salida',                ancho: 72, derecha: true  },
-        { clave: 'saldo',     titulo: 'Saldo',                 ancho: 80, derecha: true  },
+        { clave: 'ingreso',   titulo: 'Ingreso',               ancho: 82, derecha: true  },
+        { clave: 'salida',    titulo: 'Salida',                ancho: 82, derecha: true  },
+        { clave: 'saldo',     titulo: 'Saldo',                 ancho: 92, derecha: true  },
         { clave: 'item',      titulo: 'Item',                  ancho: 34, derecha: true  },
     ]
     const cols = base.filter(c => !(c.clave in op.columnas) || op.columnas[c.clave as ColumnaOpcional])
-    const fijo = cols.reduce((s, c) => s + c.ancho, 0)
-    cols.find(c => c.clave === 'concepto')!.ancho = Math.max(120, contentWidth - fijo)
+    // Si las columnas fijas no dejan espacio al concepto (hoja vertical), se
+    // achican en proporción para que la tabla nunca se salga de la página.
+    const minConcepto = horizontal ? 170 : 110
+    let fijo = cols.reduce((s, c) => s + c.ancho, 0)
+    if (fijo + minConcepto > contentWidth) {
+        const factor = (contentWidth - minConcepto) / fijo
+        cols.forEach(c => { c.ancho = Math.floor(c.ancho * factor) })
+        fijo = cols.reduce((s, c) => s + c.ancho, 0)
+    }
+    cols.find(c => c.clave === 'concepto')!.ancho = contentWidth - fijo
+
+    // Símbolo según la moneda del reporte ("Soles - S/" o "Dólares - US$").
+    const simbolo = /US|D[oó]lar/i.test(cabecera.Moneda ?? '') ? 'US$' : 'S/'
+    const importe = (v: number | string | null | undefined) => `${simbolo} ${money(v)}`
 
     let page = pdfDoc.addPage([pageWidth, pageHeight])
     let y = 0
@@ -189,7 +201,7 @@ export async function generarPdfSubcta(
                         borderColor: ultima ? tema : BORDE, borderWidth: ultima ? 1 : 0.8,
                     })
                     texto(p, t.etiqueta, x + 8, y - 12, 6.5, boldFont, GRIS)
-                    texto(p, money(t.valor), x + 8, y - 27, 11.5, boldFont, t.color)
+                    texto(p, importe(t.valor), x + 8, y - 27, 11.5, boldFont, t.color)
                 })
                 y -= 34 + 12
             }
@@ -212,13 +224,13 @@ export async function generarPdfSubcta(
     {
         let x = margin
         for (const c of cols) {
-            if (c.clave === 'saldo') textoDerecha(page, money(cabecera.SaldoInicial), x + c.ancho - 6, y, size, boldFont)
+            if (c.clave === 'saldo') textoDerecha(page, importe(cabecera.SaldoInicial), x + c.ancho - 6, y, size, boldFont)
             x += c.ancho
         }
         if (!op.columnas.saldo) {
             const tSal = cols.find(c => c.clave === 'salida')!
             const xSal = cols.slice(0, cols.indexOf(tSal) + 1).reduce((s, c) => s + c.ancho, margin)
-            textoDerecha(page, money(cabecera.SaldoInicial), xSal - 6, y, size, boldFont)
+            textoDerecha(page, importe(cabecera.SaldoInicial), xSal - 6, y, size, boldFont)
         }
     }
     y -= filaH
@@ -237,9 +249,9 @@ export async function generarPdfSubcta(
             libro:     { t: d.Libro ?? '', f: boldFont, color: tema },
             documento: { t: d.Documento ?? '', f: font, color: TEXTO },
             concepto:  { t: d.Concepto ?? '', f: font, color: TEXTO },
-            ingreso:   { t: Number(d.Ingreso) ? money(d.Ingreso) : '', f: font, color: op.colorImportes ? VERDE : TEXTO },
-            salida:    { t: Number(d.Salida) ? money(d.Salida) : '', f: font, color: op.colorImportes ? ROJO : TEXTO },
-            saldo:     { t: money(saldo), f: boldFont, color: TEXTO },
+            ingreso:   { t: Number(d.Ingreso) ? importe(d.Ingreso) : '', f: font, color: op.colorImportes ? VERDE : TEXTO },
+            salida:    { t: Number(d.Salida) ? importe(d.Salida) : '', f: font, color: op.colorImportes ? ROJO : TEXTO },
+            saldo:     { t: importe(saldo), f: boldFont, color: TEXTO },
             item:      { t: String(d.Item ?? ''), f: font, color: GRIS },
         }
 
@@ -279,11 +291,11 @@ export async function generarPdfSubcta(
         }
         const pie: [string, () => void][] = [
             ['Totales', () => {
-                textoDerecha(page, money(cabecera.TotalIngreso), xDe('ingreso'), y, size, boldFont, op.colorImportes ? VERDE : TEXTO)
-                textoDerecha(page, money(cabecera.TotalSalida), xDe('salida'), y, size, boldFont, op.colorImportes ? ROJO : TEXTO)
+                textoDerecha(page, importe(cabecera.TotalIngreso), xDe('ingreso'), y, size, boldFont, op.colorImportes ? VERDE : TEXTO)
+                textoDerecha(page, importe(cabecera.TotalSalida), xDe('salida'), y, size, boldFont, op.colorImportes ? ROJO : TEXTO)
             }],
-            ['Saldo inicial', () => textoDerecha(page, money(cabecera.SaldoInicial), xDe(op.columnas.saldo ? 'saldo' : 'salida'), y, size, boldFont)],
-            ['Saldo final',   () => textoDerecha(page, money(cabecera.SaldoFinal), xDe(op.columnas.saldo ? 'saldo' : 'salida'), y, size, boldFont, tema)],
+            ['Saldo inicial', () => textoDerecha(page, importe(cabecera.SaldoInicial), xDe(op.columnas.saldo ? 'saldo' : 'salida'), y, size, boldFont)],
+            ['Saldo final',   () => textoDerecha(page, importe(cabecera.SaldoFinal), xDe(op.columnas.saldo ? 'saldo' : 'salida'), y, size, boldFont, tema)],
         ]
         pie.forEach(([etiqueta, valores]) => {
             texto(page, etiqueta, margin + 5, y, size, boldFont)
