@@ -10,8 +10,8 @@ import {
     SelectTrigger, SelectValue,
 } from '@/components/ui/select'
 import {
-    ChevronDown, ChevronRight,
-    RefreshCw, Search, Loader2, MapPin, Paperclip,
+    ChevronDown, RefreshCw, Search, Loader2, MapPin, Paperclip,
+    ClipboardList, Banknote, CheckCircle2, AlertTriangle,
 } from 'lucide-react'
 import DetalleAdmin from './DetalleAdmin'
 import EstadoPill from './EstadoPill'
@@ -22,7 +22,7 @@ import {
     PlanillaDetalle, ResumenDia,
     TipoComprobante,
 } from "@/app/types/planilla-types";
-import {fmtMoney, fmtRel, getInitials} from "@/lib/planilla.helper";
+import {fmtFecha, fmtMoney, fmtRel, getInitials} from "@/lib/planilla.helper";
 import {EmpresaOption, TipoAmortizacion} from "@/app/types/amortizacion-types";
 import { VouchersModal, Voucher } from './VouchersModal'
 import {publicApi} from "@/app/api/client";
@@ -114,86 +114,95 @@ export default function SeccionAdmin({
 
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                 {[
-                    { label: 'Planillas hoy',   value: resumenDia?.total_planillas ?? '—', color: 'text-sky-700',     bg: 'bg-sky-50 border-sky-200' },
-                    { label: 'Total cobrado',   value: fmtMoney(resumenDia?.total_cobrado), color: 'text-emerald-700', bg: 'bg-emerald-50 border-emerald-200' },
-                    { label: 'Validadas',       value: resumenDia?.validadas ?? '—',        color: 'text-foreground',   bg: 'bg-muted border-border' },
-                    { label: 'Con observación', value: resumenDia?.rechazadas ?? '—',       color: 'text-red-700',     bg: 'bg-red-50 border-red-200' },
+                    { label: 'Planillas hoy',   value: resumenDia?.total_planillas ?? '—', sub: 'recibidas en el día',
+                      icono: ClipboardList, color: 'text-foreground', iconoCls: 'bg-blue-50 text-blue-600 dark:bg-blue-950' },
+                    { label: 'Total cobrado',   value: fmtMoney(resumenDia?.total_cobrado), sub: 'en las planillas de hoy',
+                      icono: Banknote, color: 'text-emerald-700 dark:text-emerald-400', iconoCls: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950', mono: true },
+                    { label: 'Validadas',       value: resumenDia?.validadas ?? '—', sub: 'listas para contabilidad',
+                      icono: CheckCircle2, color: 'text-foreground', iconoCls: 'bg-green-50 text-green-600 dark:bg-green-950' },
+                    { label: 'Con observación', value: resumenDia?.rechazadas ?? '—', sub: 'devueltas al vendedor',
+                      icono: AlertTriangle, color: 'text-red-700 dark:text-red-400', iconoCls: 'bg-red-50 text-red-600 dark:bg-red-950' },
                 ].map(c => (
-                    <Card key={c.label} className={`shadow-sm border ${c.bg}`}>
-                        <CardContent className="p-4">
+                    <div key={c.label} className="rounded-xl border bg-background p-4 shadow-sm">
+                        <div className="flex items-center justify-between gap-2">
                             <p className="text-[11px] text-muted-foreground uppercase font-semibold tracking-wider">{c.label}</p>
-                            <p className={`font-mono text-2xl font-bold mt-1 ${c.color}`}>{c.value}</p>
-                        </CardContent>
-                    </Card>
+                            <span className={`flex h-8 w-8 items-center justify-center rounded-lg ${c.iconoCls}`}>
+                                <c.icono className="h-4 w-4" />
+                            </span>
+                        </div>
+                        <p className={`text-2xl font-bold mt-1 ${c.mono ? 'font-mono' : ''} ${c.color}`}>{c.value}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">{c.sub}</p>
+                    </div>
                 ))}
             </div>
 
-            <Card className="shadow-sm">
-                <CardContent className="p-4 space-y-3">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                        <div className="relative sm:col-span-2 lg:col-span-1">
+            <Card className="border-t-[3px] border-t-blue-600 bg-gradient-to-b from-background to-muted/30 shadow-sm">
+                <CardContent className="p-4">
+                    <div className="flex flex-col gap-3 xl:flex-row xl:items-center">
+                        <div className="relative min-w-0 flex-1">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                             <Input
                                 placeholder="Vendedor, zona, N° planilla..."
                                 value={busqueda}
                                 onChange={e => setBusqueda(e.target.value)}
-                                className="pl-9 bg-muted"
+                                className="h-10 pl-9 bg-background"
                                 onKeyDown={e => e.key === 'Enter' && handleBuscar()}
                             />
                         </div>
-                        <Select value={filtroEstado} onValueChange={setFiltroEstado}>
-                            <SelectTrigger className="bg-muted"><SelectValue /></SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">Todos los estados</SelectItem>
-                                <SelectItem value="enviado">Enviado — pendiente</SelectItem>
-                                <SelectItem value="validado">Validado</SelectItem>
-                                <SelectItem value="rechazado">Con observación</SelectItem>
-                                <SelectItem value="borrador">Borrador</SelectItem>
-                            </SelectContent>
-                        </Select>
-                        <Input
-                            type="date"
-                            value={fechaDesde}
-                            onChange={e => setFechaDesde(e.target.value)}
-                            className="bg-muted"
-                        />
-                        <Input
-                            type="date"
-                            value={fechaHasta}
-                            onChange={e => setFechaHasta(e.target.value)}
-                            className="bg-muted"
-                        />
-                    </div>
-
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                        <p className="text-[11px] text-muted-foreground">
-                            {planillasAdmin.length} planilla{planillasAdmin.length !== 1 ? 's' : ''} encontrada{planillasAdmin.length !== 1 ? 's' : ''}
-                        </p>
-                        <div className="flex gap-2 w-full sm:w-auto">
+                        <div className="flex h-10 overflow-x-auto rounded-lg border bg-muted p-0.5" role="group" aria-label="Estado">
+                            {[
+                                ['all', 'Todos'], ['borrador', 'Borrador'], ['enviado', 'Enviada'],
+                                ['validado', 'Validada'], ['rechazado', 'Observada'],
+                            ].map(([valor, texto]) => (
+                                <button
+                                    key={valor}
+                                    type="button"
+                                    onClick={() => setFiltroEstado(valor)}
+                                    aria-pressed={filtroEstado === valor}
+                                    className={`rounded-md px-3 text-sm whitespace-nowrap transition-colors ${
+                                        filtroEstado === valor
+                                            ? 'bg-background font-semibold text-blue-700 shadow-sm dark:text-blue-400'
+                                            : 'text-muted-foreground hover:text-foreground'
+                                    }`}
+                                >
+                                    {texto}
+                                </button>
+                            ))}
+                        </div>
+                        <div className="flex gap-2">
+                            <Input type="date" value={fechaDesde} onChange={e => setFechaDesde(e.target.value)}
+                                   className="h-10 w-full bg-background xl:w-40" title="Desde" />
+                            <Input type="date" value={fechaHasta} onChange={e => setFechaHasta(e.target.value)}
+                                   className="h-10 w-full bg-background xl:w-40" title="Hasta" />
+                        </div>
+                        <div className="flex gap-2">
                             <Button
-                                size="sm"
                                 onClick={handleBuscar}
                                 disabled={loadingAdmin}
-                                className="flex-1 sm:flex-none bg-sky-600 hover:bg-sky-700 gap-1.5"
+                                className="h-10 flex-1 gap-1.5 bg-blue-600 font-semibold text-white shadow-md shadow-blue-600/30 hover:bg-blue-700 xl:flex-none"
                             >
                                 {loadingAdmin
-                                    ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                                    : <Search className="h-3.5 w-3.5" />}
+                                    ? <Loader2 className="h-4 w-4 animate-spin" />
+                                    : <Search className="h-4 w-4" />}
                                 Buscar
                             </Button>
                             <Button
-                                size="sm"
                                 variant="outline"
                                 onClick={() => { onFetchAdmin(); onFetchResumen() }}
-                                className="flex-1 sm:flex-none gap-1.5"
+                                className="h-10 gap-1.5"
+                                title="Actualizar"
                             >
-                                <RefreshCw className="h-3.5 w-3.5" />
-                                Actualizar
+                                <RefreshCw className="h-4 w-4" />
+                                <span className="xl:hidden">Actualizar</span>
                             </Button>
                         </div>
                     </div>
                 </CardContent>
             </Card>
+
+            <p className="-mb-1 px-0.5 text-xs text-muted-foreground">
+                {planillasAdmin.length} planilla{planillasAdmin.length !== 1 ? 's' : ''} encontrada{planillasAdmin.length !== 1 ? 's' : ''}
+            </p>
 
             {loadingAdmin ? (
                 Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-16 rounded-xl" />)
@@ -213,34 +222,52 @@ export default function SeccionAdmin({
                 return (
                     <Card key={planilla.id_planilla} className={`shadow-sm overflow-hidden border-l-4 ${colorBorde(planilla.estado)}`}>
                         <div
-                            className="flex items-center justify-between p-3.5 cursor-pointer hover:bg-muted transition-colors"
+                            className="flex items-center justify-between gap-3 p-4 cursor-pointer hover:bg-muted/50 transition-colors"
                             onClick={() => toggleRow(planilla)}
                         >
                             <div className="flex items-center gap-3 min-w-0">
-                                <div className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 text-xs font-bold ${avatarCls(planilla.estado)}`}>
+                                <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 text-sm font-bold ${avatarCls(planilla.estado)}`}>
                                     {getInitials(planilla.nombre_vendedor)}
                                 </div>
                                 <div className="min-w-0">
                                     <div className="flex items-center gap-2 flex-wrap">
-                                        <p className="text-sm font-bold font-mono text-card-foreground">
+                                        <p className="text-[15px] font-extrabold font-mono text-card-foreground">
                                             {planilla.numero_planilla}
                                         </p>
                                         <EstadoPill estado={planilla.estado} />
                                     </div>
-                                    <div className="mt-0.5 space-y-0.5 sm:space-y-0">
-                                        <p className="text-[11px] text-muted-foreground font-medium truncate">
-                                            {planilla.nombre_vendedor}
-                                        </p>
-                                        <p className="text-[11px] text-muted-foreground truncate flex items-center gap-1">
-                                            <MapPin className="h-3 w-3 shrink-0" />
-                                            <span className="truncate">{planilla.zona}</span>
-                                            <span className="shrink-0">· {fmtRel(planilla.fecha_envio)}</span>
-                                        </p>
-                                    </div>
+                                    <p className="text-xs font-semibold text-foreground/80 truncate">
+                                        {planilla.nombre_vendedor}
+                                    </p>
+                                    <p className="text-[11px] text-muted-foreground truncate flex items-center gap-1">
+                                        <MapPin className="h-3 w-3 shrink-0" />
+                                        <span className="truncate">{planilla.zona || '—'}</span>
+                                        <span className="shrink-0">· {fmtFecha(planilla.fecha_ruta)}</span>
+                                        {planilla.fecha_envio && (
+                                            <span className="hidden shrink-0 sm:inline">· enviada {fmtRel(planilla.fecha_envio)}</span>
+                                        )}
+                                    </p>
                                 </div>
                             </div>
 
-                            <div className="flex items-center gap-2 sm:gap-3 shrink-0 ml-2">
+                            <div className="flex items-center gap-3 sm:gap-5 shrink-0">
+                                <div className="hidden md:block text-right">
+                                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Registros</p>
+                                    <p className="text-sm font-bold">{planilla.total_registros ?? dets.length}</p>
+                                </div>
+                                {planilla.total_documentos != null && (
+                                    <div className="hidden lg:block text-right">
+                                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Documentos</p>
+                                        <p className="font-mono text-sm font-bold text-blue-700 dark:text-blue-400">{fmtMoney(planilla.total_documentos)}</p>
+                                    </div>
+                                )}
+                                <div className="text-right">
+                                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Cobrado</p>
+                                    <p className="font-mono text-sm font-bold text-emerald-700 dark:text-emerald-400">
+                                        {fmtMoney(planilla.total_cobrado ?? dets.reduce((s, r) => s + Number(r.importe_cobrado), 0))}
+                                    </p>
+                                </div>
+
                                 {planillaVouchers.length > 0 && (
                                     <Button
                                         variant="outline"
@@ -249,39 +276,21 @@ export default function SeccionAdmin({
                                             e.stopPropagation()
                                             setVouchersModal({ open: true, planilla })
                                         }}
-                                        className="gap-1 text-sky-700 border-sky-200 hover:bg-sky-50 h-7 px-2"
+                                        className="gap-1.5 text-sky-700 border-sky-200 bg-sky-50 hover:bg-sky-100 h-8 px-2.5 dark:border-sky-900 dark:bg-sky-950 dark:text-sky-300"
                                         title="Ver vouchers"
                                     >
-                                        <Paperclip className="h-3 w-3" />
-                                        <span className="text-[10px] font-semibold">{planillaVouchers.length}</span>
+                                        <Paperclip className="h-3.5 w-3.5" />
+                                        <span className="text-xs font-semibold">
+                                            {planillaVouchers.length}<span className="hidden sm:inline"> voucher{planillaVouchers.length !== 1 ? 's' : ''}</span>
+                                        </span>
                                     </Button>
                                 )}
 
-                                <div className="text-right hidden xs:block">
-                                    <p className="font-mono font-semibold text-card-foreground text-sm">
-                                        {fmtMoney(planilla.total_cobrado ?? dets.reduce((s, r) => s + Number(r.importe_cobrado), 0))}
-                                    </p>
-                                    <p className="text-[10px] text-muted-foreground">
-                                        {planilla.total_registros ?? dets.length} reg.
-                                    </p>
-                                </div>
-
                                 {isLoading
                                     ? <Loader2 className="h-4 w-4 text-muted-foreground animate-spin shrink-0" />
-                                    : isOpen
-                                        ? <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0 transition-transform" />
-                                        : <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 transition-transform" />
+                                    : <ChevronDown className={`h-4 w-4 text-muted-foreground shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
                                 }
                             </div>
-                        </div>
-
-                        <div className="px-3.5 pb-2 flex items-center justify-between xs:hidden border-t border-border bg-muted/50">
-                            <p className="text-[10px] text-muted-foreground">
-                                {planilla.total_registros ?? dets.length} registros
-                            </p>
-                            <p className="font-mono font-semibold text-card-foreground text-sm">
-                                {fmtMoney(planilla.total_cobrado ?? dets.reduce((s, r) => s + Number(r.importe_cobrado), 0))}
-                            </p>
                         </div>
 
                         {isOpen && (
@@ -308,6 +317,7 @@ export default function SeccionAdmin({
                 onOpenChange={(v) => setVouchersModal(prev => ({ ...prev, open: v }))}
                 numeroPlanilla={vouchersModal.planilla?.numero_planilla ?? ''}
                 vouchers={(vouchersModal.planilla as any)?.vouchers ?? []}
+                subtitulo={vouchersModal.planilla?.nombre_vendedor}
                 baseUrl={publicApi ?? ''}
             />
         </div>

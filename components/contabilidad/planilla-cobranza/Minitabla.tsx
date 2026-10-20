@@ -1,7 +1,7 @@
 'use client'
 
 import {CatalogosBanco, PlanillaDetalle, TipoComprobante} from "@/app/types/planilla-types";
-import {fmtFecha, fmtMoney} from "@/lib/planilla.helper";
+import {fmtFecha, fmtMoney, siglaBanco} from "@/lib/planilla.helper";
 
 interface Props {
     registros:         PlanillaDetalle[]
@@ -10,6 +10,8 @@ interface Props {
     editando?:         boolean
     onCambiar?:        (id: number, campo: string, valor: string) => void
     onEliminar?:       (id: number) => void
+    /** Fila TOTAL al pie. Se apaga donde los totales ya se muestran en recuadros aparte. */
+    mostrarTotales?:   boolean
 }
 
 function CellInput({
@@ -33,6 +35,7 @@ function CellInput({
 export default function MiniTabla({
                                       registros, tiposComprobante, bancos,
                                       editando = false, onCambiar, onEliminar,
+                                      mostrarTotales = true,
                                   }: Props) {
 
     if (registros.length === 0) {
@@ -53,36 +56,46 @@ export default function MiniTabla({
     return (
         <>
             <div className="hidden lg:block overflow-x-auto rounded-lg border border-border">
-                <table className="w-full text-[11.5px] min-w-[720px]">
+                <table className="w-full text-[11.5px] min-w-[860px]">
                     <thead>
-                    <tr className="bg-slate-800">
+                    {/* División: a la izquierda lo que se debe, a la derecha lo que se cobró. */}
+                    <tr>
+                        <th colSpan={7} className="bg-slate-800 px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-slate-100">
+                            Documento <span className="font-medium normal-case tracking-normal text-slate-400">· lo que se debe</span>
+                        </th>
+                        <th colSpan={5} className="border-l-[3px] border-white bg-emerald-800 px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-emerald-50 dark:border-background">
+                            Cobranza <span className="font-medium normal-case tracking-normal text-emerald-200">· lo que se cobró</span>
+                        </th>
+                        {(editando || onEliminar) && <th className="w-8 bg-slate-800" />}
+                    </tr>
+                    <tr className="border-b border-border">
                         {[
                             { label: '#',        w: '28px'  },
-                            { label: 'Código',   w: '90px'  },
+                            { label: 'Código',   w: '96px'  },
                             { label: 'Nombre',   w: undefined },
-                            { label: 'T/D',      w: '42px', center: true },
-                            { label: 'Serie',    w: '38px'  },
-                            { label: 'N° Doc',   w: '64px'  },
-                            { label: 'Importe',  w: '78px', sep: false },
-                            { label: 'Recibo',   w: '72px', sep: true  },
-                            { label: 'Cobrado',  w: '78px'  },
-                            { label: 'Banco',    w: '54px', center: true },
-                            { label: 'F. Dep.',  w: '82px', center: true },
-                            { label: 'N° Op',    w: '80px'  },
+                            { label: 'T/D',      w: '64px', center: true },
+                            { label: 'Serie',    w: '48px'  },
+                            { label: 'N° Doc',   w: '70px'  },
+                            { label: 'Importe',  w: '100px', right: true },
+                            { label: 'Recibo',   w: '80px', cbza: true, sep: true },
+                            { label: 'Cobrado',  w: '100px', cbza: true, right: true },
+                            { label: 'Banco',    w: undefined, cbza: true },
+                            { label: 'F. Dep.',  w: '84px', cbza: true, center: true },
+                            { label: 'N° Op',    w: '84px', cbza: true },
                         ].map(h => (
                             <th
                                 key={h.label}
                                 style={{ width: h.w }}
-                                className={`px-2 py-2 text-left text-[9px] font-semibold tracking-wider
-                    uppercase text-blue-100 whitespace-nowrap
-                    ${h.sep ? 'border-l-2 border-blue-600' : ''}
-                    ${h.center ? 'text-center' : ''}`}
+                                className={`px-2.5 py-2 text-left text-[9.5px] font-semibold tracking-wider uppercase whitespace-nowrap
+                    ${h.cbza ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400' : 'bg-muted text-muted-foreground'}
+                    ${h.sep ? 'border-l-[3px] border-emerald-500' : ''}
+                    ${h.center ? 'text-center' : ''} ${h.right ? 'text-right' : ''}`}
                             >
                                 {h.label}
                             </th>
                         ))}
                         {(editando || onEliminar) && (
-                            <th className="px-2 py-2 w-8" />
+                            <th className="px-2 py-2 w-8 bg-muted" />
                         )}
                     </tr>
                     </thead>
@@ -104,7 +117,7 @@ export default function MiniTabla({
                                     : (r.codigo_cliente || '—')}
                             </td>
 
-                            <td className="px-2 py-2 font-medium max-w-[160px] truncate">
+                            <td className="px-2.5 py-2 font-semibold max-w-[240px] truncate" title={r.nombre_cliente}>
                                 {editando
                                     ? <CellInput value={r.nombre_cliente} onChange={v => change(r.id_detalle, 'nombre_cliente', v)} className="w-full" />
                                     : r.nombre_cliente}
@@ -121,7 +134,11 @@ export default function MiniTabla({
                                             <option key={t.codigo} value={t.codigo}>{t.codigo}</option>
                                         ))}
                                     </select>
-                                ) : (r.desc_tipo_documento || r.tipo_documento)}
+                                ) : (
+                                    <span className="inline-block rounded bg-indigo-100 px-1.5 py-0.5 text-[10px] font-semibold text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">
+                                        {r.desc_tipo_documento || r.tipo_documento}
+                                    </span>
+                                )}
                             </td>
 
                             <td className="px-2 py-2 font-mono text-[10.5px] text-muted-foreground">
@@ -136,25 +153,25 @@ export default function MiniTabla({
                                     : (r.numero_doc || '—')}
                             </td>
 
-                            <td className="px-2 py-2 font-mono font-medium text-blue-800 text-right">
+                            <td className="px-2.5 py-2 font-mono font-semibold text-blue-700 text-right whitespace-nowrap dark:text-blue-400">
                                 {editando
                                     ? <CellInput type="number" value={String(r.importe)} onChange={v => change(r.id_detalle, 'importe', v)} className="w-20 text-right" />
                                     : fmtMoney(r.importe)}
                             </td>
 
-                            <td className="px-2 py-2 font-mono text-[10.5px] text-muted-foreground border-l-2 border-blue-100">
+                            <td className="px-2.5 py-2 font-mono text-[10.5px] text-muted-foreground border-l-[3px] border-emerald-500 bg-emerald-50/50 whitespace-nowrap dark:bg-emerald-950/20">
                                 {editando
                                     ? <CellInput value={r.numero_recibo ?? ''} onChange={v => change(r.id_detalle, 'numero_recibo', v)} className="w-20" />
                                     : (r.numero_recibo || '—')}
                             </td>
 
-                            <td className="px-2 py-2 font-mono font-medium text-emerald-600 text-right">
+                            <td className="px-2.5 py-2 font-mono font-semibold text-emerald-700 text-right bg-emerald-50/50 whitespace-nowrap dark:bg-emerald-950/20 dark:text-emerald-400">
                                 {editando
                                     ? <CellInput type="number" value={String(r.importe_cobrado)} onChange={v => change(r.id_detalle, 'importe_cobrado', v)} className="w-20 text-right" />
                                     : Number(r.importe_cobrado) > 0 ? fmtMoney(r.importe_cobrado) : '—'}
                             </td>
 
-                            <td className="px-2 py-2 font-mono text-[10.5px] text-muted-foreground text-center">
+                            <td className="px-2.5 py-2 text-[10.5px] text-muted-foreground bg-emerald-50/50 whitespace-nowrap dark:bg-emerald-950/20">
                                 {editando ? (
                                     <select
                                         value={r.cod_banco ?? ''}
@@ -166,16 +183,16 @@ export default function MiniTabla({
                                             <option key={b.CodigoEntidadFinanciera} value={b.CodigoEntidadFinanciera}>{b.DescripcionEntidadFinanciera}</option>
                                         ))}
                                     </select>
-                                ) : (r.desc_banco || bancos.find(b => b.CodigoEntidadFinanciera === r.cod_banco)?.DescripcionEntidadFinanciera || '—')}
+                                ) : <Banco nombre={r.desc_banco || bancos.find(b => b.CodigoEntidadFinanciera === r.cod_banco)?.DescripcionEntidadFinanciera} />}
                             </td>
 
-                            <td className="px-2 py-2 font-mono text-[10.5px] text-muted-foreground text-center">
+                            <td className="px-2.5 py-2 font-mono text-[10.5px] text-muted-foreground text-center bg-emerald-50/50 whitespace-nowrap dark:bg-emerald-950/20">
                                 {editando
                                     ? <CellInput type="date" value={r.fecha_deposito ?? ''} onChange={v => change(r.id_detalle, 'fecha_deposito', v)} />
                                     : fmtFecha(r.fecha_deposito)}
                             </td>
 
-                            <td className="px-2 py-2 font-mono text-[10.5px] text-muted-foreground">
+                            <td className="px-2.5 py-2 font-mono text-[10.5px] text-muted-foreground bg-emerald-50/50 whitespace-nowrap dark:bg-emerald-950/20">
                                 {editando
                                     ? <CellInput value={r.numero_operacion ?? ''} onChange={v => change(r.id_detalle, 'numero_operacion', v)} className="w-24" />
                                     : (r.numero_operacion || '—')}
@@ -200,6 +217,7 @@ export default function MiniTabla({
                     ))}
                     </tbody>
 
+                    {mostrarTotales && (
                     <tfoot>
                     <tr className="bg-muted border-t border-border">
                         <td colSpan={6} className="px-2 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
@@ -208,13 +226,14 @@ export default function MiniTabla({
                         <td className="px-2 py-1.5 font-mono font-semibold text-blue-800 text-right">
                             {fmtMoney(tDocs)}
                         </td>
-                        <td className="border-l-2 border-blue-100 px-2" />
+                        <td className="border-l-[3px] border-emerald-500 px-2" />
                         <td className="px-2 py-1.5 font-mono font-semibold text-emerald-600 text-right">
                             {fmtMoney(tCbza)}
                         </td>
                         <td colSpan={4} />
                     </tr>
                     </tfoot>
+                    )}
                 </table>
             </div>
 
@@ -419,5 +438,21 @@ export default function MiniTabla({
                 </div>
             </div>
         </>
+    )
+}
+
+function Banco({ nombre }: { nombre?: string | null }) {
+    if (!nombre) return <span>—</span>
+    const sigla = siglaBanco(nombre)
+    const resto = sigla ? nombre.replace(new RegExp(`\\s*-\\s*${sigla}$`, 'i'), '').trim() : nombre
+    return (
+        <span className="inline-flex items-center gap-1.5" title={nombre}>
+            {sigla && (
+                <span className="rounded bg-blue-100 px-1.5 py-0.5 text-[9.5px] font-extrabold text-blue-700 dark:bg-blue-950 dark:text-blue-300">
+                    {sigla}
+                </span>
+            )}
+            <span className="max-w-[150px] truncate text-foreground/80">{resto || nombre}</span>
+        </span>
     )
 }

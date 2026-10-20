@@ -1,7 +1,22 @@
 // ─── Formatters ───────────────────────────────────────────────────────────────
 
 export function fmtMoney(v: number | string | null | undefined): string {
-    return `S/ ${Number(v ?? 0).toFixed(2)}`
+    // Con separador de miles: S/ 1,350.78.
+    return `S/ ${Number(v ?? 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+}
+
+/**
+ * Sigla corta del banco para mostrarla como etiqueta: lo que va después del
+ * último " - " ("De Credito del Peru - BCP" -> "BCP") o la primera palabra si
+ * ya es una sigla ("BBVA Continental" -> "BBVA").
+ */
+export function siglaBanco(nombre: string | null | undefined): string {
+    const n = (nombre ?? '').trim()
+    if (!n) return ''
+    const tras = n.split(' - ').pop()!.trim()
+    if (tras !== n && tras.length <= 8) return tras.toUpperCase()
+    const primera = n.split(/\s+/)[0]
+    return /^[A-Z0-9]{2,6}$/.test(primera) ? primera : ''
 }
 
 export function fmtFecha(d: string | null | undefined): string {

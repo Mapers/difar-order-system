@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
-import { AlertCircle } from 'lucide-react'
+import { AlertCircle, ClipboardList } from 'lucide-react'
 import { useAuth } from '@/context/authContext'
 import { usePlanillaCobranza } from '@/app/hooks/usePlanillaCobranza'
 import { fetchAvailableZones } from '@/app/api/reports'
@@ -92,15 +92,20 @@ export default function PlanillaCobranzaPage() {
     return (
         <div className="grid gap-6 p-4 md:p-6">
 
-            <div>
-                <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">
-                    Planilla de Cobranza
-                </h1>
-                <p className="text-sm text-muted-foreground mt-1">
-                    {isVendedor()
-                        ? 'Crea y envía tus planillas de cobranza diarias.'
-                        : 'Gestiona y valida las planillas de cobranza de los vendedores.'}
-                </p>
+            <div className="flex items-center gap-3.5">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-600 to-violet-600 text-white shadow-lg shadow-blue-600/30">
+                    <ClipboardList className="h-6 w-6" />
+                </div>
+                <div>
+                    <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">
+                        Planilla de Cobranza
+                    </h1>
+                    <p className="text-sm text-muted-foreground mt-1">
+                        {isVendedor()
+                            ? 'Crea y envía tus planillas de cobranza diarias.'
+                            : 'Gestiona y valida las planillas de cobranza de los vendedores.'}
+                    </p>
+                </div>
             </div>
 
             {isVendedor() && vendedorInfo && (
