@@ -3,9 +3,10 @@
 import Link from "next/link";
 import { useState } from "react";
 import { usePathname } from "next/navigation";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, ChevronRight } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { cn } from "@/lib/utils";
 import { useMenuItems } from "@/hooks/useMenuItems";
 import { useSidebar } from "@/context/sidebarContext";
@@ -35,20 +36,76 @@ export function NavMenu({ onNavigate }: NavMenuProps) {
                 ? pathname.startsWith(item.href)
                 : pathname === item.href;
               const href = item.children ? item.children[0]?.href ?? item.href : item.href;
+              const claseIcono = cn(
+                "relative flex h-10 w-10 items-center justify-center rounded-lg transition-all hover:bg-blue-100 dark:hover:bg-blue-950",
+                isActive
+                  ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md"
+                  : "text-muted-foreground hover:text-blue-700",
+              );
+
+              // Con submenú: al pasar el mouse se abre un panel a la derecha
+              // con el título y sus opciones, porque colapsado no hay espacio
+              // para desplegarlas debajo.
+              if (item.children) {
+                return (
+                  <HoverCard key={item.id} openDelay={60} closeDelay={150}>
+                    <HoverCardTrigger asChild>
+                      <Link href={href} onClick={onNavigate} className={claseIcono} aria-label={item.title}>
+                        <item.icon className="h-5 w-5" />
+                        <ChevronRight
+                          className={cn(
+                            "absolute -right-0.5 bottom-0.5 h-3 w-3",
+                            isActive ? "text-white/80" : "text-muted-foreground/70",
+                          )}
+                        />
+                      </Link>
+                    </HoverCardTrigger>
+                    <HoverCardContent side="right" align="start" sideOffset={10} className="w-64 overflow-hidden p-0">
+                      <div className="flex items-center gap-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 px-3.5 py-3 text-white">
+                        <span className="flex h-7 w-7 items-center justify-center rounded-md bg-white/20">
+                          <item.icon className="h-4 w-4" />
+                        </span>
+                        <span className="text-sm font-semibold">{item.title}</span>
+                        <span className="ml-auto rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-semibold">
+                          {item.children.length}
+                        </span>
+                      </div>
+                      <div className="flex max-h-[60vh] flex-col gap-0.5 overflow-y-auto p-1.5">
+                        {item.children.map((sub) => {
+                          const subActivo = pathname === sub.href;
+                          return (
+                            <Link
+                              key={sub.id}
+                              href={sub.href}
+                              onClick={onNavigate}
+                              className={cn(
+                                "group flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm transition-colors",
+                                subActivo
+                                  ? "bg-blue-100 font-semibold text-blue-700 dark:bg-blue-950 dark:text-blue-300"
+                                  : "text-foreground/80 hover:bg-muted hover:text-blue-700",
+                              )}
+                            >
+                              <sub.icon
+                                className={cn(
+                                  "h-4 w-4 shrink-0",
+                                  subActivo ? "text-blue-700 dark:text-blue-300" : "text-muted-foreground group-hover:text-blue-600",
+                                )}
+                              />
+                              <span className="leading-tight">{sub.title}</span>
+                              {subActivo && <span className="ml-auto h-1.5 w-1.5 shrink-0 rounded-full bg-blue-600" />}
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    </HoverCardContent>
+                  </HoverCard>
+                );
+              }
 
               return (
                 <Tooltip key={item.id}>
                   <TooltipTrigger asChild>
-                    <Link
-                      href={href}
-                      onClick={onNavigate}
-                      className={cn(
-                        "flex h-10 w-10 items-center justify-center rounded-lg transition-all hover:bg-blue-100",
-                        isActive
-                          ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md"
-                          : "text-muted-foreground hover:text-blue-700",
-                      )}
-                    >
+                    <Link href={href} onClick={onNavigate} className={claseIcono}>
                       <item.icon className="h-5 w-5" />
                     </Link>
                   </TooltipTrigger>
