@@ -27,6 +27,7 @@ const COLUMNS = [
     { header: 'UM',              key: 'um',            width:  6, numFmt: '@' },
     { header: 'LOTES',           key: 'lotes',         width: 18, numFmt: '@' },
     { header: 'F. VENCIMIENTO',  key: 'vencimientos',  width: 14, numFmt: '@' },
+    { header: 'AÑO VENC.',       key: 'anioVenc',      width:  9, numFmt: '0' },
     { header: 'STOCK',           key: 'stock',         width: 10, numFmt: '#,##0.00' },
     // Las tres columnas de mes reciben el nombre real del periodo al escribir la
     // cabecera; aca van con nombre generico porque COLUMNS es estatico.
@@ -48,6 +49,7 @@ const COLUMNS = [
 export interface LoteFila {
     lote:  string
     vcto:  string
+    anio:  number | null
     stock: number | null
 }
 
@@ -68,6 +70,7 @@ export function parseLotes(raw: string): LoteFila[] {
             lote: lote ?? '',
             // Sin esto, un lote sin fecha imprimía "Invalid date".
             vcto: fecha && vcto.isValid() ? vcto.format('DD/MM/YYYY') : '',
+            anio: fecha && vcto.isValid() ? vcto.year() : null,
             stock: stock !== undefined && stock !== '' && !isNaN(Number(stock))
                 ? Number(stock)
                 : null,
@@ -161,7 +164,7 @@ function construirHoja(
                 // si no, desaparecería del listado de precios.
                 const filas = filasLote.length > 0
                     ? filasLote
-                    : [{ lote: '', vcto: '', stock: null } as LoteFila]
+                    : [{ lote: '', vcto: '', anio: null, stock: null } as LoteFila]
 
                 // El zebreado va por PRODUCTO, no por fila: así los lotes de un
                 // mismo producto comparten fondo y se leen como un bloque.
@@ -180,6 +183,7 @@ function construirHoja(
                         um           : item.prod_medida ?? '',
                         lotes        : f.lote,
                         vencimientos : f.vcto,
+                        anioVenc     : f.anio,
                         // El stock es del lote. Si el SP todavía no lo manda,
                         // se cae al total del producto y solo en la primera
                         // fila, para que sumar la columna no dé de más.
@@ -211,7 +215,7 @@ function construirHoja(
                         cell.font      = { size: 9, color: { argb: textArgb } }
                         cell.fill      = { type: 'pattern', pattern: 'solid', fgColor: { argb: bgArgb } }
                         cell.alignment = {
-                            horizontal: ['stock','ventas3m','ventasM1','ventasM2','ventasM3','precioContado','precioCredito','bonifContado','bonifCredito'].includes(col.key)
+                            horizontal: ['anioVenc','stock','ventas3m','ventasM1','ventasM2','ventasM3','precioContado','precioCredito','bonifContado','bonifCredito'].includes(col.key)
                                 ? 'right' : 'left',
                             vertical  : 'top',
                             wrapText  : true,
