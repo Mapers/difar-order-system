@@ -37,6 +37,9 @@ export default function ExpiredBalancesPage() {
     const auth = useAuth();
     const [loading, setLoading] = useState(false)
     const [data, setData] = useState<VendedorVencido[]>([])
+    // El reporte es pesado: se consulta solo cuando el usuario presiona
+    // "Actualizar", no al entrar a la pantalla.
+    const [consultado, setConsultado] = useState(false)
     const [activeTab, setActiveTab] = useState<string>("todos")
     const [selectedZona, setSelectedZona] = useState<string>("")
     const [openZona, setOpenZona] = useState(false)
@@ -148,6 +151,7 @@ export default function ExpiredBalancesPage() {
                 }
 
                 setData(reportData);
+                setConsultado(true);
                 setActiveTab("todos");
                 setSelectedZona("")
                 setSelectedCliente("")
@@ -160,12 +164,6 @@ export default function ExpiredBalancesPage() {
             setLoading(false)
         }
     }
-
-    useEffect(() => {
-        if (auth.user !== undefined) {
-            fetchReport();
-        }
-    }, [auth.user])
 
     const filteredClientOptions = useMemo(() => {
         if (!searchClienteQuery) return clientesOptions;
@@ -466,8 +464,14 @@ export default function ExpiredBalancesPage() {
                             <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
                                 <RefreshCcw className="h-8 w-8 text-muted-foreground" />
                             </div>
-                            <p className="font-medium text-muted-foreground">No hay documentos vencidos para mostrar</p>
-                            <p className="text-xs mt-1">Actualiza el reporte para cargar los datos</p>
+                            {consultado ? (
+                                <p className="font-medium text-muted-foreground">No hay documentos vencidos para mostrar</p>
+                            ) : (
+                                <>
+                                    <p className="font-medium text-muted-foreground">El reporte todavía no se ha cargado</p>
+                                    <p className="text-xs mt-1">Presiona <span className="font-semibold">Actualizar</span> para consultar los saldos vencidos</p>
+                                </>
+                            )}
                         </div>
                     )}
                 </CardContent>

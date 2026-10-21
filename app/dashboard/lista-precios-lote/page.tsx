@@ -17,10 +17,15 @@ import {PricePagination} from "@/components/lista-precios-lote/PricePagination";
 import {CreateProductModal} from "@/components/lista-precios-lote/CreateProductModal";
 import {QuickPriceEditModal} from "@/components/lista-precios-lote/QuickPriceEditModal";
 import {ArticuloImagenModal, ProductoImagen} from "@/components/lista-precios-lote/ArticuloImagenModal";
+import {ExportPorVencerModal} from "@/components/lista-precios-lote/ExportPorVencerModal";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlmacenOption, listarAlmacenes } from "@/app/dashboard/lista-precios-lote/services/almacenesExport";
+import { LayoutGrid, List } from "lucide-react";
+
+type VistaProductos = "tabla" | "cards";
+const VISTA_STORAGE_KEY = "lista-precios-lote:vista";
 
 export default function PricePage() {
   const { user, isAuthenticated, isAdmin, hasRole, globalConfigs } = useAuth();
@@ -31,6 +36,7 @@ export default function PricePage() {
   const [exportarPorAlmacen, setExportarPorAlmacen] = useState(false);
   const [almacenExport, setAlmacenExport] = useState<number | null>(null);
   const [almacenesExport, setAlmacenesExport] = useState<AlmacenOption[]>([]);
+  const [vista, setVista] = useState<VistaProductos>("cards");
 
   const imagenesActivas = useMemo(() => {
     const config = globalConfigs.find(c => c.cod_config === 'IMAGEN_PROD');
@@ -43,6 +49,20 @@ export default function PricePage() {
   const modals = useProductModals();
   const { ventas, etiquetas: etiquetasVentas } = useVentasTresMeses(isAuthenticated);
   const { imagenes, actualizarImagen } = useImagenesProducto(imagenesActivas && isAuthenticated);
+
+  // La vista elegida se recuerda en este navegador. La primera vez, o si el
+  // storage no está disponible, se muestra en cards.
+  useEffect(() => {
+    try {
+      const guardada = localStorage.getItem(VISTA_STORAGE_KEY);
+      if (guardada === "tabla" || guardada === "cards") setVista(guardada);
+    } catch {}
+  }, []);
+
+  const cambiarVista = (v: VistaProductos) => {
+    setVista(v);
+    try { localStorage.setItem(VISTA_STORAGE_KEY, v); } catch {}
+  };
 
   useEffect(() => {
     listarAlmacenes().then(setAlmacenesExport).catch(() => setAlmacenesExport([]));
@@ -107,6 +127,25 @@ export default function PricePage() {
                 </CardDescription>
               </div>
               <div className="flex flex-wrap items-center gap-3">
+                <div className="hidden lg:flex items-center rounded-lg border bg-muted p-0.5" role="group" aria-label="Vista de productos">
+                  {([["tabla", "Tabla", List], ["cards", "Cards", LayoutGrid]] as const).map(([valor, texto, Icono]) => (
+                    <button
+                        key={valor}
+                        type="button"
+                        onClick={() => cambiarVista(valor)}
+                        aria-pressed={vista === valor}
+                        className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm transition-colors ${
+                            vista === valor
+                                ? "bg-background font-semibold text-blue-700 shadow-sm dark:text-blue-400"
+                                : "text-muted-foreground hover:text-foreground"
+                        }`}
+                    >
+                      <Icono className="h-4 w-4" />
+                      {texto}
+                    </button>
+                  ))}
+                </div>
+
                 <div className="flex items-center gap-2">
                   <Label htmlFor="almacen-export" className="text-sm font-normal whitespace-nowrap">
                     Almacén
@@ -157,6 +196,16 @@ export default function PricePage() {
                     porAlmacen={exportarPorAlmacen}
                     almacenSel={almacenExport}
                 />
+                <ExportPorVencerModal
+                    payload={listData.exportPayload}
+                    filters={listData.exportFilters}
+                    porAlmacen={exportarPorAlmacen}
+                    almacenSel={almacenExport}
+                    laboratorios={laboratoriesRepres
+                        .filter((l: any) => listData.selectedLabs.includes(l.IdLineaGe))
+                        .map((l: any) => l.Descripcion)}
+                    almacenNombre={almacenesExport.find(a => a.IdAlmacen === almacenExport)?.Descripcion ?? null}
+                />
                 <div className="text-sm text-muted-foreground text-right hidden sm:block">
                   {currentDateTime.date} | {currentDateTime.time}
                 </div>
@@ -175,6 +224,8 @@ export default function PricePage() {
                 etiquetasVentas={etiquetasVentas}
                 imagenesActivas={imagenesActivas}
                 imagenes={imagenes}
+                vista={vista}
+                umbralEscaso={Number(listData.lowStockThreshold) > 0 ? Number(listData.lowStockThreshold) : 10}
                 onOpenImagen={(item: any) => setProductoImagen({
                   codigo: item.prod_codigo,
                   descripcion: item.prod_descripcion,

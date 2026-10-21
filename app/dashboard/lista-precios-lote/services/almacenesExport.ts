@@ -11,6 +11,14 @@ export interface GrupoAlmacen {
     data: any[]
 }
 
+/**
+ * Lo que reciben los generadores de Excel y PDF: una lista sola, o una lista
+ * por almacén cuando el export se separa por almacén.
+ */
+export type DatosExport =
+    | { data: any[]; grupos?: undefined }
+    | { grupos: GrupoAlmacen[]; data?: undefined }
+
 export async function listarAlmacenes(): Promise<AlmacenOption[]> {
     const res = await apiClient.get('/admin/listar/almacenes')
     const raw = res.data?.data?.data ?? res.data?.data ?? []

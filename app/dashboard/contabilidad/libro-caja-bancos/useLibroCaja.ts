@@ -134,7 +134,7 @@ export function useLibroCaja() {
             setFilas(nuevas)
             setFilasOriginales(JSON.stringify(nuevas.map(aPayload)))
             if (!v.cabecera) {
-                setError('No hay voucher para esa caja y fecha. Usa "Abrir o crear" para generarlo.')
+                setError('No hay voucher para esa caja y fecha. Usa "Nuevo voucher" para generarlo.')
             }
         } catch (e: any) {
             setCabecera(null)

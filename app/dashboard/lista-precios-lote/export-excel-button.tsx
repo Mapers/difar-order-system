@@ -7,7 +7,7 @@ import ExcelJS from 'exceljs'
 import { PriceService } from '@/app/services/price/PriceService'
 import { etiquetaPeriodo } from '@/app/dashboard/lista-precios-lote/hooks/useVentasTresMeses'
 import moment from 'moment'
-import { datosPorAlmacen, nombreHojaValido } from '@/app/dashboard/lista-precios-lote/services/almacenesExport'
+import { datosPorAlmacen, DatosExport, nombreHojaValido } from '@/app/dashboard/lista-precios-lote/services/almacenesExport'
 
 const HEADER_ARGB  = 'FF163161'
 const LAB_ARGB     = 'FF1E4A8A'
@@ -256,6 +256,57 @@ function construirHoja(
             })
 }
 
+/**
+ * Arma y descarga el Excel de la lista de precios. Recibe los datos ya
+ * filtrados para que lo usen tanto el botón de export como el modal de
+ * productos por vencer.
+ */
+export async function generarExcel({ datos, titulo, nombreArchivo }: {
+    datos: DatosExport
+    titulo: string
+    nombreArchivo: string
+}) {
+    const mapaVentas = new Map<string, { meses: number[]; total_3m: number }>()
+    let etiquetasMes: string[] = []
+    try {
+        const resVentas = await PriceService.getVentasTresMeses()
+        const body = resVentas?.data ?? {}
+        etiquetasMes = (body.periodos || []).map(etiquetaPeriodo)
+        for (const fila of (body.data || [])) {
+            mapaVentas.set(String(fila.cod_articulo), {
+                meses: (fila.meses || []).map(Number),
+                total_3m: Number(fila.total_3m || 0),
+            })
+        }
+    } catch (e) {
+        console.warn('No se pudieron cargar las ventas de 3 meses para el Excel:', e)
+    }
+
+    const workbook = new ExcelJS.Workbook()
+    workbook.creator = 'DROGUERÍA DIFAR'
+
+    if (datos.grupos) {
+        for (const { almacen, data: filas } of datos.grupos) {
+            construirHoja(
+                workbook,
+                nombreHojaValido(`${almacen.IdAlmacen} - ${almacen.Descripcion}`, `Almacén ${almacen.IdAlmacen}`),
+                `${titulo} — ALMACÉN ${almacen.IdAlmacen}: ${almacen.Descripcion.toUpperCase()}`,
+                filas, etiquetasMes, mapaVentas,
+            )
+        }
+    } else {
+        construirHoja(workbook, 'Lista de Precios', titulo, datos.data, etiquetasMes, mapaVentas)
+    }
+
+    const buffer = await workbook.xlsx.writeBuffer()
+    const blob   = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+    const link   = document.createElement('a')
+    link.href    = URL.createObjectURL(blob)
+    link.download = nombreArchivo
+    link.click()
+    URL.revokeObjectURL(link.href)
+}
+
 const ExportExcelButton = ({ payload, filters, porAlmacen = false, almacenSel = null }: { payload: any; filters?: any; porAlmacen?: boolean; almacenSel?: number | null }) => {
     const [loading, setLoading] = useState(false)
 
@@ -279,60 +330,28 @@ const ExportExcelButton = ({ payload, filters, porAlmacen = false, almacenSel = 
         try {
             const agrupar = porAlmacen || almacenSel != null
 
-            let data: any[] = []
-            if (!agrupar) {
-                const response = await PriceService.getPricesAll(payload)
-                data = applyFilters(response.data || [])
-            }
-
-            const mapaVentas = new Map<string, { meses: number[]; total_3m: number }>()
-            let etiquetasMes: string[] = []
-            try {
-                const resVentas = await PriceService.getVentasTresMeses()
-                const body = resVentas?.data ?? {}
-                etiquetasMes = (body.periodos || []).map(etiquetaPeriodo)
-                for (const fila of (body.data || [])) {
-                    mapaVentas.set(String(fila.cod_articulo), {
-                        meses: (fila.meses || []).map(Number),
-                        total_3m: Number(fila.total_3m || 0),
-                    })
-                }
-            } catch (e) {
-                console.warn('No se pudieron cargar las ventas de 3 meses para el Excel:', e)
-            }
-
-            const workbook = new ExcelJS.Workbook()
-            workbook.creator = 'DROGUERÍA DIFAR'
-
-            const TITULO_BASE = 'LISTA DE PRECIOS POR LOTE — DROGUERÍA DIFAR'
-
-            if (porAlmacen) {
-                const grupos = await datosPorAlmacen(payload, applyFilters)
-
+            let datos: DatosExport
+            if (agrupar) {
+                const grupos = await datosPorAlmacen(
+                    payload, applyFilters, almacenSel != null ? [almacenSel] : null,
+                )
                 if (grupos.length === 0) {
-                    alert('Ningún almacén tiene productos con los filtros aplicados.')
+                    alert(almacenSel != null
+                        ? 'Ese almacén no tiene productos con los filtros aplicados.'
+                        : 'Ningún almacén tiene productos con los filtros aplicados.')
                     return
                 }
-
-                for (const { almacen, data: filas } of grupos) {
-                    construirHoja(
-                        workbook,
-                        nombreHojaValido(`${almacen.IdAlmacen} - ${almacen.Descripcion}`, `Almacén ${almacen.IdAlmacen}`),
-                        `${TITULO_BASE} — ALMACÉN ${almacen.IdAlmacen}: ${almacen.Descripcion.toUpperCase()}`,
-                        filas, etiquetasMes, mapaVentas,
-                    )
-                }
+                datos = { grupos }
             } else {
-                construirHoja(workbook, 'Lista de Precios', TITULO_BASE, data, etiquetasMes, mapaVentas)
+                const response = await PriceService.getPricesAll(payload)
+                datos = { data: applyFilters(response.data || []) }
             }
 
-            const buffer = await workbook.xlsx.writeBuffer()
-            const blob   = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
-            const link   = document.createElement('a')
-            link.href    = URL.createObjectURL(blob)
-            link.download = `lista-precios-lote${almacenSel != null ? `-alm${almacenSel}` : porAlmacen ? '-por-almacen' : ''}-${new Date().toISOString().split('T')[0]}.xlsx`
-            link.click()
-            URL.revokeObjectURL(link.href)
+            await generarExcel({
+                datos,
+                titulo: 'LISTA DE PRECIOS POR LOTE — DROGUERÍA DIFAR',
+                nombreArchivo: `lista-precios-lote${almacenSel != null ? `-alm${almacenSel}` : porAlmacen ? '-por-almacen' : ''}-${new Date().toISOString().split('T')[0]}.xlsx`,
+            })
 
         } catch (error) {
             console.error('Error al generar Excel:', error)

@@ -18,6 +18,7 @@ import { useAuth } from "@/context/authContext"
 import { toast } from "@/app/hooks/useToast"
 import { fetchGetAllClients } from "@/app/api/takeOrders"
 import { IClient } from "@/app/types/order/client-interface"
+import { normalizarBusqueda, TextoResaltado } from "@/components/texto-resaltado"
 import InlineAutocomplete from "@/components/tomar-pedido/InlineAutocomplete"
 
 import {
@@ -124,9 +125,12 @@ export default function ClienteCobranzaPage() {
 
     useEffect(() => {
         if (clientSearch) {
+            // Sin distinguir mayúsculas ni tildes: "bazan" encuentra "BAZÁN".
+            const q = normalizarBusqueda(clientSearch.trim())
             setClientsFiltered(clients.filter(c =>
-                c.RUC?.includes(clientSearch) ||
-                c.Nombre?.toUpperCase().includes(clientSearch.toUpperCase())
+                c.RUC?.includes(clientSearch.trim()) ||
+                normalizarBusqueda(c.Nombre).includes(q) ||
+                normalizarBusqueda(c.NombreComercial).includes(q)
             ))
         } else {
             setClientsFiltered(clients)
@@ -454,8 +458,8 @@ export default function ClienteCobranzaPage() {
                                         tileAccent="blue"
                                         tileIcon={User}
                                         tileTitle="Buscar cliente"
-                                        tileDescription="Por RUC o nombre"
-                                        placeholder="RUC o nombre del cliente..."
+                                        tileDescription="Por RUC, nombre o nombre comercial"
+                                        placeholder="RUC, nombre o nombre comercial..."
                                         value={clientSearch}
                                         onValueChange={setClientSearch}
                                         loading={loadingClients}
@@ -473,11 +477,16 @@ export default function ClienteCobranzaPage() {
                                                 </div>
                                                 <div className="flex flex-col flex-1 min-w-0 gap-0.5">
                                                     <span className="font-semibold text-sm text-foreground line-clamp-1 leading-tight">
-                                                        {c.Nombre}
+                                                        <TextoResaltado texto={c.Nombre} busqueda={clientSearch} />
                                                     </span>
+                                                    {c.NombreComercial && c.NombreComercial.trim().toUpperCase() !== c.Nombre?.trim().toUpperCase() && (
+                                                        <span className="text-xs text-muted-foreground line-clamp-1">
+                                                            <TextoResaltado texto={c.NombreComercial} busqueda={clientSearch} />
+                                                        </span>
+                                                    )}
                                                     {c.RUC && (
                                                         <span className="text-xs text-muted-foreground">
-                                                            <span className="font-medium">RUC:</span> {c.RUC}
+                                                            <span className="font-medium">RUC:</span> <TextoResaltado texto={c.RUC} busqueda={clientSearch} />
                                                         </span>
                                                     )}
                                                 </div>

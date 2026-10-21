@@ -24,7 +24,7 @@ import {
     PlanillaCabecera, PlanillaDetalle, TipoComprobante,
 } from "@/app/types/planilla-types"
 import { TipoAmortizacion, EmpresaOption } from "@/app/types/amortizacion-types"
-import { fmtFecha, fmtHora, fmtMoney } from "@/lib/planilla.helper"
+import { fmtHora, fmtMoney } from "@/lib/planilla.helper"
 import MiniTabla from "@/components/contabilidad/planilla-cobranza/Minitabla"
 
 interface Props {
@@ -132,20 +132,7 @@ export default function DetalleAdmin({
 
     return (
         <>
-            <div className="border-t border-border p-4 bg-muted/40 space-y-3 animate-in slide-in-from-top-2 duration-200">
-
-                <div className="grid grid-cols-3 gap-2">
-                    {[
-                        { label: 'Fecha',   val: fmtFecha(planilla.fecha_ruta) },
-                        { label: 'Zona',    val: planilla.zona || '—' },
-                        { label: 'Enviada', val: planilla.fecha_envio ? fmtHora(planilla.fecha_envio) : '—' },
-                    ].map(item => (
-                        <div key={item.label} className="bg-background border border-border rounded-lg px-3 py-2">
-                            <p className="text-[10px] uppercase text-muted-foreground tracking-wide">{item.label}</p>
-                            <p className="text-xs font-medium text-foreground mt-0.5">{item.val}</p>
-                        </div>
-                    ))}
-                </div>
+            <div className="border-t border-border p-4 bg-muted/30 space-y-3 animate-in slide-in-from-top-2 duration-200">
 
                 {yaGestionada && (
                     <div className="flex items-center gap-2 flex-wrap">
@@ -195,17 +182,22 @@ export default function DetalleAdmin({
                         registros={detalle}
                         tiposComprobante={tiposComprobante}
                         bancos={bancos}
+                        mostrarTotales={false}
                     />
                 )}
 
-                <div className="hidden lg:flex gap-2">
-                    <div className="flex-1 bg-background border border-border rounded-lg px-4 py-2">
-                        <p className="text-[10px] uppercase text-muted-foreground tracking-wider">Total documentos</p>
-                        <p className="font-mono text-base font-medium text-blue-800 mt-0.5">{fmtMoney(tDocs)}</p>
+                <div className="hidden lg:grid grid-cols-3 gap-3">
+                    <div className="rounded-xl border bg-background px-4 py-2.5">
+                        <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Total documentos</p>
+                        <p className="mt-0.5 font-mono text-lg font-bold text-blue-700 dark:text-blue-400">{fmtMoney(tDocs)}</p>
                     </div>
-                    <div className="flex-1 bg-background border border-border rounded-lg px-4 py-2">
-                        <p className="text-[10px] uppercase text-muted-foreground tracking-wider">Total cobrado</p>
-                        <p className="font-mono text-base font-medium text-emerald-600 mt-0.5">{fmtMoney(tCbza)}</p>
+                    <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 dark:border-emerald-900 dark:bg-emerald-950/40">
+                        <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Total cobrado</p>
+                        <p className="mt-0.5 font-mono text-lg font-bold text-emerald-700 dark:text-emerald-400">{fmtMoney(tCbza)}</p>
+                    </div>
+                    <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 dark:border-amber-900 dark:bg-amber-950/40">
+                        <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Pendiente</p>
+                        <p className="mt-0.5 font-mono text-lg font-bold text-amber-700 dark:text-amber-400">{fmtMoney(Math.max(0, tDocs - tCbza))}</p>
                     </div>
                 </div>
 
@@ -220,13 +212,13 @@ export default function DetalleAdmin({
                                 value={obsTexto}
                                 onChange={e => setObsTexto(e.target.value)}
                                 rows={3}
-                                className="resize-none text-sm"
+                                className="resize-none text-sm bg-background"
                             />
                         </div>
-                        <div className="flex flex-wrap gap-2">
+                        <div className="flex flex-wrap justify-end gap-2">
                             <Button
                                 variant="outline" size="sm"
-                                className="border-red-200 text-red-600 hover:bg-red-50 gap-1.5"
+                                className="border-red-200 bg-red-50 text-red-600 hover:bg-red-100 gap-1.5 dark:border-red-900 dark:bg-red-950/40"
                                 onClick={handleRechazar}
                                 disabled={procesando}
                             >
@@ -235,7 +227,7 @@ export default function DetalleAdmin({
                             </Button>
                             <Button
                                 size="sm"
-                                className="bg-emerald-600 hover:bg-emerald-700 gap-1.5"
+                                className="bg-emerald-600 text-white shadow-md shadow-emerald-600/30 hover:bg-emerald-700 gap-1.5"
                                 onClick={() => onValidar(planilla.id_planilla)}
                                 disabled={procesando}
                             >
