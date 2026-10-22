@@ -1,9 +1,9 @@
 'use client'
 
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, useMemo, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
-import { Check, ChevronDown, Search, User, X, Calendar as CalendarIcon, MapPin, Users } from "lucide-react"
+import { Check, ChevronDown, Search, User, X, Calendar as CalendarIcon, MapPin, Users, Phone, Mail, Store, CreditCard, Ban } from "lucide-react"
 import { toast } from "@/app/hooks/useToast"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils"
 import { useAuth } from "@/context/authContext"
 import { searchClientsRequest, fetchAvailableZones } from "@/app/api/reports"
 import apiClient from "@/app/api/client"
+import { ClientService } from "@/app/services/client/ClientService"
 
 import { ExportSaldoCobrarPdf } from "@/components/reporte/exportSaldoCobrarPdf"
 import { DocumentoPdfLink } from "@/components/reporte/DocumentoPdfLink"
@@ -26,6 +27,17 @@ interface IAutocompleteClient {
     Nombre: string;
 }
 
+/** Datos de contacto y crédito de un cliente, sacados del listado de clientes. */
+interface DatosCliente {
+    correo:          string;
+    lineaCredito:    number;
+    telefono:        string;
+    nombreComercial: string;
+}
+
+const fmtSoles = (v: number) =>
+    `S/ ${v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+
 export default function SaldoCobrarClientePage() {
     const auth = useAuth();
     const isManagerOrAdmin = auth.isAdmin();
@@ -34,6 +46,42 @@ export default function SaldoCobrarClientePage() {
 
     const [loading, setLoading] = useState(false);
     const [data, setData] = useState<any>(null);
+
+    // El reporte no trae correo ni línea de crédito: se completan con el
+    // listado de clientes (el mismo de la pantalla Clientes), cruzando por
+    // RUC. Se carga una sola vez, la primera vez que se busca.
+    const datosClientesRef = useRef<Map<string, DatosCliente> | null>(null);
+    const vistaTablaClientes = useMemo(() => {
+        const config = auth.globalConfigs.find(c => c.cod_config === 'VISTA_TABLA_CLIENTES');
+        return config ? config.llave_config : '1';
+    }, [auth.globalConfigs]);
+
+    const cargarDatosClientes = async (): Promise<Map<string, DatosCliente>> => {
+        if (datosClientesRef.current) return datosClientesRef.current;
+        const mapa = new Map<string, DatosCliente>();
+        try {
+            const res = await ClientService.getAllClientsByCodVendedor(
+                isVendor ? auth.user?.codigo ?? '' : '',
+                vistaTablaClientes,
+                isRepresentative ? auth.user?.codRepres ?? '' : '',
+            );
+            for (const c of (res?.data || [])) {
+                const ruc = String(c.numeroDocumento || c.documento_numero || '').trim();
+                if (!ruc) continue;
+                mapa.set(ruc, {
+                    correo:          String(c.correoElectronico || '').trim(),
+                    lineaCredito:    Number(c.lineaCredito) || 0,
+                    telefono:        String(c.telefono || '').trim(),
+                    nombreComercial: String(c.nombreComercial || c.cliente_comercial || '').trim(),
+                });
+            }
+            datosClientesRef.current = mapa;
+        } catch (error) {
+            // Sin el listado el reporte igual sale; solo faltan correo y línea.
+            console.warn('No se pudo cargar el listado de clientes para completar el reporte:', error);
+        }
+        return mapa;
+    };
     const [selectedDate, setSelectedDate] = useState<Date>(new Date());
 
     type SearchMode = 'fecha' | 'mes'
@@ -130,7 +178,10 @@ export default function SaldoCobrarClientePage() {
                 body.anio = selectedYear;
             }
 
-            const response = await apiClient.post('/reportes/saldo-por-cobrar-cliente', body);
+            const [response, datosClientes] = await Promise.all([
+                apiClient.post('/reportes/saldo-por-cobrar-cliente', body),
+                cargarDatosClientes(),
+            ]);
 
             let reportData = response.data?.data;
 
@@ -180,6 +231,21 @@ export default function SaldoCobrarClientePage() {
             }
 
             if (reportData && reportData.Clientes && reportData.Clientes.length > 0) {
+                // Lo que mande el reporte tiene prioridad; lo que falte se
+                // completa con el listado de clientes.
+                reportData = {
+                    ...reportData,
+                    Clientes: reportData.Clientes.map((cli: any) => {
+                        const extra = datosClientes.get(String(cli.RUC ?? '').trim());
+                        return {
+                            ...cli,
+                            NombreComercial: cli.NombreComercial || extra?.nombreComercial || '',
+                            Telefono:        cli.Telefono || extra?.telefono || '',
+                            Correo:          cli.Correo || cli.Email || extra?.correo || '',
+                            LineaCredito:    cli.LineaCredito ?? extra?.lineaCredito ?? null,
+                        };
+                    }),
+                };
                 setData(reportData);
             } else {
                 setData(null);
@@ -425,15 +491,46 @@ export default function SaldoCobrarClientePage() {
 
                             {data.Clientes.map((cliente: any, cIdx: number) => (
                                 <div key={cIdx} className="space-y-4">
-                                    <div className="bg-background p-4 rounded-lg border border-border shadow-sm grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div>
-                                            <h2 className="text-lg font-bold text-foreground flex items-center gap-2">{cliente.Cliente}</h2>
-                                            <p className="text-sm text-muted-foreground mt-1"><span className="font-semibold">RUC:</span> {cliente.RUC}</p>
-                                            <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">{cliente.NombreComercial}</p>
+                                    <div className="bg-background p-4 rounded-xl border border-border shadow-sm grid grid-cols-1 gap-4 md:grid-cols-[1fr_1.5fr]">
+                                        <div className="min-w-0">
+                                            <h2 className="text-lg font-bold text-foreground">{cliente.Cliente}</h2>
+                                            <span className="mt-1.5 inline-flex rounded-md border bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+                                                <span className="mr-1 font-semibold text-foreground">RUC</span>{cliente.RUC}
+                                            </span>
+                                            <DatoCliente icono={Store} etiqueta="Nombre comercial" className="mt-3">
+                                                {cliente.NombreComercial
+                                                    ? <span className="font-semibold">{cliente.NombreComercial}</span>
+                                                    : <span className="text-muted-foreground">Sin nombre comercial</span>}
+                                            </DatoCliente>
                                         </div>
-                                        <div className="md:text-right space-y-1">
-                                            <p className="text-sm text-muted-foreground flex items-center md:justify-end gap-1">{cliente.Direccion}</p>
-                                            <p className="text-sm text-muted-foreground flex items-center md:justify-end gap-1">{cliente.Telefono || 'N/A'}</p>
+                                        <div className="grid grid-cols-1 gap-x-5 gap-y-3 sm:grid-cols-2">
+                                            <DatoCliente icono={MapPin} etiqueta="Dirección" className="sm:col-span-2">
+                                                {cliente.Direccion || <span className="text-muted-foreground">Sin dirección</span>}
+                                            </DatoCliente>
+                                            <DatoCliente icono={Phone} etiqueta="Teléfono">
+                                                {cliente.Telefono
+                                                    ? <span className="font-mono">{cliente.Telefono}</span>
+                                                    : <span className="text-muted-foreground">Sin teléfono</span>}
+                                            </DatoCliente>
+                                            <DatoCliente icono={Mail} etiqueta="Correo">
+                                                {cliente.Correo
+                                                    ? <span className="break-all">{cliente.Correo}</span>
+                                                    : <span className="text-muted-foreground">Sin correo</span>}
+                                            </DatoCliente>
+                                            <DatoCliente icono={CreditCard} etiqueta="Línea de crédito" className="sm:col-span-2">
+                                                {cliente.LineaCredito == null ? (
+                                                    <span className="text-muted-foreground">No disponible</span>
+                                                ) : Number(cliente.LineaCredito) > 0 ? (
+                                                    <span className="mt-0.5 flex items-center justify-between gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-300">
+                                                        Línea aprobada
+                                                        <span className="font-mono text-sm font-bold">{fmtSoles(Number(cliente.LineaCredito))}</span>
+                                                    </span>
+                                                ) : (
+                                                    <span className="mt-0.5 flex items-center gap-1.5 rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-300">
+                                                        <Ban className="h-3.5 w-3.5" /> No tiene línea de crédito
+                                                    </span>
+                                                )}
+                                            </DatoCliente>
                                         </div>
                                     </div>
 
@@ -560,6 +657,19 @@ export default function SaldoCobrarClientePage() {
                     )}
                 </CardContent>
             </Card>
+        </div>
+    )
+}
+
+function DatoCliente({ icono: Icono, etiqueta, className = "", children }: {
+    icono: React.ComponentType<{ className?: string }>; etiqueta: string; className?: string; children: React.ReactNode
+}) {
+    return (
+        <div className={`min-w-0 ${className}`}>
+            <p className="flex items-center gap-1.5 text-[10.5px] font-semibold uppercase tracking-wider text-muted-foreground">
+                <Icono className="h-3.5 w-3.5" /> {etiqueta}
+            </p>
+            <div className="mt-0.5 text-sm text-foreground">{children}</div>
         </div>
     )
 }
