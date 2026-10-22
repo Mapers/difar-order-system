@@ -77,7 +77,7 @@ export default function PlanillaCobranzaPage() {
 
     if (loading) {
         return (
-            <div className="grid gap-6 p-4 md:p-6">
+            <div className="grid grid-cols-1 gap-6 p-4 md:p-6">
                 <Skeleton className="h-10 w-72" />
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                     {Array.from({ length: 4 }).map((_, i) => (
@@ -90,7 +90,7 @@ export default function PlanillaCobranzaPage() {
     }
 
     return (
-        <div className="grid gap-6 p-4 md:p-6">
+        <div className="grid grid-cols-1 gap-6 p-4 md:p-6">
 
             <div className="flex items-center gap-3.5">
                 <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-600 to-violet-600 text-white shadow-lg shadow-blue-600/30">

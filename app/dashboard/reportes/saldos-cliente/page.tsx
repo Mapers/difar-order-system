@@ -270,7 +270,7 @@ export default function SaldoCobrarClientePage() {
     };
 
     return (
-        <div className="grid gap-6 p-4 md:p-6">
+        <div className="grid grid-cols-1 gap-6 p-4 md:p-6">
             <div className="flex flex-col gap-2">
                 <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">Saldo de Documentos por Cobrar</h1>
                 <p className="text-sm md:text-base text-muted-foreground">Consulta los saldos pendientes agrupados por vendedor y zona.</p>

@@ -206,7 +206,7 @@ export default function ClientsPage() {
   const paginatedData = getPaginatedData();
 
   return (
-      <div className="grid gap-6 w-full min-w-0">
+      <div className="grid grid-cols-1 gap-6 w-full min-w-0">
         <div className="flex flex-col gap-2">
           <h1 className="text-3xl font-bold tracking-tight text-foreground">Clientes</h1>
           <p className="text-muted-foreground">Sistema de evaluación y gestión de clientes DIFAR</p>
@@ -266,8 +266,8 @@ export default function ClientsPage() {
                 </div>
               </CardHeader>
               <CardContent className={`space-y-4 ${showFilters ? "block" : "hidden sm:block"}`}>
-                <div className="flex flex-col sm:flex-row gap-3">
-                  <div className="flex-1 space-y-2">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:flex xl:flex-row">
+                  <div className="space-y-2 sm:col-span-2 xl:flex-1">
                     <Label htmlFor="search" className="text-sm font-medium">
                       Buscar por código, cliente, provincia o dirección
                     </Label>
@@ -284,7 +284,7 @@ export default function ClientsPage() {
                     </div>
                   </div>
 
-                  <div className="sm:w-56 space-y-2">
+                  <div className="min-w-0 space-y-2 xl:w-56">
                     <Label className="text-sm font-medium">Zona</Label>
                     <Popover open={openZona} onOpenChange={setOpenZona}>
                       <div className="relative w-full">
@@ -333,7 +333,7 @@ export default function ClientsPage() {
                   </div>
 
                   {(isRepresentante() || isAdmin()) && (
-                    <div className="sm:w-56 space-y-2">
+                    <div className="min-w-0 space-y-2 xl:w-56">
                       <Label className="text-sm font-medium">Vendedor</Label>
                       <Popover open={openVendedor} onOpenChange={setOpenVendedor}>
                         <div className="relative w-full">

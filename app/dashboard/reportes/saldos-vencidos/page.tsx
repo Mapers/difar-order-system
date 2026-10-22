@@ -175,7 +175,7 @@ export default function ExpiredBalancesPage() {
     const tabValues = ["todos", ...data.map(v => v.Vendedor)];
 
     return (
-        <div className="grid gap-6 p-4 md:p-6">
+        <div className="grid grid-cols-1 gap-6 p-4 md:p-6">
             <div className="flex flex-col gap-2">
                 <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">Saldos por Cobrar (Vencidos)</h1>
                 <p className="text-sm md:text-base text-muted-foreground">Listado general de documentos vencidos agrupado por Vendedor, Zona y Cliente.</p>

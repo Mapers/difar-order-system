@@ -59,7 +59,7 @@ export default function LibroCajaBancosPage() {
         : (c.totales.ingresos > 0 ? 100 : 0)
 
     return (
-        <div className="grid gap-5 p-4 md:p-6">
+        <div className="grid grid-cols-1 gap-5 p-4 md:p-6">
             <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                 <div className="flex items-center gap-3.5">
                     <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-600 to-violet-600 text-white shadow-lg shadow-blue-600/30">
@@ -104,7 +104,7 @@ export default function LibroCajaBancosPage() {
                                 disabled={c.cargandoCatalogos}
                             >
                                 <SelectTrigger className="h-10">
-                                    <span className="flex items-center gap-2 truncate">
+                                    <span className="!flex min-w-0 items-center gap-2">
                                         <Wallet className="h-4 w-4 shrink-0 text-blue-600" />
                                         <SelectValue placeholder={c.cargandoCatalogos ? "Cargando..." : "Elegir caja..."} />
                                     </span>
@@ -126,12 +126,12 @@ export default function LibroCajaBancosPage() {
                                         onClick={() => c.setFecha(moverDia(c.fecha, -1))} title="Día anterior">
                                     <ChevronLeft className="h-4 w-4" />
                                 </Button>
-                                <Input type="date" className="h-10 w-44" value={c.fecha} onChange={e => c.setFecha(e.target.value)} />
+                                <Input type="date" className="h-10 w-full min-w-0 sm:w-44" value={c.fecha} onChange={e => c.setFecha(e.target.value)} />
                                 <Button variant="outline" size="icon" className="h-10 w-10 shrink-0"
                                         onClick={() => c.setFecha(moverDia(c.fecha, 1))} title="Día siguiente">
                                     <ChevronRight className="h-4 w-4" />
                                 </Button>
-                                <Button variant="outline" className="h-10 font-semibold" onClick={() => c.setFecha(hoyISO())}>
+                                <Button variant="outline" className="h-10 shrink-0 font-semibold" onClick={() => c.setFecha(hoyISO())}>
                                     Hoy
                                 </Button>
                             </div>
@@ -176,7 +176,7 @@ export default function LibroCajaBancosPage() {
                     <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
                         <div className="rounded-xl bg-gradient-to-br from-blue-900 to-blue-600 p-3.5 text-white shadow-sm">
                             <Kpi etiqueta="Voucher" icono={Receipt} iconoCls="bg-white/20 text-white" etiquetaCls="text-blue-200" />
-                            <p className="mt-1 font-mono text-lg font-bold">{c.cabecera.Numero || '—'}</p>
+                            <p className="mt-1 font-mono text-base font-bold sm:text-lg">{c.cabecera.Numero || '—'}</p>
                             <p className="text-xs text-blue-100">Item {c.cabecera.Item} · {c.cabecera.CajaDescripcion}</p>
                         </div>
                         <KpiCard etiqueta="Periodo" icono={CalendarDays} iconoCls="bg-blue-50 text-blue-600 dark:bg-blue-950">
@@ -192,14 +192,14 @@ export default function LibroCajaBancosPage() {
                             </p>
                         </KpiCard>
                         <KpiCard etiqueta="Ingresos" icono={ArrowUpRight} iconoCls="bg-emerald-50 text-emerald-600 dark:bg-emerald-950">
-                            <p className="mt-1 font-mono text-lg font-bold text-emerald-700 dark:text-emerald-400">S/ {money(c.totales.ingresos)}</p>
+                            <p className="mt-1 font-mono text-base font-bold sm:text-lg text-emerald-700 dark:text-emerald-400">S/ {money(c.totales.ingresos)}</p>
                         </KpiCard>
                         <KpiCard etiqueta="Egresos" icono={ArrowDownRight} iconoCls="bg-red-50 text-red-600 dark:bg-red-950">
-                            <p className="mt-1 font-mono text-lg font-bold text-red-700 dark:text-red-400">S/ {money(c.totales.egresos)}</p>
+                            <p className="mt-1 font-mono text-base font-bold sm:text-lg text-red-700 dark:text-red-400">S/ {money(c.totales.egresos)}</p>
                         </KpiCard>
                         <KpiCard etiqueta="Diferencia" icono={Scale} iconoCls="bg-amber-100 text-amber-700 dark:bg-amber-950"
                                  className="border-amber-200 bg-amber-50/70 dark:border-amber-900 dark:bg-amber-950/40">
-                            <p className="mt-1 font-mono text-lg font-bold text-amber-700 dark:text-amber-400">S/ {money(diferencia)}</p>
+                            <p className="mt-1 font-mono text-base font-bold sm:text-lg text-amber-700 dark:text-amber-400">S/ {money(diferencia)}</p>
                             <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-amber-200 dark:bg-amber-900">
                                 <div className="h-full rounded-full bg-emerald-500" style={{ width: `${cobertura}%` }} />
                             </div>
@@ -218,7 +218,7 @@ export default function LibroCajaBancosPage() {
                         )}
 
                         <div className="overflow-auto">
-                            <table className="w-full text-xs border-collapse">
+                            <table className="w-full min-w-[1100px] text-xs border-collapse">
                                 <thead>
                                     <tr className="sticky top-0 z-10 bg-gradient-to-b from-muted/60 to-muted">
                                         <Th w="34"><Trash2 className="mx-auto h-3.5 w-3.5" /></Th>

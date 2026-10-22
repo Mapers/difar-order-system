@@ -388,7 +388,7 @@ export default function ClienteCobranzaPage() {
         : entidades
 
     return (
-        <div className="grid gap-6 p-4 md:p-6">
+        <div className="grid grid-cols-1 gap-6 p-4 md:p-6">
             <div className="flex flex-col gap-2">
                 <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">Cliente Cobranza</h1>
                 <p className="text-sm md:text-base text-muted-foreground">Registro de amortizaciones y pagos de clientes.</p>
@@ -546,7 +546,7 @@ export default function ClienteCobranzaPage() {
                             <Button
                                 type="button"
                                 variant="outline"
-                                className="justify-start gap-2 h-auto py-3 border-violet-200 text-violet-700 hover:bg-violet-50"
+                                className="justify-start gap-2 h-auto whitespace-normal py-3 border-violet-200 text-violet-700 hover:bg-violet-50"
                                 onClick={() => {
                                     if (!form.Cod_Clie) {
                                         toast({

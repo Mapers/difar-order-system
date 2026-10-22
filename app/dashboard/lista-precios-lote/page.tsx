@@ -74,13 +74,13 @@ export default function PricePage() {
   }, []);
 
   return (
-      <div className="grid gap-6">
-          <div className='flex justify-between items-center gap-2'>
+      <div className="grid grid-cols-1 gap-6">
+          <div className='flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
               <div className="flex flex-col gap-2">
                   <h1 className="text-3xl font-bold tracking-tight text-foreground">Lista de Precios por Lote</h1>
                   <p className="text-muted-foreground">Gestión de inventario DIFAR</p>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                   {isAdmin() && (
                       <QuickPriceEditModal
                           filteredData={listData.filteredPricesLot.map(item => ({

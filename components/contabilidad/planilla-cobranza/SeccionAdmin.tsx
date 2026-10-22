@@ -130,7 +130,7 @@ export default function SeccionAdmin({
                                 <c.icono className="h-4 w-4" />
                             </span>
                         </div>
-                        <p className={`text-2xl font-bold mt-1 ${c.mono ? 'font-mono' : ''} ${c.color}`}>{c.value}</p>
+                        <p className={`text-xl sm:text-2xl font-bold mt-1 ${c.mono ? 'font-mono' : ''} ${c.color}`}>{c.value}</p>
                         <p className="text-xs text-muted-foreground mt-0.5">{c.sub}</p>
                     </div>
                 ))}
@@ -149,7 +149,7 @@ export default function SeccionAdmin({
                                 onKeyDown={e => e.key === 'Enter' && handleBuscar()}
                             />
                         </div>
-                        <div className="flex h-10 overflow-x-auto rounded-lg border bg-muted p-0.5" role="group" aria-label="Estado">
+                        <div className="flex flex-wrap rounded-lg border bg-muted p-0.5 xl:h-10 xl:flex-nowrap" role="group" aria-label="Estado">
                             {[
                                 ['all', 'Todos'], ['borrador', 'Borrador'], ['enviado', 'Enviada'],
                                 ['validado', 'Validada'], ['rechazado', 'Observada'],
@@ -159,7 +159,7 @@ export default function SeccionAdmin({
                                     type="button"
                                     onClick={() => setFiltroEstado(valor)}
                                     aria-pressed={filtroEstado === valor}
-                                    className={`rounded-md px-3 text-sm whitespace-nowrap transition-colors ${
+                                    className={`rounded-md px-3 py-1.5 text-sm whitespace-nowrap transition-colors ${
                                         filtroEstado === valor
                                             ? 'bg-background font-semibold text-blue-700 shadow-sm dark:text-blue-400'
                                             : 'text-muted-foreground hover:text-foreground'
@@ -169,11 +169,11 @@ export default function SeccionAdmin({
                                 </button>
                             ))}
                         </div>
-                        <div className="flex gap-2">
+                        <div className="grid grid-cols-2 gap-2 xl:flex">
                             <Input type="date" value={fechaDesde} onChange={e => setFechaDesde(e.target.value)}
-                                   className="h-10 w-full bg-background xl:w-40" title="Desde" />
+                                   className="h-10 w-full min-w-0 bg-background xl:w-40" title="Desde" />
                             <Input type="date" value={fechaHasta} onChange={e => setFechaHasta(e.target.value)}
-                                   className="h-10 w-full bg-background xl:w-40" title="Hasta" />
+                                   className="h-10 w-full min-w-0 bg-background xl:w-40" title="Hasta" />
                         </div>
                         <div className="flex gap-2">
                             <Button
@@ -222,10 +222,10 @@ export default function SeccionAdmin({
                 return (
                     <Card key={planilla.id_planilla} className={`shadow-sm overflow-hidden border-l-4 ${colorBorde(planilla.estado)}`}>
                         <div
-                            className="flex items-center justify-between gap-3 p-4 cursor-pointer hover:bg-muted/50 transition-colors"
+                            className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2.5 p-4 cursor-pointer hover:bg-muted/50 transition-colors"
                             onClick={() => toggleRow(planilla)}
                         >
-                            <div className="flex items-center gap-3 min-w-0">
+                            <div className="flex min-w-0 flex-1 basis-56 items-center gap-3">
                                 <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 text-sm font-bold ${avatarCls(planilla.estado)}`}>
                                     {getInitials(planilla.nombre_vendedor)}
                                 </div>
@@ -250,7 +250,7 @@ export default function SeccionAdmin({
                                 </div>
                             </div>
 
-                            <div className="flex items-center gap-3 sm:gap-5 shrink-0">
+                            <div className="ml-auto flex shrink-0 items-center gap-3 sm:gap-5">
                                 <div className="hidden md:block text-right">
                                     <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Registros</p>
                                     <p className="text-sm font-bold">{planilla.total_registros ?? dets.length}</p>

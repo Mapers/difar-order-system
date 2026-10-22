@@ -109,7 +109,7 @@ const ExportSubctaMvtoPdf: React.FC<Props> = ({ cabecera, detalle }) => {
                         </DialogDescription>
                     </DialogHeader>
 
-                    <div className="grid min-h-0 flex-1 grid-cols-1 md:grid-cols-[320px_1fr]">
+                    <div className="grid min-h-0 flex-1 grid-cols-1 grid-rows-[1fr_auto] md:grid-cols-[320px_1fr] md:grid-rows-1">
                         {/* Opciones */}
                         <div className="min-h-0 space-y-5 overflow-y-auto border-b p-5 md:border-b-0 md:border-r">
                             <Seccion icono={Type} titulo="Textos">
@@ -195,8 +195,17 @@ const ExportSubctaMvtoPdf: React.FC<Props> = ({ cabecera, detalle }) => {
                         </div>
 
                         {/* Vista previa */}
-                        <div className="relative min-h-[300px] bg-muted/50">
-                            {url && <iframe title="Vista previa del PDF" src={`${url}#toolbar=0&navpanes=0`} className="h-full w-full" />}
+                        <div className="relative bg-muted/50 md:min-h-[300px]">
+                            {url && <iframe title="Vista previa del PDF" src={`${url}#toolbar=0&navpanes=0`} className="hidden h-full w-full md:block" />}
+                            {/* En celulares el navegador no muestra PDF dentro de la página: se abre aparte. */}
+                            <div className="flex items-center gap-3 border-t px-4 py-3 md:hidden">
+                                <FileText className="h-6 w-6 shrink-0 text-blue-600/70" />
+                                <p className="flex-1 text-xs text-muted-foreground">En el celular la vista previa se abre en otra pestaña.</p>
+                                <Button variant="outline" size="sm" className="shrink-0 gap-1.5" disabled={!url || generando}
+                                        onClick={() => url && window.open(url, '_blank')}>
+                                    <ExternalLink className="h-4 w-4" /> Ver
+                                </Button>
+                            </div>
                             {generando && (
                                 <div className="absolute inset-0 flex items-center justify-center bg-background/60 backdrop-blur-[1px]">
                                     <span className="flex items-center gap-2 rounded-full border bg-background px-4 py-2 text-sm shadow-sm">
@@ -207,20 +216,20 @@ const ExportSubctaMvtoPdf: React.FC<Props> = ({ cabecera, detalle }) => {
                         </div>
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-2 border-t bg-muted/30 px-5 py-3">
-                        <Button variant="ghost" size="sm" className="gap-1.5" onClick={restablecer}>
-                            <RotateCcw className="h-4 w-4" /> Restablecer
+                    <div className="flex items-center gap-2 border-t bg-muted/30 px-4 py-3 sm:px-5">
+                        <Button variant="ghost" size="sm" className="gap-1.5 px-2 sm:px-3" onClick={restablecer} title="Restablecer">
+                            <RotateCcw className="h-4 w-4" /> <span className="hidden sm:inline">Restablecer</span>
                         </Button>
-                        <div className="ml-auto flex flex-wrap gap-2">
+                        <div className="ml-auto flex gap-2">
                             <Button variant="outline" onClick={() => setOpen(false)}>Cerrar</Button>
-                            <Button variant="outline" className="gap-1.5" disabled={!url || generando}
+                            <Button variant="outline" className="hidden gap-1.5 md:inline-flex" disabled={!url || generando}
                                     onClick={() => url && window.open(url, '_blank')}
                                     title="Abre el PDF en otra pestaña para imprimirlo">
                                 <ExternalLink className="h-4 w-4" /> Abrir / Imprimir
                             </Button>
                             <Button className="gap-1.5 bg-blue-600 text-white shadow-md shadow-blue-600/30 hover:bg-blue-700"
                                     disabled={!url || generando} onClick={descargar}>
-                                <Download className="h-4 w-4" /> Descargar PDF
+                                <Download className="h-4 w-4" /> Descargar<span className="hidden sm:inline"> PDF</span>
                             </Button>
                         </div>
                     </div>

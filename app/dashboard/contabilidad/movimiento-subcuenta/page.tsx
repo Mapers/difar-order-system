@@ -122,7 +122,7 @@ export default function MovimientoSubcuentaPage() {
     const nSalidas = filas.filter(d => Number(d.Salida) > 0).length
 
     return (
-        <div className="grid gap-5 p-4 md:p-6">
+        <div className="grid grid-cols-1 gap-5 p-4 md:p-6">
             <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                 <div className="flex items-center gap-3.5">
                     <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-600 to-violet-600 text-white shadow-lg shadow-blue-600/30">
@@ -184,7 +184,7 @@ export default function MovimientoSubcuentaPage() {
                                     onValueChange={v => setParams(p => ({ ...p, mes: v === '00' ? '' : v }))}
                                 >
                                     <SelectTrigger className="h-10 w-40">
-                                        <span className="flex items-center gap-2 truncate">
+                                        <span className="!flex min-w-0 items-center gap-2">
                                             <CalendarDays className="h-4 w-4 shrink-0 text-blue-600" />
                                             <SelectValue />
                                         </span>
@@ -269,19 +269,19 @@ export default function MovimientoSubcuentaPage() {
                             </p>
                         </div>
                         <KpiCard etiqueta="Saldo inicial" icono={Clock} iconoCls="bg-muted text-muted-foreground">
-                            <p className="mt-1 font-mono text-xl font-bold">{money(cab.SaldoInicial)}</p>
+                            <p className="mt-1 font-mono text-lg font-bold sm:text-xl">{money(cab.SaldoInicial)}</p>
                         </KpiCard>
                         <KpiCard etiqueta="Total ingreso" icono={ArrowUpRight} iconoCls="bg-emerald-50 text-emerald-600 dark:bg-emerald-950">
-                            <p className="mt-1 font-mono text-xl font-bold text-emerald-700 dark:text-emerald-400">{money(cab.TotalIngreso)}</p>
+                            <p className="mt-1 font-mono text-lg font-bold sm:text-xl text-emerald-700 dark:text-emerald-400">{money(cab.TotalIngreso)}</p>
                             <p className="text-xs text-muted-foreground">{nIngresos} movimiento{nIngresos !== 1 ? 's' : ''}</p>
                         </KpiCard>
                         <KpiCard etiqueta="Total salida" icono={ArrowDownRight} iconoCls="bg-red-50 text-red-600 dark:bg-red-950">
-                            <p className="mt-1 font-mono text-xl font-bold text-red-700 dark:text-red-400">{money(cab.TotalSalida)}</p>
+                            <p className="mt-1 font-mono text-lg font-bold sm:text-xl text-red-700 dark:text-red-400">{money(cab.TotalSalida)}</p>
                             <p className="text-xs text-muted-foreground">{nSalidas} movimiento{nSalidas !== 1 ? 's' : ''}</p>
                         </KpiCard>
                         <KpiCard etiqueta="Saldo final" icono={Scale} iconoCls="bg-blue-100 text-blue-700 dark:bg-blue-950"
                                  className="border-blue-200 bg-blue-50/70 dark:border-blue-900 dark:bg-blue-950/40">
-                            <p className="mt-1 font-mono text-xl font-bold text-blue-700 dark:text-blue-400">{money(cab.SaldoFinal)}</p>
+                            <p className="mt-1 font-mono text-lg font-bold sm:text-xl text-blue-700 dark:text-blue-400">{money(cab.SaldoFinal)}</p>
                             <div className="mt-2 flex h-1.5 overflow-hidden rounded-full bg-muted">
                                 <div className="h-full bg-slate-400" style={{ width: `${pctBase}%` }} />
                                 <div className="h-full bg-emerald-500" style={{ width: `${100 - pctBase}%` }} />
@@ -300,7 +300,7 @@ export default function MovimientoSubcuentaPage() {
                         </div>
 
                         <div className="overflow-auto">
-                            <table className="w-full text-xs border-collapse">
+                            <table className="w-full min-w-[820px] text-xs border-collapse">
                                 <thead>
                                     <tr className="sticky top-0 z-10 bg-gradient-to-b from-muted/60 to-muted">
                                         <Th>Fecha</Th>

@@ -183,13 +183,13 @@ export function VouchersModal({ open, onOpenChange, numeroPlanilla, vouchers, ba
                                         </div>
 
                                         <div className="grid grid-cols-2 gap-1.5 p-3 pt-2">
-                                            <Button variant="outline" size="sm" className="h-8 gap-1 text-xs" onClick={() => setVisor(i)}>
-                                                <Maximize2 className="h-3.5 w-3.5" /> Abrir
+                                            <Button variant="outline" size="sm" className="h-8 gap-1 px-2 text-xs" onClick={() => setVisor(i)} title="Abrir" aria-label="Abrir">
+                                                <Maximize2 className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Abrir</span>
                                             </Button>
                                             <Button variant="outline" size="sm"
-                                                    className="h-8 gap-1 text-xs border-sky-200 bg-sky-50 text-sky-700 hover:bg-sky-100 dark:border-sky-900 dark:bg-sky-950 dark:text-sky-300"
-                                                    onClick={() => descargar(a.url, a.nombre)}>
-                                                <Download className="h-3.5 w-3.5" /> Descargar
+                                                    className="h-8 gap-1 px-2 text-xs border-sky-200 bg-sky-50 text-sky-700 hover:bg-sky-100 dark:border-sky-900 dark:bg-sky-950 dark:text-sky-300"
+                                                    onClick={() => descargar(a.url, a.nombre)} title="Descargar" aria-label="Descargar">
+                                                <Download className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Descargar</span>
                                             </Button>
                                         </div>
                                     </div>
