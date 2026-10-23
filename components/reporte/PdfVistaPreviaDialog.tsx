@@ -125,6 +125,14 @@ export function PdfVistaPreviaDialog({
 
                         <Seccion icono={Palette} titulo="Color y formato">
                             <SelectorColor valor={op.color} onChange={v => set('color', v)} />
+                            {defecto.orientacion && (
+                                <Opciones
+                                    etiqueta="Orientación"
+                                    valor={op.orientacion ?? defecto.orientacion}
+                                    onChange={v => set('orientacion', v)}
+                                    opciones={[{ v: 'horizontal', t: 'Horizontal' }, { v: 'vertical', t: 'Vertical' }]}
+                                />
+                            )}
                             <Opciones
                                 etiqueta="Tamaño de letra"
                                 valor={op.tamanoLetra}

@@ -19,6 +19,8 @@ export interface OpcionesPdfReporte {
     /** Color principal en hex, p. ej. '#163161'. */
     color:       string
     tamanoLetra: TamanoLetraPdf
+    /** Solo en los reportes que se pueden imprimir en ambas orientaciones. */
+    orientacion?: 'horizontal' | 'vertical'
 }
 
 export const hexARgb = (hex: string): RGB => {

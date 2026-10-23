@@ -2,18 +2,14 @@
 
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { FileText, ChevronDown } from 'lucide-react'
-import { PDFDocument, StandardFonts, rgb } from 'pdf-lib'
+import { FileText, Loader2 } from 'lucide-react'
+import { StandardFonts, rgb } from 'pdf-lib'
+import { aclarar, crearPdfReporte, hexARgb, OpcionesPdfReporte, TamanoLetraPdf } from '@/components/reporte/pdfOpciones'
+import { PdfVistaPreviaDialog } from '@/components/reporte/PdfVistaPreviaDialog'
 import { EMPRESA, cargarLogoPdf, dibujarCabeceraPdf } from "@/components/reporte/pdfCabecera"
 import { PriceService } from "@/app/services/price/PriceService";
 import { datosPorAlmacen, DatosExport, GrupoAlmacen } from "@/app/dashboard/lista-precios-lote/services/almacenesExport";
 import moment from "moment";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 
 const splitTextIntoLines = (text: string, maxWidth: number, font: any, fontSize: number) => {
   if (!text) return [''];
@@ -87,41 +83,77 @@ const processEscalas = (escalasRaw: string) => {
   })
 }
 
+/** Color por defecto del PDF (azul marino corporativo). */
+export const COLOR_PDF_LISTA = '#16315c'
+
+/**
+ * Ventas de los últimos 3 meses por artículo. Endpoint aparte: si falla, la
+ * columna sale vacía en vez de perderse la exportación entera.
+ */
+export async function cargarVentasTresMeses(): Promise<Map<string, number[]>> {
+  const mapa = new Map<string, number[]>()
+  try {
+    const resVentas = await PriceService.getVentasTresMeses()
+    for (const fila of (resVentas?.data?.data || [])) {
+      mapa.set(String(fila.cod_articulo), (fila.meses || []).map(Number))
+    }
+  } catch (e) {
+    console.warn('No se pudieron cargar las ventas de 3 meses para el PDF:', e)
+  }
+  return mapa
+}
+
 /**
  * Arma y descarga el PDF de la lista de precios. Recibe los datos ya
  * filtrados para que lo usen tanto el botón de export como el modal de
  * productos por vencer.
  */
-export async function generarPdf({
-  datos,
-  orientation,
-  subtitulo = 'LISTA DE PRECIOS POR LOTE',
-  nombreArchivo,
-  mensajeVacio = 'No se encontraron productos con stock disponible.',
-}: {
+export async function generarPdf(params: {
   datos: DatosExport
   orientation: 'horizontal' | 'vertical'
   subtitulo?: string
   nombreArchivo: string
   mensajeVacio?: string
 }) {
+  const bytes = await construirPdfLista(params)
+  const blob = new Blob([bytes as BlobPart], { type: 'application/pdf' })
+  const link = document.createElement('a')
+  link.href = window.URL.createObjectURL(blob)
+  link.download = params.nombreArchivo
+  link.click()
+}
+
+/**
+ * Arma el PDF y devuelve sus bytes (para la vista previa del modal). Las
+ * opciones de nota, color y letra son las del modal; sin ellas sale como siempre.
+ */
+export async function construirPdfLista({
+  datos,
+  orientation,
+  subtitulo = 'LISTA DE PRECIOS POR LOTE',
+  mensajeVacio = 'No se encontraron productos con stock disponible.',
+  ventas,
+  nota = '',
+  color = COLOR_PDF_LISTA,
+  tamanoLetra = 'normal',
+}: {
+  datos: DatosExport
+  orientation: 'horizontal' | 'vertical'
+  subtitulo?: string
+  mensajeVacio?: string
+  /** Ventas ya cargadas; sin ellas se consultan aquí. */
+  ventas?: Map<string, number[]>
+  nota?: string
+  color?: string
+  tamanoLetra?: TamanoLetraPdf
+}): Promise<Uint8Array> {
   const agrupar = !!datos.grupos
   const data: any[] = datos.data ?? []
   const grupos: GrupoAlmacen[] = datos.grupos ?? []
 
-  // Endpoint aparte: si falla, la columna sale vacia en vez de perderse
-  // la exportacion entera.
-  const mapaVentas = new Map<string, number[]>()
-  try {
-    const resVentas = await PriceService.getVentasTresMeses()
-    for (const fila of (resVentas?.data?.data || [])) {
-      mapaVentas.set(String(fila.cod_articulo), (fila.meses || []).map(Number))
-    }
-  } catch (e) {
-    console.warn('No se pudieron cargar las ventas de 3 meses para el PDF:', e)
-  }
+  const mapaVentas = ventas ?? await cargarVentasTresMeses()
 
-  const pdfDoc = await PDFDocument.create()
+  const pdfDoc = await crearPdfReporte(tamanoLetra)
   const font = await pdfDoc.embedFont(StandardFonts.Helvetica)
   const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold)
 
@@ -153,11 +185,13 @@ export async function generarPdf({
   const empresaRuc = EMPRESA.ruc
 
   // Paleta homologada (azul marino corporativo)
+  // Con otro color elegido en el modal, la banda de laboratorio es una versión más clara de ese color.
+  const colorPropio = color.toLowerCase() !== COLOR_PDF_LISTA
   const C = {
-    primary:   rgb(0.086, 0.192, 0.361), // banda cabecera y fila de columnas
+    primary:   hexARgb(color),           // banda cabecera y fila de columnas
     accent:    rgb(0.22, 0.60, 0.85),    // línea de acento
     headerSub: rgb(0.78, 0.84, 0.92),    // texto secundario sobre banda
-    lab:       rgb(0.18, 0.38, 0.68),    // banda por laboratorio
+    lab:       colorPropio ? aclarar(hexARgb(color), 0.25) : rgb(0.18, 0.38, 0.68), // banda por laboratorio
     rowOdd:    rgb(0.945, 0.953, 0.965), // zebra
     text:      rgb(0.13, 0.17, 0.24),    // texto principal
     muted:     rgb(0.45, 0.45, 0.45),
@@ -188,6 +222,7 @@ export async function generarPdf({
       page, font, boldFont, logo: logoImage,
       pageWidth, pageHeight, margin,
       subtitulo,
+      filtros: nota.trim() || undefined,
       infoDerecha: `Página: ${pageNumber}`,
       infoDerechaSec: `Fecha: ${now.toLocaleDateString()} ${now.toLocaleTimeString()}`,
       razonSocial: empresaNombre,
@@ -459,12 +494,7 @@ export async function generarPdf({
     rowIndex++
   }
 
-  const pdfBytes = await pdfDoc.save()
-  const blob = new Blob([pdfBytes], { type: 'application/pdf' })
-  const link = document.createElement('a')
-  link.href = window.URL.createObjectURL(blob)
-  link.download = nombreArchivo
-  link.click()
+  return pdfDoc.save()
 }
 
 const ExportPdfButton = ({ payload, filters, porAlmacen = false, almacenSel = null }: { payload: any; filters?: any; porAlmacen?: boolean; almacenSel?: number | null }) => {
@@ -484,7 +514,10 @@ const ExportPdfButton = ({ payload, filters, porAlmacen = false, almacenSel = nu
   }
 
 
-  const generatePdf = async (orientation: 'horizontal' | 'vertical') => {
+  const [preparado, setPreparado] = useState<{ datos: DatosExport; ventas: Map<string, number[]>; sufijo: string } | null>(null)
+
+  // Los datos se traen una sola vez al abrir: cambiar color u orientación en el modal no vuelve a consultar.
+  const abrir = async () => {
     if (loading) return
     setLoading(true)
 
@@ -509,12 +542,11 @@ const ExportPdfButton = ({ payload, filters, porAlmacen = false, almacenSel = nu
         datos = { data: applyFilters(response.data || []) }
       }
 
-      await generarPdf({
-        datos,
-        orientation,
-        nombreArchivo: `lista-precios${almacenSel != null ? `-alm${almacenSel}` : porAlmacen ? '-por-almacen' : ''}-${orientation}-${new Date().toISOString().split('T')[0]}.pdf`,
+      const ventas = await cargarVentasTresMeses()
+      setPreparado({
+        datos, ventas,
+        sufijo: `${almacenSel != null ? `-alm${almacenSel}` : porAlmacen ? '-por-almacen' : ''}-${new Date().toISOString().split('T')[0]}`,
       })
-
     } catch (error) {
       console.error('Error al generar PDF:', error)
       alert('Ocurrió un error al generar el PDF.')
@@ -523,29 +555,38 @@ const ExportPdfButton = ({ payload, filters, porAlmacen = false, almacenSel = nu
     }
   }
 
+  const DEFECTO: OpcionesPdfReporte = {
+    titulo: 'LISTA DE PRECIOS POR LOTE', nota: '', color: COLOR_PDF_LISTA, tamanoLetra: 'normal', orientacion: 'horizontal',
+  }
 
   return (
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-              disabled={loading}
-              variant="outline"
-              className="flex items-center gap-2"
-          >
-            <FileText className="h-4 w-4" />
-            {loading ? 'Generando...' : 'Exportar PDF'}
-            <ChevronDown className="h-4 w-4 opacity-50" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuItem onClick={() => generatePdf('horizontal')} className="cursor-pointer">
-            Formato Horizontal (Recomendado)
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => generatePdf('vertical')} className="cursor-pointer">
-            Formato Vertical (Letra pequeña)
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+      <>
+        <Button
+            disabled={loading}
+            variant="outline"
+            className="flex items-center gap-2"
+            onClick={abrir}
+        >
+          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
+          {loading ? 'Preparando...' : 'Exportar PDF'}
+        </Button>
+        <PdfVistaPreviaDialog
+            abierto={!!preparado}
+            onCerrar={() => setPreparado(null)}
+            titulo="Lista de precios por lote"
+            defecto={DEFECTO}
+            archivoDefecto={`lista-precios${preparado?.sufijo ?? ''}`}
+            generar={op => construirPdfLista({
+              datos: preparado!.datos,
+              ventas: preparado!.ventas,
+              orientation: op.orientacion ?? 'horizontal',
+              subtitulo: op.titulo,
+              nota: op.nota,
+              color: op.color,
+              tamanoLetra: op.tamanoLetra,
+            })}
+        />
+      </>
   )
 }
 
