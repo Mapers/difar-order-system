@@ -15,6 +15,7 @@ import {
     Loader2, Save, Plus, Trash2, Lock, AlertCircle, X, Search, ChevronDown, Check,
     ClipboardCheck, Wallet, Truck, Printer, ShoppingBag, Hash, FileText, ArrowRight,
     Receipt, Coins, Percent, Scale, Banknote, SlidersHorizontal, ListOrdered, PackagePlus,
+    CalendarClock, Warehouse, CalendarDays, Calendar, Building2, Tags,
     type LucideIcon,
 } from "lucide-react"
 import { ComboSelect } from "@/components/ui/combo-select"
@@ -22,10 +23,14 @@ import { ComprasService } from "@/app/services/contabilidad/ContabilidadService"
 import { toast } from "@/app/hooks/useToast"
 import { useRegistroCompras, CabeceraEdicion, FilaCompra } from "./useRegistroCompras"
 import { BuscadorRemoto } from "./BuscadorRemoto"
+import { ComboTarjeta } from "./ComboTarjeta"
 import { BuscadorDocumentos } from "./BuscadorDocumentos"
 import { SaldoDialog } from "./SaldoDialog"
 import { PagosDialog } from "./PagosDialog"
 import { TransporteDialog } from "./TransporteDialog"
+
+// La tasa llega como fracción (0.18) o como porcentaje (18).
+const tasaTexto = (t: number) => `${Number(t) < 1 ? Math.round(Number(t) * 10000) / 100 : Number(t)}%`
 
 const money = (v: number) =>
     Number(v ?? 0).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
@@ -54,20 +59,21 @@ export default function RegistroComprasPage() {
     })
 
     // Combos con buscador, con el mismo formato que el resto de Contabilidad.
-    const comboCampo = <T,>({ k, items, getKey, getLabel }: {
+    const comboCampo = <T,>({ k, items, getKey, getLabel, getSub, icono, titulo, descripcion }: {
         k: keyof CabeceraEdicion; items: T[]; getKey: (x: T) => string | number; getLabel: (x: T) => string
+        getSub?: (x: T) => string; icono: LucideIcon; titulo: string; descripcion: string
     }) => (
-        <ComboSelect<T>
+        <ComboTarjeta<T>
             value={String(c.cab[k] ?? '')}
             onChange={x => c.setCampoCab(k, String(getKey(x)))}
             items={items}
             getKey={x => String(getKey(x))}
             getLabel={getLabel}
-            placeholder="Elegir"
-            searchPlaceholder="Buscar..."
-            emptyText="Sin resultados"
+            getSub={getSub}
+            icono={icono}
+            titulo={titulo}
+            descripcion={descripcion}
             disabled={ro}
-            triggerClassName="h-9 bg-background"
         />
     )
 
@@ -212,14 +218,6 @@ export default function RegistroComprasPage() {
                                 <Plus className="h-4 w-4" /> <span className="hidden sm:inline">Nueva</span>
                             </Button>
 
-                            <Button
-                                className="ml-auto h-10 gap-1.5 bg-emerald-600 font-semibold text-white shadow-md shadow-emerald-600/30 hover:bg-emerald-700 sm:ml-0"
-                                onClick={c.guardar}
-                                disabled={c.guardando || ro}
-                            >
-                                {c.guardando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                                Guardar
-                            </Button>
                         </div>
                     </div>
                 </div>
@@ -273,57 +271,61 @@ export default function RegistroComprasPage() {
                                 getSubtitulo={p => `${p.Codigo}${p.RUC ? `  RUC ${p.RUC}` : ''}`}
                                 onSelect={p => c.setProveedor(p.Codigo, p.Nombre)}
                                 onLimpiar={() => c.setProveedor('', '')}
+                                icono={Truck}
+                                descripcion="Por RUC, código o razón social"
+                                subValor={c.cab.codProv ? `Cód. ${c.cab.codProv}` : undefined}
+                                ancho="w-[var(--radix-popover-trigger-width)] min-w-[300px]"
                             />
                         </Campo>
 
                         <Campo etiqueta="Tipo de documento" requerido>
-                            {comboCampo({ k: 'tipoDoc', items: cat?.tiposDoc ?? [], getKey: x => x.Cod_Tipo, getLabel: x => String(x.Abreviatura || x.Descripcion) })}
+                            {comboCampo({ k: 'tipoDoc', items: cat?.tiposDoc ?? [], getKey: x => x.Cod_Tipo, getLabel: x => String(x.Descripcion || x.Abreviatura), getSub: x => `${x.Cod_Tipo} · ${x.Abreviatura}`, icono: FileText, titulo: 'Elegir tipo', descripcion: 'Factura, boleta, nota…' })}
                         </Campo>
 
                         <Campo etiqueta="Fecha de emisión" requerido>
-                            <Input type="date" className="h-9" {...campo('fechaEmision')} />
+                            <Input type="date" className="h-[50px] rounded-xl" {...campo('fechaEmision')} />
                         </Campo>
 
                         <Campo etiqueta="Serie" requerido>
-                            <Input className="h-9 font-mono" maxLength={10} placeholder="F001" {...campo('serie')} />
+                            <Input className="h-[50px] rounded-xl font-mono" maxLength={10} placeholder="F001" {...campo('serie')} />
                         </Campo>
 
                         <Campo etiqueta="Número" requerido>
-                            <Input className="h-9 font-mono tabular-nums" placeholder="1234" {...campo('numero')} />
+                            <Input className="h-[50px] rounded-xl font-mono tabular-nums" placeholder="1234" {...campo('numero')} />
                         </Campo>
 
                         <Campo etiqueta="Moneda" requerido>
-                            {comboCampo({ k: 'moneda', items: cat?.monedas ?? [], getKey: x => x.Abreviatura, getLabel: x => String(x.Abreviatura) })}
+                            {comboCampo({ k: 'moneda', items: cat?.monedas ?? [], getKey: x => x.Abreviatura, getLabel: x => String(x.Descripcion || x.Abreviatura), getSub: x => x.Abreviatura, icono: Coins, titulo: 'Elegir moneda', descripcion: 'Soles o dólares' })}
                         </Campo>
 
                         <Campo etiqueta="Tasa de IGV" requerido>
-                            {comboCampo({ k: 'tasaIGV', items: cat?.tasasIgv ?? [], getKey: x => String(x.Tasa), getLabel: x => String(x.Tasa) })}
+                            {comboCampo({ k: 'tasaIGV', items: cat?.tasasIgv ?? [], getKey: x => String(x.Tasa), getLabel: x => tasaTexto(x.Tasa), getSub: x => `Tasa ${x.Tasa}`, icono: Percent, titulo: 'Elegir tasa', descripcion: 'IGV del documento' })}
                         </Campo>
 
                         <Campo etiqueta="Importe total" requerido>
                             <Input type="number" step="0.01"
-                                   className="h-9 text-right tabular-nums" {...campo('importeTotal')} />
+                                   className="h-[50px] rounded-xl text-right tabular-nums" {...campo('importeTotal')} />
                         </Campo>
 
                         <Campo etiqueta="Importe sin IGV">
                             <Input type="number" step="0.01"
-                                   className="h-9 text-right tabular-nums" {...campo('exonerado')} />
+                                   className="h-[50px] rounded-xl text-right tabular-nums" {...campo('exonerado')} />
                         </Campo>
 
                         <Campo etiqueta="Condición" requerido>
-                            {comboCampo({ k: 'condicion', items: cat?.condiciones ?? [], getKey: x => x.CodigoCondicion, getLabel: x => String(x.Descripcion) })}
+                            {comboCampo({ k: 'condicion', items: cat?.condiciones ?? [], getKey: x => x.CodigoCondicion, getLabel: x => String(x.Descripcion), getSub: x => `${x.CodigoCondicion} · ${Number(x.DiasCdto) || 0} días`, icono: CalendarClock, titulo: 'Elegir condición', descripcion: 'Contado o crédito' })}
                         </Campo>
 
                         <Campo etiqueta="Almacén" requerido>
-                            {comboCampo({ k: 'almacen', items: cat?.almacenes ?? [], getKey: x => String(x.IdAlmacen), getLabel: x => String(x.Descripcion) })}
+                            {comboCampo({ k: 'almacen', items: cat?.almacenes ?? [], getKey: x => String(x.IdAlmacen), getLabel: x => String(x.Descripcion), getSub: x => `Cód. ${x.IdAlmacen}`, icono: Warehouse, titulo: 'Elegir almacén', descripcion: 'Dónde ingresa la mercadería' })}
                         </Campo>
 
                         <Campo etiqueta="Período" requerido>
-                            {comboCampo({ k: 'periodo', items: cat?.meses ?? [], getKey: x => x.Numero, getLabel: x => String(x.Mes) })}
+                            {comboCampo({ k: 'periodo', items: cat?.meses ?? [], getKey: x => x.Numero, getLabel: x => String(x.Mes), getSub: x => `Mes ${x.Numero}`, icono: CalendarDays, titulo: 'Elegir período', descripcion: 'Mes tributario' })}
                         </Campo>
 
                         <Campo etiqueta="Año" requerido>
-                            {comboCampo({ k: 'anio', items: cat?.anios ?? [], getKey: x => x.Anio, getLabel: x => String(x.Anio) })}
+                            {comboCampo({ k: 'anio', items: cat?.anios ?? [], getKey: x => x.Anio, getLabel: x => String(x.Anio), getSub: () => 'Ejercicio', icono: Calendar, titulo: 'Elegir año', descripcion: 'Ejercicio contable' })}
                         </Campo>
                     </Campos>
                 </Grupo>
@@ -333,16 +335,16 @@ export default function RegistroComprasPage() {
                            nota="La compra es al contado, así que estos cuatro datos pasan a ser obligatorios.">
                         <Campos>
                             <Campo etiqueta="Fecha de cancelación" requerido>
-                                <Input type="date" className="h-9" {...campo('fechaCancelacion')} />
+                                <Input type="date" className="h-[50px] rounded-xl" {...campo('fechaCancelacion')} />
                             </Campo>
                             <Campo etiqueta="Tipo de pago" requerido>
-                                {comboCampo({ k: 'tipoPago', items: cat?.tiposPago ?? [], getKey: x => x.Cod_Tipo_Amort, getLabel: x => String(x.Descripcion) })}
+                                {comboCampo({ k: 'tipoPago', items: cat?.tiposPago ?? [], getKey: x => x.Cod_Tipo_Amort, getLabel: x => String(x.Descripcion), getSub: x => x.Cod_Tipo_Amort, icono: Wallet, titulo: 'Elegir tipo de pago', descripcion: 'Cómo se pagó' })}
                             </Campo>
                             <Campo etiqueta="Centro de costos" requerido>
-                                {comboCampo({ k: 'centroCostos', items: cat?.centrosCosto ?? [], getKey: x => String(x.idCentroCostos), getLabel: x => String(x.Descripcion) })}
+                                {comboCampo({ k: 'centroCostos', items: cat?.centrosCosto ?? [], getKey: x => String(x.idCentroCostos), getLabel: x => String(x.Descripcion), getSub: x => x.Cod_CC, icono: Building2, titulo: 'Elegir centro', descripcion: 'Centro de costos' })}
                             </Campo>
                             <Campo etiqueta="Observación de cancelación" requerido>
-                                <Input className="h-9" {...campo('obsCancelacion')} />
+                                <Input className="h-[50px] rounded-xl" {...campo('obsCancelacion')} />
                             </Campo>
                         </Campos>
                     </Grupo>
@@ -371,39 +373,39 @@ export default function RegistroComprasPage() {
                         <div className="rounded-xl border border-border bg-background p-4 shadow-sm">
                         <Campos>
                             <Campo etiqueta="Clasificación de bienes">
-                                {comboCampo({ k: 'idClasificacionBienes', items: cat?.clasificacionBienes ?? [], getKey: x => String(x.idClasificacionBienes), getLabel: x => String(x.DescripcionBienes) })}
+                                {comboCampo({ k: 'idClasificacionBienes', items: cat?.clasificacionBienes ?? [], getKey: x => String(x.idClasificacionBienes), getLabel: x => String(x.DescripcionBienes), getSub: x => `Cód. ${x.idClasificacionBienes}`, icono: Tags, titulo: 'Elegir clasificación', descripcion: 'Tipo de bien' })}
                             </Campo>
                             <Campo etiqueta="Inafecto">
-                                <Input type="number" step="0.01" className="h-9 text-right tabular-nums" {...campo('inafecto')} />
+                                <Input type="number" step="0.01" className="h-[50px] rounded-xl text-right tabular-nums" {...campo('inafecto')} />
                             </Campo>
                             <Campo etiqueta="ICBPER">
-                                <Input type="number" step="0.01" className="h-9 text-right tabular-nums" {...campo('icbper')} />
+                                <Input type="number" step="0.01" className="h-[50px] rounded-xl text-right tabular-nums" {...campo('icbper')} />
                             </Campo>
                             <Campo etiqueta="Fecha de ingreso">
-                                <Input type="date" className="h-9" {...campo('fecIngreso')} />
+                                <Input type="date" className="h-[50px] rounded-xl" {...campo('fecIngreso')} />
                             </Campo>
 
                             <Campo etiqueta="Nº de depósito de detracción">
-                                <Input className="h-9" {...campo('nroDepositoDetra')} />
+                                <Input className="h-[50px] rounded-xl" {...campo('nroDepositoDetra')} />
                             </Campo>
                             <Campo etiqueta="Fecha de detracción">
-                                <Input type="date" className="h-9" {...campo('fechaDetra')} />
+                                <Input type="date" className="h-[50px] rounded-xl" {...campo('fechaDetra')} />
                             </Campo>
                             <Campo etiqueta="Serie de orden de compra">
-                                <Input className="h-9" {...campo('serieOC')} />
+                                <Input className="h-[50px] rounded-xl" {...campo('serieOC')} />
                             </Campo>
                             <Campo etiqueta="Nº de orden de compra">
-                                <Input className="h-9" {...campo('nrOC')} />
+                                <Input className="h-[50px] rounded-xl" {...campo('nrOC')} />
                             </Campo>
 
                             <Campo etiqueta="Entregado por">
-                                <Input className="h-9" {...campo('entregadoPor')} />
+                                <Input className="h-[50px] rounded-xl" {...campo('entregadoPor')} />
                             </Campo>
                             <Campo etiqueta="Responsable">
-                                <Input className="h-9" {...campo('responsable')} />
+                                <Input className="h-[50px] rounded-xl" {...campo('responsable')} />
                             </Campo>
                             <Campo etiqueta="Observaciones" className="sm:col-span-2">
-                                <Input className="h-9" {...campo('observaciones')} />
+                                <Input className="h-[50px] rounded-xl" {...campo('observaciones')} />
                             </Campo>
                         </Campos>
                         </div>
@@ -422,23 +424,6 @@ export default function RegistroComprasPage() {
                         <span className="rounded-full border bg-muted px-2 py-0.5 text-[11px] text-muted-foreground">
                             {c.filas.length} línea{c.filas.length !== 1 ? 's' : ''}
                         </span>
-                        <div className="ml-auto flex flex-wrap items-center gap-2">
-                            <Button variant="outline" size="sm"
-                                    className="gap-1.5 border-dashed border-blue-300 bg-blue-50 text-blue-700 hover:bg-blue-100 dark:border-blue-800 dark:bg-blue-950 dark:text-blue-300"
-                                    onClick={c.agregarFila} disabled={ro}>
-                                <Plus className="h-4 w-4" /> Agregar línea
-                            </Button>
-                            {marcadas > 0 && (
-                                <Button
-                                    variant="outline" size="sm"
-                                    className="gap-1.5 text-amber-700 border-amber-200 bg-amber-50 hover:bg-amber-100 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-300"
-                                    onClick={() => setConfirmEliminarLineas(true)}
-                                    disabled={ro || c.guardando || !c.clave}
-                                >
-                                    <Trash2 className="h-4 w-4" /> Eliminar {marcadas}
-                                </Button>
-                            )}
-                        </div>
                     </div>
 
                     <div className="p-4">
@@ -496,7 +481,8 @@ export default function RegistroComprasPage() {
                     </div>
 
                     {c.clave && (
-                        <div className="flex flex-wrap items-center gap-2 border-t border-border bg-gradient-to-r from-background to-muted/30 px-4 py-3">
+                        <div className="flex flex-wrap items-center gap-2 border-t border-border bg-muted/20 px-4 py-2.5">
+                            <span className="mr-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Documento</span>
                             <Button variant="outline" size="sm" className="gap-1.5"
                                     onClick={revisar} disabled={ro || revisando}
                                     title="Rehace el registro contable sumando el detalle">
@@ -505,12 +491,12 @@ export default function RegistroComprasPage() {
                             </Button>
                             <Button variant="outline" size="sm" className="gap-1.5"
                                     onClick={() => setSaldoAbierto(true)}>
-                                <Wallet className="h-4 w-4" /> Saldo del comprobante
+                                <Wallet className="h-4 w-4" /> Saldo
                             </Button>
                             <Button variant="outline" size="sm" className="gap-1.5"
                                     onClick={() => setPagosAbierto(true)} disabled={ro || c.esContado}
                                     title={c.esContado ? 'El documento es al contado' : 'Pagos a cuenta'}>
-                                <Wallet className="h-4 w-4" /> Pagos a cuenta
+                                <Banknote className="h-4 w-4" /> Pagos a cuenta
                             </Button>
                             <Button variant="outline" size="sm" className="gap-1.5"
                                     onClick={() => setTranspAbierto(true)} disabled={ro}>
@@ -519,18 +505,56 @@ export default function RegistroComprasPage() {
                             <Button variant="outline" size="sm" className="gap-1.5" onClick={imprimir}>
                                 <Printer className="h-4 w-4" /> Imprimir
                             </Button>
-
-                            {!ro && (
-                                <Button
-                                    variant="ghost" size="sm"
-                                    className="ml-auto gap-1.5 text-red-700 hover:bg-red-50 hover:text-red-800"
-                                    onClick={() => setConfirmEliminarDoc(true)}
-                                >
-                                    <X className="h-4 w-4" /> Eliminar este documento
-                                </Button>
-                            )}
                         </div>
                     )}
+
+                    {/* Acciones de edición y guardar, en el mismo orden que Libro Caja y Bancos */}
+                    <div className="flex flex-wrap items-center gap-2 border-t border-border bg-gradient-to-r from-background to-muted/30 p-4">
+                        <Button
+                            variant="outline" size="sm"
+                            className="gap-1.5 border-dashed border-blue-300 bg-blue-50 text-blue-700 hover:bg-blue-100 dark:border-blue-800 dark:bg-blue-950 dark:text-blue-300"
+                            onClick={c.agregarFila} disabled={ro}
+                        >
+                            <Plus className="h-4 w-4" /> Agregar línea
+                        </Button>
+
+                        <Button
+                            variant="outline" size="sm"
+                            className="gap-1.5 text-amber-700 border-amber-200 bg-amber-50 hover:bg-amber-100 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-300"
+                            onClick={() => setConfirmEliminarLineas(true)}
+                            disabled={ro || c.guardando || !c.clave || marcadas === 0}
+                            title={marcadas === 0 ? 'Marca la casilla de las líneas que quieras eliminar' : undefined}
+                        >
+                            <Trash2 className="h-4 w-4" /> Eliminar marcadas ({marcadas})
+                        </Button>
+
+                        {c.clave && !ro && (
+                            <Button
+                                variant="ghost" size="sm"
+                                className="gap-1.5 text-red-600 hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-950"
+                                onClick={() => setConfirmEliminarDoc(true)}
+                            >
+                                <X className="h-4 w-4" /> Eliminar documento
+                            </Button>
+                        )}
+
+                        <div className="ml-auto flex w-full items-center justify-end gap-2 sm:w-auto">
+                            {t.descuadrado && !ro && (
+                                <span className="mr-1 inline-flex items-center gap-1.5 text-xs text-red-700 dark:text-red-400">
+                                    <span className="h-2 w-2 rounded-full bg-red-500" /> No cuadra
+                                </span>
+                            )}
+                            <Button
+                                size="sm"
+                                className="w-full gap-1.5 bg-emerald-600 text-white shadow-md shadow-emerald-600/30 hover:bg-emerald-700 sm:w-auto"
+                                onClick={c.guardar}
+                                disabled={c.guardando || ro}
+                            >
+                                {c.guardando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                                Guardar
+                            </Button>
+                        </div>
+                    </div>
                 </section>
             </div>
 
