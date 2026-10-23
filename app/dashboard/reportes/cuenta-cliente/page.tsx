@@ -6,7 +6,6 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Check, ChevronDown, ChevronRight, ChevronsDownUp, ChevronsUpDown, Search, User, X, Calendar as CalendarIcon, MapPin, Phone, Building2 } from "lucide-react"
 import { toast } from "@/app/hooks/useToast"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
 import { Calendar } from "@/components/ui/calendar"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
@@ -14,20 +13,14 @@ import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/context/authContext"
-import { searchClientsRequest, estadoCuentaClienteRequest } from "@/app/api/reports"
+import { estadoCuentaClienteRequest } from "@/app/api/reports"
 
 import { ExportEstadoCuentaPdf } from "@/components/reporte/exportEstadoCuentaPdf"
 import { DocumentoPdfLink } from "@/components/reporte/DocumentoPdfLink"
-
-interface IAutocompleteClient {
-    RUC: string;
-    Nombre: string;
-}
+import { BuscadorClienteReporte, ClienteBusqueda } from "@/components/reporte/BuscadorClienteReporte"
 
 export default function EstadoCuentaClientePage() {
     const auth = useAuth();
-    const isRepresentative = auth.isRepresentante();
-    const isVendor = auth.isVendedor();
 
     const [loading, setLoading] = useState(false);
     const [data, setData] = useState<any>(null);
@@ -46,33 +39,7 @@ export default function EstadoCuentaClientePage() {
     const [selectedClientRuc, setSelectedClientRuc] = useState<string>("");
     const [selectedClientName, setSelectedClientName] = useState<string>("");
 
-    const [openClientAutocomplete, setOpenClientAutocomplete] = useState(false);
-    const [searchQuery, setSearchQuery] = useState("");
-    const [clientOptions, setClientOptions] = useState<IAutocompleteClient[]>([]);
-    const [loadingOptions, setLoadingOptions] = useState(false);
-
-    useEffect(() => {
-        const timer = setTimeout(async () => {
-            if (searchQuery.length > 2) {
-                setLoadingOptions(true);
-                try {
-                    const vendedorCode = isVendor ? (auth.user?.codigo || null) : null;
-                    const represCode = isRepresentative ? (auth.user?.codRepres || null) : null;
-                    const res = await searchClientsRequest(searchQuery, vendedorCode, represCode);
-                    if (res.status === 200) {
-                        setClientOptions(res.data.data || []);
-                    }
-                } catch (error) {
-                    console.error("Error buscando cliente-cobranza:", error);
-                } finally {
-                    setLoadingOptions(false);
-                }
-            } else {
-                setClientOptions([]);
-            }
-        }, 400);
-        return () => clearTimeout(timer);
-    }, [searchQuery, auth.user]);
+    const [clienteSel, setClienteSel] = useState<ClienteBusqueda | null>(null);
 
     const handleSearch = async () => {
         if (!selectedClientRuc) {
@@ -127,51 +94,15 @@ export default function EstadoCuentaClientePage() {
                                 <User className="w-4 h-4 text-muted-foreground" />
                                 <Label>Buscar Cliente</Label>
                             </div>
-                            <Popover open={openClientAutocomplete} onOpenChange={setOpenClientAutocomplete}>
-                                <div className="relative w-full">
-                                    <PopoverTrigger asChild>
-                                        <Button variant="outline" role="combobox" className={cn("w-full justify-between h-10 font-normal overflow-hidden", selectedClientName && "pr-8 bg-background")}>
-                                            <span className="truncate">
-                                                {selectedClientName ? `${selectedClientRuc} - ${selectedClientName}` : "Buscar por Nombre o RUC..."}
-                                            </span>
-                                            {!selectedClientName && <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />}
-                                        </Button>
-                                    </PopoverTrigger>
-                                    {selectedClientName && (
-                                        <div
-                                            className="absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer p-1 text-muted-foreground hover:text-red-500 hover:bg-red-50 rounded-md z-10"
-                                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); setSelectedClientRuc(""); setSelectedClientName(""); setSearchQuery(""); setData(null); }}
-                                        >
-                                            <X className="h-4 w-4" />
-                                        </div>
-                                    )}
-                                </div>
-                                <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
-                                    <Command shouldFilter={false}>
-                                        <CommandInput placeholder="Escriba Nombre o RUC..." value={searchQuery} onValueChange={setSearchQuery} />
-                                        <CommandList>
-                                            {loadingOptions && <div className="p-4 text-sm text-center text-muted-foreground">Buscando...</div>}
-                                            {!loadingOptions && clientOptions.length === 0 && searchQuery.length > 2 && <CommandEmpty>No se encontraron clientes.</CommandEmpty>}
-                                            <CommandGroup>
-                                                {clientOptions.map((client) => (
-                                                    <CommandItem
-                                                        key={client.RUC}
-                                                        value={client.Nombre}
-                                                        onSelect={() => {
-                                                            setSelectedClientRuc(client.RUC);
-                                                            setSelectedClientName(client.Nombre);
-                                                            setOpenClientAutocomplete(false);
-                                                        }}
-                                                    >
-                                                        <Check className={cn("mr-2 h-4 w-4 flex-shrink-0", selectedClientRuc === client.RUC ? "opacity-100" : "opacity-0")} />
-                                                        <span className="truncate">{client.RUC} - {client.Nombre}</span>
-                                                    </CommandItem>
-                                                ))}
-                                            </CommandGroup>
-                                        </CommandList>
-                                    </Command>
-                                </PopoverContent>
-                            </Popover>
+                            <BuscadorClienteReporte
+                                valor={clienteSel}
+                                onChange={c => {
+                                    setClienteSel(c);
+                                    setSelectedClientRuc(c?.RUC ?? "");
+                                    setSelectedClientName(c?.Nombre ?? "");
+                                    if (!c) setData(null);
+                                }}
+                            />
                         </div>
                         <div className="flex flex-col gap-1 sm:col-span-12 lg:col-span-3">
                             <div className="flex items-center gap-1.5 mb-1">

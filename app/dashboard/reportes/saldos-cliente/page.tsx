@@ -13,7 +13,8 @@ import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/context/authContext"
-import { searchClientsRequest, fetchAvailableZones } from "@/app/api/reports"
+import { fetchAvailableZones } from "@/app/api/reports"
+import { BuscadorClienteReporte, ClienteBusqueda } from "@/components/reporte/BuscadorClienteReporte"
 import apiClient from "@/app/api/client"
 import { ClientService } from "@/app/services/client/ClientService"
 
@@ -22,11 +23,6 @@ import { agruparPorVendedor, esSoles } from "./agrupar"
 import { DocumentoPdfLink } from "@/components/reporte/DocumentoPdfLink"
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-
-interface IAutocompleteClient {
-    RUC: string;
-    Nombre: string;
-}
 
 /** Datos de contacto y crédito de un cliente, sacados del listado de clientes. */
 interface DatosCliente {
@@ -98,10 +94,7 @@ export default function SaldoCobrarClientePage() {
     const [selectedZone, setSelectedZone] = useState<string>("");
     const [selectedSeller, setSelectedSeller] = useState<string>("");
 
-    const [openClientAutocomplete, setOpenClientAutocomplete] = useState(false);
-    const [searchQuery, setSearchQuery] = useState("");
-    const [clientOptions, setClientOptions] = useState<IAutocompleteClient[]>([]);
-    const [loadingOptions, setLoadingOptions] = useState(false);
+    const [clienteSel, setClienteSel] = useState<ClienteBusqueda | null>(null);
 
     const [zones, setZones] = useState<any[]>([]);
     const [sellers, setSellers] = useState<any[]>([]);
@@ -139,30 +132,6 @@ export default function SaldoCobrarClientePage() {
         };
         loadCatalogs();
     }, [isManagerOrAdmin, auth.user]);
-
-    useEffect(() => {
-        const timer = setTimeout(async () => {
-            if (searchQuery.length > 2) {
-                setLoadingOptions(true);
-                try {
-                    const vendedorCode = isVendor ? (auth.user?.codigo || null) : null;
-                    const represCode = isRepresentative ? (auth.user?.codRepres || null) : null;
-                    const res = await searchClientsRequest(searchQuery, vendedorCode, represCode);
-                    if (res.status === 200) {
-                        setClientOptions(res.data.data || []);
-                    }
-                } catch (error) {
-                    console.error("Error buscando cliente-cobranza:", error);
-                } finally {
-                    setLoadingOptions(false);
-                }
-            } else {
-                setClientOptions([]);
-            }
-        }, 400);
-
-        return () => clearTimeout(timer);
-    }, [searchQuery, auth.user]);
 
     const handleSearch = async () => {
         setLoading(true);
@@ -427,51 +396,15 @@ export default function SaldoCobrarClientePage() {
                                 <User className="w-4 h-4 text-muted-foreground" />
                                 <Label>Cliente (Opcional)</Label>
                             </div>
-                            <Popover open={openClientAutocomplete} onOpenChange={setOpenClientAutocomplete}>
-                                <div className="relative w-full">
-                                    <PopoverTrigger asChild>
-                                        <Button variant="outline" role="combobox" className={cn("w-full justify-between h-10 font-normal overflow-hidden", selectedClientName && "pr-8 bg-background")}>
-                                            <span className="truncate">
-                                                {selectedClientName ? `${selectedClientRuc} - ${selectedClientName}` : "Todos los cliente-cobranza..."}
-                                            </span>
-                                            {!selectedClientName && <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />}
-                                        </Button>
-                                    </PopoverTrigger>
-                                    {selectedClientName && (
-                                        <div
-                                            className="absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer p-1 text-muted-foreground hover:text-red-500 hover:bg-red-50 rounded-md z-10"
-                                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); setSelectedClientRuc(""); setSelectedClientName(""); setSearchQuery(""); }}
-                                        >
-                                            <X className="h-4 w-4" />
-                                        </div>
-                                    )}
-                                </div>
-                                <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
-                                    <Command shouldFilter={false}>
-                                        <CommandInput placeholder="Escriba Nombre o RUC..." value={searchQuery} onValueChange={setSearchQuery} />
-                                        <CommandList>
-                                            {loadingOptions && <div className="p-4 text-sm text-center text-muted-foreground">Buscando...</div>}
-                                            {!loadingOptions && clientOptions.length === 0 && searchQuery.length > 2 && <CommandEmpty>No se encontraron clientes.</CommandEmpty>}
-                                            <CommandGroup>
-                                                {clientOptions.map((client) => (
-                                                    <CommandItem
-                                                        key={client.RUC}
-                                                        value={client.Nombre}
-                                                        onSelect={() => {
-                                                            setSelectedClientRuc(client.RUC);
-                                                            setSelectedClientName(client.Nombre);
-                                                            setOpenClientAutocomplete(false);
-                                                        }}
-                                                    >
-                                                        <Check className={cn("mr-2 h-4 w-4 flex-shrink-0", selectedClientRuc === client.RUC ? "opacity-100" : "opacity-0")} />
-                                                        <span className="truncate">{client.RUC} - {client.Nombre}</span>
-                                                    </CommandItem>
-                                                ))}
-                                            </CommandGroup>
-                                        </CommandList>
-                                    </Command>
-                                </PopoverContent>
-                            </Popover>
+                            <BuscadorClienteReporte
+                                valor={clienteSel}
+                                descripcion="Opcional · por RUC, nombre o nombre comercial"
+                                onChange={c => {
+                                    setClienteSel(c);
+                                    setSelectedClientRuc(c?.RUC ?? "");
+                                    setSelectedClientName(c?.Nombre ?? "");
+                                }}
+                            />
                         </div>
 
                         <div className={`flex flex-col gap-1 ${isManagerOrAdmin ? 'md:col-span-2' : 'md:col-span-3'}`}>

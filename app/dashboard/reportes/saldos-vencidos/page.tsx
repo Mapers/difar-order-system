@@ -16,6 +16,7 @@ const calcDiasVencidos = (fechaVcto: string): number => {
     } catch { return 0 }
 }
 import { toast } from "@/app/hooks/useToast"
+import { BuscadorClienteReporte, ClienteBusqueda } from "@/components/reporte/BuscadorClienteReporte"
 import { ExportExpiredBalancesPdf } from "@/components/reporte/exportExpiredBalancesPdf"
 import { ZoneReportSkeleton } from "@/components/skeleton/ZoneReportSkeleton"
 import { VendedorVencido } from "@/app/types/report-types"
@@ -44,8 +45,6 @@ export default function ExpiredBalancesPage() {
     const [selectedZona, setSelectedZona] = useState<string>("")
     const [openZona, setOpenZona] = useState(false)
     const [selectedCliente, setSelectedCliente] = useState<string>("")
-    const [openCliente, setOpenCliente] = useState(false)
-    const [searchClienteQuery, setSearchClienteQuery] = useState("")
 
     const [zonasOptions, setZonasOptions] = useState<FilterOptions[]>([])
     const [clientesOptions, setClientesOptions] = useState<FilterOptions[]>([])
@@ -155,7 +154,6 @@ export default function ExpiredBalancesPage() {
                 setActiveTab("todos");
                 setSelectedZona("")
                 setSelectedCliente("")
-                setSearchClienteQuery("")
             }
         } catch (error) {
             console.error(error);
@@ -165,12 +163,12 @@ export default function ExpiredBalancesPage() {
         }
     }
 
-    const filteredClientOptions = useMemo(() => {
-        if (!searchClienteQuery) return clientesOptions;
-        return clientesOptions.filter(cliente =>
-            cliente.nombre.toLowerCase().includes(searchClienteQuery.toLowerCase())
-        );
-    }, [clientesOptions, searchClienteQuery]);
+    const clientesBusqueda: ClienteBusqueda[] = useMemo(() => clientesOptions.map(c => ({
+        codigo:  c.id,
+        Nombre:  c.nombre,
+        detalle: c.id.slice(c.nombre.length + 1) || null,
+    })), [clientesOptions])
+
 
     const tabValues = ["todos", ...data.map(v => v.Vendedor)];
 
@@ -245,58 +243,12 @@ export default function ExpiredBalancesPage() {
                                 <Label>Cliente</Label>
                             </div>
 
-                            <Popover open={openCliente} onOpenChange={setOpenCliente}>
-                                <div className="relative w-full">
-                                    <PopoverTrigger asChild>
-                                        <Button
-                                            variant="outline"
-                                            role="combobox"
-                                            className={cn("w-full justify-between h-10 font-normal overflow-hidden", selectedCliente && "pr-8")}
-                                        >
-                                            <span className="truncate">
-                                                {selectedCliente ? clientesOptions.find(c => c.id === selectedCliente)?.nombre : "Todos los cliente-cobranza"}
-                                            </span>
-                                            {!selectedCliente && <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />}
-                                        </Button>
-                                    </PopoverTrigger>
-
-                                    {selectedCliente && (
-                                        <div
-                                            className="absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer p-1 text-muted-foreground hover:text-red-500 hover:bg-red-50 rounded-md z-10"
-                                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); setSelectedCliente(""); setSearchClienteQuery(""); }}
-                                        >
-                                            <X className="h-4 w-4" />
-                                        </div>
-                                    )}
-                                </div>
-
-                                <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
-                                    <Command shouldFilter={false}>
-                                        <CommandInput placeholder="Buscar cliente..." value={searchClienteQuery} onValueChange={setSearchClienteQuery} />
-                                        <CommandList>
-                                            {filteredClientOptions.length === 0 && searchClienteQuery && (
-                                                <CommandEmpty>No se encontraron clientes.</CommandEmpty>
-                                            )}
-                                            <CommandGroup>
-                                                {filteredClientOptions.map((cliente) => (
-                                                    <CommandItem
-                                                        key={cliente.id}
-                                                        value={cliente.nombre}
-                                                        onSelect={() => {
-                                                            setSelectedCliente(selectedCliente === cliente.id ? "" : cliente.id)
-                                                            setOpenCliente(false)
-                                                            setSearchClienteQuery("")
-                                                        }}
-                                                    >
-                                                        <Check className={cn("mr-2 h-4 w-4 flex-shrink-0", selectedCliente === cliente.id ? "opacity-100" : "opacity-0")} />
-                                                        <span className="truncate">{cliente.nombre}</span>
-                                                    </CommandItem>
-                                                ))}
-                                            </CommandGroup>
-                                        </CommandList>
-                                    </Command>
-                                </PopoverContent>
-                            </Popover>
+                            <BuscadorClienteReporte
+                                valor={clientesBusqueda.find(c => c.codigo === selectedCliente) ?? null}
+                                clientes={clientesBusqueda}
+                                descripcion="Entre los clientes del resultado"
+                                onChange={c => setSelectedCliente(c?.codigo ?? "")}
+                            />
                         </div>
                     </div>
 

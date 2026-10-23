@@ -16,7 +16,8 @@ import { cn } from "@/lib/utils"
 import { toast } from "@/app/hooks/useToast"
 import { useAuth } from "@/context/authContext"
 import apiClient from "@/app/api/client"
-import { hojaEnBlancoRequest, searchClientsRequest } from "@/app/api/reports"
+import { hojaEnBlancoRequest } from "@/app/api/reports"
+import { BuscadorClienteReporte, ClienteBusqueda } from "@/components/reporte/BuscadorClienteReporte"
 
 /**
  * Una fila por documento 0800, con las columnas de la exportación a PDF
@@ -72,10 +73,7 @@ export default function HojaEnBlancoPage() {
     const [selectedVends, setSelectedVends] = useState<string[]>([])
     const [openVend, setOpenVend] = useState(false)
 
-    const [searchQuery, setSearchQuery]           = useState('')
-    const [clientOptions, setClientOptions]       = useState<any[]>([])
-    const [loadingOptions, setLoadingOptions]     = useState(false)
-    const [openClient, setOpenClient]             = useState(false)
+    const [clienteSel, setClienteSel]             = useState<ClienteBusqueda | null>(null)
     const [selectedClientRuc, setSelectedClientRuc]   = useState('')
     const [selectedClientName, setSelectedClientName] = useState('')
 
@@ -93,26 +91,6 @@ export default function HojaEnBlancoPage() {
                 variant: "destructive",
             }))
     }, [isManagerOrAdmin])
-
-    // Autocomplete de cliente, mismo criterio que Saldos por Cobrar:
-    // recién busca a partir de 3 caracteres y con debounce.
-    useEffect(() => {
-        const timer = setTimeout(async () => {
-            if (searchQuery.length <= 2) { setClientOptions([]); return }
-            setLoadingOptions(true)
-            try {
-                const vendedorCode = isVendor ? (auth.user?.codigo || null) : null
-                const represCode   = isRepresentative ? (auth.user?.codRepres || null) : null
-                const res = await searchClientsRequest(searchQuery, vendedorCode, represCode)
-                if (res.status === 200) setClientOptions(res.data.data || [])
-            } catch {
-                setClientOptions([])
-            } finally {
-                setLoadingOptions(false)
-            }
-        }, 400)
-        return () => clearTimeout(timer)
-    }, [searchQuery, isVendor, isRepresentative, auth.user])
 
     const toggleVend = (cod: string) =>
         setSelectedVends(prev => prev.includes(cod) ? prev.filter(x => x !== cod) : [...prev, cod])
@@ -182,53 +160,15 @@ export default function HojaEnBlancoPage() {
                                 <Label className="flex items-center gap-2 text-sm font-semibold text-foreground">
                                     <User className="h-4 w-4 shrink-0" /> Cliente (opcional)
                                 </Label>
-                                <Popover open={openClient} onOpenChange={setOpenClient}>
-                                    <div className="relative w-full">
-                                        <PopoverTrigger asChild>
-                                            <Button variant="outline" role="combobox"
-                                                    className={cn("h-10 w-full justify-between overflow-hidden bg-background font-normal", selectedClientName && "pr-8")}>
-                                                <span className="truncate text-sm">
-                                                    {selectedClientName ? `${selectedClientRuc} - ${selectedClientName}` : "Todos los clientes..."}
-                                                </span>
-                                                {!selectedClientName && <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />}
-                                            </Button>
-                                        </PopoverTrigger>
-                                        {selectedClientName && (
-                                            <div
-                                                className="absolute right-2 top-1/2 z-10 -translate-y-1/2 cursor-pointer rounded-md p-1 text-muted-foreground hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-950/50 dark:hover:text-red-400"
-                                                onClick={e => { e.preventDefault(); e.stopPropagation(); setSelectedClientRuc(''); setSelectedClientName(''); setSearchQuery('') }}
-                                            >
-                                                <X className="h-4 w-4" />
-                                            </div>
-                                        )}
-                                    </div>
-                                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
-                                        <Command shouldFilter={false}>
-                                            <CommandInput placeholder="Escriba nombre o RUC..." value={searchQuery} onValueChange={setSearchQuery} />
-                                            <CommandList>
-                                                {loadingOptions && (
-                                                    <div className="p-4 text-center text-sm text-muted-foreground">Buscando...</div>
-                                                )}
-                                                {!loadingOptions && clientOptions.length === 0 && searchQuery.length > 2 && (
-                                                    <CommandEmpty>No se encontraron clientes.</CommandEmpty>
-                                                )}
-                                                <CommandGroup>
-                                                    {clientOptions.map(client => (
-                                                        <CommandItem key={client.RUC} value={client.Nombre}
-                                                                     onSelect={() => {
-                                                                         setSelectedClientRuc(client.RUC)
-                                                                         setSelectedClientName(client.Nombre)
-                                                                         setOpenClient(false)
-                                                                     }}>
-                                                            <Check className={cn("mr-2 h-4 w-4 shrink-0", selectedClientRuc === client.RUC ? "opacity-100" : "opacity-0")} />
-                                                            <span className="truncate">{client.RUC} - {client.Nombre}</span>
-                                                        </CommandItem>
-                                                    ))}
-                                                </CommandGroup>
-                                            </CommandList>
-                                        </Command>
-                                    </PopoverContent>
-                                </Popover>
+                                <BuscadorClienteReporte
+                                    valor={clienteSel}
+                                    descripcion="Opcional · por RUC, nombre o nombre comercial"
+                                    onChange={c => {
+                                        setClienteSel(c)
+                                        setSelectedClientRuc(c?.RUC ?? '')
+                                        setSelectedClientName(c?.Nombre ?? '')
+                                    }}
+                                />
                             </div>
 
                             {/* Vendedores (solo admin) */}
