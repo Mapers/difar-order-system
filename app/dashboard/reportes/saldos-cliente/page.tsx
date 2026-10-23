@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
-import { Check, ChevronDown, Search, User, X, Calendar as CalendarIcon, MapPin, Users, Phone, Mail, Store, CreditCard, Ban } from "lucide-react"
+import { Check, ChevronDown, ChevronsDownUp, ChevronsUpDown, Search, User, X, Calendar as CalendarIcon, MapPin, Users, Phone, Mail, Store, CreditCard, Ban } from "lucide-react"
 import { toast } from "@/app/hooks/useToast"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
@@ -18,6 +18,7 @@ import apiClient from "@/app/api/client"
 import { ClientService } from "@/app/services/client/ClientService"
 
 import { ExportSaldoCobrarPdf } from "@/components/reporte/exportSaldoCobrarPdf"
+import { agruparPorVendedor, esSoles } from "./agrupar"
 import { DocumentoPdfLink } from "@/components/reporte/DocumentoPdfLink"
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -259,6 +260,30 @@ export default function SaldoCobrarClientePage() {
         }
     };
 
+    // El reporte viene por cliente; en pantalla (y en el PDF) se muestra por
+    // vendedor -> zona -> cliente.
+    const grupos = useMemo(() => agruparPorVendedor(data), [data]);
+
+    // Zonas abiertas del acordeón. Al buscar empiezan cerradas para ver el
+    // resumen por zona; si un vendedor tiene una sola zona, se abre.
+    const [zonasAbiertas, setZonasAbiertas] = useState<Set<string>>(new Set());
+    useEffect(() => {
+        const abiertas = new Set<string>();
+        grupos.forEach(v => { if (v.zonas.length === 1) abiertas.add(`${v.clave}|${v.zonas[0].nombre}`); });
+        setZonasAbiertas(abiertas);
+    }, [grupos]);
+
+    const cambiarZonas = (claves: string[], abrir: boolean) => {
+        setZonasAbiertas(prev => {
+            const n = new Set(prev);
+            claves.forEach(k => abrir ? n.add(k) : n.delete(k));
+            return n;
+        });
+    };
+
+    const iniciales = (nombre: string) =>
+        nombre.split(/\s+/).filter(Boolean).slice(0, 2).map(p => p[0]).join('').toUpperCase() || '?';
+
     const formatMoney = (amount: number) => amount.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     const formatDateToDDMMYYYY = (dateString: string): string => {
         if (!dateString) return '-';
@@ -268,6 +293,123 @@ export default function SaldoCobrarClientePage() {
             return dateString;
         } catch { return dateString; }
     };
+
+
+    const renderCliente = (cliente: any, soles: number, dolares: number) => (
+        <div className="grid grid-cols-1 items-center gap-3 border-b border-border bg-muted/40 px-3.5 py-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)_auto]">
+            <div className="min-w-0">
+                <h3 className="text-sm font-extrabold text-foreground">{cliente.Cliente}</h3>
+                <div className="mt-1 flex flex-wrap gap-1.5">
+                    <span className="rounded-md border bg-background px-1.5 py-0.5 text-[11px] text-muted-foreground">
+                        <span className="mr-1 font-semibold text-foreground">RUC</span>{cliente.RUC}
+                    </span>
+                    {cliente.NombreComercial && (
+                        <span className="inline-flex items-center gap-1 rounded-md border bg-background px-1.5 py-0.5 text-[11px] text-muted-foreground">
+                            <Store className="h-3 w-3" /> {cliente.NombreComercial}
+                        </span>
+                    )}
+                </div>
+            </div>
+            <div className="flex min-w-0 flex-wrap items-center gap-x-3.5 gap-y-1 text-xs text-muted-foreground">
+                <span className="inline-flex min-w-0 items-center gap-1"><MapPin className="h-3.5 w-3.5 shrink-0" />{cliente.Direccion || 'Sin dirección'}</span>
+                <span className="inline-flex items-center gap-1"><Phone className="h-3.5 w-3.5 shrink-0" />{cliente.Telefono || 'Sin teléfono'}</span>
+                <span className="inline-flex min-w-0 items-center gap-1 break-all"><Mail className="h-3.5 w-3.5 shrink-0" />{cliente.Correo || 'Sin correo'}</span>
+                {cliente.LineaCredito == null ? null : Number(cliente.LineaCredito) > 0 ? (
+                    <span className="inline-flex items-center gap-1 rounded-md border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-300">
+                        <CreditCard className="h-3 w-3" /> Línea {fmtSoles(Number(cliente.LineaCredito))}
+                    </span>
+                ) : (
+                    <span className="inline-flex items-center gap-1 rounded-md border border-red-200 bg-red-50 px-2 py-0.5 text-[11px] font-bold text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-300">
+                        <Ban className="h-3 w-3" /> Sin línea de crédito
+                    </span>
+                )}
+            </div>
+            <div className="flex items-baseline justify-between gap-3 md:block md:text-right">
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Saldo cliente</p>
+                <p className="text-sm font-extrabold text-blue-700 dark:text-blue-400">
+                    S/ {formatMoney(soles)}
+                    {dolares > 0 && <span className="ml-2 text-green-700 dark:text-green-400">US$ {formatMoney(dolares)}</span>}
+                </p>
+            </div>
+        </div>
+    );
+
+    const renderDocumentos = (documentos: any[]) => (
+        <>
+            <div className="hidden md:block overflow-x-auto">
+                <table className="w-full text-xs text-left text-muted-foreground">
+                    <thead className="text-[10px] text-muted-foreground uppercase border-b border-border">
+                    <tr>
+                        <th className="px-3 py-2 font-bold whitespace-nowrap">Emisión</th>
+                        <th className="px-3 py-2 font-bold whitespace-nowrap">Vencimiento</th>
+                        <th className="px-3 py-2 font-bold whitespace-nowrap">Documento</th>
+                        <th className="px-3 py-2 font-bold whitespace-nowrap">Nro Doc</th>
+                        <th className="px-3 py-2 font-bold text-center">M</th>
+                        <th className="px-3 py-2 font-bold text-right">Provisión</th>
+                        <th className="px-3 py-2 font-bold text-right">Amortización</th>
+                        <th className="px-3 py-2 font-bold text-right text-blue-700">Saldo S/.</th>
+                        <th className="px-3 py-2 font-bold text-right text-green-700">Saldo US$</th>
+                    </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border">
+                    {documentos.map((doc: any, dIdx: number) => {
+                        const isSoles = esSoles(doc);
+                        return (
+                            <tr key={dIdx} className="hover:bg-muted transition-colors">
+                                <td className="px-3 py-2 whitespace-nowrap">{formatDateToDDMMYYYY(doc.Fecha_Emision)}</td>
+                                <td className="px-3 py-2 whitespace-nowrap text-red-600 font-medium">{formatDateToDDMMYYYY(doc.Fecha_Vcto)}</td>
+                                <td className="px-3 py-2 font-medium">{doc.TipoDocumento}</td>
+                                <td className="px-3 py-2 font-mono font-semibold">
+                                    <DocumentoPdfLink numeroComprobante={doc.SerieDoc && doc.NumeroDoc ? `${doc.SerieDoc}-${doc.NumeroDoc}` : null} existeComprobante={!!doc.existeComprobante} />
+                                </td>
+                                <td className="px-3 py-2 text-center font-bold">{doc.Moneda}</td>
+                                <td className="px-3 py-2 text-right">{formatMoney(doc.SumaProvision)}</td>
+                                <td className="px-3 py-2 text-right">{formatMoney(doc.SumaAmortizacion)}</td>
+                                <td className="px-3 py-2 text-right font-bold text-blue-700">
+                                    {isSoles ? formatMoney(doc.Saldo) : '-'}
+                                </td>
+                                <td className="px-3 py-2 text-right font-bold text-green-700">
+                                    {!isSoles ? formatMoney(doc.Saldo) : '-'}
+                                </td>
+                            </tr>
+                        )
+                    })}
+                    </tbody>
+                </table>
+            </div>
+
+            <div className="grid grid-cols-1 gap-2 p-2.5 md:hidden">
+                {documentos.map((doc: any, dIdx: number) => {
+                    const isSoles = esSoles(doc);
+                    return (
+                        <div key={dIdx} className="rounded-lg border border-border bg-muted/30 p-3 flex flex-col gap-2.5">
+                            <div className="flex justify-between items-start gap-2">
+                                <div className="min-w-0">
+                                    <span className="text-[10px] uppercase font-bold text-muted-foreground">{doc.TipoDocumento}</span>
+                                    <p className="font-mono font-bold text-sm text-foreground">
+                                        <DocumentoPdfLink numeroComprobante={doc.SerieDoc && doc.NumeroDoc ? `${doc.SerieDoc}-${doc.NumeroDoc}` : null} existeComprobante={!!doc.existeComprobante} />
+                                    </p>
+                                </div>
+                                <Badge variant="outline" className="font-bold">{doc.Moneda}</Badge>
+                            </div>
+                            <div className="grid grid-cols-2 gap-2 text-xs">
+                                <div><span className="text-muted-foreground">Emisión:</span><p className="font-medium text-foreground">{formatDateToDDMMYYYY(doc.Fecha_Emision)}</p></div>
+                                <div><span className="text-muted-foreground">Vcto:</span><p className="font-medium text-red-600">{formatDateToDDMMYYYY(doc.Fecha_Vcto)}</p></div>
+                                <div><span className="text-muted-foreground">Prov:</span><p className="font-medium">{formatMoney(doc.SumaProvision)}</p></div>
+                                <div><span className="text-muted-foreground">Amort:</span><p className="font-medium">{formatMoney(doc.SumaAmortizacion)}</p></div>
+                            </div>
+                            <div className="flex justify-between items-center pt-2 border-t border-border">
+                                <span className="text-xs font-bold uppercase text-muted-foreground">Saldo</span>
+                                <span className={cn("text-base font-bold", isSoles ? "text-blue-700" : "text-green-700")}>
+                                    {doc.Moneda} {formatMoney(doc.Saldo)}
+                                </span>
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+        </>
+    );
 
     return (
         <div className="grid grid-cols-1 gap-6 p-4 md:p-6">
@@ -487,152 +629,100 @@ export default function SaldoCobrarClientePage() {
                             <p className="text-muted-foreground font-medium">Buscando documentos, por favor espera...</p>
                         </div>
                     ) : data ? (
-                        <div className="space-y-8">
+                        <div className="space-y-6">
 
-                            {data.Clientes.map((cliente: any, cIdx: number) => (
-                                <div key={cIdx} className="space-y-4">
-                                    <div className="bg-background p-4 rounded-xl border border-border shadow-sm grid grid-cols-1 gap-4 md:grid-cols-[1fr_1.5fr]">
-                                        <div className="min-w-0">
-                                            <h2 className="text-lg font-bold text-foreground">{cliente.Cliente}</h2>
-                                            <span className="mt-1.5 inline-flex rounded-md border bg-muted px-2 py-0.5 text-xs text-muted-foreground">
-                                                <span className="mr-1 font-semibold text-foreground">RUC</span>{cliente.RUC}
-                                            </span>
-                                            <DatoCliente icono={Store} etiqueta="Nombre comercial" className="mt-3">
-                                                {cliente.NombreComercial
-                                                    ? <span className="font-semibold">{cliente.NombreComercial}</span>
-                                                    : <span className="text-muted-foreground">Sin nombre comercial</span>}
-                                            </DatoCliente>
-                                        </div>
-                                        <div className="grid grid-cols-1 gap-x-5 gap-y-3 sm:grid-cols-2">
-                                            <DatoCliente icono={MapPin} etiqueta="Dirección" className="sm:col-span-2">
-                                                {cliente.Direccion || <span className="text-muted-foreground">Sin dirección</span>}
-                                            </DatoCliente>
-                                            <DatoCliente icono={Phone} etiqueta="Teléfono">
-                                                {cliente.Telefono
-                                                    ? <span className="font-mono">{cliente.Telefono}</span>
-                                                    : <span className="text-muted-foreground">Sin teléfono</span>}
-                                            </DatoCliente>
-                                            <DatoCliente icono={Mail} etiqueta="Correo">
-                                                {cliente.Correo
-                                                    ? <span className="break-all">{cliente.Correo}</span>
-                                                    : <span className="text-muted-foreground">Sin correo</span>}
-                                            </DatoCliente>
-                                            <DatoCliente icono={CreditCard} etiqueta="Línea de crédito" className="sm:col-span-2">
-                                                {cliente.LineaCredito == null ? (
-                                                    <span className="text-muted-foreground">No disponible</span>
-                                                ) : Number(cliente.LineaCredito) > 0 ? (
-                                                    <span className="mt-0.5 flex items-center justify-between gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-300">
-                                                        Línea aprobada
-                                                        <span className="font-mono text-sm font-bold">{fmtSoles(Number(cliente.LineaCredito))}</span>
-                                                    </span>
-                                                ) : (
-                                                    <span className="mt-0.5 flex items-center gap-1.5 rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-300">
-                                                        <Ban className="h-3.5 w-3.5" /> No tiene línea de crédito
-                                                    </span>
+                            {grupos.map(vend => {
+                                const claves = vend.zonas.map(z => `${vend.clave}|${z.nombre}`)
+                                return (
+                                    <div key={vend.clave} className="overflow-hidden rounded-xl border border-border bg-background shadow-sm">
+                                        {/* Cabecera del vendedor */}
+                                        <div className="flex flex-wrap items-center gap-3 bg-gradient-to-r from-slate-800 to-slate-700 px-4 py-3.5 text-white sm:px-5">
+                                            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-blue-500 text-sm font-extrabold">
+                                                {iniciales(vend.nombre)}
+                                            </div>
+                                            <div className="min-w-0 flex-1 basis-48">
+                                                <p className="line-clamp-2 text-base font-extrabold leading-tight sm:text-lg">{vend.nombre}</p>
+                                                <p className="text-xs text-slate-300">
+                                                    {vend.codigo ? `Vendedor ${vend.codigo} · ` : ''}
+                                                    {vend.zonas.length} zona{vend.zonas.length !== 1 ? 's' : ''} · {vend.nClientes} cliente{vend.nClientes !== 1 ? 's' : ''} · {vend.nDocumentos} documento{vend.nDocumentos !== 1 ? 's' : ''}
+                                                </p>
+                                            </div>
+                                            <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:flex-nowrap">
+                                                {vend.zonas.length > 1 && (
+                                                    <div className="flex gap-1.5">
+                                                        <button type="button" onClick={() => cambiarZonas(claves, true)}
+                                                                className="flex items-center gap-1 rounded-lg border border-white/20 bg-white/10 px-2.5 py-1.5 text-xs text-slate-100 hover:bg-white/20">
+                                                            <ChevronsUpDown className="h-3.5 w-3.5" /> Abrir todas
+                                                        </button>
+                                                        <button type="button" onClick={() => cambiarZonas(claves, false)}
+                                                                className="flex items-center gap-1 rounded-lg border border-white/20 bg-white/10 px-2.5 py-1.5 text-xs text-slate-100 hover:bg-white/20">
+                                                            <ChevronsDownUp className="h-3.5 w-3.5" /> Cerrar todas
+                                                        </button>
+                                                    </div>
                                                 )}
-                                            </DatoCliente>
+                                                <div className="ml-auto flex gap-2">
+                                                    <div className="rounded-lg border border-white/15 bg-white/10 px-3 py-1.5 text-right">
+                                                        <p className="text-[10px] uppercase tracking-wider text-slate-400">Saldo S/</p>
+                                                        <p className="text-sm font-bold sm:text-base">S/ {formatMoney(vend.soles)}</p>
+                                                    </div>
+                                                    <div className="rounded-lg border border-white/15 bg-white/10 px-3 py-1.5 text-right">
+                                                        <p className="text-[10px] uppercase tracking-wider text-slate-400">Saldo US$</p>
+                                                        <p className="text-sm font-bold sm:text-base">US$ {formatMoney(vend.dolares)}</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Zonas en acordeón */}
+                                        <div className="space-y-3 p-3 sm:p-4">
+                                            {vend.zonas.map(zona => {
+                                                const clave = `${vend.clave}|${zona.nombre}`
+                                                const abierta = zonasAbiertas.has(clave)
+                                                return (
+                                                    <div key={clave}>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => cambiarZonas([clave], !abierta)}
+                                                            aria-expanded={abierta}
+                                                            className={cn(
+                                                                "flex w-full flex-wrap items-center gap-x-2.5 gap-y-1 rounded-lg border px-3 py-2.5 text-left transition-colors",
+                                                                abierta
+                                                                    ? "border-blue-200 bg-blue-50 text-blue-800 dark:border-blue-900 dark:bg-blue-950/50 dark:text-blue-300"
+                                                                    : "border-border bg-background text-foreground hover:bg-muted/60",
+                                                            )}
+                                                        >
+                                                            <ChevronDown className={cn("h-4 w-4 shrink-0 transition-transform", !abierta && "-rotate-90")} />
+                                                            <MapPin className="h-4 w-4 shrink-0" />
+                                                            <span className="font-bold">{zona.nombre}</span>
+                                                            <span className="rounded-full border bg-background px-2 py-0.5 text-[11px] font-medium text-blue-700 dark:text-blue-300">
+                                                                {zona.clientes.length} cliente{zona.clientes.length !== 1 ? 's' : ''}
+                                                            </span>
+                                                            {!abierta && (
+                                                                <span className="hidden text-[11px] text-muted-foreground sm:inline">Clic para ver sus clientes</span>
+                                                            )}
+                                                            <span className="ml-auto text-right text-sm font-extrabold">
+                                                                S/ {formatMoney(zona.soles)}
+                                                                {zona.dolares > 0 && <span className="ml-2 text-green-700 dark:text-green-400">US$ {formatMoney(zona.dolares)}</span>}
+                                                            </span>
+                                                        </button>
+
+                                                        {abierta && (
+                                                            <div className="mt-2.5 space-y-3 border-l-[3px] border-blue-200 pl-2.5 sm:ml-2 sm:pl-4 dark:border-blue-900">
+                                                                {zona.clientes.map((cl, cIdx) => (
+                                                                    <div key={`${cl.cliente.RUC}-${cIdx}`} className="overflow-hidden rounded-lg border border-border bg-background">
+                                                                        {renderCliente(cl.cliente, cl.soles, cl.dolares)}
+                                                                        {renderDocumentos(cl.documentos)}
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                )
+                                            })}
                                         </div>
                                     </div>
-
-                                    {cliente.vendedores.map((vend: any, vIdx: number) => (
-                                        <div key={vIdx} className="border border-border rounded-lg overflow-hidden shadow-sm bg-background ml-0 md:ml-4">
-                                            <div className="bg-slate-800 text-white p-3 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
-                                                <span className="font-bold text-sm md:text-base">Vendedor: {vend.Vendedor}</span>
-                                                <span className="text-xs bg-slate-700 px-3 py-1 rounded-full font-medium border border-slate-600 w-fit">
-                                                    Zona: {vend.NombreZona}
-                                                </span>
-                                            </div>
-
-                                            <div className="hidden md:block overflow-x-auto">
-                                                <table className="w-full text-xs text-left text-muted-foreground">
-                                                    <thead className="text-[10px] md:text-xs text-muted-foreground uppercase bg-muted border-b border-border">
-                                                    <tr>
-                                                        <th className="px-3 py-3 font-bold whitespace-nowrap">Emisión</th>
-                                                        <th className="px-3 py-3 font-bold whitespace-nowrap">Vencimiento</th>
-                                                        <th className="px-3 py-3 font-bold whitespace-nowrap">Documento</th>
-                                                        <th className="px-3 py-3 font-bold whitespace-nowrap">Nro Doc</th>
-                                                        <th className="px-3 py-3 font-bold text-center">M</th>
-                                                        <th className="px-3 py-3 font-bold text-right">Provisión</th>
-                                                        <th className="px-3 py-3 font-bold text-right">Amortización</th>
-                                                        <th className="px-3 py-3 font-bold text-right text-blue-700">Saldo S/.</th>
-                                                        <th className="px-3 py-3 font-bold text-right text-green-700">Saldo US$</th>
-                                                    </tr>
-                                                    </thead>
-                                                    <tbody className="divide-y divide-border">
-                                                    {vend.documentos.map((doc: any, dIdx: number) => {
-                                                        const isSoles = doc.Tipo_Moneda === 'NSO' || doc.Moneda === 'S/.';
-                                                        return (
-                                                            <tr key={dIdx} className="hover:bg-muted transition-colors">
-                                                                <td className="px-3 py-2 whitespace-nowrap">{formatDateToDDMMYYYY(doc.Fecha_Emision)}</td>
-                                                                <td className="px-3 py-2 whitespace-nowrap text-red-600 font-medium">{formatDateToDDMMYYYY(doc.Fecha_Vcto)}</td>
-                                                                <td className="px-3 py-2 font-medium">{doc.TipoDocumento}</td>
-                                                                <td className="px-3 py-2 font-mono font-semibold">
-                                                                    <DocumentoPdfLink numeroComprobante={doc.SerieDoc && doc.NumeroDoc ? `${doc.SerieDoc}-${doc.NumeroDoc}` : null} existeComprobante={!!doc.existeComprobante} />
-                                                                </td>
-                                                                <td className="px-3 py-2 text-center font-bold">{doc.Moneda}</td>
-                                                                <td className="px-3 py-2 text-right">{formatMoney(doc.SumaProvision)}</td>
-                                                                <td className="px-3 py-2 text-right">{formatMoney(doc.SumaAmortizacion)}</td>
-                                                                <td className="px-3 py-2 text-right font-bold text-blue-700 bg-blue-50/30">
-                                                                    {isSoles ? formatMoney(doc.Saldo) : '-'}
-                                                                </td>
-                                                                <td className="px-3 py-2 text-right font-bold text-green-700 bg-green-50/30">
-                                                                    {!isSoles ? formatMoney(doc.Saldo) : '-'}
-                                                                </td>
-                                                            </tr>
-                                                        )
-                                                    })}
-                                                    </tbody>
-                                                </table>
-                                            </div>
-
-                                            <div className="grid grid-cols-1 gap-3 p-3 md:hidden bg-muted">
-                                                {vend.documentos.map((doc: any, dIdx: number) => {
-                                                    const isSoles = doc.Tipo_Moneda === 'NSO' || doc.Moneda === 'S/.';
-                                                    return (
-                                                        <div key={dIdx} className="bg-background border border-border rounded-lg p-3 shadow-sm flex flex-col gap-3">
-                                                            <div className="flex justify-between items-start border-b border-border pb-2">
-                                                                <div>
-                                                                    <span className="text-[10px] uppercase font-bold text-muted-foreground">{doc.TipoDocumento}</span>
-                                                                    <p className="font-mono font-bold text-sm text-foreground">
-                                                                        <DocumentoPdfLink numeroComprobante={doc.SerieDoc && doc.NumeroDoc ? `${doc.SerieDoc}-${doc.NumeroDoc}` : null} existeComprobante={!!doc.existeComprobante} />
-                                                                    </p>
-                                                                </div>
-                                                                <Badge variant="outline" className="font-bold">{doc.Moneda}</Badge>
-                                                            </div>
-
-                                                            <div className="grid grid-cols-2 gap-2 text-xs">
-                                                                <div>
-                                                                    <span className="text-muted-foreground">Emisión:</span>
-                                                                    <p className="font-medium text-foreground">{formatDateToDDMMYYYY(doc.Fecha_Emision)}</p>
-                                                                </div>
-                                                                <div>
-                                                                    <span className="text-muted-foreground">Vcto:</span>
-                                                                    <p className="font-medium text-red-600">{formatDateToDDMMYYYY(doc.Fecha_Vcto)}</p>
-                                                                </div>
-                                                                <div>
-                                                                    <span className="text-muted-foreground">Prov:</span>
-                                                                    <p className="font-medium">{formatMoney(doc.SumaProvision)}</p>
-                                                                </div>
-                                                                <div>
-                                                                    <span className="text-muted-foreground">Amort:</span>
-                                                                    <p className="font-medium">{formatMoney(doc.SumaAmortizacion)}</p>
-                                                                </div>
-                                                            </div>
-
-                                                            <div className="flex justify-between items-center pt-2 border-t border-border">
-                                                                <span className="text-xs font-bold uppercase text-muted-foreground">Saldo Final:</span>
-                                                                <span className={cn("text-base font-bold", isSoles ? "text-blue-700" : "text-green-700")}>
-                                                                    {doc.Moneda} {formatMoney(doc.Saldo)}
-                                                                </span>
-                                                            </div>
-                                                        </div>
-                                                    );
-                                                })}
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            ))}
+                                )
+                            })}
 
                             <div className="bg-background border border-blue-200 p-4 rounded-lg flex flex-col sm:flex-row justify-between items-center shadow-md mt-6 sticky bottom-4">
                                 <span className="text-sm font-bold uppercase tracking-wider text-foreground mb-2 sm:mb-0">Deuda Total Global</span>
@@ -657,19 +747,6 @@ export default function SaldoCobrarClientePage() {
                     )}
                 </CardContent>
             </Card>
-        </div>
-    )
-}
-
-function DatoCliente({ icono: Icono, etiqueta, className = "", children }: {
-    icono: React.ComponentType<{ className?: string }>; etiqueta: string; className?: string; children: React.ReactNode
-}) {
-    return (
-        <div className={`min-w-0 ${className}`}>
-            <p className="flex items-center gap-1.5 text-[10.5px] font-semibold uppercase tracking-wider text-muted-foreground">
-                <Icono className="h-3.5 w-3.5" /> {etiqueta}
-            </p>
-            <div className="mt-0.5 text-sm text-foreground">{children}</div>
         </div>
     )
 }

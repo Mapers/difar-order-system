@@ -4,6 +4,7 @@ import { Download } from "lucide-react";
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
 import { cargarLogoPdf, dibujarCabeceraPdf } from "@/components/reporte/pdfCabecera";
 import { toast } from "@/app/hooks/useToast";
+import { agruparPorVendedor, esSoles } from "@/app/dashboard/reportes/saldos-cliente/agrupar";
 
 interface ExportPdfProps {
     data: any;
@@ -61,10 +62,15 @@ export const ExportSaldoCobrarPdf: React.FC<ExportPdfProps> = ({ data, dateCorte
                 });
             };
 
+            // Si un vendedor sigue en la página siguiente, se repite su franja
+            // marcada como continuación para saber de quién son las zonas.
+            let alSaltarPagina: (() => void) | null = null;
+
             const checkPageBreak = (needed: number) => {
                 if (yPosition - needed < margin) {
                     currentPage = pdfDoc.addPage([pageWidth, pageHeight]);
                     drawHeader(currentPage);
+                    alSaltarPagina?.();
                 }
             };
 
@@ -73,97 +79,128 @@ export const ExportSaldoCobrarPdf: React.FC<ExportPdfProps> = ({ data, dateCorte
             const cols = [50, 50, 40, 60, 20, 65, 65, 80, 80];
             const colHeaders = ["Emisión", "Vcto.", "Doc.", "Nro Doc", "M", "Provisión", "Amortiz.", "Saldo S/.", "Saldo US$"];
 
-            // --- ITERAMOS POR CADA CLIENTE ---
-            for (const cliente of data.Clientes) {
-                checkPageBreak(80); // Espacio requerido para la cabecera del cliente
+            const fCorteLabel = (mes && anio) ? 'MES:' : 'FECHA CORTE:';
+            const fCorte = (mes && anio)
+                ? `${PDF_MONTHS[mes - 1]} ${anio}`
+                : (dateCorte ? dateCorte.toLocaleDateString('es-PE') : new Date().toLocaleDateString('es-PE'));
 
-                // --- CUADRO DEL CLIENTE ---
-                currentPage.drawRectangle({
-                    x: margin,
-                    y: yPosition - 50,
-                    width: contentWidth,
-                    height: 55,
-                    color: rgb(0.96, 0.96, 0.96),
-                    borderColor: rgb(0.8, 0.8, 0.8),
-                    borderWidth: 1
+            const textoDerecha = (texto: string, xFin: number, y: number, size: number, f: any, color = rgb(0, 0, 0)) =>
+                currentPage.drawText(texto, { x: xFin - f.widthOfTextAtSize(texto, size), y, size, font: f, color });
+
+            const dibujarDocumentos = (documentos: any[]) => {
+                let xPos = margin + 5;
+                currentPage.drawRectangle({ x: margin, y: yPosition - 4, width: contentWidth, height: 14, color: rgb(0.9, 0.9, 0.9) });
+
+                colHeaders.forEach((header, i) => {
+                    let textX = xPos;
+                    if (i >= 5) textX = xPos + cols[i] - boldFont.widthOfTextAtSize(header, 7) - 5;
+                    if (i === 4) textX = xPos + (cols[i]/2) - (boldFont.widthOfTextAtSize(header, 7)/2);
+
+                    currentPage.drawText(header, { x: textX, y: yPosition, size: 7, font: boldFont });
+                    xPos += cols[i];
                 });
 
-                const direccionCorta = cliente.Direccion && cliente.Direccion.length > 85
-                    ? cliente.Direccion.substring(0, 85) + "..."
-                    : cliente.Direccion || '-';
+                yPosition -= 15;
 
-                currentPage.drawText(`CLIENTE: ${cliente.Cliente}`, { x: margin + 10, y: yPosition - 15, size: 8, font: boldFont });
-                currentPage.drawText(`DOCUMENTO: ${cliente.RUC}`, { x: margin + 350, y: yPosition - 15, size: 8, font: boldFont });
-                currentPage.drawText(`DIRECCIÓN: ${direccionCorta}`, { x: margin + 10, y: yPosition - 30, size: 8, font });
+                for (const doc of documentos) {
+                    checkPageBreak(15);
+                    xPos = margin + 5;
 
-                const fCorteLabel = (mes && anio) ? 'MES:' : 'FECHA CORTE:';
-                const fCorte = (mes && anio)
-                    ? `${PDF_MONTHS[mes - 1]} ${anio}`
-                    : (dateCorte ? dateCorte.toLocaleDateString('es-PE') : new Date().toLocaleDateString('es-PE'));
-                currentPage.drawText(`${fCorteLabel} ${fCorte}`, { x: margin + 10, y: yPosition - 45, size: 8, font: boldFont, color: rgb(0.8, 0.1, 0.1) });
-                currentPage.drawText(`TELÉFONO: ${cliente.Telefono || '-'}`, { x: margin + 350, y: yPosition - 45, size: 8, font });
+                    const isSoles = esSoles(doc);
 
-                yPosition -= 65;
+                    const rowData = [
+                        formatDateString(doc.Fecha_Emision),
+                        formatDateString(doc.Fecha_Vcto),
+                        doc.TipoDocumento,
+                        `${doc.SerieDoc}-${doc.NumeroDoc}`,
+                        doc.Moneda,
+                        formatMoney(doc.SumaProvision),
+                        formatMoney(doc.SumaAmortizacion),
+                        isSoles ? formatMoney(doc.Saldo) : '-',
+                        !isSoles ? formatMoney(doc.Saldo) : '-'
+                    ];
 
-                // --- ITERAMOS POR VENDEDORES DE ESTE CLIENTE ---
-                for (const vend of cliente.vendedores) {
-                    checkPageBreak(50);
-                    currentPage.drawRectangle({ x: margin, y: yPosition - 12, width: contentWidth, height: 16, color: rgb(0.2, 0.2, 0.2) });
-                    currentPage.drawText(`Vendedor: ${vend.Vendedor}    |    Zona: ${vend.NombreZona}`, {
-                        x: margin + 5, y: yPosition - 8, size: 8, font: boldFont, color: rgb(1, 1, 1)
-                    });
-
-                    yPosition -= 25;
-
-                    let xPos = margin + 5;
-                    currentPage.drawRectangle({ x: margin, y: yPosition - 4, width: contentWidth, height: 14, color: rgb(0.9, 0.9, 0.9) });
-
-                    colHeaders.forEach((header, i) => {
+                    rowData.forEach((text, i) => {
                         let textX = xPos;
-                        if (i >= 5) textX = xPos + cols[i] - boldFont.widthOfTextAtSize(header, 7) - 5;
-                        if (i === 4) textX = xPos + (cols[i]/2) - (boldFont.widthOfTextAtSize(header, 7)/2);
+                        if (i >= 5) textX = xPos + cols[i] - font.widthOfTextAtSize(String(text), 7) - 5;
+                        if (i === 4) textX = xPos + (cols[i]/2) - (font.widthOfTextAtSize(String(text), 7)/2);
 
-                        currentPage.drawText(header, { x: textX, y: yPosition, size: 7, font: boldFont });
+                        currentPage.drawText(String(text), { x: textX, y: yPosition, size: 7, font });
                         xPos += cols[i];
                     });
 
-                    yPosition -= 15;
+                    currentPage.drawLine({ start: { x: margin, y: yPosition - 4 }, end: { x: pageWidth - margin, y: yPosition - 4 }, thickness: 0.5, color: rgb(0.8, 0.8, 0.8) });
+                    yPosition -= 14;
+                }
+            };
 
-                    // --- ITERAMOS POR DOCUMENTOS ---
-                    for (const doc of vend.documentos) {
-                        checkPageBreak(15);
-                        xPos = margin + 5;
+            // --- MISMA ORGANIZACIÓN QUE LA PANTALLA: VENDEDOR -> ZONA -> CLIENTE ---
+            for (const vend of agruparPorVendedor(data)) {
+                alSaltarPagina = null;
+                checkPageBreak(120);
 
-                        const isSoles = doc.Tipo_Moneda === 'NSO' || doc.Moneda === 'S/.';
+                // Cabecera del vendedor, con su saldo total.
+                const dibujarVendedor = (continuacion: boolean) => {
+                    currentPage.drawRectangle({ x: margin, y: yPosition - 14, width: contentWidth, height: 20, color: rgb(0.2, 0.2, 0.2) });
+                    currentPage.drawText(`Vendedor: ${vend.codigo ? `${vend.codigo} ` : ''}${vend.nombre}${continuacion ? '  (continuación)' : ''}`, {
+                        x: margin + 5, y: yPosition - 8, size: 9, font: boldFont, color: rgb(1, 1, 1)
+                    });
+                    textoDerecha(`S/ ${formatMoney(vend.soles)}    US$ ${formatMoney(vend.dolares)}`,
+                        pageWidth - margin - 5, yPosition - 8, 8, boldFont, rgb(1, 1, 1));
+                    yPosition -= 30;
+                };
+                dibujarVendedor(false);
+                alSaltarPagina = () => dibujarVendedor(true);
 
-                        const rowData = [
-                            formatDateString(doc.Fecha_Emision),
-                            formatDateString(doc.Fecha_Vcto),
-                            doc.TipoDocumento,
-                            `${doc.SerieDoc}-${doc.NumeroDoc}`,
-                            doc.Moneda,
-                            formatMoney(doc.SumaProvision),
-                            formatMoney(doc.SumaAmortizacion),
-                            isSoles ? formatMoney(doc.Saldo) : '-',
-                            !isSoles ? formatMoney(doc.Saldo) : '-'
-                        ];
+                for (const zona of vend.zonas) {
+                    checkPageBreak(100);
 
-                        rowData.forEach((text, i) => {
-                            let textX = xPos;
-                            if (i >= 5) textX = xPos + cols[i] - font.widthOfTextAtSize(String(text), 7) - 5;
-                            if (i === 4) textX = xPos + (cols[i]/2) - (font.widthOfTextAtSize(String(text), 7)/2);
+                    // Franja de la zona, con su subtotal.
+                    currentPage.drawRectangle({
+                        x: margin, y: yPosition - 12, width: contentWidth, height: 16,
+                        color: rgb(0.9, 0.93, 0.98), borderColor: rgb(0.75, 0.82, 0.93), borderWidth: 0.8,
+                    });
+                    currentPage.drawText(`Zona: ${zona.nombre}   (${zona.clientes.length} cliente${zona.clientes.length !== 1 ? 's' : ''})`, {
+                        x: margin + 5, y: yPosition - 8, size: 8, font: boldFont, color: rgb(0.1, 0.25, 0.55)
+                    });
+                    textoDerecha(`S/ ${formatMoney(zona.soles)}${zona.dolares ? `    US$ ${formatMoney(zona.dolares)}` : ''}`,
+                        pageWidth - margin - 5, yPosition - 8, 8, boldFont, rgb(0.1, 0.25, 0.55));
+                    yPosition -= 24;
 
-                            currentPage.drawText(String(text), { x: textX, y: yPosition, size: 7, font });
-                            xPos += cols[i];
+                    for (const { cliente, documentos } of zona.clientes) {
+                        checkPageBreak(80); // Espacio requerido para la cabecera del cliente
+
+                        // --- CUADRO DEL CLIENTE ---
+                        currentPage.drawRectangle({
+                            x: margin,
+                            y: yPosition - 50,
+                            width: contentWidth,
+                            height: 55,
+                            color: rgb(0.96, 0.96, 0.96),
+                            borderColor: rgb(0.8, 0.8, 0.8),
+                            borderWidth: 1
                         });
 
-                        currentPage.drawLine({ start: { x: margin, y: yPosition - 4 }, end: { x: pageWidth - margin, y: yPosition - 4 }, thickness: 0.5, color: rgb(0.8, 0.8, 0.8) });
-                        yPosition -= 14;
+                        const direccionCorta = cliente.Direccion && cliente.Direccion.length > 85
+                            ? cliente.Direccion.substring(0, 85) + "..."
+                            : cliente.Direccion || '-';
+
+                        currentPage.drawText(`CLIENTE: ${cliente.Cliente}`, { x: margin + 10, y: yPosition - 15, size: 8, font: boldFont });
+                        currentPage.drawText(`DOCUMENTO: ${cliente.RUC}`, { x: margin + 350, y: yPosition - 15, size: 8, font: boldFont });
+                        currentPage.drawText(`DIRECCIÓN: ${direccionCorta}`, { x: margin + 10, y: yPosition - 30, size: 8, font });
+                        currentPage.drawText(`${fCorteLabel} ${fCorte}`, { x: margin + 10, y: yPosition - 45, size: 8, font: boldFont, color: rgb(0.8, 0.1, 0.1) });
+                        currentPage.drawText(`TELÉFONO: ${cliente.Telefono || '-'}`, { x: margin + 350, y: yPosition - 45, size: 8, font });
+
+                        yPosition -= 65;
+
+                        dibujarDocumentos(documentos);
+                        yPosition -= 12;
                     }
-                    yPosition -= 10;
+                    yPosition -= 4;
                 }
-                yPosition -= 5;
+                yPosition -= 10;
             }
+            alSaltarPagina = null;
 
             // --- CUADRO FINAL GLOBAL ---
             checkPageBreak(40);
