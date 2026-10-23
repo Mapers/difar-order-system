@@ -24,6 +24,7 @@ import { toast } from "@/app/hooks/useToast"
 import { useRegistroCompras, CabeceraEdicion, FilaCompra } from "./useRegistroCompras"
 import { BuscadorRemoto } from "./BuscadorRemoto"
 import { ComboTarjeta } from "./ComboTarjeta"
+import { generarPdfRegistroCompra } from "./pdfRegistroCompra"
 import { BuscadorDocumentos } from "./BuscadorDocumentos"
 import { SaldoDialog } from "./SaldoDialog"
 import { PagosDialog } from "./PagosDialog"
@@ -39,6 +40,7 @@ export default function RegistroComprasPage() {
     const c = useRegistroCompras()
     const cat = c.catalogos
     const [confirmEliminarDoc, setConfirmEliminarDoc] = useState(false)
+    const [imprimiendo, setImprimiendo] = useState(false)
     const [confirmEliminarLineas, setConfirmEliminarLineas] = useState(false)
     const [buscarClave, setBuscarClave] = useState("")
     const [otrosAbierto, setOtrosAbierto] = useState(false)
@@ -106,19 +108,37 @@ export default function RegistroComprasPage() {
 
     const imprimir = async () => {
         if (!c.clave) return
+        // La pestaña se abre antes de esperar los datos; si se abre después, el navegador la bloquea.
+        const ventana = window.open('', '_blank')
+        setImprimiendo(true)
         try {
             const filas = await ComprasService.datosImpresion(c.clave)
             if (filas.length === 0) {
+                ventana?.close()
                 toast({ title: "Nada que imprimir", description: "El documento no tiene líneas.", variant: "warning" })
                 return
             }
-            abrirVentanaImpresion(filas as Record<string, unknown>[])
+            const bytes = await generarPdfRegistroCompra(filas as Record<string, unknown>[], cod =>
+                cat?.tiposDoc.find(x => x.Cod_Tipo === cod)?.Abreviatura || cod)
+            const url = URL.createObjectURL(new Blob([bytes as BlobPart], { type: 'application/pdf' }))
+            if (ventana) {
+                ventana.location.href = url
+            } else {
+                const a = document.createElement('a')
+                a.href = url
+                a.download = `Compra_${c.cab.serie}-${c.cab.numero}.pdf`
+                a.click()
+            }
+            setTimeout(() => URL.revokeObjectURL(url), 60_000)
         } catch (e: any) {
+            ventana?.close()
             toast({
                 title: "Error",
-                description: e?.response?.data?.message || "No se pudieron obtener los datos de impresión.",
+                description: e?.response?.data?.message || "No se pudo generar la impresión.",
                 variant: "destructive",
             })
+        } finally {
+            setImprimiendo(false)
         }
     }
 
@@ -502,8 +522,8 @@ export default function RegistroComprasPage() {
                                     onClick={() => setTranspAbierto(true)} disabled={ro}>
                                 <Truck className="h-4 w-4" /> Transporte
                             </Button>
-                            <Button variant="outline" size="sm" className="gap-1.5" onClick={imprimir}>
-                                <Printer className="h-4 w-4" /> Imprimir
+                            <Button variant="outline" size="sm" className="gap-1.5" onClick={imprimir} disabled={imprimiendo}>
+                                {imprimiendo ? <Loader2 className="h-4 w-4 animate-spin" /> : <Printer className="h-4 w-4" />} Imprimir
                             </Button>
                         </div>
                     )}
@@ -888,91 +908,4 @@ function CampoTarjeta({
             {children}
         </div>
     )
-}
-
-function abrirVentanaImpresion(filas: Record<string, unknown>[]) {
-    const v = window.open('', '_blank', 'width=900,height=700')
-    if (!v) {
-        toast({
-            title: "El navegador bloqueó la ventana",
-            description: "Permití las ventanas emergentes para este sitio e intentá de nuevo.",
-            variant: "warning",
-        })
-        return
-    }
-
-    const t = (x: unknown) => String(x ?? '')
-    const esc = (x: unknown) =>
-        t(x).replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]!))
-    const n = (x: unknown) =>
-        Number(x ?? 0).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-    const f = (x: unknown) => {
-        if (!x) return ''
-        const d = new Date(String(x))
-        return isNaN(d.getTime()) ? '' : d.toLocaleDateString('es-PE', { timeZone: 'UTC' })
-    }
-
-    const c = filas[0]
-    const total = filas.reduce((a, r) => a + Number(r.TotalItem ?? 0), 0)
-
-    v.document.write(`<!doctype html>
-<html lang="es"><head><meta charset="utf-8">
-<title>Compra ${esc(c.SerieDoc)}-${esc(c.NumeroDoc)}</title>
-<style>
-  *{box-sizing:border-box}
-  body{font:12px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:#111;margin:28px}
-  h1{font-size:15px;margin:0 0 2px}
-  .sub{color:#555;font-size:11px;margin-bottom:16px}
-  .caja{border:1px solid #ddd;border-radius:6px;padding:10px 12px;margin-bottom:16px}
-  .campos{display:grid;grid-template-columns:repeat(4,1fr);gap:8px 16px}
-  .campo span{display:block;font-size:10px;color:#666;text-transform:uppercase;letter-spacing:.03em}
-  .campo b{font-weight:600}
-  table{width:100%;border-collapse:collapse;font-size:11px}
-  th{text-align:left;background:#f4f4f5;border-bottom:1px solid #ddd;padding:6px 8px;font-size:10px;
-     text-transform:uppercase;letter-spacing:.03em;color:#555}
-  td{border-bottom:1px solid #eee;padding:5px 8px;vertical-align:top}
-  .num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
-  tfoot td{border-top:2px solid #ccc;border-bottom:none;font-weight:700;padding-top:8px}
-  @media print{body{margin:12mm} .noprint{display:none}}
-</style></head><body>
-<h1>${esc(c.NombreRazSocial)}</h1>
-<div class="sub">RUC ${esc(c.RUC)} · Registro de compras</div>
-
-<div class="caja"><div class="campos">
-  <div class="campo"><span>Documento</span><b>${esc(c.TipoDoc)} ${esc(c.SerieDoc)}-${esc(c.NumeroDoc)}</b></div>
-  <div class="campo"><span>Fecha</span><b>${f(c.Fecha_Emision)}</b></div>
-  <div class="campo"><span>Proveedor</span><b>${esc(c.Nombre)}</b></div>
-  <div class="campo"><span>Condición</span><b>${esc(c.CondicionDoc)}</b></div>
-  <div class="campo"><span>Moneda</span><b>${esc(c.Moneda)}</b></div>
-  <div class="campo"><span>Almacén</span><b>${esc(c.Almacen)}</b></div>
-  <div class="campo"><span>Clave</span><b>${esc(c.Clave)}</b></div>
-</div></div>
-
-<table>
-  <thead><tr>
-    <th>Artículo</th><th>Und</th><th class="num">Cantidad</th>
-    <th class="num">P. unit.</th><th class="num">Total</th><th>Lote</th><th>Vence</th>
-  </tr></thead>
-  <tbody>
-    ${filas.map(r => `<tr>
-      <td>${esc(r.NombreItem)}</td>
-      <td>${esc(r.Und)}</td>
-      <td class="num">${n(r.Cantidad)}</td>
-      <td class="num">${n(r.PUItem)}</td>
-      <td class="num">${n(r.TotalItem)}</td>
-      <td>${esc(r.Lote)}</td>
-      <td>${f(r.VctoArt)}</td>
-    </tr>`).join('')}
-  </tbody>
-  <tfoot><tr>
-    <td colspan="4">Total</td>
-    <td class="num">${n(total)}</td>
-    <td colspan="2"></td>
-  </tr></tfoot>
-</table>
-</body></html>`)
-    v.document.close()
-    v.focus()
-    // El print va tras el load para que la hoja de estilos ya esté aplicada.
-    v.onload = () => v.print()
 }
