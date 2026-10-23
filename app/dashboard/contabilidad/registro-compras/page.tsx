@@ -24,7 +24,7 @@ import { toast } from "@/app/hooks/useToast"
 import { useRegistroCompras, CabeceraEdicion, FilaCompra } from "./useRegistroCompras"
 import { BuscadorRemoto } from "./BuscadorRemoto"
 import { ComboTarjeta } from "./ComboTarjeta"
-import { generarPdfRegistroCompra } from "./pdfRegistroCompra"
+import { ImprimirCompraDialog } from "./ImprimirCompraDialog"
 import { BuscadorDocumentos } from "./BuscadorDocumentos"
 import { SaldoDialog } from "./SaldoDialog"
 import { PagosDialog } from "./PagosDialog"
@@ -40,7 +40,7 @@ export default function RegistroComprasPage() {
     const c = useRegistroCompras()
     const cat = c.catalogos
     const [confirmEliminarDoc, setConfirmEliminarDoc] = useState(false)
-    const [imprimiendo, setImprimiendo] = useState(false)
+    const [imprimirAbierto, setImprimirAbierto] = useState(false)
     const [confirmRevisar, setConfirmRevisar] = useState(false)
     const [confirmEliminarLineas, setConfirmEliminarLineas] = useState(false)
     const [buscarClave, setBuscarClave] = useState("")
@@ -107,41 +107,6 @@ export default function RegistroComprasPage() {
         }
     }
 
-    const imprimir = async () => {
-        if (!c.clave) return
-        // La pestaña se abre antes de esperar los datos; si se abre después, el navegador la bloquea.
-        const ventana = window.open('', '_blank')
-        setImprimiendo(true)
-        try {
-            const filas = await ComprasService.datosImpresion(c.clave)
-            if (filas.length === 0) {
-                ventana?.close()
-                toast({ title: "Nada que imprimir", description: "El documento no tiene líneas.", variant: "warning" })
-                return
-            }
-            const bytes = await generarPdfRegistroCompra(filas as Record<string, unknown>[], cod =>
-                cat?.tiposDoc.find(x => x.Cod_Tipo === cod)?.Abreviatura || cod)
-            const url = URL.createObjectURL(new Blob([bytes as BlobPart], { type: 'application/pdf' }))
-            if (ventana) {
-                ventana.location.href = url
-            } else {
-                const a = document.createElement('a')
-                a.href = url
-                a.download = `Compra_${c.cab.serie}-${c.cab.numero}.pdf`
-                a.click()
-            }
-            setTimeout(() => URL.revokeObjectURL(url), 60_000)
-        } catch (e: any) {
-            ventana?.close()
-            toast({
-                title: "Error",
-                description: e?.response?.data?.message || "No se pudo generar la impresión.",
-                variant: "destructive",
-            })
-        } finally {
-            setImprimiendo(false)
-        }
-    }
 
     return (
         <div className="grid grid-cols-1 pb-10">
@@ -523,8 +488,8 @@ export default function RegistroComprasPage() {
                                     onClick={() => setTranspAbierto(true)} disabled={ro}>
                                 <Truck className="h-4 w-4" /> Transporte
                             </Button>
-                            <Button variant="outline" size="sm" className="gap-1.5" onClick={imprimir} disabled={imprimiendo}>
-                                {imprimiendo ? <Loader2 className="h-4 w-4 animate-spin" /> : <Printer className="h-4 w-4" />} Imprimir
+                            <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setImprimirAbierto(true)}>
+                                <Printer className="h-4 w-4" /> Imprimir
                             </Button>
                         </div>
                     )}
@@ -590,7 +555,8 @@ export default function RegistroComprasPage() {
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                         <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => { setConfirmEliminarLineas(false); c.eliminarMarcadas() }}>
+                        <AlertDialogAction className="bg-red-600 hover:bg-red-700"
+                                           onClick={() => { setConfirmEliminarLineas(false); c.eliminarMarcadas() }}>
                             Eliminar líneas
                         </AlertDialogAction>
                     </AlertDialogFooter>
@@ -620,6 +586,14 @@ export default function RegistroComprasPage() {
                 catalogos={cat}
                 anioInicial={c.cab.anio}
                 periodoInicial={c.cab.periodo}
+            />
+
+            <ImprimirCompraDialog
+                abierto={imprimirAbierto}
+                onCerrar={() => setImprimirAbierto(false)}
+                clave={c.clave}
+                titulo={docTitulo}
+                nombreTipo={cod => cat?.tiposDoc.find(x => x.Cod_Tipo === cod)?.Abreviatura || cod}
             />
 
             <AlertDialog open={confirmRevisar} onOpenChange={setConfirmRevisar}>

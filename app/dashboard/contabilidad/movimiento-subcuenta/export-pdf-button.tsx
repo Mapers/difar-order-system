@@ -239,7 +239,7 @@ const ExportSubctaMvtoPdf: React.FC<Props> = ({ cabecera, detalle }) => {
     )
 }
 
-function Seccion({ icono: Icono, titulo, children }: { icono: React.ComponentType<{ className?: string }>; titulo: string; children: React.ReactNode }) {
+export function Seccion({ icono: Icono, titulo, children }: { icono: React.ComponentType<{ className?: string }>; titulo: string; children: React.ReactNode }) {
     return (
         <section className="space-y-3">
             <h3 className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -250,7 +250,7 @@ function Seccion({ icono: Icono, titulo, children }: { icono: React.ComponentTyp
     )
 }
 
-function Opciones<T extends string>({ etiqueta, valor, onChange, opciones }: {
+export function Opciones<T extends string>({ etiqueta, valor, onChange, opciones }: {
     etiqueta: string; valor: T; onChange: (v: T) => void; opciones: { v: T; t: string }[]
 }) {
     return (
@@ -275,7 +275,7 @@ function Opciones<T extends string>({ etiqueta, valor, onChange, opciones }: {
     )
 }
 
-function Interruptor({ etiqueta, valor, onChange }: { etiqueta: string; valor: boolean; onChange: (v: boolean) => void }) {
+export function Interruptor({ etiqueta, valor, onChange }: { etiqueta: string; valor: boolean; onChange: (v: boolean) => void }) {
     return (
         <label className="flex cursor-pointer items-center justify-between gap-3 text-sm">
             {etiqueta}
