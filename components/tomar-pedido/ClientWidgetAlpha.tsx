@@ -12,6 +12,7 @@ import InlineAutocomplete from '@/components/tomar-pedido/InlineAutocomplete'
 import CollapsibleWidget from '@/components/tomar-pedido/CollapsibleWidget'
 
 import { IClient, ICondicion, IMoneda, ITerritorio } from '@/app/types/order/client-interface'
+import { SucursalSelector, Sucursal } from '@/components/tomar-pedido/SucursalSelector'
 import { Seller } from '@/app/types/order/order-interface'
 import { monedas } from '@/constants'
 
@@ -39,6 +40,9 @@ interface ClientWidgetAlphaProps {
     onChangeReferenciaDireccion: (e: React.ChangeEvent<HTMLInputElement>) => void
     onChangeContactoPedido: (e: React.ChangeEvent<HTMLInputElement>) => void
     onUpdateClient: (fields: { telefono?: string; Dirección?: string }) => void
+    /** Sucursal de entrega, igual que en el tomador normal. La principal viaja con idSucursal = 0. */
+    sucursal: Sucursal | null
+    onSucursalSelect: (s: Sucursal) => void
     nameZone: string
     unidadTerritorio: ITerritorio
     conditions: ICondicion[]
@@ -58,6 +62,7 @@ const DEFAULT_CONDITION_HINT = '30'
 export default function ClientWidgetAlpha({
     search, setSearch, loadingClients, loadingSellers = false, clientsFiltered,
     selectedClient, onClientSelect, isAdmin, seller, sellersFiltered, sellerSearch,
+    sucursal, onSucursalSelect,
     onSellerSearch, onSellerSelect, referenciaDireccion, contactoPedido,
     onChangeReferenciaDireccion, onChangeContactoPedido, onUpdateClient,
     nameZone, unidadTerritorio, conditions, condition, currency,
@@ -217,6 +222,15 @@ export default function ClientWidgetAlpha({
 
                 {selectedClient && (
                     <div className="space-y-4">
+                        <div className="rounded-xl border border-border bg-muted/30 p-3">
+                            <SucursalSelector
+                                clienteCodigo={selectedClient.codigo}
+                                clienteDireccion={selectedClient.Dirección}
+                                seleccionada={sucursal}
+                                onSeleccionar={onSucursalSelect}
+                            />
+                        </div>
+
                         <ContactInfoAlpha
                             client={selectedClient}
                             referenciaDireccion={referenciaDireccion}

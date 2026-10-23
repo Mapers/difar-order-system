@@ -94,6 +94,8 @@ export default function OrderPageAlpha() {
                 loadingSellers={order.loading.sellers}
                 clientsFiltered={order.clientsFiltered}
                 selectedClient={order.selectedClient}
+                sucursal={order.sucursal}
+                onSucursalSelect={order.setSucursal}
                 sellersFiltered={order.sellersFiltered}
                 seller={order.seller}
                 conditions={order.conditions}
@@ -175,6 +177,7 @@ export default function OrderPageAlpha() {
             <aside className="hidden lg:block lg:sticky lg:top-20">
               <OrderSummarySidebar
                   selectedClient={order.selectedClient}
+                  sucursal={order.sucursal}
                   condition={order.condition}
                   currency={order.currency}
                   selectedProducts={order.selectedProducts}

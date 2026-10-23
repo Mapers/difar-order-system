@@ -2,7 +2,8 @@
 
 import React from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { ClipboardList, User, Package, CreditCard } from 'lucide-react'
+import { ClipboardList, User, Package, CreditCard, MapPin } from 'lucide-react'
+import { Sucursal } from '@/components/tomar-pedido/SucursalSelector'
 import { IClient, ICondicion, IMoneda } from '@/app/types/order/client-interface'
 import { ISelectedProduct } from '@/app/types/order/product-interface'
 import { calcularTotal, getCurrencySymbol } from '@/app/utils/order-helpers'
@@ -14,13 +15,15 @@ import { calcularTotal, getCurrencySymbol } from '@/app/utils/order-helpers'
 // sección principal en max-w-4xl.
 interface OrderSummarySidebarProps {
     selectedClient: IClient | null
+    /** Dirección de entrega elegida (sucursal o la principal del cliente). */
+    sucursal?: Sucursal | null
     condition: ICondicion | null
     currency: IMoneda | null
     selectedProducts: ISelectedProduct[]
 }
 
 export default function OrderSummarySidebar({
-    selectedClient, condition, currency, selectedProducts,
+    selectedClient, sucursal, condition, currency, selectedProducts,
 }: OrderSummarySidebarProps) {
     const sym = getCurrencySymbol(currency?.value)
     const total = calcularTotal(selectedProducts)
@@ -46,6 +49,20 @@ export default function OrderSummarySidebar({
                         )}
                     </div>
                 </div>
+
+                {selectedClient && (
+                    <div className="flex items-start gap-2">
+                        <MapPin className="h-4 w-4 shrink-0 text-rose-600 dark:text-rose-400 mt-0.5" />
+                        <div className="min-w-0">
+                            <p className="text-xs uppercase font-semibold text-muted-foreground">
+                                Entrega{sucursal && sucursal.esPrincipal !== 1 ? ' · sucursal' : ''}
+                            </p>
+                            <p className="font-medium text-foreground leading-snug line-clamp-2">
+                                {sucursal?.direccion || selectedClient.Dirección || '—'}
+                            </p>
+                        </div>
+                    </div>
+                )}
 
                 {condition && (
                     <div className="flex items-start gap-2">
