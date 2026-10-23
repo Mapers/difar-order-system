@@ -350,11 +350,11 @@ export default function ClienteCobranzaPage() {
         }
     }
 
-    // El listado puede traer el banco como Entidad_Financiera o Entida_Financiera
-    // (así se llama la columna al guardar), y a veces solo con su descripción.
+    // sp_ws_amortizacion_listar devuelve el banco en la columna EntidaFinanciera;
+    // se aceptan también las otras variantes del nombre y, sin código, la descripción.
     const entidadDelRegistro = (record: AmortizacionListItem): string => {
         const r = record as AmortizacionListItem & { Entida_Financiera?: unknown }
-        const codigo = String(r.Entidad_Financiera ?? r.Entida_Financiera ?? '').trim()
+        const codigo = String(r.EntidaFinanciera ?? r.Entidad_Financiera ?? r.Entida_Financiera ?? '').trim()
         if (codigo) return entidades.find(e => mismoCodigo(e.CodigoEntidadFinanciera, codigo))?.CodigoEntidadFinanciera ?? codigo
         const desc = String(r.DescripcionEntidadFinanciera ?? '').trim().toUpperCase()
         return desc ? entidades.find(e => e.DescripcionEntidadFinanciera?.trim().toUpperCase() === desc)?.CodigoEntidadFinanciera ?? '' : ''

@@ -76,6 +76,8 @@ export interface AmortizacionListItem {
     Moneda: string
     Tipo_Amort: string
     NroDocAmortiza: string
+    /** Así lo devuelve sp_ws_amortizacion_listar. */
+    EntidaFinanciera?: string
     Entidad_Financiera: string
     DescripcionEntidadFinanciera: string
     Observaciones: string
