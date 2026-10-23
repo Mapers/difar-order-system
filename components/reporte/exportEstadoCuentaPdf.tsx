@@ -14,7 +14,7 @@ interface ExportPdfProps {
 
 export const ExportEstadoCuentaPdf: React.FC<ExportPdfProps> = ({ data, disabled = false }) => {
     const [abierto, setAbierto] = useState(false);
-    const DEFECTO: OpcionesPdfReporte = { titulo: "ESTADO DE CUENTA CLIENTE", nota: '', color: '#333333', tamanoLetra: 'normal' };
+    const DEFECTO: OpcionesPdfReporte = { titulo: "ESTADO DE CUENTA CLIENTE", nota: '', color: '#163161', tamanoLetra: 'normal' };
 
     const formatMoney = (amount: number) => amount.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
@@ -31,6 +31,14 @@ export const ExportEstadoCuentaPdf: React.FC<ExportPdfProps> = ({ data, disabled
 
     const generar = async (op: OpcionesPdfReporte): Promise<Uint8Array> => {
         const principal = hexARgb(op.color);
+        const suave     = aclarar(principal, 0.9);
+        const cebra     = aclarar(principal, 0.96);
+        const ROJO      = rgb(0.75, 0.1, 0.1);
+        const VERDE     = rgb(0.02, 0.47, 0.34);
+        const GRIS      = rgb(0.42, 0.45, 0.5);
+        const TEXTO     = rgb(0.12, 0.14, 0.2);
+        const BLANCO    = rgb(1, 1, 1);
+
         const pdfDoc = await crearPdfReporte(op.tamanoLetra);
         const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
         const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
@@ -45,8 +53,23 @@ export const ExportEstadoCuentaPdf: React.FC<ExportPdfProps> = ({ data, disabled
 
         const logoImage = await cargarLogoPdf(pdfDoc);
 
-        // Anchos de las siete columnas del detalle.
-        const cols = [50, 185, 40, 60, 60, 60, 60];
+        // Anchos de las siete columnas del detalle (suman el ancho útil).
+        const cols = [52, 176, 42, 62, 66, 59, 58];
+        const finCol = (i: number) => margin + cols.slice(0, i + 1).reduce((a, b) => a + b, 0);
+        const derecha = (texto: string, i: number, y: number, size: number, f: any, color = TEXTO) =>
+            currentPage.drawText(texto, { x: finCol(i) - f.widthOfTextAtSize(texto, size) - 5, y, size, font: f, color });
+        const centro = (texto: string, i: number, y: number, size: number, f: any, color = TEXTO) =>
+            currentPage.drawText(texto, { x: finCol(i) - cols[i] / 2 - f.widthOfTextAtSize(texto, size) / 2, y, size, font: f, color });
+
+        const encabezadoColumnas = () => {
+            currentPage.drawRectangle({ x: margin, y: yPosition - 5, width: contentWidth, height: 16, color: principal });
+            ["Fecha", "Descripción", "Moneda", "Provisión", "Amortización", "Saldo S/.", "Saldo US$"].forEach((h, i) => {
+                if (i >= 3) derecha(h, i, yPosition, 7.5, boldFont, BLANCO);
+                else if (i === 2) centro(h, i, yPosition, 7.5, boldFont, BLANCO);
+                else currentPage.drawText(h, { x: finCol(i) - cols[i] + 5, y: yPosition, size: 7.5, font: boldFont, color: BLANCO });
+            });
+            yPosition -= 20;
+        };
 
         const drawHeader = (page: any, isFirstPage: boolean) => {
             yPosition = dibujarCabeceraPdf({
@@ -54,60 +77,40 @@ export const ExportEstadoCuentaPdf: React.FC<ExportPdfProps> = ({ data, disabled
                 pageWidth, pageHeight, margin,
                 subtitulo: op.titulo,
                 filtros: op.nota.trim() || undefined,
+                infoDerecha: `Corte: ${formatDateStr(data.FechaCorte)}`,
                 infoDerechaSec: `Impreso: ${new Date().toLocaleDateString('es-PE')}`,
             });
 
             // Los datos del cliente solo en la primera página: en las
             // siguientes serían ruido que le quita sitio al detalle.
             if (isFirstPage) {
-                page.drawRectangle({
-                    x: margin, y: yPosition - 85, width: contentWidth, height: 90,
-                    color: aclarar(principal, 0.96), borderColor: aclarar(principal, 0.75), borderWidth: 1,
-                });
+                const alto = 96;
+                page.drawRectangle({ x: margin, y: yPosition - alto, width: contentWidth, height: alto, color: aclarar(principal, 0.95), borderColor: aclarar(principal, 0.75), borderWidth: 0.8 });
+                page.drawRectangle({ x: margin, y: yPosition - alto, width: 4, height: alto, color: principal });
 
-                const xIzq = margin + 10;
-                const xDer = margin + 350;
+                const xIzq = margin + 14;
+                const xDer = margin + 330;
                 const anchoIzq = xDer - xIzq - 10;
                 const anchoDer = pageWidth - margin - xDer - 10;
 
-                const izq = (texto: string, y: number, f: any = font) =>
-                    page.drawText(truncarPdf(texto, anchoIzq, 8, f), { x: xIzq, y, size: 8, font: f });
-                const der = (texto: string, y: number, f: any = font) =>
-                    page.drawText(truncarPdf(texto, anchoDer, 8, f), { x: xDer, y, size: 8, font: f });
-
-                izq(`CLIENTE: ${data.Cliente}`, yPosition - 15, boldFont);
-                der(`DOCUMENTO: ${data.RUC}`, yPosition - 15, boldFont);
-
-                izq(`DIRECCIÓN: ${data.Direccion || '-'}`, yPosition - 30);
-                der(`DISTRITO: ${data.Distrito || '-'}`, yPosition - 30);
-
-                izq(`CORREO: ${data.Correo || '-'}`, yPosition - 45);
-                der(`TELÉFONO: ${data.Telefono || '-'}`, yPosition - 45);
-
-                izq(`VENDEDOR: ${data.Vendedor || '-'}`, yPosition - 60);
-
-                page.drawText(`FECHA DE CORTE: ${formatDateStr(data.FechaCorte)}`, {
-                    x: xIzq, y: yPosition - 75, size: 8, font: boldFont, color: rgb(0.8, 0.1, 0.1),
+                page.drawText(truncarPdf(data.NombreComercial || data.Cliente || '', anchoIzq + anchoDer, 11, boldFont), {
+                    x: xIzq, y: yPosition - 17, size: 11, font: boldFont, color: principal,
                 });
+                const campo = (etq: string, val: string, x: number, y: number, ancho: number) => {
+                    page.drawText(etq, { x, y, size: 6.5, font, color: GRIS });
+                    page.drawText(truncarPdf(val || '-', ancho, 8, boldFont), { x, y: y - 10, size: 8, font: boldFont, color: TEXTO });
+                };
+                campo('RAZÓN SOCIAL', data.Cliente, xIzq, yPosition - 32, anchoIzq);
+                campo('RUC / DOCUMENTO', data.RUC, xDer, yPosition - 32, anchoDer);
+                campo('DIRECCIÓN', [data.Direccion, data.Distrito].filter(Boolean).join(' - '), xIzq, yPosition - 56, anchoIzq);
+                campo('TELÉFONO', data.Telefono, xDer, yPosition - 56, anchoDer);
+                campo('VENDEDOR', data.Vendedor, xIzq, yPosition - 80, anchoIzq);
+                campo('CORREO', data.Correo, xDer, yPosition - 80, anchoDer);
 
-                yPosition -= 105;
+                yPosition -= alto + 16;
             }
 
-            const colHeaders = ["Fecha", "Descripción", "Moneda", "Provisión", "Amortización", "Saldo S/.", "Saldo US$"];
-
-            let xPos = margin;
-            colHeaders.forEach((header, i) => {
-                let textX = xPos;
-                if (i >= 3) textX = xPos + cols[i] - boldFont.widthOfTextAtSize(header, 8) - 5;
-                if (i === 2) textX = xPos + cols[i] / 2 - boldFont.widthOfTextAtSize(header, 8) / 2;
-                page.drawText(header, { x: textX, y: yPosition, size: 8, font: boldFont });
-                xPos += cols[i];
-            });
-
-            page.drawLine({
-                start: { x: margin, y: yPosition - 4 }, end: { x: pageWidth - margin, y: yPosition - 4 }, thickness: 1,
-            });
-            yPosition -= 16;
+            encabezadoColumnas();
         };
 
         const checkPageBreak = (needed: number) => {
@@ -121,107 +124,62 @@ export const ExportEstadoCuentaPdf: React.FC<ExportPdfProps> = ({ data, disabled
         drawHeader(currentPage, true);
 
         for (const doc of data.Documentos) {
-            checkPageBreak(30);
+            checkPageBreak(50);
 
-            currentPage.drawText(`Documento: ${doc.Abreviatura}`, {
-                x: margin, y: yPosition, size: 8, font: boldFont,
-            });
-            currentPage.drawText(`${doc.SerieNumero}`, {
-                x: margin + 80, y: yPosition, size: 8, font: boldFont,
-            });
-            currentPage.drawText("Emisión:", {
-                x: margin + 180, y: yPosition, size: 8, font,
-            });
-            currentPage.drawText(`${formatDateStr(doc.Emision)}`, {
-                x: margin + 220, y: yPosition, size: 8, font: boldFont,
-            });
-            currentPage.drawText("Vencimiento:", {
-                x: margin + 300, y: yPosition, size: 8, font,
-            });
-            currentPage.drawText(`${formatDateStr(doc.Vencimiento)}`, {
-                x: margin + 360, y: yPosition, size: 8, font: boldFont, color: rgb(0.8, 0, 0),
-            });
-
-            yPosition -= 14;
+            // Franja del documento
+            currentPage.drawRectangle({ x: margin, y: yPosition - 5, width: contentWidth, height: 16, color: suave });
+            currentPage.drawText(`${doc.Abreviatura}  ${doc.SerieNumero}`, { x: margin + 5, y: yPosition, size: 8.5, font: boldFont, color: principal });
+            const fechas = `Emisión: ${formatDateStr(doc.Emision)}`;
+            currentPage.drawText(fechas, { x: margin + 190, y: yPosition, size: 7.5, font, color: TEXTO });
+            currentPage.drawText(`Vence: ${formatDateStr(doc.Vencimiento)}`, { x: margin + 300, y: yPosition, size: 7.5, font: boldFont, color: ROJO });
+            const saldoDoc = `Saldo: S/ ${formatMoney(doc.SaldoFinalSoles || 0)}`;
+            currentPage.drawText(saldoDoc, { x: pageWidth - margin - 5 - boldFont.widthOfTextAtSize(saldoDoc, 7.5), y: yPosition, size: 7.5, font: boldFont, color: principal });
+            yPosition -= 16;
 
             let sumProvision = 0;
             let sumAmortizacion = 0;
 
-            for (const mov of doc.Movimientos) {
+            doc.Movimientos.forEach((mov: any, m: number) => {
                 checkPageBreak(15);
 
                 sumProvision    += mov.Provision;
                 sumAmortizacion += mov.Amortizacion;
 
-                let xPos = margin;
+                if (m % 2 === 1) {
+                    currentPage.drawRectangle({ x: margin, y: yPosition - 4, width: contentWidth, height: 13, color: cebra });
+                }
                 const isSoles = mov.Moneda === 'S/.' || mov.Moneda === 'NSO';
-                const desc = mov.Descripcion.length > 42
-                    ? mov.Descripcion.substring(0, 42) + "..."
-                    : mov.Descripcion;
+                currentPage.drawText(formatDateStr(mov.Fecha), { x: margin + 5, y: yPosition, size: 7.5, font, color: TEXTO });
+                currentPage.drawText(truncarPdf(mov.Descripcion || '', cols[1] - 10, 7.5, font), { x: finCol(0) + 5, y: yPosition, size: 7.5, font, color: TEXTO });
+                centro(String(mov.Moneda ?? ''), 2, yPosition, 7.5, font);
+                derecha(formatMoney(mov.Provision), 3, yPosition, 7.5, font);
+                derecha(formatMoney(mov.Amortizacion), 4, yPosition, 7.5, font);
+                derecha(isSoles ? formatMoney(mov.SaldoSoles) : '0.00', 5, yPosition, 7.5, font);
+                derecha(!isSoles ? formatMoney(mov.SaldoDolares) : '0.00', 6, yPosition, 7.5, font);
 
-                const rowData = [
-                    formatDateStr(mov.Fecha),
-                    desc,
-                    mov.Moneda,
-                    formatMoney(mov.Provision),
-                    formatMoney(mov.Amortizacion),
-                    isSoles  ? formatMoney(mov.SaldoSoles)   : '0.00',
-                    !isSoles ? formatMoney(mov.SaldoDolares) : '0.00',
-                ];
-
-                rowData.forEach((text, i) => {
-                    let textX = xPos;
-                    if (i >= 3) textX = xPos + cols[i] - font.widthOfTextAtSize(text, 8) - 5;
-                    if (i === 2) textX = xPos + cols[i] / 2 - font.widthOfTextAtSize(text, 8) / 2;
-                    currentPage.drawText(text, { x: textX, y: yPosition, size: 8, font });
-                    xPos += cols[i];
-                });
-
-                yPosition -= 12;
-            }
-
-            checkPageBreak(15);
-
-            const subTitle = `SALDO: ${doc.Abreviatura} Nro. ${doc.SerieNumero}`;
-            const subTitleWidth = boldFont.widthOfTextAtSize(subTitle, 8);
-            currentPage.drawText(subTitle, {
-                x: margin + cols[0] + cols[1] - subTitleWidth - 10, y: yPosition, size: 8, font: boldFont,
+                yPosition -= 13;
             });
 
-            currentPage.drawText(formatMoney(sumProvision), {
-                x: margin + cols[0] + cols[1] + cols[2] + cols[3] - boldFont.widthOfTextAtSize(formatMoney(sumProvision), 8) - 5,
-                y: yPosition, size: 8, font: boldFont,
-            });
-            currentPage.drawText(formatMoney(sumAmortizacion), {
-                x: margin + cols[0] + cols[1] + cols[2] + cols[3] + cols[4] - boldFont.widthOfTextAtSize(formatMoney(sumAmortizacion), 8) - 5,
-                y: yPosition, size: 8, font: boldFont,
-            });
+            checkPageBreak(18);
 
-            const saldoFinalSoles   = formatMoney(doc.SaldoFinalSoles   || 0);
-            const saldoFinalDolares = formatMoney(doc.SaldoFinalDolares || 0);
+            // Subtotal del documento
+            currentPage.drawLine({ start: { x: finCol(2), y: yPosition + 9 }, end: { x: pageWidth - margin, y: yPosition + 9 }, thickness: 0.6, color: aclarar(principal, 0.5) });
+            const subTitle = `Saldo ${doc.Abreviatura} ${doc.SerieNumero}`;
+            currentPage.drawText(subTitle, { x: finCol(2) - boldFont.widthOfTextAtSize(subTitle, 7.5) - 5, y: yPosition, size: 7.5, font: boldFont, color: TEXTO });
+            derecha(formatMoney(sumProvision), 3, yPosition, 7.5, boldFont);
+            derecha(formatMoney(sumAmortizacion), 4, yPosition, 7.5, boldFont);
+            derecha(formatMoney(doc.SaldoFinalSoles || 0), 5, yPosition, 7.5, boldFont, principal);
+            derecha(formatMoney(doc.SaldoFinalDolares || 0), 6, yPosition, 7.5, boldFont, VERDE);
 
-            currentPage.drawText(saldoFinalSoles, {
-                x: margin + cols[0] + cols[1] + cols[2] + cols[3] + cols[4] + cols[5] - boldFont.widthOfTextAtSize(saldoFinalSoles, 8) - 5,
-                y: yPosition, size: 8, font: boldFont, color: rgb(0, 0.2, 0.8),
-            });
-            currentPage.drawText(saldoFinalDolares, {
-                x: margin + cols[0] + cols[1] + cols[2] + cols[3] + cols[4] + cols[5] + cols[6] - boldFont.widthOfTextAtSize(saldoFinalDolares, 8) - 5,
-                y: yPosition, size: 8, font: boldFont, color: rgb(0, 0.5, 0),
-            });
-
-            yPosition -= 20;
+            yPosition -= 22;
         }
 
-        checkPageBreak(20);
-        const totalTitle = "SALDO CLIENTE:";
-        const totalTitleWidth = boldFont.widthOfTextAtSize(totalTitle, 9);
-        currentPage.drawText(totalTitle, { x: margin + cols[0] + cols[1] - totalTitleWidth - 10, y: yPosition, size: 9, font: boldFont });
-
-        const txtTotalSoles = formatMoney(data.TotalSoles);
-        currentPage.drawText(txtTotalSoles, { x: margin + cols[0] + cols[1] + cols[2] + cols[3] + cols[4] + cols[5] - boldFont.widthOfTextAtSize(txtTotalSoles, 9) - 5, y: yPosition, size: 9, font: boldFont, color: rgb(0, 0, 0) });
-
-        const txtTotalDolares = formatMoney(data.TotalDolares);
-        currentPage.drawText(txtTotalDolares, { x: margin + cols[0] + cols[1] + cols[2] + cols[3] + cols[4] + cols[5] + cols[6] - boldFont.widthOfTextAtSize(txtTotalDolares, 9) - 5, y: yPosition, size: 9, font: boldFont, color: rgb(0, 0, 0) });
+        // Saldo del cliente
+        checkPageBreak(30);
+        currentPage.drawRectangle({ x: margin, y: yPosition - 9, width: contentWidth, height: 22, color: principal });
+        currentPage.drawText("SALDO DEL CLIENTE", { x: margin + 8, y: yPosition - 1, size: 9, font: boldFont, color: BLANCO });
+        derecha(`S/ ${formatMoney(data.TotalSoles)}`, 5, yPosition - 1, 9, boldFont, BLANCO);
+        derecha(`US$ ${formatMoney(data.TotalDolares)}`, 6, yPosition - 1, 9, boldFont, BLANCO);
 
         const altoCierre = 170;
 
@@ -235,11 +193,11 @@ export const ExportEstadoCuentaPdf: React.FC<ExportPdfProps> = ({ data, disabled
                 infoDerechaSec: `Impreso: ${new Date().toLocaleDateString('es-PE')}`,
             });
         } else {
-            yPosition -= 35;
+            yPosition -= 40;
         }
 
         currentPage.drawText("OBSERVACIONES:", {
-            x: margin, y: yPosition, size: 8, font: boldFont,
+            x: margin, y: yPosition, size: 8, font: boldFont, color: principal,
         });
         yPosition -= 18;
 
@@ -262,7 +220,7 @@ export const ExportEstadoCuentaPdf: React.FC<ExportPdfProps> = ({ data, disabled
 
         currentPage.drawRectangle({
             x: xFirma, y: yPosition - altoFirma, width: anchoFirma, height: altoFirma,
-            borderColor: rgb(0.6, 0.6, 0.6), borderWidth: 0.5,
+            borderColor: aclarar(principal, 0.5), borderWidth: 0.6,
         });
 
         const pieFirma = "FIRMA Y SELLO DEL CLIENTE";
@@ -275,7 +233,8 @@ export const ExportEstadoCuentaPdf: React.FC<ExportPdfProps> = ({ data, disabled
         const pages = pdfDoc.getPages();
         pages.forEach((page, idx) => {
             const pageNum = `Página ${idx + 1} de ${pages.length}`;
-            page.drawText(pageNum, { x: pageWidth - margin - font.widthOfTextAtSize(pageNum, 8), y: margin / 2, size: 8, font });
+            page.drawText(pageNum, { x: pageWidth - margin - font.widthOfTextAtSize(pageNum, 8), y: margin / 2, size: 8, font, color: GRIS });
+            page.drawText(`Estado de cuenta · ${data.RUC ?? ''}`, { x: margin, y: margin / 2, size: 8, font, color: GRIS });
         });
 
         return pdfDoc.save();
