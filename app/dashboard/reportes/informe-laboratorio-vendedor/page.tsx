@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
-import { Check, ChevronDown, FlaskConical, Search, Users, X, Calendar as CalendarIcon, Eye, Loader2, Package } from "lucide-react"
+import { Check, ChevronDown, FlaskConical, Search, Users, X, Calendar as CalendarIcon, Eye, Loader2, Package, ChevronRight, ChevronsUpDown, ChevronsDownUp } from "lucide-react"
 import { toast } from "@/app/hooks/useToast"
 import { useAuth } from "@/context/authContext"
 import { Badge } from "@/components/ui/badge"
@@ -123,6 +123,16 @@ export default function LabSellerReportPage() {
     const [detalleLabVend, setDetalleLabVend] = useState<{ idLab: number; codVend: string } | null>(null);
     // R2.5: divide montos, nunca porcentajes ni cantidades.
     const [quitarIgv, setQuitarIgv] = useState(false);
+    // Laboratorios abiertos en el acordeón. Cerrados por defecto; si hay uno solo, abierto.
+    const [labsAbiertos, setLabsAbiertos] = useState<Set<string>>(new Set());
+    useEffect(() => {
+        setLabsAbiertos(data.length === 1 ? new Set([String(data[0].Laboratorio)]) : new Set());
+    }, [data]);
+    const alternarLab = (nombre: string) => setLabsAbiertos(prev => {
+        const sig = new Set(prev);
+        if (sig.has(nombre)) sig.delete(nombre); else sig.add(nombre);
+        return sig;
+    });
 
     useEffect(() => {
         const fetchCatalogs = async () => {
@@ -501,7 +511,7 @@ export default function LabSellerReportPage() {
     const formatMoney = (amount: number) => amount.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
     return (
-        <div className="grid gap-6 p-4 md:p-6">
+        <div className="grid grid-cols-1 gap-6 p-4 md:p-6">
             <div className="flex flex-col gap-2">
                 <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">Ventas por Vendedor</h1>
                 <p className="text-sm md:text-base text-muted-foreground">Consulta las ventas agrupadas por laboratorio y vendedor del mes seleccionado.</p>
@@ -668,14 +678,54 @@ export default function LabSellerReportPage() {
                                     % de cumplimiento no aplican. No es lo mismo que una cuota en cero.
                                 </div>
                             )}
-                            {dataConCuotas.map((lab: any, idx: number) => (
-                                <div key={idx} className="border border-border rounded-lg overflow-hidden shadow-sm bg-background">
-                                    <div className="bg-indigo-600 text-white p-3 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
-                                        <span className="text-lg font-bold text-center sm:text-left">{lab.Laboratorio}</span>
-                                        <Badge className="text-[10px] sm:text-xs font-medium bg-indigo-800/60 hover:bg-indigo-800/60 text-indigo-50 border-none w-fit mx-auto sm:mx-0">
-                                            Mes: {lab.Mes} | Año: {lab.Año}
-                                        </Badge>
+                            {dataConCuotas.length > 1 && (
+                                <div className="flex flex-wrap items-center justify-between gap-2">
+                                    <span className="text-xs text-muted-foreground">
+                                        {dataConCuotas.length} laboratorios · {labsAbiertos.size} abierto{labsAbiertos.size !== 1 ? 's' : ''}
+                                    </span>
+                                    <div className="flex gap-2">
+                                        <Button variant="outline" size="sm" className="h-8 gap-1.5 bg-background text-xs"
+                                                onClick={() => setLabsAbiertos(new Set(dataConCuotas.map((l: any) => String(l.Laboratorio))))}>
+                                            <ChevronsUpDown className="h-3.5 w-3.5" /> Abrir todos
+                                        </Button>
+                                        <Button variant="outline" size="sm" className="h-8 gap-1.5 bg-background text-xs"
+                                                onClick={() => setLabsAbiertos(new Set())}>
+                                            <ChevronsDownUp className="h-3.5 w-3.5" /> Cerrar todos
+                                        </Button>
                                     </div>
+                                </div>
+                            )}
+                            {dataConCuotas.map((lab: any, idx: number) => {
+                                const abierto = labsAbiertos.has(String(lab.Laboratorio))
+                                return (
+                                <div key={idx} className="border border-border rounded-lg overflow-hidden shadow-sm bg-background">
+                                    <button
+                                        type="button"
+                                        onClick={() => alternarLab(String(lab.Laboratorio))}
+                                        aria-expanded={abierto}
+                                        className="flex w-full flex-col gap-2 bg-indigo-600 p-3 text-left text-white transition-colors hover:bg-indigo-700 sm:flex-row sm:items-center sm:justify-between"
+                                    >
+                                        <span className="flex min-w-0 items-center gap-2">
+                                            <ChevronRight className={`h-5 w-5 shrink-0 transition-transform ${abierto ? 'rotate-90' : ''}`} />
+                                            <span className="min-w-0">
+                                                <span className="block text-base font-bold leading-tight sm:truncate sm:text-lg">{lab.Laboratorio}</span>
+                                                <span className="block text-[11px] text-indigo-100">
+                                                    {lab.vendedores.length} vendedor{lab.vendedores.length !== 1 ? 'es' : ''} · Mes: {lab.Mes} | Año: {lab.Año}
+                                                </span>
+                                            </span>
+                                        </span>
+                                        <span className="flex flex-wrap items-center gap-2 pl-7 sm:pl-0">
+                                            <span className="rounded-md bg-white/15 px-2.5 py-1 text-sm font-bold tabular-nums">
+                                                S/ {formatMoney(lab.totalVentasLaboratorio)}
+                                            </span>
+                                            {lab.cuotaLab > 0 && (
+                                                <span className="rounded-md bg-indigo-800/60 px-2.5 py-1 text-xs font-semibold tabular-nums">
+                                                    {lab.pctLab == null ? '—' : `${Number(lab.pctLab).toFixed(2)}%`} de S/ {formatMoney(lab.cuotaLab)}
+                                                </span>
+                                            )}
+                                        </span>
+                                    </button>
+                                    {abierto && (<>
 
                                     <div className="hidden md:block overflow-x-auto">
                                         <table className="w-full text-sm text-left text-muted-foreground">
@@ -782,10 +832,12 @@ export default function LabSellerReportPage() {
                                             </div>
                                         </div>
                                     </div>
+                                    </>)}
                                 </div>
-                            ))}
+                                )
+                            })}
 
-                            <div className="bg-background border border-blue-200 p-4 rounded-lg flex flex-col sm:flex-row justify-between items-center shadow-md mt-6 sticky bottom-4">
+                            <div className="bg-background border border-blue-200 p-4 rounded-lg flex flex-col sm:flex-row justify-between items-center shadow-md mt-6 md:sticky md:bottom-4">
                                 <span className="text-sm font-bold uppercase tracking-wider text-foreground mb-2 sm:mb-0">Total General (Todos los Laboratorios)</span>
                                 <div className="flex flex-col gap-3 items-stretch sm:flex-row sm:items-center sm:gap-8">
                                     <div className="text-center sm:text-right bg-blue-50 p-2 rounded-md sm:bg-transparent sm:p-0 border border-blue-100 sm:border-none">
