@@ -75,6 +75,12 @@ function FormSection({
     )
 }
 
+/** Compara códigos que pueden venir como número o con espacios ("02 " y 2 son el mismo). */
+const mismoCodigo = (a: unknown, b: unknown) => {
+    const x = String(a ?? '').trim(), y = String(b ?? '').trim()
+    return x !== '' && (x === y || (/^\d+$/.test(x) && /^\d+$/.test(y) && Number(x) === Number(y)))
+}
+
 export default function ClienteCobranzaPage() {
     const { user } = useAuth()
 
@@ -340,6 +346,16 @@ export default function ClienteCobranzaPage() {
         }
     }
 
+    // El listado puede traer el banco como Entidad_Financiera o Entida_Financiera
+    // (así se llama la columna al guardar), y a veces solo con su descripción.
+    const entidadDelRegistro = (record: AmortizacionListItem): string => {
+        const r = record as AmortizacionListItem & { Entida_Financiera?: unknown }
+        const codigo = String(r.Entidad_Financiera ?? r.Entida_Financiera ?? '').trim()
+        if (codigo) return entidades.find(e => mismoCodigo(e.CodigoEntidadFinanciera, codigo))?.CodigoEntidadFinanciera ?? codigo
+        const desc = String(r.DescripcionEntidadFinanciera ?? '').trim().toUpperCase()
+        return desc ? entidades.find(e => e.DescripcionEntidadFinanciera?.trim().toUpperCase() === desc)?.CodigoEntidadFinanciera ?? '' : ''
+    }
+
     const handleSelectEditar = (record: AmortizacionListItem) => {
         setForm({
             Id_Amort_Clie:     record.Id_Amort_Clie,
@@ -354,7 +370,7 @@ export default function ClienteCobranzaPage() {
             Importe_Amortiz:   record.Importe_Amortiz?.toString() ?? "",
             Tipo_Amort:        record.Tipo_Amort        ?? "",
             NroDocAmortiza:    record.NroDocAmortiza     ?? "",
-            Entida_Financiera: record.Entidad_Financiera ?? "",
+            Entida_Financiera: entidadDelRegistro(record),
             Observaciones:     record.Observaciones      ?? "",
             Cod_Vend:          record.Cod_Vend           ?? "",
             Moneda:            record.Moneda             ?? "NSO",
@@ -382,7 +398,7 @@ export default function ClienteCobranzaPage() {
         ? tiposAmort.filter(t => t.Descripcion?.toUpperCase().includes(tipoAmortSearch.toUpperCase()))
         : tiposAmort
 
-    const selectedEntidad = entidades.find(e => e.CodigoEntidadFinanciera === form.Entida_Financiera) ?? null
+    const selectedEntidad = entidades.find(e => mismoCodigo(e.CodigoEntidadFinanciera, form.Entida_Financiera)) ?? null
     const entidadesFiltered = entidadSearch
         ? entidades.filter(e => e.DescripcionEntidadFinanciera?.toUpperCase().includes(entidadSearch.toUpperCase()))
         : entidades
