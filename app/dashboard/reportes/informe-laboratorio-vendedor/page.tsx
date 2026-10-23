@@ -123,10 +123,10 @@ export default function LabSellerReportPage() {
     const [detalleLabVend, setDetalleLabVend] = useState<{ idLab: number; codVend: string } | null>(null);
     // R2.5: divide montos, nunca porcentajes ni cantidades.
     const [quitarIgv, setQuitarIgv] = useState(false);
-    // Laboratorios abiertos en el acordeón. Cerrados por defecto; si hay uno solo, abierto.
+    // Laboratorios abiertos en el acordeón. Con cada búsqueda empiezan todos cerrados.
     const [labsAbiertos, setLabsAbiertos] = useState<Set<string>>(new Set());
     useEffect(() => {
-        setLabsAbiertos(data.length === 1 ? new Set([String(data[0].Laboratorio)]) : new Set());
+        setLabsAbiertos(new Set());
     }, [data]);
     const alternarLab = (nombre: string) => setLabsAbiertos(prev => {
         const sig = new Set(prev);
