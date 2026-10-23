@@ -8,6 +8,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { AlertCircle, Check, Download, ExternalLink, FileText, Loader2, Palette, Printer, RotateCcw, Type } from 'lucide-react'
 import { toast } from '@/app/hooks/useToast'
+import { imprimirPdf } from '@/components/reporte/imprimirPdf'
 import { cn } from '@/lib/utils'
 import { ComprasService } from '@/app/services/contabilidad/ContabilidadService'
 import { TEMAS_PDF } from '@/components/reporte/pdfOpciones'
@@ -240,10 +241,15 @@ export function ImprimirCompraDialog({
                     </Button>
                     <div className="ml-auto flex gap-2">
                         <Button variant="outline" onClick={onCerrar}>Cerrar</Button>
-                        <Button variant="outline" className="hidden gap-1.5 md:inline-flex" disabled={!listo}
+                        <Button variant="outline" size="icon" className="hidden md:inline-flex" disabled={!listo}
                                 onClick={() => url && window.open(url, '_blank')}
-                                title="Abre el PDF en otra pestaña para imprimirlo">
-                            <ExternalLink className="h-4 w-4" /> Abrir / Imprimir
+                                title="Abrir en otra pestaña" aria-label="Abrir en otra pestaña">
+                            <ExternalLink className="h-4 w-4" />
+                        </Button>
+                        <Button variant="outline" className="hidden gap-1.5 md:inline-flex" disabled={!listo}
+                                onClick={() => url && imprimirPdf(url)}
+                                title="Abre el cuadro de impresión para elegir la impresora">
+                            <Printer className="h-4 w-4" /> Imprimir
                         </Button>
                         <Button className="gap-1.5 bg-blue-600 text-white shadow-md shadow-blue-600/30 hover:bg-blue-700"
                                 disabled={!listo} onClick={descargar}>
