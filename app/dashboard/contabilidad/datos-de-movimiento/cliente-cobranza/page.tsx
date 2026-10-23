@@ -448,12 +448,12 @@ export default function ClienteCobranzaPage() {
 
                 <CardContent className="p-4 md:p-6 space-y-6">
                     {isEditing && (
-                        <div className="flex flex-wrap items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-300">
-                            <Info className="h-4 w-4 shrink-0" />
-                            <p className="min-w-0 flex-1">
-                                Estás viendo un cobro ya registrado. No se puede modificar: si algo está mal, elimínalo desde Buscar y vuelve a cargarlo.
+                        <div className="flex flex-col gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 sm:flex-row sm:items-center dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-300">
+                            <p className="flex min-w-0 flex-1 gap-2">
+                                <Info className="mt-0.5 h-4 w-4 shrink-0" />
+                                <span>Estás viendo un cobro ya registrado. No se puede modificar: si algo está mal, elimínalo desde Buscar y vuelve a cargarlo.</span>
                             </p>
-                            <Button size="sm" variant="outline" className="shrink-0 bg-background" onClick={resetForm}>
+                            <Button size="sm" variant="outline" className="shrink-0 self-start bg-background sm:self-auto" onClick={resetForm}>
                                 Nueva amortización
                             </Button>
                         </div>
