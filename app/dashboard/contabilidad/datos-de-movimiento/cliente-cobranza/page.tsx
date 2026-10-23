@@ -12,7 +12,7 @@ import {
     AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
     AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { Search, Save, Loader2, X, IdCard, FileText, Wallet, MessageSquare, User, Landmark, Eraser } from "lucide-react"
+import { Search, Save, Loader2, X, IdCard, FileText, Wallet, MessageSquare, User, Landmark, Eraser, Info } from "lucide-react"
 import apiClient from "@/app/api/client"
 import { useAuth } from "@/context/authContext"
 import { toast } from "@/app/hooks/useToast"
@@ -75,9 +75,9 @@ function FormSection({
     )
 }
 
-/** Compara códigos que pueden venir como número o con espacios ("02 " y 2 son el mismo). */
+/** Compara códigos que pueden venir como número, con espacios o en minúsculas ("02 " y 2 son el mismo). */
 const mismoCodigo = (a: unknown, b: unknown) => {
-    const x = String(a ?? '').trim(), y = String(b ?? '').trim()
+    const x = String(a ?? '').trim().toUpperCase(), y = String(b ?? '').trim().toUpperCase()
     return x !== '' && (x === y || (/^\d+$/.test(x) && /^\d+$/.test(y) && Number(x) === Number(y)))
 }
 
@@ -119,6 +119,9 @@ export default function ClienteCobranzaPage() {
     const [confirmGuardarOpen, setConfirmGuardarOpen] = useState(false)
 
     const isEditing = form.Id_Amort_Clie !== null
+    // Un cobro ya registrado no se modifica (se elimina y se vuelve a cargar): al editar todo queda de solo lectura.
+    const ro = isEditing
+    const [descTipoDocEditado, setDescTipoDocEditado] = useState('')
 
     useEffect(() => {
         if (user) {
@@ -282,6 +285,7 @@ export default function ClienteCobranzaPage() {
         setSellerSearch("")
         setTipoAmortSearch("")
         setEntidadSearch("")
+        setDescTipoDocEditado("")
     }
 
     const buildPayload = () => ({
@@ -368,17 +372,26 @@ export default function ClienteCobranzaPage() {
                     ? record.Fecha_Mvto.toString().slice(0, 10)
                     : "",
             Importe_Amortiz:   record.Importe_Amortiz?.toString() ?? "",
-            Tipo_Amort:        record.Tipo_Amort        ?? "",
+            Tipo_Amort:        tiposAmort.find(t => mismoCodigo(t.Cod_Tipo_Amort, record.Tipo_Amort))?.Cod_Tipo_Amort ?? record.Tipo_Amort ?? "",
             NroDocAmortiza:    record.NroDocAmortiza     ?? "",
             Entida_Financiera: entidadDelRegistro(record),
             Observaciones:     record.Observaciones      ?? "",
             Cod_Vend:          record.Cod_Vend           ?? "",
             Moneda:            record.Moneda             ?? "NSO",
-            Empresa:           record.EMPRESA             ?? "",
+            Empresa:           empresas.find(e => mismoCodigo(e.CodigoEmpresa, record.EMPRESA))?.CodigoEmpresa ?? record.EMPRESA ?? "",
         })
 
-        setSelectedClient(clients.find(c => c.codigo === record.Cod_Clie) ?? null)
-        setSelectedSeller(sellers.find(s => s.codigo === record.Cod_Vend) ?? null)
+        // Si el código no está en la lista cargada, se muestra igual con los datos del registro.
+        setSelectedClient(
+            clients.find(c => mismoCodigo(c.codigo, record.Cod_Clie))
+            ?? (record.Cod_Clie ? { codigo: record.Cod_Clie, Nombre: record.NombreCliente || record.Cod_Clie } as IClient : null)
+        )
+        const nombreVend = `${record.NombreVendedor ?? ''} ${record.ApellidoVendedor ?? ''}`.trim()
+        setSelectedSeller(
+            sellers.find(s => mismoCodigo(s.codigo, record.Cod_Vend))
+            ?? (record.Cod_Vend ? { codigo: record.Cod_Vend, nombres: nombreVend || record.Cod_Vend, apellidos: '' } as Seller : null)
+        )
+        setDescTipoDocEditado(record.DescTipoDoc ?? '')
     }
 
     const handleOpenKardex = (record: AmortizacionListItem) => {
@@ -391,9 +404,9 @@ export default function ClienteCobranzaPage() {
         setMayorOpen(true)
     }
 
-    const selectedTipoDoc = tiposDoc.find(t => t.Cod_Tipo === form.TipoDoc) ?? null
+    const selectedTipoDoc = tiposDoc.find(t => mismoCodigo(t.Cod_Tipo, form.TipoDoc)) ?? null
 
-    const selectedTipoAmort = tiposAmort.find(t => t.Cod_Tipo_Amort === form.Tipo_Amort) ?? null
+    const selectedTipoAmort = tiposAmort.find(t => mismoCodigo(t.Cod_Tipo_Amort, form.Tipo_Amort)) ?? null
     const tiposAmortFiltered = tipoAmortSearch
         ? tiposAmort.filter(t => t.Descripcion?.toUpperCase().includes(tipoAmortSearch.toUpperCase()))
         : tiposAmort
@@ -434,6 +447,17 @@ export default function ClienteCobranzaPage() {
                 </CardHeader>
 
                 <CardContent className="p-4 md:p-6 space-y-6">
+                    {isEditing && (
+                        <div className="flex flex-wrap items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-300">
+                            <Info className="h-4 w-4 shrink-0" />
+                            <p className="min-w-0 flex-1">
+                                Estás viendo un cobro ya registrado. No se puede modificar: si algo está mal, elimínalo desde Buscar y vuelve a cargarlo.
+                            </p>
+                            <Button size="sm" variant="outline" className="shrink-0 bg-background" onClick={resetForm}>
+                                Nueva amortización
+                            </Button>
+                        </div>
+                    )}
                     <FormSection
                         icon={IdCard}
                         accent="blue"
@@ -458,7 +482,8 @@ export default function ClienteCobranzaPage() {
                                                 {selectedClient.RUC ? `RUC: ${selectedClient.RUC}` : selectedClient.codigo}
                                             </p>
                                         </div>
-                                        <Button
+                                        {!ro && (
+<Button
                                             type="button"
                                             size="sm"
                                             variant="outline"
@@ -466,7 +491,7 @@ export default function ClienteCobranzaPage() {
                                             className="h-7 px-2.5 text-xs text-blue-600 border-blue-200 hover:bg-blue-100 bg-background shrink-0"
                                         >
                                             Cambiar
-                                        </Button>
+                                        </Button>)}
                                     </div>
                                 ) : (
                                     <InlineAutocomplete<IClient>
@@ -544,6 +569,9 @@ export default function ClienteCobranzaPage() {
                                                 {e.NombreRazSocial}
                                             </SelectItem>
                                         ))}
+                                        {form.Empresa && !empresas.some(e => e.CodigoEmpresa === form.Empresa) && (
+                                            <SelectItem value={form.Empresa}>{form.Empresa}</SelectItem>
+                                        )}
                                     </SelectContent>
                                 </Select>
                             </div>
@@ -563,6 +591,7 @@ export default function ClienteCobranzaPage() {
                                 type="button"
                                 variant="outline"
                                 className="justify-start gap-2 h-auto whitespace-normal py-3 border-violet-200 text-violet-700 hover:bg-violet-50"
+                                disabled={ro}
                                 onClick={() => {
                                     if (!form.Cod_Clie) {
                                         toast({
@@ -597,7 +626,7 @@ export default function ClienteCobranzaPage() {
                                         readOnly
                                         tabIndex={-1}
                                         className="bg-muted cursor-not-allowed"
-                                        value={selectedTipoDoc?.Descripcion ?? form.TipoDoc}
+                                        value={selectedTipoDoc?.Descripcion ?? (descTipoDocEditado || form.TipoDoc)}
                                         placeholder="—"
                                     />
                                 </div>
@@ -643,6 +672,8 @@ export default function ClienteCobranzaPage() {
                                     </Label>
                                     <Input
                                         type="date"
+                                        readOnly={ro}
+                                        className={ro ? 'bg-muted cursor-not-allowed' : undefined}
                                         value={form.Fecha_Mvto}
                                         onChange={e => handleChange('Fecha_Mvto', e.target.value)}
                                     />
@@ -656,6 +687,8 @@ export default function ClienteCobranzaPage() {
                                         placeholder="0.00"
                                         min={0}
                                         step="0.01"
+                                        readOnly={ro}
+                                        className={ro ? 'bg-muted cursor-not-allowed' : undefined}
                                         value={form.Importe_Amortiz}
                                         onChange={e => handleChange('Importe_Amortiz', e.target.value)}
                                     />
@@ -680,7 +713,8 @@ export default function ClienteCobranzaPage() {
                                                     {selectedTipoAmort.Cod_Tipo_Amort}
                                                 </p>
                                             </div>
-                                            <Button
+                                            {!ro && (
+<Button
                                                 type="button"
                                                 size="sm"
                                                 variant="outline"
@@ -688,7 +722,7 @@ export default function ClienteCobranzaPage() {
                                                 className="h-7 px-2.5 text-xs text-blue-600 border-blue-200 hover:bg-blue-100 bg-background shrink-0"
                                             >
                                                 Cambiar
-                                            </Button>
+                                            </Button>)}
                                         </div>
                                     ) : (
                                         <InlineAutocomplete<TipoAmortizacion>
@@ -728,6 +762,8 @@ export default function ClienteCobranzaPage() {
                                     <Label className="text-sm">Nro. Doc. Amortiza</Label>
                                     <Input
                                         placeholder="Nro. documento de pago"
+                                        readOnly={ro}
+                                        className={ro ? 'bg-muted cursor-not-allowed' : undefined}
                                         value={form.NroDocAmortiza}
                                         onChange={e => handleChange('NroDocAmortiza', e.target.value)}
                                         maxLength={50}
@@ -750,7 +786,8 @@ export default function ClienteCobranzaPage() {
                                                     {selectedEntidad.CodigoEntidadFinanciera}
                                                 </p>
                                             </div>
-                                            <Button
+                                            {!ro && (
+<Button
                                                 type="button"
                                                 size="sm"
                                                 variant="outline"
@@ -758,7 +795,7 @@ export default function ClienteCobranzaPage() {
                                                 className="h-7 px-2.5 text-xs text-violet-600 border-violet-200 hover:bg-violet-100 bg-background shrink-0"
                                             >
                                                 Cambiar
-                                            </Button>
+                                            </Button>)}
                                         </div>
                                     ) : (
                                         <InlineAutocomplete<EntidadFinanciera>
@@ -809,7 +846,8 @@ export default function ClienteCobranzaPage() {
                                                     {selectedSeller.codigo}
                                                 </p>
                                             </div>
-                                            <Button
+                                            {!ro && (
+<Button
                                                 type="button"
                                                 size="sm"
                                                 variant="outline"
@@ -817,7 +855,7 @@ export default function ClienteCobranzaPage() {
                                                 className="h-7 px-2.5 text-xs text-violet-600 border-violet-200 hover:bg-violet-100 bg-background shrink-0"
                                             >
                                                 Cambiar
-                                            </Button>
+                                            </Button>)}
                                         </div>
                                     ) : (
                                         <InlineAutocomplete<Seller>
@@ -872,7 +910,8 @@ export default function ClienteCobranzaPage() {
                                 placeholder="Observaciones adicionales..."
                                 value={form.Observaciones}
                                 onChange={e => handleChange('Observaciones', e.target.value)}
-                                className="resize-none"
+                                readOnly={ro}
+                                className={`resize-none ${ro ? 'bg-muted cursor-not-allowed' : ''}`}
                                 rows={3}
                                 maxLength={500}
                             />
