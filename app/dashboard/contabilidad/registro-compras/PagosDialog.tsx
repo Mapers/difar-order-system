@@ -7,6 +7,10 @@ import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Loader2, AlertCircle, Plus, Trash2, Save } from "lucide-react"
 import { toast } from "@/app/hooks/useToast"
+import {
+    AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+    AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { ComprasService } from "@/app/services/contabilidad/ContabilidadService"
 import type {
     ComprasPagosDatos, ComprasPagoPayload,
@@ -85,6 +89,8 @@ export function PagosDialog({
     const saldo    = total - sumaPagos
     const excede   = sumaPagos - total > 0.005
 
+    const [confirmGuardar, setConfirmGuardar] = useState(false)
+
     const guardar = async () => {
         if (!clave) return
         setGuardando(true)
@@ -105,6 +111,7 @@ export function PagosDialog({
     }
 
     return (
+        <>
         <Dialog open={abierto} onOpenChange={(v) => { if (!v) onCerrar() }}>
             <DialogContent className="max-w-4xl">
                 <DialogHeader>
@@ -215,7 +222,7 @@ export function PagosDialog({
                             <div className="ml-auto flex items-center gap-2">
                                 <Button variant="ghost" size="sm" onClick={onCerrar}>Cerrar</Button>
                                 <Button size="sm" className="gap-1.5 bg-emerald-600 hover:bg-emerald-700"
-                                        onClick={guardar} disabled={guardando}>
+                                        onClick={() => setConfirmGuardar(true)} disabled={guardando}>
                                     {guardando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                                     Guardar pagos
                                 </Button>
@@ -225,6 +232,27 @@ export function PagosDialog({
                 )}
             </DialogContent>
         </Dialog>
+
+        <AlertDialog open={confirmGuardar} onOpenChange={setConfirmGuardar}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Guardar los pagos a cuenta</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        Quedan {vivas.length} pago{vivas.length !== 1 ? 's' : ''} por {money(sumaPagos)}
+                        {filas.some(f => f.eliminar) && <>, y se borran {filas.filter(f => f.eliminar).length} marcado{filas.filter(f => f.eliminar).length !== 1 ? 's' : ''}</>}.
+                        Al guardar se vuelve a armar el asiento del documento con estos pagos.
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction className="bg-emerald-600 hover:bg-emerald-700"
+                                       onClick={() => { setConfirmGuardar(false); guardar() }}>
+                        Sí, guardar pagos
+                    </AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
+        </>
     )
 }
 

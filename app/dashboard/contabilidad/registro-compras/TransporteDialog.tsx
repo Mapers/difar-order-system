@@ -6,6 +6,10 @@ import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Loader2, AlertCircle, Plus, Trash2, Save } from "lucide-react"
 import { toast } from "@/app/hooks/useToast"
+import {
+    AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+    AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { ComprasService } from "@/app/services/contabilidad/ContabilidadService"
 import type { ComprasTransporteDatos, ComprasTransportePayload } from "@/app/types/contabilidad-types"
 
@@ -76,6 +80,8 @@ export function TransporteDialog({
     const totalEgresos = filas.filter(f => !f.eliminar)
         .reduce((a, f) => a + Number(egresoDe(f.idDetalle)), 0)
 
+    const [confirmGuardar, setConfirmGuardar] = useState(false)
+
     const guardar = async () => {
         if (!clave) return
         setGuardando(true)
@@ -95,6 +101,7 @@ export function TransporteDialog({
     }
 
     return (
+        <>
         <Dialog open={abierto} onOpenChange={(v) => { if (!v) onCerrar() }}>
             <DialogContent className="max-w-5xl">
                 <DialogHeader>
@@ -205,7 +212,7 @@ export function TransporteDialog({
                             <div className="ml-auto flex items-center gap-2">
                                 <Button variant="ghost" size="sm" onClick={onCerrar}>Cerrar</Button>
                                 <Button size="sm" className="gap-1.5 bg-emerald-600 hover:bg-emerald-700"
-                                        onClick={guardar} disabled={guardando}>
+                                        onClick={() => setConfirmGuardar(true)} disabled={guardando}>
                                     {guardando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                                     Guardar transporte
                                 </Button>
@@ -215,5 +222,26 @@ export function TransporteDialog({
                 )}
             </DialogContent>
         </Dialog>
+
+        <AlertDialog open={confirmGuardar} onOpenChange={setConfirmGuardar}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Guardar el transporte</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        Quedan {filas.filter(f => !f.eliminar).length} fila{filas.filter(f => !f.eliminar).length !== 1 ? 's' : ''} de transporte
+                        {filas.some(f => f.eliminar) && <> y se borran {filas.filter(f => f.eliminar).length} marcada{filas.filter(f => f.eliminar).length !== 1 ? 's' : ''}</>}.
+                        Se graban los cambios de transporte de este documento.
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction className="bg-emerald-600 hover:bg-emerald-700"
+                                       onClick={() => { setConfirmGuardar(false); guardar() }}>
+                        Sí, guardar transporte
+                    </AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
+        </>
     )
 }

@@ -41,6 +41,7 @@ export default function RegistroComprasPage() {
     const cat = c.catalogos
     const [confirmEliminarDoc, setConfirmEliminarDoc] = useState(false)
     const [imprimiendo, setImprimiendo] = useState(false)
+    const [confirmRevisar, setConfirmRevisar] = useState(false)
     const [confirmEliminarLineas, setConfirmEliminarLineas] = useState(false)
     const [buscarClave, setBuscarClave] = useState("")
     const [otrosAbierto, setOtrosAbierto] = useState(false)
@@ -504,7 +505,7 @@ export default function RegistroComprasPage() {
                         <div className="flex flex-wrap items-center gap-2 border-t border-border bg-muted/20 px-4 py-2.5">
                             <span className="mr-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Documento</span>
                             <Button variant="outline" size="sm" className="gap-1.5"
-                                    onClick={revisar} disabled={ro || revisando}
+                                    onClick={() => setConfirmRevisar(true)} disabled={ro || revisando}
                                     title="Rehace el registro contable sumando el detalle">
                                 {revisando ? <Loader2 className="h-4 w-4 animate-spin" /> : <ClipboardCheck className="h-4 w-4" />}
                                 Revisa
@@ -620,6 +621,26 @@ export default function RegistroComprasPage() {
                 anioInicial={c.cab.anio}
                 periodoInicial={c.cab.periodo}
             />
+
+            <AlertDialog open={confirmRevisar} onOpenChange={setConfirmRevisar}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Revisar la compra {docTitulo}</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Se vuelve a generar el registro contable de este documento a partir de las líneas
+                            guardadas: registro de compras, movimientos de centros de costo y ejecución de
+                            presupuesto. Los cambios que no hayas guardado no se toman en cuenta.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction className="bg-blue-600 hover:bg-blue-700"
+                                           onClick={() => { setConfirmRevisar(false); revisar() }}>
+                            Sí, revisar
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
 
             <AlertDialog open={confirmEliminarDoc} onOpenChange={setConfirmEliminarDoc}>
                 <AlertDialogContent>
