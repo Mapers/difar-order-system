@@ -8,17 +8,48 @@ import { PriceService } from '@/app/services/price/PriceService'
 import { etiquetaPeriodo } from '@/app/dashboard/lista-precios-lote/hooks/useVentasTresMeses'
 import moment from 'moment'
 import { datosPorAlmacen, DatosExport, nombreHojaValido } from '@/app/dashboard/lista-precios-lote/services/almacenesExport'
+import { ExcelVistaPreviaDialog } from './ExcelVistaPreviaDialog'
 
-const HEADER_ARGB  = 'FF163161'
-const LAB_ARGB     = 'FF1E4A8A'
+const HEADER_DEFECTO_ARGB = 'FF163161'
+const LAB_DEFECTO_ARGB    = 'FF1E4A8A'
 const ROW_ODD_ARGB = 'FFF2F4F8'
+
+/** Columnas que se pueden quitar desde la vista previa (el resto siempre va). */
+export type GrupoColumnasExcel = 'presentacion' | 'principio' | 'anioVenc' | 'ventasMes' | 'bonif'
+
+export interface OpcionesExcel {
+    /** Color de la cabecera en hex; la franja de laboratorio usa uno más claro. */
+    color:    string
+    zebra:    boolean
+    columnas: Record<GrupoColumnasExcel, boolean>
+}
+
+export const OPCIONES_EXCEL_DEFECTO: OpcionesExcel = {
+    color: '#163161',
+    zebra: true,
+    columnas: { presentacion: true, principio: true, anioVenc: true, ventasMes: true, bonif: true },
+}
+
+const GRUPO_DE_COLUMNA: Record<string, GrupoColumnasExcel> = {
+    presentacion: 'presentacion', principio: 'principio', anioVenc: 'anioVenc',
+    ventasM1: 'ventasMes', ventasM2: 'ventasMes', ventasM3: 'ventasMes',
+    bonifContado: 'bonif', bonifCredito: 'bonif',
+}
+
+const argbDe = (hex: string) => 'FF' + hex.replace('#', '').toUpperCase()
+/** Mezcla con blanco para la franja de laboratorio (t=0 el color, t=1 blanco). */
+const argbAclarado = (hex: string, t: number) => {
+    const n = parseInt(hex.replace('#', ''), 16)
+    const c = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map(v => Math.round(v + (255 - v) * t))
+    return 'FF' + c.map(v => v.toString(16).padStart(2, '0')).join('').toUpperCase()
+}
 const STOCK_ARGB   = 'FF1A56A0'
 const BONIF_ARGB   = 'FF1A6B3A'
 const ESCALA_ARGB  = 'FF1A3A8F'
 const VENTAS_ARGB  = 'FF1A56A0'
 
 
-const COLUMNS = [
+const TODAS_LAS_COLUMNAS = [
     { header: 'LABORATORIO',     key: 'laboratorio',  width: 28, numFmt: '@' },
     { header: 'CÓDIGO',          key: 'codigo',        width: 10, numFmt: '@' },
     { header: 'DESCRIPCIÓN',     key: 'descripcion',   width: 38, numFmt: '@' },
@@ -102,7 +133,16 @@ function construirHoja(
     data: any[],
     etiquetasMes: string[],
     mapaVentas: Map<string, { meses: number[]; total_3m: number }>,
+    op: OpcionesExcel,
 ) {
+            const COLUMNS = TODAS_LAS_COLUMNAS.filter(c => {
+                const g = GRUPO_DE_COLUMNA[c.key]
+                return !g || op.columnas[g]
+            })
+            const propio = op.color.toLowerCase() !== OPCIONES_EXCEL_DEFECTO.color
+            const HEADER_ARGB = propio ? argbDe(op.color) : HEADER_DEFECTO_ARGB
+            const LAB_ARGB = propio ? argbAclarado(op.color, 0.2) : LAB_DEFECTO_ARGB
+
             const ws = workbook.addWorksheet(nombreHoja, {
                 views: [{ state: 'frozen', ySplit: 2 }],
             })
@@ -169,7 +209,7 @@ function construirHoja(
                 // El zebreado va por PRODUCTO, no por fila: así los lotes de un
                 // mismo producto comparten fondo y se leen como un bloque.
                 const isOdd  = rowIndex % 2 !== 0
-                const bgArgb = isOdd ? ROW_ODD_ARGB : 'FFFFFFFF'
+                const bgArgb = isOdd && op.zebra ? ROW_ODD_ARGB : 'FFFFFFFF'
 
                 filas.forEach((f, iLote) => {
                     const esPrimera = iLote === 0
@@ -220,7 +260,7 @@ function construirHoja(
                             vertical  : 'top',
                             wrapText  : true,
                         }
-                        if (col.numFmt !== '@' && cell.value !== null) cell.numFmt = col.numFmt
+                        if (col.numFmt !== '@' && cell.value !== null) cell.numFmt = col.numFmt as string
 
                         const cellStr = cell.value != null ? String(cell.value) : ''
                         if (cellStr.length > maxLen[idx]) maxLen[idx] = cellStr.length
@@ -236,6 +276,7 @@ function construirHoja(
             // las filas separadoras de laboratorio no tienen valor numerico aqui,
             // asi que la regla las ignora.
             const colVentas = ws.getColumn(COLUMNS.findIndex(c => c.key === 'ventas3m') + 1)
+
             if (ws.rowCount > 2) {
                 ws.addConditionalFormatting({
                     ref: `${colVentas.letter}3:${colVentas.letter}${ws.rowCount}`,
@@ -256,6 +297,63 @@ function construirHoja(
             })
 }
 
+export type VentasExcel = { etiquetasMes: string[]; mapa: Map<string, { meses: number[]; total_3m: number }> }
+
+/** Ventas de 3 meses por artículo; si el endpoint falla, las columnas salen en cero. */
+export async function cargarVentasExcel(): Promise<VentasExcel> {
+    const mapa = new Map<string, { meses: number[]; total_3m: number }>()
+    let etiquetasMes: string[] = []
+    try {
+        const resVentas = await PriceService.getVentasTresMeses()
+        const body = resVentas?.data ?? {}
+        etiquetasMes = (body.periodos || []).map(etiquetaPeriodo)
+        for (const fila of (body.data || [])) {
+            mapa.set(String(fila.cod_articulo), {
+                meses: (fila.meses || []).map(Number),
+                total_3m: Number(fila.total_3m || 0),
+            })
+        }
+    } catch (e) {
+        console.warn('No se pudieron cargar las ventas de 3 meses para el Excel:', e)
+    }
+    return { etiquetasMes, mapa }
+}
+
+/** Arma el libro (una hoja, o una por almacén) sin descargarlo: lo usa también la vista previa. */
+export function construirLibroExcel({ datos, titulo, ventas, opciones = OPCIONES_EXCEL_DEFECTO }: {
+    datos: DatosExport
+    titulo: string
+    ventas: VentasExcel
+    opciones?: OpcionesExcel
+}): ExcelJS.Workbook {
+    const workbook = new ExcelJS.Workbook()
+    workbook.creator = 'DROGUERÍA DIFAR'
+
+    if (datos.grupos) {
+        for (const { almacen, data: filas } of datos.grupos) {
+            construirHoja(
+                workbook,
+                nombreHojaValido(`${almacen.IdAlmacen} - ${almacen.Descripcion}`, `Almacén ${almacen.IdAlmacen}`),
+                `${titulo} — ALMACÉN ${almacen.IdAlmacen}: ${almacen.Descripcion.toUpperCase()}`,
+                filas, ventas.etiquetasMes, ventas.mapa, opciones,
+            )
+        }
+    } else {
+        construirHoja(workbook, 'Lista de Precios', titulo, datos.data ?? [], ventas.etiquetasMes, ventas.mapa, opciones)
+    }
+    return workbook
+}
+
+export async function descargarLibroExcel(workbook: ExcelJS.Workbook, nombreArchivo: string) {
+    const buffer = await workbook.xlsx.writeBuffer()
+    const blob   = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+    const link   = document.createElement('a')
+    link.href    = URL.createObjectURL(blob)
+    link.download = nombreArchivo
+    link.click()
+    URL.revokeObjectURL(link.href)
+}
+
 /**
  * Arma y descarga el Excel de la lista de precios. Recibe los datos ya
  * filtrados para que lo usen tanto el botón de export como el modal de
@@ -266,45 +364,8 @@ export async function generarExcel({ datos, titulo, nombreArchivo }: {
     titulo: string
     nombreArchivo: string
 }) {
-    const mapaVentas = new Map<string, { meses: number[]; total_3m: number }>()
-    let etiquetasMes: string[] = []
-    try {
-        const resVentas = await PriceService.getVentasTresMeses()
-        const body = resVentas?.data ?? {}
-        etiquetasMes = (body.periodos || []).map(etiquetaPeriodo)
-        for (const fila of (body.data || [])) {
-            mapaVentas.set(String(fila.cod_articulo), {
-                meses: (fila.meses || []).map(Number),
-                total_3m: Number(fila.total_3m || 0),
-            })
-        }
-    } catch (e) {
-        console.warn('No se pudieron cargar las ventas de 3 meses para el Excel:', e)
-    }
-
-    const workbook = new ExcelJS.Workbook()
-    workbook.creator = 'DROGUERÍA DIFAR'
-
-    if (datos.grupos) {
-        for (const { almacen, data: filas } of datos.grupos) {
-            construirHoja(
-                workbook,
-                nombreHojaValido(`${almacen.IdAlmacen} - ${almacen.Descripcion}`, `Almacén ${almacen.IdAlmacen}`),
-                `${titulo} — ALMACÉN ${almacen.IdAlmacen}: ${almacen.Descripcion.toUpperCase()}`,
-                filas, etiquetasMes, mapaVentas,
-            )
-        }
-    } else {
-        construirHoja(workbook, 'Lista de Precios', titulo, datos.data, etiquetasMes, mapaVentas)
-    }
-
-    const buffer = await workbook.xlsx.writeBuffer()
-    const blob   = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
-    const link   = document.createElement('a')
-    link.href    = URL.createObjectURL(blob)
-    link.download = nombreArchivo
-    link.click()
-    URL.revokeObjectURL(link.href)
+    const ventas = await cargarVentasExcel()
+    await descargarLibroExcel(construirLibroExcel({ datos, titulo, ventas }), nombreArchivo)
 }
 
 const ExportExcelButton = ({ payload, filters, porAlmacen = false, almacenSel = null }: { payload: any; filters?: any; porAlmacen?: boolean; almacenSel?: number | null }) => {
@@ -323,7 +384,10 @@ const ExportExcelButton = ({ payload, filters, porAlmacen = false, almacenSel = 
         return result
     }
 
-    const exportExcel = async () => {
+    const [preparado, setPreparado] = useState<{ datos: DatosExport; ventas: VentasExcel; archivo: string } | null>(null)
+
+    // Los datos se traen una vez al abrir; las opciones del modal solo rearman el libro.
+    const abrir = async () => {
         if (loading) return
         setLoading(true)
 
@@ -347,12 +411,11 @@ const ExportExcelButton = ({ payload, filters, porAlmacen = false, almacenSel = 
                 datos = { data: applyFilters(response.data || []) }
             }
 
-            await generarExcel({
+            setPreparado({
                 datos,
-                titulo: 'LISTA DE PRECIOS POR LOTE — DROGUERÍA DIFAR',
-                nombreArchivo: `lista-precios-lote${almacenSel != null ? `-alm${almacenSel}` : porAlmacen ? '-por-almacen' : ''}-${new Date().toISOString().split('T')[0]}.xlsx`,
+                ventas: await cargarVentasExcel(),
+                archivo: `lista-precios-lote${almacenSel != null ? `-alm${almacenSel}` : porAlmacen ? '-por-almacen' : ''}-${new Date().toISOString().split('T')[0]}`,
             })
-
         } catch (error) {
             console.error('Error al generar Excel:', error)
             alert('Ocurrió un error al generar el Excel.')
@@ -362,18 +425,28 @@ const ExportExcelButton = ({ payload, filters, porAlmacen = false, almacenSel = 
     }
 
     return (
-        <Button
-            variant="outline"
-            disabled={loading}
-            onClick={exportExcel}
-            className="flex items-center gap-2"
-        >
-            {loading
-                ? <Loader2 className="h-4 w-4 animate-spin" />
-                : <FileSpreadsheet className="h-4 w-4" />
-            }
-            {loading ? 'Generando...' : 'Exportar Excel'}
-        </Button>
+        <>
+            <Button
+                variant="outline"
+                disabled={loading}
+                onClick={abrir}
+                className="flex items-center gap-2"
+            >
+                {loading
+                    ? <Loader2 className="h-4 w-4 animate-spin" />
+                    : <FileSpreadsheet className="h-4 w-4" />
+                }
+                {loading ? 'Preparando...' : 'Exportar Excel'}
+            </Button>
+            <ExcelVistaPreviaDialog
+                abierto={!!preparado}
+                onCerrar={() => setPreparado(null)}
+                datos={preparado?.datos ?? null}
+                ventas={preparado?.ventas ?? null}
+                tituloDefecto="LISTA DE PRECIOS POR LOTE — DROGUERÍA DIFAR"
+                archivoDefecto={preparado?.archivo ?? 'lista-precios-lote'}
+            />
+        </>
     )
 }
 
