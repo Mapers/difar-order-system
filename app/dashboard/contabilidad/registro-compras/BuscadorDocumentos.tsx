@@ -94,6 +94,8 @@ export function BuscadorDocumentos({
 
     const meses = [TODO_EL_ANIO, ...(catalogos?.meses ?? []).map(x => ({ Numero: String(x.Numero), Mes: x.Mes }))]
     const importe = (f: ComprasResumen) => `${f.Moneda === 'NSO' ? 'S/' : f.Moneda} ${money(f.ImporteTotal)}`
+    // El documento trae solo el código del tipo (01, 07…); el nombre sale del catálogo que ya se cargó.
+    const tipoDoc = (cod: string) => catalogos?.tiposDoc.find(x => x.Cod_Tipo === cod)
     const documento = (f: ComprasResumen) => `${f.SerieDoc}-${f.NumeroDoc}`
 
     return (
@@ -205,8 +207,8 @@ export function BuscadorDocumentos({
                                             >
                                                 <td className="whitespace-nowrap px-3 py-2.5 tabular-nums">{fecha(f.Fecha_Emision)}</td>
                                                 <td className="whitespace-nowrap px-3 py-2.5">
-                                                    <span className="mr-1.5 rounded bg-blue-100 px-1.5 py-0.5 font-mono text-[10px] font-semibold text-blue-700 dark:bg-blue-950 dark:text-blue-300">
-                                                        {f.Tipo_Doc}
+                                                    <span title={tipoDoc(f.Tipo_Doc)?.Descripcion} className="mr-1.5 rounded bg-blue-100 px-1.5 py-0.5 font-mono text-[10px] font-semibold text-blue-700 dark:bg-blue-950 dark:text-blue-300">
+                                                        {tipoDoc(f.Tipo_Doc)?.Abreviatura || f.Tipo_Doc}
                                                     </span>
                                                     <span className="font-mono text-xs">{resaltar(documento(f), texto)}</span>
                                                 </td>
@@ -237,8 +239,8 @@ export function BuscadorDocumentos({
                                     >
                                         <div className="min-w-0 flex-1">
                                             <div className="flex items-center gap-1.5">
-                                                <span className="rounded bg-blue-100 px-1.5 py-0.5 font-mono text-[10px] font-semibold text-blue-700 dark:bg-blue-950 dark:text-blue-300">
-                                                    {f.Tipo_Doc}
+                                                <span title={tipoDoc(f.Tipo_Doc)?.Descripcion} className="rounded bg-blue-100 px-1.5 py-0.5 font-mono text-[10px] font-semibold text-blue-700 dark:bg-blue-950 dark:text-blue-300">
+                                                    {tipoDoc(f.Tipo_Doc)?.Abreviatura || f.Tipo_Doc}
                                                 </span>
                                                 <span className="truncate font-mono text-xs font-semibold">{resaltar(documento(f), texto)}</span>
                                             </div>
