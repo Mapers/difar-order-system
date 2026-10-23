@@ -21,6 +21,7 @@ export function ComboSelect<T>({
     emptyText = "Sin resultados",
     disabled = false,
     triggerClassName,
+    contentClassName,
 }: {
     value: string
     onChange: (item: T) => void
@@ -32,6 +33,8 @@ export function ComboSelect<T>({
     emptyText?: string
     disabled?: boolean
     triggerClassName?: string
+    /** Clases extra para la lista desplegable (p. ej. un ancho mínimo cuando el combo es angosto). */
+    contentClassName?: string
 }) {
     const [open, setOpen] = useState(false)
     const selected = items.find(item => getKey(item) === value)
@@ -51,7 +54,7 @@ export function ComboSelect<T>({
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
             </PopoverTrigger>
-            <PopoverContent align="start" className="w-[var(--radix-popover-trigger-width)] p-0">
+            <PopoverContent align="start" className={cn("w-[var(--radix-popover-trigger-width)] p-0", contentClassName)}>
                 <Command>
                     <CommandInput placeholder={searchPlaceholder} />
                     <CommandList>

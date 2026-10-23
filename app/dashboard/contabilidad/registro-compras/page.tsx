@@ -13,8 +13,11 @@ import {
 } from "@/components/ui/alert-dialog"
 import {
     Loader2, Save, Plus, Trash2, Lock, AlertCircle, X, Search, ChevronDown, Check,
-    ClipboardCheck, Wallet, Truck, Printer,
+    ClipboardCheck, Wallet, Truck, Printer, ShoppingBag, Hash, FileText, ArrowRight,
+    Receipt, Coins, Percent, Scale, Banknote, SlidersHorizontal, ListOrdered, PackagePlus,
+    type LucideIcon,
 } from "lucide-react"
+import { ComboSelect } from "@/components/ui/combo-select"
 import { ComprasService } from "@/app/services/contabilidad/ContabilidadService"
 import { toast } from "@/app/hooks/useToast"
 import { useRegistroCompras, CabeceraEdicion, FilaCompra } from "./useRegistroCompras"
@@ -50,12 +53,23 @@ export default function RegistroComprasPage() {
         onChange: (e: React.ChangeEvent<HTMLInputElement>) => c.setCampoCab(k, e.target.value),
     })
 
-    const opciones = (k: keyof CabeceraEdicion) => ({
-        value: c.cab[k],
-        disabled: ro,
-        onChange: (e: React.ChangeEvent<HTMLSelectElement>) => c.setCampoCab(k, e.target.value),
-        className: "h-9 w-full rounded-md border border-input bg-background px-2 text-sm disabled:opacity-60",
-    })
+    // Combos con buscador, con el mismo formato que el resto de Contabilidad.
+    const comboCampo = <T,>({ k, items, getKey, getLabel }: {
+        k: keyof CabeceraEdicion; items: T[]; getKey: (x: T) => string | number; getLabel: (x: T) => string
+    }) => (
+        <ComboSelect<T>
+            value={String(c.cab[k] ?? '')}
+            onChange={x => c.setCampoCab(k, String(getKey(x)))}
+            items={items}
+            getKey={x => String(getKey(x))}
+            getLabel={getLabel}
+            placeholder="Elegir"
+            searchPlaceholder="Buscar..."
+            emptyText="Sin resultados"
+            disabled={ro}
+            triggerClassName="h-9 bg-background"
+        />
+    )
 
     const docTitulo = c.cab.serie || c.cab.numero
         ? `${c.cab.serie}-${c.cab.numero}`
@@ -103,102 +117,136 @@ export default function RegistroComprasPage() {
     }
 
     return (
-        <div className="pb-10">
-            <div className="sticky top-16 z-30 -mx-4 bg-background/95 backdrop-blur md:top-14 md:-mx-8">
-                <header className="border-b border-border px-4 py-3 md:px-8">
-                <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-                    <div className="min-w-0">
-                        <div className="flex items-center gap-2">
-                            <h1 className="truncate text-lg font-semibold">
-                                {c.clave ? docTitulo : 'Compra nueva'}
-                            </h1>
-                            {c.clave && <Badge variant="outline" className="shrink-0">Clave {c.clave}</Badge>}
-                            {ro && (
-                                <Badge className="shrink-0 gap-1 bg-red-100 text-red-700 hover:bg-red-100">
-                                    <Lock className="h-3 w-3" /> Cerrado
-                                </Badge>
-                            )}
-                        </div>
-                        <p className="truncate text-xs text-muted-foreground">
-                            {c.cab.proveedorNombre || 'Elige el proveedor para empezar'}
+        <div className="grid grid-cols-1 pb-10">
+            {/* Encabezado de la pantalla, igual que el resto de Contabilidad */}
+            <div className="flex flex-col gap-3 pt-2 md:flex-row md:items-center md:justify-between">
+                <div className="flex items-center gap-3.5">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-600 to-violet-600 text-white shadow-lg shadow-blue-600/30">
+                        <ShoppingBag className="h-6 w-6" />
+                    </div>
+                    <div>
+                        <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">
+                            Registro de Compras e Inventarios
+                        </h1>
+                        <p className="text-sm md:text-base text-muted-foreground">
+                            Facturas de proveedores. Al guardar se genera el asiento contable, el kardex y los lotes.
                         </p>
                     </div>
-
-                    <div className="ml-auto flex flex-wrap items-center gap-2">
-                        <div className="flex items-center gap-1">
-                            <Input
-                                className="h-9 w-[92px]" placeholder="Clave"
-                                value={buscarClave}
-                                onChange={e => setBuscarClave(e.target.value)}
-                                onKeyDown={e => {
-                                    if (e.key === 'Enter' && Number(buscarClave) > 0) c.abrir(Number(buscarClave))
-                                }}
-                            />
-                            <Button
-                                variant="ghost" size="icon" className="h-9 w-9"
-                                title="Abrir ese documento"
-                                disabled={c.cargando || !(Number(buscarClave) > 0)}
-                                onClick={() => c.abrir(Number(buscarClave))}
-                            >
-                                {c.cargando
-                                    ? <Loader2 className="h-4 w-4 animate-spin" />
-                                    : <Search className="h-4 w-4" />}
-                            </Button>
-                        </div>
-
-                        <Button
-                            onClick={() => setBuscadorAbierto(true)}
-                            variant="outline" size="sm" className="gap-1.5"
-                            title="Buscar por período, proveedor, serie o número"
-                        >
-                            <Search className="h-4 w-4" /> Buscar
-                        </Button>
-
-                        <Button onClick={c.nuevo} variant="outline" size="sm" className="gap-1.5">
-                            <Plus className="h-4 w-4" /> Nueva
-                        </Button>
-
-                        <Button
-                            size="sm"
-                            className="gap-1.5 bg-emerald-600 hover:bg-emerald-700"
-                            onClick={c.guardar}
-                            disabled={c.guardando || ro}
-                        >
-                            {c.guardando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                            Guardar
-                        </Button>
-                    </div>
                 </div>
-                </header>
-
-                <div className={`flex flex-wrap items-center gap-x-6 gap-y-2 border-b px-4 py-2.5 md:px-8
-                                 ${t.descuadrado
-                                     ? 'border-red-200 bg-red-50/80'
-                                     : 'border-border bg-muted/40'}`}>
-                    <div className="flex items-center gap-2">
-                        {t.descuadrado
-                            ? <AlertCircle className="h-4 w-4 shrink-0 text-red-600" />
-                            : <Check className="h-4 w-4 shrink-0 text-emerald-600" />}
-                        <span className={`text-sm font-semibold ${t.descuadrado ? 'text-red-700' : 'text-emerald-700'}`}>
-                            {t.descuadrado ? 'No cuadra' : 'Cuadra'}
+                <div className="flex flex-wrap items-center gap-2">
+                    {c.clave && (
+                        <span className="inline-flex items-center gap-1.5 rounded-full border bg-muted px-3 py-1.5 text-xs text-muted-foreground">
+                            <Hash className="h-3.5 w-3.5" /> Clave {c.clave}
                         </span>
-                        <span className="text-xs text-muted-foreground">
-                            {t.lineas} línea{t.lineas !== 1 ? 's' : ''}
+                    )}
+                    {ro ? (
+                        <span className="inline-flex items-center gap-1.5 rounded-full border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-300">
+                            <Lock className="h-3.5 w-3.5" /> Cerrado · solo lectura
                         </span>
-                    </div>
-
-                    <dl className="flex flex-wrap items-center gap-x-5 gap-y-1 text-sm">
-                        <Cifra etiqueta="Diferencia" valor={t.diferencia} alerta={t.descuadrado} />
-                        <span className="hidden sm:contents">
-                            <Cifra etiqueta="Con IGV" valor={t.tIncIGV} />
-                            <Cifra etiqueta="Sin IGV" valor={t.tSinIGV} />
-                            <Cifra etiqueta="IGV calculado" valor={t.calculoIGV} />
+                    ) : (
+                        <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-300">
+                            <span className="h-2 w-2 rounded-full bg-emerald-500" /> {c.clave ? 'Editable' : 'Nueva compra'}
                         </span>
-                    </dl>
+                    )}
                 </div>
             </div>
 
-            <div className="space-y-6 pt-5">
+            {/* Barra de acciones: queda fija arriba al bajar por el formulario */}
+            <div className="sticky top-16 z-30 mt-5 md:top-14">
+                <div className="rounded-xl border border-t-[3px] border-border border-t-blue-600 bg-background/95 px-4 py-3 shadow-sm backdrop-blur">
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
+                        <div className="flex min-w-0 flex-1 basis-60 items-center gap-3">
+                            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-950">
+                                <FileText className="h-5 w-5" />
+                            </span>
+                            <div className="min-w-0">
+                                <p className="truncate font-mono text-base font-bold">
+                                    {c.clave ? docTitulo : 'Compra nueva'}
+                                </p>
+                                <p className="truncate text-xs text-muted-foreground">
+                                    {c.cab.proveedorNombre || 'Elige el proveedor para empezar'}
+                                </p>
+                            </div>
+                            <span className={`ml-1 hidden shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold sm:inline-flex ${
+                                t.descuadrado
+                                    ? 'bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300'
+                                    : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300'
+                            }`}>
+                                {t.descuadrado ? <AlertCircle className="h-3.5 w-3.5" /> : <Check className="h-3.5 w-3.5" />}
+                                {t.descuadrado ? `No cuadra · ${money(t.diferencia)}` : 'Cuadra'}
+                            </span>
+                        </div>
+
+                        <div className="flex w-full items-center gap-1.5 sm:w-auto sm:gap-2">
+                            <div className="flex items-center gap-1">
+                                <Input
+                                    className="h-10 w-[64px] px-2 sm:w-[96px] sm:px-3" placeholder="Clave"
+                                    value={buscarClave}
+                                    onChange={e => setBuscarClave(e.target.value)}
+                                    onKeyDown={e => {
+                                        if (e.key === 'Enter' && Number(buscarClave) > 0) c.abrir(Number(buscarClave))
+                                    }}
+                                />
+                                <Button
+                                    variant="outline" size="icon" className="h-10 w-10"
+                                    title="Abrir ese documento"
+                                    disabled={c.cargando || !(Number(buscarClave) > 0)}
+                                    onClick={() => c.abrir(Number(buscarClave))}
+                                >
+                                    {c.cargando
+                                        ? <Loader2 className="h-4 w-4 animate-spin" />
+                                        : <ArrowRight className="h-4 w-4" />}
+                                </Button>
+                            </div>
+
+                            <Button
+                                onClick={() => setBuscadorAbierto(true)}
+                                variant="outline" className="h-10 gap-1.5 px-3 font-semibold"
+                                title="Buscar por período, proveedor, serie o número"
+                                aria-label="Buscar"
+                            >
+                                <Search className="h-4 w-4" /> <span className="hidden sm:inline">Buscar</span>
+                            </Button>
+
+                            <Button onClick={c.nuevo} variant="outline" className="h-10 gap-1.5 px-3 font-semibold" title="Nueva compra" aria-label="Nueva">
+                                <Plus className="h-4 w-4" /> <span className="hidden sm:inline">Nueva</span>
+                            </Button>
+
+                            <Button
+                                className="ml-auto h-10 gap-1.5 bg-emerald-600 font-semibold text-white shadow-md shadow-emerald-600/30 hover:bg-emerald-700 sm:ml-0"
+                                onClick={c.guardar}
+                                disabled={c.guardando || ro}
+                            >
+                                {c.guardando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                                Guardar
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Totales en vivo */}
+            <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
+                <div className={`col-span-2 rounded-xl p-3.5 text-white shadow-sm md:col-span-1 ${
+                    t.descuadrado ? 'bg-gradient-to-br from-red-700 to-red-500' : 'bg-gradient-to-br from-emerald-700 to-emerald-500'
+                }`}>
+                    <div className="flex items-center justify-between gap-2">
+                        <p className="text-[11px] font-semibold uppercase tracking-wider text-white/80">Cuadre</p>
+                        <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/20">
+                            {t.descuadrado ? <AlertCircle className="h-4 w-4" /> : <Check className="h-4 w-4" />}
+                        </span>
+                    </div>
+                    <p className="mt-1 text-lg font-bold">{t.descuadrado ? 'No cuadra' : 'Cuadra'}</p>
+                    <p className="text-xs text-white/80">{t.lineas} línea{t.lineas !== 1 ? 's' : ''} en el detalle</p>
+                </div>
+                <Cifra etiqueta="Con IGV" valor={t.tIncIGV} icono={Receipt} iconoCls="bg-blue-50 text-blue-600 dark:bg-blue-950" />
+                <Cifra etiqueta="Sin IGV" valor={t.tSinIGV} icono={Coins} iconoCls="bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300" />
+                <Cifra etiqueta="IGV calculado" valor={t.calculoIGV} icono={Percent} iconoCls="bg-violet-50 text-violet-600 dark:bg-violet-950" />
+                <Cifra etiqueta="Diferencia" valor={t.diferencia} icono={Scale} alerta={t.descuadrado}
+                       iconoCls={t.descuadrado ? 'bg-red-50 text-red-600 dark:bg-red-950' : 'bg-amber-50 text-amber-600 dark:bg-amber-950'} />
+            </div>
+
+            <div className="space-y-5 pt-5">
                 {ro && (
                     <Aviso tono="rojo" icono={Lock}>
                         Este documento cayó dentro del cierre contable. Se puede consultar, no modificar.
@@ -212,7 +260,7 @@ export default function RegistroComprasPage() {
                     </Aviso>
                 )}
 
-                <Grupo titulo="El documento" nota="Todos estos campos hacen falta para guardar.">
+                <Grupo titulo="El documento" nota="Todos estos campos hacen falta para guardar." icono={FileText} acento="blue">
                     <Campos>
                         <Campo etiqueta="Proveedor" requerido className="sm:col-span-2">
                             <BuscadorRemoto
@@ -229,12 +277,7 @@ export default function RegistroComprasPage() {
                         </Campo>
 
                         <Campo etiqueta="Tipo de documento" requerido>
-                            <select {...opciones('tipoDoc')}>
-                                <option value="">Elegir</option>
-                                {(cat?.tiposDoc ?? []).map(x => (
-                                    <option key={x.Cod_Tipo} value={x.Cod_Tipo}>{x.Abreviatura || x.Descripcion}</option>
-                                ))}
-                            </select>
+                            {comboCampo({ k: 'tipoDoc', items: cat?.tiposDoc ?? [], getKey: x => x.Cod_Tipo, getLabel: x => String(x.Abreviatura || x.Descripcion) })}
                         </Campo>
 
                         <Campo etiqueta="Fecha de emisión" requerido>
@@ -250,20 +293,11 @@ export default function RegistroComprasPage() {
                         </Campo>
 
                         <Campo etiqueta="Moneda" requerido>
-                            <select {...opciones('moneda')}>
-                                {(cat?.monedas ?? []).map(x => (
-                                    <option key={x.Abreviatura} value={x.Abreviatura}>{x.Abreviatura}</option>
-                                ))}
-                            </select>
+                            {comboCampo({ k: 'moneda', items: cat?.monedas ?? [], getKey: x => x.Abreviatura, getLabel: x => String(x.Abreviatura) })}
                         </Campo>
 
                         <Campo etiqueta="Tasa de IGV" requerido>
-                            <select {...opciones('tasaIGV')}>
-                                <option value="">Elegir</option>
-                                {(cat?.tasasIgv ?? []).map(x => (
-                                    <option key={String(x.Tasa)} value={String(x.Tasa)}>{x.Tasa}</option>
-                                ))}
-                            </select>
+                            {comboCampo({ k: 'tasaIGV', items: cat?.tasasIgv ?? [], getKey: x => String(x.Tasa), getLabel: x => String(x.Tasa) })}
                         </Campo>
 
                         <Campo etiqueta="Importe total" requerido>
@@ -277,67 +311,35 @@ export default function RegistroComprasPage() {
                         </Campo>
 
                         <Campo etiqueta="Condición" requerido>
-                            <select {...opciones('condicion')}>
-                                <option value="">Elegir</option>
-                                {(cat?.condiciones ?? []).map(x => (
-                                    <option key={x.CodigoCondicion} value={x.CodigoCondicion}>{x.Descripcion}</option>
-                                ))}
-                            </select>
+                            {comboCampo({ k: 'condicion', items: cat?.condiciones ?? [], getKey: x => x.CodigoCondicion, getLabel: x => String(x.Descripcion) })}
                         </Campo>
 
                         <Campo etiqueta="Almacén" requerido>
-                            <select {...opciones('almacen')}>
-                                <option value="">Elegir</option>
-                                {(cat?.almacenes ?? []).map(x => (
-                                    <option key={x.IdAlmacen} value={String(x.IdAlmacen)}>{x.Descripcion}</option>
-                                ))}
-                            </select>
+                            {comboCampo({ k: 'almacen', items: cat?.almacenes ?? [], getKey: x => String(x.IdAlmacen), getLabel: x => String(x.Descripcion) })}
                         </Campo>
 
                         <Campo etiqueta="Período" requerido>
-                            <select {...opciones('periodo')}>
-                                <option value="">Elegir</option>
-                                {(cat?.meses ?? []).map(x => (
-                                    <option key={x.Numero} value={x.Numero}>{x.Mes}</option>
-                                ))}
-                            </select>
+                            {comboCampo({ k: 'periodo', items: cat?.meses ?? [], getKey: x => x.Numero, getLabel: x => String(x.Mes) })}
                         </Campo>
 
                         <Campo etiqueta="Año" requerido>
-                            <select {...opciones('anio')}>
-                                <option value="">Elegir</option>
-                                {(cat?.anios ?? []).map(x => (
-                                    <option key={x.Anio} value={x.Anio}>{x.Anio}</option>
-                                ))}
-                            </select>
+                            {comboCampo({ k: 'anio', items: cat?.anios ?? [], getKey: x => x.Anio, getLabel: x => String(x.Anio) })}
                         </Campo>
                     </Campos>
                 </Grupo>
 
                 {c.esContado && (
-                    <Grupo titulo="Cancelación"
+                    <Grupo titulo="Cancelación" icono={Banknote} acento="emerald"
                            nota="La compra es al contado, así que estos cuatro datos pasan a ser obligatorios.">
                         <Campos>
                             <Campo etiqueta="Fecha de cancelación" requerido>
                                 <Input type="date" className="h-9" {...campo('fechaCancelacion')} />
                             </Campo>
                             <Campo etiqueta="Tipo de pago" requerido>
-                                <select {...opciones('tipoPago')}>
-                                    <option value="">Elegir</option>
-                                    {(cat?.tiposPago ?? []).map(x => (
-                                        <option key={x.Cod_Tipo_Amort} value={x.Cod_Tipo_Amort}>{x.Descripcion}</option>
-                                    ))}
-                                </select>
+                                {comboCampo({ k: 'tipoPago', items: cat?.tiposPago ?? [], getKey: x => x.Cod_Tipo_Amort, getLabel: x => String(x.Descripcion) })}
                             </Campo>
                             <Campo etiqueta="Centro de costos" requerido>
-                                <select {...opciones('centroCostos')}>
-                                    <option value="">Elegir</option>
-                                    {(cat?.centrosCosto ?? []).map(x => (
-                                        <option key={x.idCentroCostos} value={String(x.idCentroCostos)}>
-                                            {x.Descripcion}
-                                        </option>
-                                    ))}
-                                </select>
+                                {comboCampo({ k: 'centroCostos', items: cat?.centrosCosto ?? [], getKey: x => String(x.idCentroCostos), getLabel: x => String(x.Descripcion) })}
                             </Campo>
                             <Campo etiqueta="Observación de cancelación" requerido>
                                 <Input className="h-9" {...campo('obsCancelacion')} />
@@ -348,24 +350,28 @@ export default function RegistroComprasPage() {
 
                 <Collapsible open={otrosAbierto} onOpenChange={setOtrosAbierto}>
                     <CollapsibleTrigger asChild>
-                        <button className="flex w-full items-center gap-2 rounded-lg border border-border bg-muted/40 px-4 py-3 text-left hover:bg-muted">
-                            <ChevronDown className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform ${otrosAbierto ? 'rotate-180' : ''}`} />
-                            <span className="text-sm font-medium">Detracción, clasificación, orden de compra y observaciones</span>
-                            <span className="ml-auto text-xs text-muted-foreground">Opcional</span>
+                        <button className={`flex w-full items-center gap-3 rounded-xl border px-4 py-3 text-left shadow-sm transition-colors ${
+                            otrosAbierto ? 'border-violet-200 bg-violet-50/60 dark:border-violet-900 dark:bg-violet-950/30' : 'border-border bg-background hover:bg-muted/50'
+                        }`}>
+                            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-violet-100 bg-violet-50 text-violet-600 dark:border-violet-900 dark:bg-violet-950">
+                                <SlidersHorizontal className="h-4 w-4" />
+                            </span>
+                            <span className="min-w-0">
+                                <span className="block text-sm font-semibold">Datos adicionales</span>
+                                <span className="block text-xs text-muted-foreground">Detracción, clasificación, orden de compra y observaciones</span>
+                            </span>
+                            <span className="ml-auto flex shrink-0 items-center gap-2">
+                                <span className="hidden rounded-full border bg-background px-2 py-0.5 text-[11px] text-muted-foreground sm:inline">Opcional</span>
+                                <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${otrosAbierto ? 'rotate-180' : ''}`} />
+                            </span>
                         </button>
                     </CollapsibleTrigger>
 
-                    <CollapsibleContent className="pt-4">
+                    <CollapsibleContent className="pt-3">
+                        <div className="rounded-xl border border-border bg-background p-4 shadow-sm">
                         <Campos>
                             <Campo etiqueta="Clasificación de bienes">
-                                <select {...opciones('idClasificacionBienes')}>
-                                    <option value="">Elegir</option>
-                                    {(cat?.clasificacionBienes ?? []).map(x => (
-                                        <option key={x.idClasificacionBienes} value={String(x.idClasificacionBienes)}>
-                                            {x.DescripcionBienes}
-                                        </option>
-                                    ))}
-                                </select>
+                                {comboCampo({ k: 'idClasificacionBienes', items: cat?.clasificacionBienes ?? [], getKey: x => String(x.idClasificacionBienes), getLabel: x => String(x.DescripcionBienes) })}
                             </Campo>
                             <Campo etiqueta="Inafecto">
                                 <Input type="number" step="0.01" className="h-9 text-right tabular-nums" {...campo('inafecto')} />
@@ -400,21 +406,32 @@ export default function RegistroComprasPage() {
                                 <Input className="h-9" {...campo('observaciones')} />
                             </Campo>
                         </Campos>
+                        </div>
                     </CollapsibleContent>
                 </Collapsible>
 
-                <section>
-                    <div className="mb-3 flex flex-wrap items-center gap-2">
-                        <h2 className="text-sm font-semibold">Detalle de la compra</h2>
+                <section className="overflow-hidden rounded-xl border border-border bg-background shadow-sm">
+                    <div className="flex flex-wrap items-center gap-3 border-b border-border bg-gradient-to-b from-muted/40 to-transparent px-4 py-3">
+                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-blue-100 bg-blue-50 text-blue-600 dark:border-blue-900 dark:bg-blue-950">
+                            <ListOrdered className="h-4 w-4" />
+                        </span>
+                        <div>
+                            <h2 className="text-sm font-semibold">Detalle de la compra</h2>
+                            <p className="text-xs text-muted-foreground">Una línea por cada ítem de la factura.</p>
+                        </div>
+                        <span className="rounded-full border bg-muted px-2 py-0.5 text-[11px] text-muted-foreground">
+                            {c.filas.length} línea{c.filas.length !== 1 ? 's' : ''}
+                        </span>
                         <div className="ml-auto flex flex-wrap items-center gap-2">
-                            <Button variant="outline" size="sm" className="gap-1.5"
+                            <Button variant="outline" size="sm"
+                                    className="gap-1.5 border-dashed border-blue-300 bg-blue-50 text-blue-700 hover:bg-blue-100 dark:border-blue-800 dark:bg-blue-950 dark:text-blue-300"
                                     onClick={c.agregarFila} disabled={ro}>
                                 <Plus className="h-4 w-4" /> Agregar línea
                             </Button>
                             {marcadas > 0 && (
                                 <Button
                                     variant="outline" size="sm"
-                                    className="gap-1.5 text-amber-700 border-amber-200 hover:bg-amber-50"
+                                    className="gap-1.5 text-amber-700 border-amber-200 bg-amber-50 hover:bg-amber-100 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-300"
                                     onClick={() => setConfirmEliminarLineas(true)}
                                     disabled={ro || c.guardando || !c.clave}
                                 >
@@ -424,8 +441,10 @@ export default function RegistroComprasPage() {
                         </div>
                     </div>
 
+                    <div className="p-4">
                     {c.filas.length === 0 ? (
-                        <div className="rounded-lg border border-dashed border-border py-14 text-center">
+                        <div className="flex flex-col items-center rounded-lg border border-dashed border-border py-12 text-center">
+                            <PackagePlus className="mb-3 h-10 w-10 text-muted-foreground/40" />
                             <p className="text-sm font-medium">Todavía no hay líneas</p>
                             <p className="mt-1 text-xs text-muted-foreground">
                                 Agregá una por cada ítem de la factura.
@@ -437,7 +456,7 @@ export default function RegistroComprasPage() {
                             <div className="hidden overflow-x-auto rounded-lg border border-border lg:block">
                                 <table className="w-full border-collapse text-xs">
                                     <thead>
-                                        <tr className="border-b border-border bg-muted/60">
+                                        <tr className="border-b border-border bg-gradient-to-b from-muted/60 to-muted">
                                             <Th w="36" />
                                             <Th w="210">Artículo</Th>
                                             <Th w="84" right>Cantidad</Th>
@@ -474,8 +493,10 @@ export default function RegistroComprasPage() {
                         </>
                     )}
 
+                    </div>
+
                     {c.clave && (
-                        <div className="mt-4 flex flex-wrap items-center gap-2 border-t pt-4">
+                        <div className="flex flex-wrap items-center gap-2 border-t border-border bg-gradient-to-r from-background to-muted/30 px-4 py-3">
                             <Button variant="outline" size="sm" className="gap-1.5"
                                     onClick={revisar} disabled={ro || revisando}
                                     title="Rehace el registro contable sumando el detalle">
@@ -580,12 +601,24 @@ export default function RegistroComprasPage() {
 
 /* ── Piezas de layout ─────────────────────────────────────────────────────── */
 
-function Grupo({ titulo, nota, children }: { titulo: string; nota?: string; children: React.ReactNode }) {
+const ACENTOS = {
+    blue:    'border-blue-100 bg-blue-50 text-blue-600 dark:border-blue-900 dark:bg-blue-950',
+    emerald: 'border-emerald-100 bg-emerald-50 text-emerald-600 dark:border-emerald-900 dark:bg-emerald-950',
+}
+
+function Grupo({ titulo, nota, icono: Icono, acento = 'blue', children }: {
+    titulo: string; nota?: string; icono: LucideIcon; acento?: keyof typeof ACENTOS; children: React.ReactNode
+}) {
     return (
-        <section className="rounded-lg border border-border bg-background">
-            <div className="border-b border-border px-4 py-3">
-                <h2 className="text-sm font-semibold">{titulo}</h2>
-                {nota && <p className="mt-0.5 text-xs text-muted-foreground">{nota}</p>}
+        <section className="overflow-hidden rounded-xl border border-border bg-background shadow-sm">
+            <div className="flex items-center gap-3 border-b border-border bg-gradient-to-b from-muted/40 to-transparent px-4 py-3">
+                <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border ${ACENTOS[acento]}`}>
+                    <Icono className="h-4 w-4" />
+                </span>
+                <div className="min-w-0">
+                    <h2 className="text-sm font-semibold">{titulo}</h2>
+                    {nota && <p className="mt-0.5 text-xs text-muted-foreground">{nota}</p>}
+                </div>
             </div>
             <div className="p-4">{children}</div>
         </section>
@@ -609,11 +642,20 @@ function Campo({
     )
 }
 
-function Cifra({ etiqueta, valor, alerta = false }: { etiqueta: string; valor: number; alerta?: boolean }) {
+function Cifra({ etiqueta, valor, icono: Icono, iconoCls, alerta = false }: {
+    etiqueta: string; valor: number; icono: LucideIcon; iconoCls: string; alerta?: boolean
+}) {
     return (
-        <div className="flex items-baseline gap-2">
-            <dt className="text-xs text-muted-foreground">{etiqueta}</dt>
-            <dd className={`font-semibold tabular-nums ${alerta ? 'text-red-600' : ''}`}>{money(valor)}</dd>
+        <div className={`rounded-xl border p-3.5 shadow-sm ${alerta ? 'border-red-200 bg-red-50/70 dark:border-red-900 dark:bg-red-950/40' : 'bg-background'}`}>
+            <div className="flex items-center justify-between gap-2">
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{etiqueta}</p>
+                <span className={`flex h-7 w-7 items-center justify-center rounded-lg ${iconoCls}`}>
+                    <Icono className="h-4 w-4" />
+                </span>
+            </div>
+            <p className={`mt-1 font-mono text-base font-bold tabular-nums sm:text-lg ${alerta ? 'text-red-700 dark:text-red-400' : ''}`}>
+                {money(valor)}
+            </p>
         </div>
     )
 }
@@ -626,7 +668,7 @@ function Aviso({
         ambar: 'border-amber-200 bg-amber-50 text-amber-900',
     }
     return (
-        <div className={`flex items-start gap-2 rounded-lg border px-4 py-3 text-sm ${tonos[tono]}`}>
+        <div className={`flex items-start gap-2 rounded-xl border px-4 py-3 text-sm shadow-sm ${tonos[tono]}`}>
             <Icono className="mt-0.5 h-4 w-4 shrink-0" />
             <span>{children}</span>
         </div>
@@ -636,7 +678,7 @@ function Aviso({
 function Th({ children, w, right = false }: { children?: React.ReactNode; w?: string; right?: boolean }) {
     return (
         <th style={w ? { width: `${w}px` } : undefined}
-            className={`px-2 py-2 text-[11px] font-medium text-muted-foreground ${right ? 'text-right' : 'text-left'}`}>
+            className={`px-2 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground ${right ? 'text-right' : 'text-left'}`}>
             {children}
         </th>
     )
@@ -652,7 +694,7 @@ interface PropsFila {
 }
 
 const inputFila = "h-7 text-xs"
-const selectFila = "h-7 w-full rounded border border-input bg-background px-1 text-xs disabled:opacity-60"
+const comboFila = "h-7 px-2 text-xs"
 
 function BuscadorArticulo({ f, ro, setArticulo }: Pick<PropsFila, 'f' | 'ro' | 'setArticulo'>) {
     return (
@@ -672,25 +714,37 @@ function BuscadorArticulo({ f, ro, setArticulo }: Pick<PropsFila, 'f' | 'ro' | '
 
 function SelectCuenta({ f, cat, ro, setCampo }: Pick<PropsFila, 'f' | 'cat' | 'ro' | 'setCampo'>) {
     return (
-        <select className={`${selectFila} font-mono`} value={f.cuentaContab} disabled={ro}
-                onChange={e => setCampo(f.key, 'cuentaContab', e.target.value)}>
-            <option value="">Elegir</option>
-            {(cat?.cuentas ?? []).map(q => (
-                <option key={q.IdCtaContable} value={String(q.IdCtaContable)}>{q.Cod_Contab}</option>
-            ))}
-        </select>
+        <ComboSelect
+            value={f.cuentaContab}
+            onChange={q => setCampo(f.key, 'cuentaContab', String(q.IdCtaContable))}
+            items={cat?.cuentas ?? []}
+            getKey={q => String(q.IdCtaContable)}
+            getLabel={q => q.Cod_Contab}
+            placeholder="Elegir"
+            searchPlaceholder="Buscar cuenta..."
+            emptyText="Sin resultados"
+            disabled={ro}
+            triggerClassName={comboFila + " font-mono"}
+            contentClassName="min-w-[220px]"
+        />
     )
 }
 
 function SelectCentroCostos({ f, cat, ro, setCampo }: Pick<PropsFila, 'f' | 'cat' | 'ro' | 'setCampo'>) {
     return (
-        <select className={selectFila} value={f.centroCostos} disabled={ro}
-                onChange={e => setCampo(f.key, 'centroCostos', e.target.value)}>
-            <option value="">Elegir</option>
-            {(cat?.centrosCosto ?? []).map(cc => (
-                <option key={cc.Cod_CC} value={cc.Cod_CC}>{cc.Cod_CC}</option>
-            ))}
-        </select>
+        <ComboSelect
+            value={f.centroCostos}
+            onChange={cc => setCampo(f.key, 'centroCostos', cc.Cod_CC)}
+            items={cat?.centrosCosto ?? []}
+            getKey={cc => cc.Cod_CC}
+            getLabel={cc => cc.Cod_CC}
+            placeholder="Elegir"
+            searchPlaceholder="Buscar..."
+            emptyText="Sin resultados"
+            disabled={ro}
+            triggerClassName={comboFila}
+            contentClassName="min-w-[220px]"
+        />
     )
 }
 
@@ -747,7 +801,7 @@ function FilaTabla({ f, cat, ro, setCampo, setArticulo, quitar }: PropsFila) {
 
 function FilaTarjeta({ f, cat, ro, setCampo, setArticulo, quitar }: PropsFila) {
     return (
-        <div className={`rounded-lg border p-3 ${f.eliminar ? 'border-red-200 bg-red-50/60' : 'border-border bg-background'}`}>
+        <div className={`rounded-xl border p-3 shadow-sm ${f.eliminar ? 'border-red-200 bg-red-50/60' : 'border-border bg-background'}`}>
             <div className="mb-3 flex items-start gap-2">
                 <div className="min-w-0 flex-1">
                     <BuscadorArticulo f={f} ro={ro} setArticulo={setArticulo} />
