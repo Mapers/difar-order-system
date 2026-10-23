@@ -10,8 +10,8 @@ import { AlertCircle, Check, Download, ExternalLink, FileText, Loader2, Palette,
 import { toast } from '@/app/hooks/useToast'
 import { cn } from '@/lib/utils'
 import { ComprasService } from '@/app/services/contabilidad/ContabilidadService'
-import { TEMAS_PDF } from '../movimiento-subcuenta/pdfSubcuenta'
-import { Interruptor, Opciones, Seccion } from '../movimiento-subcuenta/export-pdf-button'
+import { TEMAS_PDF } from '@/components/reporte/pdfOpciones'
+import { Interruptor, Opciones, Seccion } from '@/components/reporte/PdfOpcionesControles'
 import {
     ColumnaOpcionalCompra, generarPdfRegistroCompra, OPCIONES_PDF_COMPRA_DEFECTO, OpcionesPdfCompra,
 } from './pdfRegistroCompra'

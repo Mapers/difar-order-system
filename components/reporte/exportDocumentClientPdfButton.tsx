@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
-import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
+import { StandardFonts, rgb } from 'pdf-lib';
 import { cargarLogoPdf, dibujarCabeceraPdf } from "@/components/reporte/pdfCabecera";
+import { aclarar, crearPdfReporte, hexARgb, OpcionesPdfReporte } from "@/components/reporte/pdfOpciones";
+import { PdfVistaPreviaDialog } from "@/components/reporte/PdfVistaPreviaDialog";
 import { toast } from "@/app/hooks/useToast";
 import { Zone } from '@/app/types/report/report-interface';
 import { calcularTotalWithAmortizacion } from '@/app/utils/client';
@@ -13,7 +15,8 @@ interface ExportPdfProps {
 }
 
 const ExportDocumentClientPdfButton: React.FC<ExportPdfProps> = ({ data, disabled = false }) => {
-    const [loading, setLoading] = useState(false);
+    const [abierto, setAbierto] = useState(false);
+    const DEFECTO: OpcionesPdfReporte = { titulo: "REPORTE DE DOCUMENTOS POR CLIENTE", nota: '', color: '#4d4dcc', tamanoLetra: 'normal' };
 
     const formatDateToDDMMYYYY = (dateString: string): string => {
         if (!dateString) return '-';
@@ -29,239 +32,239 @@ const ExportDocumentClientPdfButton: React.FC<ExportPdfProps> = ({ data, disable
         }
     };
 
-    const generatePdf = async () => {
+    const abrir = () => {
         if (!data || data.length === 0) {
             toast({ title: "Sin datos", description: "No hay datos para exportar", variant: "warning" });
             return;
         }
+        setAbierto(true);
+    };
 
-        setLoading(true);
+    const generar = async (op: OpcionesPdfReporte): Promise<Uint8Array> => {
+        const principal = hexARgb(op.color);
+        const pdfDoc = await crearPdfReporte(op.tamanoLetra);
+        const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+        const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
 
-        try {
-            const pdfDoc = await PDFDocument.create();
-            const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
-            const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+        // Formato Vertical A4
+        const pageWidth = 595.28;
+        const pageHeight = 841.89;
+        const margin = 40;
+        const contentWidth = pageWidth - (margin * 2);
 
-            // Formato Vertical A4
-            const pageWidth = 595.28;
-            const pageHeight = 841.89;
-            const margin = 40;
-            const contentWidth = pageWidth - (margin * 2);
+        let currentPage = pdfDoc.addPage([pageWidth, pageHeight]);
+        let yPosition = pageHeight - margin;
 
-            let currentPage = pdfDoc.addPage([pageWidth, pageHeight]);
-            let yPosition = pageHeight - margin;
+        // Logo
+        const logoImage = await cargarLogoPdf(pdfDoc);
 
-            // Logo
-            const logoImage = await cargarLogoPdf(pdfDoc);
+        const drawHeader = (page: any) => {
+            yPosition = dibujarCabeceraPdf({
+                page, font, boldFont, logo: logoImage,
+                pageWidth, pageHeight, margin,
+                subtitulo: op.titulo,
+                filtros: op.nota.trim() || undefined,
+            });
+        };
 
-            const drawHeader = (page: any) => {
-                yPosition = dibujarCabeceraPdf({
-                    page, font, boldFont, logo: logoImage,
-                    pageWidth, pageHeight, margin,
-                    subtitulo: "REPORTE DE DOCUMENTOS POR CLIENTE",
+        const checkPageBreak = (neededHeight: number) => {
+            if (yPosition - neededHeight < margin) {
+                currentPage = pdfDoc.addPage([pageWidth, pageHeight]);
+                drawHeader(currentPage);
+                return true;
+            }
+            return false;
+        };
+
+        drawHeader(currentPage);
+
+        for (const zone of data) {
+            checkPageBreak(30);
+
+            currentPage.drawRectangle({
+                x: margin,
+                y: yPosition - 10,
+                width: contentWidth,
+                height: 20,
+                color: principal,
+            });
+
+            currentPage.drawText(`Vendedor: ${zone.CodVend} - ${zone.nomVend}`, {
+                x: margin + 5,
+                y: yPosition - 5,
+                size: 10,
+                font: boldFont,
+                color: rgb(1, 1, 1),
+            });
+
+            yPosition -= 30;
+
+            if (!zone.document_dislab || zone.document_dislab.length === 0) {
+                currentPage.drawText("No hay registros en esta zona", {
+                    x: margin + 10,
+                    y: yPosition,
+                    size: 9,
+                    font,
+                    color: rgb(0.5, 0.5, 0.5),
                 });
-            };
+                yPosition -= 20;
+                continue;
+            }
 
-            const checkPageBreak = (neededHeight: number) => {
-                if (yPosition - neededHeight < margin) {
-                    currentPage = pdfDoc.addPage([pageWidth, pageHeight]);
-                    drawHeader(currentPage);
-                    return true;
-                }
-                return false;
-            };
+            for (const client of zone.document_dislab) {
+                checkPageBreak(40);
 
-            drawHeader(currentPage);
+                const totalClient = calcularTotalWithAmortizacion(client.boddy);
 
-            for (const zone of data) {
-                checkPageBreak(30);
+                // Nombre Cliente
+                currentPage.drawText(String(client.head.NombreComercial || client.head.Cod_Clie), {
+                    x: margin,
+                    y: yPosition,
+                    size: 9,
+                    font: boldFont,
+                });
 
-                currentPage.drawRectangle({
+                // Zona del Cliente
+                currentPage.drawText(`Zona: ${client.head.Nombre}`, {
                     x: margin,
                     y: yPosition - 10,
-                    width: contentWidth,
-                    height: 20,
-                    color: rgb(0.3, 0.3, 0.8),
+                    size: 8,
+                    font,
+                    color: rgb(0.4, 0.4, 0.4),
                 });
 
-                currentPage.drawText(`Vendedor: ${zone.CodVend} - ${zone.nomVend}`, {
-                    x: margin + 5,
-                    y: yPosition - 5,
-                    size: 10,
+                // Total
+                const totalText = `Saldo Total: S/ ${totalClient.toFixed(2)}`;
+                currentPage.drawText(totalText, {
+                    x: pageWidth - margin - boldFont.widthOfTextAtSize(totalText, 9),
+                    y: yPosition,
+                    size: 9,
                     font: boldFont,
-                    color: rgb(1, 1, 1),
+                    color: rgb(0.1, 0.5, 0.1),
                 });
 
-                yPosition -= 30;
+                yPosition -= 25;
 
-                if (!zone.document_dislab || zone.document_dislab.length === 0) {
-                    currentPage.drawText("No hay registros en esta zona", {
-                        x: margin + 10,
-                        y: yPosition,
-                        size: 9,
-                        font,
-                        color: rgb(0.5, 0.5, 0.5),
-                    });
-                    yPosition -= 20;
-                    continue;
-                }
+                if (client.boddy && client.boddy.length > 0) {
+                    checkPageBreak(30);
 
-                for (const client of zone.document_dislab) {
-                    checkPageBreak(40);
+                    // Anchos de columnas ajustados (Suman ~515)
+                    const colWidths = [55, 55, 55, 35, 45, 65, 40, 80, 80];
+                    const colHeaders = ["F. Emisión", "F. Vcto", "F. Amort.", "Abre", "Serie", "Nro. Doc", "Mon.", "Provisión", "Amortización"];
 
-                    const totalClient = calcularTotalWithAmortizacion(client.boddy);
+                    let xPos = margin + 5;
 
-                    // Nombre Cliente
-                    currentPage.drawText(String(client.head.NombreComercial || client.head.Cod_Clie), {
-                        x: margin,
-                        y: yPosition,
-                        size: 9,
-                        font: boldFont,
+                    currentPage.drawRectangle({
+                        x: margin + 2,
+                        y: yPosition - 2,
+                        width: contentWidth - 4,
+                        height: 12,
+                        color: rgb(0.95, 0.95, 0.95),
                     });
 
-                    // Zona del Cliente
-                    currentPage.drawText(`Zona: ${client.head.Nombre}`, {
-                        x: margin,
-                        y: yPosition - 10,
-                        size: 8,
-                        font,
-                        color: rgb(0.4, 0.4, 0.4),
-                    });
+                    colHeaders.forEach((header, i) => {
+                        // Alinear a la derecha Provisión(7) y Amortización(8)
+                        const isRightAligned = i === 7 || i === 8;
+                        let textX = xPos;
 
-                    // Total
-                    const totalText = `Saldo Total: S/ ${totalClient.toFixed(2)}`;
-                    currentPage.drawText(totalText, {
-                        x: pageWidth - margin - boldFont.widthOfTextAtSize(totalText, 9),
-                        y: yPosition,
-                        size: 9,
-                        font: boldFont,
-                        color: rgb(0.1, 0.5, 0.1),
-                    });
+                        if (isRightAligned) {
+                            textX = xPos + colWidths[i] - boldFont.widthOfTextAtSize(header, 6.5) - 5;
+                        }
 
-                    yPosition -= 25;
-
-                    if (client.boddy && client.boddy.length > 0) {
-                        checkPageBreak(30);
-
-                        // Anchos de columnas ajustados (Suman ~515)
-                        const colWidths = [55, 55, 55, 35, 45, 65, 40, 80, 80];
-                        const colHeaders = ["F. Emisión", "F. Vcto", "F. Amort.", "Abre", "Serie", "Nro. Doc", "Mon.", "Provisión", "Amortización"];
-
-                        let xPos = margin + 5;
-
-                        currentPage.drawRectangle({
-                            x: margin + 2,
-                            y: yPosition - 2,
-                            width: contentWidth - 4,
-                            height: 12,
-                            color: rgb(0.95, 0.95, 0.95),
+                        currentPage.drawText(header, {
+                            x: textX,
+                            y: yPosition,
+                            size: 6.5,
+                            font: boldFont,
                         });
+                        xPos += colWidths[i];
+                    });
 
-                        colHeaders.forEach((header, i) => {
-                            // Alinear a la derecha Provisión(7) y Amortización(8)
+                    yPosition -= 15;
+
+                    for (const invoice of client.boddy) {
+                        checkPageBreak(15);
+                        xPos = margin + 5;
+
+                        const rowData = [
+                            formatDateToDDMMYYYY(invoice.Fecha_Emision),
+                            formatDateToDDMMYYYY(invoice.Fecha_Vcto),
+                            invoice.Date_Amortizacion || "-",
+                            invoice.Abre_Doc || "-",
+                            invoice.SerieDoc || "-",
+                            invoice.NumeroDoc || "-",
+                            invoice.Tipo_Moneda || "-",
+                            invoice.Provision ? Number(invoice.Provision).toFixed(2) : "-",
+                            invoice.Amortizacion ? Number(invoice.Amortizacion).toFixed(2) : "-"
+                        ];
+
+                        rowData.forEach((text, i) => {
                             const isRightAligned = i === 7 || i === 8;
                             let textX = xPos;
 
-                            if (isRightAligned) {
-                                textX = xPos + colWidths[i] - boldFont.widthOfTextAtSize(header, 6.5) - 5;
+                            if (isRightAligned && text !== "-") {
+                                textX = xPos + colWidths[i] - font.widthOfTextAtSize(String(text), 6.5) - 5;
                             }
 
-                            currentPage.drawText(header, {
+                            currentPage.drawText(String(text), {
                                 x: textX,
                                 y: yPosition,
                                 size: 6.5,
-                                font: boldFont,
+                                font,
                             });
                             xPos += colWidths[i];
                         });
 
+                        currentPage.drawLine({
+                            start: { x: margin + 5, y: yPosition - 5 },
+                            end: { x: pageWidth - margin - 5, y: yPosition - 5 },
+                            thickness: 0.5,
+                            color: rgb(0.9, 0.9, 0.9),
+                        });
+
                         yPosition -= 15;
-
-                        for (const invoice of client.boddy) {
-                            checkPageBreak(15);
-                            xPos = margin + 5;
-
-                            const rowData = [
-                                formatDateToDDMMYYYY(invoice.Fecha_Emision),
-                                formatDateToDDMMYYYY(invoice.Fecha_Vcto),
-                                invoice.Date_Amortizacion || "-",
-                                invoice.Abre_Doc || "-",
-                                invoice.SerieDoc || "-",
-                                invoice.NumeroDoc || "-",
-                                invoice.Tipo_Moneda || "-",
-                                invoice.Provision ? Number(invoice.Provision).toFixed(2) : "-",
-                                invoice.Amortizacion ? Number(invoice.Amortizacion).toFixed(2) : "-"
-                            ];
-
-                            rowData.forEach((text, i) => {
-                                const isRightAligned = i === 7 || i === 8;
-                                let textX = xPos;
-
-                                if (isRightAligned && text !== "-") {
-                                    textX = xPos + colWidths[i] - font.widthOfTextAtSize(String(text), 6.5) - 5;
-                                }
-
-                                currentPage.drawText(String(text), {
-                                    x: textX,
-                                    y: yPosition,
-                                    size: 6.5,
-                                    font,
-                                });
-                                xPos += colWidths[i];
-                            });
-
-                            currentPage.drawLine({
-                                start: { x: margin + 5, y: yPosition - 5 },
-                                end: { x: pageWidth - margin - 5, y: yPosition - 5 },
-                                thickness: 0.5,
-                                color: rgb(0.9, 0.9, 0.9),
-                            });
-
-                            yPosition -= 15;
-                        }
                     }
-
-                    yPosition -= 10;
                 }
+
+                yPosition -= 10;
             }
-
-            // Numeración al pie. Antes iba en la cabecera de cada página; al
-            // unificar la cabecera se movió acá, que es donde la ponen los
-            // demás reportes.
-            const paginas = pdfDoc.getPages();
-            paginas.forEach((pg, idx) => {
-                const txt = `Página ${idx + 1} de ${paginas.length}`;
-                pg.drawText(txt, {
-                    x: pageWidth - margin - font.widthOfTextAtSize(txt, 8),
-                    y: margin / 2, size: 8, font, color: rgb(0.5, 0.5, 0.5),
-                });
-            });
-
-            const pdfBytes = await pdfDoc.save();
-            const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-            const link = document.createElement('a');
-            link.href = window.URL.createObjectURL(blob);
-            link.download = `Doc-Clientes-${new Date().toISOString().split('T')[0]}.pdf`;
-            link.click();
-
-        } catch (error) {
-            console.error('Error al generar PDF:', error);
-            toast({ title: "Error", description: "Ocurrió un error al generar el PDF.", variant: "destructive" });
-        } finally {
-            setLoading(false);
         }
+
+        // Numeración al pie. Antes iba en la cabecera de cada página; al
+        // unificar la cabecera se movió acá, que es donde la ponen los
+        // demás reportes.
+        const paginas = pdfDoc.getPages();
+        paginas.forEach((pg, idx) => {
+            const txt = `Página ${idx + 1} de ${paginas.length}`;
+            pg.drawText(txt, {
+                x: pageWidth - margin - font.widthOfTextAtSize(txt, 8),
+                y: margin / 2, size: 8, font, color: rgb(0.5, 0.5, 0.5),
+            });
+        });
+
+        return pdfDoc.save();
     };
 
     return (
-        <Button
-            variant="outline"
-            className="w-full sm:w-auto bg-transparent"
-            onClick={generatePdf}
-            disabled={loading || disabled}
-        >
-            <Download className="mr-2 h-4 w-4" />
-            {loading ? "Generando..." : "Exportar PDF"}
-        </Button>
+        <>
+            <Button
+                variant="outline"
+                className="w-full sm:w-auto bg-transparent"
+                onClick={abrir}
+                disabled={disabled}
+            >
+                <Download className="mr-2 h-4 w-4" />
+                Exportar PDF
+            </Button>
+            <PdfVistaPreviaDialog
+                abierto={abierto}
+                onCerrar={() => setAbierto(false)}
+                titulo="Documentos por cliente"
+                defecto={DEFECTO}
+                archivoDefecto={`Doc-Clientes-${new Date().toISOString().split('T')[0]}`}
+                generar={generar}
+            />
+        </>
     );
 };
 

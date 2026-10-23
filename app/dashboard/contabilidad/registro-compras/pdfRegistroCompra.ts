@@ -1,6 +1,6 @@
 import { PDFDocument, StandardFonts, rgb, RGB } from 'pdf-lib'
 import { cargarLogoPdf, dibujarCabeceraPdf, sanitizarPdf, truncarPdf } from '@/components/reporte/pdfCabecera'
-import { TEMAS_PDF } from '../movimiento-subcuenta/pdfSubcuenta'
+import { TEMAS_PDF } from '@/components/reporte/pdfOpciones'
 
 export type ColumnaOpcionalCompra = 'und' | 'punit' | 'lote' | 'vence'
 

@@ -1,5 +1,6 @@
 import { PDFDocument, StandardFonts, rgb, RGB } from 'pdf-lib'
 import { cargarLogoPdf, sanitizarPdf, truncarPdf } from '@/components/reporte/pdfCabecera'
+import { TEMAS_PDF } from '@/components/reporte/pdfOpciones'
 import { SubctaMvtoCabecera, SubctaMvtoDetalle } from '@/app/types/contabilidad-types'
 
 export type ColumnaOpcional = 'libro' | 'documento' | 'saldo' | 'item'
@@ -17,14 +18,7 @@ export interface OpcionesPdfSubcta {
     mostrarResumen:  boolean
 }
 
-export const TEMAS_PDF: { nombre: string; color: string }[] = [
-    { nombre: 'Azul marino', color: '#163161' },
-    { nombre: 'Azul',        color: '#2563eb' },
-    { nombre: 'Verde',       color: '#047857' },
-    { nombre: 'Morado',      color: '#6d28d9' },
-    { nombre: 'Vino',        color: '#9f1239' },
-    { nombre: 'Grafito',     color: '#334155' },
-]
+export { TEMAS_PDF }
 
 export const OPCIONES_PDF_DEFECTO: OpcionesPdfSubcta = {
     titulo:         'MOVIMIENTO DE SUB CUENTA CONTABLE',

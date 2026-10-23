@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
-import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
+import { StandardFonts, rgb } from 'pdf-lib';
 import { cargarLogoPdf, dibujarCabeceraPdf } from "@/components/reporte/pdfCabecera";
+import { aclarar, crearPdfReporte, hexARgb, OpcionesPdfReporte } from "@/components/reporte/pdfOpciones";
+import { PdfVistaPreviaDialog } from "@/components/reporte/PdfVistaPreviaDialog";
 import { toast } from "@/app/hooks/useToast";
 import { capPctCuota, estadoCuota, hexEstado } from "@/app/utils/cuotas-helpers";
 
@@ -32,208 +34,209 @@ interface ExportPdfProps {
 }
 
 export const ExportLabSellerPdf: React.FC<ExportPdfProps> = ({ data, disabled = false }) => {
-    const [loading, setLoading] = useState(false);
+    const [abierto, setAbierto] = useState(false);
+    const DEFECTO: OpcionesPdfReporte = { titulo: "Ventas por Vendedor", nota: '', color: '#4d4dcc', tamanoLetra: 'normal' };
 
     const formatMoney = (amount: number) => {
         return amount.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
     };
 
-    const generatePdf = async () => {
+    const abrir = () => {
         if (!data || data.length === 0) {
             toast({ title: "Sin datos", description: "No hay datos para exportar", variant: "warning" });
             return;
         }
+        setAbierto(true);
+    };
 
-        setLoading(true);
+    const generar = async (op: OpcionesPdfReporte): Promise<Uint8Array> => {
+        const principal = hexARgb(op.color);
+        const pdfDoc = await crearPdfReporte(op.tamanoLetra);
+        const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+        const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
 
-        try {
-            const pdfDoc = await PDFDocument.create();
-            const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
-            const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+        const pageWidth = 595.28;
+        const pageHeight = 841.89;
+        const margin = 40;
+        const contentWidth = pageWidth - (margin * 2);
 
-            const pageWidth = 595.28;
-            const pageHeight = 841.89;
-            const margin = 40;
-            const contentWidth = pageWidth - (margin * 2);
+        let currentPage = pdfDoc.addPage([pageWidth, pageHeight]);
+        let yPosition = pageHeight - margin;
 
-            let currentPage = pdfDoc.addPage([pageWidth, pageHeight]);
-            let yPosition = pageHeight - margin;
+        const logoImage = await cargarLogoPdf(pdfDoc);
 
-            const logoImage = await cargarLogoPdf(pdfDoc);
+        const drawHeader = (page: any) => {
+            yPosition = dibujarCabeceraPdf({
+                page, font, boldFont, logo: logoImage,
+                pageWidth, pageHeight, margin,
+                subtitulo: op.titulo,
+                filtros: op.nota.trim() || undefined,
+            });
+        };
 
-            const drawHeader = (page: any) => {
-                yPosition = dibujarCabeceraPdf({
-                    page, font, boldFont, logo: logoImage,
-                    pageWidth, pageHeight, margin,
-                    subtitulo: "Ventas por Vendedor",
-                });
-            };
+        const checkPageBreak = (needed: number) => {
+            if (yPosition - needed < margin) {
+                currentPage = pdfDoc.addPage([pageWidth, pageHeight]);
+                drawHeader(currentPage);
+            }
+        };
 
-            const checkPageBreak = (needed: number) => {
-                if (yPosition - needed < margin) {
-                    currentPage = pdfDoc.addPage([pageWidth, pageHeight]);
-                    drawHeader(currentPage);
-                }
-            };
+        drawHeader(currentPage);
 
-            drawHeader(currentPage);
+        // Columnas: las tres últimas van alineadas a la derecha.
+        const cols = [70, 190, 85, 85, 85];
+        const colHeaders = ["Cód Vend.", "Nombre Vendedor", "Ventas (S/.)", "Cuota (S/.)", "% Cumpl."];
+        const alineadasDerecha = new Set([2, 3, 4]);
 
-            // Columnas: las tres últimas van alineadas a la derecha.
-            const cols = [70, 190, 85, 85, 85];
-            const colHeaders = ["Cód Vend.", "Nombre Vendedor", "Ventas (S/.)", "Cuota (S/.)", "% Cumpl."];
-            const alineadasDerecha = new Set([2, 3, 4]);
+        /**
+         * "—" cuando no hay cuota contra la cual medir, que es distinto de
+         * 0%. El valor se topa a 100, igual que en pantalla.
+         */
+        const textoPct = (pct: number | null | undefined): string =>
+            pct === null || pct === undefined ? "—" : `${capPctCuota(pct)!.toFixed(2)}%`;
 
-            /**
-             * "—" cuando no hay cuota contra la cual medir, que es distinto de
-             * 0%. El valor se topa a 100, igual que en pantalla.
-             */
-            const textoPct = (pct: number | null | undefined): string =>
-                pct === null || pct === undefined ? "—" : `${capPctCuota(pct)!.toFixed(2)}%`;
+        const colorPct = (pct: number | null | undefined) => {
+            const hex = hexEstado[estadoCuota(pct ?? null)];
+            const n = parseInt(hex.slice(1), 16);
+            return rgb(((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255);
+        };
 
-            const colorPct = (pct: number | null | undefined) => {
-                const hex = hexEstado[estadoCuota(pct ?? null)];
-                const n = parseInt(hex.slice(1), 16);
-                return rgb(((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255);
-            };
+        for (const lab of data) {
+            checkPageBreak(50);
 
-            for (const lab of data) {
-                checkPageBreak(50);
+            currentPage.drawRectangle({
+                x: margin, y: yPosition - 10, width: contentWidth, height: 20, color: principal
+            });
+            currentPage.drawText(`${lab.Laboratorio}`, {
+                x: margin + 5, y: yPosition - 5, size: 10, font: boldFont, color: rgb(1, 1, 1)
+            });
 
-                currentPage.drawRectangle({
-                    x: margin, y: yPosition - 10, width: contentWidth, height: 20, color: rgb(0.3, 0.3, 0.8)
-                });
-                currentPage.drawText(`${lab.Laboratorio}`, {
-                    x: margin + 5, y: yPosition - 5, size: 10, font: boldFont, color: rgb(1, 1, 1)
-                });
+            const periodoTxt = `Mes: ${lab.Mes} | Año: ${lab.Año}`;
+            currentPage.drawText(periodoTxt, {
+                x: pageWidth - margin - boldFont.widthOfTextAtSize(periodoTxt, 9) - 5,
+                y: yPosition - 5, size: 9, font: boldFont, color: rgb(1, 1, 1)
+            });
 
-                const periodoTxt = `Mes: ${lab.Mes} | Año: ${lab.Año}`;
-                currentPage.drawText(periodoTxt, {
-                    x: pageWidth - margin - boldFont.widthOfTextAtSize(periodoTxt, 9) - 5,
-                    y: yPosition - 5, size: 9, font: boldFont, color: rgb(1, 1, 1)
-                });
+            yPosition -= 30;
 
-                yPosition -= 30;
+            let xPos = margin + 5;
+            currentPage.drawRectangle({
+                x: margin, y: yPosition - 2, width: contentWidth, height: 12, color: rgb(0.95, 0.95, 0.95)
+            });
 
-                let xPos = margin + 5;
-                currentPage.drawRectangle({
-                    x: margin, y: yPosition - 2, width: contentWidth, height: 12, color: rgb(0.95, 0.95, 0.95)
-                });
+            colHeaders.forEach((header, i) => {
+                let textX = xPos;
+                if (alineadasDerecha.has(i)) textX = xPos + cols[i] - boldFont.widthOfTextAtSize(header, 8) - 5;
+                currentPage.drawText(header, { x: textX, y: yPosition, size: 8, font: boldFont });
+                xPos += cols[i];
+            });
 
-                colHeaders.forEach((header, i) => {
+            yPosition -= 15;
+
+            for (const vend of lab.vendedores) {
+                checkPageBreak(15);
+                xPos = margin + 5;
+
+                const cleanName = vend.Vendedor.substring(vend.Codigo_Vend.length).trim();
+
+                const rowData = [
+                    vend.Codigo_Vend,
+                    cleanName,
+                    formatMoney(vend.SumaDeVta_Tot),
+                    vend.cuota && vend.cuota > 0 ? formatMoney(vend.cuota) : "—",
+                    textoPct(vend.pct)
+                ];
+
+                rowData.forEach((text, i) => {
                     let textX = xPos;
-                    if (alineadasDerecha.has(i)) textX = xPos + cols[i] - boldFont.widthOfTextAtSize(header, 8) - 5;
-                    currentPage.drawText(header, { x: textX, y: yPosition, size: 8, font: boldFont });
+                    if (alineadasDerecha.has(i)) textX = xPos + cols[i] - font.widthOfTextAtSize(text, 8) - 5;
+                    // El semáforo es lo único con color: en PDF no hay barra
+                    // de avance, así que el color carga toda la señal.
+                    const color = i === 4 ? colorPct(vend.pct) : rgb(0, 0, 0);
+                    currentPage.drawText(text, { x: textX, y: yPosition, size: 8, font, color });
                     xPos += cols[i];
                 });
 
+                currentPage.drawLine({
+                    start: { x: margin, y: yPosition - 5 },
+                    end: { x: pageWidth - margin, y: yPosition - 5 },
+                    thickness: 0.5, color: rgb(0.9, 0.9, 0.9)
+                });
+
                 yPosition -= 15;
-
-                for (const vend of lab.vendedores) {
-                    checkPageBreak(15);
-                    xPos = margin + 5;
-
-                    const cleanName = vend.Vendedor.substring(vend.Codigo_Vend.length).trim();
-
-                    const rowData = [
-                        vend.Codigo_Vend,
-                        cleanName,
-                        formatMoney(vend.SumaDeVta_Tot),
-                        vend.cuota && vend.cuota > 0 ? formatMoney(vend.cuota) : "—",
-                        textoPct(vend.pct)
-                    ];
-
-                    rowData.forEach((text, i) => {
-                        let textX = xPos;
-                        if (alineadasDerecha.has(i)) textX = xPos + cols[i] - font.widthOfTextAtSize(text, 8) - 5;
-                        // El semáforo es lo único con color: en PDF no hay barra
-                        // de avance, así que el color carga toda la señal.
-                        const color = i === 4 ? colorPct(vend.pct) : rgb(0, 0, 0);
-                        currentPage.drawText(text, { x: textX, y: yPosition, size: 8, font, color });
-                        xPos += cols[i];
-                    });
-
-                    currentPage.drawLine({
-                        start: { x: margin, y: yPosition - 5 },
-                        end: { x: pageWidth - margin, y: yPosition - 5 },
-                        thickness: 0.5, color: rgb(0.9, 0.9, 0.9)
-                    });
-
-                    yPosition -= 15;
-                }
-
-                checkPageBreak(20);
-                const verde = rgb(0.1, 0.5, 0.1);
-                currentPage.drawText("TOTALES:", { x: margin + 5, y: yPosition, size: 9, font: boldFont, color: verde });
-
-                // Cada total va alineado al borde derecho de su propia columna,
-                // para que quede debajo del valor que resume.
-                const totalesFila: [string, number][] = [
-                    [formatMoney(lab.totalVentasLaboratorio), 2],
-                    [lab.cuotaLab && lab.cuotaLab > 0 ? formatMoney(lab.cuotaLab) : "—", 3],
-                    [textoPct(lab.pctLab), 4],
-                ];
-                for (const [texto, idx] of totalesFila) {
-                    const bordeDerecho = margin + 5 + cols.slice(0, idx + 1).reduce((a, c) => a + c, 0);
-                    currentPage.drawText(texto, {
-                        x: bordeDerecho - boldFont.widthOfTextAtSize(texto, 9) - 5,
-                        y: yPosition, size: 9, font: boldFont,
-                        color: idx === 4 ? colorPct(lab.pctLab) : verde,
-                    });
-                }
-
-                yPosition -= 35;
             }
 
-            // --- CUADRO FINAL: TOTAL GENERAL (TODOS LOS LABORATORIOS) ---
-            const totalGeneral = data.reduce((acc, lab) => acc + (lab.totalVentasLaboratorio || 0), 0);
-            const cuotaGeneral = data.reduce((acc, lab) => acc + (lab.cuotaLab || 0), 0);
-            const factGeneral = data.reduce(
-                (acc, lab) => acc + lab.vendedores.reduce((b, v) => b + Number(v.SumaDeVta_Fact || 0), 0),
-                0
-            );
-            // Mismo criterio que la pantalla: sobre venta facturada, y "—" si
-            // no hay cuota. No se promedian los porcentajes de cada laboratorio.
-            const pctGeneral = cuotaGeneral > 0
-                ? Math.round((factGeneral / cuotaGeneral) * 10000) / 100
-                : null;
+            checkPageBreak(20);
+            const verde = rgb(0.1, 0.5, 0.1);
+            currentPage.drawText("TOTALES:", { x: margin + 5, y: yPosition, size: 9, font: boldFont, color: verde });
 
-            checkPageBreak(40);
-            yPosition -= 5;
+            // Cada total va alineado al borde derecho de su propia columna,
+            // para que quede debajo del valor que resume.
+            const totalesFila: [string, number][] = [
+                [formatMoney(lab.totalVentasLaboratorio), 2],
+                [lab.cuotaLab && lab.cuotaLab > 0 ? formatMoney(lab.cuotaLab) : "—", 3],
+                [textoPct(lab.pctLab), 4],
+            ];
+            for (const [texto, idx] of totalesFila) {
+                const bordeDerecho = margin + 5 + cols.slice(0, idx + 1).reduce((a, c) => a + c, 0);
+                currentPage.drawText(texto, {
+                    x: bordeDerecho - boldFont.widthOfTextAtSize(texto, 9) - 5,
+                    y: yPosition, size: 9, font: boldFont,
+                    color: idx === 4 ? colorPct(lab.pctLab) : verde,
+                });
+            }
 
-            currentPage.drawRectangle({ x: margin, y: yPosition - 20, width: contentWidth, height: 25, color: rgb(0.1, 0.4, 0.8) });
-            currentPage.drawText("TOTAL GENERAL:", { x: margin + 10, y: yPosition - 10, size: 9, font: boldFont, color: rgb(1, 1, 1) });
-
-            const txtTotalGeneral =
-                `Ventas: S/ ${formatMoney(totalGeneral)}    ` +
-                `Cuota: ${cuotaGeneral > 0 ? `S/ ${formatMoney(cuotaGeneral)}` : "—"}    ` +
-                `Cumpl.: ${textoPct(pctGeneral)}`;
-            currentPage.drawText(txtTotalGeneral, {
-                x: pageWidth - margin - boldFont.widthOfTextAtSize(txtTotalGeneral, 9) - 10,
-                y: yPosition - 10,
-                size: 9,
-                font: boldFont,
-                color: rgb(1, 1, 1)
-            });
-
-            const pdfBytes = await pdfDoc.save();
-            const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-            const link = document.createElement('a');
-            link.href = window.URL.createObjectURL(blob);
-            link.download = `Ventas-Laboratorio-Vendedor-${new Date().toISOString().split('T')[0]}.pdf`;
-            link.click();
-
-        } catch (error) {
-            console.error('Error al generar PDF:', error);
-            toast({ title: "Error", description: "Ocurrió un error al generar el PDF.", variant: "destructive" });
-        } finally {
-            setLoading(false);
+            yPosition -= 35;
         }
+
+        // --- CUADRO FINAL: TOTAL GENERAL (TODOS LOS LABORATORIOS) ---
+        const totalGeneral = data.reduce((acc, lab) => acc + (lab.totalVentasLaboratorio || 0), 0);
+        const cuotaGeneral = data.reduce((acc, lab) => acc + (lab.cuotaLab || 0), 0);
+        const factGeneral = data.reduce(
+            (acc, lab) => acc + lab.vendedores.reduce((b, v) => b + Number(v.SumaDeVta_Fact || 0), 0),
+            0
+        );
+        // Mismo criterio que la pantalla: sobre venta facturada, y "—" si
+        // no hay cuota. No se promedian los porcentajes de cada laboratorio.
+        const pctGeneral = cuotaGeneral > 0
+            ? Math.round((factGeneral / cuotaGeneral) * 10000) / 100
+            : null;
+
+        checkPageBreak(40);
+        yPosition -= 5;
+
+        currentPage.drawRectangle({ x: margin, y: yPosition - 20, width: contentWidth, height: 25, color: rgb(0.1, 0.4, 0.8) });
+        currentPage.drawText("TOTAL GENERAL:", { x: margin + 10, y: yPosition - 10, size: 9, font: boldFont, color: rgb(1, 1, 1) });
+
+        const txtTotalGeneral =
+            `Ventas: S/ ${formatMoney(totalGeneral)}    ` +
+            `Cuota: ${cuotaGeneral > 0 ? `S/ ${formatMoney(cuotaGeneral)}` : "—"}    ` +
+            `Cumpl.: ${textoPct(pctGeneral)}`;
+        currentPage.drawText(txtTotalGeneral, {
+            x: pageWidth - margin - boldFont.widthOfTextAtSize(txtTotalGeneral, 9) - 10,
+            y: yPosition - 10,
+            size: 9,
+            font: boldFont,
+            color: rgb(1, 1, 1)
+        });
+
+        return pdfDoc.save();
     };
 
     return (
-        <Button variant="outline" className="bg-background shadow-sm w-full sm:w-auto" onClick={generatePdf} disabled={loading || disabled}>
-            <Download className="mr-2 h-4 w-4" />
-            {loading ? "Generando..." : "Exportar PDF"}
-        </Button>
+        <>
+            <Button variant="outline" className="bg-background shadow-sm w-full sm:w-auto" onClick={abrir} disabled={disabled}>
+                <Download className="mr-2 h-4 w-4" />
+                Exportar PDF
+            </Button>
+            <PdfVistaPreviaDialog
+                abierto={abierto}
+                onCerrar={() => setAbierto(false)}
+                titulo="Ventas por vendedor"
+                defecto={DEFECTO}
+                archivoDefecto={`Ventas-Laboratorio-Vendedor-${new Date().toISOString().split('T')[0]}`}
+                generar={generar}
+            />
+        </>
     );
 };

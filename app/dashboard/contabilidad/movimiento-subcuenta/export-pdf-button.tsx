@@ -4,11 +4,11 @@ import React, { useEffect, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Switch } from '@/components/ui/switch'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Check, Download, ExternalLink, FileText, Loader2, Palette, RotateCcw, Type } from 'lucide-react'
 import { toast } from '@/app/hooks/useToast'
+import { Interruptor, Opciones, Seccion } from '@/components/reporte/PdfOpcionesControles'
 import { cn } from '@/lib/utils'
 import { SubctaMvtoCabecera, SubctaMvtoDetalle } from '@/app/types/contabilidad-types'
 import {
@@ -236,51 +236,6 @@ const ExportSubctaMvtoPdf: React.FC<Props> = ({ cabecera, detalle }) => {
                 </DialogContent>
             </Dialog>
         </>
-    )
-}
-
-export function Seccion({ icono: Icono, titulo, children }: { icono: React.ComponentType<{ className?: string }>; titulo: string; children: React.ReactNode }) {
-    return (
-        <section className="space-y-3">
-            <h3 className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                <Icono className="h-3.5 w-3.5" /> {titulo}
-            </h3>
-            {children}
-        </section>
-    )
-}
-
-export function Opciones<T extends string>({ etiqueta, valor, onChange, opciones }: {
-    etiqueta: string; valor: T; onChange: (v: T) => void; opciones: { v: T; t: string }[]
-}) {
-    return (
-        <div className="space-y-1.5">
-            <Label className="text-xs">{etiqueta}</Label>
-            <div className="flex rounded-lg border bg-muted p-0.5">
-                {opciones.map(o => (
-                    <button
-                        key={o.v}
-                        type="button"
-                        onClick={() => onChange(o.v)}
-                        className={cn(
-                            'flex-1 rounded-md px-2 py-1.5 text-xs transition-colors',
-                            valor === o.v ? 'bg-background font-semibold text-blue-700 shadow-sm dark:text-blue-400' : 'text-muted-foreground hover:text-foreground',
-                        )}
-                    >
-                        {o.t}
-                    </button>
-                ))}
-            </div>
-        </div>
-    )
-}
-
-export function Interruptor({ etiqueta, valor, onChange }: { etiqueta: string; valor: boolean; onChange: (v: boolean) => void }) {
-    return (
-        <label className="flex cursor-pointer items-center justify-between gap-3 text-sm">
-            {etiqueta}
-            <Switch checked={valor} onCheckedChange={onChange} />
-        </label>
     )
 }
 

@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Download, FileText } from "lucide-react";
-import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
+import { StandardFonts, rgb } from 'pdf-lib';
 import { cargarLogoPdf, dibujarCabeceraPdf, truncarPdf } from "@/components/reporte/pdfCabecera";
+import { aclarar, crearPdfReporte, hexARgb, OpcionesPdfReporte } from "@/components/reporte/pdfOpciones";
+import { PdfVistaPreviaDialog } from "@/components/reporte/PdfVistaPreviaDialog";
 import { toast } from "@/app/hooks/useToast";
 
 interface ExportPdfProps {
@@ -11,7 +13,8 @@ interface ExportPdfProps {
 }
 
 export const ExportEstadoCuentaPdf: React.FC<ExportPdfProps> = ({ data, disabled = false }) => {
-    const [loading, setLoading] = useState(false);
+    const [abierto, setAbierto] = useState(false);
+    const DEFECTO: OpcionesPdfReporte = { titulo: "ESTADO DE CUENTA CLIENTE", nota: '', color: '#333333', tamanoLetra: 'normal' };
 
     const formatMoney = (amount: number) => amount.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
@@ -21,275 +24,277 @@ export const ExportEstadoCuentaPdf: React.FC<ExportPdfProps> = ({ data, disabled
         return parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : dateStr;
     };
 
-    const generatePdf = async () => {
+    const abrir = () => {
         if (!data) return;
-        setLoading(true);
+        setAbierto(true);
+    };
 
-        try {
-            const pdfDoc = await PDFDocument.create();
-            const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
-            const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+    const generar = async (op: OpcionesPdfReporte): Promise<Uint8Array> => {
+        const principal = hexARgb(op.color);
+        const pdfDoc = await crearPdfReporte(op.tamanoLetra);
+        const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+        const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
 
-            const pageWidth = 595.28;
-            const pageHeight = 841.89;
-            const margin = 40;
-            const contentWidth = pageWidth - (margin * 2);
+        const pageWidth = 595.28;
+        const pageHeight = 841.89;
+        const margin = 40;
+        const contentWidth = pageWidth - (margin * 2);
 
-            let currentPage = pdfDoc.addPage([pageWidth, pageHeight]);
-            let yPosition = pageHeight - margin;
+        let currentPage = pdfDoc.addPage([pageWidth, pageHeight]);
+        let yPosition = pageHeight - margin;
 
-            const logoImage = await cargarLogoPdf(pdfDoc);
+        const logoImage = await cargarLogoPdf(pdfDoc);
 
-            // Anchos de las siete columnas del detalle.
-            const cols = [50, 185, 40, 60, 60, 60, 60];
+        // Anchos de las siete columnas del detalle.
+        const cols = [50, 185, 40, 60, 60, 60, 60];
 
-            const drawHeader = (page: any, isFirstPage: boolean) => {
-                yPosition = dibujarCabeceraPdf({
-                    page, font, boldFont, logo: logoImage,
-                    pageWidth, pageHeight, margin,
-                    subtitulo: "ESTADO DE CUENTA CLIENTE",
-                    infoDerechaSec: `Impreso: ${new Date().toLocaleDateString('es-PE')}`,
+        const drawHeader = (page: any, isFirstPage: boolean) => {
+            yPosition = dibujarCabeceraPdf({
+                page, font, boldFont, logo: logoImage,
+                pageWidth, pageHeight, margin,
+                subtitulo: op.titulo,
+                filtros: op.nota.trim() || undefined,
+                infoDerechaSec: `Impreso: ${new Date().toLocaleDateString('es-PE')}`,
+            });
+
+            // Los datos del cliente solo en la primera página: en las
+            // siguientes serían ruido que le quita sitio al detalle.
+            if (isFirstPage) {
+                page.drawRectangle({
+                    x: margin, y: yPosition - 85, width: contentWidth, height: 90,
+                    color: aclarar(principal, 0.96), borderColor: aclarar(principal, 0.75), borderWidth: 1,
                 });
 
-                // Los datos del cliente solo en la primera página: en las
-                // siguientes serían ruido que le quita sitio al detalle.
-                if (isFirstPage) {
-                    page.drawRectangle({
-                        x: margin, y: yPosition - 85, width: contentWidth, height: 90,
-                        color: rgb(0.96, 0.96, 0.96), borderColor: rgb(0.8, 0.8, 0.8), borderWidth: 1,
-                    });
+                const xIzq = margin + 10;
+                const xDer = margin + 350;
+                const anchoIzq = xDer - xIzq - 10;
+                const anchoDer = pageWidth - margin - xDer - 10;
 
-                    const xIzq = margin + 10;
-                    const xDer = margin + 350;
-                    const anchoIzq = xDer - xIzq - 10;
-                    const anchoDer = pageWidth - margin - xDer - 10;
+                const izq = (texto: string, y: number, f: any = font) =>
+                    page.drawText(truncarPdf(texto, anchoIzq, 8, f), { x: xIzq, y, size: 8, font: f });
+                const der = (texto: string, y: number, f: any = font) =>
+                    page.drawText(truncarPdf(texto, anchoDer, 8, f), { x: xDer, y, size: 8, font: f });
 
-                    const izq = (texto: string, y: number, f: any = font) =>
-                        page.drawText(truncarPdf(texto, anchoIzq, 8, f), { x: xIzq, y, size: 8, font: f });
-                    const der = (texto: string, y: number, f: any = font) =>
-                        page.drawText(truncarPdf(texto, anchoDer, 8, f), { x: xDer, y, size: 8, font: f });
+                izq(`CLIENTE: ${data.Cliente}`, yPosition - 15, boldFont);
+                der(`DOCUMENTO: ${data.RUC}`, yPosition - 15, boldFont);
 
-                    izq(`CLIENTE: ${data.Cliente}`, yPosition - 15, boldFont);
-                    der(`DOCUMENTO: ${data.RUC}`, yPosition - 15, boldFont);
+                izq(`DIRECCIÓN: ${data.Direccion || '-'}`, yPosition - 30);
+                der(`DISTRITO: ${data.Distrito || '-'}`, yPosition - 30);
 
-                    izq(`DIRECCIÓN: ${data.Direccion || '-'}`, yPosition - 30);
-                    der(`DISTRITO: ${data.Distrito || '-'}`, yPosition - 30);
+                izq(`CORREO: ${data.Correo || '-'}`, yPosition - 45);
+                der(`TELÉFONO: ${data.Telefono || '-'}`, yPosition - 45);
 
-                    izq(`CORREO: ${data.Correo || '-'}`, yPosition - 45);
-                    der(`TELÉFONO: ${data.Telefono || '-'}`, yPosition - 45);
+                izq(`VENDEDOR: ${data.Vendedor || '-'}`, yPosition - 60);
 
-                    izq(`VENDEDOR: ${data.Vendedor || '-'}`, yPosition - 60);
+                page.drawText(`FECHA DE CORTE: ${formatDateStr(data.FechaCorte)}`, {
+                    x: xIzq, y: yPosition - 75, size: 8, font: boldFont, color: rgb(0.8, 0.1, 0.1),
+                });
 
-                    page.drawText(`FECHA DE CORTE: ${formatDateStr(data.FechaCorte)}`, {
-                        x: xIzq, y: yPosition - 75, size: 8, font: boldFont, color: rgb(0.8, 0.1, 0.1),
-                    });
+                yPosition -= 105;
+            }
 
-                    yPosition -= 105;
-                }
+            const colHeaders = ["Fecha", "Descripción", "Moneda", "Provisión", "Amortización", "Saldo S/.", "Saldo US$"];
 
-                const colHeaders = ["Fecha", "Descripción", "Moneda", "Provisión", "Amortización", "Saldo S/.", "Saldo US$"];
+            let xPos = margin;
+            colHeaders.forEach((header, i) => {
+                let textX = xPos;
+                if (i >= 3) textX = xPos + cols[i] - boldFont.widthOfTextAtSize(header, 8) - 5;
+                if (i === 2) textX = xPos + cols[i] / 2 - boldFont.widthOfTextAtSize(header, 8) / 2;
+                page.drawText(header, { x: textX, y: yPosition, size: 8, font: boldFont });
+                xPos += cols[i];
+            });
+
+            page.drawLine({
+                start: { x: margin, y: yPosition - 4 }, end: { x: pageWidth - margin, y: yPosition - 4 }, thickness: 1,
+            });
+            yPosition -= 16;
+        };
+
+        const checkPageBreak = (needed: number) => {
+            if (yPosition - needed < margin + 20) {
+                currentPage = pdfDoc.addPage([pageWidth, pageHeight]);
+                yPosition = pageHeight - margin;
+                drawHeader(currentPage, false);
+            }
+        };
+
+        drawHeader(currentPage, true);
+
+        for (const doc of data.Documentos) {
+            checkPageBreak(30);
+
+            currentPage.drawText(`Documento: ${doc.Abreviatura}`, {
+                x: margin, y: yPosition, size: 8, font: boldFont,
+            });
+            currentPage.drawText(`${doc.SerieNumero}`, {
+                x: margin + 80, y: yPosition, size: 8, font: boldFont,
+            });
+            currentPage.drawText("Emisión:", {
+                x: margin + 180, y: yPosition, size: 8, font,
+            });
+            currentPage.drawText(`${formatDateStr(doc.Emision)}`, {
+                x: margin + 220, y: yPosition, size: 8, font: boldFont,
+            });
+            currentPage.drawText("Vencimiento:", {
+                x: margin + 300, y: yPosition, size: 8, font,
+            });
+            currentPage.drawText(`${formatDateStr(doc.Vencimiento)}`, {
+                x: margin + 360, y: yPosition, size: 8, font: boldFont, color: rgb(0.8, 0, 0),
+            });
+
+            yPosition -= 14;
+
+            let sumProvision = 0;
+            let sumAmortizacion = 0;
+
+            for (const mov of doc.Movimientos) {
+                checkPageBreak(15);
+
+                sumProvision    += mov.Provision;
+                sumAmortizacion += mov.Amortizacion;
 
                 let xPos = margin;
-                colHeaders.forEach((header, i) => {
+                const isSoles = mov.Moneda === 'S/.' || mov.Moneda === 'NSO';
+                const desc = mov.Descripcion.length > 42
+                    ? mov.Descripcion.substring(0, 42) + "..."
+                    : mov.Descripcion;
+
+                const rowData = [
+                    formatDateStr(mov.Fecha),
+                    desc,
+                    mov.Moneda,
+                    formatMoney(mov.Provision),
+                    formatMoney(mov.Amortizacion),
+                    isSoles  ? formatMoney(mov.SaldoSoles)   : '0.00',
+                    !isSoles ? formatMoney(mov.SaldoDolares) : '0.00',
+                ];
+
+                rowData.forEach((text, i) => {
                     let textX = xPos;
-                    if (i >= 3) textX = xPos + cols[i] - boldFont.widthOfTextAtSize(header, 8) - 5;
-                    if (i === 2) textX = xPos + cols[i] / 2 - boldFont.widthOfTextAtSize(header, 8) / 2;
-                    page.drawText(header, { x: textX, y: yPosition, size: 8, font: boldFont });
+                    if (i >= 3) textX = xPos + cols[i] - font.widthOfTextAtSize(text, 8) - 5;
+                    if (i === 2) textX = xPos + cols[i] / 2 - font.widthOfTextAtSize(text, 8) / 2;
+                    currentPage.drawText(text, { x: textX, y: yPosition, size: 8, font });
                     xPos += cols[i];
                 });
 
-                page.drawLine({
-                    start: { x: margin, y: yPosition - 4 }, end: { x: pageWidth - margin, y: yPosition - 4 }, thickness: 1,
-                });
-                yPosition -= 16;
-            };
-
-            const checkPageBreak = (needed: number) => {
-                if (yPosition - needed < margin + 20) {
-                    currentPage = pdfDoc.addPage([pageWidth, pageHeight]);
-                    yPosition = pageHeight - margin;
-                    drawHeader(currentPage, false);
-                }
-            };
-
-            drawHeader(currentPage, true);
-
-            for (const doc of data.Documentos) {
-                checkPageBreak(30);
-
-                currentPage.drawText(`Documento: ${doc.Abreviatura}`, {
-                    x: margin, y: yPosition, size: 8, font: boldFont,
-                });
-                currentPage.drawText(`${doc.SerieNumero}`, {
-                    x: margin + 80, y: yPosition, size: 8, font: boldFont,
-                });
-                currentPage.drawText("Emisión:", {
-                    x: margin + 180, y: yPosition, size: 8, font,
-                });
-                currentPage.drawText(`${formatDateStr(doc.Emision)}`, {
-                    x: margin + 220, y: yPosition, size: 8, font: boldFont,
-                });
-                currentPage.drawText("Vencimiento:", {
-                    x: margin + 300, y: yPosition, size: 8, font,
-                });
-                currentPage.drawText(`${formatDateStr(doc.Vencimiento)}`, {
-                    x: margin + 360, y: yPosition, size: 8, font: boldFont, color: rgb(0.8, 0, 0),
-                });
-
-                yPosition -= 14;
-
-                let sumProvision = 0;
-                let sumAmortizacion = 0;
-
-                for (const mov of doc.Movimientos) {
-                    checkPageBreak(15);
-
-                    sumProvision    += mov.Provision;
-                    sumAmortizacion += mov.Amortizacion;
-
-                    let xPos = margin;
-                    const isSoles = mov.Moneda === 'S/.' || mov.Moneda === 'NSO';
-                    const desc = mov.Descripcion.length > 42
-                        ? mov.Descripcion.substring(0, 42) + "..."
-                        : mov.Descripcion;
-
-                    const rowData = [
-                        formatDateStr(mov.Fecha),
-                        desc,
-                        mov.Moneda,
-                        formatMoney(mov.Provision),
-                        formatMoney(mov.Amortizacion),
-                        isSoles  ? formatMoney(mov.SaldoSoles)   : '0.00',
-                        !isSoles ? formatMoney(mov.SaldoDolares) : '0.00',
-                    ];
-
-                    rowData.forEach((text, i) => {
-                        let textX = xPos;
-                        if (i >= 3) textX = xPos + cols[i] - font.widthOfTextAtSize(text, 8) - 5;
-                        if (i === 2) textX = xPos + cols[i] / 2 - font.widthOfTextAtSize(text, 8) / 2;
-                        currentPage.drawText(text, { x: textX, y: yPosition, size: 8, font });
-                        xPos += cols[i];
-                    });
-
-                    yPosition -= 12;
-                }
-
-                checkPageBreak(15);
-
-                const subTitle = `SALDO: ${doc.Abreviatura} Nro. ${doc.SerieNumero}`;
-                const subTitleWidth = boldFont.widthOfTextAtSize(subTitle, 8);
-                currentPage.drawText(subTitle, {
-                    x: margin + cols[0] + cols[1] - subTitleWidth - 10, y: yPosition, size: 8, font: boldFont,
-                });
-
-                currentPage.drawText(formatMoney(sumProvision), {
-                    x: margin + cols[0] + cols[1] + cols[2] + cols[3] - boldFont.widthOfTextAtSize(formatMoney(sumProvision), 8) - 5,
-                    y: yPosition, size: 8, font: boldFont,
-                });
-                currentPage.drawText(formatMoney(sumAmortizacion), {
-                    x: margin + cols[0] + cols[1] + cols[2] + cols[3] + cols[4] - boldFont.widthOfTextAtSize(formatMoney(sumAmortizacion), 8) - 5,
-                    y: yPosition, size: 8, font: boldFont,
-                });
-
-                const saldoFinalSoles   = formatMoney(doc.SaldoFinalSoles   || 0);
-                const saldoFinalDolares = formatMoney(doc.SaldoFinalDolares || 0);
-
-                currentPage.drawText(saldoFinalSoles, {
-                    x: margin + cols[0] + cols[1] + cols[2] + cols[3] + cols[4] + cols[5] - boldFont.widthOfTextAtSize(saldoFinalSoles, 8) - 5,
-                    y: yPosition, size: 8, font: boldFont, color: rgb(0, 0.2, 0.8),
-                });
-                currentPage.drawText(saldoFinalDolares, {
-                    x: margin + cols[0] + cols[1] + cols[2] + cols[3] + cols[4] + cols[5] + cols[6] - boldFont.widthOfTextAtSize(saldoFinalDolares, 8) - 5,
-                    y: yPosition, size: 8, font: boldFont, color: rgb(0, 0.5, 0),
-                });
-
-                yPosition -= 20;
+                yPosition -= 12;
             }
 
-            checkPageBreak(20);
-            const totalTitle = "SALDO CLIENTE:";
-            const totalTitleWidth = boldFont.widthOfTextAtSize(totalTitle, 9);
-            currentPage.drawText(totalTitle, { x: margin + cols[0] + cols[1] - totalTitleWidth - 10, y: yPosition, size: 9, font: boldFont });
+            checkPageBreak(15);
 
-            const txtTotalSoles = formatMoney(data.TotalSoles);
-            currentPage.drawText(txtTotalSoles, { x: margin + cols[0] + cols[1] + cols[2] + cols[3] + cols[4] + cols[5] - boldFont.widthOfTextAtSize(txtTotalSoles, 9) - 5, y: yPosition, size: 9, font: boldFont, color: rgb(0, 0, 0) });
+            const subTitle = `SALDO: ${doc.Abreviatura} Nro. ${doc.SerieNumero}`;
+            const subTitleWidth = boldFont.widthOfTextAtSize(subTitle, 8);
+            currentPage.drawText(subTitle, {
+                x: margin + cols[0] + cols[1] - subTitleWidth - 10, y: yPosition, size: 8, font: boldFont,
+            });
 
-            const txtTotalDolares = formatMoney(data.TotalDolares);
-            currentPage.drawText(txtTotalDolares, { x: margin + cols[0] + cols[1] + cols[2] + cols[3] + cols[4] + cols[5] + cols[6] - boldFont.widthOfTextAtSize(txtTotalDolares, 9) - 5, y: yPosition, size: 9, font: boldFont, color: rgb(0, 0, 0) });
+            currentPage.drawText(formatMoney(sumProvision), {
+                x: margin + cols[0] + cols[1] + cols[2] + cols[3] - boldFont.widthOfTextAtSize(formatMoney(sumProvision), 8) - 5,
+                y: yPosition, size: 8, font: boldFont,
+            });
+            currentPage.drawText(formatMoney(sumAmortizacion), {
+                x: margin + cols[0] + cols[1] + cols[2] + cols[3] + cols[4] - boldFont.widthOfTextAtSize(formatMoney(sumAmortizacion), 8) - 5,
+                y: yPosition, size: 8, font: boldFont,
+            });
 
-            const altoCierre = 170;
+            const saldoFinalSoles   = formatMoney(doc.SaldoFinalSoles   || 0);
+            const saldoFinalDolares = formatMoney(doc.SaldoFinalDolares || 0);
 
-            if (yPosition - altoCierre < margin + 20) {
-                currentPage = pdfDoc.addPage([pageWidth, pageHeight]);
-                yPosition = dibujarCabeceraPdf({
-                    page: currentPage, font, boldFont, logo: logoImage,
-                    pageWidth, pageHeight, margin,
-                    subtitulo: "ESTADO DE CUENTA CLIENTE",
-                    infoDerechaSec: `Impreso: ${new Date().toLocaleDateString('es-PE')}`,
-                });
-            } else {
-                yPosition -= 35;
-            }
+            currentPage.drawText(saldoFinalSoles, {
+                x: margin + cols[0] + cols[1] + cols[2] + cols[3] + cols[4] + cols[5] - boldFont.widthOfTextAtSize(saldoFinalSoles, 8) - 5,
+                y: yPosition, size: 8, font: boldFont, color: rgb(0, 0.2, 0.8),
+            });
+            currentPage.drawText(saldoFinalDolares, {
+                x: margin + cols[0] + cols[1] + cols[2] + cols[3] + cols[4] + cols[5] + cols[6] - boldFont.widthOfTextAtSize(saldoFinalDolares, 8) - 5,
+                y: yPosition, size: 8, font: boldFont, color: rgb(0, 0.5, 0),
+            });
 
-            currentPage.drawText("OBSERVACIONES:", {
-                x: margin, y: yPosition, size: 8, font: boldFont,
+            yPosition -= 20;
+        }
+
+        checkPageBreak(20);
+        const totalTitle = "SALDO CLIENTE:";
+        const totalTitleWidth = boldFont.widthOfTextAtSize(totalTitle, 9);
+        currentPage.drawText(totalTitle, { x: margin + cols[0] + cols[1] - totalTitleWidth - 10, y: yPosition, size: 9, font: boldFont });
+
+        const txtTotalSoles = formatMoney(data.TotalSoles);
+        currentPage.drawText(txtTotalSoles, { x: margin + cols[0] + cols[1] + cols[2] + cols[3] + cols[4] + cols[5] - boldFont.widthOfTextAtSize(txtTotalSoles, 9) - 5, y: yPosition, size: 9, font: boldFont, color: rgb(0, 0, 0) });
+
+        const txtTotalDolares = formatMoney(data.TotalDolares);
+        currentPage.drawText(txtTotalDolares, { x: margin + cols[0] + cols[1] + cols[2] + cols[3] + cols[4] + cols[5] + cols[6] - boldFont.widthOfTextAtSize(txtTotalDolares, 9) - 5, y: yPosition, size: 9, font: boldFont, color: rgb(0, 0, 0) });
+
+        const altoCierre = 170;
+
+        if (yPosition - altoCierre < margin + 20) {
+            currentPage = pdfDoc.addPage([pageWidth, pageHeight]);
+            yPosition = dibujarCabeceraPdf({
+                page: currentPage, font, boldFont, logo: logoImage,
+                pageWidth, pageHeight, margin,
+                subtitulo: op.titulo,
+                filtros: op.nota.trim() || undefined,
+                infoDerechaSec: `Impreso: ${new Date().toLocaleDateString('es-PE')}`,
+            });
+        } else {
+            yPosition -= 35;
+        }
+
+        currentPage.drawText("OBSERVACIONES:", {
+            x: margin, y: yPosition, size: 8, font: boldFont,
+        });
+        yPosition -= 18;
+
+        for (let i = 0; i < 3; i++) {
+            currentPage.drawLine({
+                start: { x: margin, y: yPosition },
+                end:   { x: pageWidth - margin, y: yPosition },
+                thickness: 0.5,
+                color: rgb(0.45, 0.45, 0.45),
+                dashArray: [1.5, 2],
             });
             yPosition -= 18;
-
-            for (let i = 0; i < 3; i++) {
-                currentPage.drawLine({
-                    start: { x: margin, y: yPosition },
-                    end:   { x: pageWidth - margin, y: yPosition },
-                    thickness: 0.5,
-                    color: rgb(0.45, 0.45, 0.45),
-                    dashArray: [1.5, 2],
-                });
-                yPosition -= 18;
-            }
-
-            yPosition -= 22;
-
-            const anchoFirma = 220;
-            const altoFirma  = 70;
-            const xFirma     = pageWidth - margin - anchoFirma;
-
-            currentPage.drawRectangle({
-                x: xFirma, y: yPosition - altoFirma, width: anchoFirma, height: altoFirma,
-                borderColor: rgb(0.6, 0.6, 0.6), borderWidth: 0.5,
-            });
-
-            const pieFirma = "FIRMA Y SELLO DEL CLIENTE";
-            currentPage.drawText(pieFirma, {
-                x: xFirma + (anchoFirma - font.widthOfTextAtSize(pieFirma, 7)) / 2,
-                y: yPosition - altoFirma - 12,
-                size: 7, font, color: rgb(0.35, 0.35, 0.35),
-            });
-
-            const pages = pdfDoc.getPages();
-            pages.forEach((page, idx) => {
-                const pageNum = `Página ${idx + 1} de ${pages.length}`;
-                page.drawText(pageNum, { x: pageWidth - margin - font.widthOfTextAtSize(pageNum, 8), y: margin / 2, size: 8, font });
-            });
-
-            const pdfBytes = await pdfDoc.save();
-            const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-            const link = document.createElement('a');
-            link.href = window.URL.createObjectURL(blob);
-            link.download = `Estado_Cuenta_${data.RUC}_${new Date().toISOString().split('T')[0]}.pdf`;
-            link.click();
-
-        } catch (error) {
-            console.error('Error al generar PDF:', error);
-            toast({ title: "Error", description: "Ocurrió un error al generar el PDF.", variant: "destructive" });
-        } finally {
-            setLoading(false);
         }
+
+        yPosition -= 22;
+
+        const anchoFirma = 220;
+        const altoFirma  = 70;
+        const xFirma     = pageWidth - margin - anchoFirma;
+
+        currentPage.drawRectangle({
+            x: xFirma, y: yPosition - altoFirma, width: anchoFirma, height: altoFirma,
+            borderColor: rgb(0.6, 0.6, 0.6), borderWidth: 0.5,
+        });
+
+        const pieFirma = "FIRMA Y SELLO DEL CLIENTE";
+        currentPage.drawText(pieFirma, {
+            x: xFirma + (anchoFirma - font.widthOfTextAtSize(pieFirma, 7)) / 2,
+            y: yPosition - altoFirma - 12,
+            size: 7, font, color: rgb(0.35, 0.35, 0.35),
+        });
+
+        const pages = pdfDoc.getPages();
+        pages.forEach((page, idx) => {
+            const pageNum = `Página ${idx + 1} de ${pages.length}`;
+            page.drawText(pageNum, { x: pageWidth - margin - font.widthOfTextAtSize(pageNum, 8), y: margin / 2, size: 8, font });
+        });
+
+        return pdfDoc.save();
     };
 
     return (
-        <Button variant="outline" className="bg-background shadow-sm w-full sm:w-auto text-blue-700 border-blue-200 hover:bg-blue-50" onClick={generatePdf} disabled={loading || disabled}>
-            <FileText className="mr-2 h-4 w-4" />
-            {loading ? "Generando..." : "Exportar PDF"}
-        </Button>
+        <>
+            <Button variant="outline" className="bg-background shadow-sm w-full sm:w-auto text-blue-700 border-blue-200 hover:bg-blue-50" onClick={abrir} disabled={disabled}>
+                <FileText className="mr-2 h-4 w-4" />
+                Exportar PDF
+            </Button>
+            <PdfVistaPreviaDialog
+                abierto={abierto}
+                onCerrar={() => setAbierto(false)}
+                titulo="Estado de cuenta cliente"
+                defecto={DEFECTO}
+                archivoDefecto={`Estado_Cuenta_${data?.RUC ?? ""}_${new Date().toISOString().split('T')[0]}`}
+                generar={generar}
+            />
+        </>
     );
 };
