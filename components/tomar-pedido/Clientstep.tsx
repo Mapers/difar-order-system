@@ -22,6 +22,7 @@ import { IClient, ICondicion, IMoneda, ITerritorio } from '@/app/types/order/cli
 import { Seller } from '@/app/types/order/order-interface'
 import { monedas } from '@/constants'
 import SearchPickerDialog from "@/components/tomar-pedido/SearchPickerDialog";
+import { SucursalSelector, Sucursal } from "@/components/tomar-pedido/SucursalSelector";
 // import { ClientTransferButton } from "@/components/tomar-pedido/ClientTransferButton"; // "Transferir" deshabilitado (selección por zona)
 
 interface ClientStepProps {
@@ -55,6 +56,11 @@ interface ClientStepProps {
     onNext: () => void
     isStepValid: boolean
     handleSaveDraft: () => void
+    // Sucursal de entrega. La principal es la dirección del propio cliente
+    // y viaja con idSucursal = 0; el pedido la guarda como NULL.
+    sucursal: Sucursal | null
+    onSucursalSelect: (s: Sucursal) => void
+    usuarioId?: number | null
 }
 
 export default function ClientStep({
@@ -64,6 +70,9 @@ export default function ClientStep({
                                        loadingSellers = false,
                                        clientsFiltered,
                                        selectedClient,
+                                       sucursal,
+                                       onSucursalSelect,
+                                       usuarioId,
                                        onClientSelect,
                                        isAdmin,
                                        seller,
@@ -119,6 +128,16 @@ export default function ClientStep({
                                     {selectedClient.RUC ? `RUC: ${selectedClient.RUC}` : selectedClient.codigo}
                                 </p>
                             </div>
+                        </div>
+
+                        <div className="mt-3 border-t border-blue-200 pt-3 dark:border-blue-900/50">
+                            <SucursalSelector
+                                clienteCodigo={selectedClient.codigo}
+                                clienteDireccion={selectedClient.Dirección}
+                                seleccionada={sucursal}
+                                onSeleccionar={onSucursalSelect}
+                                usuarioId={usuarioId}
+                            />
                         </div>
 
                         <div className="flex justify-end mt-2">

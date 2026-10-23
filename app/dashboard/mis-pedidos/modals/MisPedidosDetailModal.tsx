@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useState } from "react"
+import { Sucursal } from "@/components/tomar-pedido/SucursalSelector"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import apiClient from "@/app/api/client"
 import { useAuth } from "@/context/authContext"
@@ -38,6 +39,10 @@ export function MisPedidosDetailModal({ open, onOpenChange, nroPedido, onAuthori
   const [authLoading, setAuthLoading] = useState(false)
 
   const [isEditing, setIsEditing] = useState(false)
+  // Dirección de entrega en edición. Arranca en null: SucursalSelector
+  // elige la del cliente al cargar la lista, y si el vendedor no la toca
+  // el PUT no la manda y el pedido conserva la que tenía.
+  const [sucursal, setSucursal] = useState<Sucursal | null>(null)
   const [tempDetalles, setTempDetalles] = useState<PedidoDet[]>([])
 
   const [openAddModal, setOpenAddModal] = useState(false)
@@ -155,6 +160,11 @@ export function MisPedidosDetailModal({ open, onOpenChange, nroPedido, onAuthori
         nroPedido: pedido?.nroPedido,
         clientePedido: selectedClient?.codigo || selectedClient?.RUC || pedido?.codigoCliente,
         condicionPedido: selectedCondition?.CodigoCondicion || pedido?.condicionPedido,
+        ...(sucursal && sucursal.direccion && sucursal.direccion !== pedido?.direccionEntrega
+            ? { direccionEntrega: sucursal.direccion,
+                referenciaDireccion: sucursal.referencia || undefined,
+                idSucursal: sucursal.idSucursal || null }
+            : {}),
       }
       const payloadDet = {
         insertedId: pedido?.idPedidocab,
@@ -360,6 +370,8 @@ export function MisPedidosDetailModal({ open, onOpenChange, nroPedido, onAuthori
             clientsFiltered={filteredClients}
             selectedClient={selectedClient}
             onClientSelect={setSelectedClient}
+            sucursal={sucursal}
+            onSucursalSelect={setSucursal}
             openClientSearch={openClientSearch}
             setOpenClientSearch={setOpenClientSearch}
             clientSearchQuery={clientSearchQuery}

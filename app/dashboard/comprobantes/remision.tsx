@@ -328,8 +328,8 @@ export const Remision = ({ pedido, detalles, onOpenChange, fetchGuiasRemision }:
       codigoSunat: "",
     },
     llegada: {
-      ubigeo: "",
-      direccion: pedido?.direccionCliente || "",
+      ubigeo: pedido?.ubigeoEntrega || "",
+      direccion: pedido?.direccionEntrega || pedido?.direccionCliente || "",
       codigoSunat: "",
     },
   });
@@ -437,6 +437,12 @@ export const Remision = ({ pedido, detalles, onOpenChange, fetchGuiasRemision }:
         return false;
       }
 
+      // SUNAT rechaza la guía sin ubigeo de llegada; mejor frenarla acá.
+      if (!/^\d{6}$/.test(puntosUbicacion.llegada.ubigeo || "")) {
+        setValidationError("El ubigeo de llegada es obligatorio");
+        return false;
+      }
+
       if (!datosGuia.observaciones) {
         setValidationError("Las observaciones son obligatorias");
         return false;
@@ -483,6 +489,14 @@ export const Remision = ({ pedido, detalles, onOpenChange, fetchGuiasRemision }:
         clienteNumDoc: pedido.codigoCliente || "",
         clienteDenominacion: pedido.nombreCliente || "",
         clienteDireccion: pedido.direccionCliente || "",
+      }));
+      setPuntosUbicacion(prev => ({
+        ...prev,
+        llegada: {
+          ...prev.llegada,
+          ubigeo: pedido.ubigeoEntrega || "",
+          direccion: pedido.direccionEntrega || pedido.direccionCliente || "",
+        },
       }));
     }
   }, [pedido]);
@@ -628,8 +642,7 @@ export const Remision = ({ pedido, detalles, onOpenChange, fetchGuiasRemision }:
                     <Label>Serie</Label>
                     <Select
                         value={serie}
-                        onChange={(value: string) => setSerie(value)}
-                        className="border border-border rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-20"
+                        onValueChange={(value: string) => setSerie(value)}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Seleccione prefijo" />
@@ -802,6 +815,12 @@ export const Remision = ({ pedido, detalles, onOpenChange, fetchGuiasRemision }:
                           })}
                       />
                     </div>
+                    {pedido?.ubigeoEntrega && puntosUbicacion.llegada.ubigeo === pedido.ubigeoEntrega && (
+                        <p className="text-xs text-muted-foreground">
+                          {pedido.ubigeoEntregaTexto}
+                          {pedido.idSucursal ? ' · de la sucursal del pedido' : ' · del cliente'}
+                        </p>
+                    )}
                   </div>
 
                   <div className="space-y-2">

@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button"
 import { Loader2, Truck, AlertCircle, FileText, Eye } from "lucide-react"
 import { format, parseISO } from "date-fns"
 import apiClient from "@/app/api/client"
-import { GuiaReferencia } from "./GuidesSelectorModal"
+import { GuiaReferencia } from "@/app/types/order/order-interface"
 import { Comprobante } from "@/app/types/order/order-interface"
 
 interface RelatedGuidesModalProps {
@@ -28,7 +28,9 @@ export function RelatedGuidesModal({ open, onOpenChange, comprobante, onViewPdf 
         if (!comprobante) return
         setLoading(true)
         try {
-            const response = await apiClient.get(`/pedidos/guiasRelacionadas?nroPedido=${comprobante.nroPedido}`)
+            const response = comprobante.idComprobanteCab
+                ? await apiClient.get(`/pedidos/guiasComprobante?idComprobanteCab=${comprobante.idComprobanteCab}`)
+                : await apiClient.get(`/pedidos/guiasRelacionadas?nroPedido=${comprobante.nroPedido}`)
             const data = response.data.data.data || []
             setGuias(data)
         } catch (error) {

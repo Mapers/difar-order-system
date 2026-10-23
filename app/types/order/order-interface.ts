@@ -108,6 +108,10 @@ export interface Pedido {
     monedaPedido: string
     cantidadPedidos: number
     direccionCliente: string
+    direccionEntrega?: string | null
+    idSucursal?: number | null
+    ubigeoEntrega?: string | null
+    ubigeoEntregaTexto?: string | null
     errorObservaciones?: string
     errorCodigo?: string
     errorFecha?: string
@@ -124,6 +128,7 @@ export interface GuiaReferencia {
     fecha_emision: string;
     tipo_comprobante: string;
     pdf_zip_base64: string;
+    productos?: { codigo: string; descripcion: string }[];
 }
 
 export interface LoteProducto {

@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import apiClient from "@/app/api/client"
+import { Sucursal } from "@/components/tomar-pedido/SucursalSelector"
 import moment from 'moment'
 import { monedas } from "@/constants"
 import {
@@ -41,6 +42,10 @@ export function useOrderPage() {
     const [sellerSearch, setSellerSearch] = useState("")
     const [nameZone, setNameZone] = useState("")
     const [selectedClient, setSelectedClient] = useState<IClient | null>(null)
+    // Sucursal de entrega elegida. La principal llega con idSucursal = 0 y
+    // se guarda como NULL en el pedido, igual que antes de que existieran
+    // las sucursales. SucursalSelector la setea apenas carga la lista.
+    const [sucursal, setSucursal] = useState<Sucursal | null>(null)
     const [condition, setCondition] = useState<ICondicion | null>(null)
     const [currency, setCurrency] = useState<IMoneda | null>(null)
     const [clients, setClients] = useState<IClient[]>([])
@@ -627,7 +632,13 @@ export function useOrderPage() {
                 monedaPedido:        currency?.value,
                 condicionPedido:     condition?.CodigoCondicion,
                 contactoPedido:      contactoPedido,
-                direccionEntrega:    selectedClient?.Dirección,
+                // Lo que viaja al pedido es la DIRECCIÓN elegida, no la
+                // sucursal. El pedido vale por sí mismo: si mañana corrigen
+                // o dan de baja esa sucursal, lo ya emitido no cambia.
+                direccionEntrega:    sucursal?.direccion || selectedClient?.Dirección,
+                // La sucursal da el distrito de la factura. 0 = principal:
+                // el backend no guarda nada y se usa el del cliente.
+                idSucursal:          sucursal?.idSucursal || null,
                 referenciaDireccion: referenciaDireccion,
                 fechaPedido:         moment(new Date()).format('yyyy-MM-DD'),
                 usuario:             1,
@@ -871,6 +882,10 @@ export function useOrderPage() {
         currentStep,
         search,
         selectedClient,
+        // La sucursal de entrega es parte del pedido, así que viaja en el
+        // borrador. Sin esto, al retomarlo se volvía a la dirección
+        // principal del cliente sin aviso.
+        sucursal,
         seller,
         sellerSearch,
         nameZone,
@@ -895,6 +910,10 @@ export function useOrderPage() {
         setCurrentStep(draft.currentStep ?? 0);
         setSearch(draft.search || { client: '', product: '', condition: '' });
         setSelectedClient(draft.selectedClient || null);
+        // Un borrador anterior a las sucursales no trae el campo: queda en
+        // null y SucursalSelector elige la principal al cargar la lista,
+        // que es el comportamiento de siempre.
+        setSucursal(draft.sucursal || null);
         setClient(draft.selectedClient?.codigo || "");
         setClientName(draft.selectedClient?.Nombre || "");
         setSeller(draft.seller || null);
@@ -913,6 +932,9 @@ export function useOrderPage() {
     };
 
     return {
+        // Sucursal de entrega elegida en ClientStep.
+        sucursal,
+        setSucursal,
         // State
         currentStep, isLoading, isLoadingSave, modalLoader,
         client, clientName, sellerSearch, nameZone,

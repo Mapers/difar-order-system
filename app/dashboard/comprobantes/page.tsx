@@ -467,7 +467,8 @@ export default function ComprobantesPage() {
       )
 
       if (response.data.success) {
-        toast({ title: "Éxito", description: "Comprobante generado correctamente", variant: "default" })
+        const varios = (response.data.data?.comprobantes?.length ?? 0) > 1
+        toast({ title: "Éxito", description: varios ? response.data.message : "Comprobante generado correctamente", variant: "default" })
         fetchComprobantes()
         fetchPedidosPendientes()
       } else {
@@ -481,6 +482,13 @@ export default function ComprobantesPage() {
         setErrorStock(stock)
       } else {
         toast({ title: "Error", description: error?.response?.data?.message || 'Error de servidor al generar comprobante', variant: "destructive" })
+      }
+
+      // Pedido dividido que se emitió a medias: lo emitido ya existe, así que
+      // los listados tienen que reflejarlo.
+      if (error?.response?.data?.data?.comprobantes?.length) {
+        fetchComprobantes()
+        fetchPedidosPendientes()
       }
     } finally {
       setIsProcessingInvoice(false)

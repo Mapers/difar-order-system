@@ -85,6 +85,12 @@ export function InvoiceModal({
         tipo_cpe: string
     } | null>(null)
     const [loadingPreviewData, setLoadingPreviewData] = useState(false)
+    const [planFacturacion, setPlanFacturacion] = useState<{
+        maxItems:        number
+        productos:       number
+        comprobantes:    number[]
+        emitidosPrevios: number
+    } | null>(null)
 
     const [descuentoActivo,  setDescuentoActivo]  = useState(false)
     const [descuentoMonto,   setDescuentoMonto]   = useState<string>("")
@@ -227,6 +233,18 @@ export function InvoiceModal({
         fetchPreview()
     }, [open, selectedOrder?.nroPedido])
 
+    useEffect(() => {
+        if (!open || !selectedOrder) return
+        setPlanFacturacion(null)
+        apiClient.get(`/pedidos/planFacturacion?nroPedido=${selectedOrder.nroPedido}`)
+            .then(res => setPlanFacturacion(res.data?.data ?? null))
+            .catch(() => setPlanFacturacion(null))
+    }, [open, selectedOrder?.nroPedido])
+
+    const seDivide = !!planFacturacion && (
+        planFacturacion.comprobantes.length > 1 || planFacturacion.emitidosPrevios > 0
+    )
+
     const handleInitialConfirm = () => {
         if (tipoSunat === '1' && selectedOrder?.RUC?.length !== 8) {
             setTipoDocError("El cliente tiene RUC (11 dígitos). Para tipo documento DNI el cliente debe tener exactamente 8 dígitos.")
@@ -276,8 +294,22 @@ export function InvoiceModal({
         )
     }
 
+    const productosRepetidos = useMemo(() => {
+        const porCodigo = new Map<string, { codigo: string; descripcion: string; guias: string[] }>()
+        for (const g of selectedGuides) {
+            for (const p of g.productos ?? []) {
+                const item = porCodigo.get(p.codigo) ?? { ...p, guias: [] }
+                const guia = `${g.serie}-${g.numero}`
+                if (!item.guias.includes(guia)) item.guias.push(guia)
+                porCodigo.set(p.codigo, item)
+            }
+        }
+        return [...porCodigo.values()].filter(x => x.guias.length > 1)
+    }, [selectedGuides])
+
     const canConfirm =
         !isProcessing &&
+        productosRepetidos.length === 0 &&
         !!invoiceType &&
         !!sunatTransaction &&
         !!selectedAlmacen &&
@@ -560,6 +592,40 @@ export function InvoiceModal({
                                         </Badge>
                                     )}
                                 </div>
+
+                                {productosRepetidos.length > 0 && (
+                                    <div className="mt-2 p-3 bg-red-50 border border-red-300 rounded-md flex gap-2 items-start">
+                                        <AlertTriangle className="h-4 w-4 text-red-600 shrink-0 mt-0.5" />
+                                        <div className="text-sm text-red-800 space-y-1">
+                                            <span className="font-semibold block">
+                                                Las guías seleccionadas repiten productos
+                                            </span>
+                                            <p>
+                                                Parece que se generó más de una guía con los mismos productos.
+                                                {' '}Deja seleccionada solo una que tenga todos los productos sin repetir:
+                                                {' '}si pasan las dos, el kardex los descuenta dos veces.
+                                            </p>
+                                            <ul className="list-disc pl-5 text-xs">
+                                                {productosRepetidos.slice(0, 5).map(r => (
+                                                    <li key={r.codigo}>
+                                                        {r.codigo} {r.descripcion} — en {r.guias.join(' y ')}
+                                                    </li>
+                                                ))}
+                                                {productosRepetidos.length > 5 && (
+                                                    <li>y {productosRepetidos.length - 5} más</li>
+                                                )}
+                                            </ul>
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowGuidesModal(true)}
+                                                disabled={isProcessing}
+                                                className="text-xs font-semibold underline underline-offset-2"
+                                            >
+                                                Modificar guías
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
 
                             {selectedOrder.observaciones && (
@@ -569,6 +635,43 @@ export function InvoiceModal({
                                     </Label>
                                     <div className="bg-muted border border-border rounded-md p-3 text-sm text-muted-foreground italic">
                                         {selectedOrder.observaciones}
+                                    </div>
+                                </div>
+                            )}
+
+                            {seDivide && planFacturacion && (
+                                <div className="p-3 bg-amber-50 border border-amber-300 rounded-md flex gap-2 items-start">
+                                    <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+                                    <div className="text-sm text-amber-800 space-y-1">
+                                        {planFacturacion.emitidosPrevios > 0 ? (
+                                            <>
+                                                <span className="font-semibold block">
+                                                    Este pedido ya está facturado en parte
+                                                </span>
+                                                <p>
+                                                    Ya tiene {planFacturacion.emitidosPrevios} comprobante{planFacturacion.emitidosPrevios === 1 ? '' : 's'} emitido{planFacturacion.emitidosPrevios === 1 ? '' : 's'}.
+                                                    {' '}Faltan {planFacturacion.productos} producto{planFacturacion.productos === 1 ? '' : 's'}, que
+                                                    {planFacturacion.comprobantes.length === 1
+                                                        ? ' se emitirán en 1 comprobante.'
+                                                        : ` se emitirán en ${planFacturacion.comprobantes.length} comprobantes (${planFacturacion.comprobantes.join(' + ')}).`}
+                                                </p>
+                                                <p>El flete y el descuento global ya se cobraron en el primer comprobante: no se vuelven a aplicar.</p>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <span className="font-semibold block">
+                                                    Se emitirán {planFacturacion.comprobantes.length} comprobantes
+                                                </span>
+                                                <p>
+                                                    El pedido tiene {planFacturacion.productos} productos y el máximo por comprobante es {planFacturacion.maxItems}:
+                                                    {' '}se dividirá en {planFacturacion.comprobantes.join(' + ')} productos.
+                                                </p>
+                                                <p>
+                                                    El flete y el descuento global van en el primero.
+                                                    {isCredit && ' Cada comprobante lleva sus propias cuotas, con las mismas fechas y montos en proporción a su total.'}
+                                                </p>
+                                            </>
+                                        )}
                                     </div>
                                 </div>
                             )}

@@ -85,11 +85,14 @@ export function GenerarNotaCreditoModal({
         }
     }
 
-    const fetchDetallesPedido = async (nroPedido: number) => {
+    const fetchDetallesPedido = async (nroPedido: number, idComprobanteCab?: number | null) => {
         setLoadingDetalles(true)
         try {
-            let url = `/pedidosDetalles/${nroPedido}/detalles`
-            if (auth.user?.idRol === 1) url += `?vendedor=${auth.user?.codigo}`
+            const params = new URLSearchParams()
+            if (auth.user?.idRol === 1) params.append('vendedor', auth.user?.codigo || '')
+            if (idComprobanteCab) params.append('idComprobanteCab', String(idComprobanteCab))
+            const query = params.toString()
+            const url = `/pedidosDetalles/${nroPedido}/detalles${query ? `?${query}` : ''}`
             const response = await apiClient.get(url)
             const data: DetallePedido[] = response.data.data || []
             setDetallesPedido(data)
@@ -126,7 +129,7 @@ export function GenerarNotaCreditoModal({
     const handleSelectTipo = async (tipo: 'total' | 'parcial' | 'descuento') => {
         setTipoNC(tipo)
         if (tipo === 'parcial' && selectedComprobante?.nroPedido) {
-            await fetchDetallesPedido(selectedComprobante.nroPedido)
+            await fetchDetallesPedido(selectedComprobante.nroPedido, selectedComprobante.idComprobanteCab)
         }
         setStep(3)
     }

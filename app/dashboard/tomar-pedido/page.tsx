@@ -210,6 +210,8 @@ export default function OrderPage() {
                   loadingSellers={order.loading.sellers}
                   clientsFiltered={order.clientsFiltered}
                   selectedClient={order.selectedClient}
+                  sucursal={order.sucursal}
+                  onSucursalSelect={order.setSucursal}
                   sellersFiltered={order.sellersFiltered}
                   seller={order.seller}
                   conditions={order.conditions}
@@ -285,6 +287,7 @@ export default function OrderPage() {
           {order.currentStep === 2 && (
               <SummaryStep
                   selectedClient={order.selectedClient}
+                  sucursal={order.sucursal}
                   condition={order.condition}
                   currency={order.currency}
                   nameZone={order.nameZone}

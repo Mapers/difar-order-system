@@ -1,5 +1,6 @@
 'use client'
 import React, {useState} from "react"
+import { Sucursal } from "@/components/tomar-pedido/SucursalSelector"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
@@ -18,6 +19,9 @@ import ConfirmOrderDialog from "@/components/tomar-pedido/ConfirmOrderDialog";
 
 interface SummaryStepProps {
     selectedClient: IClient | null
+    // Sucursal de entrega elegida en el paso 1. Es la dirección a la que
+    // realmente va el pedido, y puede no ser la del cliente.
+    sucursal?: Sucursal | null
     contactoPedido: string
     nameZone: string
     condition: ICondicion | null
@@ -35,7 +39,7 @@ interface SummaryStepProps {
 }
 
 export default function SummaryStep({
-                                        selectedClient, contactoPedido, nameZone, condition, currency,
+                                        selectedClient, sucursal, contactoPedido, nameZone, condition, currency,
                                         selectedProducts, productosConLotes, note, onNoteChange,
                                         onRemoveItem, onPrev, isLoadingSave, handleSaveDraft, onConfirmOrder,
                                         metasMap,
@@ -90,10 +94,19 @@ export default function SummaryStep({
                                 <div className="flex items-start gap-2">
                                     <MapPin className="w-4 h-4 text-green-600 mt-0.5 shrink-0" />
                                     <div className="min-w-0">
-                                        <Label className="text-xs text-blue-900">Dirección</Label>
-                                        <p className="text-sm line-clamp-2 text-blue-900">{selectedClient?.Dirección ?? '----'}</p>
-                                        {selectedClient?.referenciaDireccion && (
-                                            <p className="text-xs text-blue-900 mt-0.5 line-clamp-1">Ref: {selectedClient.referenciaDireccion}</p>
+                                        <Label className="text-xs text-blue-900">Dirección de entrega</Label>
+                                        <p className="text-sm line-clamp-2 text-blue-900">
+                                            {sucursal?.direccion || selectedClient?.Dirección || '----'}
+                                        </p>
+                                        {(sucursal?.referencia ?? selectedClient?.referenciaDireccion) && (
+                                            <p className="text-xs text-blue-900 mt-0.5 line-clamp-1">
+                                                Ref: {sucursal?.referencia ?? selectedClient?.referenciaDireccion}
+                                            </p>
+                                        )}
+                                        {sucursal && sucursal.esPrincipal !== 1 && (
+                                            <p className="text-[11px] text-blue-700 mt-0.5">
+                                                Sucursal{sucursal.nombreZona ? ` · ${sucursal.nombreZona}` : ''}
+                                            </p>
                                         )}
                                     </div>
                                 </div>

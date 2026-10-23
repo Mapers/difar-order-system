@@ -1,6 +1,7 @@
 'use client'
 
 import { Button } from "@/components/ui/button"
+import { SucursalSelector, Sucursal } from "@/components/tomar-pedido/SucursalSelector"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
@@ -59,6 +60,9 @@ export interface OrderDetailViewProps {
     clientsFiltered?: any[]
     selectedClient?: any | null
     onClientSelect?: (c: any | null) => void
+    sucursal?: Sucursal | null
+    onSucursalSelect?: (s: Sucursal) => void
+    usuarioId?: number | null
     openClientSearch?: boolean
     setOpenClientSearch?: (val: boolean) => void
     clientSearchQuery?: string
@@ -187,6 +191,7 @@ export default function OrderDetailView({
                                             canAddProduct, openAddModal, onOpenAddModal, addProductSlot,
                                             canAuthorize, onAuthorize, onReject, authLoading,
                                             clientsFiltered = [], selectedClient, onClientSelect, openClientSearch, setOpenClientSearch, clientSearchQuery, setClientSearchQuery,
+                                            sucursal, onSucursalSelect, usuarioId,
                                             conditions = [], selectedCondition, onConditionChange, isConditionOpen, setIsConditionOpen,
                                         }: OrderDetailViewProps) {
 
@@ -530,10 +535,22 @@ export default function OrderDetailView({
                                 </div>
                             )}
                             <div className="md:col-span-2">
-                                <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground/80">
-                                    <MapPin className="h-3 w-3" /> Dirección de Entrega:
-                                </p>
-                                <p className="text-sm">{pedido.direccionEntrega || 'No especificada'}</p>
+                                {isEditing && onSucursalSelect && selectedClient?.codigo ? (
+                                    <SucursalSelector
+                                        clienteCodigo={selectedClient.codigo}
+                                        clienteDireccion={selectedClient.Dirección}
+                                        seleccionada={sucursal ?? null}
+                                        onSeleccionar={onSucursalSelect}
+                                        usuarioId={usuarioId}
+                                    />
+                                ) : (
+                                    <>
+                                        <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground/80">
+                                            <MapPin className="h-3 w-3" /> Dirección de Entrega:
+                                        </p>
+                                        <p className="text-sm">{pedido.direccionEntrega || 'No especificada'}</p>
+                                    </>
+                                )}
                             </div>
                             {pedido.referenciaDireccion && (
                                 <div className="md:col-span-2">
