@@ -108,7 +108,7 @@ export default function SeccionVendedor({
     const [enviando, setEnviando] = useState(false)
     const [guardando, setGuardando] = useState(false)
     const [confirmOpen, setConfirmOpen] = useState(false)
-    const [fechaRuta,  setFechaRuta]  = useState(new Date().toISOString().slice(0, 10))
+    const [fechaRuta,  setFechaRuta]  = useState(new Date().toLocaleDateString('en-CA'))
     const [zonaCombo,  setZonaCombo]  = useState('')
     const [zonaLibre,  setZonaLibre]  = useState('')
     const [usaCombo,   setUsaCombo]   = useState(false)

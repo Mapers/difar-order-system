@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -15,7 +15,7 @@ import {
 import { Label } from '@/components/ui/label'
 import {
     CheckCircle2, XCircle, Loader2,
-    PlayCircle, AlertTriangle,
+    PlayCircle, AlertTriangle, CheckCheck,
 } from 'lucide-react'
 import { toast } from '@/app/hooks/useToast'
 import apiClient from '@/app/api/client'
@@ -26,6 +26,12 @@ import {
 import { TipoAmortizacion, EmpresaOption } from "@/app/types/amortizacion-types"
 import { fmtHora, fmtMoney } from "@/lib/planilla.helper"
 import MiniTabla from "@/components/contabilidad/planilla-cobranza/Minitabla"
+
+/** Identifica un documento cobrado: cliente, tipo, serie y número. */
+const claveDoc = (cliente: unknown, tipo: unknown, serie: unknown, numero: unknown) =>
+    [cliente, tipo, serie, Number(numero) || numero]
+        .map(v => String(v ?? '').trim().toUpperCase())
+        .join('|')
 
 interface Props {
     planilla:         PlanillaCabecera
@@ -58,6 +64,13 @@ export default function DetalleAdmin({
         () => empresas[0]?.CodigoEmpresa ?? ''
     )
 
+    // Filas de la planilla que todavía no tienen su amortización registrada.
+    // null mientras se consulta o si la consulta falló.
+    const [pendientes,   setPendientes]   = useState<PlanillaDetalle[] | null>(null)
+    const [verificando,  setVerificando]  = useState(false)
+    // Avance del procesamiento: cuántas van de cuántas.
+    const [progreso,     setProgreso]     = useState<{ hechas: number; total: number } | null>(null)
+
     const yaGestionada = planilla.estado === 'validado' || planilla.estado === 'rechazado'
     const tDocs = detalle.reduce((s, r) => s + Number(r.importe), 0)
     const tCbza = detalle.reduce((s, r) => s + Number(r.importe_cobrado), 0)
@@ -67,6 +80,54 @@ export default function DetalleAdmin({
         setEmpresaSel(empresas[0]?.CodigoEmpresa ?? '')
         setModalOpen(true)
     }
+
+    /**
+     * Consulta las amortizaciones ya registradas con el número de esta planilla
+     * y devuelve las filas que faltan. Si un documento aparece dos veces en la
+     * planilla, cada registro encontrado descuenta una sola fila.
+     */
+    const consultarPendientes = async (): Promise<PlanillaDetalle[]> => {
+        const res = await apiClient.get('/amortizacion/buscar', { params: { nroPlanilla: planilla.numero_planilla } })
+        const registradas: any[] = res.data?.data?.data ?? []
+        const cuenta = new Map<string, number>()
+        for (const r of registradas) {
+            const k = claveDoc(r.Cod_Clie, r.TipoDoc, r.SerieDoc, r.NumeroDoc)
+            cuenta.set(k, (cuenta.get(k) ?? 0) + 1)
+        }
+        return detalle.filter(item => {
+            const k = claveDoc(item.codigo_cliente, item.tipo_documento, item.serie, item.numero_doc)
+            const n = cuenta.get(k) ?? 0
+            if (n === 0) return true
+            cuenta.set(k, n - 1)
+            return false
+        })
+    }
+
+    useEffect(() => {
+        if (planilla.estado !== 'validado' || loadingDet || detalle.length === 0) {
+            setPendientes(null)
+            return
+        }
+        let vivo = true
+        setVerificando(true)
+        consultarPendientes()
+            .then(p => { if (vivo) setPendientes(p) })
+            .catch(() => { if (vivo) setPendientes(null) })
+            .finally(() => { if (vivo) setVerificando(false) })
+        return () => { vivo = false }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [planilla.id_planilla, planilla.estado, planilla.numero_planilla, detalle, loadingDet])
+
+    // Mientras se procesa, el navegador pide confirmación antes de cerrar o recargar la página.
+    useEffect(() => {
+        if (!isProcesando) return
+        const avisar = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = '' }
+        window.addEventListener('beforeunload', avisar)
+        return () => window.removeEventListener('beforeunload', avisar)
+    }, [isProcesando])
+
+    const procesada = pendientes !== null && detalle.length > 0 && pendientes.length === 0
+    const parcial   = pendientes !== null && pendientes.length > 0 && pendientes.length < detalle.length
 
     const buildPayload = (item: PlanillaDetalle) => ({
         id_amort_clie:     null,
@@ -103,21 +164,56 @@ export default function DetalleAdmin({
         setModalOpen(false)
         setIsProcesando(true)
         try {
-            await Promise.all(
-                detalle.map(item => apiClient.post('/amortizacion', buildPayload(item)))
-            )
-            toast({
-                title:       'Procesado',
-                description: `${detalle.length} amortización(es) registradas correctamente.`,
-            })
-        } catch (error: any) {
-            toast({
-                title:       'Error al procesar',
-                description: error?.response?.data?.message || 'No se pudieron registrar las amortizaciones.',
-                variant:     'destructive',
-            })
+            // Se vuelve a consultar justo antes: otro usuario pudo procesarla mientras tanto.
+            let porRegistrar: PlanillaDetalle[]
+            try {
+                porRegistrar = await consultarPendientes()
+            } catch {
+                toast({
+                    title:       'No se pudo verificar',
+                    description: 'No se pudo revisar qué documentos ya están registrados. Intenta de nuevo.',
+                    variant:     'destructive',
+                })
+                return
+            }
+            if (porRegistrar.length === 0) {
+                setPendientes([])
+                toast({ title: 'Planilla ya procesada', description: 'Todos los documentos ya tienen su amortización registrada.' })
+                return
+            }
+
+            // Uno por uno, para saber exactamente cuáles se registraron y cuáles no.
+            let registradas = 0
+            const fallas: string[] = []
+            setProgreso({ hechas: 0, total: porRegistrar.length })
+            for (const [i, item] of porRegistrar.entries()) {
+                setProgreso({ hechas: i + 1, total: porRegistrar.length })
+                try {
+                    await apiClient.post('/amortizacion', buildPayload(item))
+                    registradas++
+                } catch (error: any) {
+                    const doc = `${item.serie ?? ''}-${item.numero_doc ?? ''}`
+                    fallas.push(`${doc} (${error?.response?.data?.message || 'error'})`)
+                }
+            }
+
+            if (fallas.length === 0) {
+                toast({
+                    title:       'Procesado',
+                    description: `${registradas} amortización(es) registradas correctamente.`,
+                })
+            } else {
+                toast({
+                    title:       registradas > 0 ? 'Procesado con errores' : 'Error al procesar',
+                    description: `${registradas} registrada(s), ${fallas.length} con error: ${fallas.join(', ')}. Vuelve a procesar para reintentar solo las que faltan.`,
+                    variant:     'destructive',
+                })
+            }
+
+            setPendientes(await consultarPendientes().catch(() => null))
         } finally {
             setIsProcesando(false)
+            setProgreso(null)
         }
     }
 
@@ -148,19 +244,27 @@ export default function DetalleAdmin({
                                 : `Observación registrada · ${fmtHora(planilla.fecha_revision)}`}
                         </div>
 
-                        {planilla.estado === 'validado' && (
+                        {planilla.estado === 'validado' && (procesada ? (
+                            <div className="inline-flex items-center gap-1.5 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700 dark:border-indigo-900 dark:bg-indigo-950/40 dark:text-indigo-300">
+                                <CheckCheck className="h-3.5 w-3.5" />
+                                Procesada · {detalle.length} amortización(es) registradas
+                            </div>
+                        ) : (
                             <Button
                                 size="sm"
                                 className="gap-1.5 bg-indigo-600 hover:bg-indigo-700"
                                 onClick={handleAbrirModal}
-                                disabled={isProcesando}
+                                disabled={isProcesando || verificando}
                             >
-                                {isProcesando
+                                {isProcesando || verificando
                                     ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
                                     : <PlayCircle className="h-3.5 w-3.5" />}
-                                {isProcesando ? 'Procesando...' : 'Procesar'}
+                                {isProcesando ? (progreso ? `Procesando ${progreso.hechas} de ${progreso.total}...` : 'Procesando...')
+                                    : verificando ? 'Verificando...'
+                                    : parcial ? `Procesar pendientes (${pendientes!.length} de ${detalle.length})`
+                                    : 'Procesar'}
                             </Button>
-                        )}
+                        ))}
                     </div>
                 )}
 
@@ -247,8 +351,10 @@ export default function DetalleAdmin({
                             Confirmar procesamiento
                         </DialogTitle>
                         <DialogDescription className="text-sm text-muted-foreground pt-1">
-                            Se registrará esta amortización para
-                            la planilla <span className="font-mono font-semibold text-foreground">{planilla.numero_planilla}</span>.
+                            {parcial
+                                ? <>Se registrarán las {pendientes!.length} amortización(es) que faltan (de {detalle.length}) para</>
+                                : <>Se registrarán {detalle.length} amortización(es) para</>}
+                            {' '}la planilla <span className="font-mono font-semibold text-foreground">{planilla.numero_planilla}</span>.
                             Completa los campos requeridos antes de continuar.
                         </DialogDescription>
                     </DialogHeader>
