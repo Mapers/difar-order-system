@@ -21,6 +21,8 @@ export interface OpcionesPdfReporte {
     tamanoLetra: TamanoLetraPdf
     /** Solo en los reportes que se pueden imprimir en ambas orientaciones. */
     orientacion?: 'horizontal' | 'vertical'
+    /** Interruptores propios de cada reporte (p. ej. incluir anexos). */
+    extras?: Record<string, boolean>
 }
 
 export const hexARgb = (hex: string): RGB => {

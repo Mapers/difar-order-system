@@ -5,7 +5,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import {
     CheckCircle2, AlertCircle, Edit2, Send, Loader2,
 } from 'lucide-react'
-import ExportPlanillaPdfButton from './ExportPlanillaPdfButton'
+import { ExportarPlanillaFormato } from './ExportarPlanillaFormato'
 import {CatalogosBanco, PlanillaCabecera, PlanillaDetalle, TipoComprobante} from "@/app/types/planilla-types";
 import {fmtFecha, fmtHora, fmtMoney} from "@/lib/planilla.helper";
 import MiniTabla from "@/components/contabilidad/planilla-cobranza/Minitabla";
@@ -43,6 +43,11 @@ export default function DetalleVendedor({
 
     return (
         <div className="border-t border-border p-4 bg-muted/40 space-y-3 animate-in slide-in-from-top-2 duration-200">
+
+            <div className="flex justify-end">
+                <ExportarPlanillaFormato planilla={planilla} detalle={registros} disabled={loadingDet}
+                                         tiposComprobante={tiposComprobante} bancos={bancos} etiqueta="Ver planilla" />
+            </div>
 
             {/* Meta grid */}
             <div className="grid grid-cols-3 gap-2">
@@ -178,7 +183,6 @@ export default function DetalleVendedor({
                         <CheckCircle2 className="h-3.5 w-3.5" />
                         Planilla aprobada · {fmtHora(planilla.fecha_revision)}
                     </div>
-                    <ExportPlanillaPdfButton planilla={planilla} detalle={registros} />
                 </div>
             )}
         </div>

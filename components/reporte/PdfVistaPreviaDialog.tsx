@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Download, ExternalLink, FileText, Loader2, Palette, RotateCcw, Type, Printer } from 'lucide-react'
+import { Download, ExternalLink, FileText, Loader2, Palette, RotateCcw, Type, Printer, Paperclip } from 'lucide-react'
 import { toast } from '@/app/hooks/useToast'
 import { imprimirPdf } from '@/components/reporte/imprimirPdf'
 import { OpcionesPdfReporte } from './pdfOpciones'
@@ -18,7 +18,7 @@ import { Opciones, Seccion, SelectorColor } from './PdfOpcionesControles'
  * entrega la función que arma su PDF con esas opciones.
  */
 export function PdfVistaPreviaDialog({
-    abierto, onCerrar, titulo, descripcion, defecto, archivoDefecto, generar,
+    abierto, onCerrar, titulo, descripcion, defecto, archivoDefecto, generar, interruptores = [],
 }: {
     abierto:        boolean
     onCerrar:       () => void
@@ -29,6 +29,8 @@ export function PdfVistaPreviaDialog({
     defecto:        OpcionesPdfReporte
     archivoDefecto: string
     generar:        (op: OpcionesPdfReporte) => Promise<Uint8Array>
+    /** Opciones de sí/no propias del reporte; su valor llega en op.extras[k]. */
+    interruptores?: { k: string; t: string; d?: string }[]
 }) {
     const [op, setOp] = useState<OpcionesPdfReporte>(defecto)
     const [archivo, setArchivo] = useState(archivoDefecto)
@@ -122,6 +124,22 @@ export function PdfVistaPreviaDialog({
                                 </div>
                             </div>
                         </Seccion>
+
+                        {interruptores.length > 0 && (
+                            <Seccion icono={Paperclip} titulo="Anexos">
+                                {interruptores.map(it => (
+                                    <label key={it.k} className="flex cursor-pointer items-start gap-2.5 rounded-lg border p-2.5 hover:bg-muted/50">
+                                        <input type="checkbox" className="mt-0.5 h-4 w-4 accent-blue-600"
+                                               checked={!!op.extras?.[it.k]}
+                                               onChange={e => set('extras', { ...(op.extras ?? {}), [it.k]: e.target.checked })} />
+                                        <span>
+                                            <span className="block text-sm font-medium">{it.t}</span>
+                                            {it.d && <span className="block text-xs text-muted-foreground">{it.d}</span>}
+                                        </span>
+                                    </label>
+                                ))}
+                            </Seccion>
+                        )}
 
                         <Seccion icono={Palette} titulo="Color y formato">
                             <SelectorColor valor={op.color} onChange={v => set('color', v)} />

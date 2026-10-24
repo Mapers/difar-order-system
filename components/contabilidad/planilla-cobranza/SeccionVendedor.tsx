@@ -47,6 +47,7 @@ import {Voucher, VouchersModal} from "@/components/contabilidad/planilla-cobranz
 import { UnificarImagenesModal } from "@/components/cobranza/UnificarImagenesModal";
 import { SeleccionarReciboModal, ReciboDocumento } from "@/components/contabilidad/planilla-cobranza/SeleccionarReciboModal";
 import { ReciboCabecera } from "@/app/types/recibo-cliente-types";
+import { ExportarPlanillaFormato } from "@/components/contabilidad/planilla-cobranza/ExportarPlanillaFormato";
 
 interface FormRegistro {
     codigo_cliente:   string
@@ -1266,7 +1267,9 @@ export default function SeccionVendedor({
                                         </p>
                                     </div>
                                 </div>
-                                <div className="flex gap-2">
+                                <div className="flex flex-wrap justify-end gap-2">
+                                    <ExportarPlanillaFormato planilla={planillaActiva} detalle={detalle}
+                                                             tiposComprobante={tiposComprobante} bancos={bancos} etiqueta="Vista previa" />
                                     <Button variant="outline" size="sm" onClick={onLimpiar} className="text-muted-foreground">
                                         Cancelar
                                     </Button>

@@ -26,6 +26,7 @@ import {
 import { TipoAmortizacion, EmpresaOption } from "@/app/types/amortizacion-types"
 import { fmtHora, fmtMoney } from "@/lib/planilla.helper"
 import MiniTabla from "@/components/contabilidad/planilla-cobranza/Minitabla"
+import { ExportarPlanillaFormato } from "@/components/contabilidad/planilla-cobranza/ExportarPlanillaFormato"
 
 /** Identifica un documento cobrado: cliente, tipo, serie y número. */
 const claveDoc = (cliente: unknown, tipo: unknown, serie: unknown, numero: unknown) =>
@@ -236,6 +237,11 @@ export default function DetalleAdmin({
     return (
         <>
             <div className="border-t border-border p-4 bg-muted/30 space-y-3 animate-in slide-in-from-top-2 duration-200">
+
+                <div className="flex justify-end">
+                    <ExportarPlanillaFormato planilla={planilla} detalle={detalle} disabled={loadingDet}
+                                             tiposComprobante={tiposComprobante} bancos={bancos} />
+                </div>
 
                 {yaGestionada && (
                     <div className="flex items-center gap-2 flex-wrap">
