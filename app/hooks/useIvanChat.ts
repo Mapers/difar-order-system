@@ -10,6 +10,17 @@ export type { Mensaje, OpcionIvan, AccionIvan } from '@/components/ivan/nucleo/t
 const CLAVE_CHAT = 'ivan-claude-conversacion'
 const nuevoId = () => Math.random().toString(36).slice(2, 10)
 
+/**
+ * Lo que vuelve al backend como historial. Las respuestas de IVAN llevan
+ * delante qué consultó y con qué parámetros, para que "el mismo registro" o
+ * "ahora a crédito" se resuelvan sin volver a preguntar.
+ */
+function paraHistorial(m: Mensaje) {
+    if (m.rol === 'user' || !m.contexto?.length) return m.texto
+    const nota = m.contexto.map(c => `${c.herramienta}(${JSON.stringify(c.parametros)})`).join('; ')
+    return `[Consultas: ${nota}]\n${m.texto}`
+}
+
 function leerGuardada(): Mensaje[] {
     if (typeof window === 'undefined') return []
     try {
@@ -59,7 +70,7 @@ export function useIvanChat() {
         setMensajes(prev => {
             historial = prev
                 .filter(m => m.texto.trim() && m.estado !== 'error')
-                .map(m => ({ role: m.rol === 'user' ? 'user' : 'assistant', content: m.texto }))
+                .map(m => ({ role: m.rol === 'user' ? 'user' : 'assistant', content: paraHistorial(m) }))
             return [
                 ...prev,
                 { id: nuevoId(), rol: 'user', texto },

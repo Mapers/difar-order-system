@@ -23,6 +23,7 @@ const ESTRATEGIAS: { [T in EventoIvan['type']]: Aplicar<T> } = {
     cotizacion: (m, e) => ({ ...m, cotizacion: e.cotizacion }),
     acciones: (m, e) => ({ ...m, acciones: e.acciones }),
     tabla: (m, e) => ({ ...m, tablas: [...(m.tablas ?? []), e.tabla] }),
+    contexto: (m, e) => ({ ...m, contexto: e.consultas }),
     done: (m) => ({ ...m, estado: 'listo' }),
     error: (m, e) => ({ ...m, texto: e.content, estado: 'error' }),
 }

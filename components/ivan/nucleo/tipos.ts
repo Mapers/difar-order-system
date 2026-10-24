@@ -51,6 +51,8 @@ export interface Mensaje {
     cotizacion?: Cotizacion
     acciones?: AccionIvan[]
     tablas?: TablaIvan[]
+    /** Qué consultó IVAN y con qué parámetros (vuelve en el historial). */
+    contexto?: { herramienta: string; parametros: Record<string, unknown> }[]
 }
 
 /** Eventos que llegan del backend (/api/ivan/stream). */
@@ -62,5 +64,6 @@ export type EventoIvan =
     | { type: 'cotizacion'; cotizacion: Cotizacion }
     | { type: 'acciones'; acciones: AccionIvan[] }
     | { type: 'tabla'; tabla: TablaIvan }
+    | { type: 'contexto'; consultas: { herramienta: string; parametros: Record<string, unknown> }[] }
     | { type: 'done' }
     | { type: 'error'; content: string }
