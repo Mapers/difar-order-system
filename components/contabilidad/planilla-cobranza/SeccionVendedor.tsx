@@ -17,8 +17,9 @@ import {
     Send, Plus, ChevronDown, ChevronRight,
     CheckCircle2, AlertCircle,
     RefreshCw, FileText, Loader2, MapPin,
-    DollarSign, Eye, X, Upload, Image as ImageIcon, Paperclip, User, Layers,
+    DollarSign, Eye, X, Upload, Image as ImageIcon, Paperclip, User, Layers, Sparkles,
 } from 'lucide-react'
+import apiClient from '@/app/api/client'
 import { toast } from '@/app/hooks/useToast'
 import DetalleVendedor from './DetalleVendedor'
 import EstadoPill from './EstadoPill'
@@ -122,7 +123,47 @@ export default function SeccionVendedor({
     const { user, isAdmin } = useAuth()
 
     const [formReg, setFormReg] = useState<FormRegistro>(FORM_INICIAL)
-    const fc = (f: keyof FormRegistro, v: string) => setFormReg(p => ({ ...p, [f]: v }))
+    const fc = (f: keyof FormRegistro, v: string) => {
+        setFormReg(p => ({ ...p, [f]: v }))
+        // Si el vendedor corrige un dato leído del voucher, deja de marcarse como leído.
+        setLectura(l => l && l.campos.includes(f) ? { ...l, campos: l.campos.filter(c => c !== f) } : l)
+    }
+
+    // Lectura automática del voucher: qué campos se llenaron y el importe que decía.
+    const [lectura, setLectura] = useState<{
+        estado:   'leyendo' | 'ok' | 'error'
+        campos:   (keyof FormRegistro)[]
+        importe?: number | null
+    } | null>(null)
+
+    const leerVoucher = async (file: File) => {
+        setLectura({ estado: 'leyendo', campos: [] })
+        try {
+            const fd = new FormData()
+            fd.append('voucher', file)
+            const res = await apiClient.post('/planilla-cobranza/leer-voucher', fd)
+            const d = res.data?.data ?? {}
+            const leidos: Partial<Record<keyof FormRegistro, unknown>> = {
+                cod_banco:        d.cod_banco,
+                fecha_deposito:   d.fecha,
+                numero_operacion: d.numero_operacion,
+                importe_cobrado:  d.importe,
+            }
+            // Solo se llenan los campos vacíos: nunca se pisa lo que escribió el vendedor.
+            const campos = (Object.keys(leidos) as (keyof FormRegistro)[])
+                .filter(k => leidos[k] != null && leidos[k] !== '' && !String(formReg[k] ?? '').trim())
+            if (campos.length === 0 && d.importe == null) throw new Error('sin datos')
+            setFormReg(p => ({ ...p, ...Object.fromEntries(campos.map(k => [k, String(leidos[k])])) }))
+            setLectura({ estado: 'ok', campos, importe: d.importe != null ? Number(d.importe) : null })
+        } catch {
+            setLectura({ estado: 'error', campos: [] })
+        }
+    }
+
+    const leido = (k: keyof FormRegistro) =>
+        lectura?.estado === 'ok' && lectura.campos.includes(k) ? 'ring-2 ring-violet-300 bg-violet-50/60 dark:bg-violet-950/30' : ''
+    const difiereImporte = lectura?.importe != null && Number(formReg.importe_cobrado) > 0
+        && Math.abs(Number(formReg.importe_cobrado) - lectura.importe) > 0.009
 
     const [vouchers,    setVouchers]    = useState<File[]>([])
     const [unirModalOpen, setUnirModalOpen] = useState(false)
@@ -245,6 +286,7 @@ export default function SeccionVendedor({
         }
 
         setVouchers(prev => [...prev, ...validos.slice(0, disponibles)])
+        if (lectura?.estado !== 'ok' && lectura?.estado !== 'leyendo') leerVoucher(validos[0])
     }
 
     const handleImagenUnificada = (file: File) => {
@@ -262,6 +304,7 @@ export default function SeccionVendedor({
         }
         setVouchers(prev => [...prev, file])
         toast({ title: 'Imagen unificada', description: 'Se agregó como un voucher más.' })
+        if (lectura?.estado !== 'ok' && lectura?.estado !== 'leyendo') leerVoucher(file)
     }
 
     const removeVoucher = (idx: number) => {
@@ -319,6 +362,7 @@ export default function SeccionVendedor({
         if (nuevo) {
             setFormReg(FORM_INICIAL)
             setVouchers([])
+            setLectura(null)
             setSelectedClient(null)
         }
         setGuardando(false)
@@ -750,10 +794,27 @@ export default function SeccionVendedor({
                                                 type="number" step="0.01" min={0} placeholder="0.00"
                                                 value={formReg.importe_cobrado}
                                                 onChange={e => fc('importe_cobrado', e.target.value)}
-                                                className="font-mono"
+                                                className={`font-mono ${leido('importe_cobrado')}`}
                                             />
+                                            {difiereImporte && (
+                                                <p className="flex items-start gap-1 text-[11px] leading-snug text-amber-700 dark:text-amber-400">
+                                                    <AlertCircle className="mt-0.5 h-3 w-3 shrink-0" />
+                                                    El voucher dice S/ {lectura!.importe!.toFixed(2)} y escribiste S/ {Number(formReg.importe_cobrado).toFixed(2)}.
+                                                </p>
+                                            )}
                                         </div>
                                     </div>
+
+                                    {lectura && (
+                                        <div className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-xs
+                                            ${lectura.estado === 'error'
+                                            ? 'border-border bg-muted/50 text-muted-foreground'
+                                            : 'border-violet-200 bg-violet-50 text-violet-700 dark:border-violet-900 dark:bg-violet-950/40 dark:text-violet-300'}`}>
+                                            {lectura.estado === 'leyendo' && <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Leyendo voucher…</>}
+                                            {lectura.estado === 'ok' && <><Sparkles className="h-3.5 w-3.5" /> Datos leídos del voucher: revisa que estén correctos antes de agregar.</>}
+                                            {lectura.estado === 'error' && <><AlertCircle className="h-3.5 w-3.5" /> No se pudo leer el voucher. Completa los datos a mano.</>}
+                                        </div>
+                                    )}
 
                                     <div className="border-t border-dashed border-border pt-3">
                                         <p className="text-[10px] uppercase font-semibold text-muted-foreground tracking-wider mb-3">Depósito bancario</p>
@@ -761,7 +822,7 @@ export default function SeccionVendedor({
                                             <div className="flex flex-col gap-1.5">
                                                 <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Banco (C/B)</label>
                                                 <Select value={formReg.cod_banco} onValueChange={v => fc('cod_banco', v)}>
-                                                    <SelectTrigger><SelectValue placeholder="— sin banco —" /></SelectTrigger>
+                                                    <SelectTrigger className={leido('cod_banco')}><SelectValue placeholder="— sin banco —" /></SelectTrigger>
                                                     <SelectContent>
                                                         {bancos.map(b => (
                                                             <SelectItem key={b.CodigoEntidadFinanciera} value={b.CodigoEntidadFinanciera}>
@@ -773,7 +834,7 @@ export default function SeccionVendedor({
                                             </div>
                                             <div className="flex flex-col gap-1.5">
                                                 <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Fecha depósito</label>
-                                                <Input type="date" value={formReg.fecha_deposito} onChange={e => fc('fecha_deposito', e.target.value)} />
+                                                <Input type="date" value={formReg.fecha_deposito} onChange={e => fc('fecha_deposito', e.target.value)} className={leido('fecha_deposito')} />
                                             </div>
                                             <div className="flex flex-col gap-1.5">
                                                 <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">N° Operación</label>
@@ -781,7 +842,7 @@ export default function SeccionVendedor({
                                                     placeholder="14009921"
                                                     value={formReg.numero_operacion}
                                                     onChange={e => fc('numero_operacion', e.target.value)}
-                                                    maxLength={50} className="font-mono"
+                                                    maxLength={50} className={`font-mono ${leido('numero_operacion')}`}
                                                 />
                                             </div>
                                             <div className="flex flex-col gap-1.5">
