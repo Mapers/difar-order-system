@@ -74,6 +74,35 @@ const VOUCHER_ACCEPT = 'image/jpeg,image/png,image/webp,application/pdf'
 const VOUCHER_TIPOS = VOUCHER_ACCEPT.split(',')
 const VOUCHER_MAX_BYTES = 5 * 1024 * 1024
 
+// Las fotos del celular pesan 6-8 MB. Se reducen antes de subirlas: con 1600 px
+// el voucher se lee igual (es la resolución con la que lo procesa la IA) y pesa
+// unos 200-300 KB. Los PDF no se tocan.
+const VOUCHER_LADO_MAX = 1600
+
+async function reducirImagen(file: File): Promise<File> {
+    if (!file.type.startsWith('image/')) return file
+    try {
+        const bitmap = await createImageBitmap(file)
+        const escala = Math.min(1, VOUCHER_LADO_MAX / Math.max(bitmap.width, bitmap.height))
+        if (escala === 1 && file.size <= 1024 * 1024) { bitmap.close(); return file }
+        const canvas = document.createElement('canvas')
+        canvas.width  = Math.round(bitmap.width * escala)
+        canvas.height = Math.round(bitmap.height * escala)
+        const ctx = canvas.getContext('2d')
+        if (!ctx) { bitmap.close(); return file }
+        ctx.fillStyle = '#fff'
+        ctx.fillRect(0, 0, canvas.width, canvas.height)
+        ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height)
+        bitmap.close()
+        const blob = await new Promise<Blob | null>(r => canvas.toBlob(r, 'image/jpeg', 0.85))
+        if (!blob || blob.size >= file.size) return file
+        return new File([blob], file.name.replace(/\.[^.]+$/, '') + '.jpg', { type: 'image/jpeg', lastModified: Date.now() })
+    } catch {
+        // Si el navegador no puede decodificarla se sube tal cual y la valida el tamaño.
+        return file
+    }
+}
+
 interface Props {
     tiposComprobante: TipoComprobante[]
     bancos:           CatalogosBanco[]
@@ -244,8 +273,8 @@ export default function SeccionVendedor({
         })
     }
 
-    const handleVoucherChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const files = Array.from(e.target.files || [])
+    const handleVoucherChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const originales = Array.from(e.target.files || [])
         if (voucherInputRef.current) voucherInputRef.current.value = ''
 
         const disponibles = MAX_VOUCHERS - vouchers.length
@@ -255,15 +284,16 @@ export default function SeccionVendedor({
         }
 
         const validos: File[] = []
-        for (const file of files) {
-            if (!VOUCHER_TIPOS.includes(file.type)) {
+        for (const original of originales) {
+            if (!VOUCHER_TIPOS.includes(original.type)) {
                 toast({
                     title: 'Archivo no permitido',
-                    description: `${file.name} no es JPG, PNG, WEBP ni PDF. Las fotos de iPhone (HEIC) hay que convertirlas antes.`,
+                    description: `${original.name} no es JPG, PNG, WEBP ni PDF. Las fotos de iPhone (HEIC) hay que convertirlas antes.`,
                     variant: 'warning',
                 })
                 continue
             }
+            const file = await reducirImagen(original)
             if (file.size > VOUCHER_MAX_BYTES) {
                 toast({
                     title: 'Archivo muy pesado',
@@ -289,7 +319,8 @@ export default function SeccionVendedor({
         if (lectura?.estado !== 'ok' && lectura?.estado !== 'leyendo') leerVoucher(validos[0])
     }
 
-    const handleImagenUnificada = (file: File) => {
+    const handleImagenUnificada = async (unida: File) => {
+        const file = await reducirImagen(unida)
         if (vouchers.length >= MAX_VOUCHERS) {
             toast({ title: 'Límite alcanzado', description: `Máximo ${MAX_VOUCHERS} vouchers por registro.`, variant: 'warning' })
             return
