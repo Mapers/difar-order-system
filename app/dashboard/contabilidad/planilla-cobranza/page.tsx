@@ -123,7 +123,7 @@ export default function PlanillaCobranzaPage() {
                     misPlanillas={hook.misPlanillas}
                     loadingMisPlanillas={hook.loadingMisPlanillas}
                     onFetchMisPlanillas={hook.fetchMisPlanillas}
-                    onFetchDetalle={hook.fetchDetalle}
+                    onFetchDetalle={hook.consultarDetalle}
                     onReenviar={hook.reenviarPlanilla}
                     onCargarBorrador={hook.cargarBorrador}
                     vendedorInfo={vendedorInfo}

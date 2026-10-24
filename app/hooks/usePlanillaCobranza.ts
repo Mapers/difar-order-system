@@ -149,6 +149,18 @@ export function usePlanillaCobranza() {
         }
     }, [])
 
+    /** Solo consulta el detalle de una planilla, sin cambiar la que se está llenando. */
+    const consultarDetalle = useCallback(async (id_planilla: number) => {
+        try {
+            const res = await apiClient.get(`/planilla-cobranza/${id_planilla}/detalle`)
+            const { planilla, detalle: det } = res.data?.data || {}
+            return { planilla, detalle: (det || []) as PlanillaDetalle[] }
+        } catch {
+            toast({ title: 'Error', description: 'No se pudo cargar el detalle.', variant: 'destructive' })
+            return null
+        }
+    }, [])
+
     const fetchDetalle = useCallback(async (id_planilla: number) => {
         setLoadingDetalle(true)
         try {
@@ -326,7 +338,7 @@ export function usePlanillaCobranza() {
 
     return {
         tiposComprobante, bancos, loadingCatalogos, fetchCatalogos,
-        planillaActiva, detalle, loadingDetalle,
+        planillaActiva, detalle, loadingDetalle, consultarDetalle,
         generarCorrelativo, limpiarPlanillaActiva, cargarBorrador,
         agregarDetalle, eliminarDetalle, fetchDetalle,
         enviarPlanilla, reenviarPlanilla,

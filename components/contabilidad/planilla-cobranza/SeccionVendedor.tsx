@@ -17,8 +17,8 @@ import {
     Send, Plus, ChevronDown, ChevronRight,
     CheckCircle2, AlertCircle,
     RefreshCw, FileText, Loader2, MapPin,
-    DollarSign, Eye, X, Upload, Image as ImageIcon, Paperclip, User, Layers, Sparkles,
-    Lock, PencilLine, ScanSearch, Camera, Receipt, Search,
+    Eye, X, Upload, Image as ImageIcon, Paperclip, User, Layers, Sparkles,
+    Lock, PencilLine, ScanSearch, Camera, Receipt, Search, Eraser,
 } from 'lucide-react'
 import apiClient from '@/app/api/client'
 import { toast } from '@/app/hooks/useToast'
@@ -35,9 +35,8 @@ import {fmtFecha, fmtMoney, fmtRel} from "@/lib/planilla.helper";
 import ZonaCombobox from "@/components/contabilidad/planilla-cobranza/ZonaComboBox";
 import MiniTabla from "@/components/contabilidad/planilla-cobranza/Minitabla";
 import {useAuth} from "@/context/authContext";
-import { fetchGetAllClients } from "@/app/api/takeOrders"
 import { IClient } from "@/app/types/order/client-interface"
-import InlineAutocomplete from "@/components/tomar-pedido/InlineAutocomplete"
+import { BuscadorClienteReporte } from "@/components/reporte/BuscadorClienteReporte"
 import {
     DocumentoCliente,
     SeleccionarDocumentoModal
@@ -219,20 +218,11 @@ export default function SeccionVendedor({
     const [usaCombo,   setUsaCombo]   = useState(false)
     const zonaEfectiva = usaCombo ? zonaCombo : zonaLibre
 
-    const [clients,         setClients]         = useState<IClient[]>([])
-    const [clientsFiltered, setClientsFiltered] = useState<IClient[]>([])
-    const [clientSearch,    setClientSearch]    = useState("")
     const [selectedClient,  setSelectedClient]  = useState<IClient | null>(null)
-    const [loadingClients,  setLoadingClients]  = useState(false)
     const { user, isAdmin } = useAuth()
 
     const [formReg, setFormReg] = useState<FormRegistro>(FORM_INICIAL)
-    const fc = (f: keyof FormRegistro, v: string) => {
-        if (f === 'importe_cobrado') cobradoAuto.current = false
-        setFormReg(p => ({ ...p, [f]: v }))
-    }
-    // Mientras el vendedor no escriba el importe cobrado, se mantiene igual a la suma de los vouchers.
-    const cobradoAuto = useRef(true)
+    const fc = (f: keyof FormRegistro, v: string) => setFormReg(p => ({ ...p, [f]: v }))
 
     // Comprobantes del registro: cada uno se lee con IA y sus datos quedan bloqueados.
     const [items, setItems] = useState<VoucherItem[]>([])
@@ -266,15 +256,10 @@ export default function SeccionVendedor({
         if (!completo) setPorRevisar(prev => [...prev, item.id])
     }
 
-    // El importe cobrado se propone como la suma de los vouchers.
+    // El importe cobrado sale del recibo (o lo escribe el vendedor); el voucher solo sirve para avisar si no cuadra.
     const sumaVouchers = items.reduce((s, i) => s + (Number(i.importe) || 0), 0)
     const difiereImporte = items.length > 0 && sumaVouchers > 0 && Number(formReg.importe_cobrado) > 0
         && Math.abs(Number(formReg.importe_cobrado) - sumaVouchers) > 0.009
-    useEffect(() => {
-        if (cobradoAuto.current && sumaVouchers > 0)
-            setFormReg(p => ({ ...p, importe_cobrado: sumaVouchers.toFixed(2) }))
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [sumaVouchers])
 
     const agregarArchivos = (files: File[]) => {
         const nuevos: VoucherItem[] = files.map(file => ({
@@ -302,7 +287,6 @@ export default function SeccionVendedor({
     const importarRecibo = (cab: ReciboCabecera, doc: ReciboDocumento) => {
         setRecibo({ cab, doc })
         setSelectedClient({ codigo: cab.cod_cliente, Nombre: cab.nombre_cliente, RUC: cab.ruc_cliente ?? '' } as IClient)
-        cobradoAuto.current = false
         setFormReg(p => ({
             ...p,
             codigo_cliente:  cab.ruc_cliente || cab.cod_cliente,
@@ -320,7 +304,6 @@ export default function SeccionVendedor({
     const quitarRecibo = () => {
         setRecibo(null)
         setSelectedClient(null)
-        cobradoAuto.current = true
         setFormReg(p => ({
             ...p,
             codigo_cliente: '', nombre_cliente: '', tipo_documento: '', serie: '', numero_doc: '',
@@ -345,37 +328,6 @@ export default function SeccionVendedor({
     useEffect(() => {
         onFetchMisPlanillas({ id_vendedor: vendedorInfo.id_vendedor })
     }, [vendedorInfo.id_vendedor])
-
-    useEffect(() => {
-        if (user) fetchClients()
-    }, [user])
-
-    const fetchClients = async () => {
-        setLoadingClients(true)
-        try {
-            const sellerCode = isAdmin() ? "" : (user?.codigo || "")
-            const representante = isAdmin() ? "" : (user?.codRepres || "")
-            const response = await fetchGetAllClients(sellerCode, false, representante)
-            const data = response.data?.data?.data || []
-            setClients(data)
-            setClientsFiltered(data)
-        } catch {
-            setClients([])
-        } finally {
-            setLoadingClients(false)
-        }
-    }
-
-    useEffect(() => {
-        if (clientSearch) {
-            setClientsFiltered(clients.filter(c =>
-                c.RUC?.includes(clientSearch) ||
-                c.Nombre?.toUpperCase().includes(clientSearch.toUpperCase())
-            ))
-        } else {
-            setClientsFiltered(clients)
-        }
-    }, [clientSearch, clients])
 
     const handleClientSelect = (client: IClient | null) => {
         setSelectedClient(client)
@@ -500,6 +452,19 @@ export default function SeccionVendedor({
         return null
     }
 
+    /** Deja el formulario del registro en blanco: cliente, documento, recibo y vouchers. */
+    const limpiarRegistro = () => {
+        setFormReg(FORM_INICIAL)
+        items.forEach(i => i.preview && URL.revokeObjectURL(i.preview))
+        setItems([])
+        setPorRevisar([])
+        setRecibo(null)
+        setSelectedClient(null)
+    }
+    const [limpiarOpen, setLimpiarOpen] = useState(false)
+    const hayDatosRegistro = !!selectedClient || items.length > 0
+        || Object.entries(formReg).some(([k, v]) => v !== (FORM_INICIAL as any)[k])
+
     const handleAgregar = async () => {
         if (!planillaActiva) return
         if (!formReg.nombre_cliente || !formReg.tipo_documento || !formReg.importe) {
@@ -542,15 +507,7 @@ export default function SeccionVendedor({
             },
             vouchers
         )
-        if (nuevo) {
-            setFormReg(FORM_INICIAL)
-            items.forEach(i => i.preview && URL.revokeObjectURL(i.preview))
-            setItems([])
-            setPorRevisar([])
-            setRecibo(null)
-            cobradoAuto.current = true
-            setSelectedClient(null)
-        }
+        if (nuevo) limpiarRegistro()
         setGuardando(false)
     }
 
@@ -744,6 +701,33 @@ export default function SeccionVendedor({
                 </DialogContent>
             </Dialog>
 
+            <Dialog open={limpiarOpen} onOpenChange={setLimpiarOpen}>
+                <DialogContent className="max-w-md">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-100 text-amber-600">
+                                <Eraser className="h-4 w-4" />
+                            </span>
+                            ¿Limpiar el registro?
+                        </DialogTitle>
+                        <DialogDescription>
+                            Se borrará todo lo que llenaste en este registro: cliente, documento, recibo,
+                            importe cobrado, datos del depósito y los vouchers subidos.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <p className="rounded-lg bg-muted/60 px-3 py-2 text-xs text-muted-foreground">
+                        Los registros que ya agregaste a la planilla no se tocan.
+                    </p>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setLimpiarOpen(false)}>Cancelar</Button>
+                        <Button className="gap-1.5 bg-amber-600 text-white hover:bg-amber-700"
+                                onClick={() => { limpiarRegistro(); setLimpiarOpen(false) }}>
+                            <Eraser className="h-4 w-4" /> Sí, limpiar
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
             <SeleccionarDocumentoModal
                 open={docModalOpen}
                 onOpenChange={setDocModalOpen}
@@ -857,143 +841,58 @@ export default function SeccionVendedor({
                                 </div>
                             </div>
 
-                            <div className="bg-background border border-border rounded-xl overflow-hidden shadow-sm">
-                                <div className="flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-blue-50 to-slate-50 border-b border-border">
-                                    <div className="w-7 h-7 rounded-lg bg-sky-100 flex items-center justify-center">
-                                        <FileText className="h-3.5 w-3.5 text-sky-600" />
+                            <div className="overflow-hidden rounded-xl border border-border bg-background shadow-sm">
+                                <div className="flex items-center gap-3 border-b border-border bg-gradient-to-r from-sky-50 via-blue-50/60 to-transparent px-5 py-3.5 dark:from-sky-950/40 dark:via-blue-950/20">
+                                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-sky-500 to-blue-600 text-sm font-bold text-white shadow-sm shadow-sky-200 dark:shadow-none">1</span>
+                                    <div className="min-w-0">
+                                        <p className="text-sm font-semibold leading-tight text-sky-900 dark:text-sky-100">Cliente y documento</p>
+                                        <p className="text-[11px] text-muted-foreground">A quién se le cobra y qué documento se liquida</p>
                                     </div>
-                                    <p className="text-sm font-semibold text-sky-800">Datos del documento</p>
-                                    <span className="ml-auto text-[10px] text-muted-foreground font-medium">Sección 1 de 2</span>
+                                    <span className="ml-auto shrink-0 rounded-full border border-sky-200 bg-background px-2 py-0.5 text-[10px] font-medium text-sky-700 dark:border-sky-900 dark:text-sky-300">Paso 1 de 2</span>
                                 </div>
-                                <div className="p-5 space-y-4">
-                                    <div className="grid grid-cols-1 md:grid-cols-6 gap-3">
-                                        <div className="flex flex-col gap-1.5 md:col-span-5">
-                                            <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                                                Buscar Cliente (Nombre o RUC/DNI) <span className="text-red-500">*</span>
-                                            </label>
-                                            {selectedClient ? (
-                                                <div className="flex items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 p-2.5">
-                                                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-600">
-                                                        <User className="h-4 w-4 text-white" />
-                                                    </div>
-                                                    <div className="min-w-0 flex-1">
-                                                        <p className="text-sm font-semibold text-blue-900 truncate leading-tight">
-                                                            {selectedClient.Nombre}
-                                                        </p>
-                                                        <p className="text-xs text-blue-600 truncate">
-                                                            {selectedClient.RUC ? `RUC: ${selectedClient.RUC}` : selectedClient.codigo}
-                                                        </p>
-                                                    </div>
-                                                    {conRecibo ? (
-                                                        <span className="flex shrink-0 items-center gap-1 text-[11px] font-medium text-blue-600">
-                                                            <Lock className="h-3 w-3" /> Del recibo
-                                                        </span>
-                                                    ) : (
-                                                    <Button
-                                                        type="button"
-                                                        size="sm"
-                                                        variant="outline"
-                                                        onClick={() => handleClientSelect(null)}
-                                                        className="h-7 px-2.5 text-xs text-blue-600 border-blue-200 hover:bg-blue-100 bg-background shrink-0"
-                                                    >
-                                                        Cambiar
-                                                    </Button>
-                                                    )}
+                                <div className="space-y-4 p-5">
+                                    <div className="flex flex-col gap-1.5">
+                                        <label className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                                            <User className="h-3 w-3" /> Cliente <span className="text-red-500">*</span>
+                                        </label>
+                                        {conRecibo && selectedClient ? (
+                                            <div className="flex items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 p-2.5">
+                                                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-600">
+                                                    <User className="h-4 w-4 text-white" />
                                                 </div>
-                                            ) : (
-                                                <InlineAutocomplete<IClient>
-                                                    variant="tile"
-                                                    tileAccent="blue"
-                                                    tileIcon={User}
-                                                    tileTitle="Buscar cliente"
-                                                    tileDescription="Por RUC o nombre"
-                                                    placeholder="RUC o nombre del cliente..."
-                                                    value={clientSearch}
-                                                    onValueChange={setClientSearch}
-                                                    loading={loadingClients}
-                                                    items={clientsFiltered}
-                                                    pageSize={30}
-                                                    getKey={c => c.codigo}
-                                                    getItemLabel={c => c.Nombre}
-                                                    onSelect={handleClientSelect}
-                                                    emptyMessage="No se encontraron clientes"
-                                                    idleMessage="Escribe para buscar clientes"
-                                                    renderItem={c => (
-                                                        <div className="flex items-start gap-3 px-3 py-2.5">
-                                                            <div className="bg-blue-100 p-2 rounded-full shrink-0 mt-0.5">
-                                                                <User className="h-4 w-4 text-blue-600" />
-                                                            </div>
-                                                            <div className="flex flex-col flex-1 min-w-0 gap-0.5">
-                                                                <span className="font-semibold text-sm text-foreground line-clamp-1 leading-tight">
-                                                                    {c.Nombre}
-                                                                </span>
-                                                                {c.RUC && (
-                                                                    <span className="text-xs text-muted-foreground">
-                                                                        <span className="font-medium">RUC:</span> {c.RUC}
-                                                                    </span>
-                                                                )}
-                                                            </div>
-                                                        </div>
-                                                    )}
-                                                />
-                                            )}
-                                        </div>
-                                        <div className="flex flex-col gap-1.5 md:col-span-1">
-                                            <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                                                T/D <span className="text-red-500">*</span>
-                                            </label>
-                                            <Select value={formReg.tipo_documento} onValueChange={v => fc('tipo_documento', v)} disabled={conRecibo}>
-                                                <SelectTrigger className={conRecibo ? CLASE_BLOQUEADO : ''}><SelectValue placeholder="—" /></SelectTrigger>
-                                                <SelectContent>
-                                                    {tiposComprobante.map(t => (
-                                                        <SelectItem key={t.codigo} value={t.codigo}>{t.descripcion}</SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
+                                                <div className="min-w-0 flex-1">
+                                                    <p className="text-sm font-semibold text-blue-900 truncate leading-tight">
+                                                        {selectedClient.Nombre}
+                                                    </p>
+                                                    <p className="text-xs text-blue-600 truncate">
+                                                        {selectedClient.RUC ? `RUC: ${selectedClient.RUC}` : selectedClient.codigo}
+                                                    </p>
+                                                </div>
+                                                <span className="flex shrink-0 items-center gap-1 text-[11px] font-medium text-blue-600">
+                                                    <Lock className="h-3 w-3" /> Del recibo
+                                                </span>
+                                            </div>
+                                        ) : (
+                                            <BuscadorClienteReporte
+                                                valor={selectedClient}
+                                                onChange={c => handleClientSelect(c as IClient | null)}
+                                            />
+                                        )}
                                     </div>
 
-                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 items-end">
-                                        <div className="flex flex-col gap-1.5">
-                                            <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Serie</label>
-                                            <Input
-                                                placeholder="02"
-                                                value={formReg.serie}
-                                                onChange={e => fc('serie', e.target.value)}
-                                                maxLength={4} disabled={conRecibo}
-                                                className={`font-mono ${conRecibo ? CLASE_BLOQUEADO : ''}`}
-                                            />
-                                        </div>
-                                        <div className="flex flex-col gap-1.5">
-                                            <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">N° Documento</label>
-                                            <Input
-                                                placeholder="10737"
-                                                value={formReg.numero_doc}
-                                                onChange={e => fc('numero_doc', e.target.value)}
-                                                disabled={conRecibo}
-                                                className={`font-mono ${conRecibo ? CLASE_BLOQUEADO : ''}`}
-                                            />
-                                        </div>
-                                        <div className="flex flex-col gap-1.5">
-                                            <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                                                Importe S/. <span className="text-red-500">*</span>
-                                            </label>
-                                            <Input
-                                                type="number" step="0.01" min={0} placeholder="0.00"
-                                                value={formReg.importe}
-                                                onChange={e => fc('importe', e.target.value)}
-                                                disabled={conRecibo}
-                                                className={`font-mono text-lg ${conRecibo ? CLASE_BLOQUEADO : ''}`}
-                                            />
-                                        </div>
-
-                                        <div className="flex flex-col gap-1.5">
-                                            <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground invisible">
-                                                Buscar doc.
-                                            </label>
+                                    <div className={`rounded-xl border p-4 transition-colors ${formReg.codigo_cliente ? 'border-slate-200 bg-slate-50/60 dark:border-slate-800 dark:bg-slate-900/40' : 'border-dashed border-slate-200 bg-muted/20 dark:border-slate-800'}`}>
+                                        <div className="mb-3 flex flex-wrap items-center gap-2">
+                                            <span className="flex h-6 w-6 items-center justify-center rounded-md bg-sky-100 text-sky-600 dark:bg-sky-950 dark:text-sky-400">
+                                                <FileText className="h-3.5 w-3.5" />
+                                            </span>
+                                            <p className="text-sm font-semibold text-foreground">Documento a cobrar</p>
+                                            {conRecibo && (
+                                                <span className="flex items-center gap-1 text-[11px] font-medium text-blue-600">
+                                                    <Lock className="h-3 w-3" /> Del recibo
+                                                </span>
+                                            )}
                                             <Button
-                                                type="button"
-                                                variant="outline"
+                                                type="button" size="sm" variant="outline"
                                                 onClick={() => {
                                                     if (!formReg.codigo_cliente) {
                                                         toast({
@@ -1006,25 +905,82 @@ export default function SeccionVendedor({
                                                     setDocModalOpen(true)
                                                 }}
                                                 disabled={conRecibo}
-                                                className="w-full gap-2 border-sky-300 text-sky-700 hover:bg-sky-50"
+                                                className="ml-auto h-8 gap-1.5 border-sky-300 bg-background text-xs text-sky-700 hover:bg-sky-50"
                                                 title="Ver documentos del cliente (kardex)"
                                             >
-                                                <Eye className="h-4 w-4" />
+                                                <Eye className="h-3.5 w-3.5" /> Ver documentos del cliente
                                             </Button>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-3 md:grid-cols-12">
+                                            <div className="col-span-2 flex flex-col gap-1.5 md:col-span-3">
+                                                <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Tipo <span className="text-red-500">*</span></label>
+                                                <Select value={formReg.tipo_documento} onValueChange={v => fc('tipo_documento', v)} disabled={conRecibo}>
+                                                    <SelectTrigger className={`bg-background ${conRecibo ? CLASE_BLOQUEADO : ''}`}><SelectValue placeholder="Elegir tipo" /></SelectTrigger>
+                                                    <SelectContent>
+                                                        {tiposComprobante.map(t => (
+                                                            <SelectItem key={t.codigo} value={t.codigo}>{t.descripcion}</SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+                                            <div className="flex flex-col gap-1.5 md:col-span-2">
+                                                <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Serie</label>
+                                                <Input
+                                                    placeholder="Ej. F001"
+                                                    value={formReg.serie}
+                                                    onChange={e => fc('serie', e.target.value)}
+                                                    maxLength={4} disabled={conRecibo}
+                                                    className={`bg-background font-mono placeholder:font-sans placeholder:text-muted-foreground/50 ${conRecibo ? CLASE_BLOQUEADO : ''}`}
+                                                />
+                                            </div>
+                                            <div className="flex flex-col gap-1.5 md:col-span-3">
+                                                <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">N° documento</label>
+                                                <Input
+                                                    placeholder="Ej. 10737"
+                                                    value={formReg.numero_doc}
+                                                    onChange={e => fc('numero_doc', e.target.value)}
+                                                    disabled={conRecibo}
+                                                    className={`bg-background font-mono placeholder:font-sans placeholder:text-muted-foreground/50 ${conRecibo ? CLASE_BLOQUEADO : ''}`}
+                                                />
+                                            </div>
+                                            <div className="col-span-2 flex flex-col gap-1.5 md:col-span-4">
+                                                <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Importe del documento <span className="text-red-500">*</span></label>
+                                                <div className="relative">
+                                                    <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm font-semibold text-muted-foreground">S/</span>
+                                                    <Input
+                                                        type="number" step="0.01" min={0} placeholder="0.00"
+                                                        value={formReg.importe}
+                                                        onChange={e => fc('importe', e.target.value)}
+                                                        disabled={conRecibo}
+                                                        className={`bg-background pl-9 text-right font-mono text-base font-semibold placeholder:text-muted-foreground/50 ${conRecibo ? CLASE_BLOQUEADO : ''}`}
+                                                    />
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
                             <div className="bg-background border border-border rounded-xl overflow-hidden shadow-sm">
-                                <div className="flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-emerald-50 to-slate-50 border-b border-border">
-                                    <div className="w-7 h-7 rounded-lg bg-emerald-100 flex items-center justify-center">
-                                        <DollarSign className="h-3.5 w-3.5 text-emerald-600" />
+                                <div className="flex items-center gap-3 border-b border-border bg-gradient-to-r from-emerald-50 via-teal-50/60 to-transparent px-5 py-3.5 dark:from-emerald-950/40 dark:via-teal-950/20">
+                                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 text-sm font-bold text-white shadow-sm shadow-emerald-200 dark:shadow-none">2</span>
+                                    <div className="min-w-0">
+                                        <p className="text-sm font-semibold leading-tight text-emerald-900 dark:text-emerald-100">Liquidación de cobranza</p>
+                                        <p className="text-[11px] text-muted-foreground">Recibo, importe cobrado y comprobantes de pago</p>
                                     </div>
-                                    <p className="text-sm font-semibold text-emerald-800">Liquidación de cobranza</p>
-                                    <span className="ml-auto text-[10px] text-muted-foreground font-medium">Sección 2 de 2</span>
+                                    <span className="ml-auto shrink-0 rounded-full border border-emerald-200 bg-background px-2 py-0.5 text-[10px] font-medium text-emerald-700 dark:border-emerald-900 dark:text-emerald-300">Paso 2 de 2</span>
                                 </div>
                                 <div className="p-5 space-y-4">
+                                    <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-4 dark:border-slate-800 dark:bg-slate-900/40">
+                                        <div className="mb-3 flex items-center gap-2">
+                                            <span className="flex h-6 w-6 items-center justify-center rounded-md bg-sky-100 text-sky-600 dark:bg-sky-950 dark:text-sky-400">
+                                                <Receipt className="h-3.5 w-3.5" />
+                                            </span>
+                                            <div className="min-w-0">
+                                                <p className="text-sm font-semibold leading-tight text-foreground">Recibo de cuenta</p>
+                                                <p className="text-[11px] text-muted-foreground">El importe cobrado sale del recibo</p>
+                                            </div>
+                                        </div>
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                         <div className="flex flex-col gap-1.5">
                                             <label className="flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
@@ -1032,7 +988,7 @@ export default function SeccionVendedor({
                                             </label>
                                             <div className="flex gap-2">
                                                 <div className={`flex h-10 min-w-0 flex-1 items-center gap-2 rounded-md border px-3
-                                                    ${recibo ? 'border-sky-200 bg-sky-50 dark:border-sky-900 dark:bg-sky-950/40' : 'bg-muted/60'}`}>
+                                                    ${recibo ? 'border-sky-200 bg-sky-50 dark:border-sky-900 dark:bg-sky-950/40' : 'bg-background'}`}>
                                                     <Receipt className={`h-4 w-4 shrink-0 ${recibo ? 'text-sky-600' : 'text-muted-foreground'}`} />
                                                     {recibo ? (
                                                         <span className="min-w-0 flex-1 truncate font-mono text-sm font-semibold text-sky-900 dark:text-sky-100">
@@ -1072,7 +1028,7 @@ export default function SeccionVendedor({
                                                 value={formReg.importe_cobrado}
                                                 onChange={e => fc('importe_cobrado', e.target.value)}
                                                 disabled={conRecibo}
-                                                className={`h-10 font-mono ${conRecibo ? CLASE_BLOQUEADO : ''}`}
+                                                className={`h-10 bg-background font-mono ${conRecibo ? CLASE_BLOQUEADO : ''}`}
                                             />
                                             {difiereImporte && (
                                                 <p className="flex items-start gap-1 text-[11px] leading-snug text-amber-700 dark:text-amber-400">
@@ -1082,14 +1038,20 @@ export default function SeccionVendedor({
                                             )}
                                         </div>
                                     </div>
+                                    </div>
 
-                                    <div className="border-t border-dashed border-border pt-3 space-y-3">
-                                        <div className="flex items-center justify-between">
-                                            <p className="text-[10px] uppercase font-semibold text-muted-foreground tracking-wider flex items-center gap-1.5">
-                                                <Paperclip className="h-3 w-3" />
-                                                Comprobantes de pago
-                                            </p>
-                                            {VOUCHER_MULTIPLE && <span className="text-[10px] text-muted-foreground">{items.length}/{MAX_VOUCHERS}</span>}
+                                    <div className="space-y-3 rounded-xl border border-violet-100 bg-violet-50/30 p-4 dark:border-violet-950 dark:bg-violet-950/10">
+                                        <div className="flex items-center gap-2">
+                                            <span className="flex h-6 w-6 items-center justify-center rounded-md bg-violet-100 text-violet-600 dark:bg-violet-950 dark:text-violet-400">
+                                                <Paperclip className="h-3.5 w-3.5" />
+                                            </span>
+                                            <div className="min-w-0">
+                                                <p className="text-sm font-semibold leading-tight text-foreground">Comprobantes de pago</p>
+                                                <p className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                                                    <Sparkles className="h-3 w-3 text-violet-500" /> Banco, fecha y operación se leen del voucher
+                                                </p>
+                                            </div>
+                                            {VOUCHER_MULTIPLE && <span className="ml-auto text-[10px] text-muted-foreground">{items.length}/{MAX_VOUCHERS}</span>}
                                         </div>
 
                                         {items.map((v, idx) => (
@@ -1218,20 +1180,31 @@ export default function SeccionVendedor({
                                                     placeholder="Opcional"
                                                     value={formReg.numero_cheque}
                                                     onChange={e => fc('numero_cheque', e.target.value)}
-                                                    maxLength={50} className="font-mono"
+                                                    maxLength={50} className="bg-background font-mono"
                                                 />
                                             </div>
                                         </div>
                                     </div>
 
-                                    <Button
-                                        onClick={handleAgregar}
-                                        disabled={guardando}
-                                        className="w-full h-11 border-2 border-dashed border-sky-300 bg-sky-50 text-sky-700 hover:bg-sky-100 hover:border-sky-400"
-                                    >
-                                        {guardando ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Plus className="h-4 w-4 mr-2" />}
-                                        Agregar registro a la planilla
-                                    </Button>
+                                    <div className="flex gap-2">
+                                        <Button
+                                            type="button" variant="outline"
+                                            onClick={() => setLimpiarOpen(true)}
+                                            disabled={guardando || !hayDatosRegistro}
+                                            className="h-11 shrink-0 gap-1.5 px-4 text-muted-foreground"
+                                            title="Borrar lo escrito en este registro"
+                                        >
+                                            <Eraser className="h-4 w-4" /> Limpiar
+                                        </Button>
+                                        <Button
+                                            onClick={handleAgregar}
+                                            disabled={guardando}
+                                            className="h-11 flex-1 border-2 border-dashed border-sky-300 bg-sky-50 text-sky-700 hover:bg-sky-100 hover:border-sky-400"
+                                        >
+                                            {guardando ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Plus className="h-4 w-4 mr-2" />}
+                                            Agregar registro a la planilla
+                                        </Button>
+                                    </div>
                                 </div>
                             </div>
 
