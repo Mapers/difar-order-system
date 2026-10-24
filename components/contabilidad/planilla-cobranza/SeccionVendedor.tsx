@@ -285,10 +285,23 @@ export default function SeccionVendedor({
 
     const handleZonaCombo = (val: string) => { setUsaCombo(true); setZonaCombo(val); setZonaLibre('') }
 
+    /** Lo cobrado debe ser mayor a 0 y no pasar el importe del documento. */
+    const errorCobrado = (importe: number | string, cobrado: number | string) => {
+        const c = Number(cobrado)
+        if (!(c > 0)) return 'Ingresa el importe cobrado.'
+        if (c > Number(importe) + 0.001) return 'El importe cobrado no puede ser mayor al importe del documento.'
+        return null
+    }
+
     const handleAgregar = async () => {
         if (!planillaActiva) return
         if (!formReg.nombre_cliente || !formReg.tipo_documento || !formReg.importe) {
             toast({ title: 'Campos requeridos', description: 'Nombre, tipo de documento e importe son obligatorios.', variant: 'warning' })
+            return
+        }
+        const errCobrado = errorCobrado(formReg.importe, formReg.importe_cobrado)
+        if (errCobrado) {
+            toast({ title: 'Importe cobrado', description: errCobrado, variant: 'warning' })
             return
         }
         setGuardando(true)
@@ -380,6 +393,16 @@ export default function SeccionVendedor({
 
     const handleReenviar = async () => {
         if (!editId) return
+        const conError = editRegs.findIndex(r => errorCobrado(r.importe, r.importe_cobrado))
+        if (conError >= 0) {
+            const r = editRegs[conError]
+            toast({
+                title:       `Fila ${conError + 1}: importe cobrado`,
+                description: `${r.serie ?? ''}-${r.numero_doc ?? ''} · ${errorCobrado(r.importe, r.importe_cobrado)}`,
+                variant:     'warning',
+            })
+            return
+        }
         setReen(true)
         await onReenviar(editId, vendedorInfo, editRegs.map(r => ({
             codigo_cliente:   r.codigo_cliente   || undefined,
@@ -722,7 +745,7 @@ export default function SeccionVendedor({
                                             />
                                         </div>
                                         <div className="flex flex-col gap-1.5">
-                                            <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Importe cobrado S/.</label>
+                                            <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Importe cobrado S/. <span className="text-red-500">*</span></label>
                                             <Input
                                                 type="number" step="0.01" min={0} placeholder="0.00"
                                                 value={formReg.importe_cobrado}

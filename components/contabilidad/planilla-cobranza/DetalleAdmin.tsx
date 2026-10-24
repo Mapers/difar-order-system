@@ -74,6 +74,9 @@ export default function DetalleAdmin({
     const yaGestionada = planilla.estado === 'validado' || planilla.estado === 'rechazado'
     const tDocs = detalle.reduce((s, r) => s + Number(r.importe), 0)
     const tCbza = detalle.reduce((s, r) => s + Number(r.importe_cobrado), 0)
+    // Solo las filas con importe cobrado se convierten en amortización; las que están en 0 no hubo pago.
+    const conCobro  = detalle.filter(r => Number(r.importe_cobrado) > 0)
+    const sinCobro  = detalle.length - conCobro.length
 
     const handleAbrirModal = () => {
         setTipoAmortSel(tiposAmort[0]?.Cod_Tipo_Amort ?? '')
@@ -94,7 +97,7 @@ export default function DetalleAdmin({
             const k = claveDoc(r.Cod_Clie, r.TipoDoc, r.SerieDoc, r.NumeroDoc)
             cuenta.set(k, (cuenta.get(k) ?? 0) + 1)
         }
-        return detalle.filter(item => {
+        return conCobro.filter(item => {
             const k = claveDoc(item.codigo_cliente, item.tipo_documento, item.serie, item.numero_doc)
             const n = cuenta.get(k) ?? 0
             if (n === 0) return true
@@ -104,7 +107,7 @@ export default function DetalleAdmin({
     }
 
     useEffect(() => {
-        if (planilla.estado !== 'validado' || loadingDet || detalle.length === 0) {
+        if (planilla.estado !== 'validado' || loadingDet || conCobro.length === 0) {
             setPendientes(null)
             return
         }
@@ -126,8 +129,8 @@ export default function DetalleAdmin({
         return () => window.removeEventListener('beforeunload', avisar)
     }, [isProcesando])
 
-    const procesada = pendientes !== null && detalle.length > 0 && pendientes.length === 0
-    const parcial   = pendientes !== null && pendientes.length > 0 && pendientes.length < detalle.length
+    const procesada = pendientes !== null && conCobro.length > 0 && pendientes.length === 0
+    const parcial   = pendientes !== null && pendientes.length > 0 && pendientes.length < conCobro.length
 
     const buildPayload = (item: PlanillaDetalle) => ({
         id_amort_clie:     null,
@@ -156,8 +159,8 @@ export default function DetalleAdmin({
             toast({ title: 'Campo requerido', description: 'Selecciona la empresa.', variant: 'warning' })
             return
         }
-        if (detalle.length === 0) {
-            toast({ title: 'Sin detalle', description: 'No hay registros para procesar.', variant: 'warning' })
+        if (conCobro.length === 0) {
+            toast({ title: 'Sin cobros', description: 'No hay registros con importe cobrado para procesar.', variant: 'warning' })
             return
         }
 
@@ -244,10 +247,14 @@ export default function DetalleAdmin({
                                 : `Observación registrada · ${fmtHora(planilla.fecha_revision)}`}
                         </div>
 
-                        {planilla.estado === 'validado' && (procesada ? (
+                        {planilla.estado === 'validado' && !loadingDet && conCobro.length === 0 ? (
+                            <div className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-muted px-3 py-1.5 text-xs font-semibold text-muted-foreground">
+                                Sin cobros para procesar
+                            </div>
+                        ) : planilla.estado === 'validado' && (procesada ? (
                             <div className="inline-flex items-center gap-1.5 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700 dark:border-indigo-900 dark:bg-indigo-950/40 dark:text-indigo-300">
                                 <CheckCheck className="h-3.5 w-3.5" />
-                                Procesada · {detalle.length} amortización(es) registradas
+                                Procesada · {conCobro.length} amortización(es) registradas
                             </div>
                         ) : (
                             <Button
@@ -261,7 +268,7 @@ export default function DetalleAdmin({
                                     : <PlayCircle className="h-3.5 w-3.5" />}
                                 {isProcesando ? (progreso ? `Procesando ${progreso.hechas} de ${progreso.total}...` : 'Procesando...')
                                     : verificando ? 'Verificando...'
-                                    : parcial ? `Procesar pendientes (${pendientes!.length} de ${detalle.length})`
+                                    : parcial ? `Procesar pendientes (${pendientes!.length} de ${conCobro.length})`
                                     : 'Procesar'}
                             </Button>
                         ))}
@@ -352,9 +359,10 @@ export default function DetalleAdmin({
                         </DialogTitle>
                         <DialogDescription className="text-sm text-muted-foreground pt-1">
                             {parcial
-                                ? <>Se registrarán las {pendientes!.length} amortización(es) que faltan (de {detalle.length}) para</>
-                                : <>Se registrarán {detalle.length} amortización(es) para</>}
+                                ? <>Se registrarán las {pendientes!.length} amortización(es) que faltan (de {conCobro.length}) para</>
+                                : <>Se registrarán {conCobro.length} amortización(es) para</>}
                             {' '}la planilla <span className="font-mono font-semibold text-foreground">{planilla.numero_planilla}</span>.
+                            {sinCobro > 0 && <> {sinCobro} documento(s) sin importe cobrado no se registran.</>}{' '}
                             Completa los campos requeridos antes de continuar.
                         </DialogDescription>
                     </DialogHeader>
