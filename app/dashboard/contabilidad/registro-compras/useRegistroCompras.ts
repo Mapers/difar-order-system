@@ -69,7 +69,7 @@ export interface FilaCompra {
 
 const CAB_VACIA: CabeceraEdicion = {
     codProv: '', proveedorNombre: '', tipoDoc: '', serie: '', numero: '',
-    fechaEmision: new Date().toISOString().slice(0, 10), moneda: 'NSO',
+    fechaEmision: new Date().toLocaleDateString('en-CA'), moneda: 'NSO',
     importeTotal: '', tasaIGV: '', condicion: '', almacen: '',
     periodo: String(new Date().getMonth() + 1).padStart(2, '0'),
     anio: String(new Date().getFullYear()),

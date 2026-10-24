@@ -73,7 +73,7 @@ export function PagosDialog({
 
     const agregar = () => setFilas(fs => [...fs, {
         key: nuevaKey(), id: null,
-        fecha: new Date().toISOString().slice(0, 10),
+        fecha: new Date().toLocaleDateString('en-CA'),
         tipoPago: datos?.tiposPago?.[0]?.Cod_Tipo_Amort ?? '',
         centroCosto: null, observaciones: null, importe: 0, eliminar: false,
     }])

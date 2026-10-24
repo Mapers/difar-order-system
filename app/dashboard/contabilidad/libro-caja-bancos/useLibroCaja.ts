@@ -31,7 +31,7 @@ export interface FilaEdicion {
     eliminar:      boolean
 }
 
-const hoyISO = () => new Date().toISOString().slice(0, 10)
+const hoyISO = () => new Date().toLocaleDateString('en-CA')
 
 const desdeBD = (d: CajaDetalleFila): FilaEdicion => ({
     id:            d.Id_Detalle_Caja,
