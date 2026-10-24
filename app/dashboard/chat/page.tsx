@@ -1,17 +1,18 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { Bot, Minimize2, Trash2 } from 'lucide-react'
+import { Minimize2, RotateCcw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useIvanChat } from '@/app/hooks/useIvanChat'
 import { ChatConversacion } from '@/components/ivan/ChatConversacion'
+import { AvatarIvan } from '@/components/ivan/AvatarIvan'
 
 export default function ChatIvanPage() {
     const router = useRouter()
     const chat = useIvanChat()
 
     const limpiar = () => {
-        if (chat.mensajes.length > 1 && !confirm('¿Borrar la conversación y empezar de nuevo?')) return
+        if (chat.mensajes.length > 0 && !confirm('¿Borrar la conversación y empezar de nuevo?')) return
         chat.limpiar()
     }
 
@@ -19,20 +20,19 @@ export default function ChatIvanPage() {
         <div className="grid w-full min-w-0 gap-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-600 text-white">
-                        <Bot className="h-5 w-5" />
-                    </div>
+                    <AvatarIvan tamano="lg" activo={chat.pensando} />
                     <div className="min-w-0">
                         <h1 className="text-2xl font-bold tracking-tight text-foreground">IVAN</h1>
-                        <p className="text-sm text-muted-foreground">
-                            Inteligencia Virtual de Atención y Negocios
+                        <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                            <span className={`h-1.5 w-1.5 rounded-full ${chat.pensando ? 'animate-pulse bg-amber-500' : 'bg-emerald-500'}`} />
+                            {chat.pensando ? 'Trabajando en tu consulta…' : 'Inteligencia Virtual de Atención y Negocios'}
                         </p>
                     </div>
                 </div>
 
                 <div className="flex items-center gap-2">
                     <Button variant="outline" size="sm" className="gap-1.5" onClick={limpiar}>
-                        <Trash2 className="h-3.5 w-3.5" /> Limpiar
+                        <RotateCcw className="h-3.5 w-3.5" /> Nueva conversación
                     </Button>
                     <Button variant="outline" size="sm" className="gap-1.5" onClick={() => router.push('/dashboard')}>
                         <Minimize2 className="h-3.5 w-3.5" /> Salir de pantalla completa
@@ -40,7 +40,7 @@ export default function ChatIvanPage() {
                 </div>
             </div>
 
-            <div className="flex h-[calc(100vh-13rem)] min-h-[420px] flex-col overflow-hidden rounded-xl border border-border bg-background">
+            <div className="flex h-[calc(100vh-13rem)] min-h-[420px] flex-col overflow-hidden rounded-2xl border border-border bg-background shadow-sm">
                 <ChatConversacion {...chat} amplio autoFocus />
             </div>
         </div>

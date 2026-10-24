@@ -2,10 +2,11 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
-import { Bot, Maximize2, X } from 'lucide-react'
+import { Maximize2, RotateCcw, Sparkles, X } from 'lucide-react'
 import { useAuth } from '@/context/authContext'
 import { useIvanChat } from '@/app/hooks/useIvanChat'
 import { ChatConversacion } from './ChatConversacion'
+import { AvatarIvan } from './AvatarIvan'
 
 export function IvanWidget() {
     const { isAuthenticated } = useAuth()
@@ -96,33 +97,32 @@ function BurbujaIvan() {
             style={pos ? { left: pos.x, top: pos.y } : undefined}
         >
             {abierto && (
-                <div className="fixed inset-x-0 bottom-0 top-16 flex flex-col overflow-hidden border-t border-border bg-background shadow-2xl
-                                sm:inset-auto sm:bottom-20 sm:right-6 sm:top-auto sm:h-[540px] sm:w-[400px] sm:rounded-xl sm:border">
-                    <div className="flex items-center justify-between bg-blue-600 px-4 py-3 text-white">
-                        <div className="flex items-center gap-2">
-                            <Bot className="h-5 w-5" />
+                <div className="fixed inset-x-0 bottom-0 top-16 flex flex-col overflow-hidden border-t border-border bg-background shadow-2xl animate-in fade-in slide-in-from-bottom-4 duration-300
+                                sm:inset-auto sm:bottom-20 sm:right-6 sm:top-auto sm:h-[600px] sm:w-[420px] sm:rounded-2xl sm:border">
+                    <div className="flex items-center justify-between bg-gradient-to-r from-indigo-600 via-blue-600 to-sky-600 px-4 py-3 text-white">
+                        <div className="flex items-center gap-2.5">
+                            <AvatarIvan activo={chat.pensando} />
                             <div>
                                 <p className="text-sm font-semibold leading-tight">IVAN</p>
-                                <p className="text-xs leading-tight text-blue-100">
-                                    Inteligencia Virtual de Atención y Negocios
+                                <p className="flex items-center gap-1.5 text-xs leading-tight text-blue-100">
+                                    <span className={`h-1.5 w-1.5 rounded-full ${chat.pensando ? 'animate-pulse bg-amber-300' : 'bg-emerald-300'}`} />
+                                    {chat.pensando ? 'Trabajando en tu consulta…' : 'En línea'}
                                 </p>
                             </div>
                         </div>
                         <div className="flex items-center gap-1">
-                            <button
-                                onClick={expandir}
-                                className="rounded p-1 transition hover:bg-blue-700"
-                                title="Abrir en pantalla completa"
-                                aria-label="Abrir el chat en pantalla completa"
-                            >
+                            {chat.mensajes.length > 0 && (
+                                <button onClick={chat.limpiar} className="rounded-lg p-1.5 transition hover:bg-white/15"
+                                        title="Nueva conversación" aria-label="Empezar una nueva conversación">
+                                    <RotateCcw className="h-4 w-4" />
+                                </button>
+                            )}
+                            <button onClick={expandir} className="rounded-lg p-1.5 transition hover:bg-white/15"
+                                    title="Abrir en pantalla completa" aria-label="Abrir el chat en pantalla completa">
                                 <Maximize2 className="h-4 w-4" />
                             </button>
-                            <button
-                                onClick={() => setAbierto(false)}
-                                className="rounded p-1 transition hover:bg-blue-700"
-                                title="Minimizar"
-                                aria-label="Minimizar el chat"
-                            >
+                            <button onClick={() => setAbierto(false)} className="rounded-lg p-1.5 transition hover:bg-white/15"
+                                    title="Minimizar" aria-label="Minimizar el chat">
                                 <X className="h-4 w-4" />
                             </button>
                         </div>
@@ -138,13 +138,13 @@ function BurbujaIvan() {
                     onPointerMove={alMoverPuntero}
                     onPointerUp={alSoltarPuntero}
                     onPointerCancel={() => { inicioArrastre.current = null; setArrastrando(false) }}
-                    className={`flex h-14 w-14 touch-none items-center justify-center rounded-full bg-blue-600 text-white shadow-xl transition hover:bg-blue-700 ${
+                    className={`flex h-14 w-14 touch-none items-center justify-center rounded-full bg-gradient-to-br from-indigo-600 via-blue-600 to-sky-500 text-white shadow-xl shadow-indigo-500/30 transition ${
                         arrastrando ? 'scale-110 cursor-grabbing opacity-90' : 'cursor-grab hover:scale-105'
                     }`}
                     title="Abrir IVAN — mantén pulsado para moverla"
                     aria-label="Abrir el asistente IVAN"
                 >
-                    <Bot className="h-6 w-6" />
+                    <Sparkles className="h-6 w-6" />
                 </button>
             )}
         </div>

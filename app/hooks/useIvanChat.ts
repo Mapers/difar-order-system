@@ -1,194 +1,103 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import apiClient from '@/app/api/client'
-import { useAuth } from '@/context/authContext'
-import type { Cotizacion } from '@/components/ivan/CotizacionCard'
+import { conversarConIvan, SesionVencidaError } from '@/components/ivan/nucleo/transporte'
+import { aplicarEvento } from '@/components/ivan/nucleo/eventos'
+import type { Mensaje } from '@/components/ivan/nucleo/tipos'
 
-export interface OpcionIvan {
-    codigo?: string
-    ruc?: string
-    nombre?: string
-    nombre_comercial?: string
-    producto?: string
-    presentacion?: string
-}
+export type { Mensaje, OpcionIvan, AccionIvan } from '@/components/ivan/nucleo/tipos'
 
-export interface Mensaje {
-    rol: 'user' | 'ivan'
-    texto: string
-    opciones?: OpcionIvan[]
-    cotizacion?: Cotizacion
-}
-
-export const BIENVENIDA =
-    'Hola, soy IVAN. Puedo consultar el estado de cuenta de un cliente, sus comprobantes, ' +
-    'los datos de un producto con su kardex, o la ficha de un cliente. ¿Qué necesitas?'
-
-const CLAVE_CHAT = 'ivan-conversacion'
+const CLAVE_CHAT = 'ivan-claude-conversacion'
+const nuevoId = () => Math.random().toString(36).slice(2, 10)
 
 function leerGuardada(): Mensaje[] {
-    if (typeof window === 'undefined') return [{ rol: 'ivan', texto: BIENVENIDA }]
+    if (typeof window === 'undefined') return []
     try {
-        const crudo = sessionStorage.getItem(CLAVE_CHAT)
-        if (!crudo) return [{ rol: 'ivan', texto: BIENVENIDA }]
-        const datos = JSON.parse(crudo)
-        return Array.isArray(datos) && datos.length > 0 ? datos : [{ rol: 'ivan', texto: BIENVENIDA }]
+        const datos = JSON.parse(sessionStorage.getItem(CLAVE_CHAT) || '[]')
+        // Una respuesta que quedó a medias (se recargó la página) se marca como detenida.
+        return Array.isArray(datos)
+            ? datos.map((m: Mensaje) => (m.estado && !['listo', 'error', 'detenido'].includes(m.estado) ? { ...m, estado: 'detenido' } : m))
+            : []
     } catch {
-        return [{ rol: 'ivan', texto: BIENVENIDA }]
+        return []
     }
 }
 
+/** Estado del chat con IVAN: mensajes, envío, detener y limpiar. */
 export function useIvanChat() {
-    const { user, isVendedor, isRepresentante } = useAuth()
-
-    const [mensajes, setMensajes] = useState<Mensaje[]>([{ rol: 'ivan', texto: BIENVENIDA }])
+    const [mensajes, setMensajes] = useState<Mensaje[]>([])
     const [entrada, setEntrada] = useState('')
     const [pensando, setPensando] = useState(false)
-    const [herramienta, setHerramienta] = useState<string | null>(null)
-
     const abortRef = useRef<AbortController | null>(null)
 
     useEffect(() => { setMensajes(leerGuardada()) }, [])
-
     useEffect(() => {
-        try { sessionStorage.setItem(CLAVE_CHAT, JSON.stringify(mensajes)) } catch {}
+        try { sessionStorage.setItem(CLAVE_CHAT, JSON.stringify(mensajes)) } catch { /* sin almacenamiento */ }
     }, [mensajes])
-
     useEffect(() => () => abortRef.current?.abort(), [])
+
+    // Actualiza solo la última respuesta de IVAN.
+    const actualizarUltima = (cambio: (m: Mensaje) => Mensaje) =>
+        setMensajes(prev => {
+            const copia = [...prev]
+            copia[copia.length - 1] = cambio(copia[copia.length - 1])
+            return copia
+        })
 
     const detener = useCallback(() => abortRef.current?.abort(), [])
 
     const limpiar = useCallback(() => {
         abortRef.current?.abort()
-        setMensajes([{ rol: 'ivan', texto: BIENVENIDA }])
+        setMensajes([])
     }, [])
 
     const enviar = useCallback(async (textoForzado?: string) => {
         const texto = (textoForzado ?? entrada).trim()
         if (!texto || pensando) return
 
-        let historial: { role: string; content: string }[] = []
+        let historial: { role: 'user' | 'assistant'; content: string }[] = []
         setMensajes(prev => {
             historial = prev
-                .slice(1)
-                .filter(m => m.texto.trim().length > 0)
+                .filter(m => m.texto.trim() && m.estado !== 'error')
                 .map(m => ({ role: m.rol === 'user' ? 'user' : 'assistant', content: m.texto }))
-            return [...prev, { rol: 'user', texto }, { rol: 'ivan', texto: '' }]
+            return [
+                ...prev,
+                { id: nuevoId(), rol: 'user', texto },
+                { id: nuevoId(), rol: 'ivan', texto: '', estado: 'pensando' },
+            ]
         })
-
         setEntrada('')
         setPensando(true)
-        setHerramienta(null)
 
         const control = new AbortController()
         abortRef.current = control
 
         try {
-            const res = await fetch(`${apiClient.defaults.baseURL}/chat/stream`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    message: texto,
-                    historial,
-                    vendedor: isVendedor() ? user?.codigo ?? null : null,
-                    representante: isRepresentante() ? user?.codRepres ?? null : null,
-                }),
+            await conversarConIvan({
+                texto,
+                historial,
                 signal: control.signal,
+                alEvento: evento => actualizarUltima(m => aplicarEvento(m, evento)),
             })
-
-            if (!res.ok || !res.body) throw new Error(`HTTP ${res.status}`)
-
-            const reader = res.body.getReader()
-            const decoder = new TextDecoder()
-            let buffer = ''
-
-            while (true) {
-                const { done, value } = await reader.read()
-                if (done) break
-
-                buffer += decoder.decode(value, { stream: true })
-                const lineas = buffer.split('\n')
-                buffer = lineas.pop() ?? ''
-
-                for (const linea of lineas) {
-                    const t = linea.trim()
-                    if (!t.startsWith('data: ')) continue
-
-                    let evento: any
-                    try { evento = JSON.parse(t.slice(6)) } catch { continue }
-
-                    if (evento.type === 'token') {
-                        setHerramienta(null)
-                        setMensajes(prev => {
-                            const copia = [...prev]
-                            copia[copia.length - 1] = {
-                                ...copia[copia.length - 1],
-                                rol: 'ivan',
-                                texto: copia[copia.length - 1].texto + evento.content,
-                            }
-                            return copia
-                        })
-                    } else if (evento.type === 'tool') {
-                        setHerramienta(evento.etiqueta || 'Consultando...')
-                    } else if (evento.type === 'cotizacion') {
-                        setMensajes(prev => {
-                            const copia = [...prev]
-                            copia[copia.length - 1] = { ...copia[copia.length - 1], cotizacion: evento.cotizacion }
-                            return copia
-                        })
-                    } else if (evento.type === 'opciones') {
-                        setMensajes(prev => {
-                            const copia = [...prev]
-                            copia[copia.length - 1] = { ...copia[copia.length - 1], opciones: evento.opciones }
-                            return copia
-                        })
-                    } else if (evento.type === 'error') {
-                        setMensajes(prev => {
-                            const copia = [...prev]
-                            copia[copia.length - 1] = { rol: 'ivan', texto: evento.content }
-                            return copia
-                        })
-                    }
-                }
-            }
-
-            setMensajes(prev => {
-                const copia = [...prev]
-                if (!copia[copia.length - 1].texto) {
-                    copia[copia.length - 1] = { rol: 'ivan', texto: 'No recibí respuesta. Intenta de nuevo.' }
-                }
-                return copia
+            actualizarUltima(m => {
+                if (m.estado === 'error') return m
+                if (!m.texto) return { ...m, texto: 'No recibí respuesta. Intenta de nuevo.', estado: 'error' }
+                return { ...m, estado: 'listo' }
             })
         } catch (error: any) {
             if (error?.name === 'AbortError') {
-                setMensajes(prev => {
-                    const copia = [...prev]
-                    const parcial = copia[copia.length - 1].texto
-                    copia[copia.length - 1] = {
-                        ...copia[copia.length - 1],
-                        rol: 'ivan',
-                        texto: parcial ? `${parcial}\n\n_(respuesta detenida)_` : '_(respuesta detenida)_',
-                    }
-                    return copia
-                })
+                actualizarUltima(m => ({ ...m, estado: 'detenido' }))
+            } else if (error instanceof SesionVencidaError) {
+                actualizarUltima(m => ({ ...m, estado: 'error', texto: 'Tu sesión venció. Vuelve a iniciar sesión para seguir usando a IVAN.' }))
             } else {
                 console.error('[IVAN] Error en la consulta:', error)
-                setMensajes(prev => {
-                    const copia = [...prev]
-                    copia[copia.length - 1] = {
-                        rol: 'ivan',
-                        texto: 'No pude conectarme con el asistente. Revisa tu conexión e intenta de nuevo.',
-                    }
-                    return copia
-                })
+                actualizarUltima(m => ({ ...m, estado: 'error', texto: 'No pude conectarme con IVAN. Revisa tu conexión e intenta de nuevo.' }))
             }
         } finally {
             abortRef.current = null
             setPensando(false)
-            setHerramienta(null)
         }
-    }, [entrada, pensando, user, isVendedor, isRepresentante])
+    }, [entrada, pensando])
 
-    return { mensajes, entrada, setEntrada, pensando, herramienta, enviar, detener, limpiar }
+    return { mensajes, entrada, setEntrada, pensando, enviar, detener, limpiar }
 }
