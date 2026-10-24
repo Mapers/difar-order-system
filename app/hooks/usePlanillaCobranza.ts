@@ -135,6 +135,22 @@ export function usePlanillaCobranza() {
         }
     }, [])
 
+    /** Elimina una planilla en borrador del vendedor, con sus registros y vouchers. */
+    const eliminarPlanilla = useCallback(async (id_planilla: number, vendedor: VendedorInfo) => {
+        try {
+            await apiClient.delete(`/planilla-cobranza/${id_planilla}`, { params: { id_vendedor: vendedor.id_vendedor } })
+            toast({ title: 'Planilla eliminada' })
+            return true
+        } catch (error: any) {
+            toast({
+                title: 'Error',
+                description: error?.response?.data?.message || 'No se pudo eliminar la planilla.',
+                variant: 'destructive'
+            })
+            return false
+        }
+    }, [])
+
     const eliminarDetalle = useCallback(async (id_planilla: number, id_detalle: number) => {
         try {
             await apiClient.delete(`/planilla-cobranza/${id_planilla}/detalle/${id_detalle}`)
@@ -338,7 +354,7 @@ export function usePlanillaCobranza() {
 
     return {
         tiposComprobante, bancos, loadingCatalogos, fetchCatalogos,
-        planillaActiva, detalle, loadingDetalle, consultarDetalle,
+        planillaActiva, detalle, loadingDetalle, consultarDetalle, eliminarPlanilla,
         generarCorrelativo, limpiarPlanillaActiva, cargarBorrador,
         agregarDetalle, eliminarDetalle, fetchDetalle,
         enviarPlanilla, reenviarPlanilla,

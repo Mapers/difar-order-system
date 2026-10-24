@@ -18,7 +18,7 @@ import {
     CheckCircle2, AlertCircle,
     RefreshCw, FileText, Loader2, MapPin,
     Eye, X, Upload, Image as ImageIcon, Paperclip, User, Layers, Sparkles,
-    Lock, PencilLine, ScanSearch, Camera, Receipt, Search, Eraser,
+    Lock, PencilLine, ScanSearch, Camera, Receipt, Search, Eraser, Trash2,
 } from 'lucide-react'
 import apiClient from '@/app/api/client'
 import { toast } from '@/app/hooks/useToast'
@@ -194,6 +194,7 @@ interface Props {
     onFetchDetalle:       (id: number) => Promise<{ planilla: any; detalle: PlanillaDetalle[] } | null>
     onReenviar:           (id: number, v: VendedorInfo, regs: NuevoDetalle[]) => Promise<any>
     onCargarBorrador:     (planilla: PlanillaCabecera, detalle: PlanillaDetalle[]) => void
+    onEliminarPlanilla:   (id: number, v: VendedorInfo) => Promise<boolean>
     vendedorInfo: VendedorInfo
 }
 
@@ -203,7 +204,7 @@ export default function SeccionVendedor({
                                             onGenerarCorrelativo, onLimpiar,
                                             onAgregarDetalle, onEliminarDetalle, onEnviarPlanilla,
                                             misPlanillas, loadingMisPlanillas, onFetchMisPlanillas,
-                                            onFetchDetalle, onReenviar, onCargarBorrador,
+                                            onFetchDetalle, onReenviar, onCargarBorrador, onEliminarPlanilla,
                                             vendedorInfo,
                                         }: Props) {
 
@@ -471,6 +472,10 @@ export default function SeccionVendedor({
             toast({ title: 'Campos requeridos', description: 'Nombre, tipo de documento e importe son obligatorios.', variant: 'warning' })
             return
         }
+        if (!recibo) {
+            toast({ title: 'Falta el recibo', description: 'Selecciona el recibo de cuenta: el importe cobrado sale de él.', variant: 'warning' })
+            return
+        }
         const errCobrado = errorCobrado(formReg.importe, formReg.importe_cobrado)
         if (errCobrado) {
             toast({ title: 'Importe cobrado', description: errCobrado, variant: 'warning' })
@@ -576,6 +581,24 @@ export default function SeccionVendedor({
         onCargarBorrador(planilla, regs)
         setTab('nueva')
         toast({ title: 'Planilla cargada', description: `Editando ${planilla.numero_planilla}` })
+    }
+
+    const [aEliminar,  setAEliminar]  = useState<PlanillaCabecera | null>(null)
+    const [eliminando, setEliminando] = useState(false)
+    const handleEliminarPlanilla = async () => {
+        if (!aEliminar) return
+        setEliminando(true)
+        const ok = await onEliminarPlanilla(aEliminar.id_planilla, vendedorInfo)
+        setEliminando(false)
+        if (!ok) return
+        // Si estaba abierta en "Nueva planilla", se cierra junto con lo que se estaba llenando.
+        if (planillaActiva?.id_planilla === aEliminar.id_planilla) {
+            limpiarRegistro()
+            onLimpiar()
+        }
+        setOpenRows(prev => { const n = new Set(prev); n.delete(aEliminar.id_planilla); return n })
+        setAEliminar(null)
+        onFetchMisPlanillas({ id_vendedor: vendedorInfo.id_vendedor })
     }
 
     const handleReenviar = async () => {
@@ -723,6 +746,35 @@ export default function SeccionVendedor({
                         <Button className="gap-1.5 bg-amber-600 text-white hover:bg-amber-700"
                                 onClick={() => { limpiarRegistro(); setLimpiarOpen(false) }}>
                             <Eraser className="h-4 w-4" /> Sí, limpiar
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={!!aEliminar} onOpenChange={v => { if (!v && !eliminando) setAEliminar(null) }}>
+                <DialogContent className="max-w-md">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-red-100 text-red-600">
+                                <Trash2 className="h-4 w-4" />
+                            </span>
+                            ¿Eliminar la planilla {aEliminar?.numero_planilla}?
+                        </DialogTitle>
+                        <DialogDescription>
+                            Se borrará la planilla con todos sus registros y vouchers. Esta acción no se puede deshacer.
+                        </DialogDescription>
+                    </DialogHeader>
+                    {aEliminar && (
+                        <div className="grid grid-cols-3 gap-2 rounded-lg border bg-muted/40 p-3 text-xs">
+                            <div><p className="text-muted-foreground">Fecha</p><p className="font-medium">{fmtFecha(aEliminar.fecha_ruta)}</p></div>
+                            <div><p className="text-muted-foreground">Zona</p><p className="truncate font-medium">{aEliminar.zona || '—'}</p></div>
+                            <div><p className="text-muted-foreground">Registros</p><p className="font-medium">{detalleCache[aEliminar.id_planilla]?.length ?? (aEliminar as any).total_registros ?? 0}</p></div>
+                        </div>
+                    )}
+                    <DialogFooter>
+                        <Button variant="outline" disabled={eliminando} onClick={() => setAEliminar(null)}>Cancelar</Button>
+                        <Button className="gap-1.5 bg-red-600 text-white hover:bg-red-700" disabled={eliminando} onClick={handleEliminarPlanilla}>
+                            {eliminando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />} Sí, eliminar
                         </Button>
                     </DialogFooter>
                 </DialogContent>
@@ -978,13 +1030,13 @@ export default function SeccionVendedor({
                                             </span>
                                             <div className="min-w-0">
                                                 <p className="text-sm font-semibold leading-tight text-foreground">Recibo de cuenta</p>
-                                                <p className="text-[11px] text-muted-foreground">El importe cobrado sale del recibo</p>
+                                                <p className="text-[11px] text-muted-foreground">Obligatorio: el importe cobrado sale del recibo</p>
                                             </div>
                                         </div>
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                         <div className="flex flex-col gap-1.5">
                                             <label className="flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                                                {conRecibo && <Lock className="h-2.5 w-2.5" />}Recibo N°
+                                                {conRecibo && <Lock className="h-2.5 w-2.5" />}Recibo N° <span className="text-red-500">*</span>
                                             </label>
                                             <div className="flex gap-2">
                                                 <div className={`flex h-10 min-w-0 flex-1 items-center gap-2 rounded-md border px-3
@@ -1021,19 +1073,18 @@ export default function SeccionVendedor({
                                         </div>
                                         <div className="flex flex-col gap-1.5">
                                             <label className="flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                                                {conRecibo && <Lock className="h-2.5 w-2.5" />}Importe cobrado S/. <span className="text-red-500">*</span>
+                                                <Lock className="h-2.5 w-2.5" />Importe cobrado S/.
                                             </label>
                                             <Input
-                                                type="number" step="0.01" min={0} placeholder="0.00"
+                                                type="number" step="0.01" min={0} placeholder="Sale del recibo"
                                                 value={formReg.importe_cobrado}
-                                                onChange={e => fc('importe_cobrado', e.target.value)}
-                                                disabled={conRecibo}
-                                                className={`h-10 bg-background font-mono ${conRecibo ? CLASE_BLOQUEADO : ''}`}
+                                                disabled
+                                                className={`h-10 font-mono placeholder:font-sans placeholder:text-muted-foreground/60 ${CLASE_BLOQUEADO}`}
                                             />
                                             {difiereImporte && (
                                                 <p className="flex items-start gap-1 text-[11px] leading-snug text-amber-700 dark:text-amber-400">
                                                     <AlertCircle className="mt-0.5 h-3 w-3 shrink-0" />
-                                                    {conRecibo ? 'El voucher suma' : 'Los vouchers suman'} S/ {sumaVouchers.toFixed(2)} y {conRecibo ? 'el recibo dice' : 'escribiste'} S/ {Number(formReg.importe_cobrado).toFixed(2)}.
+                                                    {VOUCHER_MULTIPLE ? 'Los vouchers suman' : 'El voucher dice'} S/ {sumaVouchers.toFixed(2)} y el recibo dice S/ {Number(formReg.importe_cobrado).toFixed(2)}.
                                                 </p>
                                             )}
                                         </div>
@@ -1383,6 +1434,9 @@ export default function SeccionVendedor({
                                         reenviando={reenviando}
                                         onEditarBorrador={planilla.estado === 'borrador'
                                             ? () => handleEditarBorrador(planilla)
+                                            : undefined}
+                                        onEliminarBorrador={planilla.estado === 'borrador'
+                                            ? () => setAEliminar(planilla)
                                             : undefined}
                                     />
                                 )}

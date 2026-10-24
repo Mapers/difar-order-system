@@ -126,6 +126,7 @@ export default function PlanillaCobranzaPage() {
                     onFetchDetalle={hook.consultarDetalle}
                     onReenviar={hook.reenviarPlanilla}
                     onCargarBorrador={hook.cargarBorrador}
+                    onEliminarPlanilla={hook.eliminarPlanilla}
                     vendedorInfo={vendedorInfo}
                 />
             )}

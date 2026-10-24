@@ -3,7 +3,7 @@
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
-    CheckCircle2, AlertCircle, Edit2, Send, Loader2,
+    CheckCircle2, AlertCircle, Edit2, Send, Loader2, Trash2,
 } from 'lucide-react'
 import { ExportarPlanillaFormato } from './ExportarPlanillaFormato'
 import {CatalogosBanco, PlanillaCabecera, PlanillaDetalle, TipoComprobante} from "@/app/types/planilla-types";
@@ -26,6 +26,7 @@ interface Props {
     reenviando:       boolean
     // borrador
     onEditarBorrador?: () => void
+    onEliminarBorrador?: () => void
 }
 
 export default function DetalleVendedor({
@@ -33,7 +34,7 @@ export default function DetalleVendedor({
                                             tiposComprobante, bancos,
                                             editId, editRegs, setEditRegs,
                                             onIniciarEdicion, onCancelarEdicion, onReenviar, reenviando,
-                                            onEditarBorrador,
+                                            onEditarBorrador, onEliminarBorrador,
                                         }: Props) {
 
     const isEditing  = editId === planilla.id_planilla
@@ -161,6 +162,15 @@ export default function DetalleVendedor({
                     >
                         <Edit2 className="h-3.5 w-3.5" /> Editar planilla
                     </Button>
+                    {onEliminarBorrador && (
+                        <Button
+                            size="sm" variant="outline"
+                            className="gap-1.5 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 dark:border-red-900 dark:hover:bg-red-950/40"
+                            onClick={onEliminarBorrador}
+                        >
+                            <Trash2 className="h-3.5 w-3.5" /> Eliminar
+                        </Button>
+                    )}
                 </div>
             )}
 
