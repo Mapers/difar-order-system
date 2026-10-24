@@ -225,6 +225,12 @@ export default function ClientWidgetAlpha({
                         <div className="rounded-xl border border-border bg-muted/30 p-3">
                             <SucursalSelector
                                 clienteCodigo={selectedClient.codigo}
+                                clienteTelefono={selectedClient.telefono}
+                                onPrincipalGuardada={(direccion, referencia) => {
+                                    // El pedido toma la dirección recién registrada y su referencia.
+                                    onUpdateClient({ Dirección: direccion })
+                                    onChangeReferenciaDireccion({ target: { value: referencia ?? '' } } as React.ChangeEvent<HTMLInputElement>)
+                                }}
                                 clienteDireccion={selectedClient.Dirección}
                                 seleccionada={sucursal}
                                 onSeleccionar={onSucursalSelect}

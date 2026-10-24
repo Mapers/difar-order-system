@@ -133,6 +133,12 @@ export default function ClientStep({
                         <div className="mt-3 border-t border-blue-200 pt-3 dark:border-blue-900/50">
                             <SucursalSelector
                                 clienteCodigo={selectedClient.codigo}
+                                clienteTelefono={selectedClient.telefono}
+                                onPrincipalGuardada={(direccion, referencia) => {
+                                    // El pedido toma la dirección recién registrada y su referencia.
+                                    onUpdateClient({ Dirección: direccion })
+                                    onChangeReferenciaDireccion({ target: { value: referencia ?? '' } } as React.ChangeEvent<HTMLInputElement>)
+                                }}
                                 clienteDireccion={selectedClient.Dirección}
                                 seleccionada={sucursal}
                                 onSeleccionar={onSucursalSelect}
