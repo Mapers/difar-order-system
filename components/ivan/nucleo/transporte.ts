@@ -6,6 +6,8 @@ export class SesionVencidaError extends Error {}
 
 interface Pedido {
     texto: string
+    /** Identifica la conversación: el backend la guarda completa para seguir el hilo. */
+    conversacionId: string
     historial: { role: 'user' | 'assistant'; content: string }[]
     signal: AbortSignal
     alEvento: (evento: EventoIvan) => void
@@ -15,14 +17,14 @@ interface Pedido {
  * Conexión con IVAN (adaptador del streaming SSE). Manda el token de la sesión:
  * el backend saca de ahí quién pregunta y sus permisos, no del cuerpo.
  */
-export async function conversarConIvan({ texto, historial, signal, alEvento }: Pedido) {
+export async function conversarConIvan({ texto, conversacionId, historial, signal, alEvento }: Pedido) {
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null
     if (!token) throw new SesionVencidaError()
 
     const res = await fetch(`${apiClient.defaults.baseURL}/ivan/stream`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ message: texto, historial }),
+        body: JSON.stringify({ message: texto, conversacion_id: conversacionId, historial }),
         signal,
     })
 

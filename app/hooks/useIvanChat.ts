@@ -8,6 +8,8 @@ import type { Mensaje } from '@/components/ivan/nucleo/tipos'
 export type { Mensaje, OpcionIvan, AccionIvan } from '@/components/ivan/nucleo/tipos'
 
 const CLAVE_CHAT = 'ivan-claude-conversacion'
+const CLAVE_ID = 'ivan-claude-conversacion-id'
+const idConversacion = () => `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`
 const nuevoId = () => Math.random().toString(36).slice(2, 10)
 
 /**
@@ -40,8 +42,15 @@ export function useIvanChat() {
     const [entrada, setEntrada] = useState('')
     const [pensando, setPensando] = useState(false)
     const abortRef = useRef<AbortController | null>(null)
+    // Una conversación = un id. El backend guarda con él todo el hilo.
+    const conversacionRef = useRef('')
 
-    useEffect(() => { setMensajes(leerGuardada()) }, [])
+    useEffect(() => {
+        setMensajes(leerGuardada())
+        try { conversacionRef.current = sessionStorage.getItem(CLAVE_ID) || '' } catch { /* sin almacenamiento */ }
+        if (!conversacionRef.current) conversacionRef.current = idConversacion()
+        try { sessionStorage.setItem(CLAVE_ID, conversacionRef.current) } catch { /* sin almacenamiento */ }
+    }, [])
     useEffect(() => {
         try { sessionStorage.setItem(CLAVE_CHAT, JSON.stringify(mensajes)) } catch { /* sin almacenamiento */ }
     }, [mensajes])
@@ -60,6 +69,8 @@ export function useIvanChat() {
     const limpiar = useCallback(() => {
         abortRef.current?.abort()
         setMensajes([])
+        conversacionRef.current = idConversacion()
+        try { sessionStorage.setItem(CLAVE_ID, conversacionRef.current) } catch { /* sin almacenamiento */ }
     }, [])
 
     const enviar = useCallback(async (textoForzado?: string) => {
@@ -86,6 +97,7 @@ export function useIvanChat() {
         try {
             await conversarConIvan({
                 texto,
+                conversacionId: conversacionRef.current || idConversacion(),
                 historial,
                 signal: control.signal,
                 alEvento: evento => actualizarUltima(m => aplicarEvento(m, evento)),
