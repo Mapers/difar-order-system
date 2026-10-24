@@ -3,6 +3,7 @@
 import React, { useState } from 'react'
 import { CreditCard, ChevronDown } from 'lucide-react'
 import { IClient } from '@/app/types/order/client-interface'
+import { CreditoCliente, tieneCreditoActivo } from '@/app/hooks/useCreditoCliente'
 import apiClient from '@/app/api/client'
 import {
   Dialog,
@@ -22,6 +23,9 @@ import {Badge} from "@/components/ui/badge";
 // de siempre (donut, facturas pendientes).
 interface CreditLineChipProps {
   client: IClient
+  /** Línea, usado y disponible según /clientes/credito. Sin él se calcula como antes. */
+  credito?: CreditoCliente | null
+  cargandoCredito?: boolean
 }
 
 function CreditDonut({ pct, size = 160, strokeWidth = 14 }: { pct: number; size?: number; strokeWidth?: number }) {
@@ -145,7 +149,7 @@ interface IResumenCredito {
   pct_utilizado: number;
 }
 
-export default function CreditLineChip({ client }: CreditLineChipProps) {
+export default function CreditLineChip({ client, credito, cargandoCredito = false }: CreditLineChipProps) {
   const [showCreditModal, setShowCreditModal] = useState(false);
   const [facturas, setFacturas] = useState<IFacturaPendiente[]>([]);
   const [resumen, setResumen] = useState<IResumenCredito | null>(null);
@@ -159,9 +163,10 @@ export default function CreditLineChip({ client }: CreditLineChipProps) {
       const response = await apiClient.get(`/admin/credit-line-details/${client.codigo}`);
       const data = response.data?.data;
 
-      const lineaCredito = Number(client.LineaCredito) || 0;
-      const creditoUtilizado = data.reduce((acc, f) => acc + (Number(f.saldo) || 0), 0);
-      const disponible = Math.max(0, lineaCredito - creditoUtilizado);
+      // Con los datos del endpoint de crédito se usan sus montos; las facturas siguen saliendo del detalle.
+      const lineaCredito = credito ? credito.lineaCredito : (Number(client.LineaCredito) || 0);
+      const creditoUtilizado = credito ? credito.usado : (data || []).reduce((acc: number, f: any) => acc + (Number(f.saldo) || 0), 0);
+      const disponible = credito ? credito.disponible : Math.max(0, lineaCredito - creditoUtilizado);
       const pct = lineaCredito > 0 ? Math.min(Math.round((creditoUtilizado / lineaCredito) * 100), 100) : 0;
 
       setFacturas(data || []);
@@ -172,11 +177,13 @@ export default function CreditLineChip({ client }: CreditLineChipProps) {
         pct_utilizado: pct
       });
     } catch (error) {
+      const linea = credito ? credito.lineaCredito : Number(client.LineaCredito || 0);
+      const usado = credito ? credito.usado : 0;
       setResumen({
-        linea_credito: Number(client.LineaCredito || 0),
-        credito_utilizado: 0,
-        disponible: Number(client.LineaCredito || 0),
-        pct_utilizado: 0
+        linea_credito: linea,
+        credito_utilizado: usado,
+        disponible: credito ? credito.disponible : linea,
+        pct_utilizado: linea > 0 ? Math.min(Math.round((usado / linea) * 100), 100) : 0
       });
       setFacturas([]);
     } finally {
@@ -198,11 +205,27 @@ export default function CreditLineChip({ client }: CreditLineChipProps) {
           <button
               type="button"
               onClick={handleCreditClick}
-              className="inline-flex items-center gap-1.5 rounded-full border border-yellow-200 bg-yellow-50 px-3 py-1.5 text-xs font-medium text-yellow-800 hover:bg-yellow-100 transition-colors dark:border-yellow-900/50 dark:bg-yellow-950/30 dark:text-yellow-400"
+              className={`inline-flex max-w-full flex-wrap items-center gap-x-1.5 gap-y-0.5 rounded-full border px-3 py-1.5 text-left text-xs font-medium transition-colors ${
+                credito && !tieneCreditoActivo(credito)
+                  ? 'border-red-200 bg-red-50 text-red-700 hover:bg-red-100 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-400'
+                  : 'border-yellow-200 bg-yellow-50 text-yellow-800 hover:bg-yellow-100 dark:border-yellow-900/50 dark:bg-yellow-950/30 dark:text-yellow-400'
+              }`}
           >
-            <CreditCard className="h-3.5 w-3.5" />
-            Línea de crédito
-            <ChevronDown className="h-3 w-3 rotate-[-90deg]" />
+            <CreditCard className="h-3.5 w-3.5 shrink-0" />
+            {cargandoCredito ? (
+              <span>Línea de crédito…</span>
+            ) : credito && !tieneCreditoActivo(credito) ? (
+              <span className="font-semibold">Sin línea de crédito activa</span>
+            ) : credito ? (
+              <>
+                <span>Línea <b className="tabular-nums">{fmtMoney(credito.lineaCredito)}</b></span>
+                <span className="opacity-50">·</span>
+                <span>Disponible <b className={`tabular-nums ${credito.disponible <= 0 ? 'text-red-600 dark:text-red-400' : 'text-emerald-700 dark:text-emerald-400'}`}>{fmtMoney(credito.disponible)}</b></span>
+              </>
+            ) : (
+              <span>Línea de crédito</span>
+            )}
+            <ChevronDown className="h-3 w-3 shrink-0 rotate-[-90deg]" />
           </button>
         </DialogTrigger>
 

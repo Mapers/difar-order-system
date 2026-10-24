@@ -8,6 +8,8 @@ import ContactInfoAlpha from '@/components/cliente/ContactInfoAlpha'
 import FinancialZoneAlpha from '@/components/cliente/financialZoneAlpha'
 import PaymentConditionAlpha from '@/components/cliente/paymentConditionAlpha'
 import CreditLineChip from '@/components/cliente/CreditLineChip'
+import { AvisoSinCredito } from '@/components/cliente/AvisoSinCredito'
+import { useCreditoCliente } from '@/app/hooks/useCreditoCliente'
 import InlineAutocomplete from '@/components/tomar-pedido/InlineAutocomplete'
 import CollapsibleWidget from '@/components/tomar-pedido/CollapsibleWidget'
 
@@ -68,6 +70,9 @@ export default function ClientWidgetAlpha({
     nameZone, unidadTerritorio, conditions, condition, currency,
     onConditionChange, onCurrencyChange, open, onOpenChange,
 }: ClientWidgetAlphaProps) {
+    // Línea de crédito del cliente elegido; si no tiene una activa se avisa al elegirlo.
+    const { credito, cargando: cargandoCredito } = useCreditoCliente(selectedClient?.RUC)
+
     // Si el cliente no trae condición propia asignada, se preselecciona
     // "30 días" (la más usada) para no obligar a elegirla a mano siempre.
     useEffect(() => {
@@ -95,7 +100,7 @@ export default function ClientWidgetAlpha({
                             </div>
                         </div>
                         <div className="flex items-center justify-between gap-2 mt-2.5">
-                            <CreditLineChip client={selectedClient} />
+                            <CreditLineChip client={selectedClient} credito={credito} cargandoCredito={cargandoCredito} />
                             <Button
                                 type="button" size="sm" variant="outline"
                                 onClick={() => onClientSelect(null)}
@@ -219,6 +224,8 @@ export default function ClientWidgetAlpha({
                         )}
                     </div>
                 )}
+
+                <AvisoSinCredito credito={credito} nombreCliente={selectedClient?.Nombre} />
 
                 {selectedClient && (
                     <div className="space-y-4">
