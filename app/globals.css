@@ -113,3 +113,24 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+/* Lectura de voucher con IA: línea de escaneo que recorre la foto. */
+@keyframes voucher-escaneo {
+  0%   { top: 0%;   opacity: 0; }
+  10%  { opacity: 1; }
+  50%  { top: 100%; opacity: 1; }
+  60%  { opacity: 0; }
+  100% { top: 0%;   opacity: 0; }
+}
+.voucher-escaneo {
+  animation: voucher-escaneo 2.2s ease-in-out infinite;
+}
+@keyframes voucher-brillo {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.voucher-brillo {
+  background: linear-gradient(90deg, hsl(var(--muted)) 25%, rgba(167, 139, 250, 0.25) 50%, hsl(var(--muted)) 75%);
+  background-size: 200% 100%;
+  animation: voucher-brillo 1.4s linear infinite;
+}

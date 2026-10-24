@@ -132,6 +132,10 @@ export default function DetalleAdmin({
     const procesada = pendientes !== null && conCobro.length > 0 && pendientes.length === 0
     const parcial   = pendientes !== null && pendientes.length > 0 && pendientes.length < conCobro.length
 
+    // DEUDA TÉCNICA: la fecha de depósito, el N° de operación y el N° de cheque del
+    // registro (lo que ahora se lee del voucher) no llegan al cobro: sp_ws_amortizacion_guardar
+    // no tiene parámetros para ellos y fecha_mvto recibe la fecha de ruta. Validar en la base
+    // de datos qué soporta el SP (o usar p_Fecha_Mvto / p_Observaciones) antes de cambiarlo.
     const buildPayload = (item: PlanillaDetalle) => ({
         id_amort_clie:     null,
         nroPlanilla:       planilla.numero_planilla,

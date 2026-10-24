@@ -18,6 +18,7 @@ import {
     CheckCircle2, AlertCircle,
     RefreshCw, FileText, Loader2, MapPin,
     DollarSign, Eye, X, Upload, Image as ImageIcon, Paperclip, User, Layers, Sparkles,
+    Lock, PencilLine, ScanSearch, Camera, Receipt, Search,
 } from 'lucide-react'
 import apiClient from '@/app/api/client'
 import { toast } from '@/app/hooks/useToast'
@@ -44,6 +45,8 @@ import {
 import {publicApi} from "@/app/api/client";
 import {Voucher, VouchersModal} from "@/components/contabilidad/planilla-cobranza/VouchersModal";
 import { UnificarImagenesModal } from "@/components/cobranza/UnificarImagenesModal";
+import { SeleccionarReciboModal, ReciboDocumento } from "@/components/contabilidad/planilla-cobranza/SeleccionarReciboModal";
+import { ReciboCabecera } from "@/app/types/recibo-cliente-types";
 
 interface FormRegistro {
     codigo_cliente:   string
@@ -69,7 +72,78 @@ const FORM_INICIAL: FormRegistro = {
     numero_operacion: '', numero_cheque: '',
 }
 
-const MAX_VOUCHERS = 3
+// Varios vouchers por registro, cada uno con su banco, fecha y operación. Está
+// apagado hasta que la base de datos guarde esos datos por voucher (hoy el detalle
+// tiene un solo banco/operación); con false se permite un solo voucher.
+const VOUCHER_MULTIPLE = false
+const MAX_VOUCHERS = VOUCHER_MULTIPLE ? 3 : 1
+
+/** Estilo de los campos que vienen de un documento (recibo o voucher) y no se editan. */
+const CLASE_BLOQUEADO = 'bg-muted/60 disabled:opacity-100 disabled:cursor-not-allowed font-medium'
+
+const PASOS_LECTURA = [
+    'Identificando el banco…',
+    'Buscando el N° de operación…',
+    'Leyendo la fecha del depósito…',
+    'Leyendo el importe…',
+]
+
+/** Animación mientras la IA lee el voucher: escaneo sobre la foto y pasos que avanzan. */
+function LecturaVoucher({ preview }: { preview: string | null }) {
+    const [paso, setPaso] = useState(0)
+    useEffect(() => {
+        const t = setInterval(() => setPaso(p => (p + 1) % PASOS_LECTURA.length), 900)
+        return () => clearInterval(t)
+    }, [])
+    return (
+        <div className="flex items-center gap-3 sm:gap-4">
+            <div className="relative h-20 w-20 sm:h-24 sm:w-24 shrink-0 overflow-hidden rounded-xl border-2 border-violet-300 bg-muted shadow-sm shadow-violet-200 dark:border-violet-800">
+                {preview
+                    ? <img src={preview} alt="" className="h-full w-full object-cover opacity-80" />
+                    : <div className="flex h-full w-full items-center justify-center"><FileText className="h-8 w-8 text-muted-foreground" /></div>}
+                <div className="absolute inset-0 bg-violet-500/10" />
+                <div className="voucher-escaneo absolute left-0 right-0 h-0.5 bg-violet-500 shadow-[0_0_12px_4px_rgba(139,92,246,0.6)]" />
+                {['left-1 top-1 border-l-2 border-t-2', 'right-1 top-1 border-r-2 border-t-2',
+                  'left-1 bottom-1 border-l-2 border-b-2', 'right-1 bottom-1 border-r-2 border-b-2'].map(c => (
+                    <span key={c} className={`absolute h-3 w-3 border-violet-500 ${c}`} />
+                ))}
+            </div>
+            <div className="min-w-0 flex-1 space-y-2">
+                <p className="flex items-center gap-1.5 text-sm font-semibold text-violet-700 dark:text-violet-300">
+                    <Sparkles className="h-4 w-4 shrink-0 animate-pulse" /> Leyendo con IA
+                </p>
+                <p key={paso} className="animate-in fade-in slide-in-from-bottom-1 text-xs text-muted-foreground duration-300">
+                    {PASOS_LECTURA[paso]}
+                </p>
+                <div className="flex gap-1">
+                    {PASOS_LECTURA.map((_, i) => (
+                        <span key={i} className={`h-1 flex-1 rounded-full transition-colors duration-300 ${i <= paso ? 'bg-violet-500' : 'bg-violet-200 dark:bg-violet-900'}`} />
+                    ))}
+                </div>
+            </div>
+        </div>
+    )
+}
+
+/** Un comprobante de pago del registro, con sus propios datos de depósito. */
+interface VoucherItem {
+    id:               string
+    file:             File
+    preview:          string | null
+    estado:           'leyendo' | 'leido' | 'manual'
+    cod_banco:        string
+    fecha:            string
+    numero_operacion: string
+    importe:          string
+    /** Campos que vienen del voucher: quedan bloqueados. */
+    bloqueados:       CampoVoucher[]
+}
+type CampoVoucher = 'cod_banco' | 'fecha' | 'numero_operacion' | 'importe'
+const CAMPOS_VOUCHER: { k: CampoVoucher; t: string }[] = [
+    { k: 'cod_banco', t: 'Banco' }, { k: 'fecha', t: 'Fecha' },
+    { k: 'numero_operacion', t: 'N° de operación' }, { k: 'importe', t: 'Importe' },
+]
+const faltantes = (v: VoucherItem) => CAMPOS_VOUCHER.filter(c => !String(v[c.k] ?? '').trim())
 const VOUCHER_ACCEPT = 'image/jpeg,image/png,image/webp,application/pdf'
 const VOUCHER_TIPOS = VOUCHER_ACCEPT.split(',')
 const VOUCHER_MAX_BYTES = 5 * 1024 * 1024
@@ -153,52 +227,105 @@ export default function SeccionVendedor({
 
     const [formReg, setFormReg] = useState<FormRegistro>(FORM_INICIAL)
     const fc = (f: keyof FormRegistro, v: string) => {
+        if (f === 'importe_cobrado') cobradoAuto.current = false
         setFormReg(p => ({ ...p, [f]: v }))
-        // Si el vendedor corrige un dato leído del voucher, deja de marcarse como leído.
-        setLectura(l => l && l.campos.includes(f) ? { ...l, campos: l.campos.filter(c => c !== f) } : l)
     }
+    // Mientras el vendedor no escriba el importe cobrado, se mantiene igual a la suma de los vouchers.
+    const cobradoAuto = useRef(true)
 
-    // Lectura automática del voucher: qué campos se llenaron y el importe que decía.
-    const [lectura, setLectura] = useState<{
-        estado:   'leyendo' | 'ok' | 'error'
-        campos:   (keyof FormRegistro)[]
-        importe?: number | null
-    } | null>(null)
+    // Comprobantes del registro: cada uno se lee con IA y sus datos quedan bloqueados.
+    const [items, setItems] = useState<VoucherItem[]>([])
+    const vouchers = items.map(i => i.file)
+    // Vouchers que no se pudieron leer completos: se avisan de a uno en un modal.
+    const [porRevisar, setPorRevisar] = useState<string[]>([])
+    const enRevision = items.find(i => i.id === porRevisar[0]) ?? null
 
-    const leerVoucher = async (file: File) => {
-        setLectura({ estado: 'leyendo', campos: [] })
+    const actualizarItem = (id: string, cambios: Partial<VoucherItem>) =>
+        setItems(prev => prev.map(i => i.id === id ? { ...i, ...cambios } : i))
+
+    const leerVoucher = async (item: VoucherItem) => {
+        let d: any = {}
         try {
             const fd = new FormData()
-            fd.append('voucher', file)
+            fd.append('voucher', item.file)
             const res = await apiClient.post('/planilla-cobranza/leer-voucher', fd)
-            const d = res.data?.data ?? {}
-            const leidos: Partial<Record<keyof FormRegistro, unknown>> = {
-                cod_banco:        d.cod_banco,
-                fecha_deposito:   d.fecha,
-                numero_operacion: d.numero_operacion,
-                importe_cobrado:  d.importe,
-            }
-            // Solo se llenan los campos vacíos: nunca se pisa lo que escribió el vendedor.
-            const campos = (Object.keys(leidos) as (keyof FormRegistro)[])
-                .filter(k => leidos[k] != null && leidos[k] !== '' && !String(formReg[k] ?? '').trim())
-            if (campos.length === 0 && d.importe == null) throw new Error('sin datos')
-            setFormReg(p => ({ ...p, ...Object.fromEntries(campos.map(k => [k, String(leidos[k])])) }))
-            setLectura({ estado: 'ok', campos, importe: d.importe != null ? Number(d.importe) : null })
-        } catch {
-            setLectura({ estado: 'error', campos: [] })
+            d = res.data?.data ?? {}
+        } catch { /* sin datos: se pide completar a mano */ }
+        const leidos: Record<CampoVoucher, string> = {
+            cod_banco:        d.cod_banco ?? '',
+            fecha:            d.fecha ?? '',
+            numero_operacion: d.numero_operacion ?? '',
+            importe:          d.importe != null ? String(d.importe) : '',
         }
+        const bloqueados = CAMPOS_VOUCHER.map(c => c.k).filter(k => leidos[k])
+        const completo = bloqueados.length === CAMPOS_VOUCHER.length
+        setItems(prev => prev.map(i => i.id === item.id
+            ? { ...i, ...leidos, bloqueados, estado: completo ? 'leido' : 'manual' }
+            : i))
+        if (!completo) setPorRevisar(prev => [...prev, item.id])
     }
 
-    const leido = (k: keyof FormRegistro) =>
-        lectura?.estado === 'ok' && lectura.campos.includes(k) ? 'ring-2 ring-violet-300 bg-violet-50/60 dark:bg-violet-950/30' : ''
-    const difiereImporte = lectura?.importe != null && Number(formReg.importe_cobrado) > 0
-        && Math.abs(Number(formReg.importe_cobrado) - lectura.importe) > 0.009
+    // El importe cobrado se propone como la suma de los vouchers.
+    const sumaVouchers = items.reduce((s, i) => s + (Number(i.importe) || 0), 0)
+    const difiereImporte = items.length > 0 && sumaVouchers > 0 && Number(formReg.importe_cobrado) > 0
+        && Math.abs(Number(formReg.importe_cobrado) - sumaVouchers) > 0.009
+    useEffect(() => {
+        if (cobradoAuto.current && sumaVouchers > 0)
+            setFormReg(p => ({ ...p, importe_cobrado: sumaVouchers.toFixed(2) }))
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [sumaVouchers])
 
-    const [vouchers,    setVouchers]    = useState<File[]>([])
+    const agregarArchivos = (files: File[]) => {
+        const nuevos: VoucherItem[] = files.map(file => ({
+            id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+            file,
+            preview: file.type === 'application/pdf' ? null : URL.createObjectURL(file),
+            estado: 'leyendo',
+            cod_banco: '', fecha: '', numero_operacion: '', importe: '',
+            bloqueados: [],
+        }))
+        setItems(prev => [...prev, ...nuevos])
+        nuevos.forEach(leerVoucher)
+    }
+
     const [unirModalOpen, setUnirModalOpen] = useState(false)
     const voucherInputRef               = useRef<HTMLInputElement>(null)
 
     const [docModalOpen, setDocModalOpen] = useState(false)
+
+    // Recibo de cuenta importado: sus datos (cliente, documento, importes) no se editan.
+    const [reciboModalOpen, setReciboModalOpen] = useState(false)
+    const [recibo, setRecibo] = useState<{ cab: ReciboCabecera; doc: ReciboDocumento } | null>(null)
+    const conRecibo = !!recibo
+
+    const importarRecibo = (cab: ReciboCabecera, doc: ReciboDocumento) => {
+        setRecibo({ cab, doc })
+        setSelectedClient({ codigo: cab.cod_cliente, Nombre: cab.nombre_cliente, RUC: cab.ruc_cliente ?? '' } as IClient)
+        cobradoAuto.current = false
+        setFormReg(p => ({
+            ...p,
+            codigo_cliente:  cab.ruc_cliente || cab.cod_cliente,
+            nombre_cliente:  cab.nombre_cliente,
+            tipo_documento:  doc.tipo_documento,
+            serie:           doc.serie,
+            numero_doc:      doc.numero_doc,
+            importe:         String(doc.saldo_documento ?? doc.importe),
+            numero_recibo:   `${cab.prefijo}-${cab.numero_recibo}`,
+            importe_cobrado: Number(doc.importe).toFixed(2),
+        }))
+        toast({ title: 'Recibo importado', description: `${cab.prefijo}-${cab.numero_recibo} · ${doc.abre_documento} ${doc.serie}-${doc.numero_doc}` })
+    }
+
+    const quitarRecibo = () => {
+        setRecibo(null)
+        setSelectedClient(null)
+        cobradoAuto.current = true
+        setFormReg(p => ({
+            ...p,
+            codigo_cliente: '', nombre_cliente: '', tipo_documento: '', serie: '', numero_doc: '',
+            importe: '', numero_recibo: '', importe_cobrado: '',
+        }))
+    }
 
     const [openRows,     setOpenRows]     = useState<Set<number>>(new Set())
     const [detalleCache, setDetalleCache] = useState<Record<number, PlanillaDetalle[]>>({})
@@ -315,8 +442,7 @@ export default function SeccionVendedor({
             })
         }
 
-        setVouchers(prev => [...prev, ...validos.slice(0, disponibles)])
-        if (lectura?.estado !== 'ok' && lectura?.estado !== 'leyendo') leerVoucher(validos[0])
+        agregarArchivos(validos.slice(0, disponibles))
     }
 
     const handleImagenUnificada = async (unida: File) => {
@@ -333,18 +459,24 @@ export default function SeccionVendedor({
             })
             return
         }
-        setVouchers(prev => [...prev, file])
+        agregarArchivos([file])
         toast({ title: 'Imagen unificada', description: 'Se agregó como un voucher más.' })
-        if (lectura?.estado !== 'ok' && lectura?.estado !== 'leyendo') leerVoucher(file)
     }
 
-    const removeVoucher = (idx: number) => {
-        setVouchers(prev => prev.filter((_, i) => i !== idx))
+    const quitarVoucher = (id: string) => {
+        setItems(prev => {
+            const it = prev.find(i => i.id === id)
+            if (it?.preview) URL.revokeObjectURL(it.preview)
+            return prev.filter(i => i.id !== id)
+        })
+        setPorRevisar(prev => prev.filter(x => x !== id))
     }
 
-    const voucherPreview = (file: File) => {
-        if (file.type === 'application/pdf') return null
-        return URL.createObjectURL(file)
+    // Modal "no pudimos leer": completar a mano habilita solo lo que faltó.
+    const completarAMano = () => setPorRevisar(prev => prev.slice(1))
+    const subirOtraFoto = () => {
+        if (enRevision) quitarVoucher(enRevision.id)
+        setTimeout(() => voucherInputRef.current?.click(), 0)
     }
 
     const handleCrear = async () => {
@@ -378,12 +510,31 @@ export default function SeccionVendedor({
             toast({ title: 'Importe cobrado', description: errCobrado, variant: 'warning' })
             return
         }
+        if (items.some(i => i.estado === 'leyendo')) {
+            toast({ title: 'Leyendo vouchers', description: 'Espera a que termine la lectura de los vouchers.', variant: 'warning' })
+            return
+        }
+        const incompleto = items.findIndex(i => faltantes(i).length > 0)
+        if (incompleto >= 0) {
+            toast({
+                title:       `Voucher ${incompleto + 1} incompleto`,
+                description: `Completa: ${faltantes(items[incompleto]).map(c => c.t.toLowerCase()).join(', ')}.`,
+                variant:     'warning',
+            })
+            return
+        }
         setGuardando(true)
-        const banco = bancos.find(b => b.CodigoEntidadFinanciera === formReg.cod_banco)
+        // El registro guarda el depósito del primer voucher (el detalle tiene un solo banco/operación).
+        const principal = items[0]
+        const codBanco = principal?.cod_banco ?? formReg.cod_banco
+        const banco = bancos.find(b => b.CodigoEntidadFinanciera === codBanco)
         const nuevo = await onAgregarDetalle(
             planillaActiva.id_planilla,
             {
                 ...formReg,
+                cod_banco:        codBanco,
+                fecha_deposito:   principal?.fecha ?? formReg.fecha_deposito,
+                numero_operacion: principal ? items.map(i => i.numero_operacion).join(' / ') : formReg.numero_operacion,
                 importe:         parseFloat(formReg.importe),
                 importe_cobrado: parseFloat(formReg.importe_cobrado || '0'),
                 desc_banco:      banco?.DescripcionEntidadFinanciera || formReg.desc_banco,
@@ -392,8 +543,11 @@ export default function SeccionVendedor({
         )
         if (nuevo) {
             setFormReg(FORM_INICIAL)
-            setVouchers([])
-            setLectura(null)
+            items.forEach(i => i.preview && URL.revokeObjectURL(i.preview))
+            setItems([])
+            setPorRevisar([])
+            setRecibo(null)
+            cobradoAuto.current = true
             setSelectedClient(null)
         }
         setGuardando(false)
@@ -502,6 +656,58 @@ export default function SeccionVendedor({
 
     return (
         <div className="space-y-4">
+
+            <SeleccionarReciboModal
+                open={reciboModalOpen}
+                onOpenChange={setReciboModalOpen}
+                idUsuarioWeb={user?.idUsuarioWeb}
+                codCliente={formReg.codigo_cliente || undefined}
+                onImportar={importarRecibo}
+            />
+
+            <Dialog open={!!enRevision} onOpenChange={v => { if (!v) completarAMano() }}>
+                <DialogContent className="max-w-sm" onOpenAutoFocus={e => e.preventDefault()}>
+                    <DialogHeader className="items-center text-center">
+                        <div className="mx-auto mb-1 flex h-14 w-14 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-950/50">
+                            <ScanSearch className="h-7 w-7 text-amber-600" />
+                        </div>
+                        <DialogTitle className="text-center">No pudimos leer todo el voucher</DialogTitle>
+                        <DialogDescription className="text-center">
+                            {enRevision && faltantes(enRevision).length === CAMPOS_VOUCHER.length
+                                ? 'La foto no se ve con claridad o no parece un comprobante de pago.'
+                                : enRevision && faltantes(enRevision).some(c => c.k === 'cod_banco')
+                                    ? 'No logramos identificar a qué banco pertenece este comprobante.'
+                                    : 'Algunos datos no se ven con claridad en la foto.'}
+                            {' '}No te preocupes: puedes completarlos a mano.
+                        </DialogDescription>
+                    </DialogHeader>
+                    {enRevision && (
+                        <div className="flex gap-3 rounded-lg border bg-muted/40 p-3">
+                            <div className="h-16 w-16 shrink-0 overflow-hidden rounded-md border bg-muted flex items-center justify-center">
+                                {enRevision.preview
+                                    ? <img src={enRevision.preview} alt="" className="h-full w-full object-cover" />
+                                    : <FileText className="h-6 w-6 text-muted-foreground" />}
+                            </div>
+                            <div className="min-w-0 space-y-1 text-xs">
+                                {enRevision.bloqueados.length > 0 && (
+                                    <p><span className="font-semibold text-violet-700">Leímos:</span>{' '}
+                                        {CAMPOS_VOUCHER.filter(c => enRevision.bloqueados.includes(c.k)).map(c => c.t.toLowerCase()).join(', ')}</p>
+                                )}
+                                <p><span className="font-semibold text-amber-700">Falta completar:</span>{' '}
+                                    {faltantes(enRevision).map(c => c.t.toLowerCase()).join(', ')}</p>
+                            </div>
+                        </div>
+                    )}
+                    <DialogFooter className="gap-2 sm:justify-center">
+                        <Button variant="outline" className="gap-1.5" onClick={subirOtraFoto}>
+                            <Camera className="h-4 w-4" /> Subir otra foto
+                        </Button>
+                        <Button className="gap-1.5 bg-sky-600 text-white hover:bg-sky-700" onClick={completarAMano}>
+                            <PencilLine className="h-4 w-4" /> Completar a mano
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
 
             <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
                 <DialogContent className="max-w-md">
@@ -677,6 +883,11 @@ export default function SeccionVendedor({
                                                             {selectedClient.RUC ? `RUC: ${selectedClient.RUC}` : selectedClient.codigo}
                                                         </p>
                                                     </div>
+                                                    {conRecibo ? (
+                                                        <span className="flex shrink-0 items-center gap-1 text-[11px] font-medium text-blue-600">
+                                                            <Lock className="h-3 w-3" /> Del recibo
+                                                        </span>
+                                                    ) : (
                                                     <Button
                                                         type="button"
                                                         size="sm"
@@ -686,6 +897,7 @@ export default function SeccionVendedor({
                                                     >
                                                         Cambiar
                                                     </Button>
+                                                    )}
                                                 </div>
                                             ) : (
                                                 <InlineAutocomplete<IClient>
@@ -729,8 +941,8 @@ export default function SeccionVendedor({
                                             <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                                                 T/D <span className="text-red-500">*</span>
                                             </label>
-                                            <Select value={formReg.tipo_documento} onValueChange={v => fc('tipo_documento', v)}>
-                                                <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
+                                            <Select value={formReg.tipo_documento} onValueChange={v => fc('tipo_documento', v)} disabled={conRecibo}>
+                                                <SelectTrigger className={conRecibo ? CLASE_BLOQUEADO : ''}><SelectValue placeholder="—" /></SelectTrigger>
                                                 <SelectContent>
                                                     {tiposComprobante.map(t => (
                                                         <SelectItem key={t.codigo} value={t.codigo}>{t.descripcion}</SelectItem>
@@ -747,8 +959,8 @@ export default function SeccionVendedor({
                                                 placeholder="02"
                                                 value={formReg.serie}
                                                 onChange={e => fc('serie', e.target.value)}
-                                                maxLength={4}
-                                                className="font-mono"
+                                                maxLength={4} disabled={conRecibo}
+                                                className={`font-mono ${conRecibo ? CLASE_BLOQUEADO : ''}`}
                                             />
                                         </div>
                                         <div className="flex flex-col gap-1.5">
@@ -757,7 +969,8 @@ export default function SeccionVendedor({
                                                 placeholder="10737"
                                                 value={formReg.numero_doc}
                                                 onChange={e => fc('numero_doc', e.target.value)}
-                                                className="font-mono"
+                                                disabled={conRecibo}
+                                                className={`font-mono ${conRecibo ? CLASE_BLOQUEADO : ''}`}
                                             />
                                         </div>
                                         <div className="flex flex-col gap-1.5">
@@ -768,7 +981,8 @@ export default function SeccionVendedor({
                                                 type="number" step="0.01" min={0} placeholder="0.00"
                                                 value={formReg.importe}
                                                 onChange={e => fc('importe', e.target.value)}
-                                                className="font-mono text-lg"
+                                                disabled={conRecibo}
+                                                className={`font-mono text-lg ${conRecibo ? CLASE_BLOQUEADO : ''}`}
                                             />
                                         </div>
 
@@ -790,6 +1004,7 @@ export default function SeccionVendedor({
                                                     }
                                                     setDocModalOpen(true)
                                                 }}
+                                                disabled={conRecibo}
                                                 className="w-full gap-2 border-sky-300 text-sky-700 hover:bg-sky-50"
                                                 title="Ver documentos del cliente (kardex)"
                                             >
@@ -809,141 +1024,151 @@ export default function SeccionVendedor({
                                     <span className="ml-auto text-[10px] text-muted-foreground font-medium">Sección 2 de 2</span>
                                 </div>
                                 <div className="p-5 space-y-4">
-                                    <div className="grid grid-cols-2 gap-3">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                         <div className="flex flex-col gap-1.5">
-                                            <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Recibo N°</label>
-                                            <Input
-                                                placeholder="B/34752"
-                                                value={formReg.numero_recibo}
-                                                onChange={e => fc('numero_recibo', e.target.value)}
-                                                maxLength={30} className="font-mono"
-                                            />
+                                            <label className="flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                                                {conRecibo && <Lock className="h-2.5 w-2.5" />}Recibo N°
+                                            </label>
+                                            <div className="flex gap-2">
+                                                <div className={`flex h-10 min-w-0 flex-1 items-center gap-2 rounded-md border px-3
+                                                    ${recibo ? 'border-sky-200 bg-sky-50 dark:border-sky-900 dark:bg-sky-950/40' : 'bg-muted/60'}`}>
+                                                    <Receipt className={`h-4 w-4 shrink-0 ${recibo ? 'text-sky-600' : 'text-muted-foreground'}`} />
+                                                    {recibo ? (
+                                                        <span className="min-w-0 flex-1 truncate font-mono text-sm font-semibold text-sky-900 dark:text-sky-100">
+                                                            {formReg.numero_recibo}
+                                                            <span className="ml-2 font-sans text-xs font-normal text-sky-700">· {recibo.doc.abre_documento} {recibo.doc.serie}-{recibo.doc.numero_doc}</span>
+                                                        </span>
+                                                    ) : (
+                                                        <span className="flex-1 truncate text-sm text-muted-foreground">Selecciona un recibo emitido</span>
+                                                    )}
+                                                    {recibo && (
+                                                        <button type="button" onClick={quitarRecibo} title="Quitar recibo"
+                                                                className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:bg-red-50 hover:text-red-600">
+                                                            <X className="h-3.5 w-3.5" />
+                                                        </button>
+                                                    )}
+                                                </div>
+                                                {recibo?.cab.ruta_pdf && (
+                                                    <Button type="button" variant="outline" size="icon" asChild
+                                                            className="h-10 w-10 shrink-0 border-sky-300 text-sky-700 hover:bg-sky-50" title="Ver PDF del recibo">
+                                                        <a href={`${publicApi}${recibo.cab.ruta_pdf}`} target="_blank" rel="noreferrer"><Eye className="h-4 w-4" /></a>
+                                                    </Button>
+                                                )}
+                                                <Button type="button" variant="outline" onClick={() => setReciboModalOpen(true)}
+                                                        className="h-10 shrink-0 gap-1.5 border-sky-300 text-sky-700 hover:bg-sky-50"
+                                                        title={recibo ? 'Cambiar recibo' : 'Buscar mis recibos'}>
+                                                    <Search className="h-4 w-4" />
+                                                    <span className="hidden sm:inline">{recibo ? 'Cambiar' : 'Buscar'}</span>
+                                                </Button>
+                                            </div>
                                         </div>
                                         <div className="flex flex-col gap-1.5">
-                                            <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Importe cobrado S/. <span className="text-red-500">*</span></label>
+                                            <label className="flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                                                {conRecibo && <Lock className="h-2.5 w-2.5" />}Importe cobrado S/. <span className="text-red-500">*</span>
+                                            </label>
                                             <Input
                                                 type="number" step="0.01" min={0} placeholder="0.00"
                                                 value={formReg.importe_cobrado}
                                                 onChange={e => fc('importe_cobrado', e.target.value)}
-                                                className={`font-mono ${leido('importe_cobrado')}`}
+                                                disabled={conRecibo}
+                                                className={`h-10 font-mono ${conRecibo ? CLASE_BLOQUEADO : ''}`}
                                             />
                                             {difiereImporte && (
                                                 <p className="flex items-start gap-1 text-[11px] leading-snug text-amber-700 dark:text-amber-400">
                                                     <AlertCircle className="mt-0.5 h-3 w-3 shrink-0" />
-                                                    El voucher dice S/ {lectura!.importe!.toFixed(2)} y escribiste S/ {Number(formReg.importe_cobrado).toFixed(2)}.
+                                                    {conRecibo ? 'El voucher suma' : 'Los vouchers suman'} S/ {sumaVouchers.toFixed(2)} y {conRecibo ? 'el recibo dice' : 'escribiste'} S/ {Number(formReg.importe_cobrado).toFixed(2)}.
                                                 </p>
                                             )}
                                         </div>
                                     </div>
 
-                                    {lectura && (
-                                        <div className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-xs
-                                            ${lectura.estado === 'error'
-                                            ? 'border-border bg-muted/50 text-muted-foreground'
-                                            : 'border-violet-200 bg-violet-50 text-violet-700 dark:border-violet-900 dark:bg-violet-950/40 dark:text-violet-300'}`}>
-                                            {lectura.estado === 'leyendo' && <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Leyendo voucher…</>}
-                                            {lectura.estado === 'ok' && <><Sparkles className="h-3.5 w-3.5" /> Datos leídos del voucher: revisa que estén correctos antes de agregar.</>}
-                                            {lectura.estado === 'error' && <><AlertCircle className="h-3.5 w-3.5" /> No se pudo leer el voucher. Completa los datos a mano.</>}
-                                        </div>
-                                    )}
-
-                                    <div className="border-t border-dashed border-border pt-3">
-                                        <p className="text-[10px] uppercase font-semibold text-muted-foreground tracking-wider mb-3">Depósito bancario</p>
-                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                                            <div className="flex flex-col gap-1.5">
-                                                <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Banco (C/B)</label>
-                                                <Select value={formReg.cod_banco} onValueChange={v => fc('cod_banco', v)}>
-                                                    <SelectTrigger className={leido('cod_banco')}><SelectValue placeholder="— sin banco —" /></SelectTrigger>
-                                                    <SelectContent>
-                                                        {bancos.map(b => (
-                                                            <SelectItem key={b.CodigoEntidadFinanciera} value={b.CodigoEntidadFinanciera}>
-                                                                {b.DescripcionEntidadFinanciera}
-                                                            </SelectItem>
-                                                        ))}
-                                                    </SelectContent>
-                                                </Select>
-                                            </div>
-                                            <div className="flex flex-col gap-1.5">
-                                                <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Fecha depósito</label>
-                                                <Input type="date" value={formReg.fecha_deposito} onChange={e => fc('fecha_deposito', e.target.value)} className={leido('fecha_deposito')} />
-                                            </div>
-                                            <div className="flex flex-col gap-1.5">
-                                                <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">N° Operación</label>
-                                                <Input
-                                                    placeholder="14009921"
-                                                    value={formReg.numero_operacion}
-                                                    onChange={e => fc('numero_operacion', e.target.value)}
-                                                    maxLength={50} className={`font-mono ${leido('numero_operacion')}`}
-                                                />
-                                            </div>
-                                            <div className="flex flex-col gap-1.5">
-                                                <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">N° Cheque</label>
-                                                <Input
-                                                    placeholder="Opcional"
-                                                    value={formReg.numero_cheque}
-                                                    onChange={e => fc('numero_cheque', e.target.value)}
-                                                    maxLength={50} className="font-mono"
-                                                />
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div className="border-t border-dashed border-border pt-3">
-                                        <div className="flex items-center justify-between mb-2">
+                                    <div className="border-t border-dashed border-border pt-3 space-y-3">
+                                        <div className="flex items-center justify-between">
                                             <p className="text-[10px] uppercase font-semibold text-muted-foreground tracking-wider flex items-center gap-1.5">
                                                 <Paperclip className="h-3 w-3" />
-                                                Vouchers / comprobantes de pago
+                                                Comprobantes de pago
                                             </p>
-                                            <span className="text-[10px] text-muted-foreground">
-                                                {vouchers.length}/{MAX_VOUCHERS}
-                                            </span>
+                                            {VOUCHER_MULTIPLE && <span className="text-[10px] text-muted-foreground">{items.length}/{MAX_VOUCHERS}</span>}
                                         </div>
 
-                                        {vouchers.length > 0 && (
-                                            <div className="flex flex-wrap gap-2 mb-3">
-                                                {vouchers.map((file, idx) => {
-                                                    const preview = voucherPreview(file)
-                                                    return (
-                                                        <div
-                                                            key={idx}
-                                                            className="relative group w-20 h-20 rounded-lg border border-border overflow-hidden bg-muted flex items-center justify-center"
-                                                        >
-                                                            {preview ? (
-                                                                <img
-                                                                    src={preview}
-                                                                    alt={file.name}
-                                                                    className="w-full h-full object-cover"
-                                                                    onLoad={() => URL.revokeObjectURL(preview)}
-                                                                />
-                                                            ) : (
-                                                                <div className="flex flex-col items-center gap-1 p-1">
-                                                                    <FileText className="h-6 w-6 text-muted-foreground" />
-                                                                    <span className="text-[9px] text-muted-foreground truncate w-full text-center px-1">
-                                                                        {file.name}
-                                                                    </span>
-                                                                </div>
-                                                            )}
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => removeVoucher(idx)}
-                                                                className="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-red-500 text-white
-                                                                    flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                                                            >
-                                                                <X className="h-3 w-3" />
-                                                            </button>
-                                                        </div>
-                                                    )
-                                                })}
-                                            </div>
-                                        )}
+                                        {items.map((v, idx) => (
+                                            <div key={v.id} className={`rounded-xl border p-3 space-y-3
+                                                ${v.estado === 'manual' ? 'border-amber-200 bg-amber-50/40 dark:border-amber-900 dark:bg-amber-950/20' : 'border-violet-200 bg-violet-50/40 dark:border-violet-900 dark:bg-violet-950/20'}`}>
+                                                {v.estado === 'leyendo' ? (
+                                                    <div className="flex items-start gap-2">
+                                                        <div className="flex-1"><LecturaVoucher preview={v.preview} /></div>
+                                                        <button type="button" onClick={() => quitarVoucher(v.id)} title="Quitar voucher"
+                                                                className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground hover:bg-red-50 hover:text-red-600">
+                                                            <X className="h-4 w-4" />
+                                                        </button>
+                                                    </div>
+                                                ) : (
+                                                <div className="flex items-center gap-3 animate-in fade-in duration-500">
+                                                    <div className="h-14 w-14 shrink-0 overflow-hidden rounded-lg border bg-muted flex items-center justify-center">
+                                                        {v.preview
+                                                            ? <img src={v.preview} alt={v.file.name} className="h-full w-full object-cover" />
+                                                            : <FileText className="h-6 w-6 text-muted-foreground" />}
+                                                    </div>
+                                                    <div className="min-w-0 flex-1">
+                                                        <p className="text-sm font-semibold">{VOUCHER_MULTIPLE ? `Voucher ${idx + 1}` : 'Voucher'}</p>
+                                                        {v.estado === 'leido' && <p className="flex items-center gap-1 text-xs text-violet-700 dark:text-violet-300"><Sparkles className="h-3 w-3" /> Leído del voucher</p>}
+                                                        {v.estado === 'manual' && <p className="flex items-center gap-1 text-xs text-amber-700 dark:text-amber-400"><PencilLine className="h-3 w-3" /> Completa a mano lo que falta</p>}
+                                                    </div>
+                                                    <button type="button" onClick={() => quitarVoucher(v.id)} title="Quitar voucher"
+                                                            className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground hover:bg-red-50 hover:text-red-600">
+                                                        <X className="h-4 w-4" />
+                                                    </button>
+                                                </div>
+                                                )}
 
-                                        {vouchers.length < MAX_VOUCHERS && (
+                                                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                                                    {CAMPOS_VOUCHER.map((c, ci) => {
+                                                        if (v.estado === 'leyendo') return (
+                                                            <div key={c.k} className="flex flex-col gap-1">
+                                                                <label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{c.t}</label>
+                                                                <div className="voucher-brillo h-9 rounded-md border" />
+                                                            </div>
+                                                        )
+                                                        const bloqueado = v.bloqueados.includes(c.k)
+                                                        const clase = bloqueado ? 'bg-muted/60 text-foreground disabled:opacity-100 font-medium' : 'bg-background'
+                                                        return (
+                                                            <div key={c.k} className="flex flex-col gap-1 animate-in fade-in slide-in-from-bottom-1 fill-mode-both duration-500"
+                                                                 style={{ animationDelay: `${ci * 120}ms` }}>
+                                                                <label className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                                                                    {bloqueado && <Lock className="h-2.5 w-2.5" />}{c.t}
+                                                                </label>
+                                                                {c.k === 'cod_banco' ? (
+                                                                    <Select value={v.cod_banco} onValueChange={val => actualizarItem(v.id, { cod_banco: val })} disabled={bloqueado}>
+                                                                        <SelectTrigger className={`h-9 text-xs ${clase}`}><SelectValue placeholder="Elegir banco" /></SelectTrigger>
+                                                                        <SelectContent>
+                                                                            {bancos.map(b => (
+                                                                                <SelectItem key={b.CodigoEntidadFinanciera} value={b.CodigoEntidadFinanciera}>{b.DescripcionEntidadFinanciera}</SelectItem>
+                                                                            ))}
+                                                                        </SelectContent>
+                                                                    </Select>
+                                                                ) : (
+                                                                    <Input
+                                                                        type={c.k === 'fecha' ? 'date' : c.k === 'importe' ? 'number' : 'text'}
+                                                                        step={c.k === 'importe' ? '0.01' : undefined}
+                                                                        value={v[c.k]} disabled={bloqueado}
+                                                                        onChange={e => actualizarItem(v.id, { [c.k]: e.target.value } as Partial<VoucherItem>)}
+                                                                        className={`h-9 text-xs font-mono ${clase}`}
+                                                                    />
+                                                                )}
+                                                            </div>
+                                                        )
+                                                    })}
+                                                </div>
+                                            </div>
+                                        ))}
+
+                                        {items.length < MAX_VOUCHERS && (
                                             <>
                                                 <input
                                                     ref={voucherInputRef}
                                                     type="file"
                                                     accept={VOUCHER_ACCEPT}
-                                                    multiple
+                                                    multiple={VOUCHER_MULTIPLE}
                                                     className="hidden"
                                                     onChange={handleVoucherChange}
                                                 />
@@ -951,16 +1176,16 @@ export default function SeccionVendedor({
                                                     <button
                                                         type="button"
                                                         onClick={() => voucherInputRef.current?.click()}
-                                                        className="h-14 border-2 border-dashed border-border rounded-lg
+                                                        className="h-14 border-2 border-dashed border-sky-300 rounded-lg
                                                             flex items-center justify-center gap-2 px-3
-                                                            text-xs text-muted-foreground hover:border-sky-400 hover:text-sky-600
+                                                            text-xs font-medium text-sky-700 hover:border-sky-400
                                                             hover:bg-sky-50/50 transition-all"
                                                     >
-                                                        <Upload className="h-4 w-4 shrink-0" />
+                                                        {items.length === 0 ? <Upload className="h-4 w-4 shrink-0" /> : <Plus className="h-4 w-4 shrink-0" />}
                                                         <span className="text-left leading-tight">
-                                                            Subir voucher (jpg, png, pdf)
-                                                            <span className="block text-[10px] opacity-70">
-                                                                máx. {MAX_VOUCHERS - vouchers.length} más
+                                                            {items.length === 0 ? 'Subir voucher' : 'Agregar otro voucher'}
+                                                            <span className="block text-[10px] font-normal opacity-70">
+                                                                foto o PDF{VOUCHER_MULTIPLE && <> · máx. {MAX_VOUCHERS - items.length} más</>}
                                                             </span>
                                                         </span>
                                                     </button>
@@ -984,6 +1209,18 @@ export default function SeccionVendedor({
                                                 </div>
                                             </>
                                         )}
+
+                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                            <div className="flex flex-col gap-1.5">
+                                                <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">N° Cheque</label>
+                                                <Input
+                                                    placeholder="Opcional"
+                                                    value={formReg.numero_cheque}
+                                                    onChange={e => fc('numero_cheque', e.target.value)}
+                                                    maxLength={50} className="font-mono"
+                                                />
+                                            </div>
+                                        </div>
                                     </div>
 
                                     <Button
