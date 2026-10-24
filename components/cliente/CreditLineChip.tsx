@@ -15,12 +15,11 @@ import {
 } from "@/components/ui/dialog";
 import {DialogTitle} from "@radix-ui/react-dialog";
 import {Button} from "@/components/ui/button";
-import {Badge} from "@/components/ui/badge";
 
 // Chip de Línea de Crédito, extraído de FinancialZoneAlpha para poder
 // mostrarlo directo dentro de la tarjeta del cliente seleccionado (en vez
 // de más abajo junto a Zona/Condición) — se abre el mismo modal de detalle
-// de siempre (donut, facturas pendientes).
+// de siempre (donut y montos de la línea).
 interface CreditLineChipProps {
   client: IClient
   /** Línea, usado y disponible según /clientes/credito. Sin él se calcula como antes. */
@@ -67,16 +66,6 @@ function CreditDonut({ pct, size = 160, strokeWidth = 14 }: { pct: number; size?
 const fmtMoney = (n: number) =>
     "S/ " + Number(n).toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-const fmtDate = (dateStr: string | null | undefined) => {
-  if (!dateStr) return 'N/A';
-  try {
-    const d = new Date(dateStr);
-    return d.toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric' });
-  } catch {
-    return dateStr;
-  }
-};
-
 function CreditAlert({ pct }: { pct: number }) {
   if (pct >= 90) {
     return (
@@ -102,18 +91,6 @@ function CreditAlert({ pct }: { pct: number }) {
   );
 }
 
-function EstadoBadge({ estado }: { estado: string }) {
-  switch (estado) {
-    case 'VENCIDA':
-      return <Badge className="bg-red-100 text-red-800 border-red-200 hover:bg-red-100 text-[10px] font-semibold">Vencida</Badge>;
-    case 'POR_VENCER':
-      return <Badge className="bg-amber-100 text-amber-800 border-amber-200 hover:bg-amber-100 text-[10px] font-semibold">Por vencer</Badge>;
-    case 'VIGENTE':
-    default:
-      return <Badge className="bg-green-100 text-green-800 border-green-200 hover:bg-green-100 text-[10px] font-semibold">Vigente</Badge>;
-  }
-}
-
 function CreditProgressBar({ pct }: { pct: number }) {
   const getColor = (p: number) => {
     if (p >= 90) return 'bg-red-500';
@@ -127,21 +104,6 @@ function CreditProgressBar({ pct }: { pct: number }) {
   );
 }
 
-interface IFacturaPendiente {
-  nro_documento: string;
-  tipo_documento: string;
-  serie: string;
-  numero: string;
-  fecha_emision: string;
-  fecha_vencimiento: string;
-  tipo_moneda: string;
-  simbolo_moneda: string;
-  provision: number;
-  amortizacion: number;
-  saldo: number;
-  estado: string;
-}
-
 interface IResumenCredito {
   linea_credito: number;
   credito_utilizado: number;
@@ -151,7 +113,6 @@ interface IResumenCredito {
 
 export default function CreditLineChip({ client, credito, cargandoCredito = false }: CreditLineChipProps) {
   const [showCreditModal, setShowCreditModal] = useState(false);
-  const [facturas, setFacturas] = useState<IFacturaPendiente[]>([]);
   const [resumen, setResumen] = useState<IResumenCredito | null>(null);
   const [loadingCredit, setLoadingCredit] = useState(false);
 
@@ -163,13 +124,11 @@ export default function CreditLineChip({ client, credito, cargandoCredito = fals
       const response = await apiClient.get(`/admin/credit-line-details/${client.codigo}`);
       const data = response.data?.data;
 
-      // Con los datos del endpoint de crédito se usan sus montos; las facturas siguen saliendo del detalle.
+      // Sin datos del endpoint de crédito: se calcula con la línea del cliente y sus documentos pendientes.
       const lineaCredito = credito ? credito.lineaCredito : (Number(client.LineaCredito) || 0);
       const creditoUtilizado = credito ? credito.usado : (data || []).reduce((acc: number, f: any) => acc + (Number(f.saldo) || 0), 0);
       const disponible = credito ? credito.disponible : Math.max(0, lineaCredito - creditoUtilizado);
       const pct = lineaCredito > 0 ? Math.min(Math.round((creditoUtilizado / lineaCredito) * 100), 100) : 0;
-
-      setFacturas(data || []);
       setResumen({
         credito_utilizado: creditoUtilizado,
         disponible: disponible,
@@ -185,7 +144,6 @@ export default function CreditLineChip({ client, credito, cargandoCredito = fals
         disponible: credito ? credito.disponible : linea,
         pct_utilizado: linea > 0 ? Math.min(Math.round((usado / linea) * 100), 100) : 0
       });
-      setFacturas([]);
     } finally {
       setLoadingCredit(false);
     }
@@ -193,6 +151,16 @@ export default function CreditLineChip({ client, credito, cargandoCredito = fals
 
   const handleCreditClick = () => {
     setShowCreditModal(true);
+    if (credito) {
+      const linea = credito.lineaCredito;
+      setResumen({
+        linea_credito: linea,
+        credito_utilizado: credito.usado,
+        disponible: credito.disponible,
+        pct_utilizado: linea > 0 ? Math.min(Math.round((credito.usado / linea) * 100), 100) : 0,
+      });
+      return;
+    }
     fetchCreditDetail();
   };
 
@@ -290,43 +258,6 @@ export default function CreditLineChip({ client, credito, cargandoCredito = fals
                   </div>
                 </div>
 
-                {facturas.length > 0 && (
-                    <div>
-                      <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-3">
-                        Facturas Pendientes de Pago
-                      </h4>
-                      <div className="border border-slate-200 rounded-lg overflow-hidden">
-                        <table className="w-full text-xs">
-                          <thead>
-                          <tr className="bg-slate-50 border-b border-slate-200">
-                            <th className="text-left px-3 py-2.5 font-semibold text-slate-500">Nro. Factura</th>
-                            <th className="text-left px-3 py-2.5 font-semibold text-slate-500">Vencimiento</th>
-                            <th className="text-right px-3 py-2.5 font-semibold text-slate-500">Monto</th>
-                            <th className="text-center px-3 py-2.5 font-semibold text-slate-500">Estado</th>
-                          </tr>
-                          </thead>
-                          <tbody>
-                          {facturas.map((factura, index) => (
-                              <tr key={`${factura.nro_documento}-${index}`} className="border-b border-slate-100 last:border-b-0 hover:bg-slate-50 transition-colors">
-                                <td className="px-3 py-2.5 font-mono font-medium text-slate-800">{factura.nro_documento}</td>
-                                <td className="px-3 py-2.5 text-slate-600">{fmtDate(factura.fecha_vencimiento)}</td>
-                                <td className="px-3 py-2.5 text-right font-bold text-slate-800">
-                                  {factura.simbolo_moneda} {Number(factura.saldo).toLocaleString('es-PE', { minimumFractionDigits: 2 })}
-                                </td>
-                                <td className="px-3 py-2.5 text-center"><EstadoBadge estado={factura.estado} /></td>
-                              </tr>
-                          ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-                )}
-
-                {facturas.length === 0 && (
-                    <div className="text-center py-6 text-slate-400 text-sm">
-                      No se encontraron facturas pendientes de pago.
-                    </div>
-                )}
               </div>
           ) : (
               <div className="text-center py-12 text-slate-400 text-sm px-6">
