@@ -13,8 +13,8 @@ import { SmsCheck, SmsSend, UserLoginDTO, VendedorRelacionUnico } from "@/app/se
 import { AuthService } from "@/app/services/auth/AuthService"
 import { decodeToken } from "@/app/utils/tokenUtils"
 import { RoleEntryModal } from "@/components/auth/RoleEntryModal"
-import Image from "next/image"
 import { toast } from "@/app/hooks/useToast"
+import { LogoDifar } from "@/components/LogoDifar"
 
 export function LoginForm() {
   const { signin, sendDni, ingresarComoVendedor, clearPendingRoleSelection, errors } = useAuth();
@@ -206,9 +206,7 @@ export function LoginForm() {
     <div className="w-full max-w-md mx-auto">
       <div className="text-center mb-6">
         <div className="inline-flex items-center justify-center w-60 h-24 mb-2 relative">
-          <Image
-            src="/difar-logo.png"
-            alt="Logo difar"
+          <LogoDifar
             fill
             style={{ objectFit: 'contain' }}
             sizes="130px"

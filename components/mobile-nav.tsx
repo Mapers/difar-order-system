@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import { Menu } from "lucide-react";
@@ -13,6 +12,7 @@ import { UserCard } from "@/components/nav/UserCard";
 import { LogoutButton, LogoutConfirmDialog } from "@/components/nav/LogoutButton";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { LogoDifar } from "@/components/LogoDifar";
 
 /** Header + drawer para móvil. Oculto en escritorio (md:hidden). */
 export function MobileNav() {
@@ -31,9 +31,7 @@ export function MobileNav() {
   return (
     <header className="fixed inset-x-0 top-0 z-20 flex h-16 items-center justify-between border-b bg-background px-4 md:hidden">
       <Link href="/dashboard" className="flex items-center gap-2">
-        <Image
-          src="/difar-logo.png"
-          alt="Logo difar"
+        <LogoDifar
           width={80}
           height={40}
           className="object-contain"

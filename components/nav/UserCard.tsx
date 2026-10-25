@@ -1,13 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { User, Loader2 } from "lucide-react";
 import { useAuth } from "@/context/authContext";
 import { useSidebar } from "@/context/sidebarContext";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
+import { LogoDifar } from "@/components/LogoDifar";
 
 /** Cabecera compartida del sidebar: logo + tarjeta con datos del usuario. */
 export function UserCard() {
@@ -45,9 +45,7 @@ export function UserCard() {
   return (
     <div className="flex flex-col items-center border-b px-4 pt-4 pb-2 gap-2">
       <Link href="/dashboard" className="flex items-center gap-2">
-        <Image
-          src="/difar-logo.png"
-          alt="Logo difar"
+        <LogoDifar
           width={120}
           height={60}
           className="object-contain"
