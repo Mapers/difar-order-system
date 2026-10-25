@@ -145,3 +145,15 @@ body {
 .ivan-cursor::after { content: '▍'; margin-left: 1px; color: #6366f1; animation: ivan-parpadeo 1s steps(1) infinite; }
 .ivan-punto { animation: ivan-punto 1.2s ease-in-out infinite; }
 .ivan-barrido { animation: ivan-barrido 1.4s ease-in-out infinite; }
+/* Botón flotante de IVAN: ondas, destello del ícono e invitación. */
+@keyframes ivan-onda { 0% { transform: scale(1); opacity: .55; } 100% { transform: scale(1.9); opacity: 0; } }
+@keyframes ivan-destello { 0%, 82%, 100% { transform: rotate(0) scale(1); filter: none; } 88% { transform: rotate(-14deg) scale(1.22); filter: drop-shadow(0 0 6px rgba(255,255,255,.9)); } 94% { transform: rotate(10deg) scale(1.08); } }
+@keyframes ivan-invitacion { 0% { opacity: 0; transform: translateY(6px) scale(.92); } 100% { opacity: 1; transform: translateY(0) scale(1); } }
+.ivan-onda { position: absolute; inset: 0; border-radius: 9999px; background: radial-gradient(circle, rgba(99,102,241,.55), rgba(14,165,233,.35)); animation: ivan-onda 2.8s cubic-bezier(.2,.6,.4,1) infinite; pointer-events: none; }
+.ivan-onda-2 { animation-delay: 1.4s; }
+.ivan-destello { animation: ivan-destello 4.5s ease-in-out infinite; }
+.ivan-invitacion { animation: ivan-invitacion .35s cubic-bezier(.2,.9,.3,1.2) both; }
+@media (prefers-reduced-motion: reduce) {
+  .ivan-onda, .ivan-destello, .ivan-invitacion { animation: none; }
+  .ivan-onda { display: none; }
+}

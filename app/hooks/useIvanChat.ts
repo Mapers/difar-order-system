@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { conversarConIvan, SesionVencidaError } from '@/components/ivan/nucleo/transporte'
 import { aplicarEvento } from '@/components/ivan/nucleo/eventos'
 import type { Mensaje } from '@/components/ivan/nucleo/tipos'
+import { marcarIvanUsado } from '@/components/ivan/LanzadorIvan'
 
 export type { Mensaje, OpcionIvan, AccionIvan } from '@/components/ivan/nucleo/tipos'
 
@@ -76,6 +77,7 @@ export function useIvanChat() {
     const enviar = useCallback(async (textoForzado?: string) => {
         const texto = (textoForzado ?? entrada).trim()
         if (!texto || pensando) return
+        marcarIvanUsado()
 
         let historial: { role: 'user' | 'assistant'; content: string }[] = []
         setMensajes(prev => {

@@ -2,11 +2,12 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
-import { Maximize2, RotateCcw, Sparkles, X } from 'lucide-react'
+import { Maximize2, RotateCcw, X } from 'lucide-react'
 import { useAuth } from '@/context/authContext'
 import { useIvanChat } from '@/app/hooks/useIvanChat'
 import { ChatConversacion } from './ChatConversacion'
 import { AvatarIvan } from './AvatarIvan'
+import { LanzadorIvan, marcarIvanUsado } from './LanzadorIvan'
 
 export function IvanWidget() {
     const { isAuthenticated } = useAuth()
@@ -78,12 +79,17 @@ function BurbujaIvan() {
         inicioArrastre.current = null
         setArrastrando(false)
 
-        if (!ini?.movio) { setAbierto(true); return }
+        if (!ini?.movio) { abrir(); return }
 
         setPos(p => {
             if (p) { try { localStorage.setItem(CLAVE_POS, JSON.stringify(p)) } catch {} }
             return p
         })
+    }
+
+    const abrir = () => {
+        marcarIvanUsado()
+        setAbierto(true)
     }
 
     const expandir = () => {
@@ -133,19 +139,17 @@ function BurbujaIvan() {
             )}
 
             {!abierto && (
-                <button
-                    onPointerDown={alBajarPuntero}
-                    onPointerMove={alMoverPuntero}
-                    onPointerUp={alSoltarPuntero}
-                    onPointerCancel={() => { inicioArrastre.current = null; setArrastrando(false) }}
-                    className={`flex h-14 w-14 touch-none items-center justify-center rounded-full bg-gradient-to-br from-indigo-600 via-blue-600 to-sky-500 text-white shadow-xl shadow-indigo-500/30 transition ${
-                        arrastrando ? 'scale-110 cursor-grabbing opacity-90' : 'cursor-grab hover:scale-105'
-                    }`}
-                    title="Abrir IVAN — mantén pulsado para moverla"
-                    aria-label="Abrir el asistente IVAN"
-                >
-                    <Sparkles className="h-6 w-6" />
-                </button>
+                <LanzadorIvan
+                    arrastrando={arrastrando}
+                    ladoInvitacion={pos && pos.x < 280 ? 'derecha' : 'izquierda'}
+                    onAbrir={abrir}
+                    eventos={{
+                        onPointerDown: alBajarPuntero,
+                        onPointerMove: alMoverPuntero,
+                        onPointerUp: alSoltarPuntero,
+                        onPointerCancel: () => { inicioArrastre.current = null; setArrastrando(false) },
+                    }}
+                />
             )}
         </div>
     )
