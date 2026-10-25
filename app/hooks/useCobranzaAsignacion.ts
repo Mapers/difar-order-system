@@ -35,11 +35,6 @@ export function useCobranzaAsignacion() {
 
     const [guardando, setGuardando] = useState(false)
 
-    // Listas completas (ya filtradas por el servidor) para quien pagina,
-    // ordena y filtra en pantalla, como la vista de administración.
-    const [listaPorAsignar, setListaPorAsignar] = useState<FacturaPorAsignar[]>([])
-    const [listaAsignadas, setListaAsignadas] = useState<CobranzaAsignada[]>([])
-
     const offsetPorAsignar = useRef(0)
     const offsetAsignadas = useRef(0)
     const enVueloPorAsignar = useRef(false)
@@ -75,7 +70,6 @@ export function useCobranzaAsignacion() {
                 const total: number = res.data?.data?.total ?? data.length
 
                 todosPorAsignar.current = ordenarPorEmision(data)
-                setListaPorAsignar(todosPorAsignar.current)
                 setTotalPorAsignar(total)
             }
 
@@ -114,7 +108,6 @@ export function useCobranzaAsignacion() {
                 // (vista de admin), no se debe traer ni mostrar ninguna fila.
                 if (estados !== undefined && estados.length === 0) {
                     todosAsignadas.current = []
-                    setListaAsignadas([])
                     setTotalAsignadas(0)
                 } else {
                     const params: Record<string, string> = { limit: '100000', offset: '0' }
@@ -126,7 +119,6 @@ export function useCobranzaAsignacion() {
                     todosAsignadas.current = (estados && estados.length > 0)
                         ? data.filter(c => estados.some(e => coincideEstado(c, e)))
                         : data
-                    setListaAsignadas(todosAsignadas.current)
                     setTotalAsignadas(todosAsignadas.current.length)
                 }
             }
@@ -299,8 +291,8 @@ export function useCobranzaAsignacion() {
     }, [])
 
     return {
-        porAsignar, totalPorAsignar, cargandoPorAsignar, fetchPorAsignar, listaPorAsignar,
-        asignadas, totalAsignadas, cargandoAsignadas, fetchAsignadas, listaAsignadas,
+        porAsignar, totalPorAsignar, cargandoPorAsignar, fetchPorAsignar,
+        asignadas, totalAsignadas, cargandoAsignadas, fetchAsignadas,
         guardando,
         consultarVendedores, asignar, retirar, actualizarGestion,
         subirEvidencia, eliminarEvidencia, obtenerComentarios, obtenerEvidencia,

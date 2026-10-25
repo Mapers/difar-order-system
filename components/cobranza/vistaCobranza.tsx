@@ -1,8 +1,8 @@
 'use client'
 
 import { ArrowDown, ArrowUp, ArrowUpDown, X } from 'lucide-react'
-import type { DireccionOrden } from '@/app/hooks/useTablaPaginada'
-import { FiltroVencimiento, fmtMontoCobranza, simboloMonedaCobranza } from '@/app/types/cobranza-types'
+type DireccionOrden = 'asc' | 'desc'
+import { fmtMontoCobranza, simboloMonedaCobranza } from '@/app/types/cobranza-types'
 
 /* Piezas de presentación de la asignación de cobranzas: días al vencimiento,
    tarjetas de resumen, filtros rápidos, cabeceras ordenables y la barra de
@@ -20,16 +20,6 @@ export function diasParaVencer(fecha: string | null | undefined): number | null 
     return Math.round((Date.UTC(a, m - 1, d) - base) / 86400000)
 }
 
-/** Si un vencimiento entra en un filtro rápido (mismos rangos que el servidor). */
-export function cumpleVencimiento(fecha: string | null | undefined, filtro: FiltroVencimiento): boolean {
-    if (filtro === 'todas') return true
-    const dias = diasParaVencer(fecha)
-    if (dias == null) return false
-    if (filtro === 'vencidas') return dias < 0
-    const tope = filtro === 'v7' ? 7 : filtro === 'v15' ? 15 : 30
-    return dias >= 0 && dias <= tope
-}
-
 export function DiasVencimiento({ fecha }: { fecha: string | null | undefined }) {
     const dias = diasParaVencer(fecha)
     if (dias == null) return <span className="text-xs text-muted-foreground">—</span>
@@ -44,6 +34,17 @@ export function DiasVencimiento({ fecha }: { fecha: string | null | undefined })
 }
 
 // ── Montos por moneda ────────────────────────────────────────────────────────
+
+/** Montos por moneda tal como los resume el servidor. */
+export type Montos = { PEN: number; USD: number }
+
+/** "S/ 12,345.67 · US$ 890.00" (los dólares solo si hay). */
+export function fmtMontos(m: Montos | undefined) {
+    if (!m) return '—'
+    const partes = [`S/ ${fmtMontoCobranza(m.PEN)}`]
+    if (m.USD) partes.push(`US$ ${fmtMontoCobranza(m.USD)}`)
+    return partes.join(' · ')
+}
 
 /** Suma por moneda: "S/ 12,345.67 · US$ 890.00". */
 export function sumaPorMoneda<T>(filas: T[], monto: (f: T) => number | string | null | undefined, moneda: (f: T) => number | null | undefined) {

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -18,7 +18,7 @@ import { format, parseISO } from 'date-fns'
 import apiClient from '@/app/api/client'
 import { useAuth } from '@/context/authContext'
 import { Paginador } from '@/components/ui/paginador'
-import { useTablaPaginada, type Ordenes } from '@/app/hooks/useTablaPaginada'
+import { usePaginaServidor } from '@/app/hooks/usePaginaServidor'
 import { EstadoCobranzaBadge } from './EstadoCobranzaBadge'
 import { ConfirmarAsignacionModal } from './ConfirmarAsignacionModal'
 import { EvidenciaCobranzaModal } from './EvidenciaCobranzaModal'
@@ -27,7 +27,7 @@ import { useCobranzaAsignacion } from '@/app/hooks/useCobranzaAsignacion'
 import { ExportAsignadasPdfButton } from './ExportAsignadasPdfButton'
 import {
     BarraSeleccion, ChipsFiltro, DiasVencimiento, TarjetasResumen, Th,
-    cumpleVencimiento, diasParaVencer, sumaPorMoneda, type Tarjeta,
+    fmtMontos, sumaPorMoneda, type Montos, type Tarjeta,
 } from './vistaCobranza'
 import {
     CobranzaAsignada, ESTADOS_FILTRO, FacturaPorAsignar, FiltroVencimiento,
@@ -42,25 +42,27 @@ function fmtFecha(f: string | null) {
     try { return format(parseISO(f), 'dd/MM/yyyy') } catch { return f.slice(0, 10) }
 }
 
-const fecha = (f: string | null) => (f ? f.slice(0, 10) : null)
+type Orden = { orden: string; direccion: 'asc' | 'desc' }
+type Totales = { cantidad: number; montos: Montos }
 
-const ORDEN_POR_ASIGNAR: Ordenes<FacturaPorAsignar> = {
-    factura: f => `${f.serie}-${f.numero}`,
-    cliente: f => f.cliente_denominacion,
-    vendedor: f => f.nombre_vendedor,
-    saldo: f => Number(f.saldo),
-    emision: f => fecha(f.fecha_emision),
-    vence: f => fecha(f.fecha_vencimiento),
+type ResumenPorAsignar = {
+    total: Totales
+    vencimiento: Record<FiltroVencimiento, Totales>
+}
+type ResumenAsignadas = {
+    total: Totales; gestion: Totales; promesa: Totales; pagado: Totales
+    vencimiento: Record<FiltroVencimiento, Totales>
+    estados: Record<string, number>
 }
 
-const ORDEN_ASIGNADAS: Ordenes<CobranzaAsignada> = {
-    factura: c => `${c.serie}-${c.numero}`,
-    cliente: c => c.cliente_denominacion,
-    vendedor: c => c.nombre_vendedor_asignado,
-    saldo: c => Number(c.saldo_actual),
-    vence: c => fecha(c.fecha_vencimiento),
-    estado: c => estadoVisible(c),
-}
+const ORDEN_INICIAL: Orden = { orden: 'vence', direccion: 'asc' }
+
+/** Clic en una cabecera: ordena por esa columna o invierte el sentido. */
+const siguienteOrden = (actual: Orden, clave: string): Orden => (
+    actual.orden === clave
+        ? { orden: clave, direccion: actual.direccion === 'asc' ? 'desc' : 'asc' }
+        : { orden: clave, direccion: 'asc' }
+)
 
 const ETIQUETA_VENC: Record<FiltroVencimiento, string> = {
     todas: 'Todas', vencidas: 'Vencidas', v7: 'Vencen en 7 días', v15: 'En 15 días', v30: 'En 30 días',
@@ -110,8 +112,7 @@ export function SeccionAdminCobranza() {
         return () => clearTimeout(t)
     }, [buscar])
 
-    // Al servidor solo van búsqueda y vendedor: vencimiento y estado se filtran
-    // aquí, para poder mostrar cuántas hay en cada filtro rápido.
+    // El servidor filtra, ordena, pagina y resume; aquí solo llega la página.
     const filtrosServidor = { busqueda: buscarAplicado, vendedor: vendedorFiltro }
     // El PDF de asignadas se arma en el servidor con todos los filtros.
     const filtrosAsignadas = { ...filtrosServidor, estados: estadosFiltro, ...rangoDeVencimiento(vencFiltro) }
@@ -133,65 +134,57 @@ export function SeccionAdminCobranza() {
         return partes.length ? partes.join('  ·  ') : 'Todas las cobranzas asignadas'
     })()
 
-    // Las dos pestañas se cargan juntas: así ambos contadores son reales desde el inicio.
-    const recargarPorAsignar = () => hook.fetchPorAsignar(filtrosServidor, true)
-    const recargarAsignadas = () => hook.fetchAsignadas({ ...filtrosServidor, estados: undefined }, true)
+    const [ordenPA, setOrdenPA] = useState<Orden>(ORDEN_INICIAL)
+    const [ordenAS, setOrdenAS] = useState<Orden>(ORDEN_INICIAL)
+    const [tamano, setTamano] = useState(25)
 
-    useEffect(() => {
-        recargarPorAsignar()
-        recargarAsignadas()
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [buscarAplicado, vendedorFiltro])
+    // La página va atada a la consulta: si cambia un filtro, el orden o el
+    // tamaño, se vuelve a la primera en el mismo render (un solo pedido).
+    const consultaPA = JSON.stringify([buscarAplicado, vendedorFiltro, vencFiltro, ordenPA, tamano])
+    const consultaAS = JSON.stringify([buscarAplicado, vendedorFiltro, vencFiltro, estadosFiltro, ordenAS, tamano])
+    const [paginaPAEn, setPaginaPAEn] = useState({ consulta: consultaPA, pagina: 1 })
+    const [paginaASEn, setPaginaASEn] = useState({ consulta: consultaAS, pagina: 1 })
+    const paginaPA = paginaPAEn.consulta === consultaPA ? paginaPAEn.pagina : 1
+    const paginaAS = paginaASEn.consulta === consultaAS ? paginaASEn.pagina : 1
+    const setPaginaPA = (pagina: number) => setPaginaPAEn({ consulta: consultaPA, pagina })
+    const setPaginaAS = (pagina: number) => setPaginaASEn({ consulta: consultaAS, pagina })
 
-    const cargando = tab === 'porAsignar' ? hook.cargandoPorAsignar : hook.cargandoAsignadas
+    // Las dos pestañas se piden a la vez: así ambos contadores son reales desde el inicio.
+    const pa = usePaginaServidor<FacturaPorAsignar, ResumenPorAsignar>('/cobranza/por-asignar/pagina', {
+        ...filtrosServidor, vencimiento: vencFiltro, ...ordenPA, pagina: paginaPA, tamano,
+    }, 'No se pudieron cargar las facturas por asignar.')
+    const asig = usePaginaServidor<CobranzaAsignada, ResumenAsignadas>('/cobranza/asignadas/pagina', {
+        ...filtrosServidor, vencimiento: vencFiltro, estados: estadosFiltro.join(','), ...ordenAS, pagina: paginaAS, tamano,
+    }, 'No se pudieron cargar las cobranzas asignadas.')
 
-    // ── Por asignar ──────────────────────────────────────────────────────────
-    const porAsignarFiltradas = useMemo(
-        () => hook.listaPorAsignar.filter(f => cumpleVencimiento(f.fecha_vencimiento, vencFiltro)),
-        [hook.listaPorAsignar, vencFiltro],
-    )
-    const tablaPA = useTablaPaginada(porAsignarFiltradas, ORDEN_POR_ASIGNAR, { orden: 'vence', direccion: 'asc' })
-
-    // ── Asignadas ────────────────────────────────────────────────────────────
-    const asignadasPorVenc = useMemo(
-        () => hook.listaAsignadas.filter(c => cumpleVencimiento(c.fecha_vencimiento, vencFiltro)),
-        [hook.listaAsignadas, vencFiltro],
-    )
-    const asignadasFiltradas = useMemo(
-        () => (estadosFiltro.length ? asignadasPorVenc.filter(c => estadosFiltro.includes(estadoVisible(c))) : asignadasPorVenc),
-        [asignadasPorVenc, estadosFiltro],
-    )
-    const tablaAS = useTablaPaginada(asignadasFiltradas, ORDEN_ASIGNADAS, { orden: 'vence', direccion: 'asc' })
+    const actual = tab === 'porAsignar' ? pa : asig
+    const cargando = actual.cargando
 
     // ── Resumen y filtros rápidos ────────────────────────────────────────────
-    const base = tab === 'porAsignar' ? hook.listaPorAsignar : hook.listaAsignadas
-    const contarVenc = (v: FiltroVencimiento) => base.filter(f => cumpleVencimiento(f.fecha_vencimiento, v)).length
+    const vencResumen = (tab === 'porAsignar' ? pa.resumen : asig.resumen)?.vencimiento
     const chipsVenc = (['todas', 'vencidas', 'v7', 'v15', 'v30'] as FiltroVencimiento[])
-        .map(v => ({ valor: v, etiqueta: ETIQUETA_VENC[v], cantidad: contarVenc(v) }))
+        .map(v => ({ valor: v, etiqueta: ETIQUETA_VENC[v], cantidad: vencResumen?.[v]?.cantidad ?? 0 }))
     const chipsEstado = ESTADOS_FILTRO.map(e => ({
-        valor: e.value, etiqueta: e.label,
-        cantidad: asignadasPorVenc.filter(c => estadoVisible(c) === e.value).length,
+        valor: e.value, etiqueta: e.label, cantidad: asig.resumen?.estados[e.value] ?? 0,
     }))
 
-    const vencidasPA = hook.listaPorAsignar.filter(f => (diasParaVencer(f.fecha_vencimiento) ?? 0) < 0)
-    const proximasPA = hook.listaPorAsignar.filter(f => cumpleVencimiento(f.fecha_vencimiento, 'v7'))
     const seleccionadas = [...seleccion.values()]
-    const montoPA = (fs: FacturaPorAsignar[]) => sumaPorMoneda(fs, f => f.saldo, f => f.moneda)
-    const montoAS = (cs: CobranzaAsignada[]) => sumaPorMoneda(cs, c => c.saldo_actual, c => c.moneda)
-    const deEstado = (...estados: string[]) => hook.listaAsignadas.filter(c => estados.includes(estadoVisible(c)))
+    const montoSeleccion = sumaPorMoneda(seleccionadas, f => f.saldo, f => f.moneda)
+    const t = (x?: Totales) => ({ valor: String(x?.cantidad ?? 0), detalle: fmtMontos(x?.montos) })
+    const rPA = pa.resumen, rAS = asig.resumen
 
     const tarjetas: Tarjeta[] = tab === 'porAsignar'
         ? [
-            { id: 'total', titulo: 'Por asignar', valor: String(hook.listaPorAsignar.length), detalle: montoPA(hook.listaPorAsignar), tono: 'neutro', activa: vencFiltro === 'todas', onClick: () => setVencFiltro('todas') },
-            { id: 'vencidas', titulo: 'Vencidas', valor: String(vencidasPA.length), detalle: montoPA(vencidasPA), tono: 'rojo', activa: vencFiltro === 'vencidas', onClick: () => setVencFiltro('vencidas') },
-            { id: 'v7', titulo: 'Vencen en 7 días', valor: String(proximasPA.length), detalle: montoPA(proximasPA), tono: 'ambar', activa: vencFiltro === 'v7', onClick: () => setVencFiltro('v7') },
-            { id: 'sel', titulo: 'Seleccionadas', valor: String(seleccion.size), detalle: seleccion.size ? montoPA(seleccionadas) : 'Marca facturas para asignarlas', tono: 'verde' },
+            { id: 'total', titulo: 'Por asignar', ...t(rPA?.total), tono: 'neutro', activa: vencFiltro === 'todas', onClick: () => setVencFiltro('todas') },
+            { id: 'vencidas', titulo: 'Vencidas', ...t(rPA?.vencimiento.vencidas), tono: 'rojo', activa: vencFiltro === 'vencidas', onClick: () => setVencFiltro('vencidas') },
+            { id: 'v7', titulo: 'Vencen en 7 días', ...t(rPA?.vencimiento.v7), tono: 'ambar', activa: vencFiltro === 'v7', onClick: () => setVencFiltro('v7') },
+            { id: 'sel', titulo: 'Seleccionadas', valor: String(seleccion.size), detalle: seleccion.size ? montoSeleccion : 'Marca facturas para asignarlas', tono: 'verde' },
         ]
         : [
-            { id: 'total', titulo: 'Asignadas', valor: String(hook.listaAsignadas.length), detalle: montoAS(hook.listaAsignadas), tono: 'neutro', activa: estadosFiltro.length === 0, onClick: () => setEstadosFiltro([]) },
-            { id: 'gestion', titulo: 'Pendientes / en gestión', valor: String(deEstado('pendiente', 'en_gestion').length), detalle: montoAS(deEstado('pendiente', 'en_gestion')), tono: 'azul', activa: estadosFiltro.join() === 'pendiente,en_gestion', onClick: () => setEstadosFiltro(['pendiente', 'en_gestion']) },
-            { id: 'promesa', titulo: 'Promesa de pago', valor: String(deEstado('promesa_pago').length), detalle: montoAS(deEstado('promesa_pago')), tono: 'violeta', activa: estadosFiltro.join() === 'promesa_pago', onClick: () => setEstadosFiltro(['promesa_pago']) },
-            { id: 'pagado', titulo: 'Pagadas', valor: String(deEstado('pagado').length), detalle: montoAS(deEstado('pagado')), tono: 'verde', activa: estadosFiltro.join() === 'pagado', onClick: () => setEstadosFiltro(['pagado']) },
+            { id: 'total', titulo: 'Asignadas', ...t(rAS?.total), tono: 'neutro', activa: estadosFiltro.length === 0, onClick: () => setEstadosFiltro([]) },
+            { id: 'gestion', titulo: 'Pendientes / en gestión', ...t(rAS?.gestion), tono: 'azul', activa: estadosFiltro.join() === 'pendiente,en_gestion', onClick: () => setEstadosFiltro(['pendiente', 'en_gestion']) },
+            { id: 'promesa', titulo: 'Promesa de pago', ...t(rAS?.promesa), tono: 'violeta', activa: estadosFiltro.join() === 'promesa_pago', onClick: () => setEstadosFiltro(['promesa_pago']) },
+            { id: 'pagado', titulo: 'Pagadas', ...t(rAS?.pagado), tono: 'verde', activa: estadosFiltro.join() === 'pagado', onClick: () => setEstadosFiltro(['pagado']) },
         ]
 
     // ── Selección ────────────────────────────────────────────────────────────
@@ -210,8 +203,14 @@ export function SeccionAdminCobranza() {
             return m
         })
     }
-    const paginaSeleccionada = tablaPA.visibles.length > 0 && tablaPA.visibles.every(f => seleccion.has(f.id_sunat))
-    const filtradasSeleccionadas = porAsignarFiltradas.length > 0 && porAsignarFiltradas.every(f => seleccion.has(f.id_sunat))
+    const paginaSeleccionada = pa.data.length > 0 && pa.data.every(f => seleccion.has(f.id_sunat))
+    // Todas las del filtro (no solo la página): se piden al servidor sin paginar.
+    const [marcandoTodas, setMarcandoTodas] = useState(false)
+    const marcarFiltro = async () => {
+        setMarcandoTodas(true)
+        alternarVarias(await pa.todasDelFiltro(), true)
+        setMarcandoTodas(false)
+    }
 
     const confirmarAsignacion = async (asignaciones: { id_sunat: number; cod_vendedor: string }[]) => {
         if (!user?.idUsuarioWeb) return
@@ -220,8 +219,8 @@ export function SeccionAdminCobranza() {
 
         setSeleccion(new Map())
         setConfirmando(false)
-        recargarPorAsignar()
-        recargarAsignadas()
+        pa.recargar()
+        asig.recargar()
         setTab('asignadas')
     }
 
@@ -231,14 +230,14 @@ export function SeccionAdminCobranza() {
         setRetirandoId(c.id_asignacion)
         await hook.retirar(c.id_asignacion, user.idUsuarioWeb)
         setRetirandoId(null)
-        recargarAsignadas()
-        recargarPorAsignar()
+        asig.recargar()
+        pa.recargar()
     }
 
     const eliminarEvidencia = async (idAsignacion: number) => {
         if (!user?.idUsuarioWeb) return false
         const ok = await hook.eliminarEvidencia(idAsignacion, user.idUsuarioWeb)
-        if (ok) recargarAsignadas()
+        if (ok) asig.recargar()
         return ok
     }
 
@@ -251,20 +250,20 @@ export function SeccionAdminCobranza() {
         if (archivo) await hook.subirEvidencia(gestionando.id_asignacion, archivo, user.idUsuarioWeb)
 
         setGestionando(null)
-        recargarAsignadas()
+        asig.recargar()
     }
 
     const alternarEstado = (valor: string) =>
         setEstadosFiltro(prev => (prev.includes(valor) ? prev.filter(x => x !== valor) : [...prev, valor]))
 
-    const sinFilas = (tab === 'porAsignar' ? porAsignarFiltradas : asignadasFiltradas).length === 0
+    const sinFilas = actual.total === 0
 
     return (
         <div className="min-w-0 space-y-4">
             <div className="flex gap-1 border-b">
                 {([
-                    ['porAsignar', 'Por asignar', hook.listaPorAsignar.length],
-                    ['asignadas', 'Asignadas', hook.listaAsignadas.length],
+                    ['porAsignar', 'Por asignar', rPA?.total.cantidad ?? 0],
+                    ['asignadas', 'Asignadas', rAS?.total.cantidad ?? 0],
                 ] as const).map(([id, titulo, total]) => (
                     <button
                         key={id}
@@ -285,7 +284,7 @@ export function SeccionAdminCobranza() {
                 ))}
             </div>
 
-            <TarjetasResumen tarjetas={tarjetas} cargando={cargando && base.length === 0} />
+            <TarjetasResumen tarjetas={tarjetas} cargando={!actual.resumen} />
 
             <Card className="space-y-3 p-3 sm:p-4">
                 <div className="flex flex-col gap-2 lg:flex-row lg:items-center">
@@ -342,16 +341,14 @@ export function SeccionAdminCobranza() {
 
             {tab === 'porAsignar' ? (
                 <>
-                {porAsignarFiltradas.length > 0 && (
+                {pa.total > 0 && (
                     <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
                         <span className="text-muted-foreground">
-                            Ordenado por <b className="text-foreground">{({ vence: 'vencimiento', emision: 'emisión', saldo: 'saldo', cliente: 'cliente', vendedor: 'vendedor', factura: 'factura' } as Record<string, string>)[tablaPA.orden]}</b>. Clic en una columna para cambiarlo.
+                            Ordenado por <b className="text-foreground">{({ vence: 'vencimiento', emision: 'emisión', saldo: 'saldo', cliente: 'cliente', vendedor: 'vendedor', factura: 'factura' } as Record<string, string>)[ordenPA.orden]}</b>. Clic en una columna para cambiarlo.
                         </span>
-                        <Button
-                            variant="outline" size="sm"
-                            onClick={() => alternarVarias(porAsignarFiltradas, !filtradasSeleccionadas)}
-                        >
-                            {filtradasSeleccionadas ? 'Quitar selección' : `Seleccionar las ${porAsignarFiltradas.length} del filtro`}
+                        <Button variant="outline" size="sm" onClick={marcarFiltro} disabled={marcandoTodas} className="gap-1.5">
+                            {marcandoTodas && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                            Seleccionar las {pa.total} del filtro
                         </Button>
                     </div>
                 )}
@@ -374,22 +371,22 @@ export function SeccionAdminCobranza() {
                                     <th className="px-3 py-2.5">
                                         <Checkbox
                                             checked={paginaSeleccionada}
-                                            onCheckedChange={(v) => alternarVarias(tablaPA.visibles, v === true)}
-                                            disabled={tablaPA.visibles.length === 0}
+                                            onCheckedChange={(v) => alternarVarias(pa.data, v === true)}
+                                            disabled={pa.data.length === 0}
                                             aria-label="Seleccionar las facturas de esta página"
                                         />
                                     </th>
-                                    <Th titulo="N° Factura" clave="factura" orden={tablaPA.orden} direccion={tablaPA.direccion} onOrdenar={tablaPA.ordenarPor} />
-                                    <Th titulo="Cliente" clave="cliente" orden={tablaPA.orden} direccion={tablaPA.direccion} onOrdenar={tablaPA.ordenarPor} />
-                                    <Th titulo="Vendedor" clave="vendedor" orden={tablaPA.orden} direccion={tablaPA.direccion} onOrdenar={tablaPA.ordenarPor} />
-                                    <Th titulo="Saldo" clave="saldo" orden={tablaPA.orden} direccion={tablaPA.direccion} onOrdenar={tablaPA.ordenarPor} derecha />
-                                    <Th titulo="Emisión" clave="emision" orden={tablaPA.orden} direccion={tablaPA.direccion} onOrdenar={tablaPA.ordenarPor} />
-                                    <Th titulo="Vence" clave="vence" orden={tablaPA.orden} direccion={tablaPA.direccion} onOrdenar={tablaPA.ordenarPor} />
+                                    <Th titulo="N° Factura" clave="factura" orden={ordenPA.orden} direccion={ordenPA.direccion} onOrdenar={c => setOrdenPA(o => siguienteOrden(o, c))} />
+                                    <Th titulo="Cliente" clave="cliente" orden={ordenPA.orden} direccion={ordenPA.direccion} onOrdenar={c => setOrdenPA(o => siguienteOrden(o, c))} />
+                                    <Th titulo="Vendedor" clave="vendedor" orden={ordenPA.orden} direccion={ordenPA.direccion} onOrdenar={c => setOrdenPA(o => siguienteOrden(o, c))} />
+                                    <Th titulo="Saldo" clave="saldo" orden={ordenPA.orden} direccion={ordenPA.direccion} onOrdenar={c => setOrdenPA(o => siguienteOrden(o, c))} derecha />
+                                    <Th titulo="Emisión" clave="emision" orden={ordenPA.orden} direccion={ordenPA.direccion} onOrdenar={c => setOrdenPA(o => siguienteOrden(o, c))} />
+                                    <Th titulo="Vence" clave="vence" orden={ordenPA.orden} direccion={ordenPA.direccion} onOrdenar={c => setOrdenPA(o => siguienteOrden(o, c))} />
                                     <Th titulo="Situación" />
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-border">
-                                {tablaPA.visibles.map(f => {
+                                {pa.data.map(f => {
                                     const marcada = seleccion.has(f.id_sunat)
                                     return (
                                         <tr
@@ -423,7 +420,7 @@ export function SeccionAdminCobranza() {
                 </Card>
 
                 <div className="space-y-3 lg:hidden">
-                    {tablaPA.visibles.map(f => {
+                    {pa.data.map(f => {
                         const marcada = seleccion.has(f.id_sunat)
                         return (
                             <Card
@@ -458,8 +455,8 @@ export function SeccionAdminCobranza() {
                 </div>
 
                 <Paginador
-                    pagina={tablaPA.pagina} totalPaginas={tablaPA.totalPaginas} total={tablaPA.total}
-                    tamano={tablaPA.tamano} onPagina={tablaPA.setPagina} onTamano={tablaPA.setTamano}
+                    pagina={pa.pagina} totalPaginas={pa.totalPaginas} total={pa.total}
+                    tamano={tamano} onPagina={setPaginaPA} onTamano={setTamano}
                     etiqueta="facturas"
                 />
                 </>
@@ -479,17 +476,17 @@ export function SeccionAdminCobranza() {
                             </colgroup>
                             <thead className="sticky top-0 z-10 border-b bg-muted">
                                 <tr>
-                                    <Th titulo="N° Factura" clave="factura" orden={tablaAS.orden} direccion={tablaAS.direccion} onOrdenar={tablaAS.ordenarPor} />
-                                    <Th titulo="Cliente" clave="cliente" orden={tablaAS.orden} direccion={tablaAS.direccion} onOrdenar={tablaAS.ordenarPor} />
-                                    <Th titulo="Asignado a" clave="vendedor" orden={tablaAS.orden} direccion={tablaAS.direccion} onOrdenar={tablaAS.ordenarPor} />
-                                    <Th titulo="Saldo" clave="saldo" orden={tablaAS.orden} direccion={tablaAS.direccion} onOrdenar={tablaAS.ordenarPor} derecha />
-                                    <Th titulo="Vence" clave="vence" orden={tablaAS.orden} direccion={tablaAS.direccion} onOrdenar={tablaAS.ordenarPor} />
-                                    <Th titulo="Estado" clave="estado" orden={tablaAS.orden} direccion={tablaAS.direccion} onOrdenar={tablaAS.ordenarPor} />
+                                    <Th titulo="N° Factura" clave="factura" orden={ordenAS.orden} direccion={ordenAS.direccion} onOrdenar={c => setOrdenAS(o => siguienteOrden(o, c))} />
+                                    <Th titulo="Cliente" clave="cliente" orden={ordenAS.orden} direccion={ordenAS.direccion} onOrdenar={c => setOrdenAS(o => siguienteOrden(o, c))} />
+                                    <Th titulo="Asignado a" clave="vendedor" orden={ordenAS.orden} direccion={ordenAS.direccion} onOrdenar={c => setOrdenAS(o => siguienteOrden(o, c))} />
+                                    <Th titulo="Saldo" clave="saldo" orden={ordenAS.orden} direccion={ordenAS.direccion} onOrdenar={c => setOrdenAS(o => siguienteOrden(o, c))} derecha />
+                                    <Th titulo="Vence" clave="vence" orden={ordenAS.orden} direccion={ordenAS.direccion} onOrdenar={c => setOrdenAS(o => siguienteOrden(o, c))} />
+                                    <Th titulo="Estado" clave="estado" orden={ordenAS.orden} direccion={ordenAS.direccion} onOrdenar={c => setOrdenAS(o => siguienteOrden(o, c))} />
                                     <Th titulo="" />
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-border">
-                                {tablaAS.visibles.map(c => (
+                                {asig.data.map(c => (
                                     <tr key={c.id_asignacion} className="hover:bg-muted/50">
                                         <td className="whitespace-nowrap px-3 py-2.5 font-mono text-[13px] font-semibold">{c.serie}-{c.numero}</td>
                                         <td className="px-3 py-2.5">
@@ -556,7 +553,7 @@ export function SeccionAdminCobranza() {
                 </Card>
 
                 <div className="space-y-3 lg:hidden">
-                    {tablaAS.visibles.map(c => (
+                    {asig.data.map(c => (
                         <Card key={c.id_asignacion} className="p-4">
                             <div className="flex items-start justify-between gap-2">
                                 <div className="min-w-0">
@@ -610,14 +607,14 @@ export function SeccionAdminCobranza() {
                 </div>
 
                 <Paginador
-                    pagina={tablaAS.pagina} totalPaginas={tablaAS.totalPaginas} total={tablaAS.total}
-                    tamano={tablaAS.tamano} onPagina={tablaAS.setPagina} onTamano={tablaAS.setTamano}
+                    pagina={asig.pagina} totalPaginas={asig.totalPaginas} total={asig.total}
+                    tamano={tamano} onPagina={setPaginaAS} onTamano={setTamano}
                     etiqueta="cobranzas"
                 />
                 </>
             )}
 
-            {cargando && base.length === 0 && (
+            {cargando && actual.data.length === 0 && (
                 <Card className="space-y-2 p-4">
                     {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}
                 </Card>
@@ -634,7 +631,7 @@ export function SeccionAdminCobranza() {
             {tab === 'porAsignar' && (
                 <BarraSeleccion
                     cantidad={seleccion.size}
-                    monto={montoPA(seleccionadas)}
+                    monto={montoSeleccion}
                     onLimpiar={() => setSeleccion(new Map())}
                     onAsignar={() => setConfirmando(true)}
                 />
