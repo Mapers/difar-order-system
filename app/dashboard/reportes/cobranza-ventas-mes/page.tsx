@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { ChevronLeft, ChevronRight, FileSpreadsheet, FileText, Loader2, Search, TrendingUp } from 'lucide-react'
+import { BarChart3, ChevronLeft, ChevronRight, FileSpreadsheet, FileText, List, Loader2, Search, TrendingUp } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -10,11 +10,13 @@ import { Paginador } from '@/components/ui/paginador'
 import { PdfVistaPreviaDialog } from '@/components/reporte/PdfVistaPreviaDialog'
 import { ChipsFiltro } from '@/components/cobranza/vistaCobranza'
 import { exportarExcel } from '@/components/ivan/exportar/excel'
-import { generarPdfTabla } from '@/components/ivan/exportar/pdf'
 import type { TablaIvan } from '@/components/ivan/nucleo/tipos'
 import { TarjetasMes } from '@/components/cobranza-ventas-mes/TarjetasMes'
 import { TablaMes } from '@/components/cobranza-ventas-mes/TablaMes'
 import { DetalleMes } from '@/components/cobranza-ventas-mes/DetalleMes'
+import { GraficosMes } from '@/components/cobranza-ventas-mes/GraficosMes'
+import { BarraCarga, CargandoMes } from '@/components/cobranza-ventas-mes/CargandoMes'
+import { generarPdfCobranza, type DatosPdfCobranza } from '@/components/cobranza-ventas-mes/pdfCobranza'
 import { usePaginaServidor } from '@/app/hooks/usePaginaServidor'
 import apiClient from '@/app/api/client'
 import { cabeceraSesion } from '@/app/api/sesion'
@@ -45,7 +47,8 @@ export default function CobranzaVentasMesPage() {
     const [tamano, setTamano] = useState(25)
     const [abierto, setAbierto] = useState<ComprobanteMes | null>(null)
     const [exportando, setExportando] = useState<'excel' | 'pdf' | null>(null)
-    const [tablaPdf, setTablaPdf] = useState<TablaIvan | null>(null)
+    const [datosPdf, setDatosPdf] = useState<DatosPdfCobranza | null>(null)
+    const [seccion, setSeccion] = useState<'lista' | 'graficos'>('lista')
 
     useEffect(() => {
         const t = setTimeout(() => setBusqueda(buscar.trim()), 350)
@@ -75,7 +78,10 @@ export default function CobranzaVentasMesPage() {
     const datos = usePaginaServidor<ComprobanteMes, ResumenMes>(
         '/cobranza-ventas-mes', params, 'No se pudo cargar la cobranza del mes.', { conSesion: true },
     )
-    const r = datos.resumen
+    // El resumen solo vale si es del mes y vendedor pedidos (no mostrar el mes anterior como si fuera este).
+    const delPeriodo = datos.respuesta?.periodo?.anio === periodo.anio && datos.respuesta?.periodo?.mes === periodo.mes
+    const r = delPeriodo ? datos.resumen : null
+    const primeraCarga = !r
     const soloPropio = !!datos.respuesta?.alcance?.soloPropio
     const ordenActual = { orden: datos.respuesta?.orden ?? '', direccion: (datos.respuesta?.direccion ?? 'desc') as 'asc' | 'desc' }
     const nombreMes = MESES[periodo.mes - 1]
@@ -134,7 +140,10 @@ export default function CobranzaVentasMesPage() {
                     : { comprobante: `${filas.length} comprobantes`, total: filas.reduce((s, c) => s + c.total, 0) },
             }
             if (formato === 'excel') exportarExcel(tabla)
-            else setTablaPdf(tabla)
+            else if (r) setDatosPdf({
+                vista, filas, resumen: r, periodo: `${nombreMes.toLowerCase()} ${periodo.anio}`,
+                corte: datos.respuesta?.periodo?.corte ?? '', filtros: tabla.subtitulo ?? '',
+            })
         } catch {
             toast({ title: '', description: 'No se pudo preparar la exportación.', variant: 'error' })
         } finally {
@@ -175,8 +184,26 @@ export default function CobranzaVentasMesPage() {
                 </div>
             </div>
 
-            <TarjetasMes resumen={r} nombreMes={nombreMes.toLowerCase()} vista={vista} onVista={cambiarVista} />
+            <BarraCarga activa={datos.cargando && !primeraCarga} />
 
+            {primeraCarga ? <CargandoMes mes={`${nombreMes.toLowerCase()} ${periodo.anio}`} /> : (
+            <>
+            <TarjetasMes resumen={r} nombreMes={nombreMes.toLowerCase()} vista={vista} onVista={v => { cambiarVista(v); setSeccion('lista') }} />
+
+            <div className="flex w-full gap-1 rounded-xl border bg-muted/50 p-1 sm:w-fit" role="tablist">
+                {([['lista', 'Comprobantes', List], ['graficos', 'Gráficos del mes', BarChart3]] as const).map(([id, titulo, Icono]) => (
+                    <button
+                        key={id} role="tab" aria-selected={seccion === id} onClick={() => setSeccion(id)}
+                        className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition sm:flex-none ${
+                            seccion === id ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+                        }`}
+                    >
+                        <Icono className="h-4 w-4" /> {titulo}
+                    </button>
+                ))}
+            </div>
+
+            {seccion === 'graficos' ? <GraficosMes periodo={periodo} vendedor={vendedor} nombreMes={nombreMes.toLowerCase()} /> : (
             <Card className="overflow-hidden">
                 <div className="space-y-3 border-b p-4 sm:p-5">
                     <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
@@ -237,18 +264,21 @@ export default function CobranzaVentasMesPage() {
                     />
                 </div>
             </Card>
+            )}
+            </>
+            )}
 
             <DetalleMes comprobante={abierto} periodo={periodo} vendedor={vendedor} onCerrar={() => setAbierto(null)} />
 
-            {tablaPdf && (
+            {datosPdf && (
                 <PdfVistaPreviaDialog
-                    abierto={!!tablaPdf}
-                    onCerrar={() => setTablaPdf(null)}
-                    titulo={tablaPdf.titulo}
+                    abierto={!!datosPdf}
+                    onCerrar={() => setDatosPdf(null)}
+                    titulo={datosPdf.vista === 'faltante' ? 'Comprobantes con deuda' : 'Comprobantes pagados'}
                     descripcion="Cobranza de Ventas por Mes"
-                    defecto={{ titulo: tablaPdf.titulo.toUpperCase(), nota: '', color: '#163161', tamanoLetra: 'normal' }}
+                    defecto={{ titulo: datosPdf.vista === 'faltante' ? 'COMPROBANTES CON DEUDA' : 'COMPROBANTES PAGADOS', nota: '', color: '#163161', tamanoLetra: 'normal' }}
                     archivoDefecto={`cobranza-${nombreMes.toLowerCase()}-${periodo.anio}-${vista}`}
-                    generar={op => generarPdfTabla(tablaPdf, op)}
+                    generar={op => generarPdfCobranza(datosPdf, op)}
                 />
             )}
         </div>

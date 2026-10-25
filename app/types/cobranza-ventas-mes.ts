@@ -113,3 +113,24 @@ export const porcentaje = (parte: number, total: number) => (total > 0 ? `${((pa
 
 /** 2026-09-03 → 03/09/2026 */
 export const fecha = (f: string | null | undefined) => (f ? f.slice(0, 10).split('-').reverse().join('/') : '—')
+
+export interface GrupoMes {
+    nombre: string
+    ventas: number
+    cobrado: number
+    faltante: number
+    vencido: number
+    comprobantes: number
+    avance: number
+}
+
+export interface GraficosMes {
+    periodo: { anio: number; mes: number; corte: string }
+    totales: { ventas: number; cobrado: number; faltante: number; avance: number }
+    antiguedad: { clave: string; etiqueta: string; monto: number; cantidad: number }[]
+    porVendedor: GrupoMes[]
+    porZona: GrupoMes[]
+    topClientes: GrupoMes[]
+    curva: { fecha: string; ventas: number; cobrado: number; ventasAcum: number; cobradoAcum: number }[]
+    conclusiones: { tono: 'bien' | 'atencion' | 'alerta' | 'info'; texto: string }[]
+}
