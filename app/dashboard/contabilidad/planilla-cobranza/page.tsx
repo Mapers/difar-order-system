@@ -143,6 +143,7 @@ export default function PlanillaCobranzaPage() {
                     onFetchResumen={hook.fetchResumenDia}
                     onFetchDetalle={hook.fetchDetalle}
                     onValidar={handleValidar}
+                    onEliminar={(p) => hook.eliminarPlanillaAdmin(p, adminInfo)}
                     tiposAmort={tiposAmort}
                     empresas={empresas}
                 />
