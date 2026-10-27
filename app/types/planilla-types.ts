@@ -39,6 +39,7 @@ export interface PlanillaCabecera {
     total_documentos?:  number
     total_cobrado?:     number
     total_registros?:   number
+    procesado?:         number | boolean
 }
 
 export interface PlanillaDetalle {

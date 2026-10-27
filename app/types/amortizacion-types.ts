@@ -81,6 +81,7 @@ export interface AmortizacionListItem {
     Entidad_Financiera: string
     DescripcionEntidadFinanciera: string
     Observaciones: string
+    EsPlanillaCobranza?: number
 }
 
 export interface KardexItem {

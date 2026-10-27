@@ -352,6 +352,22 @@ export function usePlanillaCobranza() {
         }
     }, [fetchResumenDia])
 
+    const eliminarPlanillaAdmin = useCallback(async (planilla: PlanillaCabecera, admin: AdminInfo) => {
+        try {
+            await apiClient.delete(`/planilla-cobranza/${planilla.id_planilla}`, { params: { id_admin: admin.id_admin } })
+            setPlanillasAdmin(prev => prev.filter(p => p.id_planilla !== planilla.id_planilla))
+            toast({ title: 'Planilla eliminada', description: planilla.numero_planilla })
+            return true
+        } catch (error: any) {
+            toast({
+                title: 'Error',
+                description: error?.response?.data?.message || 'No se pudo eliminar la planilla.',
+                variant: 'destructive'
+            })
+            return false
+        }
+    }, [])
+
     return {
         tiposComprobante, bancos, loadingCatalogos, fetchCatalogos,
         planillaActiva, detalle, loadingDetalle, consultarDetalle, eliminarPlanilla,
@@ -361,5 +377,6 @@ export function usePlanillaCobranza() {
         misPlanillas, loadingMisPlanillas, fetchMisPlanillas,
         planillasAdmin, resumenDia, loadingAdmin,
         fetchPlanillasAdmin, fetchResumenDia, validarPlanilla,
+        eliminarPlanillaAdmin,
     }
 }

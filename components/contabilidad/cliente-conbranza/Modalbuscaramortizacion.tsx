@@ -8,7 +8,7 @@ import {
     Dialog, DialogContent, DialogHeader, DialogTitle,
     DialogDescription, DialogFooter
 } from "@/components/ui/dialog"
-import { Search, Loader2, Pencil, BookOpen, BookMarked, Trash2, X, AlertCircle, RefreshCw } from "lucide-react"
+import { Search, Loader2, Pencil, BookOpen, BookMarked, Trash2, X, AlertCircle, RefreshCw, Undo2 } from "lucide-react"
 import apiClient from "@/app/api/client"
 import { toast } from "@/app/hooks/useToast"
 import { AmortizacionListItem } from "@/app/types/amortizacion-types"
@@ -33,6 +33,9 @@ export default function ModalBuscarAmortizacion({ open, onClose, onSelectEditar,
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
     const [deleteTarget, setDeleteTarget] = useState<AmortizacionListItem | null>(null)
     const [loadingDelete, setLoadingDelete] = useState(false)
+
+    const [revertTarget, setRevertTarget] = useState<AmortizacionListItem | null>(null)
+    const [loadingRevert, setLoadingRevert] = useState(false)
 
     const fetchData = useCallback(async () => {
         setLoading(true)
@@ -87,6 +90,33 @@ export default function ModalBuscarAmortizacion({ open, onClose, onSelectEditar,
             setLoadingDelete(false)
         }
     }
+
+    const handleRevertir = async () => {
+        if (!revertTarget) return
+        setLoadingRevert(true)
+        try {
+            const res = await apiClient.delete(`/amortizacion/planilla/${encodeURIComponent(revertTarget.NroPlanilla)}`)
+            const total = res.data?.data?.resultado?.amortizaciones_eliminadas ?? 0
+            toast({
+                title: "Planilla revertida",
+                description: `Se quitaron ${total} amortización(es) de la planilla ${revertTarget.NroPlanilla}. Ya puedes corregirla o procesarla de nuevo.`,
+            })
+            setRevertTarget(null)
+            fetchData()
+        } catch (error: any) {
+            toast({
+                title: "Error",
+                description: error?.response?.data?.error || error?.response?.data?.message || "No se pudo revertir la planilla.",
+                variant: "destructive"
+            })
+        } finally {
+            setLoadingRevert(false)
+        }
+    }
+
+    const filasDePlanilla = revertTarget
+        ? data.filter(r => r.NroPlanilla === revertTarget.NroPlanilla)
+        : []
 
     return (
         <>
@@ -224,6 +254,17 @@ export default function ModalBuscarAmortizacion({ open, onClose, onSelectEditar,
                                             >
                                                 <Trash2 className="h-3 w-3" /> Eliminar
                                             </Button>
+                                            {!!r.EsPlanillaCobranza && (
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    className="h-6 px-2 text-[10px] gap-1 text-amber-700 border-amber-200 hover:bg-amber-50"
+                                                    onClick={() => setRevertTarget(r)}
+                                                    title="Quitar todo lo procesado de esta planilla"
+                                                >
+                                                    <Undo2 className="h-3 w-3" /> Revertir planilla
+                                                </Button>
+                                            )}
                                         </div>
                                     </td>
                                 </tr>
@@ -236,6 +277,30 @@ export default function ModalBuscarAmortizacion({ open, onClose, onSelectEditar,
                         <span className="text-xs text-muted-foreground">{data.length} registro{data.length !== 1 ? 's' : ''}</span>
                         <Button variant="outline" size="sm" className="text-xs h-7" onClick={onClose}>Cerrar</Button>
                     </div>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={!!revertTarget} onOpenChange={v => { if (!v && !loadingRevert) setRevertTarget(null) }}>
+                <DialogContent className="max-w-lg">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <Undo2 className="h-5 w-5 text-amber-600" /> Revertir planilla {revertTarget?.NroPlanilla}
+                        </DialogTitle>
+                        <DialogDescription>
+                            Se quitarán <strong>todas</strong> las amortizaciones de la planilla <strong>{revertTarget?.NroPlanilla}</strong>
+                            {filasDePlanilla.length > 0 && <> ({filasDePlanilla.length} en esta lista, {fmtMoney(filasDePlanilla.reduce((s, r) => s + Number(r.Importe_Amortiz), 0))})</>}
+                            , con sus registros de kardex y libro mayor. La planilla vuelve a quedar validada en Planilla de Cobranza, lista para corregirla o procesarla de nuevo.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter className="gap-2">
+                        <Button variant="outline" onClick={() => setRevertTarget(null)} disabled={loadingRevert}>
+                            Cancelar
+                        </Button>
+                        <Button onClick={handleRevertir} className="bg-amber-600 hover:bg-amber-700" disabled={loadingRevert}>
+                            {loadingRevert ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <Undo2 className="h-4 w-4 mr-2" />}
+                            Revertir
+                        </Button>
+                    </DialogFooter>
                 </DialogContent>
             </Dialog>
 

@@ -15,7 +15,7 @@ import {
 import { Label } from '@/components/ui/label'
 import {
     CheckCircle2, XCircle, Loader2,
-    PlayCircle, AlertTriangle, CheckCheck,
+    PlayCircle, AlertTriangle, CheckCheck, Trash2,
 } from 'lucide-react'
 import { toast } from '@/app/hooks/useToast'
 import apiClient from '@/app/api/client'
@@ -46,6 +46,7 @@ interface Props {
     procesando:       boolean
     onValidar:        (id: number) => void
     onRechazar:       (id: number, obs: string) => void
+    onEliminar:       (planilla: PlanillaCabecera) => Promise<boolean>
 }
 
 export default function DetalleAdmin({
@@ -53,7 +54,7 @@ export default function DetalleAdmin({
                                          tiposComprobante, bancos,
                                          tiposAmort, empresas,
                                          adminInfo, procesando,
-                                         onValidar, onRechazar,
+                                         onValidar, onRechazar, onEliminar,
                                      }: Props) {
 
     const [obsTexto,     setObsTexto]     = useState('')
@@ -131,6 +132,18 @@ export default function DetalleAdmin({
     }, [isProcesando])
 
     const procesada = pendientes !== null && conCobro.length > 0 && pendientes.length === 0
+    const puedeEliminar = planilla.estado !== 'validado' || conCobro.length === 0
+        || (pendientes !== null && pendientes.length === conCobro.length)
+
+    const [eliminarOpen, setEliminarOpen] = useState(false)
+    const [eliminando,   setEliminando]   = useState(false)
+
+    const handleEliminar = async () => {
+        setEliminando(true)
+        const ok = await onEliminar(planilla)
+        setEliminando(false)
+        if (ok) setEliminarOpen(false)
+    }
     const parcial   = pendientes !== null && pendientes.length > 0 && pendientes.length < conCobro.length
 
     // DEUDA TÉCNICA: la fecha de depósito, el N° de operación y el N° de cheque del
@@ -238,7 +251,22 @@ export default function DetalleAdmin({
         <>
             <div className="border-t border-border p-4 bg-muted/30 space-y-3 animate-in slide-in-from-top-2 duration-200">
 
-                <div className="flex justify-end">
+                <div className="flex flex-wrap items-center justify-end gap-2">
+                    {puedeEliminar && !loadingDet && !verificando && !isProcesando && (
+                        <Button
+                            variant="ghost" size="sm"
+                            className="mr-auto gap-1.5 text-red-600 hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-950/40"
+                            onClick={() => setEliminarOpen(true)}
+                        >
+                            <Trash2 className="h-3.5 w-3.5" />
+                            Eliminar planilla
+                        </Button>
+                    )}
+                    {!puedeEliminar && planilla.estado === 'validado' && (
+                        <span className="mr-auto text-[11px] text-muted-foreground">
+                            Tiene cobros registrados: para eliminarla, primero revierte la planilla en Cliente Cobranza.
+                        </span>
+                    )}
                     <ExportarPlanillaFormato planilla={planilla} detalle={detalle} disabled={loadingDet}
                                              tiposComprobante={tiposComprobante} bancos={bancos} />
                 </div>
@@ -444,6 +472,29 @@ export default function DetalleAdmin({
                                 ? <Loader2 className="h-4 w-4 animate-spin" />
                                 : <PlayCircle className="h-4 w-4" />}
                             Confirmar y procesar
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+            <Dialog open={eliminarOpen} onOpenChange={v => { if (!eliminando) setEliminarOpen(v) }}>
+                <DialogContent className="max-w-md">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2 text-base">
+                            <Trash2 className="h-5 w-5 text-red-600" />
+                            Eliminar planilla
+                        </DialogTitle>
+                        <DialogDescription className="text-sm text-muted-foreground pt-1">
+                            Se eliminará la planilla <span className="font-mono font-semibold text-foreground">{planilla.numero_planilla}</span> de {planilla.nombre_vendedor}, con
+                            sus {planilla.total_registros ?? detalle.length} registro(s) y vouchers. Esta acción no se puede deshacer.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter className="gap-2">
+                        <Button variant="outline" onClick={() => setEliminarOpen(false)} disabled={eliminando}>
+                            Cancelar
+                        </Button>
+                        <Button className="bg-red-600 hover:bg-red-700 gap-1.5" onClick={handleEliminar} disabled={eliminando}>
+                            {eliminando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                            Eliminar
                         </Button>
                     </DialogFooter>
                 </DialogContent>

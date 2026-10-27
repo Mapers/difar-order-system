@@ -40,6 +40,7 @@ interface Props {
     onFetchResumen:       (fecha?: string) => void
     onFetchDetalle:       (id: number) => Promise<{ planilla: any; detalle: PlanillaDetalle[] } | null>
     onValidar:            (id: number, admin: AdminInfo, accion: 'validado' | 'rechazado', obs?: string) => Promise<any>
+    onEliminar:           (planilla: PlanillaCabecera) => Promise<boolean>
 }
 
 export default function SeccionAdmin({
@@ -47,6 +48,7 @@ export default function SeccionAdmin({
                                          planillasAdmin, resumenDia, loadingAdmin,
                                          adminInfo,
                                          onFetchAdmin, onFetchResumen, onFetchDetalle, onValidar,
+                                         onEliminar,
                                          tiposAmort, empresas
                                      }: Props) {
 
@@ -235,6 +237,11 @@ export default function SeccionAdmin({
                                             {planilla.numero_planilla}
                                         </p>
                                         <EstadoPill estado={planilla.estado} />
+                                        {!!planilla.procesado && (
+                                            <span className="rounded-full border border-indigo-200 bg-indigo-50 px-2 py-0.5 text-[10px] font-semibold text-indigo-700 dark:border-indigo-900 dark:bg-indigo-950 dark:text-indigo-300">
+                                                Procesada
+                                            </span>
+                                        )}
                                     </div>
                                     <p className="text-xs font-semibold text-foreground/80 truncate">
                                         {planilla.nombre_vendedor}
@@ -304,6 +311,7 @@ export default function SeccionAdmin({
                                 procesando={procesando === planilla.id_planilla}
                                 onValidar={handleValidar}
                                 onRechazar={handleRechazar}
+                                onEliminar={onEliminar}
                                 tiposAmort={tiposAmort}
                                 empresas={empresas}
                             />
