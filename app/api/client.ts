@@ -5,8 +5,8 @@ export const publicApi = 'https://backend-difar.backend-l23.click';
 
 const apiClient = axios.create({
   //  baseURL: 'https://3qavkuqp3f.us-west-2.awsapprunner.com/api',
-  //   baseURL: 'https://backend-difar.backend-l23.click/api',
-  baseURL: 'http://localhost:4000/api',
+    baseURL: 'https://backend-difar.backend-l23.click/api',
+  // baseURL: 'http://localhost:4000/api',
   timeout: 120000,
   // headers: {
   //   'Content-Type': 'application/json',
