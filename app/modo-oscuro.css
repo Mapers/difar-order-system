@@ -122,6 +122,8 @@
 :where(.dark) .text-teal-700 { color: #5eead4; }
 :where(.dark) .text-teal-800 { color: #5eead4; }
 :where(.dark) .text-teal-900 { color: #99f6e4; }
+:where(.dark) .border-teal-200 { border-color: rgb(20 184 166 / 0.3); }
+:where(.dark) .border-teal-300 { border-color: rgb(20 184 166 / 0.4); }
 :where(.dark) .hover\:bg-cyan-50:hover { background-color: rgb(6 182 212 / 0.1); }
 :where(.dark) .text-cyan-600 { color: #22d3ee; }
 :where(.dark) .border-cyan-200 { border-color: rgb(6 182 212 / 0.3); }

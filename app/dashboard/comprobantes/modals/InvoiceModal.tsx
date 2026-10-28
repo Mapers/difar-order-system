@@ -473,7 +473,7 @@ export function InvoiceModal({
                                     <div className="space-y-2 pl-6">
                                         <div className="flex-1 space-y-1">
                                             <Label className="text-xs text-muted-foreground">
-                                                Monto Flete <span className="text-muted-foreground">(sin IGV)</span>
+                                                Monto Flete <span className="text-muted-foreground">(incluye IGV)</span>
                                             </Label>
                                             <div className="relative">
                                                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">S/</span>
