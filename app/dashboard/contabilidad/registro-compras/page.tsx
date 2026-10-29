@@ -194,7 +194,7 @@ export default function RegistroComprasPage() {
                             <Button
                                 onClick={() => setBuscadorAbierto(true)}
                                 variant="outline" className="h-10 gap-1.5 px-3 font-semibold"
-                                title="Buscar por período, proveedor, serie o número"
+                                title="Buscar por proveedor, serie o número"
                                 aria-label="Buscar"
                             >
                                 <Search className="h-4 w-4" /> <span className="hidden sm:inline">Buscar</span>
@@ -584,8 +584,6 @@ export default function RegistroComprasPage() {
                 onCerrar={() => setBuscadorAbierto(false)}
                 onElegir={(clave) => { setBuscadorAbierto(false); setBuscarClave(String(clave)); c.abrir(clave) }}
                 catalogos={cat}
-                anioInicial={c.cab.anio}
-                periodoInicial={c.cab.periodo}
             />
 
             <ImprimirCompraDialog
