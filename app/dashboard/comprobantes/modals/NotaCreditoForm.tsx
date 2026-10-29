@@ -14,6 +14,7 @@ import apiClient from "@/app/api/client"
 import { Sequential } from "@/app/types/config-types"
 import { SerieNCField } from "./SerieNCField"
 import { toast } from "@/app/hooks/useToast"
+import { avisarNotaCredito } from "@/components/comprobantes/AvisoEstadoSunat"
 
 interface ItemParcial {
     idPedidodet: number
@@ -155,6 +156,7 @@ export function NotaCreditoForm({
 
             if (response.data.success) {
                 toast({ title: "Éxito", description: "Nota de crédito generada correctamente" })
+                avisarNotaCredito(response.data.data)
                 onSuccess()
             } else {
                 toast({ title: "Error", description: response.data.message || "Error al generar", variant: "destructive" })

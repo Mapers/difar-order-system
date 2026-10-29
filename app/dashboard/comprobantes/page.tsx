@@ -37,6 +37,7 @@ import {TransferirVendedorModal} from "@/app/dashboard/comprobantes/modals/Trans
 import {TransferirAlmacenModal} from "@/app/dashboard/comprobantes/modals/TransferirAlmacenModal";
 import {PdfViewerModal} from "@/app/dashboard/comprobantes/modals/PdfViewerModal";
 import {ComprobantePdfModal} from "@/app/dashboard/comprobantes/modals/ComprobantePdfModal";
+import {GuiaPdfModal} from "@/app/dashboard/comprobantes/modals/GuiaPdfModal";
 import {ConformidadModal} from "@/app/dashboard/comprobantes/modals/ConformidadModal";
 import {ErrorModal} from "@/app/dashboard/comprobantes/modals/ErrorModal";
 import {GenerarGuiasModal} from "@/app/dashboard/comprobantes/modals/generar-guias-modal";
@@ -58,6 +59,7 @@ import {GenerarSireMenu} from "@/app/dashboard/comprobantes/GenerarSireMenu";
 import {ResultCounter} from "@/components/comprobantes/ResultCounter";
 import {ValidacionModal} from "@/app/dashboard/comprobantes/modals/ValidacionModal"
 import { ComprobantesDetailModal } from "@/app/dashboard/comprobantes/modals/ComprobantesDetailModal";
+import { avisarEstadoSunat, avisarNotaCredito } from "@/components/comprobantes/AvisoEstadoSunat";
 
 function ViewToggle({ value, onChange }: { value: 'tarjetas' | 'tabla', onChange: (v: 'tarjetas' | 'tabla') => void }) {
   return (
@@ -467,8 +469,19 @@ export default function ComprobantesPage() {
       )
 
       if (response.data.success) {
-        const varios = (response.data.data?.comprobantes?.length ?? 0) > 1
+        const datos = response.data.data
+        const varios = (datos?.comprobantes?.length ?? 0) > 1
         toast({ title: "Éxito", description: varios ? response.data.message : "Comprobante generado correctamente", variant: "default" })
+        avisarEstadoSunat('comprobante', varios
+            ? datos.comprobantes.map((c: any) => ({
+                nombre: `${c.serie}-${String(c.numero).padStart(8, '0')}`,
+                estado: c.estado_sunat,
+              }))
+            : [{
+                nombre: `${datos?.respuesta?.serie_cpe}-${datos?.respuesta?.correlativo_cpe}`,
+                estado: datos?.respuesta?.estado_documento,
+                nota:   datos?.respuesta?.sunat_note,
+              }])
         fetchComprobantes()
         fetchPedidosPendientes()
       } else {
@@ -644,9 +657,10 @@ export default function ComprobantesPage() {
     setShowPdfModal(true)
   }
 
-  const handleViewPdfGuia = (base64: string) => {
-    setCurrentPdfUrl(`data:application/pdf;base64,${base64}`)
-    setShowPdfModal(true)
+  const [guiaPdf, setGuiaPdf] = useState<GuiaRemision | null>(null)
+
+  const handleViewPdfGuia = (guia: GuiaRemision) => {
+    setGuiaPdf(guia)
   }
 
   const handleOpenErrorModal = (guia: GuiaRemision) => {
@@ -705,6 +719,7 @@ export default function ComprobantesPage() {
       const response = await apiClient.post('/admin/getStatusGuide', { id: guia.idGuiaRemCab });
       if(response.data.success) {
         setStatusData(response.data.data)
+        fetchGuiasRemision()
       } else {
         toast({ title: "Atención", description: response.data.message, variant: "destructive" })
         setShowStatusModal(false)
@@ -818,6 +833,7 @@ export default function ComprobantesPage() {
       })
       if (response.data.success) {
         toast({ title: "Éxito", description: "Corrección de descripción generada" })
+        avisarNotaCredito(response.data.data)
         setShowCorregirDescModal(false)
         fetchComprobantes()
         fetchNotasCredito()
@@ -850,6 +866,7 @@ export default function ComprobantesPage() {
       })
       if (response.data.success) {
         toast({ title: "Éxito", description: "Modificación de cuotas generada" })
+        avisarNotaCredito(response.data.data)
         setShowModificarCuotasModal(false)
         fetchComprobantes()
         fetchNotasCredito()
@@ -1321,9 +1338,14 @@ export default function ComprobantesPage() {
         />
         <PdfViewerModal open={showPdfModal} onOpenChange={setShowPdfModal} pdfUrl={currentPdfUrl} />
 
-        {/* Comprobantes y notas de crédito: el PDF se pide al abrir, por serie
-            y número. Las guías siguen con PdfViewerModal porque su base64 llega
-            por otro endpoint. */}
+        {/* Comprobantes, notas de crédito y guías: el PDF se pide al abrir, así
+            se ve el que guardó la re-verificación aunque el listado sea viejo. */}
+        <GuiaPdfModal
+            open={guiaPdf != null}
+            onOpenChange={(v) => { if (!v) setGuiaPdf(null) }}
+            idGuiaRemCab={guiaPdf?.idGuiaRemCab ?? null}
+            fileName={guiaPdf ? `${guiaPdf.serie}-${guiaPdf.numero}.pdf` : undefined}
+        />
         <ComprobantePdfModal
             open={showComprobantePdf}
             onOpenChange={setShowComprobantePdf}

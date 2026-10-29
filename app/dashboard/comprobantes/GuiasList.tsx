@@ -21,7 +21,7 @@ interface GuiasListProps {
     guias: GuiaRemision[]
     loading: boolean
     isAdmin: boolean
-    onViewPdf: (base64: string) => void
+    onViewPdf: (guia: GuiaRemision) => void
     onErrorView: (guia: GuiaRemision) => void
     onSendEmail: (guia: GuiaRemision) => void
     onSendWhatsApp: (guia: GuiaRemision) => void
@@ -189,7 +189,7 @@ export function GuiasList({
                                                 <div className="flex gap-2">
                                                     <Button variant="ghost" size="icon"
                                                             className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                                                            onClick={() => onViewPdf(guia.pdf_zip_base64!)}>
+                                                            onClick={() => onViewPdf(guia)}>
                                                         <Eye className="h-4 w-4" />
                                                     </Button>
                                                     {(guia.idComprobanteCab && guia.comprobante_serie != null) && (
@@ -291,7 +291,7 @@ export function GuiasList({
                                             )}
                                             <div className="border-t pt-3 flex gap-2">
                                                 <Button variant="outline" size="sm" className="text-xs bg-transparent"
-                                                        onClick={() => onViewPdf(guia.pdf_zip_base64!)}>
+                                                        onClick={() => onViewPdf(guia)}>
                                                     <Eye className="h-3 w-3 mr-1" /> Ver PDF
                                                 </Button>
                                                 {(guia.idComprobanteCab && guia.comprobante_serie != null) && (

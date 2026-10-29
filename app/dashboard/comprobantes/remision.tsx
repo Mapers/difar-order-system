@@ -17,6 +17,7 @@ import apiClient from "@/app/api/client";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {Pedido} from "@/app/types/order/order-interface";
 import {toast} from "@/app/hooks/useToast";
+import { avisarEstadoSunat } from "@/components/comprobantes/AvisoEstadoSunat";
 
 // RUC del remitente/emisor (DIFAR). SUNAT rechaza la guía si el transportista
 // tiene el mismo documento que el remitente en transporte público.
@@ -595,11 +596,16 @@ export const Remision = ({ pedido, detalles, onOpenChange, fetchGuiasRemision }:
         }))
       };
 
-      await apiClient.post("/pedidos/generateGuia", guiaCabData);
+      const response = await apiClient.post("/pedidos/generateGuia", guiaCabData);
       toast({
         title: "Éxito",
         description: "Guía de remisión generada correctamente",
       });
+      const r = response.data?.data?.respuesta
+      avisarEstadoSunat('guia', [{
+        nombre: `${r?.serie_cpe}-${r?.correlativo_cpe}`,
+        estado: r?.estado_documento,
+      }]);
       onOpenChange(false);
       fetchGuiasRemision();
     } catch (error: any) {

@@ -22,7 +22,7 @@ interface GuiasGridProps {
     guias: GuiaRemision[]
     loading: boolean
     isAdmin: boolean
-    onViewPdf: (base64: string) => void
+    onViewPdf: (guia: GuiaRemision) => void
     onErrorView: (guia: GuiaRemision) => void
     onSendEmail: (guia: GuiaRemision) => void
     onSendWhatsApp: (guia: GuiaRemision) => void
@@ -209,7 +209,7 @@ export function GuiasGrid({
                                     <div className="mt-auto flex items-center justify-end gap-1 border-t border-border pt-3">
                                         <Button variant="ghost" size="icon"
                                                 className="h-9 w-9 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                                                onClick={() => onViewPdf(guia.pdf_zip_base64!)} title="Ver PDF">
+                                                onClick={() => onViewPdf(guia)} title="Ver PDF">
                                             <Eye className="h-4 w-4" />
                                         </Button>
                                         {(guia.idComprobanteCab && guia.comprobante_serie != null) && (
