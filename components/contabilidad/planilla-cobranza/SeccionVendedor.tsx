@@ -615,6 +615,7 @@ export default function SeccionVendedor({
         }
         setReen(true)
         await onReenviar(editId, vendedorInfo, editRegs.map(r => ({
+            id_detalle:       r.id_detalle,
             codigo_cliente:   r.codigo_cliente   || undefined,
             nombre_cliente:   r.nombre_cliente,
             tipo_documento:   r.tipo_documento,

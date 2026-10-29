@@ -23,7 +23,7 @@ function buildVendedorInfo(user: any): VendedorInfo {
 }
 
 function buildAdminInfo(user: any): AdminInfo {
-    return { id_admin: user.idVendedor ?? user.id ?? user.codigo }
+    return { id_admin: user.idUsuarioWeb ?? user.idVendedor ?? user.id }
 }
 
 function normTipos(raw: any[]): TipoComprobante[] {

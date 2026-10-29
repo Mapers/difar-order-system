@@ -63,6 +63,7 @@ export interface PlanillaDetalle {
 }
 
 export interface NuevoDetalle {
+    id_detalle?:       number
     codigo_cliente?:   string
     nombre_cliente:    string
     tipo_documento:    string
