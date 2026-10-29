@@ -6,6 +6,7 @@ import {
     ComprasDetallePayload,
     ComprasDocumento,
     ComprasResumen,
+    ComprasPagina,
     ProveedorCompras,
     CajaCatalogos,
     CajaDetallePayload,
@@ -164,6 +165,21 @@ export const ComprasService = {
             params: { anio, periodo: periodo || undefined, texto: texto || undefined },
         })
         return res.data?.data?.data ?? []
+    },
+
+    /** Busca en todos los años, paginado en el backend. */
+    buscarDocumentosPagina: async (texto: string, pagina: number, tamano: number): Promise<ComprasPagina> => {
+        const res = await apiClient.get('/contabilidad/compras/documentos/pagina', {
+            params: { texto: texto || undefined, pagina, tamano },
+        })
+        const d = res.data?.data ?? {}
+        return {
+            data:         d.data ?? [],
+            total:        d.total ?? 0,
+            pagina:       d.pagina ?? 1,
+            totalPaginas: d.totalPaginas ?? 1,
+            tamano:       d.tamano ?? tamano,
+        }
     },
 
     obtenerDocumento: async (clave: number): Promise<ComprasDocumento> => {

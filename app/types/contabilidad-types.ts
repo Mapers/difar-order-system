@@ -285,14 +285,24 @@ export interface ComprasDocumento {
 export interface ComprasResumen {
     Clave:           number
     Cod_Prov:        string
-    ProveedorNombre: string | null
+    Proveedor:       string | null
+    RUC:             string | null
     Tipo_Doc:        string
+    TipoDocAbrev:    string | null
     SerieDoc:        string
     NumeroDoc:       number
     Fecha_Emision:   string
     Moneda:          string
     ImporteTotal:    number
     NroRegistro:     number | null
+}
+
+export interface ComprasPagina {
+    data:         ComprasResumen[]
+    total:        number
+    pagina:       number
+    totalPaginas: number
+    tamano:       number
 }
 
 export interface ComprasCabeceraPayload {
