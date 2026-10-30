@@ -328,7 +328,10 @@ export function useOrderPage() {
                         prod_descripcion: producto.product.NombreItem,
                         cantidadPedido: producto.quantity,
                         lotes: lotesFiltered,
-                        loteSeleccionado: existingSelection?.loteSeleccionado || (lotesFiltered.length > 0 ? lotesFiltered[0].value : ""),
+                        // Por defecto, el primero (vence antes) que alcance para la cantidad pedida.
+                        loteSeleccionado: existingSelection?.loteSeleccionado
+                            || (lotesFiltered.find((l: any) => Number(l.stock) >= Number(producto.quantity)) ?? lotesFiltered[0])?.value
+                            || "",
                     })
                 }
             }
@@ -379,7 +382,20 @@ export function useOrderPage() {
         setSelectedProducts(newItems)
     }
 
+    // El stock del lote viaja en el value: "lote|vencimiento|stock".
+    const loteNoAlcanza = (producto: ProductoConLotes, value: string) => {
+        const [lote, , stock] = value.split('|')
+        if (Number(producto.cantidadPedido) <= Number(stock)) return false
+        toast({
+            title: "No se puede usar ese lote",
+            description: `Se piden ${producto.cantidadPedido} y el lote ${lote} solo tiene ${Number(stock)}. Elige otro lote.`,
+            variant: "error",
+        })
+        return true
+    }
+
     const handleLoteChange = (productIndex: number, value: string) => {
+        if (loteNoAlcanza(editingLotes[productIndex], value)) return
         setEditingLotes(prev => {
             const updated = [...prev]
             updated[productIndex].loteSeleccionado = value
@@ -413,6 +429,7 @@ export function useOrderPage() {
     }
 
     const handleConfirmarLotes = () => {
+        if (editingLotes.some(x => x.loteSeleccionado && loteNoAlcanza(x, x.loteSeleccionado))) return
         applyLotesSelection(editingLotes, selectedIndexLote)
         setShowLotesModal(false)
         setEditingLotes([])

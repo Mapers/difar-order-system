@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader } 
 import { DialogTitle } from "@radix-ui/react-dialog"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
-import { Package, CheckSquare, Loader2, CalendarDays, Boxes } from "lucide-react"
+import { Package, CheckSquare, Loader2, CalendarDays, Boxes, AlertTriangle } from "lucide-react"
 import { format, parseISO } from "date-fns"
 import { cn } from "@/lib/utils"
 import { ProductoConLotes } from "@/app/types/order/order-interface"
@@ -60,15 +60,18 @@ export default function LotesModal({ open, onOpenChange, editingLotes, loadingLo
                                             {producto.lotes.map((lote, loteIndex) => {
                                                 const [codigo, fechaISO, stock] = split(lote)
                                                 const isSelected = producto.loteSeleccionado === lote.value
+                                                const noAlcanza = Number(stock) < Number(producto.cantidadPedido)
                                                 return (
                                                     <Label
                                                         key={loteIndex}
                                                         htmlFor={`lote-${productIndex}-${loteIndex}`}
                                                         className={cn(
                                                             "flex items-center gap-3 rounded-lg border p-3 cursor-pointer transition-colors",
-                                                            isSelected
-                                                                ? "border-blue-500 bg-blue-50"
-                                                                : "border-border hover:bg-muted"
+                                                            noAlcanza
+                                                                ? "border-red-200 bg-red-50/70 dark:border-red-900 dark:bg-red-950/30"
+                                                                : isSelected
+                                                                    ? "border-blue-500 bg-blue-50"
+                                                                    : "border-border hover:bg-muted"
                                                         )}
                                                     >
                                                         <RadioGroupItem
@@ -84,10 +87,16 @@ export default function LotesModal({ open, onOpenChange, editingLotes, loadingLo
                                                                 <CalendarDays className="h-3.5 w-3.5" />
                                                                 Vence: {format(parseISO(fechaISO), "dd/MM/yyyy")}
                                                             </span>
-                                                            <span className={cn("flex items-center gap-1", isSelected ? "text-blue-700" : "text-muted-foreground")}>
+                                                            <span className={cn("flex items-center gap-1", noAlcanza ? "font-semibold text-red-600 dark:text-red-400" : isSelected ? "text-blue-700" : "text-muted-foreground")}>
                                                                 <Boxes className="h-3.5 w-3.5" />
                                                                 Stock: {stock}
                                                             </span>
+                                                            {noAlcanza && (
+                                                                <span className="flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700 dark:bg-red-900/50 dark:text-red-300">
+                                                                    <AlertTriangle className="h-3 w-3" />
+                                                                    No alcanza para {producto.cantidadPedido}
+                                                                </span>
+                                                            )}
                                                             <VencimientoCortoBadge fechaISO={fechaISO} />
                                                         </div>
                                                     </Label>
