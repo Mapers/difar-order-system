@@ -10,6 +10,7 @@ import { PriceType, ProductoConLotes } from "@/app/types/order/order-interface"
 import ProductSearchDialog from "@/components/tomar-pedido/product-step/ProductSearchDialog"
 import PriceSelector from "@/components/tomar-pedido/product-step/PriceSelector"
 import LotesModal from "@/components/tomar-pedido/Lotesmodal"
+import { avisarLoteNoAlcanza, primerLoteQueAlcanza } from "@/components/tomar-pedido/lotesStock"
 import ModalLoader from "@/components/modal/modalLoader"
 import { fmtFecha } from "@/lib/planilla.helper"
 import { Button } from "@/components/ui/button"
@@ -211,7 +212,7 @@ export function EstadosPedidosDetailModal({ open, onOpenChange, nroPedido }: Est
 
       setEditingLotes(lotes.length > 0 ? [{
         prod_codigo: selectedProduct.Codigo_Art, prod_descripcion: selectedProduct.NombreItem,
-        cantidadPedido: Number(quantity), lotes, loteSeleccionado: lotes[0].value,
+        cantidadPedido: Number(quantity), lotes, loteSeleccionado: primerLoteQueAlcanza(lotes, Number(quantity)),
       }] : [])
     } finally {
       setIsLoading(false)
@@ -222,6 +223,8 @@ export function EstadosPedidosDetailModal({ open, onOpenChange, nroPedido }: Est
 
   const handleConfirmarLotes = () => {
     if (!pendingDetalle) return
+    const elegido = editingLotes[0]
+    if (elegido?.loteSeleccionado && avisarLoteNoAlcanza(elegido, elegido.loteSeleccionado)) return
     let lote: string | undefined, fecVenc: string | undefined
     if (editingLotes[0]?.loteSeleccionado) {
       const parts = editingLotes[0].loteSeleccionado.split('|')
@@ -339,7 +342,7 @@ export function EstadosPedidosDetailModal({ open, onOpenChange, nroPedido }: Est
       <ModalLoader open={isLoading} onOpenChange={setIsLoading} caseKey={modalLoader ?? undefined} />
       <LotesModal open={showLotesModal} onOpenChange={setShowLotesModal}
                   editingLotes={editingLotes} loadingLotes={loadingLotes}
-                  onLoteChange={(i, v) => setEditingLotes(prev => { const u = [...prev]; u[i].loteSeleccionado = v; return u })}
+                  onLoteChange={(i, v) => { if (avisarLoteNoAlcanza(editingLotes[i], v)) return; setEditingLotes(prev => { const u = [...prev]; u[i].loteSeleccionado = v; return u }) }}
                   onConfirm={handleConfirmarLotes} />
     </>
   )
