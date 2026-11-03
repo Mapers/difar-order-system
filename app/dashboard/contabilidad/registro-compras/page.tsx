@@ -15,7 +15,7 @@ import {
     Loader2, Save, Plus, Trash2, Lock, AlertCircle, X, Search, ChevronDown, Check,
     ClipboardCheck, Wallet, Truck, Printer, ShoppingBag, Hash, FileText, ArrowRight,
     Receipt, Coins, Percent, Scale, Banknote, SlidersHorizontal, ListOrdered, PackagePlus,
-    CalendarClock, Warehouse, CalendarDays, Calendar, Building2, Tags,
+    CalendarClock, Warehouse, CalendarDays, Calendar, Building2, Tags, Eraser,
     type LucideIcon,
 } from "lucide-react"
 import { ComboSelect } from "@/components/ui/combo-select"
@@ -567,6 +567,14 @@ export default function RegistroComprasPage() {
                                     <span className="h-2 w-2 rounded-full bg-red-500" /> No cuadra
                                 </span>
                             )}
+                            <Button
+                                variant="outline" size="sm" className="gap-1.5"
+                                onClick={() => { setBuscarClave(""); c.nuevo() }}
+                                disabled={c.guardando}
+                                title="Vaciar el formulario y empezar una compra nueva"
+                            >
+                                <Eraser className="h-4 w-4" /> Limpiar
+                            </Button>
                             <Button
                                 size="sm"
                                 className="w-full gap-1.5 bg-emerald-600 text-white shadow-md shadow-emerald-600/30 hover:bg-emerald-700 sm:w-auto"
