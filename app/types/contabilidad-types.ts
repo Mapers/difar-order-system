@@ -499,6 +499,8 @@ export interface LecturaFactura {
         cuentaContab:    string
         centroCostos:    string
     }[]
+    /** Productos de la factura que no existen en el catálogo. */
+    productosNuevos: string[]
     avisos: string[]
     yaRegistrado: { clave: number; nroRegistro: number | null } | null
 }

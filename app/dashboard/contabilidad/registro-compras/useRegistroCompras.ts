@@ -306,7 +306,7 @@ export function useRegistroCompras() {
     const [pintando, setPintando] = useState<string | null>(null)
     const [pintados, setPintados] = useState<Set<string>>(new Set())
     const [lineasLeidas, setLineasLeidas] = useState<Set<number>>(new Set())
-    const [lectura, setLectura] = useState<Pick<LecturaFactura, 'avisos' | 'yaRegistrado'> | null>(null)
+    const [lectura, setLectura] = useState<Pick<LecturaFactura, 'avisos' | 'yaRegistrado' | 'productosNuevos'> | null>(null)
     const nroLectura = useRef(0)
 
     const aplicarLectura = useCallback(async (d: LecturaFactura) => {
@@ -321,7 +321,7 @@ export function useRegistroCompras() {
         setFilas([])
         setPintados(new Set())
         setLineasLeidas(new Set())
-        setLectura({ avisos: d.avisos, yaRegistrado: d.yaRegistrado })
+        setLectura({ avisos: d.avisos, yaRegistrado: d.yaRegistrado, productosNuevos: d.productosNuevos ?? [] })
 
         const leida: Partial<CabeceraEdicion> = { ...d.cabecera }
         // A crédito: la condición que tenga exactamente esos días, si existe.
@@ -445,6 +445,16 @@ export function useRegistroCompras() {
             toast({
                 title: "Datos incompletos",
                 description: `Falta ${falta}.`,
+                variant: "warning",
+            })
+            return
+        }
+
+        const nuevos = filas.filter(f => !f.eliminar && f.leidaComo && !f.idArticulo)
+        if (nuevos.length > 0) {
+            toast({
+                title: "Hay productos nuevos",
+                description: `${nuevos.map(f => f.leidaComo).join(' · ')} no existe(n) en el catálogo. Créalos o elige el artículo antes de guardar.`,
                 variant: "warning",
             })
             return

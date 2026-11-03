@@ -245,8 +245,19 @@ export default function RegistroComprasPage() {
                     </Aviso>
                 )}
 
-                {c.lectura && (c.lectura.yaRegistrado || c.lectura.avisos.length > 0) && (
+                {c.lectura && (c.lectura.yaRegistrado || c.lectura.avisos.length > 0 || c.lectura.productosNuevos.length > 0) && (
                     <div className="space-y-2">
+                        {c.lectura.productosNuevos.length > 0 && (
+                            <Aviso tono="rojo" icono={PackagePlus}>
+                                <b>{c.lectura.productosNuevos.length === 1 ? 'Producto nuevo' : `${c.lectura.productosNuevos.length} productos nuevos`}:</b>{' '}
+                                {c.lectura.productosNuevos.length === 1
+                                    ? 'no existe en el catálogo. Créalo en Lista de Precios por Lote o elige el artículo en su línea antes de guardar.'
+                                    : 'no existen en el catálogo. Créalos en Lista de Precios por Lote o elige el artículo en su línea antes de guardar.'}
+                                <ul className="mt-1.5 list-disc space-y-0.5 pl-5 font-medium">
+                                    {c.lectura.productosNuevos.map(p => <li key={p}>{p}</li>)}
+                                </ul>
+                            </Aviso>
+                        )}
                         {c.lectura.yaRegistrado && (
                             <Aviso tono="ambar" icono={AlertCircle}>
                                 Esta factura ya está registrada
@@ -779,8 +790,9 @@ function BuscadorArticulo({ f, ro, setArticulo }: Pick<PropsFila, 'f' | 'ro' | '
             onLimpiar={() => setArticulo(f.key, '', '', '')}
         />
         {f.leidaComo && !f.idArticulo && (
-            <p className="mt-0.5 truncate text-[10px] font-medium text-amber-700 dark:text-amber-400" title={f.leidaComo}>
-                En la factura: {f.leidaComo}
+            <p className="mt-0.5 flex min-w-0 items-center gap-1 text-[10px] font-medium text-amber-700 dark:text-amber-400" title={f.leidaComo}>
+                <span className="shrink-0 rounded bg-red-600 px-1 py-px text-[9px] font-bold uppercase tracking-wide text-white">Producto nuevo</span>
+                <span className="truncate">{f.leidaComo}</span>
             </p>
         )}
         </>
