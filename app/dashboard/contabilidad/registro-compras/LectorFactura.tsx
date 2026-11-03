@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog"
-import { Check, FileText, Loader2, ScanText, Sparkles, AlertCircle } from "lucide-react"
+import { Check, FileText, Loader2, ScanText, Sparkles, AlertCircle, UploadCloud, Image as ImageIcon } from "lucide-react"
 import { ComprasService } from "@/app/services/contabilidad/ContabilidadService"
 import type { LecturaFactura } from "@/app/types/contabilidad-types"
 
@@ -45,6 +45,9 @@ export function BotonLeerFactura({ disabled, onLeida }: { disabled?: boolean; on
     const [paso, setPaso] = useState(0)
     const [error, setError] = useState<string | null>(null)
     const [listo, setListo] = useState(false)
+    // El modal abre primero en "elegir" (arrastrar o buscar el archivo) y luego lee.
+    const [eligiendo, setEligiendo] = useState(false)
+    const [arrastrando, setArrastrando] = useState(false)
 
     useEffect(() => () => { if (vista) URL.revokeObjectURL(vista) }, [vista])
 
@@ -56,6 +59,8 @@ export function BotonLeerFactura({ disabled, onLeida }: { disabled?: boolean; on
     }, [archivo, paso, error, listo])
 
     const cerrar = () => {
+        setEligiendo(false)
+        setArrastrando(false)
         setArchivo(null)
         setVista(null)
         setError(null)
@@ -64,6 +69,12 @@ export function BotonLeerFactura({ disabled, onLeida }: { disabled?: boolean; on
     }
 
     const leer = async (f: File) => {
+        setEligiendo(false)
+        if (!TIPOS.split(",").includes(f.type)) {
+            setArchivo(f)
+            setError("Sube una imagen (JPG, PNG, WEBP) o un PDF.")
+            return
+        }
         if (f.size > PESO_MAXIMO) {
             setArchivo(f)
             setError("La factura debe pesar 10 MB o menos.")
@@ -93,13 +104,64 @@ export function BotonLeerFactura({ disabled, onLeida }: { disabled?: boolean; on
                 onChange={e => { const f = e.target.files?.[0]; e.target.value = ""; if (f) leer(f) }}
             />
             <Button
-                onClick={() => input.current?.click()} disabled={disabled}
+                onClick={() => setEligiendo(true)} disabled={disabled}
                 className="h-10 gap-1.5 bg-gradient-to-r from-violet-600 to-blue-600 px-3 font-semibold text-white shadow-md shadow-violet-600/25 hover:from-violet-700 hover:to-blue-700"
                 title="Sube la foto o el PDF de la factura y se llena sola"
             >
                 <ScanText className="h-4 w-4" /> <span className="hidden sm:inline">Leer factura</span>
             </Button>
 
+            {/* Paso 1: elegir el archivo arrastrándolo o buscándolo */}
+            <Dialog open={eligiendo && !archivo} onOpenChange={v => { if (!v) cerrar() }}>
+                <DialogContent className="max-w-md gap-0 overflow-hidden p-0">
+                    <div className="flex items-center gap-3 border-b px-5 py-4">
+                        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-violet-600 to-blue-600 text-white shadow-md shadow-violet-600/30">
+                            <ScanText className="h-5 w-5" />
+                        </span>
+                        <div className="min-w-0">
+                            <DialogTitle className="text-base">Leer factura</DialogTitle>
+                            <DialogDescription className="text-xs">Se llena sola con los datos de la factura del proveedor.</DialogDescription>
+                        </div>
+                    </div>
+                    <div className="p-5">
+                        <button
+                            type="button"
+                            onClick={() => input.current?.click()}
+                            onDragEnter={e => { e.preventDefault(); setArrastrando(true) }}
+                            onDragOver={e => { e.preventDefault(); setArrastrando(true) }}
+                            onDragLeave={e => { e.preventDefault(); setArrastrando(false) }}
+                            onDrop={e => {
+                                e.preventDefault()
+                                setArrastrando(false)
+                                const f = e.dataTransfer.files?.[0]
+                                if (f) leer(f)
+                            }}
+                            className={`flex w-full flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed px-6 py-10 text-center transition-all ${
+                                arrastrando
+                                    ? "scale-[1.02] border-violet-500 bg-violet-50 dark:bg-violet-950/40"
+                                    : "border-border bg-muted/30 hover:border-violet-400 hover:bg-violet-50/50 dark:hover:bg-violet-950/20"
+                            }`}
+                        >
+                            <span className={`flex h-14 w-14 items-center justify-center rounded-2xl transition-colors ${arrastrando ? "bg-violet-600 text-white" : "bg-violet-100 text-violet-600 dark:bg-violet-950 dark:text-violet-300"}`}>
+                                <UploadCloud className="h-7 w-7" />
+                            </span>
+                            <span className="text-sm font-semibold">
+                                {arrastrando ? "Suelta la factura aquí" : "Arrastra la factura aquí"}
+                            </span>
+                            <span className="text-xs text-muted-foreground">
+                                o <span className="font-semibold text-violet-700 underline underline-offset-2 dark:text-violet-300">búscala en tu equipo</span>
+                            </span>
+                        </button>
+                        <div className="mt-3 flex items-center justify-center gap-4 text-[11px] text-muted-foreground">
+                            <span className="flex items-center gap-1"><ImageIcon className="h-3.5 w-3.5" /> JPG, PNG o WEBP</span>
+                            <span className="flex items-center gap-1"><FileText className="h-3.5 w-3.5" /> PDF</span>
+                            <span>Hasta 10 MB</span>
+                        </div>
+                    </div>
+                </DialogContent>
+            </Dialog>
+
+            {/* Paso 2: leyendo */}
             <Dialog open={!!archivo} onOpenChange={v => { if (!v && (error || listo)) cerrar() }}>
                 <DialogContent className="max-w-md gap-0 overflow-hidden p-0" onInteractOutside={e => { if (!error) e.preventDefault() }}>
                     <div className="flex items-center gap-3 border-b px-5 py-4">
@@ -164,7 +226,7 @@ export function BotonLeerFactura({ disabled, onLeida }: { disabled?: boolean; on
                     {error && (
                         <div className="flex justify-end gap-2 border-t bg-muted/30 px-5 py-3">
                             <Button variant="outline" size="sm" onClick={cerrar}>Cerrar</Button>
-                            <Button size="sm" onClick={() => { cerrar(); input.current?.click() }}>Probar con otra</Button>
+                            <Button size="sm" onClick={() => { cerrar(); setEligiendo(true) }}>Probar con otra</Button>
                         </div>
                     )}
                 </DialogContent>
