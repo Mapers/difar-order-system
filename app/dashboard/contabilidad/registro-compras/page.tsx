@@ -181,7 +181,7 @@ export default function RegistroComprasPage() {
                                     : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300'
                             }`}>
                                 {t.descuadrado ? <AlertCircle className="h-3.5 w-3.5" /> : <Check className="h-3.5 w-3.5" />}
-                                {t.descuadrado ? `No cuadra · ${money(t.diferencia)}` : 'Cuadra'}
+                                {t.descuadrado ? `No cuadra · ${simbolo} ${money(t.diferencia)}` : 'Cuadra'}
                             </span>
                         </div>
 
@@ -241,10 +241,10 @@ export default function RegistroComprasPage() {
                     <p className="mt-1 text-lg font-bold">{t.descuadrado ? 'No cuadra' : 'Cuadra'}</p>
                     <p className="text-xs text-white/80">{t.lineas} línea{t.lineas !== 1 ? 's' : ''} en el detalle</p>
                 </div>
-                <Cifra etiqueta="Con IGV" valor={t.tIncIGV} icono={Receipt} iconoCls="bg-blue-50 text-blue-600 dark:bg-blue-950" />
-                <Cifra etiqueta="Sin IGV" valor={t.tSinIGV} icono={Coins} iconoCls="bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300" />
-                <Cifra etiqueta="IGV calculado" valor={t.calculoIGV} icono={Percent} iconoCls="bg-violet-50 text-violet-600 dark:bg-violet-950" />
-                <Cifra etiqueta="Diferencia" valor={t.diferencia} icono={Scale} alerta={t.descuadrado}
+                <Cifra etiqueta="Con IGV" simbolo={simbolo} valor={t.tIncIGV} icono={Receipt} iconoCls="bg-blue-50 text-blue-600 dark:bg-blue-950" />
+                <Cifra etiqueta="Sin IGV" simbolo={simbolo} valor={t.tSinIGV} icono={Coins} iconoCls="bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300" />
+                <Cifra etiqueta="IGV calculado" simbolo={simbolo} valor={t.calculoIGV} icono={Percent} iconoCls="bg-violet-50 text-violet-600 dark:bg-violet-950" />
+                <Cifra etiqueta="Diferencia" simbolo={simbolo} valor={t.diferencia} icono={Scale} alerta={t.descuadrado}
                        iconoCls={t.descuadrado ? 'bg-red-50 text-red-600 dark:bg-red-950' : 'bg-amber-50 text-amber-600 dark:bg-amber-950'} />
             </div>
 
@@ -792,8 +792,8 @@ function Campo({
     )
 }
 
-function Cifra({ etiqueta, valor, icono: Icono, iconoCls, alerta = false }: {
-    etiqueta: string; valor: number; icono: LucideIcon; iconoCls: string; alerta?: boolean
+function Cifra({ etiqueta, valor, simbolo, icono: Icono, iconoCls, alerta = false }: {
+    etiqueta: string; valor: number; simbolo: string; icono: LucideIcon; iconoCls: string; alerta?: boolean
 }) {
     return (
         <div className={`rounded-xl border p-3.5 shadow-sm ${alerta ? 'border-red-200 bg-red-50/70 dark:border-red-900 dark:bg-red-950/40' : 'bg-background'}`}>
@@ -804,7 +804,7 @@ function Cifra({ etiqueta, valor, icono: Icono, iconoCls, alerta = false }: {
                 </span>
             </div>
             <p className={`mt-1 font-mono text-base font-bold tabular-nums sm:text-lg ${alerta ? 'text-red-700 dark:text-red-400' : ''}`}>
-                {money(valor)}
+                <span className="mr-1 text-xs font-semibold text-muted-foreground sm:text-sm">{simbolo}</span>{money(valor)}
             </p>
         </div>
     )
