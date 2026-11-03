@@ -29,16 +29,23 @@ export function EstilosLectura() {
   0%   { box-shadow: 0 0 0 0 rgb(139 92 246 / .55); background-color: rgb(139 92 246 / .14); }
   100% { box-shadow: 0 0 0 6px rgb(139 92 246 / 0);  background-color: transparent; }
 }
+@keyframes lf-latido { 0% { transform: scale(1); opacity: .7; } 70%, 100% { transform: scale(1.18, 1.45); opacity: 0; } }
+.lf-latido { animation: lf-latido 1.8s ease-out infinite; }
 @keyframes lf-entrar { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
 .lf-pintando { animation: lf-pintar .9s ease-out; border-radius: .75rem; }
 .lf-pintado  { outline: 2px solid rgb(139 92 246 / .45); outline-offset: 2px; border-radius: .75rem; transition: outline-color 1s; }
 .lf-fila     { animation: lf-entrar .35s ease-out, lf-pintar 1.1s ease-out; }
-@media (prefers-reduced-motion: reduce) { .lf-pintando, .lf-fila { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .lf-pintando, .lf-fila, .lf-latido { animation: none; } }
         `}</style>
     )
 }
 
-export function BotonLeerFactura({ disabled, onLeida }: { disabled?: boolean; onLeida: (d: LecturaFactura) => void }) {
+export function BotonLeerFactura({ disabled, llamativo = false, onLeida }: {
+    disabled?: boolean
+    /** Late suavemente para invitar a usarlo (compra nueva y vacía). */
+    llamativo?: boolean
+    onLeida: (d: LecturaFactura) => void
+}) {
     const input = useRef<HTMLInputElement>(null)
     const [archivo, setArchivo] = useState<File | null>(null)
     const [vista, setVista] = useState<string | null>(null)
@@ -103,13 +110,18 @@ export function BotonLeerFactura({ disabled, onLeida }: { disabled?: boolean; on
                 ref={input} type="file" accept={TIPOS} className="hidden"
                 onChange={e => { const f = e.target.files?.[0]; e.target.value = ""; if (f) leer(f) }}
             />
-            <Button
-                onClick={() => setEligiendo(true)} disabled={disabled}
-                className="h-10 gap-1.5 bg-gradient-to-r from-violet-600 to-blue-600 px-3 font-semibold text-white shadow-md shadow-violet-600/25 hover:from-violet-700 hover:to-blue-700"
-                title="Sube la foto o el PDF de la factura y se llena sola"
-            >
-                <ScanText className="h-4 w-4" /> <span className="hidden sm:inline">Leer factura</span>
-            </Button>
+            <span className="relative inline-flex">
+                {llamativo && !disabled && (
+                    <span aria-hidden className="lf-latido pointer-events-none absolute inset-0 rounded-md bg-violet-500/50" />
+                )}
+                <Button
+                    onClick={() => setEligiendo(true)} disabled={disabled}
+                    className="relative z-10 h-10 gap-1.5 bg-gradient-to-r from-violet-600 to-blue-600 px-3 font-semibold text-white shadow-md shadow-violet-600/25 hover:from-violet-700 hover:to-blue-700"
+                    title="Sube la foto o el PDF de la factura y se llena sola"
+                >
+                    <ScanText className="h-4 w-4" /> <span className="hidden sm:inline">Leer factura</span>
+                </Button>
+            </span>
 
             {/* Paso 1: elegir el archivo arrastrándolo o buscándolo */}
             <Dialog open={eligiendo && !archivo} onOpenChange={v => { if (!v) cerrar() }}>

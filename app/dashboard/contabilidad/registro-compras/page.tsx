@@ -207,7 +207,7 @@ export default function RegistroComprasPage() {
                                 </Button>
                             </div>
 
-                            <BotonLeerFactura disabled={c.cargando || ro} onLeida={c.aplicarLectura} />
+                            <BotonLeerFactura disabled={c.cargando || ro} llamativo={!c.clave && c.filas.length === 0} onLeida={c.aplicarLectura} />
 
                             <Button
                                 onClick={() => setBuscadorAbierto(true)}
