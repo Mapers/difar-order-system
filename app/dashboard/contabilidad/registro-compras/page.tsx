@@ -47,6 +47,7 @@ export default function RegistroComprasPage() {
     const [imprimirAbierto, setImprimirAbierto] = useState(false)
     const [confirmRevisar, setConfirmRevisar] = useState(false)
     const [confirmEliminarLineas, setConfirmEliminarLineas] = useState(false)
+    const [confirmNueva, setConfirmNueva] = useState(false)
     const [buscarClave, setBuscarClave] = useState("")
     const [otrosAbierto, setOtrosAbierto] = useState(false)
     const [buscadorAbierto, setBuscadorAbierto] = useState(false)
@@ -56,6 +57,15 @@ export default function RegistroComprasPage() {
     const [revisando, setRevisando] = useState(false)
 
     const marcadas = c.filas.filter(f => f.eliminar && f.id !== null).length
+    const simbolo = c.cab.moneda === 'USD' ? 'US$' : 'S/'
+
+    // Nueva y Limpiar vacían el formulario: si ya hay algo llenado, se confirma antes.
+    const empezarNueva = () => { setBuscarClave(""); c.nuevo() }
+    const pedirNueva = () => {
+        const hayDatos = !!c.clave || !!c.cab.codProv || !!c.cab.serie.trim() || !!c.cab.numero.trim() || c.filas.length > 0
+        if (hayDatos) setConfirmNueva(true)
+        else empezarNueva()
+    }
     const ro = c.cerrado
     const t = c.totalesEnVivo
 
@@ -208,7 +218,7 @@ export default function RegistroComprasPage() {
                                 <Search className="h-4 w-4" /> <span className="hidden sm:inline">Buscar</span>
                             </Button>
 
-                            <Button onClick={c.nuevo} variant="outline" className="h-10 gap-1.5 px-3 font-semibold" title="Nueva compra" aria-label="Nueva">
+                            <Button onClick={pedirNueva} variant="outline" className="h-10 gap-1.5 px-3 font-semibold" title="Nueva compra" aria-label="Nueva">
                                 <Plus className="h-4 w-4" /> <span className="hidden sm:inline">Nueva</span>
                             </Button>
 
@@ -462,19 +472,19 @@ export default function RegistroComprasPage() {
                         <>
                             {/* Tabla en escritorio */}
                             <div className="hidden overflow-x-auto rounded-lg border border-border lg:block">
-                                <table className="w-full border-collapse text-xs">
+                                <table className="w-full table-fixed border-collapse text-xs">
                                     <thead>
                                         <tr className="border-b border-border bg-gradient-to-b from-muted/60 to-muted">
-                                            <Th w="36" />
-                                            <Th w="210">Artículo</Th>
-                                            <Th w="84" right>Cantidad</Th>
+                                            <Th w="52" />
+                                            <Th>Artículo</Th>
+                                            <Th w="80" right>Cantidad</Th>
                                             <Th w="84">Lote</Th>
-                                            <Th w="120">Vence</Th>
+                                            <Th w="118">Vence</Th>
                                             <Th w="104" right>Con IGV</Th>
-                                            <Th w="104" right>Sin IGV</Th>
-                                            <Th w="118">Cuenta</Th>
-                                            <Th w="96">C. costos</Th>
-                                            <Th w="40" />
+                                            <Th w="86" right>Sin IGV</Th>
+                                            <Th w="160">Cuenta</Th>
+                                            <Th w="88">C. costos</Th>
+                                            <Th w="34" />
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -569,7 +579,7 @@ export default function RegistroComprasPage() {
                             )}
                             <Button
                                 variant="outline" size="sm" className="gap-1.5"
-                                onClick={() => { setBuscarClave(""); c.nuevo() }}
+                                onClick={pedirNueva}
                                 disabled={c.guardando}
                                 title="Vaciar el formulario y empezar una compra nueva"
                             >
@@ -589,15 +599,70 @@ export default function RegistroComprasPage() {
                 </section>
             </div>
 
+            <AlertDialog open={confirmNueva} onOpenChange={setConfirmNueva}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>¿Empezar una compra nueva?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            {c.clave
+                                ? `Se cierra ${docTitulo}. Lo que no hayas guardado se pierde.`
+                                : 'Se borra todo lo que llenaste y no se ha guardado.'}
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Seguir aquí</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => { setConfirmNueva(false); empezarNueva() }}>
+                            Sí, empezar de nuevo
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
             <AlertDialog open={confirmEliminarLineas} onOpenChange={setConfirmEliminarLineas}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
                         <AlertDialogTitle>Eliminar {marcadas} línea{marcadas !== 1 ? 's' : ''}</AlertDialogTitle>
                         <AlertDialogDescription>
-                            Primero se guarda el documento y después se quitan las líneas marcadas.
-                            El asiento contable, el kardex y los lotes se regeneran con lo que quede.
+                            Revisa que sean estas. Primero se guarda el documento y después se quitan;
+                            el asiento contable, el kardex y los lotes se regeneran con lo que quede.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
+                    <div className="max-h-64 overflow-y-auto rounded-lg border">
+                        <table className="w-full text-xs">
+                            <thead className="sticky top-0 bg-muted text-left text-[10px] uppercase tracking-wider text-muted-foreground">
+                                <tr>
+                                    <th className="px-2 py-1.5">#</th>
+                                    <th className="px-2 py-1.5">Artículo</th>
+                                    <th className="px-2 py-1.5">Lote</th>
+                                    <th className="px-2 py-1.5 text-right">Cant.</th>
+                                    <th className="px-2 py-1.5 text-right">Importe</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {c.filas.map((f, i) => ({ f, n: i + 1 })).filter(x => x.f.eliminar && x.f.id !== null).map(({ f, n }) => (
+                                    <tr key={f.key} className="border-t">
+                                        <td className="px-2 py-1.5 tabular-nums text-muted-foreground">{n}</td>
+                                        <td className="max-w-[180px] truncate px-2 py-1.5 font-medium" title={f.nombreItem}>{f.nombreItem || f.articulo || '—'}</td>
+                                        <td className="px-2 py-1.5 font-mono">{f.lote || '—'}</td>
+                                        <td className="px-2 py-1.5 text-right tabular-nums">{Number(f.cantidad || 0).toLocaleString('es-PE')}</td>
+                                        <td className="whitespace-nowrap px-2 py-1.5 text-right tabular-nums">{simbolo} {money(Number(f.importeAfecto || 0) + Number(f.importeNoAfecto || 0))}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                            <tfoot>
+                                <tr className="border-t bg-muted/50 font-semibold">
+                                    <td colSpan={4} className="px-2 py-1.5 text-right">Total a quitar</td>
+                                    <td className="whitespace-nowrap px-2 py-1.5 text-right tabular-nums text-red-700 dark:text-red-400">
+                                        {simbolo} {money(c.filas.filter(f => f.eliminar && f.id !== null)
+                                            .reduce((t, f) => t + Number(f.importeAfecto || 0) + Number(f.importeNoAfecto || 0), 0))}
+                                    </td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                        Quedan {c.filas.filter(f => !f.eliminar).length} línea(s). Si el total del documento no cambia, después no va a cuadrar.
+                    </p>
                     <AlertDialogFooter>
                         <AlertDialogCancel>Cancelar</AlertDialogCancel>
                         <AlertDialogAction className="bg-red-600 hover:bg-red-700"
@@ -815,12 +880,14 @@ function SelectCuenta({ f, cat, ro, setCampo }: Pick<PropsFila, 'f' | 'cat' | 'r
             items={cat?.cuentas ?? []}
             getKey={q => String(q.IdCtaContable)}
             getLabel={q => q.Cod_Contab}
+            getSub={q => String(q.Descricpion ?? '').trim()}
+            subEnBoton="debajo"
             placeholder="Elegir"
             searchPlaceholder="Buscar cuenta..."
             emptyText="Sin resultados"
             disabled={ro}
-            triggerClassName={comboFila + " font-mono"}
-            contentClassName="min-w-[220px]"
+            triggerClassName="h-auto min-h-7 px-2 py-0.5 text-xs font-mono"
+            contentClassName="min-w-[380px]"
         />
     )
 }
@@ -833,6 +900,8 @@ function SelectCentroCostos({ f, cat, ro, setCampo }: Pick<PropsFila, 'f' | 'cat
             items={cat?.centrosCosto ?? []}
             getKey={cc => cc.Cod_CC}
             getLabel={cc => cc.Cod_CC}
+            getSub={cc => String(cc.Descripcion ?? '').trim()}
+            subEnBoton={false}
             placeholder="Elegir"
             searchPlaceholder="Buscar..."
             emptyText="Sin resultados"

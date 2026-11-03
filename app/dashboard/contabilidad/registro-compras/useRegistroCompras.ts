@@ -70,7 +70,9 @@ export interface FilaCompra {
     leidaComo?:      string
 }
 
-const CAB_VACIA: CabeceraEdicion = {
+// Se arma en cada uso: la fecha y el período por defecto son los de hoy, aunque
+// la página haya quedado abierta de un día (o de un mes) para otro.
+const cabVacia = (): CabeceraEdicion => ({
     codProv: '', proveedorNombre: '', tipoDoc: '', serie: '', numero: '',
     fechaEmision: new Date().toLocaleDateString('en-CA'), moneda: 'NSO',
     importeTotal: '', tasaIGV: '', condicion: '', almacen: '',
@@ -82,7 +84,7 @@ const CAB_VACIA: CabeceraEdicion = {
     fechaCancelacion: '', tipoPago: '', centroCostos: '', obsCancelacion: '',
     observaciones: '', entregadoPor: '', responsable: '', idClasificacionBienes: '',
     fecIngreso: '', serieOC: '', nrOC: '',
-}
+})
 
 const num = (v: string) => {
     const n = Number(v)
@@ -118,7 +120,8 @@ const cabDesdeBD = (c: ComprasCabecera): CabeceraEdicion => ({
     fechaEmision:          c.Fecha_Emision ? String(c.Fecha_Emision).slice(0, 10) : '',
     moneda:                c.Moneda ?? 'NSO',
     importeTotal:          c.ImporteTotal != null ? String(c.ImporteTotal) : '',
-    tasaIGV:               c.TasaIGV != null ? String(c.TasaIGV) : '',
+    // La base guarda 0.1800 y el catálogo 0.18: se normaliza para que el combo lo encuentre.
+    tasaIGV:               c.TasaIGV != null ? String(Number(c.TasaIGV)) : '',
     condicion:             c.Condision ?? '',
     almacen:               c.Almacen != null ? String(c.Almacen) : '',
     periodo:               c.PeriodoTributario ?? '',
@@ -222,7 +225,7 @@ export function useRegistroCompras() {
     const [cargandoCatalogos, setCargandoCatalogos] = useState(true)
 
     const [clave, setClave] = useState<number | null>(null)
-    const [cab, setCab] = useState<CabeceraEdicion>(CAB_VACIA)
+    const [cab, setCab] = useState<CabeceraEdicion>(cabVacia)
     const [filas, setFilas] = useState<FilaCompra[]>([])
     const [totales, setTotales] = useState<ComprasTotales | null>(null)
     const [cerrado, setCerrado] = useState(false)
@@ -259,19 +262,20 @@ export function useRegistroCompras() {
         setCerrado(false)
         setVecesRegistrado(0)
 
+        const vacia = cabVacia()
         try {
-            const v = await ComprasService.valoresIniciales(CAB_VACIA.anio, CAB_VACIA.periodo)
+            const v = await ComprasService.valoresIniciales(vacia.anio, vacia.periodo)
             setCab({
-                ...CAB_VACIA,
+                ...vacia,
                 tasaIGV:   v?.TasaIGV   != null ? String(v.TasaIGV)   : '',
                 condicion: v?.Condision ?? '',
                 moneda:    v?.Moneda    ?? 'NSO',
                 almacen:   v?.Almacen   != null ? String(v.Almacen)   : '',
-                periodo:   v?.PeriodoTributario ?? CAB_VACIA.periodo,
-                anio:      v?.Anio ?? CAB_VACIA.anio,
+                periodo:   v?.PeriodoTributario ?? vacia.periodo,
+                anio:      v?.Anio ?? vacia.anio,
             })
         } catch {
-            setCab(CAB_VACIA)
+            setCab(vacia)
         }
     }, [])
 
@@ -331,7 +335,7 @@ export function useRegistroCompras() {
             : null
         if (conDias) leida.condicion = conDias.CodigoCondicion
 
-        const inicial = { ...CAB_VACIA }
+        const inicial = cabVacia()
         for (const [k, v] of Object.entries(leida) as [keyof CabeceraEdicion, string][]) {
             if (!ORDEN_PINTADO.includes(k) && v) inicial[k] = v
         }
