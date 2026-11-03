@@ -89,6 +89,7 @@ const num = (v: string) => {
     return v.trim() !== '' && Number.isFinite(n) ? n : null
 }
 const num0 = (v: string) => Number(v) || 0
+const x0 = (v: string) => (v.trim() === '' ? 'vacía' : v)
 const txt = (v: string) => (v.trim() === '' ? null : v.trim())
 
 const desdeBD = (d: ComprasDetalleFila): FilaCompra => ({
@@ -450,6 +451,22 @@ export function useRegistroCompras() {
             return
         }
 
+        const aviso = (title: string, description: string) => toast({ title, description, variant: "warning" })
+
+        // 1. El detalle tiene que cuadrar con el total del documento.
+        if (totalesEnVivo.descuadrado) {
+            aviso("No cuadra", `El detalle no cuadra con el total del documento (diferencia ${totalesEnVivo.diferencia.toFixed(2)}). Corrígelo antes de guardar.`)
+            return
+        }
+
+        const vivas = filas.map((f, i) => ({ f, n: i + 1 })).filter(x => !x.f.eliminar)
+        const nombre = (x: { f: FilaCompra; n: number }) => `Línea ${x.n}${x.f.nombreItem ? ` (${x.f.nombreItem.trim()})` : ''}`
+
+        if (vivas.length === 0) {
+            aviso("Sin detalle", "Agrega al menos una línea al detalle.")
+            return
+        }
+
         const nuevos = filas.filter(f => !f.eliminar && f.leidaComo && !f.idArticulo)
         if (nuevos.length > 0) {
             toast({
@@ -458,6 +475,45 @@ export function useRegistroCompras() {
                 variant: "warning",
             })
             return
+        }
+
+        // 2. Toda línea lleva artículo (los servicios usan su artículo de servicio).
+        const sinArticulo = vivas.find(x => !x.f.idArticulo)
+        if (sinArticulo) {
+            aviso("Falta el artículo", `${nombre(sinArticulo)} no tiene artículo. Elígelo o quita la línea.`)
+            return
+        }
+
+        // 4. Cantidad mayor a cero.
+        const sinCantidad = vivas.find(x => !(Number(x.f.cantidad) > 0))
+        if (sinCantidad) {
+            aviso("Cantidad inválida", `${nombre(sinCantidad)} tiene cantidad ${x0(sinCantidad.f.cantidad)}. Debe ser mayor a 0.`)
+            return
+        }
+
+        // 3. Un lote entra al kardex con su vencimiento.
+        const sinVence = vivas.find(x => x.f.lote.trim() && !x.f.vctoArt)
+        if (sinVence) {
+            aviso("Falta el vencimiento", `${nombre(sinVence)} tiene el lote ${sinVence.f.lote} sin fecha de vencimiento.`)
+            return
+        }
+
+        // 5. Que no se registre dos veces la misma factura.
+        if (!clave) {
+            try {
+                const r = await ComprasService.buscarDocumentosPagina(cab.codProv, 1, 100)
+                const numero = Number(cab.numero)
+                const repetido = r.data.find(d =>
+                    String(d.Cod_Prov) === cab.codProv && d.Tipo_Doc === cab.tipoDoc &&
+                    String(d.SerieDoc ?? '').trim().toUpperCase() === cab.serie.trim().toUpperCase() &&
+                    Number(d.NumeroDoc) === numero)
+                if (repetido) {
+                    aviso("Ya está registrada", `${cab.serie}-${cab.numero} de este proveedor ya existe (clave ${repetido.Clave}${repetido.NroRegistro != null ? `, registro Nº ${repetido.NroRegistro}` : ''}). Ábrela con Buscar en lugar de registrarla otra vez.`)
+                    return
+                }
+            } catch {
+                // Si no se pudo verificar, se deja guardar: el resto ya está validado.
+            }
         }
 
         const sinCuenta = filas.find(f =>
