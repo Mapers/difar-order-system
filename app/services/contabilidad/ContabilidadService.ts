@@ -7,6 +7,7 @@ import {
     ComprasDocumento,
     ComprasResumen,
     ComprasPagina,
+    LecturaFactura,
     ProveedorCompras,
     CajaCatalogos,
     CajaDetallePayload,
@@ -180,6 +181,17 @@ export const ComprasService = {
             totalPaginas: d.totalPaginas ?? 1,
             tamano:       d.tamano ?? tamano,
         }
+    },
+
+    /** Lee la factura del proveedor (imagen o PDF) y propone la compra. No guarda nada. */
+    leerFactura: async (archivo: File): Promise<LecturaFactura> => {
+        const form = new FormData()
+        form.append('factura', archivo)
+        const res = await apiClient.post('/contabilidad/compras/leer-factura', form, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+            timeout: 120000,
+        })
+        return res.data?.data
     },
 
     obtenerDocumento: async (clave: number): Promise<ComprasDocumento> => {

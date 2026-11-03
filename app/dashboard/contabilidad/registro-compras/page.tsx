@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from "react"
+import { createContext, useContext, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -15,7 +15,7 @@ import {
     Loader2, Save, Plus, Trash2, Lock, AlertCircle, X, Search, ChevronDown, Check,
     ClipboardCheck, Wallet, Truck, Printer, ShoppingBag, Hash, FileText, ArrowRight,
     Receipt, Coins, Percent, Scale, Banknote, SlidersHorizontal, ListOrdered, PackagePlus,
-    CalendarClock, Warehouse, CalendarDays, Calendar, Building2, Tags,
+    CalendarClock, Warehouse, CalendarDays, Calendar, Building2, Tags, Eraser,
     type LucideIcon,
 } from "lucide-react"
 import { ComboSelect } from "@/components/ui/combo-select"
@@ -29,9 +29,13 @@ import { BuscadorDocumentos } from "./BuscadorDocumentos"
 import { SaldoDialog } from "./SaldoDialog"
 import { PagosDialog } from "./PagosDialog"
 import { TransporteDialog } from "./TransporteDialog"
+import { BotonLeerFactura, EstilosLectura } from "./LectorFactura"
 
 // La tasa llega como fracción (0.18) o como porcentaje (18).
 const tasaTexto = (t: number) => `${Number(t) < 1 ? Math.round(Number(t) * 10000) / 100 : Number(t)}%`
+
+// Qué campo se está llenando al leer una factura, para resaltarlo.
+const PintadoCtx = createContext<{ pintando: string | null; pintados: Set<string> }>({ pintando: null, pintados: new Set() })
 
 const money = (v: number) =>
     Number(v ?? 0).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
@@ -43,6 +47,7 @@ export default function RegistroComprasPage() {
     const [imprimirAbierto, setImprimirAbierto] = useState(false)
     const [confirmRevisar, setConfirmRevisar] = useState(false)
     const [confirmEliminarLineas, setConfirmEliminarLineas] = useState(false)
+    const [confirmNueva, setConfirmNueva] = useState(false)
     const [buscarClave, setBuscarClave] = useState("")
     const [otrosAbierto, setOtrosAbierto] = useState(false)
     const [buscadorAbierto, setBuscadorAbierto] = useState(false)
@@ -52,6 +57,15 @@ export default function RegistroComprasPage() {
     const [revisando, setRevisando] = useState(false)
 
     const marcadas = c.filas.filter(f => f.eliminar && f.id !== null).length
+    const simbolo = c.cab.moneda === 'USD' ? 'US$' : 'S/'
+
+    // Nueva y Limpiar vacían el formulario: si ya hay algo llenado, se confirma antes.
+    const empezarNueva = () => { setBuscarClave(""); c.nuevo() }
+    const pedirNueva = () => {
+        const hayDatos = !!c.clave || !!c.cab.codProv || !!c.cab.serie.trim() || !!c.cab.numero.trim() || c.filas.length > 0
+        if (hayDatos) setConfirmNueva(true)
+        else empezarNueva()
+    }
     const ro = c.cerrado
     const t = c.totalesEnVivo
 
@@ -109,6 +123,8 @@ export default function RegistroComprasPage() {
 
 
     return (
+        <PintadoCtx.Provider value={{ pintando: c.pintando, pintados: c.pintados }}>
+        <EstilosLectura />
         <div className="grid grid-cols-1 pb-10">
             {/* Encabezado de la pantalla, igual que el resto de Contabilidad */}
             <div className="flex flex-col gap-3 pt-2 md:flex-row md:items-center md:justify-between">
@@ -165,7 +181,7 @@ export default function RegistroComprasPage() {
                                     : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300'
                             }`}>
                                 {t.descuadrado ? <AlertCircle className="h-3.5 w-3.5" /> : <Check className="h-3.5 w-3.5" />}
-                                {t.descuadrado ? `No cuadra · ${money(t.diferencia)}` : 'Cuadra'}
+                                {t.descuadrado ? `No cuadra · ${simbolo} ${money(t.diferencia)}` : 'Cuadra'}
                             </span>
                         </div>
 
@@ -191,6 +207,8 @@ export default function RegistroComprasPage() {
                                 </Button>
                             </div>
 
+                            <BotonLeerFactura disabled={c.cargando || ro} llamativo={!c.clave && c.filas.length === 0} onLeida={c.aplicarLectura} />
+
                             <Button
                                 onClick={() => setBuscadorAbierto(true)}
                                 variant="outline" className="h-10 gap-1.5 px-3 font-semibold"
@@ -200,7 +218,7 @@ export default function RegistroComprasPage() {
                                 <Search className="h-4 w-4" /> <span className="hidden sm:inline">Buscar</span>
                             </Button>
 
-                            <Button onClick={c.nuevo} variant="outline" className="h-10 gap-1.5 px-3 font-semibold" title="Nueva compra" aria-label="Nueva">
+                            <Button onClick={pedirNueva} variant="outline" className="h-10 gap-1.5 px-3 font-semibold" title="Nueva compra" aria-label="Nueva">
                                 <Plus className="h-4 w-4" /> <span className="hidden sm:inline">Nueva</span>
                             </Button>
 
@@ -223,10 +241,10 @@ export default function RegistroComprasPage() {
                     <p className="mt-1 text-lg font-bold">{t.descuadrado ? 'No cuadra' : 'Cuadra'}</p>
                     <p className="text-xs text-white/80">{t.lineas} línea{t.lineas !== 1 ? 's' : ''} en el detalle</p>
                 </div>
-                <Cifra etiqueta="Con IGV" valor={t.tIncIGV} icono={Receipt} iconoCls="bg-blue-50 text-blue-600 dark:bg-blue-950" />
-                <Cifra etiqueta="Sin IGV" valor={t.tSinIGV} icono={Coins} iconoCls="bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300" />
-                <Cifra etiqueta="IGV calculado" valor={t.calculoIGV} icono={Percent} iconoCls="bg-violet-50 text-violet-600 dark:bg-violet-950" />
-                <Cifra etiqueta="Diferencia" valor={t.diferencia} icono={Scale} alerta={t.descuadrado}
+                <Cifra etiqueta="Con IGV" simbolo={simbolo} valor={t.tIncIGV} icono={Receipt} iconoCls="bg-blue-50 text-blue-600 dark:bg-blue-950" />
+                <Cifra etiqueta="Sin IGV" simbolo={simbolo} valor={t.tSinIGV} icono={Coins} iconoCls="bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300" />
+                <Cifra etiqueta="IGV calculado" simbolo={simbolo} valor={t.calculoIGV} icono={Percent} iconoCls="bg-violet-50 text-violet-600 dark:bg-violet-950" />
+                <Cifra etiqueta="Diferencia" simbolo={simbolo} valor={t.diferencia} icono={Scale} alerta={t.descuadrado}
                        iconoCls={t.descuadrado ? 'bg-red-50 text-red-600 dark:bg-red-950' : 'bg-amber-50 text-amber-600 dark:bg-amber-950'} />
             </div>
 
@@ -235,6 +253,35 @@ export default function RegistroComprasPage() {
                     <Aviso tono="rojo" icono={Lock}>
                         Este documento cayó dentro del cierre contable. Se puede consultar, no modificar.
                     </Aviso>
+                )}
+
+                {c.lectura && (c.lectura.yaRegistrado || c.lectura.avisos.length > 0 || c.lectura.productosNuevos.length > 0) && (
+                    <div className="space-y-2">
+                        {c.lectura.productosNuevos.length > 0 && (
+                            <Aviso tono="rojo" icono={PackagePlus}>
+                                <b>{c.lectura.productosNuevos.length === 1 ? 'Producto nuevo' : `${c.lectura.productosNuevos.length} productos nuevos`}:</b>{' '}
+                                {c.lectura.productosNuevos.length === 1
+                                    ? 'no existe en el catálogo. Créalo en Lista de Precios por Lote o elige el artículo en su línea antes de guardar.'
+                                    : 'no existen en el catálogo. Créalos en Lista de Precios por Lote o elige el artículo en su línea antes de guardar.'}
+                                <ul className="mt-1.5 list-disc space-y-0.5 pl-5 font-medium">
+                                    {c.lectura.productosNuevos.map(p => <li key={p}>{p}</li>)}
+                                </ul>
+                            </Aviso>
+                        )}
+                        {c.lectura.yaRegistrado && (
+                            <Aviso tono="ambar" icono={AlertCircle}>
+                                Este comprobante ya está registrado
+                                {c.lectura.yaRegistrado.nroRegistro != null && <> (registro Nº {c.lectura.yaRegistrado.nroRegistro})</>}.{' '}
+                                <button type="button" className="font-semibold underline underline-offset-2"
+                                        onClick={() => c.abrir(c.lectura!.yaRegistrado!.clave)}>
+                                    Abrir la registrada (clave {c.lectura.yaRegistrado.clave})
+                                </button>
+                            </Aviso>
+                        )}
+                        {c.lectura.avisos.map(a => (
+                            <Aviso key={a} tono="ambar" icono={AlertCircle}>{a}</Aviso>
+                        ))}
+                    </div>
                 )}
 
                 {c.vecesRegistrado > 1 && (
@@ -246,7 +293,7 @@ export default function RegistroComprasPage() {
 
                 <Grupo titulo="El documento" nota="Todos estos campos hacen falta para guardar." icono={FileText} acento="blue">
                     <Campos>
-                        <Campo etiqueta="Proveedor" requerido className="sm:col-span-2">
+                        <Campo k="codProv" etiqueta="Proveedor" requerido className="sm:col-span-2">
                             <BuscadorRemoto
                                 etiqueta="proveedor"
                                 valor={c.cab.proveedorNombre || c.cab.codProv}
@@ -264,53 +311,53 @@ export default function RegistroComprasPage() {
                             />
                         </Campo>
 
-                        <Campo etiqueta="Tipo de documento" requerido>
+                        <Campo k="tipoDoc" etiqueta="Tipo de documento" requerido>
                             {comboCampo({ k: 'tipoDoc', items: cat?.tiposDoc ?? [], getKey: x => x.Cod_Tipo, getLabel: x => String(x.Descripcion || x.Abreviatura), getSub: x => `${x.Cod_Tipo} · ${x.Abreviatura}`, icono: FileText, titulo: 'Elegir tipo', descripcion: 'Factura, boleta, nota…' })}
                         </Campo>
 
-                        <Campo etiqueta="Fecha de emisión" requerido>
+                        <Campo k="fechaEmision" etiqueta="Fecha de emisión" requerido>
                             <Input type="date" className="h-[50px] rounded-xl" {...campo('fechaEmision')} />
                         </Campo>
 
-                        <Campo etiqueta="Serie" requerido>
+                        <Campo k="serie" etiqueta="Serie" requerido>
                             <Input className="h-[50px] rounded-xl font-mono" maxLength={10} placeholder="F001" {...campo('serie')} />
                         </Campo>
 
-                        <Campo etiqueta="Número" requerido>
+                        <Campo k="numero" etiqueta="Número" requerido>
                             <Input className="h-[50px] rounded-xl font-mono tabular-nums" placeholder="1234" {...campo('numero')} />
                         </Campo>
 
-                        <Campo etiqueta="Moneda" requerido>
+                        <Campo k="moneda" etiqueta="Moneda" requerido>
                             {comboCampo({ k: 'moneda', items: cat?.monedas ?? [], getKey: x => x.Abreviatura, getLabel: x => String(x.Descripcion || x.Abreviatura), getSub: x => x.Abreviatura, icono: Coins, titulo: 'Elegir moneda', descripcion: 'Soles o dólares' })}
                         </Campo>
 
-                        <Campo etiqueta="Tasa de IGV" requerido>
+                        <Campo k="tasaIGV" etiqueta="Tasa de IGV" requerido>
                             {comboCampo({ k: 'tasaIGV', items: cat?.tasasIgv ?? [], getKey: x => String(x.Tasa), getLabel: x => tasaTexto(x.Tasa), getSub: x => `Tasa ${x.Tasa}`, icono: Percent, titulo: 'Elegir tasa', descripcion: 'IGV del documento' })}
                         </Campo>
 
-                        <Campo etiqueta="Importe total" requerido>
+                        <Campo k="importeTotal" etiqueta="Importe total" requerido>
                             <Input type="number" step="0.01"
                                    className="h-[50px] rounded-xl text-right tabular-nums" {...campo('importeTotal')} />
                         </Campo>
 
-                        <Campo etiqueta="Importe sin IGV">
+                        <Campo k="exonerado" etiqueta="Importe sin IGV">
                             <Input type="number" step="0.01"
                                    className="h-[50px] rounded-xl text-right tabular-nums" {...campo('exonerado')} />
                         </Campo>
 
-                        <Campo etiqueta="Condición" requerido>
+                        <Campo k="condicion" etiqueta="Condición" requerido>
                             {comboCampo({ k: 'condicion', items: cat?.condiciones ?? [], getKey: x => x.CodigoCondicion, getLabel: x => String(x.Descripcion), getSub: x => `${x.CodigoCondicion} · ${Number(x.DiasCdto) || 0} días`, icono: CalendarClock, titulo: 'Elegir condición', descripcion: 'Contado o crédito' })}
                         </Campo>
 
-                        <Campo etiqueta="Almacén" requerido>
+                        <Campo k="almacen" etiqueta="Almacén" requerido>
                             {comboCampo({ k: 'almacen', items: cat?.almacenes ?? [], getKey: x => String(x.IdAlmacen), getLabel: x => String(x.Descripcion), getSub: x => `Cód. ${x.IdAlmacen}`, icono: Warehouse, titulo: 'Elegir almacén', descripcion: 'Dónde ingresa la mercadería' })}
                         </Campo>
 
-                        <Campo etiqueta="Período" requerido>
+                        <Campo k="periodo" etiqueta="Período" requerido>
                             {comboCampo({ k: 'periodo', items: cat?.meses ?? [], getKey: x => x.Numero, getLabel: x => String(x.Mes), getSub: x => `Mes ${x.Numero}`, icono: CalendarDays, titulo: 'Elegir período', descripcion: 'Mes tributario' })}
                         </Campo>
 
-                        <Campo etiqueta="Año" requerido>
+                        <Campo k="anio" etiqueta="Año" requerido>
                             {comboCampo({ k: 'anio', items: cat?.anios ?? [], getKey: x => x.Anio, getLabel: x => String(x.Anio), getSub: () => 'Ejercicio', icono: Calendar, titulo: 'Elegir año', descripcion: 'Ejercicio contable' })}
                         </Campo>
                     </Campos>
@@ -425,24 +472,24 @@ export default function RegistroComprasPage() {
                         <>
                             {/* Tabla en escritorio */}
                             <div className="hidden overflow-x-auto rounded-lg border border-border lg:block">
-                                <table className="w-full border-collapse text-xs">
+                                <table className="w-full table-fixed border-collapse text-xs">
                                     <thead>
                                         <tr className="border-b border-border bg-gradient-to-b from-muted/60 to-muted">
-                                            <Th w="36" />
-                                            <Th w="210">Artículo</Th>
-                                            <Th w="84" right>Cantidad</Th>
+                                            <Th w="52" />
+                                            <Th>Artículo</Th>
+                                            <Th w="80" right>Cantidad</Th>
                                             <Th w="84">Lote</Th>
-                                            <Th w="120">Vence</Th>
+                                            <Th w="118">Vence</Th>
                                             <Th w="104" right>Con IGV</Th>
-                                            <Th w="104" right>Sin IGV</Th>
-                                            <Th w="118">Cuenta</Th>
-                                            <Th w="96">C. costos</Th>
-                                            <Th w="40" />
+                                            <Th w="86" right>Sin IGV</Th>
+                                            <Th w="160">Cuenta</Th>
+                                            <Th w="88">C. costos</Th>
+                                            <Th w="34" />
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {c.filas.map(f => (
-                                            <FilaTabla key={f.key} f={f} cat={cat} ro={ro}
+                                            <FilaTabla key={f.key} f={f} cat={cat} ro={ro} leida={c.lineasLeidas.has(f.key)}
                                                        setCampo={c.setCampoFila}
                                                        setArticulo={c.setArticulo}
                                                        quitar={c.quitarFilaNueva} />
@@ -455,7 +502,7 @@ export default function RegistroComprasPage() {
                                 no se puede usar en un teléfono. */}
                             <div className="space-y-3 lg:hidden">
                                 {c.filas.map(f => (
-                                    <FilaTarjeta key={f.key} f={f} cat={cat} ro={ro}
+                                    <FilaTarjeta key={f.key} f={f} cat={cat} ro={ro} leida={c.lineasLeidas.has(f.key)}
                                                  setCampo={c.setCampoFila}
                                                  setArticulo={c.setArticulo}
                                                  quitar={c.quitarFilaNueva} />
@@ -531,6 +578,14 @@ export default function RegistroComprasPage() {
                                 </span>
                             )}
                             <Button
+                                variant="outline" size="sm" className="gap-1.5"
+                                onClick={pedirNueva}
+                                disabled={c.guardando}
+                                title="Vaciar el formulario y empezar una compra nueva"
+                            >
+                                <Eraser className="h-4 w-4" /> Limpiar
+                            </Button>
+                            <Button
                                 size="sm"
                                 className="w-full gap-1.5 bg-emerald-600 text-white shadow-md shadow-emerald-600/30 hover:bg-emerald-700 sm:w-auto"
                                 onClick={c.guardar}
@@ -544,15 +599,70 @@ export default function RegistroComprasPage() {
                 </section>
             </div>
 
+            <AlertDialog open={confirmNueva} onOpenChange={setConfirmNueva}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>¿Empezar una compra nueva?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            {c.clave
+                                ? `Se cierra ${docTitulo}. Lo que no hayas guardado se pierde.`
+                                : 'Se borra todo lo que llenaste y no se ha guardado.'}
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Seguir aquí</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => { setConfirmNueva(false); empezarNueva() }}>
+                            Sí, empezar de nuevo
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
             <AlertDialog open={confirmEliminarLineas} onOpenChange={setConfirmEliminarLineas}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
                         <AlertDialogTitle>Eliminar {marcadas} línea{marcadas !== 1 ? 's' : ''}</AlertDialogTitle>
                         <AlertDialogDescription>
-                            Primero se guarda el documento y después se quitan las líneas marcadas.
-                            El asiento contable, el kardex y los lotes se regeneran con lo que quede.
+                            Revisa que sean estas. Primero se guarda el documento y después se quitan;
+                            el asiento contable, el kardex y los lotes se regeneran con lo que quede.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
+                    <div className="max-h-64 overflow-y-auto rounded-lg border">
+                        <table className="w-full text-xs">
+                            <thead className="sticky top-0 bg-muted text-left text-[10px] uppercase tracking-wider text-muted-foreground">
+                                <tr>
+                                    <th className="px-2 py-1.5">#</th>
+                                    <th className="px-2 py-1.5">Artículo</th>
+                                    <th className="px-2 py-1.5">Lote</th>
+                                    <th className="px-2 py-1.5 text-right">Cant.</th>
+                                    <th className="px-2 py-1.5 text-right">Importe</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {c.filas.map((f, i) => ({ f, n: i + 1 })).filter(x => x.f.eliminar && x.f.id !== null).map(({ f, n }) => (
+                                    <tr key={f.key} className="border-t">
+                                        <td className="px-2 py-1.5 tabular-nums text-muted-foreground">{n}</td>
+                                        <td className="max-w-[180px] truncate px-2 py-1.5 font-medium" title={f.nombreItem}>{f.nombreItem || f.articulo || '—'}</td>
+                                        <td className="px-2 py-1.5 font-mono">{f.lote || '—'}</td>
+                                        <td className="px-2 py-1.5 text-right tabular-nums">{Number(f.cantidad || 0).toLocaleString('es-PE')}</td>
+                                        <td className="whitespace-nowrap px-2 py-1.5 text-right tabular-nums">{simbolo} {money(Number(f.importeAfecto || 0) + Number(f.importeNoAfecto || 0))}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                            <tfoot>
+                                <tr className="border-t bg-muted/50 font-semibold">
+                                    <td colSpan={4} className="px-2 py-1.5 text-right">Total a quitar</td>
+                                    <td className="whitespace-nowrap px-2 py-1.5 text-right tabular-nums text-red-700 dark:text-red-400">
+                                        {simbolo} {money(c.filas.filter(f => f.eliminar && f.id !== null)
+                                            .reduce((t, f) => t + Number(f.importeAfecto || 0) + Number(f.importeNoAfecto || 0), 0))}
+                                    </td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                        Quedan {c.filas.filter(f => !f.eliminar).length} línea(s). Si el total del documento no cambia, después no va a cuadrar.
+                    </p>
                     <AlertDialogFooter>
                         <AlertDialogCancel>Cancelar</AlertDialogCancel>
                         <AlertDialogAction className="bg-red-600 hover:bg-red-700"
@@ -633,6 +743,7 @@ export default function RegistroComprasPage() {
                 </AlertDialogContent>
             </AlertDialog>
         </div>
+        </PintadoCtx.Provider>
     )
 }
 
@@ -667,10 +778,12 @@ function Campos({ children }: { children: React.ReactNode }) {
 }
 
 function Campo({
-    etiqueta, requerido = false, className = '', children,
-}: { etiqueta: string; requerido?: boolean; className?: string; children: React.ReactNode }) {
+    k, etiqueta, requerido = false, className = '', children,
+}: { k?: string; etiqueta: string; requerido?: boolean; className?: string; children: React.ReactNode }) {
+    const { pintando, pintados } = useContext(PintadoCtx)
+    const brillo = k && pintando === k ? 'lf-pintando lf-pintado' : k && pintados.has(k) ? 'lf-pintado' : ''
     return (
-        <div className={`flex min-w-0 flex-col gap-1.5 ${className}`}>
+        <div className={`flex min-w-0 flex-col gap-1.5 ${className} ${brillo}`}>
             <Label className="text-xs font-medium text-muted-foreground">
                 {etiqueta}{requerido && <span className="ml-0.5 text-red-500">*</span>}
             </Label>
@@ -679,8 +792,8 @@ function Campo({
     )
 }
 
-function Cifra({ etiqueta, valor, icono: Icono, iconoCls, alerta = false }: {
-    etiqueta: string; valor: number; icono: LucideIcon; iconoCls: string; alerta?: boolean
+function Cifra({ etiqueta, valor, simbolo, icono: Icono, iconoCls, alerta = false }: {
+    etiqueta: string; valor: number; simbolo: string; icono: LucideIcon; iconoCls: string; alerta?: boolean
 }) {
     return (
         <div className={`rounded-xl border p-3.5 shadow-sm ${alerta ? 'border-red-200 bg-red-50/70 dark:border-red-900 dark:bg-red-950/40' : 'bg-background'}`}>
@@ -691,7 +804,7 @@ function Cifra({ etiqueta, valor, icono: Icono, iconoCls, alerta = false }: {
                 </span>
             </div>
             <p className={`mt-1 font-mono text-base font-bold tabular-nums sm:text-lg ${alerta ? 'text-red-700 dark:text-red-400' : ''}`}>
-                {money(valor)}
+                <span className="mr-1 text-xs font-semibold text-muted-foreground sm:text-sm">{simbolo}</span>{money(valor)}
             </p>
         </div>
     )
@@ -728,6 +841,8 @@ interface PropsFila {
     setCampo: (key: number, campo: keyof FilaCompra, valor: string | boolean) => void
     setArticulo: (key: number, idArticulo: string, codigo: string, nombre: string) => void
     quitar: (key: number) => void
+    /** La línea vino de leer la factura. */
+    leida?: boolean
 }
 
 const inputFila = "h-7 text-xs"
@@ -735,6 +850,7 @@ const comboFila = "h-7 px-2 text-xs"
 
 function BuscadorArticulo({ f, ro, setArticulo }: Pick<PropsFila, 'f' | 'ro' | 'setArticulo'>) {
     return (
+        <>
         <BuscadorRemoto
             etiqueta="artículo"
             valor={f.nombreItem || f.articulo}
@@ -746,6 +862,13 @@ function BuscadorArticulo({ f, ro, setArticulo }: Pick<PropsFila, 'f' | 'ro' | '
             onSelect={a => setArticulo(f.key, String(a.IdArticulo), a.Codigo_Art, a.NombreItem)}
             onLimpiar={() => setArticulo(f.key, '', '', '')}
         />
+        {f.leidaComo && !f.idArticulo && (
+            <p className="mt-0.5 flex min-w-0 items-center gap-1 text-[10px] font-medium text-amber-700 dark:text-amber-400" title={f.leidaComo}>
+                <span className="shrink-0 rounded bg-red-600 px-1 py-px text-[9px] font-bold uppercase tracking-wide text-white">Producto nuevo</span>
+                <span className="truncate">{f.leidaComo}</span>
+            </p>
+        )}
+        </>
     )
 }
 
@@ -757,12 +880,14 @@ function SelectCuenta({ f, cat, ro, setCampo }: Pick<PropsFila, 'f' | 'cat' | 'r
             items={cat?.cuentas ?? []}
             getKey={q => String(q.IdCtaContable)}
             getLabel={q => q.Cod_Contab}
+            getSub={q => String(q.Descricpion ?? '').trim()}
+            subEnBoton="debajo"
             placeholder="Elegir"
             searchPlaceholder="Buscar cuenta..."
             emptyText="Sin resultados"
             disabled={ro}
-            triggerClassName={comboFila + " font-mono"}
-            contentClassName="min-w-[220px]"
+            triggerClassName="h-auto min-h-7 px-2 py-0.5 text-xs font-mono"
+            contentClassName="min-w-[380px]"
         />
     )
 }
@@ -775,6 +900,8 @@ function SelectCentroCostos({ f, cat, ro, setCampo }: Pick<PropsFila, 'f' | 'cat
             items={cat?.centrosCosto ?? []}
             getKey={cc => cc.Cod_CC}
             getLabel={cc => cc.Cod_CC}
+            getSub={cc => String(cc.Descripcion ?? '').trim()}
+            subEnBoton={false}
             placeholder="Elegir"
             searchPlaceholder="Buscar..."
             emptyText="Sin resultados"
@@ -785,9 +912,9 @@ function SelectCentroCostos({ f, cat, ro, setCampo }: Pick<PropsFila, 'f' | 'cat
     )
 }
 
-function FilaTabla({ f, cat, ro, setCampo, setArticulo, quitar }: PropsFila) {
+function FilaTabla({ f, cat, ro, setCampo, setArticulo, quitar, leida }: PropsFila) {
     return (
-        <tr className={`border-b border-border last:border-0 ${f.eliminar ? 'bg-red-50/60 opacity-60' : 'hover:bg-muted/40'}`}>
+        <tr className={`border-b border-border last:border-0 ${f.eliminar ? 'bg-red-50/60 opacity-60' : 'hover:bg-muted/40'} ${leida ? 'lf-fila' : ''} ${leida && !f.idArticulo ? 'bg-amber-50/70 dark:bg-amber-950/30' : ''}`}>
             <td className="px-2 py-1 text-center">
                 {f.id !== null ? (
                     <Checkbox checked={f.eliminar} disabled={ro}
@@ -836,9 +963,9 @@ function FilaTabla({ f, cat, ro, setCampo, setArticulo, quitar }: PropsFila) {
     )
 }
 
-function FilaTarjeta({ f, cat, ro, setCampo, setArticulo, quitar }: PropsFila) {
+function FilaTarjeta({ f, cat, ro, setCampo, setArticulo, quitar, leida }: PropsFila) {
     return (
-        <div className={`rounded-xl border p-3 shadow-sm ${f.eliminar ? 'border-red-200 bg-red-50/60' : 'border-border bg-background'}`}>
+        <div className={`rounded-xl border p-3 shadow-sm ${f.eliminar ? 'border-red-200 bg-red-50/60' : leida && !f.idArticulo ? 'border-amber-300 bg-amber-50/70 dark:border-amber-800 dark:bg-amber-950/30' : 'border-border bg-background'} ${leida ? 'lf-fila' : ''}`}>
             <div className="mb-3 flex items-start gap-2">
                 <div className="min-w-0 flex-1">
                     <BuscadorArticulo f={f} ro={ro} setArticulo={setArticulo} />

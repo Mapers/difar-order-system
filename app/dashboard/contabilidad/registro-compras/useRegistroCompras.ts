@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { toast } from "@/app/hooks/useToast"
 import { useAuth } from "@/context/authContext"
 import { ComprasService } from "@/app/services/contabilidad/ContabilidadService"
@@ -12,6 +12,7 @@ import {
     ComprasDetalleFila,
     ComprasDetallePayload,
     ComprasTotales,
+    LecturaFactura,
 } from "@/app/types/contabilidad-types"
 
 export interface CabeceraEdicion {
@@ -65,9 +66,13 @@ export interface FilaCompra {
     centroCostos:    string
     idGalpon:        string
     eliminar:        boolean
+    /** Cómo venía en la factura leída, para ubicar el artículo si no se emparejó. */
+    leidaComo?:      string
 }
 
-const CAB_VACIA: CabeceraEdicion = {
+// Se arma en cada uso: la fecha y el período por defecto son los de hoy, aunque
+// la página haya quedado abierta de un día (o de un mes) para otro.
+const cabVacia = (): CabeceraEdicion => ({
     codProv: '', proveedorNombre: '', tipoDoc: '', serie: '', numero: '',
     fechaEmision: new Date().toLocaleDateString('en-CA'), moneda: 'NSO',
     importeTotal: '', tasaIGV: '', condicion: '', almacen: '',
@@ -79,13 +84,14 @@ const CAB_VACIA: CabeceraEdicion = {
     fechaCancelacion: '', tipoPago: '', centroCostos: '', obsCancelacion: '',
     observaciones: '', entregadoPor: '', responsable: '', idClasificacionBienes: '',
     fecIngreso: '', serieOC: '', nrOC: '',
-}
+})
 
 const num = (v: string) => {
     const n = Number(v)
     return v.trim() !== '' && Number.isFinite(n) ? n : null
 }
 const num0 = (v: string) => Number(v) || 0
+const x0 = (v: string) => (v.trim() === '' ? 'vacía' : v)
 const txt = (v: string) => (v.trim() === '' ? null : v.trim())
 
 const desdeBD = (d: ComprasDetalleFila): FilaCompra => ({
@@ -114,7 +120,8 @@ const cabDesdeBD = (c: ComprasCabecera): CabeceraEdicion => ({
     fechaEmision:          c.Fecha_Emision ? String(c.Fecha_Emision).slice(0, 10) : '',
     moneda:                c.Moneda ?? 'NSO',
     importeTotal:          c.ImporteTotal != null ? String(c.ImporteTotal) : '',
-    tasaIGV:               c.TasaIGV != null ? String(c.TasaIGV) : '',
+    // La base guarda 0.1800 y el catálogo 0.18: se normaliza para que el combo lo encuentre.
+    tasaIGV:               c.TasaIGV != null ? String(Number(c.TasaIGV)) : '',
     condicion:             c.Condision ?? '',
     almacen:               c.Almacen != null ? String(c.Almacen) : '',
     periodo:               c.PeriodoTributario ?? '',
@@ -192,6 +199,12 @@ const aFilaPayload = (f: FilaCompra): ComprasDetallePayload => ({
     eliminar:        f.eliminar,
 })
 
+// Orden en que se van llenando los campos visibles al leer una factura.
+const ORDEN_PINTADO: (keyof CabeceraEdicion)[] = [
+    'codProv', 'tipoDoc', 'fechaEmision', 'serie', 'numero', 'moneda', 'tasaIGV',
+    'importeTotal', 'exonerado', 'condicion', 'almacen', 'periodo', 'anio',
+]
+
 const OBLIGATORIOS: [keyof CabeceraEdicion, string][] = [
     ['codProv', 'Proveedor'], ['fechaEmision', 'Fecha de emisión'],
     ['tipoDoc', 'Tipo de documento'], ['serie', 'Serie'], ['numero', 'Número'],
@@ -212,7 +225,7 @@ export function useRegistroCompras() {
     const [cargandoCatalogos, setCargandoCatalogos] = useState(true)
 
     const [clave, setClave] = useState<number | null>(null)
-    const [cab, setCab] = useState<CabeceraEdicion>(CAB_VACIA)
+    const [cab, setCab] = useState<CabeceraEdicion>(cabVacia)
     const [filas, setFilas] = useState<FilaCompra[]>([])
     const [totales, setTotales] = useState<ComprasTotales | null>(null)
     const [cerrado, setCerrado] = useState(false)
@@ -241,29 +254,34 @@ export function useRegistroCompras() {
     }, [])
 
     const nuevo = useCallback(async () => {
+        nroLectura.current++
+        setLectura(null)
         setClave(null)
         setFilas([])
         setTotales(null)
         setCerrado(false)
         setVecesRegistrado(0)
 
+        const vacia = cabVacia()
         try {
-            const v = await ComprasService.valoresIniciales(CAB_VACIA.anio, CAB_VACIA.periodo)
+            const v = await ComprasService.valoresIniciales(vacia.anio, vacia.periodo)
             setCab({
-                ...CAB_VACIA,
+                ...vacia,
                 tasaIGV:   v?.TasaIGV   != null ? String(v.TasaIGV)   : '',
                 condicion: v?.Condision ?? '',
                 moneda:    v?.Moneda    ?? 'NSO',
                 almacen:   v?.Almacen   != null ? String(v.Almacen)   : '',
-                periodo:   v?.PeriodoTributario ?? CAB_VACIA.periodo,
-                anio:      v?.Anio ?? CAB_VACIA.anio,
+                periodo:   v?.PeriodoTributario ?? vacia.periodo,
+                anio:      v?.Anio ?? vacia.anio,
             })
         } catch {
-            setCab(CAB_VACIA)
+            setCab(vacia)
         }
     }, [])
 
     const abrir = useCallback(async (claveDoc: number) => {
+        nroLectura.current++
+        setLectura(null)
         setCargando(true)
         try {
             const d = await ComprasService.obtenerDocumento(claveDoc)
@@ -287,6 +305,77 @@ export function useRegistroCompras() {
             setCargando(false)
         }
     }, [])
+
+    // ─── Lectura de la factura ───────────────────────────────────────────────
+    // Los campos se van llenando uno por uno para que se vea qué se leyó.
+    const [pintando, setPintando] = useState<string | null>(null)
+    const [pintados, setPintados] = useState<Set<string>>(new Set())
+    const [lineasLeidas, setLineasLeidas] = useState<Set<number>>(new Set())
+    const [lectura, setLectura] = useState<Pick<LecturaFactura, 'avisos' | 'yaRegistrado' | 'productosNuevos'> | null>(null)
+    const nroLectura = useRef(0)
+
+    const aplicarLectura = useCallback(async (d: LecturaFactura) => {
+        const mia = ++nroLectura.current
+        const pausa = (ms: number) => new Promise(r => setTimeout(r, ms))
+        const sigue = () => mia === nroLectura.current
+
+        setClave(null)
+        setTotales(null)
+        setCerrado(false)
+        setVecesRegistrado(0)
+        setFilas([])
+        setPintados(new Set())
+        setLineasLeidas(new Set())
+        setLectura({ avisos: d.avisos, yaRegistrado: d.yaRegistrado, productosNuevos: d.productosNuevos ?? [] })
+
+        const leida: Partial<CabeceraEdicion> = { ...d.cabecera }
+        // A crédito: la condición que tenga exactamente esos días, si existe.
+        const conDias = d.diasCredito != null
+            ? catalogos?.condiciones.find(x => Number(x.DiasCdto) === d.diasCredito)
+            : null
+        if (conDias) leida.condicion = conDias.CodigoCondicion
+
+        const inicial = cabVacia()
+        for (const [k, v] of Object.entries(leida) as [keyof CabeceraEdicion, string][]) {
+            if (!ORDEN_PINTADO.includes(k) && v) inicial[k] = v
+        }
+        setCab(inicial)
+
+        for (const k of ORDEN_PINTADO) {
+            const v = leida[k]
+            if (!v) continue
+            await pausa(170)
+            if (!sigue()) return
+            setCab(prev => ({ ...prev, [k]: v, ...(k === 'codProv' ? { proveedorNombre: leida.proveedorNombre ?? '' } : {}) }))
+            setPintando(k)
+            setPintados(prev => new Set(prev).add(k))
+        }
+
+        let key = proximaKey
+        for (const l of d.lineas) {
+            await pausa(140)
+            if (!sigue()) return
+            const fila: FilaCompra = {
+                id: null, key, idGalpon: '', eliminar: false,
+                idArticulo: l.idArticulo, articulo: l.articulo, nombreItem: l.nombreItem,
+                cantidad: l.cantidad, lote: l.lote, vctoArt: l.vctoArt,
+                importeAfecto: l.importeAfecto, importeNoAfecto: l.importeNoAfecto,
+                cuentaContab: l.cuentaContab, centroCostos: l.centroCostos || '001',
+                leidaComo: l.descripcionFactura,
+            }
+            setFilas(prev => [...prev, fila])
+            setLineasLeidas(prev => new Set(prev).add(fila.key))
+            setPintando(`linea:${fila.key}`)
+            key -= 1
+        }
+        setProximaKey(key)
+        setPintando(null)
+
+        await pausa(2500)
+        if (sigue()) setPintados(new Set())
+    }, [catalogos, proximaKey])
+
+    const descartarLectura = () => setLectura(null)
 
     const setCampoCab = (campo: keyof CabeceraEdicion, valor: string) =>
         setCab(prev => ({ ...prev, [campo]: valor }))
@@ -366,6 +455,71 @@ export function useRegistroCompras() {
             return
         }
 
+        const aviso = (title: string, description: string) => toast({ title, description, variant: "warning" })
+
+        // 1. El detalle tiene que cuadrar con el total del documento.
+        if (totalesEnVivo.descuadrado) {
+            aviso("No cuadra", `El detalle no cuadra con el total del documento (diferencia ${totalesEnVivo.diferencia.toFixed(2)}). Corrígelo antes de guardar.`)
+            return
+        }
+
+        const vivas = filas.map((f, i) => ({ f, n: i + 1 })).filter(x => !x.f.eliminar)
+        const nombre = (x: { f: FilaCompra; n: number }) => `Línea ${x.n}${x.f.nombreItem ? ` (${x.f.nombreItem.trim()})` : ''}`
+
+        if (vivas.length === 0) {
+            aviso("Sin detalle", "Agrega al menos una línea al detalle.")
+            return
+        }
+
+        const nuevos = filas.filter(f => !f.eliminar && f.leidaComo && !f.idArticulo)
+        if (nuevos.length > 0) {
+            toast({
+                title: "Hay productos nuevos",
+                description: `${nuevos.map(f => f.leidaComo).join(' · ')} no existe(n) en el catálogo. Créalos o elige el artículo antes de guardar.`,
+                variant: "warning",
+            })
+            return
+        }
+
+        // 2. Toda línea lleva artículo (los servicios usan su artículo de servicio).
+        const sinArticulo = vivas.find(x => !x.f.idArticulo)
+        if (sinArticulo) {
+            aviso("Falta el artículo", `${nombre(sinArticulo)} no tiene artículo. Elígelo o quita la línea.`)
+            return
+        }
+
+        // 4. Cantidad mayor a cero.
+        const sinCantidad = vivas.find(x => !(Number(x.f.cantidad) > 0))
+        if (sinCantidad) {
+            aviso("Cantidad inválida", `${nombre(sinCantidad)} tiene cantidad ${x0(sinCantidad.f.cantidad)}. Debe ser mayor a 0.`)
+            return
+        }
+
+        // 3. Un lote entra al kardex con su vencimiento.
+        const sinVence = vivas.find(x => x.f.lote.trim() && !x.f.vctoArt)
+        if (sinVence) {
+            aviso("Falta el vencimiento", `${nombre(sinVence)} tiene el lote ${sinVence.f.lote} sin fecha de vencimiento.`)
+            return
+        }
+
+        // 5. Que no se registre dos veces la misma factura.
+        if (!clave) {
+            try {
+                const r = await ComprasService.buscarDocumentosPagina(cab.codProv, 1, 100)
+                const numero = Number(cab.numero)
+                const repetido = r.data.find(d =>
+                    String(d.Cod_Prov) === cab.codProv && d.Tipo_Doc === cab.tipoDoc &&
+                    String(d.SerieDoc ?? '').trim().toUpperCase() === cab.serie.trim().toUpperCase() &&
+                    Number(d.NumeroDoc) === numero)
+                if (repetido) {
+                    aviso("Ya está registrada", `${cab.serie}-${cab.numero} de este proveedor ya existe (clave ${repetido.Clave}${repetido.NroRegistro != null ? `, registro Nº ${repetido.NroRegistro}` : ''}). Ábrela con Buscar en lugar de registrarla otra vez.`)
+                    return
+                }
+            } catch {
+                // Si no se pudo verificar, se deja guardar: el resto ya está validado.
+            }
+        }
+
         const sinCuenta = filas.find(f =>
             !f.eliminar && (num0(f.importeAfecto) || num0(f.importeNoAfecto)) && !f.cuentaContab)
         if (sinCuenta) {
@@ -442,6 +596,7 @@ export function useRegistroCompras() {
         catalogos, cargandoCatalogos,
         clave, cab, filas, totales, totalesEnVivo, cerrado, vecesRegistrado,
         cargando, guardando, esContado,
+        pintando, pintados, lineasLeidas, lectura, aplicarLectura, descartarLectura,
         nuevo, abrir, setCampoCab, setProveedor, setCampoFila, setArticulo,
         agregarFila, quitarFilaNueva, guardar, eliminarMarcadas, eliminarDocumento,
     }
