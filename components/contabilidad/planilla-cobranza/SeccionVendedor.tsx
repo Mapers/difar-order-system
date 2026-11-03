@@ -787,6 +787,7 @@ export default function SeccionVendedor({
                 codCliente={formReg.codigo_cliente}
                 codVendedor={isAdmin() ? undefined : user?.codigo}
                 soloVigentes={false}
+                consolidar
                 onSelect={handleDocumentoSelect}
             />
 

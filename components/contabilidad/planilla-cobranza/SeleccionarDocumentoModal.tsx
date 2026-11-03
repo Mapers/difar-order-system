@@ -39,12 +39,44 @@ export interface DocumentoCliente {
     saldo_pendiente:   number
 }
 
+const TIPO_NOTA_CREDITO = '07'
+
+function esNotaCredito(doc: DocumentoCliente) {
+    return String(doc.Tipo_Doc ?? '').trim().padStart(2, '0') === TIPO_NOTA_CREDITO
+}
+
+export function consolidarPendientes(docs: DocumentoCliente[]): DocumentoCliente[] {
+    const porDocumento = new Map<string, { base: DocumentoCliente; saldo: number }>()
+
+    for (const d of docs) {
+        if (esNotaCredito(d)) continue
+
+        const clave = d.documento_completo || `${d.Tipo_Doc}-${d.SerieDoc}-${d.NumeroDoc}`
+        const saldo = Number(d.saldo_pendiente) || 0
+        const acumulado = porDocumento.get(clave)
+
+        if (!acumulado) {
+            porDocumento.set(clave, { base: d, saldo })
+            continue
+        }
+
+        acumulado.saldo += saldo
+        if (saldo > 0) acumulado.base = d
+    }
+
+    return [...porDocumento.values()]
+        .filter(x => x.saldo > 0.005)
+        .map(x => ({ ...x.base, saldo_pendiente: Number(x.saldo.toFixed(2)) }))
+}
+
 interface Props {
     open:            boolean
     onOpenChange:    (v: boolean) => void
     codCliente:      string
     codVendedor?:    string
     soloVigentes?:   boolean
+    // Un documento por línea con su saldo real (provisión menos amortizaciones y NC).
+    consolidar?:     boolean
     onSelect:        (doc: DocumentoCliente) => void
 }
 
@@ -61,6 +93,7 @@ export function SeleccionarDocumentoModal({
                                               open, onOpenChange,
                                               codCliente, codVendedor,
                                               soloVigentes = false,
+                                              consolidar = false,
                                               onSelect,
                                           }: Props) {
     const [docs,      setDocs]      = useState<DocumentoCliente[]>([])
@@ -87,7 +120,8 @@ export function SeleccionarDocumentoModal({
 
             const res = await apiClient.get(`/planilla-cobranza/documentos-cliente?${params}`)
 
-            setDocs(res.data?.data?.data ?? [])
+            const filas: DocumentoCliente[] = res.data?.data?.data ?? []
+            setDocs(consolidar ? consolidarPendientes(filas) : filas)
         } catch {
             setError('No se pudieron cargar los documentos del cliente.')
             setDocs([])
@@ -204,6 +238,15 @@ export function SeleccionarDocumentoModal({
                                                     Vcto: {fmtFecha(doc.Fecha_Vcto)}
                                                 </span>
                                             </div>
+
+                                            {consolidar && (
+                                                <p className="text-xs">
+                                                    <span className="text-muted-foreground">Saldo: </span>
+                                                    <span className={`font-mono font-bold ${saldoColor(doc.saldo_pendiente)}`}>
+                                                        {fmtMoney(doc.saldo_pendiente, doc.Simb_Moneda || 'S/')}
+                                                    </span>
+                                                </p>
+                                            )}
 
                                             {/*<div className="grid grid-cols-3 gap-1 pt-1 border-t border-dashed border-slate-100">*/}
                                             {/*    <div>*/}

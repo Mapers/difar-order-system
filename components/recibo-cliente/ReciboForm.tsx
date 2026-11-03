@@ -15,7 +15,7 @@ import {
     LineaRecibo, MonedaRecibo, NuevoRecibo, ReciboCabecera, simboloMoneda,
 } from '@/app/types/recibo-cliente-types'
 import {
-    DocumentoCliente,
+    DocumentoCliente, consolidarPendientes,
 } from '@/components/contabilidad/planilla-cobranza/SeleccionarDocumentoModal'
 import { ReciboDetalleTabla } from './ReciboDetalleTabla'
 import { FirmaPad } from './FirmaPad'
@@ -54,36 +54,6 @@ function componerFecha(dia: string, mesIdx: number, anio: string) {
 const CAMPO =
     'bg-transparent border-0 border-b border-[#8aa0cf] outline-none px-1 py-0.5 ' +
     'text-[#12388f] placeholder:text-[#b9c4dd] focus:border-[#d21f27] focus:bg-[#f4f7ff]'
-
-const TIPO_NOTA_CREDITO = '07'
-
-function esNotaCredito(doc: DocumentoCliente) {
-    return String(doc.Tipo_Doc ?? '').trim().padStart(2, '0') === TIPO_NOTA_CREDITO
-}
-
-function consolidarPendientes(docs: DocumentoCliente[]): DocumentoCliente[] {
-    const porDocumento = new Map<string, { base: DocumentoCliente; saldo: number }>()
-
-    for (const d of docs) {
-        if (esNotaCredito(d)) continue
-
-        const clave = d.documento_completo || `${d.Tipo_Doc}-${d.SerieDoc}-${d.NumeroDoc}`
-        const saldo = Number(d.saldo_pendiente) || 0
-        const acumulado = porDocumento.get(clave)
-
-        if (!acumulado) {
-            porDocumento.set(clave, { base: d, saldo })
-            continue
-        }
-
-        acumulado.saldo += saldo
-        if (saldo > 0) acumulado.base = d
-    }
-
-    return [...porDocumento.values()]
-        .filter(x => x.saldo > 0.005)
-        .map(x => ({ ...x.base, saldo_pendiente: Number(x.saldo.toFixed(2)) }))
-}
 
 function Casilla({
     marcada, onToggle, children,
