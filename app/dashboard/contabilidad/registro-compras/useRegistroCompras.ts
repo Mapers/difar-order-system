@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { toast } from "@/app/hooks/useToast"
 import { useAuth } from "@/context/authContext"
 import { ComprasService } from "@/app/services/contabilidad/ContabilidadService"
@@ -12,6 +12,7 @@ import {
     ComprasDetalleFila,
     ComprasDetallePayload,
     ComprasTotales,
+    LecturaFactura,
 } from "@/app/types/contabilidad-types"
 
 export interface CabeceraEdicion {
@@ -65,6 +66,8 @@ export interface FilaCompra {
     centroCostos:    string
     idGalpon:        string
     eliminar:        boolean
+    /** Cómo venía en la factura leída, para ubicar el artículo si no se emparejó. */
+    leidaComo?:      string
 }
 
 const CAB_VACIA: CabeceraEdicion = {
@@ -192,6 +195,12 @@ const aFilaPayload = (f: FilaCompra): ComprasDetallePayload => ({
     eliminar:        f.eliminar,
 })
 
+// Orden en que se van llenando los campos visibles al leer una factura.
+const ORDEN_PINTADO: (keyof CabeceraEdicion)[] = [
+    'codProv', 'tipoDoc', 'fechaEmision', 'serie', 'numero', 'moneda', 'tasaIGV',
+    'importeTotal', 'exonerado', 'condicion', 'almacen', 'periodo', 'anio',
+]
+
 const OBLIGATORIOS: [keyof CabeceraEdicion, string][] = [
     ['codProv', 'Proveedor'], ['fechaEmision', 'Fecha de emisión'],
     ['tipoDoc', 'Tipo de documento'], ['serie', 'Serie'], ['numero', 'Número'],
@@ -241,6 +250,8 @@ export function useRegistroCompras() {
     }, [])
 
     const nuevo = useCallback(async () => {
+        nroLectura.current++
+        setLectura(null)
         setClave(null)
         setFilas([])
         setTotales(null)
@@ -264,6 +275,8 @@ export function useRegistroCompras() {
     }, [])
 
     const abrir = useCallback(async (claveDoc: number) => {
+        nroLectura.current++
+        setLectura(null)
         setCargando(true)
         try {
             const d = await ComprasService.obtenerDocumento(claveDoc)
@@ -287,6 +300,77 @@ export function useRegistroCompras() {
             setCargando(false)
         }
     }, [])
+
+    // ─── Lectura de la factura ───────────────────────────────────────────────
+    // Los campos se van llenando uno por uno para que se vea qué se leyó.
+    const [pintando, setPintando] = useState<string | null>(null)
+    const [pintados, setPintados] = useState<Set<string>>(new Set())
+    const [lineasLeidas, setLineasLeidas] = useState<Set<number>>(new Set())
+    const [lectura, setLectura] = useState<Pick<LecturaFactura, 'avisos' | 'yaRegistrado'> | null>(null)
+    const nroLectura = useRef(0)
+
+    const aplicarLectura = useCallback(async (d: LecturaFactura) => {
+        const mia = ++nroLectura.current
+        const pausa = (ms: number) => new Promise(r => setTimeout(r, ms))
+        const sigue = () => mia === nroLectura.current
+
+        setClave(null)
+        setTotales(null)
+        setCerrado(false)
+        setVecesRegistrado(0)
+        setFilas([])
+        setPintados(new Set())
+        setLineasLeidas(new Set())
+        setLectura({ avisos: d.avisos, yaRegistrado: d.yaRegistrado })
+
+        const leida: Partial<CabeceraEdicion> = { ...d.cabecera }
+        // A crédito: la condición que tenga exactamente esos días, si existe.
+        const conDias = d.diasCredito != null
+            ? catalogos?.condiciones.find(x => Number(x.DiasCdto) === d.diasCredito)
+            : null
+        if (conDias) leida.condicion = conDias.CodigoCondicion
+
+        const inicial = { ...CAB_VACIA }
+        for (const [k, v] of Object.entries(leida) as [keyof CabeceraEdicion, string][]) {
+            if (!ORDEN_PINTADO.includes(k) && v) inicial[k] = v
+        }
+        setCab(inicial)
+
+        for (const k of ORDEN_PINTADO) {
+            const v = leida[k]
+            if (!v) continue
+            await pausa(170)
+            if (!sigue()) return
+            setCab(prev => ({ ...prev, [k]: v, ...(k === 'codProv' ? { proveedorNombre: leida.proveedorNombre ?? '' } : {}) }))
+            setPintando(k)
+            setPintados(prev => new Set(prev).add(k))
+        }
+
+        let key = proximaKey
+        for (const l of d.lineas) {
+            await pausa(140)
+            if (!sigue()) return
+            const fila: FilaCompra = {
+                id: null, key, idGalpon: '', eliminar: false,
+                idArticulo: l.idArticulo, articulo: l.articulo, nombreItem: l.nombreItem,
+                cantidad: l.cantidad, lote: l.lote, vctoArt: l.vctoArt,
+                importeAfecto: l.importeAfecto, importeNoAfecto: l.importeNoAfecto,
+                cuentaContab: l.cuentaContab, centroCostos: l.centroCostos || '001',
+                leidaComo: l.descripcionFactura,
+            }
+            setFilas(prev => [...prev, fila])
+            setLineasLeidas(prev => new Set(prev).add(fila.key))
+            setPintando(`linea:${fila.key}`)
+            key -= 1
+        }
+        setProximaKey(key)
+        setPintando(null)
+
+        await pausa(2500)
+        if (sigue()) setPintados(new Set())
+    }, [catalogos, proximaKey])
+
+    const descartarLectura = () => setLectura(null)
 
     const setCampoCab = (campo: keyof CabeceraEdicion, valor: string) =>
         setCab(prev => ({ ...prev, [campo]: valor }))
@@ -442,6 +526,7 @@ export function useRegistroCompras() {
         catalogos, cargandoCatalogos,
         clave, cab, filas, totales, totalesEnVivo, cerrado, vecesRegistrado,
         cargando, guardando, esContado,
+        pintando, pintados, lineasLeidas, lectura, aplicarLectura, descartarLectura,
         nuevo, abrir, setCampoCab, setProveedor, setCampoFila, setArticulo,
         agregarFila, quitarFilaNueva, guardar, eliminarMarcadas, eliminarDocumento,
     }

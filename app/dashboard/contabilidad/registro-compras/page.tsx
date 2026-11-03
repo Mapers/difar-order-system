@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from "react"
+import { createContext, useContext, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -29,9 +29,13 @@ import { BuscadorDocumentos } from "./BuscadorDocumentos"
 import { SaldoDialog } from "./SaldoDialog"
 import { PagosDialog } from "./PagosDialog"
 import { TransporteDialog } from "./TransporteDialog"
+import { BotonLeerFactura, EstilosLectura } from "./LectorFactura"
 
 // La tasa llega como fracción (0.18) o como porcentaje (18).
 const tasaTexto = (t: number) => `${Number(t) < 1 ? Math.round(Number(t) * 10000) / 100 : Number(t)}%`
+
+// Qué campo se está llenando al leer una factura, para resaltarlo.
+const PintadoCtx = createContext<{ pintando: string | null; pintados: Set<string> }>({ pintando: null, pintados: new Set() })
 
 const money = (v: number) =>
     Number(v ?? 0).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
@@ -109,6 +113,8 @@ export default function RegistroComprasPage() {
 
 
     return (
+        <PintadoCtx.Provider value={{ pintando: c.pintando, pintados: c.pintados }}>
+        <EstilosLectura />
         <div className="grid grid-cols-1 pb-10">
             {/* Encabezado de la pantalla, igual que el resto de Contabilidad */}
             <div className="flex flex-col gap-3 pt-2 md:flex-row md:items-center md:justify-between">
@@ -191,6 +197,8 @@ export default function RegistroComprasPage() {
                                 </Button>
                             </div>
 
+                            <BotonLeerFactura disabled={c.cargando || ro} onLeida={c.aplicarLectura} />
+
                             <Button
                                 onClick={() => setBuscadorAbierto(true)}
                                 variant="outline" className="h-10 gap-1.5 px-3 font-semibold"
@@ -237,6 +245,24 @@ export default function RegistroComprasPage() {
                     </Aviso>
                 )}
 
+                {c.lectura && (c.lectura.yaRegistrado || c.lectura.avisos.length > 0) && (
+                    <div className="space-y-2">
+                        {c.lectura.yaRegistrado && (
+                            <Aviso tono="ambar" icono={AlertCircle}>
+                                Esta factura ya está registrada
+                                {c.lectura.yaRegistrado.nroRegistro != null && <> (registro Nº {c.lectura.yaRegistrado.nroRegistro})</>}.{' '}
+                                <button type="button" className="font-semibold underline underline-offset-2"
+                                        onClick={() => c.abrir(c.lectura!.yaRegistrado!.clave)}>
+                                    Abrir la registrada (clave {c.lectura.yaRegistrado.clave})
+                                </button>
+                            </Aviso>
+                        )}
+                        {c.lectura.avisos.map(a => (
+                            <Aviso key={a} tono="ambar" icono={AlertCircle}>{a}</Aviso>
+                        ))}
+                    </div>
+                )}
+
                 {c.vecesRegistrado > 1 && (
                     <Aviso tono="ambar" icono={AlertCircle}>
                         Hay {c.vecesRegistrado} documentos con el mismo proveedor, tipo, serie y número.
@@ -246,7 +272,7 @@ export default function RegistroComprasPage() {
 
                 <Grupo titulo="El documento" nota="Todos estos campos hacen falta para guardar." icono={FileText} acento="blue">
                     <Campos>
-                        <Campo etiqueta="Proveedor" requerido className="sm:col-span-2">
+                        <Campo k="codProv" etiqueta="Proveedor" requerido className="sm:col-span-2">
                             <BuscadorRemoto
                                 etiqueta="proveedor"
                                 valor={c.cab.proveedorNombre || c.cab.codProv}
@@ -264,53 +290,53 @@ export default function RegistroComprasPage() {
                             />
                         </Campo>
 
-                        <Campo etiqueta="Tipo de documento" requerido>
+                        <Campo k="tipoDoc" etiqueta="Tipo de documento" requerido>
                             {comboCampo({ k: 'tipoDoc', items: cat?.tiposDoc ?? [], getKey: x => x.Cod_Tipo, getLabel: x => String(x.Descripcion || x.Abreviatura), getSub: x => `${x.Cod_Tipo} · ${x.Abreviatura}`, icono: FileText, titulo: 'Elegir tipo', descripcion: 'Factura, boleta, nota…' })}
                         </Campo>
 
-                        <Campo etiqueta="Fecha de emisión" requerido>
+                        <Campo k="fechaEmision" etiqueta="Fecha de emisión" requerido>
                             <Input type="date" className="h-[50px] rounded-xl" {...campo('fechaEmision')} />
                         </Campo>
 
-                        <Campo etiqueta="Serie" requerido>
+                        <Campo k="serie" etiqueta="Serie" requerido>
                             <Input className="h-[50px] rounded-xl font-mono" maxLength={10} placeholder="F001" {...campo('serie')} />
                         </Campo>
 
-                        <Campo etiqueta="Número" requerido>
+                        <Campo k="numero" etiqueta="Número" requerido>
                             <Input className="h-[50px] rounded-xl font-mono tabular-nums" placeholder="1234" {...campo('numero')} />
                         </Campo>
 
-                        <Campo etiqueta="Moneda" requerido>
+                        <Campo k="moneda" etiqueta="Moneda" requerido>
                             {comboCampo({ k: 'moneda', items: cat?.monedas ?? [], getKey: x => x.Abreviatura, getLabel: x => String(x.Descripcion || x.Abreviatura), getSub: x => x.Abreviatura, icono: Coins, titulo: 'Elegir moneda', descripcion: 'Soles o dólares' })}
                         </Campo>
 
-                        <Campo etiqueta="Tasa de IGV" requerido>
+                        <Campo k="tasaIGV" etiqueta="Tasa de IGV" requerido>
                             {comboCampo({ k: 'tasaIGV', items: cat?.tasasIgv ?? [], getKey: x => String(x.Tasa), getLabel: x => tasaTexto(x.Tasa), getSub: x => `Tasa ${x.Tasa}`, icono: Percent, titulo: 'Elegir tasa', descripcion: 'IGV del documento' })}
                         </Campo>
 
-                        <Campo etiqueta="Importe total" requerido>
+                        <Campo k="importeTotal" etiqueta="Importe total" requerido>
                             <Input type="number" step="0.01"
                                    className="h-[50px] rounded-xl text-right tabular-nums" {...campo('importeTotal')} />
                         </Campo>
 
-                        <Campo etiqueta="Importe sin IGV">
+                        <Campo k="exonerado" etiqueta="Importe sin IGV">
                             <Input type="number" step="0.01"
                                    className="h-[50px] rounded-xl text-right tabular-nums" {...campo('exonerado')} />
                         </Campo>
 
-                        <Campo etiqueta="Condición" requerido>
+                        <Campo k="condicion" etiqueta="Condición" requerido>
                             {comboCampo({ k: 'condicion', items: cat?.condiciones ?? [], getKey: x => x.CodigoCondicion, getLabel: x => String(x.Descripcion), getSub: x => `${x.CodigoCondicion} · ${Number(x.DiasCdto) || 0} días`, icono: CalendarClock, titulo: 'Elegir condición', descripcion: 'Contado o crédito' })}
                         </Campo>
 
-                        <Campo etiqueta="Almacén" requerido>
+                        <Campo k="almacen" etiqueta="Almacén" requerido>
                             {comboCampo({ k: 'almacen', items: cat?.almacenes ?? [], getKey: x => String(x.IdAlmacen), getLabel: x => String(x.Descripcion), getSub: x => `Cód. ${x.IdAlmacen}`, icono: Warehouse, titulo: 'Elegir almacén', descripcion: 'Dónde ingresa la mercadería' })}
                         </Campo>
 
-                        <Campo etiqueta="Período" requerido>
+                        <Campo k="periodo" etiqueta="Período" requerido>
                             {comboCampo({ k: 'periodo', items: cat?.meses ?? [], getKey: x => x.Numero, getLabel: x => String(x.Mes), getSub: x => `Mes ${x.Numero}`, icono: CalendarDays, titulo: 'Elegir período', descripcion: 'Mes tributario' })}
                         </Campo>
 
-                        <Campo etiqueta="Año" requerido>
+                        <Campo k="anio" etiqueta="Año" requerido>
                             {comboCampo({ k: 'anio', items: cat?.anios ?? [], getKey: x => x.Anio, getLabel: x => String(x.Anio), getSub: () => 'Ejercicio', icono: Calendar, titulo: 'Elegir año', descripcion: 'Ejercicio contable' })}
                         </Campo>
                     </Campos>
@@ -442,7 +468,7 @@ export default function RegistroComprasPage() {
                                     </thead>
                                     <tbody>
                                         {c.filas.map(f => (
-                                            <FilaTabla key={f.key} f={f} cat={cat} ro={ro}
+                                            <FilaTabla key={f.key} f={f} cat={cat} ro={ro} leida={c.lineasLeidas.has(f.key)}
                                                        setCampo={c.setCampoFila}
                                                        setArticulo={c.setArticulo}
                                                        quitar={c.quitarFilaNueva} />
@@ -455,7 +481,7 @@ export default function RegistroComprasPage() {
                                 no se puede usar en un teléfono. */}
                             <div className="space-y-3 lg:hidden">
                                 {c.filas.map(f => (
-                                    <FilaTarjeta key={f.key} f={f} cat={cat} ro={ro}
+                                    <FilaTarjeta key={f.key} f={f} cat={cat} ro={ro} leida={c.lineasLeidas.has(f.key)}
                                                  setCampo={c.setCampoFila}
                                                  setArticulo={c.setArticulo}
                                                  quitar={c.quitarFilaNueva} />
@@ -633,6 +659,7 @@ export default function RegistroComprasPage() {
                 </AlertDialogContent>
             </AlertDialog>
         </div>
+        </PintadoCtx.Provider>
     )
 }
 
@@ -667,10 +694,12 @@ function Campos({ children }: { children: React.ReactNode }) {
 }
 
 function Campo({
-    etiqueta, requerido = false, className = '', children,
-}: { etiqueta: string; requerido?: boolean; className?: string; children: React.ReactNode }) {
+    k, etiqueta, requerido = false, className = '', children,
+}: { k?: string; etiqueta: string; requerido?: boolean; className?: string; children: React.ReactNode }) {
+    const { pintando, pintados } = useContext(PintadoCtx)
+    const brillo = k && pintando === k ? 'lf-pintando lf-pintado' : k && pintados.has(k) ? 'lf-pintado' : ''
     return (
-        <div className={`flex min-w-0 flex-col gap-1.5 ${className}`}>
+        <div className={`flex min-w-0 flex-col gap-1.5 ${className} ${brillo}`}>
             <Label className="text-xs font-medium text-muted-foreground">
                 {etiqueta}{requerido && <span className="ml-0.5 text-red-500">*</span>}
             </Label>
@@ -728,6 +757,8 @@ interface PropsFila {
     setCampo: (key: number, campo: keyof FilaCompra, valor: string | boolean) => void
     setArticulo: (key: number, idArticulo: string, codigo: string, nombre: string) => void
     quitar: (key: number) => void
+    /** La línea vino de leer la factura. */
+    leida?: boolean
 }
 
 const inputFila = "h-7 text-xs"
@@ -735,6 +766,7 @@ const comboFila = "h-7 px-2 text-xs"
 
 function BuscadorArticulo({ f, ro, setArticulo }: Pick<PropsFila, 'f' | 'ro' | 'setArticulo'>) {
     return (
+        <>
         <BuscadorRemoto
             etiqueta="artículo"
             valor={f.nombreItem || f.articulo}
@@ -746,6 +778,12 @@ function BuscadorArticulo({ f, ro, setArticulo }: Pick<PropsFila, 'f' | 'ro' | '
             onSelect={a => setArticulo(f.key, String(a.IdArticulo), a.Codigo_Art, a.NombreItem)}
             onLimpiar={() => setArticulo(f.key, '', '', '')}
         />
+        {f.leidaComo && !f.idArticulo && (
+            <p className="mt-0.5 truncate text-[10px] font-medium text-amber-700 dark:text-amber-400" title={f.leidaComo}>
+                En la factura: {f.leidaComo}
+            </p>
+        )}
+        </>
     )
 }
 
@@ -785,9 +823,9 @@ function SelectCentroCostos({ f, cat, ro, setCampo }: Pick<PropsFila, 'f' | 'cat
     )
 }
 
-function FilaTabla({ f, cat, ro, setCampo, setArticulo, quitar }: PropsFila) {
+function FilaTabla({ f, cat, ro, setCampo, setArticulo, quitar, leida }: PropsFila) {
     return (
-        <tr className={`border-b border-border last:border-0 ${f.eliminar ? 'bg-red-50/60 opacity-60' : 'hover:bg-muted/40'}`}>
+        <tr className={`border-b border-border last:border-0 ${f.eliminar ? 'bg-red-50/60 opacity-60' : 'hover:bg-muted/40'} ${leida ? 'lf-fila' : ''} ${leida && !f.idArticulo ? 'bg-amber-50/70 dark:bg-amber-950/30' : ''}`}>
             <td className="px-2 py-1 text-center">
                 {f.id !== null ? (
                     <Checkbox checked={f.eliminar} disabled={ro}
@@ -836,9 +874,9 @@ function FilaTabla({ f, cat, ro, setCampo, setArticulo, quitar }: PropsFila) {
     )
 }
 
-function FilaTarjeta({ f, cat, ro, setCampo, setArticulo, quitar }: PropsFila) {
+function FilaTarjeta({ f, cat, ro, setCampo, setArticulo, quitar, leida }: PropsFila) {
     return (
-        <div className={`rounded-xl border p-3 shadow-sm ${f.eliminar ? 'border-red-200 bg-red-50/60' : 'border-border bg-background'}`}>
+        <div className={`rounded-xl border p-3 shadow-sm ${f.eliminar ? 'border-red-200 bg-red-50/60' : leida && !f.idArticulo ? 'border-amber-300 bg-amber-50/70 dark:border-amber-800 dark:bg-amber-950/30' : 'border-border bg-background'} ${leida ? 'lf-fila' : ''}`}>
             <div className="mb-3 flex items-start gap-2">
                 <div className="min-w-0 flex-1">
                     <BuscadorArticulo f={f} ro={ro} setArticulo={setArticulo} />

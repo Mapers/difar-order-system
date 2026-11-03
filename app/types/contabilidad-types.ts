@@ -478,3 +478,27 @@ export interface ComprasTransportePayload {
     idDetalle:     number | null
     eliminar:      boolean
 }
+
+/** Compra propuesta al leer la factura del proveedor (POST /contabilidad/compras/leer-factura). */
+export interface LecturaFactura {
+    cabecera: Partial<Record<
+        'codProv' | 'proveedorNombre' | 'tipoDoc' | 'serie' | 'numero' | 'fechaEmision' | 'moneda' |
+        'importeTotal' | 'tasaIGV' | 'condicion' | 'almacen' | 'periodo' | 'anio' | 'exonerado' |
+        'inafecto' | 'observaciones' | 'responsable' | 'idClasificacionBienes' | 'nrOC', string>>
+    diasCredito: number | null
+    lineas: {
+        descripcionFactura: string
+        idArticulo:      string
+        articulo:        string
+        nombreItem:      string
+        cantidad:        string
+        lote:            string
+        vctoArt:         string
+        importeAfecto:   string
+        importeNoAfecto: string
+        cuentaContab:    string
+        centroCostos:    string
+    }[]
+    avisos: string[]
+    yaRegistrado: { clave: number; nroRegistro: number | null } | null
+}
