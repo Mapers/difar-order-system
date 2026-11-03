@@ -13,7 +13,7 @@ const PESO_MAXIMO = 10 * 1024 * 1024
 // Lo que hace el backend, en el orden en que lo hace. Los pasos avanzan solos
 // mientras se espera; la lectura con IA es el más largo.
 const PASOS = [
-    { texto: "Subiendo la factura",            ms: 900 },
+    { texto: "Subiendo el comprobante",        ms: 900 },
     { texto: "Leyendo el documento con IA",    ms: 9000 },
     { texto: "Buscando al proveedor",          ms: 1800 },
     { texto: "Emparejando productos y lotes",  ms: 2500 },
@@ -84,7 +84,7 @@ export function BotonLeerFactura({ disabled, llamativo = false, onLeida }: {
         }
         if (f.size > PESO_MAXIMO) {
             setArchivo(f)
-            setError("La factura debe pesar 10 MB o menos.")
+            setError("El comprobante debe pesar 10 MB o menos.")
             return
         }
         setArchivo(f)
@@ -100,7 +100,7 @@ export function BotonLeerFactura({ disabled, llamativo = false, onLeida }: {
             cerrar()
             onLeida(d)
         } catch (e: any) {
-            setError(e?.response?.data?.message || "No se pudo leer la factura.")
+            setError(e?.response?.data?.message || "No se pudo leer el comprobante.")
         }
     }
 
@@ -117,9 +117,9 @@ export function BotonLeerFactura({ disabled, llamativo = false, onLeida }: {
                 <Button
                     onClick={() => setEligiendo(true)} disabled={disabled}
                     className="relative z-10 h-10 gap-1.5 bg-gradient-to-r from-violet-600 to-blue-600 px-3 font-semibold text-white shadow-md shadow-violet-600/25 hover:from-violet-700 hover:to-blue-700"
-                    title="Sube la foto o el PDF de la factura y se llena sola"
+                    title="Sube la foto o el PDF del comprobante (factura, boleta, recibo…) y se llena solo"
                 >
-                    <ScanText className="h-4 w-4" /> <span className="hidden sm:inline">Leer factura</span>
+                    <ScanText className="h-4 w-4" /> <span className="hidden sm:inline">Escanear comprobante</span>
                 </Button>
             </span>
 
@@ -131,8 +131,8 @@ export function BotonLeerFactura({ disabled, llamativo = false, onLeida }: {
                             <ScanText className="h-5 w-5" />
                         </span>
                         <div className="min-w-0">
-                            <DialogTitle className="text-base">Leer factura</DialogTitle>
-                            <DialogDescription className="text-xs">Se llena sola con los datos de la factura del proveedor.</DialogDescription>
+                            <DialogTitle className="text-base">Escanear comprobante</DialogTitle>
+                            <DialogDescription className="text-xs">Factura, boleta o recibo del proveedor: se llena solo con sus datos.</DialogDescription>
                         </div>
                     </div>
                     <div className="p-5">
@@ -158,10 +158,10 @@ export function BotonLeerFactura({ disabled, llamativo = false, onLeida }: {
                                 <UploadCloud className="h-7 w-7" />
                             </span>
                             <span className="text-sm font-semibold">
-                                {arrastrando ? "Suelta la factura aquí" : "Arrastra la factura aquí"}
+                                {arrastrando ? "Suelta el comprobante aquí" : "Arrastra el comprobante aquí"}
                             </span>
                             <span className="text-xs text-muted-foreground">
-                                o <span className="font-semibold text-violet-700 underline underline-offset-2 dark:text-violet-300">búscala en tu equipo</span>
+                                o <span className="font-semibold text-violet-700 underline underline-offset-2 dark:text-violet-300">búscalo en tu equipo</span>
                             </span>
                         </button>
                         <div className="mt-3 flex items-center justify-center gap-4 text-[11px] text-muted-foreground">
@@ -181,7 +181,7 @@ export function BotonLeerFactura({ disabled, llamativo = false, onLeida }: {
                             <Sparkles className="h-5 w-5" />
                         </span>
                         <div className="min-w-0">
-                            <DialogTitle className="text-base">Leyendo la factura</DialogTitle>
+                            <DialogTitle className="text-base">Leyendo el comprobante</DialogTitle>
                             <DialogDescription className="truncate text-xs">{archivo?.name}</DialogDescription>
                         </div>
                     </div>

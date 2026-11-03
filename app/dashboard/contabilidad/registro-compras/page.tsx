@@ -270,7 +270,7 @@ export default function RegistroComprasPage() {
                         )}
                         {c.lectura.yaRegistrado && (
                             <Aviso tono="ambar" icono={AlertCircle}>
-                                Esta factura ya está registrada
+                                Este comprobante ya está registrado
                                 {c.lectura.yaRegistrado.nroRegistro != null && <> (registro Nº {c.lectura.yaRegistrado.nroRegistro})</>}.{' '}
                                 <button type="button" className="font-semibold underline underline-offset-2"
                                         onClick={() => c.abrir(c.lectura!.yaRegistrado!.clave)}>
