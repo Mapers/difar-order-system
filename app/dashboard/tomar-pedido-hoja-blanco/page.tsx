@@ -85,9 +85,6 @@ interface SerieDoc { idSerieDoc: number; Nro_Serie: string; tipoDocumento: strin
 interface CuentaVenta { IdCtaContable: number; Cod_Contab: string; Descricpion: string }
 interface LoteItem { Lote: string; VctoItem: string | null; Saldo: string | number | null }
 
-// Serie: como Access se listan todas las series de la empresa (las NC usan
-// F001/F002 y hay boletas en R001). Primero van las del tipo elegido; las
-// NC/ND toman por defecto una serie de factura.
 const tipoSerieDe = (tipoDoc: string) => (tipoDoc === DOC_NOTA_CREDITO || tipoDoc === DOC_NOTA_DEBITO ? DOC_FACTURA : tipoDoc)
 const seriePorDefecto = (series: SerieDoc[], tipoDoc: string) =>
     series.find((s) => s.tipoDocumento === tipoSerieDe(tipoDoc))?.Nro_Serie ?? ""
