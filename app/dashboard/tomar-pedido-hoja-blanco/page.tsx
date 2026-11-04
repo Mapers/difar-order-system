@@ -740,32 +740,24 @@ export default function TomarPedidoHojaBlancoPage() {
 
             {/* ── Resumen arriba, como en el resto de Contabilidad ── */}
             <Card className="overflow-hidden shadow-md">
-                <div className="grid lg:grid-cols-[1fr_minmax(300px,380px)]">
-                    <div className="flex flex-col gap-4 p-4 md:p-6">
-                        <div className="flex items-center gap-3">
-                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-blue-100 bg-blue-50 text-blue-600 dark:border-blue-900/60 dark:bg-blue-950/40 dark:text-blue-400">
-                                <Receipt className="h-4 w-4" />
-                            </div>
-                            <div className="min-w-0">
-                                <h2 className="text-sm font-semibold leading-none text-foreground">Resumen del comprobante</h2>
-                                <p className="mt-1 text-xs text-muted-foreground">
-                                    {itemsConProducto} {itemsConProducto === 1 ? "item" : "items"} · {monedas.find((m) => m.value === moneda)?.label ?? "Sin moneda"}
-                                </p>
-                            </div>
+                <div className="flex flex-col gap-4 p-4 md:p-5">
+                    <div className="flex items-center gap-3">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-blue-100 bg-blue-50 text-blue-600 dark:border-blue-900/60 dark:bg-blue-950/40 dark:text-blue-400">
+                            <Receipt className="h-4 w-4" />
                         </div>
-                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                            <TotalCard label="VVNA" hint="Valor venta no afecto" valor={`${simbolo} ${fmt(totales.vvna)}`} />
-                            <TotalCard label="VVA" hint="Valor venta afecto" valor={`${simbolo} ${fmt(totales.vva)}`} />
-                            <TotalCard label="IGV" hint={tasaIgv === null ? "Sin tasa" : `Impuesto ${(tasaIgv * 100).toFixed(tasaIgv * 100 % 1 ? 1 : 0)}%`} valor={`${simbolo} ${fmt(totales.igv)}`} />
+                        <div className="min-w-0">
+                            <h2 className="text-sm font-semibold leading-none text-foreground">Resumen del comprobante</h2>
+                            <p className="mt-1 truncate text-xs text-muted-foreground">
+                                {itemsConProducto} {itemsConProducto === 1 ? "item" : "items"} · {monedas.find((m) => m.value === moneda)?.label ?? "Sin moneda"}
+                                {serie && ` · ${docSeleccionado?.Descripcion ?? ""} ${serie}-${numeroTexto}`}
+                            </p>
                         </div>
                     </div>
-
-                    <div className="flex flex-col justify-center bg-gradient-to-br from-blue-600 to-blue-800 p-5 text-white md:p-6">
-                        <p className="text-xs font-semibold uppercase tracking-wider text-blue-100">Total a pagar</p>
-                        <p className="mt-1 font-mono text-3xl font-bold tracking-tight md:text-4xl">{simbolo} {fmt(totales.total)}</p>
-                        <p className="mt-1 truncate text-xs text-blue-100">
-                            {docSeleccionado?.Descripcion ?? "Sin documento"} {serie && `· ${serie}-${numeroTexto}`}
-                        </p>
+                    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+                        <TotalCard label="VVNA" hint="Valor venta no afecto" valor={`${simbolo} ${fmt(totales.vvna)}`} />
+                        <TotalCard label="VVA" hint="Valor venta afecto" valor={`${simbolo} ${fmt(totales.vva)}`} />
+                        <TotalCard label="IGV" hint={tasaIgv === null ? "Sin tasa" : `Impuesto ${(tasaIgv * 100).toFixed(tasaIgv * 100 % 1 ? 1 : 0)}%`} valor={`${simbolo} ${fmt(totales.igv)}`} />
+                        <TotalCard label="Total" hint="A pagar" valor={`${simbolo} ${fmt(totales.total)}`} destacado />
                     </div>
                 </div>
             </Card>
@@ -1093,10 +1085,10 @@ export default function TomarPedidoHojaBlancoPage() {
                                     <fieldset
                                         disabled={!l.idArticulo}
                                         title={!l.idArticulo ? "Primero elige el producto" : undefined}
-                                        className="mt-3 grid min-w-0 grid-cols-2 gap-3 border-0 p-0 md:pl-10 lg:grid-cols-12 lg:items-end disabled:pointer-events-none disabled:opacity-50"
+                                        className="mt-3 grid min-w-0 grid-cols-2 gap-3 border-0 p-0 md:pl-10 lg:grid-cols-12 lg:items-start disabled:pointer-events-none disabled:opacity-50"
                                     >
                                         <div className="flex min-w-0 flex-col gap-1.5 lg:col-span-2">
-                                            <Label className="text-xs font-semibold text-muted-foreground">Cantidad</Label>
+                                            <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Cantidad</Label>
                                             <Input
                                                 type="number"
                                                 inputMode="numeric"
@@ -1109,16 +1101,17 @@ export default function TomarPedidoHojaBlancoPage() {
                                                     const n = Math.floor(Number(e.target.value))
                                                     setLinea(idx, { Cantidad: Number.isFinite(n) && n > 0 ? n : 0 })
                                                 }}
-                                                className="h-10 text-right font-mono"
+                                                className="h-[62px] text-right font-mono text-base"
                                             />
                                         </div>
                                         <div className="flex min-w-0 flex-col gap-1.5 lg:col-span-2">
-                                            <Label className="text-xs font-semibold text-muted-foreground">{l.Afecto ? "PU con IGV" : "PU sin IGV"} ({simbolo})</Label>
-                                            <Input type="number" min={0} step="0.01" value={l.PU} onChange={(e) => setLinea(idx, { PU: Number(e.target.value) })} className="h-10 text-right font-mono" />
+                                            <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{l.Afecto ? "PU con IGV" : "PU sin IGV"} ({simbolo})</Label>
+                                            <Input type="number" min={0} step="0.01" value={l.PU} onChange={(e) => setLinea(idx, { PU: Number(e.target.value) })} className="h-[62px] text-right font-mono text-base" />
                                         </div>
-                                        <div className="col-span-2 flex min-w-0 flex-col gap-1 lg:col-span-4">
+                                        <div className="col-span-2 flex min-w-0 flex-col gap-1 lg:col-span-5">
                                             <ComboTile
                                                 label="Lote"
+                                                enLinea
                                                 value={l.Lote}
                                                 items={l.Lotes ?? []}
                                                 getKey={(i) => i.Lote}
@@ -1145,6 +1138,7 @@ export default function TomarPedidoHojaBlancoPage() {
                                         <div className="col-span-2 lg:order-last lg:col-span-6">
                                             <ComboTile
                                                 label="Cuenta contable"
+                                                enLinea
                                                 value={l.CuentaContab}
                                                 items={cuentas}
                                                 getKey={(i) => String(i.IdCtaContable)}
@@ -1166,6 +1160,7 @@ export default function TomarPedidoHojaBlancoPage() {
                                         <div className="col-span-2 lg:order-last lg:col-span-6">
                                             <ComboTile
                                                 label="Centro de costos"
+                                                enLinea
                                                 value={l.CentroCostos}
                                                 items={centrosCosto}
                                                 getKey={(i) => i.Cod_CC}
@@ -1183,9 +1178,11 @@ export default function TomarPedidoHojaBlancoPage() {
                                                 description="Sucursal"
                                             />
                                         </div>
-                                        <div className="col-span-2 flex items-center justify-between rounded-xl border border-blue-100 bg-blue-50 px-3 py-2.5 dark:border-blue-900/60 dark:bg-blue-950/30 lg:col-span-4 lg:flex-col lg:items-end lg:justify-center">
-                                            <span className="text-[11px] font-bold uppercase tracking-wide text-blue-600 dark:text-blue-400">Importe</span>
-                                            <span className="font-mono text-lg font-bold text-blue-800 dark:text-blue-200">{simbolo} {fmt(importe)}</span>
+                                        <div className="col-span-2 flex min-w-0 flex-col gap-1.5 lg:col-span-3">
+                                            <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Importe</Label>
+                                            <div className="flex h-[62px] items-center justify-end rounded-xl border border-blue-100 bg-blue-50 px-4 dark:border-blue-900/60 dark:bg-blue-950/30">
+                                                <span className="font-mono text-lg font-bold text-blue-800 dark:text-blue-200">{simbolo} {fmt(importe)}</span>
+                                            </div>
                                         </div>
                                     </fieldset>
                                 </div>
@@ -1383,14 +1380,16 @@ function Campo({ label, children }: { label: string; children: React.ReactNode }
     )
 }
 
-function TotalCard({ label, hint, valor }: { label: string; hint: string; valor: string }) {
+function TotalCard({ label, hint, valor, destacado = false }: { label: string; hint: string; valor: string; destacado?: boolean }) {
     return (
-        <div className="rounded-xl border border-border bg-muted/40 p-4">
+        <div className={cn("rounded-xl border p-4", destacado
+            ? "border-transparent bg-gradient-to-br from-blue-600 to-blue-800 text-white shadow-sm"
+            : "border-border bg-muted/40")}>
             <div className="flex items-baseline justify-between gap-2">
-                <span className="text-xs font-bold uppercase tracking-wide text-foreground">{label}</span>
-                <span className="truncate text-[11px] text-muted-foreground">{hint}</span>
+                <span className={cn("text-xs font-bold uppercase tracking-wide", destacado ? "text-white" : "text-foreground")}>{label}</span>
+                <span className={cn("truncate text-[11px]", destacado ? "text-blue-100" : "text-muted-foreground")}>{hint}</span>
             </div>
-            <div className="mt-2 font-mono text-xl font-bold text-blue-700 dark:text-blue-400">{valor}</div>
+            <div className={cn("mt-2 font-mono text-xl font-bold", destacado ? "text-white" : "text-blue-700 dark:text-blue-400")}>{valor}</div>
         </div>
     )
 }
@@ -1405,7 +1404,7 @@ const TILE_ACCENTS = {
 
 function ComboTile<T>({
     label, required, value, items, getKey, getLabel, getSub, onSelect, onClear,
-    icon: Icon, accent = "blue", title, description, placeholder, loading, pageSize, confirmarCambio, compacto = false,
+    icon: Icon, accent = "blue", title, description, placeholder, loading, pageSize, confirmarCambio, compacto = false, enLinea = false,
 }: {
     label: string
     required?: boolean
@@ -1427,6 +1426,8 @@ function ComboTile<T>({
     confirmarCambio?: { titulo: string; descripcion: string }
     /** Para columnas angostas: "Cambiar" pasa a ícono y el texto usa todo el ancho. */
     compacto?: boolean
+    /** Dentro de una línea del detalle: etiqueta chica y la misma altura que los campos de al lado. */
+    enLinea?: boolean
 }) {
     const [search, setSearch] = useState("")
     const [confirmOpen, setConfirmOpen] = useState(false)
@@ -1444,11 +1445,11 @@ function ComboTile<T>({
 
     return (
         <div className="flex min-w-0 flex-col gap-1.5">
-            <Label className="text-sm font-semibold text-foreground">
+            <Label className={enLinea ? "text-xs font-semibold uppercase tracking-wide text-muted-foreground" : "text-sm font-semibold text-foreground"}>
                 {label} {required && <span className="text-red-500">*</span>}
             </Label>
             {selected ? (
-                <div className={cn("flex items-center gap-2 rounded-xl border p-2.5", colors.card)}>
+                <div className={cn("flex items-center gap-2 rounded-xl border p-2.5", enLinea && "h-[62px]", colors.card)}>
                     <div className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-full", colors.badge, compacto && "hidden xl:flex")}>
                         <Icon className="h-4 w-4 text-white" />
                     </div>
