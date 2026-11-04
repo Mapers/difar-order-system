@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { ArrowLeftRight, BookOpen, Building2, CalendarClock, Coins, Eraser, FilePlus2, FileText, Hash, Loader2, MessageSquareText, Package, Pencil, Percent, Plus, Printer, Receipt, Save, Search, Target, Trash2, User, UserCheck } from "lucide-react"
+import { ArrowLeftRight, BookOpen, Building2, CalendarClock, Coins, Eraser, FilePlus2, FileText, Hash, Loader2, MessageSquareText, Package, Pencil, Percent, Plus, Printer, Receipt, RefreshCw, Save, Search, Target, Trash2, User, UserCheck } from "lucide-react"
 import InlineAutocomplete from "@/components/tomar-pedido/InlineAutocomplete"
 import { cn } from "@/lib/utils"
 import { toast } from "@/app/hooks/useToast"
@@ -1056,8 +1056,8 @@ export default function TomarPedidoHojaBlancoPage() {
                                     </div>
 
                                     {/* Fila 2: cantidad, precio, lote, contabilidad, importe */}
-                                    <div className="mt-3 grid grid-cols-2 gap-3 md:pl-10 lg:grid-cols-[110px_140px_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_160px] lg:items-end">
-                                        <div className="flex min-w-0 flex-col gap-1.5">
+                                    <div className="mt-3 grid grid-cols-2 gap-3 md:pl-10 lg:grid-cols-12 lg:items-end">
+                                        <div className="flex min-w-0 flex-col gap-1.5 lg:col-span-2">
                                             <Label className="text-xs font-semibold text-muted-foreground">Cantidad</Label>
                                             <Input
                                                 type="number"
@@ -1074,11 +1074,11 @@ export default function TomarPedidoHojaBlancoPage() {
                                                 className="h-10 text-right font-mono"
                                             />
                                         </div>
-                                        <div className="flex min-w-0 flex-col gap-1.5">
+                                        <div className="flex min-w-0 flex-col gap-1.5 lg:col-span-2">
                                             <Label className="text-xs font-semibold text-muted-foreground">{l.Afecto ? "PU con IGV" : "PU sin IGV"} ({simbolo})</Label>
                                             <Input type="number" min={0} step="0.01" value={l.PU} onChange={(e) => setLinea(idx, { PU: Number(e.target.value) })} className="h-10 text-right font-mono" />
                                         </div>
-                                        <div className="col-span-2 flex min-w-0 flex-col gap-1 lg:col-span-1">
+                                        <div className="col-span-2 flex min-w-0 flex-col gap-1 lg:col-span-4">
                                             <ComboTile
                                                 label="Lote"
                                                 value={l.Lote}
@@ -1104,7 +1104,7 @@ export default function TomarPedidoHojaBlancoPage() {
                                                 ) : null
                                             })()}
                                         </div>
-                                        <div className="col-span-2 lg:col-span-1">
+                                        <div className="col-span-2 lg:order-last lg:col-span-6">
                                             <ComboTile
                                                 label="Cuenta contable"
                                                 value={l.CuentaContab}
@@ -1125,7 +1125,7 @@ export default function TomarPedidoHojaBlancoPage() {
                                                 description="Cuenta de ventas"
                                             />
                                         </div>
-                                        <div className="col-span-2 lg:col-span-1">
+                                        <div className="col-span-2 lg:order-last lg:col-span-6">
                                             <ComboTile
                                                 label="Centro de costos"
                                                 value={l.CentroCostos}
@@ -1145,7 +1145,7 @@ export default function TomarPedidoHojaBlancoPage() {
                                                 description="Sucursal"
                                             />
                                         </div>
-                                        <div className="col-span-2 flex items-center justify-between rounded-xl border border-blue-100 bg-blue-50 px-3 py-2.5 dark:border-blue-900/60 dark:bg-blue-950/30 lg:col-span-1 lg:flex-col lg:items-end lg:justify-center">
+                                        <div className="col-span-2 flex items-center justify-between rounded-xl border border-blue-100 bg-blue-50 px-3 py-2.5 dark:border-blue-900/60 dark:bg-blue-950/30 lg:col-span-4 lg:flex-col lg:items-end lg:justify-center">
                                             <span className="text-[11px] font-bold uppercase tracking-wide text-blue-600 dark:text-blue-400">Importe</span>
                                             <span className="font-mono text-lg font-bold text-blue-800 dark:text-blue-200">{simbolo} {fmt(importe)}</span>
                                         </div>
@@ -1396,7 +1396,7 @@ const TILE_ACCENTS = {
 
 function ComboTile<T>({
     label, required, value, items, getKey, getLabel, getSub, onSelect, onClear,
-    icon: Icon, accent = "blue", title, description, placeholder, loading, pageSize, confirmarCambio,
+    icon: Icon, accent = "blue", title, description, placeholder, loading, pageSize, confirmarCambio, compacto = false,
 }: {
     label: string
     required?: boolean
@@ -1416,6 +1416,8 @@ function ComboTile<T>({
     pageSize?: number
     /** Si se pasa, "Cambiar" pide confirmacion antes de liberar el valor */
     confirmarCambio?: { titulo: string; descripcion: string }
+    /** Para columnas angostas: "Cambiar" pasa a ícono y el texto usa todo el ancho. */
+    compacto?: boolean
 }) {
     const [search, setSearch] = useState("")
     const [confirmOpen, setConfirmOpen] = useState(false)
@@ -1438,11 +1440,11 @@ function ComboTile<T>({
             </Label>
             {selected ? (
                 <div className={cn("flex items-center gap-2 rounded-xl border p-2.5", colors.card)}>
-                    <div className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-full", colors.badge)}>
+                    <div className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-full", colors.badge, compacto && "hidden xl:flex")}>
                         <Icon className="h-4 w-4 text-white" />
                     </div>
                     <div className="min-w-0 flex-1">
-                        <p className={cn("truncate text-sm font-semibold leading-tight", colors.title)}>{getLabel(selected)}</p>
+                        <p className={cn("line-clamp-2 break-words text-sm font-semibold leading-tight", colors.title)} title={getLabel(selected)}>{getLabel(selected)}</p>
                         <p className={cn("truncate font-mono text-xs", colors.sub)}>{subDe(selected)}</p>
                     </div>
                     <Button
@@ -1450,9 +1452,11 @@ function ComboTile<T>({
                         size="sm"
                         variant="outline"
                         onClick={() => (confirmarCambio ? setConfirmOpen(true) : liberar())}
-                        className={cn("h-7 shrink-0 bg-background px-2.5 text-xs", colors.button)}
+                        title="Cambiar"
+                        aria-label="Cambiar"
+                        className={cn("h-7 shrink-0 bg-background text-xs", compacto ? "w-7 p-0" : "px-2.5", colors.button)}
                     >
-                        Cambiar
+                        {compacto ? <RefreshCw className="h-3.5 w-3.5" /> : "Cambiar"}
                     </Button>
                 </div>
             ) : (
@@ -1473,13 +1477,15 @@ function ComboTile<T>({
                     onSelect={onSelect}
                     emptyMessage="No se encontraron resultados"
                     idleMessage="Sin opciones disponibles"
+                    // La lista puede ser más ancha que el botón y el texto baja de línea: se lee completo.
+                    contentClassName="min-w-[340px] max-w-[calc(100vw-2rem)]"
                     renderItem={(i) => (
                         <div className="flex items-center gap-3 px-3 py-2.5">
                             <div className={cn("shrink-0 rounded-full p-2", colors.itemBadge)}>
                                 <Icon className={cn("h-4 w-4", colors.itemIcon)} />
                             </div>
                             <div className="min-w-0 flex-1">
-                                <p className="truncate text-sm font-semibold text-foreground">{getLabel(i)}</p>
+                                <p className="break-words text-sm font-semibold leading-snug text-foreground">{getLabel(i)}</p>
                                 <p className="font-mono text-xs text-muted-foreground">{subDe(i)}</p>
                             </div>
                         </div>
