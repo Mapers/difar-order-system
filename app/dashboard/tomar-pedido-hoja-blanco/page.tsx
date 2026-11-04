@@ -738,6 +738,38 @@ export default function TomarPedidoHojaBlancoPage() {
                 </div>
             )}
 
+            {/* ── Resumen arriba, como en el resto de Contabilidad ── */}
+            <Card className="overflow-hidden shadow-md">
+                <div className="grid lg:grid-cols-[1fr_minmax(300px,380px)]">
+                    <div className="flex flex-col gap-4 p-4 md:p-6">
+                        <div className="flex items-center gap-3">
+                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-blue-100 bg-blue-50 text-blue-600 dark:border-blue-900/60 dark:bg-blue-950/40 dark:text-blue-400">
+                                <Receipt className="h-4 w-4" />
+                            </div>
+                            <div className="min-w-0">
+                                <h2 className="text-sm font-semibold leading-none text-foreground">Resumen del comprobante</h2>
+                                <p className="mt-1 text-xs text-muted-foreground">
+                                    {itemsConProducto} {itemsConProducto === 1 ? "item" : "items"} · {monedas.find((m) => m.value === moneda)?.label ?? "Sin moneda"}
+                                </p>
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                            <TotalCard label="VVNA" hint="Valor venta no afecto" valor={`${simbolo} ${fmt(totales.vvna)}`} />
+                            <TotalCard label="VVA" hint="Valor venta afecto" valor={`${simbolo} ${fmt(totales.vva)}`} />
+                            <TotalCard label="IGV" hint={tasaIgv === null ? "Sin tasa" : `Impuesto ${(tasaIgv * 100).toFixed(tasaIgv * 100 % 1 ? 1 : 0)}%`} valor={`${simbolo} ${fmt(totales.igv)}`} />
+                        </div>
+                    </div>
+
+                    <div className="flex flex-col justify-center bg-gradient-to-br from-blue-600 to-blue-800 p-5 text-white md:p-6">
+                        <p className="text-xs font-semibold uppercase tracking-wider text-blue-100">Total a pagar</p>
+                        <p className="mt-1 font-mono text-3xl font-bold tracking-tight md:text-4xl">{simbolo} {fmt(totales.total)}</p>
+                        <p className="mt-1 truncate text-xs text-blue-100">
+                            {docSeleccionado?.Descripcion ?? "Sin documento"} {serie && `· ${serie}-${numeroTexto}`}
+                        </p>
+                    </div>
+                </div>
+            </Card>
+
             {/* ── Cabecera ── */}
             <Card className="shadow-md">
                 <CardHeader className="border-b border-border bg-muted p-4 md:p-5">
@@ -1174,39 +1206,10 @@ export default function TomarPedidoHojaBlancoPage() {
                 </CardContent>
             </Card>
 
-            {/* ── Resumen: totales + acciones ── */}
+            {/* ── Acciones ── */}
             <Card className="overflow-hidden shadow-md">
-                <div className="grid lg:grid-cols-[1fr_minmax(300px,380px)]">
-                    <div className="flex flex-col gap-4 p-4 md:p-6">
-                        <div className="flex items-center gap-3">
-                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-blue-100 bg-blue-50 text-blue-600 dark:border-blue-900/60 dark:bg-blue-950/40 dark:text-blue-400">
-                                <Receipt className="h-4 w-4" />
-                            </div>
-                            <div className="min-w-0">
-                                <h2 className="text-sm font-semibold leading-none text-foreground">Resumen del comprobante</h2>
-                                <p className="mt-1 text-xs text-muted-foreground">
-                                    {itemsConProducto} {itemsConProducto === 1 ? "item" : "items"} · {monedas.find((m) => m.value === moneda)?.label ?? "Sin moneda"}
-                                </p>
-                            </div>
-                        </div>
-                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                            <TotalCard label="VVNA" hint="Valor venta no afecto" valor={`${simbolo} ${fmt(totales.vvna)}`} />
-                            <TotalCard label="VVA" hint="Valor venta afecto" valor={`${simbolo} ${fmt(totales.vva)}`} />
-                            <TotalCard label="IGV" hint={tasaIgv === null ? "Sin tasa" : `Impuesto ${(tasaIgv * 100).toFixed(tasaIgv * 100 % 1 ? 1 : 0)}%`} valor={`${simbolo} ${fmt(totales.igv)}`} />
-                        </div>
-                    </div>
-
-                    <div className="flex flex-col justify-center bg-gradient-to-br from-blue-600 to-blue-800 p-5 text-white md:p-6">
-                        <p className="text-xs font-semibold uppercase tracking-wider text-blue-100">Total a pagar</p>
-                        <p className="mt-1 font-mono text-3xl font-bold tracking-tight md:text-4xl">{simbolo} {fmt(totales.total)}</p>
-                        <p className="mt-1 truncate text-xs text-blue-100">
-                            {docSeleccionado?.Descripcion ?? "Sin documento"} {serie && `· ${serie}-${numeroTexto}`}
-                        </p>
-                    </div>
-                </div>
-
                 {/* Acciones: Guardar / Imprimir a la izquierda, Limpiar a la derecha */}
-                <div className="flex flex-col-reverse gap-2 border-t border-border bg-muted/40 p-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex flex-col-reverse gap-2 bg-muted/40 p-4 sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex flex-col gap-2 sm:flex-row">
                         <Button type="button" onClick={handleGuardar} disabled={guardando || abriendo || bloqueado} className="bg-blue-600 font-semibold shadow-sm hover:bg-blue-700 sm:min-w-[140px]">
                             {guardando ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
