@@ -694,7 +694,7 @@ export default function TomarPedidoHojaBlancoPage() {
                 </h1>
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <p className="text-sm text-muted-foreground md:text-base">
-                        Registro de Ventas — formulario migrado de Access (Facturas/Boleta/NC/ND). En validación.
+                        Registro de comprobantes en hoja en blanco: facturas, boletas y notas de crédito o débito.
                     </p>
                     <Button type="button" variant="outline" onClick={() => setBuscarOpen(true)} className="shrink-0 border-blue-200 text-blue-700 hover:bg-blue-50 dark:border-blue-900/60 dark:text-blue-400">
                         <Search className="mr-2 h-4 w-4" /> Buscar comprobante
