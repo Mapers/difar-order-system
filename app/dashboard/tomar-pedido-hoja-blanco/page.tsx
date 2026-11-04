@@ -108,10 +108,11 @@ interface ComprobanteFila {
 const cuentaPorDefecto = (afecto: boolean, cuentas: CuentaVenta[]) =>
     afecto ? String(cuentas.find((c) => c.Cod_Contab === COD_CUENTA_AFECTA)?.IdCtaContable ?? "") : ""
 
-// Centro de costos por defecto: el que se llama igual que el almacen (CHIMBOTE → CHIMBOTE)
-const normalizar = (t: string) => (t || "").trim().toUpperCase()
-const centroPorAlmacen = (almacen: IAlmacen | null, centros: CentroCosto[]) =>
-    almacen ? centros.find((c) => normalizar(c.Descripcion) === normalizar(almacen.Descripcion))?.Cod_CC ?? "" : ""
+// Centro de costos por defecto: 001 ADMINISTRACION para todas las lineas, sea cual
+// sea el almacen. Cambiarlo pide confirmacion.
+const COD_CENTRO_POR_DEFECTO = "001"
+const centroPorAlmacen = (_almacen: IAlmacen | null, centros: CentroCosto[]) =>
+    centros.find((c) => c.Cod_CC === COD_CENTRO_POR_DEFECTO)?.Cod_CC ?? ""
 
 interface LineaDetalle {
     idArticulo: string
@@ -372,7 +373,7 @@ export default function TomarPedidoHojaBlancoPage() {
         })))
     }
 
-    // Centro de costos del almacen seleccionado; se aplica a las lineas que no fueron cambiadas a mano
+    // Centro de costos por defecto; se aplica a las lineas que no fueron cambiadas a mano
     const centroAlmacen = centroPorAlmacen(selectedAlmacen, centrosCosto)
     useEffect(() => {
         if (!centroAlmacen) return
@@ -1137,7 +1138,7 @@ export default function TomarPedidoHojaBlancoPage() {
                                                 onClear={() => setLinea(idx, { CentroCostos: "" })}
                                                 confirmarCambio={{
                                                     titulo: "¿Cambiar el centro de costos?",
-                                                    descripcion: `Se asignó automáticamente según el almacén${selectedAlmacen ? ` (${selectedAlmacen.Descripcion})` : ""}. Si lo cambias, ya no se ajustará solo.`,
+                                                    descripcion: `Por defecto va ${COD_CENTRO_POR_DEFECTO} ADMINISTRACION. ¿Seguro que esta línea va a otro centro de costos?`,
                                                 }}
                                                 icon={Target}
                                                 accent="violet"
