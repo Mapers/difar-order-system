@@ -64,6 +64,7 @@ export interface IProduct {
   Codigo_Art: string;
   NombreItem: string;
   Stock: string;
+  StockFisico?: string | number;
   Descripcion: string;
   presentacion: string | null;
   tieneEscala: number;
@@ -80,6 +81,10 @@ export interface IProduct {
   tipo_afectacion_descripcion: string;
   tieneSustitutos: number;
 }
+
+// Físico a mostrar: sin la columna (SP sin actualizar) es igual al virtual; nunca negativo.
+export const stockFisicoDe = (p: Pick<IProduct, "Stock" | "StockFisico">) =>
+  Math.max(0, Number(p.StockFisico ?? p.Stock) || 0);
 
 // Interfaz order item
 export interface OrderItem {

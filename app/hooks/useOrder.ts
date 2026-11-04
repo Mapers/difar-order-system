@@ -313,6 +313,7 @@ export function useOrderPage() {
                     numeroLote: lote.numeroLote,
                     fechaVencimiento: lote.fechaVencimiento,
                     stock: Number(lote.stock).toFixed(2),
+                    stockFisico: Number(lote.stockFisico ?? lote.stock).toFixed(2),
                 }))
 
                 const lotesFiltered = lotes.filter((item: any) => {

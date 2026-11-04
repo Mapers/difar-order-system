@@ -133,6 +133,7 @@ export interface GuiaReferencia {
 
 export interface LoteProducto {
     value: string
+    stockFisico?: string
 }
 
 export interface ProductoConLotes {

@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import {ShoppingCart, ArrowRight, ArrowLeft, Search, Building, Minus, Plus, Trash, Package, Save, Loader2} from "lucide-react"
-import { IProduct, ISelectedProduct } from "@/app/types/order/product-interface"
+import { IProduct, ISelectedProduct, stockFisicoDe } from "@/app/types/order/product-interface"
 import { IItemDashboard } from "@/app/types/metas-types"
 import { IMoneda } from "@/app/types/order/client-interface"
 import { PriceType, ProductoConLotes } from "@/app/types/order/order-interface"
@@ -174,7 +174,7 @@ export default function ProductStep({
                                             const remaining = stockTotal - safeQuantity;
                                             return (
                                                 <span className="ml-1 text-[10px] font-normal text-muted-foreground">
-                                Stock: {stockTotal.toFixed(0)} · <span className={remaining <= 0 ? 'text-red-500 font-semibold' : remaining <= 3 ? 'text-amber-500' : 'text-green-600'}>
+                                Stock: {stockTotal.toFixed(0)}{` Físico: ${stockFisicoDe(selectedProduct).toFixed(0)}`} · <span className={remaining <= 0 ? 'text-red-500 font-semibold' : remaining <= 3 ? 'text-amber-500' : 'text-green-600'}>
                                     Restante: {Math.max(0, remaining)}
                                 </span>
                             </span>

@@ -90,6 +90,7 @@ export default function LotesModal({ open, onOpenChange, editingLotes, loadingLo
                                                             <span className={cn("flex items-center gap-1", noAlcanza ? "font-semibold text-red-600 dark:text-red-400" : isSelected ? "text-blue-700" : "text-muted-foreground")}>
                                                                 <Boxes className="h-3.5 w-3.5" />
                                                                 Stock: {stock}
+                                                                {` Físico: ${Math.max(0, Number(lote.stockFisico ?? stock) || 0).toFixed(2)}`}
                                                             </span>
                                                             {noAlcanza && (
                                                                 <span className="flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700 dark:bg-red-900/50 dark:text-red-300">

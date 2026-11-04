@@ -3,7 +3,7 @@ import React, { useState, useRef } from "react"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { Search, X, Package, Pill, AlertCircle } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
-import { IProduct } from "@/app/types/order/product-interface"
+import { IProduct, stockFisicoDe } from "@/app/types/order/product-interface"
 import { IMoneda } from "@/app/types/order/client-interface"
 import SubstituteSelectionDialog from "./SubstituteSelectionDialog"
 
@@ -153,6 +153,7 @@ export default function ProductSearchDialog({
                                                         </span>
                                                         <span className={`text-xs shrink-0 font-medium border rounded-full px-2 py-0.5 ${stockBadgeClass}`}>
                                                             Stock: {stockNum.toFixed(0)}
+                                                            {` Físico: ${stockFisicoDe(product).toFixed(0)}`}
                                                         </span>
                                                     </div>
 

@@ -27,55 +27,16 @@ import ComprobantePreviewModal, { ComprobantePreviewData } from "@/components/to
 import AlmacenModal from "@/components/tomar-pedido/AlmacenModal"
 import ProductSearchDialog from "@/components/tomar-pedido/product-step/ProductSearchDialog"
 
-/**
- * Tomar Pedido Hoja en Blanco — Registro de Ventas (Facturas/Boleta/NC/ND).
- *
- * Formulario migrado del formulario "Facturas" de Access
- * (sieContable0623.accdb, menu Contabilidad > SIE CONTABLE > Datos
- * Movimientos > Operaciones Contables > Ventas). Detalle completo del
- * analisis, el VBA real extraido y los stored procedures propuestos en
- * opencode-difar/Hoja Blanco/.
- *
- * Catalogos reales reusados del modulo Tomar Pedido (mismos
- * microservicios, no duplicados):
- *   - Clientes      → fetchGetAllClients (app/api/takeOrders.ts)
- *   - Condiciones   → fetchGetConditions (app/api/takeOrders.ts)
- *   - Vendedores    → GET /usuarios/listar/vendedores
- *   - Almacenes     → GET /admin/listar/almacenes (AlmacenModal)
- *   - Productos     → getProductsLabRequest, filtrado por almacen (ProductSearchDialog)
- *   - Moneda        → constants/index.ts (monedas, PEN/USD como el resto de
- *                     la web); al guardar se convierte a NSO/USD
- *                     (mtipomoneda), igual que sp_ws_procesar_pedido_a_registro_ventas
- *   - Documento     → fetchTypeDocuments (mismo de Consulta Documento Clientes),
- *                     filtrado a los tipos de venta (codigos SUNAT)
- *   - Operación     → GET /admin/listar/operaciones (sp_GetTipoOperacion),
- *                     solo operaciones de venta (Motivo = 1)
- *   - IGV / Centro de costos → GET /contabilidad/compras/catalogos
- *                     (sp_ws_regcompras_catalogos: tasasIgv, centrosCosto)
- *
- * Serie, Número, Cuenta contable y Lote → /hoja-blanco/* (SP sp_ws_hoja_blanco_*,
- * ver sistema-difar/documentacion/api-hoja-blanco.md).
- *
- * Estado: en validación. El guardado del comprobante es simulado (no hay
- * endpoint real todavia). No confundir con "Hoja en Blanco"
- * (/dashboard/reportes/hoja-en-blanco), que es el reporte de despachos de
- * la serie 0800 ya existente: son pantallas distintas.
- */
-
-// Codigos SUNAT de /reportes/typedocuments que aplican a Registro de Ventas
 const DOC_FACTURA = "01"
 const DOC_BOLETA = "03"
 const DOC_NOTA_CREDITO = "07"
 const DOC_NOTA_DEBITO = "08"
 const TIPOS_DOC_VENTA = [DOC_FACTURA, DOC_BOLETA, DOC_NOTA_CREDITO, DOC_NOTA_DEBITO]
 
-// mtipooperaciones: "01" = VENTA (Motivo 1 = venta)
 const OPERACION_VENTA = "01"
 const MOTIVO_VENTA = 1
 const IGV_POR_DEFECTO = 0.18
 
-// La web maneja PEN/USD (pedidocab, SUNAT); las tablas contables
-// (reg ventas encabezado.Moneda → mtipomoneda) solo aceptan NSO/USD.
 const MONEDA_CONTABLE: Record<string, string> = { PEN: "NSO", USD: "USD" }
 const aMonedaContable = (moneda: string) => MONEDA_CONTABLE[moneda] ?? "NSO"
 
@@ -139,7 +100,8 @@ function fmt(n: number) {
     return n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
-export default function TomarPedidoHojaBlancoPage() {
+// Se abre en un modal desde Gestión de Comprobantes > Facturas y Boletas.
+export default function HojaEnBlanco() {
     const auth = useAuth()
 
     // ── Catalogos reales ──
@@ -686,19 +648,11 @@ export default function TomarPedidoHojaBlancoPage() {
     }, [resultados, buscarTexto])
 
     return (
-        <div className="grid gap-6 p-4 md:p-6">
-            <div className="flex flex-col gap-2">
-                <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight text-foreground md:text-3xl">
-                    <FilePlus2 className="h-6 w-6 text-blue-600" /> Tomar Pedido Hoja en Blanco
-                </h1>
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <p className="text-sm text-muted-foreground md:text-base">
-                        Registro de Ventas — formulario migrado de Access (Facturas/Boleta/NC/ND). En validación.
-                    </p>
-                    <Button type="button" variant="outline" onClick={() => setBuscarOpen(true)} className="shrink-0 border-blue-200 text-blue-700 hover:bg-blue-50 dark:border-blue-900/60 dark:text-blue-400">
-                        <Search className="mr-2 h-4 w-4" /> Buscar comprobante
-                    </Button>
-                </div>
+        <div className="grid gap-6">
+            <div className="flex justify-end">
+                <Button type="button" variant="outline" onClick={() => setBuscarOpen(true)} className="shrink-0 border-blue-200 text-blue-700 hover:bg-blue-50 dark:border-blue-900/60 dark:text-blue-400">
+                    <Search className="mr-2 h-4 w-4" /> Buscar comprobante
+                </Button>
             </div>
 
             {ide !== null && (

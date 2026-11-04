@@ -1,7 +1,9 @@
 'use client'
 
 import {useState, useEffect, useCallback, useRef, useMemo} from "react"
-import {Search, FileText, AlertTriangle, Truck, Loader2, FileDiff, X, FileSearch, Users, ChevronDown, Check, LayoutGrid, List} from "lucide-react"
+import {Search, FileText, AlertTriangle, Truck, Loader2, FileDiff, X, FileSearch, Users, ChevronDown, Check, LayoutGrid, List, FilePlus2} from "lucide-react"
+import dynamic from "next/dynamic"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -60,6 +62,13 @@ import {ResultCounter} from "@/components/comprobantes/ResultCounter";
 import {ValidacionModal} from "@/app/dashboard/comprobantes/modals/ValidacionModal"
 import { ComprobantesDetailModal } from "@/app/dashboard/comprobantes/modals/ComprobantesDetailModal";
 import { avisarEstadoSunat, avisarNotaCredito } from "@/components/comprobantes/AvisoEstadoSunat";
+import { SHOW_TOMAR_PEDIDO_HOJA_BLANCO } from "@/constants/featureFlags";
+
+// Formulario grande: se carga recién al abrir el modal.
+const HojaEnBlanco = dynamic(() => import("@/components/tomar-pedido-hoja-blanco/HojaEnBlanco"), {
+  ssr: false,
+  loading: () => <div className="flex justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>,
+})
 
 function ViewToggle({ value, onChange }: { value: 'tarjetas' | 'tabla', onChange: (v: 'tarjetas' | 'tabla') => void }) {
   return (
@@ -207,6 +216,7 @@ export default function ComprobantesPage() {
 
   const [showNotaCreditoModal, setShowNotaCreditoModal] = useState(false)
   const [showValidacionModal,  setShowValidacionModal]  = useState(false)
+  const [showHojaBlanco,       setShowHojaBlanco]       = useState(false)
 
   const [detailNroPedido, setDetailNroPedido] = useState("")
   const [isDetailOpen, setIsDetailOpen] = useState(false)
@@ -1088,6 +1098,13 @@ export default function ComprobantesPage() {
                       <ViewToggle value={vistaComprobantes} onChange={setVistaComprobantes} />
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
+                    {/* Antes era el menú "Tomar Pedido Hoja en Blanco" */}
+                    {SHOW_TOMAR_PEDIDO_HOJA_BLANCO && isAdmin && (
+                        <Button variant="outline" onClick={() => setShowHojaBlanco(true)} className="flex items-center gap-2">
+                          <FilePlus2 className="h-4 w-4"/>
+                          Hoja en Blanco
+                        </Button>
+                    )}
                     {comprobantes.length > 0 && <Button variant="outline" onClick={() => setShowValidacionModal(true)}
                              className="flex items-center gap-2">
                       <FileSearch className="h-4 w-4"/>
@@ -1427,6 +1444,24 @@ export default function ComprobantesPage() {
                 tiposComprobante={tiposComprobante}
                 onConfirm={handleConfirmModificacionCuotas}
             />
+        )}
+
+        {SHOW_TOMAR_PEDIDO_HOJA_BLANCO && isAdmin && (
+            <Dialog open={showHojaBlanco} onOpenChange={setShowHojaBlanco}>
+              {/* Sin cerrar al hacer clic afuera: se perdería lo que se estaba llenando */}
+              <DialogContent className="max-w-[min(96vw,1400px)] max-h-[94vh] overflow-y-auto p-4 sm:p-6"
+                             onInteractOutside={(e) => e.preventDefault()}>
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2">
+                    <FilePlus2 className="h-5 w-5 text-blue-600" /> Hoja en Blanco
+                  </DialogTitle>
+                  <DialogDescription>
+                    Registro de Ventas — formulario migrado de Access (Factura/Boleta/NC/ND).
+                  </DialogDescription>
+                </DialogHeader>
+                <HojaEnBlanco />
+              </DialogContent>
+            </Dialog>
         )}
 
         <ValidacionModal
