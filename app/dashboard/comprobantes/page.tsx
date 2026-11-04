@@ -1456,7 +1456,7 @@ export default function ComprobantesPage() {
                     <FilePlus2 className="h-5 w-5 text-blue-600" /> Hoja en Blanco
                   </DialogTitle>
                   <DialogDescription>
-                    Registro de Ventas — formulario migrado de Access (Factura/Boleta/NC/ND).
+                    Registro de comprobantes en hoja en blanco: facturas, boletas y notas de crédito o débito.
                   </DialogDescription>
                 </DialogHeader>
                 <HojaEnBlanco />
