@@ -36,6 +36,8 @@ interface InlineAutocompleteProps<T> {
      * (Vendedor, Laboratorio) que no deben competir visualmente con el
      * campo principal. */
     variant?: 'tile' | 'full' | 'chip'
+    /** Clases extra para la lista desplegable (p. ej. un ancho mínimo si el botón es angosto). */
+    contentClassName?: string
     chipLabel?: string
     /** Ícono, título y descripción del tile (para variant='tile'). La
      * descripción reemplaza a `placeholder` como subtítulo de la tarjeta;
@@ -63,7 +65,7 @@ export default function InlineAutocomplete<T>({
     placeholder = 'Buscar...', label, getKey, onSelect, renderItem,
     isItemDisabled, emptyMessage = 'No se encontraron resultados',
     idleMessage = 'Escribe para buscar', variant = 'tile', chipLabel,
-    tileIcon: TileIcon, tileTitle, tileDescription, tileAccent = 'blue', focusTrigger = false,
+    tileIcon: TileIcon, tileTitle, tileDescription, tileAccent = 'blue', focusTrigger = false, contentClassName,
     pageSize,
 }: InlineAutocompleteProps<T>) {
     const [open, setOpen] = useState(false)
@@ -159,7 +161,7 @@ export default function InlineAutocomplete<T>({
                 </PopoverTrigger>
                 <PopoverContent
                     align="start"
-                    className={variant === 'chip' ? 'w-80 p-0' : 'w-[var(--radix-popover-trigger-width)] p-0'}
+                    className={`${variant === 'chip' ? 'w-80 p-0' : 'w-[var(--radix-popover-trigger-width)] p-0'} ${contentClassName ?? ''}`}
                 >
                     <Command shouldFilter={false}>
                         <CommandInput
