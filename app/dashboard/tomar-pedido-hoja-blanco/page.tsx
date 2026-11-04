@@ -1080,14 +1080,14 @@ export default function TomarPedidoHojaBlancoPage() {
                                         </div>
                                     </div>
 
-                                    {/* Fila 2: cantidad, precio, lote, contabilidad, importe */}
+                                    {/* Fila 2 y 3: cantidad, precio y lote / cuenta, centro de costos e importe, en 3 columnas iguales */}
                                     {/* Hasta elegir el producto no se puede tocar nada de la línea */}
                                     <fieldset
                                         disabled={!l.idArticulo}
                                         title={!l.idArticulo ? "Primero elige el producto" : undefined}
-                                        className="mt-3 grid min-w-0 grid-cols-2 gap-3 border-0 p-0 md:pl-10 lg:grid-cols-12 lg:items-start disabled:pointer-events-none disabled:opacity-50"
+                                        className="mt-3 grid min-w-0 grid-cols-2 gap-3 border-0 p-0 md:pl-10 lg:grid-cols-3 lg:items-stretch disabled:pointer-events-none disabled:opacity-50"
                                     >
-                                        <div className="flex min-w-0 flex-col gap-1.5 lg:col-span-2">
+                                        <div className="flex min-w-0 flex-col gap-1.5">
                                             <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Cantidad</Label>
                                             <Input
                                                 type="number"
@@ -1104,13 +1104,14 @@ export default function TomarPedidoHojaBlancoPage() {
                                                 className="h-[62px] text-right font-mono text-base"
                                             />
                                         </div>
-                                        <div className="flex min-w-0 flex-col gap-1.5 lg:col-span-2">
+                                        <div className="flex min-w-0 flex-col gap-1.5">
                                             <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{l.Afecto ? "PU con IGV" : "PU sin IGV"} ({simbolo})</Label>
                                             <Input type="number" min={0} step="0.01" value={l.PU} onChange={(e) => setLinea(idx, { PU: Number(e.target.value) })} className="h-[62px] text-right font-mono text-base" />
                                         </div>
-                                        <div className="col-span-2 flex min-w-0 flex-col gap-1 lg:col-span-5">
+                                        <div className="col-span-2 flex min-w-0 flex-col gap-1 lg:col-span-1">
                                             <ComboTile
                                                 label="Lote"
+                                                compacto
                                                 enLinea
                                                 value={l.Lote}
                                                 items={l.Lotes ?? []}
@@ -1135,9 +1136,10 @@ export default function TomarPedidoHojaBlancoPage() {
                                                 ) : null
                                             })()}
                                         </div>
-                                        <div className="col-span-2 lg:order-last lg:col-span-6">
+                                        <div className="col-span-2 lg:col-span-1">
                                             <ComboTile
                                                 label="Cuenta contable"
+                                                compacto
                                                 enLinea
                                                 value={l.CuentaContab}
                                                 items={cuentas}
@@ -1157,9 +1159,10 @@ export default function TomarPedidoHojaBlancoPage() {
                                                 description="Cuenta de ventas"
                                             />
                                         </div>
-                                        <div className="col-span-2 lg:order-last lg:col-span-6">
+                                        <div className="col-span-2 lg:col-span-1">
                                             <ComboTile
                                                 label="Centro de costos"
+                                                compacto
                                                 enLinea
                                                 value={l.CentroCostos}
                                                 items={centrosCosto}
@@ -1178,9 +1181,9 @@ export default function TomarPedidoHojaBlancoPage() {
                                                 description="Sucursal"
                                             />
                                         </div>
-                                        <div className="col-span-2 flex min-w-0 flex-col gap-1.5 lg:col-span-3">
+                                        <div className="col-span-2 flex min-w-0 flex-col gap-1.5 lg:col-span-1">
                                             <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Importe</Label>
-                                            <div className="flex h-[62px] items-center justify-end rounded-xl border border-blue-100 bg-blue-50 px-4 dark:border-blue-900/60 dark:bg-blue-950/30">
+                                            <div className="flex min-h-[62px] flex-1 items-center justify-end rounded-xl border border-blue-100 bg-blue-50 px-4 dark:border-blue-900/60 dark:bg-blue-950/30">
                                                 <span className="font-mono text-lg font-bold text-blue-800 dark:text-blue-200">{simbolo} {fmt(importe)}</span>
                                             </div>
                                         </div>
@@ -1444,17 +1447,17 @@ function ComboTile<T>({
     }, [items, search])
 
     return (
-        <div className="flex min-w-0 flex-col gap-1.5">
+        <div className={cn("flex min-w-0 flex-col gap-1.5", enLinea && "h-full")}>
             <Label className={enLinea ? "text-xs font-semibold uppercase tracking-wide text-muted-foreground" : "text-sm font-semibold text-foreground"}>
                 {label} {required && <span className="text-red-500">*</span>}
             </Label>
             {selected ? (
-                <div className={cn("flex items-center gap-2 rounded-xl border p-2.5", enLinea && "h-[62px]", colors.card)}>
-                    <div className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-full", colors.badge, compacto && "hidden xl:flex")}>
+                <div className={cn("flex items-center gap-2 rounded-xl border p-2.5", enLinea && "min-h-[62px] flex-1", colors.card)}>
+                    <div className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-full", colors.badge)}>
                         <Icon className="h-4 w-4 text-white" />
                     </div>
                     <div className="min-w-0 flex-1">
-                        <p className={cn("line-clamp-2 break-words text-sm font-semibold leading-tight", colors.title)} title={getLabel(selected)}>{getLabel(selected)}</p>
+                        <p className={cn("break-words text-sm font-semibold leading-tight", !enLinea && "line-clamp-2", colors.title)} title={getLabel(selected)}>{getLabel(selected)}</p>
                         <p className={cn("truncate font-mono text-xs", colors.sub)}>{subDe(selected)}</p>
                     </div>
                     <Button
