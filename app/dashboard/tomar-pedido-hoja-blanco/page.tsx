@@ -1057,7 +1057,12 @@ export default function TomarPedidoHojaBlancoPage() {
                                     </div>
 
                                     {/* Fila 2: cantidad, precio, lote, contabilidad, importe */}
-                                    <div className="mt-3 grid grid-cols-2 gap-3 md:pl-10 lg:grid-cols-12 lg:items-end">
+                                    {/* Hasta elegir el producto no se puede tocar nada de la línea */}
+                                    <fieldset
+                                        disabled={!l.idArticulo}
+                                        title={!l.idArticulo ? "Primero elige el producto" : undefined}
+                                        className="mt-3 grid min-w-0 grid-cols-2 gap-3 border-0 p-0 md:pl-10 lg:grid-cols-12 lg:items-end disabled:pointer-events-none disabled:opacity-50"
+                                    >
                                         <div className="flex min-w-0 flex-col gap-1.5 lg:col-span-2">
                                             <Label className="text-xs font-semibold text-muted-foreground">Cantidad</Label>
                                             <Input
@@ -1150,7 +1155,7 @@ export default function TomarPedidoHojaBlancoPage() {
                                             <span className="text-[11px] font-bold uppercase tracking-wide text-blue-600 dark:text-blue-400">Importe</span>
                                             <span className="font-mono text-lg font-bold text-blue-800 dark:text-blue-200">{simbolo} {fmt(importe)}</span>
                                         </div>
-                                    </div>
+                                    </fieldset>
                                 </div>
                             )
                         })}
