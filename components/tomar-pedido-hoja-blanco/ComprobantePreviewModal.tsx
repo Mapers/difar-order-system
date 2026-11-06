@@ -35,6 +35,9 @@ export interface ComprobantePreviewLinea {
     cantidad: number
     precio: number
     afecto: boolean
+    lote?: string
+    /** Vencimiento del lote, YYYY-MM-DD */
+    vencimiento?: string
 }
 
 export interface ComprobantePreviewData {
@@ -44,6 +47,7 @@ export interface ComprobantePreviewData {
     numero: string
     fecha: string
     clienteNombre: string
+    clienteNombreComercial?: string
     clienteDocumento: string
     clienteDireccion: string
     clienteTelefono: string
@@ -212,7 +216,7 @@ function construirPdf(data: ComprobantePreviewData, empresa: Empresa, logo: Logo
     const gap = 4
     const wIzq = util * 0.58, wDer = util - wIzq - gap
     const xDer = m + wIzq + gap
-    const altoBloque = 33
+    const altoBloque = 41
     const bloque = (x: number, w: number, titulo: string) => {
         doc.setFillColor(248, 250, 252).setDrawColor(...BORDE).setLineWidth(0.3).roundedRect(x, y, w, altoBloque, 2, 2, "FD")
         doc.setFillColor(...AZUL).rect(x, y + 2, 1.1, altoBloque - 4, "F")
@@ -226,16 +230,18 @@ function construirPdf(data: ComprobantePreviewData, empresa: Empresa, logo: Logo
         doc.text(doc.splitTextToSize(valor || "—", anchoTotal - anchoLabel)[0], x + anchoLabel, yy)
     }
     bloque(m, wIzq, "DATOS DEL CLIENTE")
-    dato(m + 5, y + 12.5, "Señor(es)", data.clienteNombre, wIzq - 8)
-    dato(m + 5, y + 18.5, "RUC / DNI", data.clienteDocumento, wIzq - 8)
-    dato(m + 5, y + 24.5, "Dirección", data.clienteDireccion, wIzq - 8)
-    dato(m + 5, y + 30.5, "Vendedor", data.vendedor, wIzq - 8)
+    dato(m + 5, y + 12.5, "Razón social", data.clienteNombre, wIzq - 8)
+    dato(m + 5, y + 18.5, "N. comercial", data.clienteNombreComercial || "", wIzq - 8)
+    dato(m + 5, y + 24.5, "RUC / DNI", data.clienteDocumento, wIzq - 8)
+    dato(m + 5, y + 30.5, "Dirección", data.clienteDireccion, wIzq - 8)
+    dato(m + 5, y + 36.5, "Vendedor", data.vendedor, wIzq - 8)
 
     bloque(xDer, wDer, "DATOS DEL COMPROBANTE")
     dato(xDer + 5, y + 12.5, "Emisión", fechaLegible(data.fecha), wDer - 8, 20)
     dato(xDer + 5, y + 18.5, "Condición", data.diasCredito ? `${data.condicion} (${data.diasCredito} d)` : data.condicion, wDer - 8, 20)
     dato(xDer + 5, y + 24.5, "Moneda", data.moneda, wDer - 8, 20)
     dato(xDer + 5, y + 30.5, "Almacén", data.almacen, wDer - 8, 20)
+    dato(xDer + 5, y + 36.5, "Operación", data.operacion, wDer - 8, 20)
     y += altoBloque + 4
 
     if (data.referencia) {
@@ -247,30 +253,34 @@ function construirPdf(data: ComprobantePreviewData, empresa: Empresa, logo: Logo
 
     autoTable(doc, {
         startY: y,
-        head: [["#", "Código", "Descripción", "Cant.", `P. Unit.`, `Importe`]],
+        head: [["#", "Código", "Descripción", "Lote", "F. Venc.", "Cant.", `P. Unit.`, `Importe`]],
         body: data.lineas.length
             ? data.lineas.map((l, i) => [
                 String(i + 1),
                 l.codigo,
                 l.descripcion + (l.afecto ? "" : "  · Inafecto"),
+                l.lote || "—",
+                l.vencimiento ? fechaLegible(l.vencimiento.slice(0, 10)) : "—",
                 l.cantidad.toLocaleString("es-PE"),
                 fmt(l.precio),
                 fmt(l.cantidad * l.precio),
             ])
-            : [[{ content: "Sin items agregados", colSpan: 6, styles: { halign: "center", textColor: GRIS } }]],
+            : [[{ content: "Sin items agregados", colSpan: 8, styles: { halign: "center", textColor: GRIS } }]],
         theme: "plain",
         headStyles: { fillColor: PIZARRA, textColor: 255, fontStyle: "bold", fontSize: 8, cellPadding: { top: 2.6, bottom: 2.6, left: 2, right: 2 } },
         bodyStyles: { fontSize: 8.3, textColor: PIZARRA, cellPadding: { top: 2.4, bottom: 2.4, left: 2, right: 2 }, lineColor: BORDE, lineWidth: { bottom: 0.2 } },
         alternateRowStyles: { fillColor: [248, 250, 252] },
         columnStyles: {
             0: { cellWidth: 8, halign: "center", textColor: GRIS },
-            1: { cellWidth: 22, font: "courier", fontSize: 8 },
-            3: { cellWidth: 15, halign: "right" },
-            4: { cellWidth: 24, halign: "right" },
-            5: { cellWidth: 26, halign: "right", fontStyle: "bold" },
+            1: { cellWidth: 20, font: "courier", fontSize: 7.5 },
+            3: { cellWidth: 18, font: "courier", fontSize: 7.5 },
+            4: { cellWidth: 19 },
+            5: { cellWidth: 13, halign: "right" },
+            6: { cellWidth: 20, halign: "right" },
+            7: { cellWidth: 23, halign: "right", fontStyle: "bold" },
         },
         didParseCell: (h) => {
-            if (h.section === "head" && h.column.index >= 3) h.cell.styles.halign = "right"
+            if (h.section === "head" && h.column.index >= 5) h.cell.styles.halign = "right"
             if (h.section === "head" && h.column.index === 0) h.cell.styles.halign = "center"
         },
         margin: { left: m, right: m },
@@ -559,8 +569,11 @@ function HojaComprobante({
                 {/* Datos del cliente / comprobante */}
                 <div className="mt-6 grid grid-cols-[58fr_42fr] gap-4">
                     <Bloque titulo="Datos del cliente">
-                        <Dato label="Señor(es)">
+                        <Dato label="Razón social">
                             <Editable value={data.clienteNombre} editando={editando} onChange={(v) => set("clienteNombre", v)} />
+                        </Dato>
+                        <Dato label="N. comercial">
+                            <Editable value={data.clienteNombreComercial ?? ""} editando={editando} onChange={(v) => set("clienteNombreComercial", v)} />
                         </Dato>
                         <Dato label="RUC / DNI">
                             <Editable value={data.clienteDocumento} editando={editando} onChange={(v) => set("clienteDocumento", v)} />
@@ -575,6 +588,7 @@ function HojaComprobante({
                         <Dato label="Condición">{data.diasCredito ? `${data.condicion} (${data.diasCredito} d)` : data.condicion || "—"}</Dato>
                         <Dato label="Moneda">{data.moneda || "—"}</Dato>
                         <Dato label="Almacén">{data.almacen || "—"}</Dato>
+                        <Dato label="Operación">{data.operacion || "—"}</Dato>
                     </Bloque>
                 </div>
 
@@ -591,6 +605,8 @@ function HojaComprobante({
                             <th className="w-8 rounded-l-md px-2 py-2.5 text-center font-semibold">#</th>
                             <th className="w-[84px] px-2 py-2.5 text-left font-semibold">Código</th>
                             <th className="px-2 py-2.5 text-left font-semibold">Descripción</th>
+                            <th className="w-[72px] px-2 py-2.5 text-left font-semibold">Lote</th>
+                            <th className="w-[78px] px-2 py-2.5 text-left font-semibold">F. Venc.</th>
                             <th className="w-14 px-2 py-2.5 text-right font-semibold">Cant.</th>
                             <th className="w-24 px-2 py-2.5 text-right font-semibold">P. Unit.</th>
                             <th className="w-24 rounded-r-md px-2 py-2.5 text-right font-semibold">Importe</th>
@@ -598,7 +614,7 @@ function HojaComprobante({
                     </thead>
                     <tbody>
                         {data.lineas.length === 0 ? (
-                            <tr><td colSpan={6} className="px-2 py-8 text-center text-slate-400">Sin items agregados</td></tr>
+                            <tr><td colSpan={8} className="px-2 py-8 text-center text-slate-400">Sin items agregados</td></tr>
                         ) : data.lineas.map((l, i) => (
                             <tr key={i} className="border-b border-slate-200 align-top even:bg-slate-50/80">
                                 <td className="px-2 py-2.5 text-center text-slate-400">{i + 1}</td>
@@ -607,6 +623,8 @@ function HojaComprobante({
                                     <Editable value={l.descripcion} editando={editando} onChange={(v) => setDescripcion(i, v)} />
                                     {!l.afecto && <span className="ml-1.5 rounded bg-slate-200 px-1.5 py-0.5 text-[9px] font-semibold uppercase text-slate-600">Inafecto</span>}
                                 </td>
+                                <td className="px-2 py-2.5 font-mono text-[11px] text-slate-600">{l.lote || "—"}</td>
+                                <td className="px-2 py-2.5 text-[11px] text-slate-600">{l.vencimiento ? fechaLegible(l.vencimiento.slice(0, 10)) : "—"}</td>
                                 <td className="px-2 py-2.5 text-right">{l.cantidad.toLocaleString("es-PE")}</td>
                                 <td className="px-2 py-2.5 text-right tabular-nums">{fmt(l.precio)}</td>
                                 <td className="px-2 py-2.5 text-right font-semibold tabular-nums">{fmt(l.cantidad * l.precio)}</td>

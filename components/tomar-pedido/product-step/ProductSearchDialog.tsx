@@ -16,6 +16,8 @@ interface ProductSearchDialogProps {
     onProductSelect: (product: IProduct) => void
     currency: IMoneda | null
     loadingProducts?: boolean
+    /** Muestra Contado / Crédito en cada resultado (por defecto sí). */
+    mostrarPrecios?: boolean
 }
 
 const IgvBadge = ({ product }: { product: IProduct }) => {
@@ -44,7 +46,7 @@ const IgvBadge = ({ product }: { product: IProduct }) => {
 
 export default function ProductSearchDialog({
                                                 open, onOpenChange, searchQuery, onSearchQueryChange,
-                                                filteredProducts, onProductSelect, currency, loadingProducts = false
+                                                filteredProducts, onProductSelect, currency, loadingProducts = false, mostrarPrecios = true
                                             }: ProductSearchDialogProps) {
     const [isSearching, setIsSearching] = useState(false)
     const searchTimerRef = useRef<NodeJS.Timeout | null>(null)
@@ -167,12 +169,14 @@ export default function ProductSearchDialog({
                                                     </div>
 
                                                     <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-0.5">
+                                                        {mostrarPrecios && <>
                                                         <span className="text-xs font-semibold text-green-700 dark:text-green-400">
                                                             Contado: {currency?.value === "PEN" ? "S/." : "$"}{Number(product.PUContado).toFixed(2)}
                                                         </span>
                                                         <span className="text-xs font-semibold text-blue-700 dark:text-blue-400">
                                                             Crédito: {currency?.value === "PEN" ? "S/." : "$"}{Number(product.PUCredito).toFixed(2)}
                                                         </span>
+                                                        </>}
                                                         <IgvBadge product={product} />
                                                     </div>
                                                 </div>

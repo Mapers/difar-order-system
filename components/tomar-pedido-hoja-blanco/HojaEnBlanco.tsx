@@ -5,14 +5,14 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { ArrowLeftRight, BookOpen, Building2, CalendarClock, CheckCircle2, Coins, Eraser, FilePlus2, FileText, Hash, Loader2, MessageSquareText, Package, Pencil, Percent, Plus, Printer, Receipt, RefreshCw, Save, Search, Target, Trash2, User, UserCheck } from "lucide-react"
+import { ArrowLeftRight, BookOpen, Building2, CalendarClock, Check, CheckCircle2, Coins, Eraser, FilePlus2, FileText, Hash, Loader2, MessageSquareText, Package, Pencil, Percent, Plus, Printer, Receipt, RefreshCw, Save, Search, Target, Trash2, User, UserCheck } from "lucide-react"
 import InlineAutocomplete from "@/components/tomar-pedido/InlineAutocomplete"
 import { cn } from "@/lib/utils"
 import { toast } from "@/app/hooks/useToast"
 import { useAuth } from "@/context/authContext"
 import apiClient from "@/app/api/client"
 import { fetchGetAllClients, fetchGetConditions } from "@/app/api/takeOrders"
-import { getProductsLabRequest } from "@/app/api/products"
+import { getProductsByAlmacenRequest } from "@/app/api/products"
 import { fetchTypeDocuments } from "@/app/api/reports"
 import { TypeDocument } from "@/app/types/report/report-interface"
 import { monedas } from "@/constants"
@@ -26,6 +26,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import ComprobantePreviewModal, { ComprobantePreviewData } from "@/components/tomar-pedido-hoja-blanco/ComprobantePreviewModal"
 import AlmacenModal from "@/components/tomar-pedido/AlmacenModal"
 import ProductSearchDialog from "@/components/tomar-pedido/product-step/ProductSearchDialog"
+import PriceSelector from "@/components/tomar-pedido/product-step/PriceSelector"
+import { PriceType } from "@/app/types/order/order-interface"
 
 const DOC_FACTURA = "01"
 const DOC_BOLETA = "03"
@@ -90,12 +92,28 @@ interface LineaDetalle {
     // true cuando el usuario eligio el valor a mano: ya no se reasigna automaticamente
     CuentaManual: boolean
     CentroManual: boolean
+    // Producto elegido y tipo de precio (como Tomar Pedido). En comprobantes ya
+    // guardados no se tiene el producto: se ve solo el PU guardado.
+    Producto?: IProduct | null
+    TipoPrecio?: PriceType
 }
 const lineaVacia = (centro = "", cuenta = ""): LineaDetalle => ({
     idArticulo: "", CodigoArticulo: "", Articulo: "", Cantidad: 1, PU: 0, Afecto: true,
     CuentaContab: cuenta, CentroCostos: centro, Lote: "", Lotes: [], CuentaManual: false, CentroManual: false,
 })
 const hoy = () => new Date().toISOString().slice(0, 10)
+
+// Precio de la línea según el tipo elegido en el selector (mismos campos que Tomar Pedido).
+const precioDe = (p: IProduct, tipo: PriceType, actual: number) => {
+    switch (tipo) {
+        case "contado":  return Number(p.PUContado) || 0
+        case "credito":  return Number(p.PUCredito) || 0
+        case "porMayor": return Number(p.PUPorMayor) || 0
+        case "porMenor": return Number(p.PUPorMenor) || 0
+        case "regalo":   return 0
+        default:         return actual
+    }
+}
 
 function fmt(n: number) {
     return n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
@@ -254,32 +272,39 @@ export default function HojaEnBlanco() {
     // ── Buscador de productos real (mismo componente de Tomar Pedido) ──
     const [productSearchOpen, setProductSearchOpen] = useState(false)
     const [productSearchQuery, setProductSearchQuery] = useState("")
-    const [filteredProducts, setFilteredProducts] = useState<IProduct[]>([])
+    const [productosAlmacen, setProductosAlmacen] = useState<IProduct[]>([])
     const [loadingProducts, setLoadingProducts] = useState(false)
     const [activeRowIndex, setActiveRowIndex] = useState<number | null>(null)
-    const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-    const handleSearchQueryChange = (val: string) => {
-        setProductSearchQuery(val)
-        if (searchTimer.current) clearTimeout(searchTimer.current)
-        if (!val || !selectedAlmacen) { setFilteredProducts([]); return }
+    // Como Tomar Pedido: se traen una vez todos los productos del almacén (con su
+    // tipo de IGV y sustitutos) y se filtra mientras se escribe.
+    useEffect(() => {
+        if (!selectedAlmacen) { setProductosAlmacen([]); return }
+        let vigente = true
         setLoadingProducts(true)
-        searchTimer.current = setTimeout(async () => {
-            try {
-                const res = await getProductsLabRequest(undefined, val, selectedAlmacen.IdAlmacen)
-                setFilteredProducts(res.data?.data?.data || res.data?.data || [])
-            } catch {
-                setFilteredProducts([])
-            } finally {
-                setLoadingProducts(false)
-            }
-        }, 350)
-    }
+        const representante = auth.isAdmin() ? "" : (auth.user?.codRepres || "")
+        getProductsByAlmacenRequest(selectedAlmacen.IdAlmacen, representante)
+            .then((res) => { if (vigente) setProductosAlmacen(res.data?.data?.data || res.data?.data || []) })
+            .catch(() => { if (vigente) setProductosAlmacen([]) })
+            .finally(() => { if (vigente) setLoadingProducts(false) })
+        return () => { vigente = false }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [selectedAlmacen?.IdAlmacen])
+
+    const filteredProducts = useMemo(() => {
+        const q = productSearchQuery.trim().toLowerCase()
+        if (!q) return []
+        return productosAlmacen.filter((p) =>
+            String(p.Codigo_Art ?? "").toLowerCase().includes(q) ||
+            String(p.NombreItem ?? "").toLowerCase().includes(q) ||
+            String(p.Descripcion ?? "").toLowerCase().includes(q))
+    }, [productosAlmacen, productSearchQuery])
+
+    const handleSearchQueryChange = (val: string) => setProductSearchQuery(val)
 
     const abrirBuscadorItem = (idx: number) => {
         setActiveRowIndex(idx)
         setProductSearchQuery("")
-        setFilteredProducts([])
         setProductSearchOpen(true)
     }
 
@@ -292,6 +317,8 @@ export default function HojaEnBlanco() {
             CodigoArticulo: codigo,
             Articulo: `${product.Codigo_Art} - ${product.NombreItem}`,
             PU: Number(product.PUContado),
+            Producto: product,
+            TipoPrecio: "contado",
             Lote: "",
             Lotes: null,
         })
@@ -377,6 +404,7 @@ export default function HojaEnBlanco() {
             numero: numeroTexto,
             fecha,
             clienteNombre: cliente?.Nombre ?? "",
+            clienteNombreComercial: (cliente as any)?.NombreComercial ?? "",
             clienteDocumento: cliente?.RUC ?? "",
             clienteDireccion: cliente?.["Dirección"] ?? "",
             clienteTelefono: cliente?.telefono ?? "",
@@ -401,6 +429,8 @@ export default function HojaEnBlanco() {
                     cantidad: Number(l.Cantidad || 0),
                     precio: Number(l.PU || 0),
                     afecto: l.Afecto,
+                    lote: l.Lote || "",
+                    vencimiento: l.Lotes?.find((x) => x.Lote === l.Lote)?.VctoItem ?? "",
                 }
             }),
             totales,
@@ -1047,6 +1077,20 @@ export default function HojaEnBlanco() {
                                         title={!l.idArticulo ? "Primero elige el producto" : undefined}
                                         className="mt-3 grid min-w-0 grid-cols-2 gap-3 border-0 p-0 md:pl-10 lg:grid-cols-3 lg:items-stretch disabled:pointer-events-none disabled:opacity-50"
                                     >
+                                        {l.Producto && (
+                                            <div className="col-span-2 lg:col-span-3">
+                                                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Precio de venta</p>
+                                                <PriceSelector
+                                                    selectedProduct={l.Producto}
+                                                    priceType={l.TipoPrecio ?? "contado"}
+                                                    onPriceTypeChange={(pt) => setLinea(idx, { TipoPrecio: pt, PU: precioDe(l.Producto!, pt, l.PU) })}
+                                                    priceEdit={l.TipoPrecio === "custom" ? l.PU : 0}
+                                                    onPriceEditChange={(v) => setLinea(idx, { TipoPrecio: "custom", PU: Number(v) || 0 })}
+                                                    onPriceEditBlur={() => {}}
+                                                    currency={monedas.find((m) => m.value === moneda) || null}
+                                                />
+                                            </div>
+                                        )}
                                         <div className="flex min-w-0 flex-col gap-1.5">
                                             <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Cantidad</Label>
                                             <Input
@@ -1066,7 +1110,7 @@ export default function HojaEnBlanco() {
                                         </div>
                                         <div className="flex min-w-0 flex-col gap-1.5">
                                             <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{l.Afecto ? "PU con IGV" : "PU sin IGV"} ({simbolo})</Label>
-                                            <Input type="number" min={0} step="0.01" value={l.PU} onChange={(e) => setLinea(idx, { PU: Number(e.target.value) })} className="h-[62px] text-right font-mono text-base" />
+                                            <Input type="number" min={0} step="0.01" value={l.PU} onChange={(e) => setLinea(idx, { PU: Number(e.target.value), ...(l.Producto ? { TipoPrecio: "custom" as PriceType } : {}) })} className="h-[62px] text-right font-mono text-base" />
                                         </div>
                                         <div className="col-span-2 flex min-w-0 flex-col gap-1 lg:col-span-1">
                                             <ComboTile
@@ -1334,6 +1378,8 @@ export default function HojaEnBlanco() {
                 onProductSelect={handleProductSelect}
                 currency={monedas.find((m) => m.value === moneda) || null}
                 loadingProducts={loadingProducts}
+                // Los precios se eligen al seleccionar el producto, no hace falta verlos aquí.
+                mostrarPrecios={false}
             />
         </div>
     )
