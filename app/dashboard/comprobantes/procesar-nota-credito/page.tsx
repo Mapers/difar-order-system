@@ -32,7 +32,9 @@ export default function ProcesarNotaCreditoPage() {
     const [fase, setFase]                     = useState<FaseAplicacion>('confirmar')
     const [tab, setTab]                       = useState('procesar')
 
-    const puedeVerHistorial = (auth.user?.rolDescripcion ?? '').toLowerCase().includes('admin')
+    // El historial lo ven los administradores y el gerente.
+    const rol = (auth.user?.rolDescripcion ?? '').toLowerCase()
+    const puedeVerHistorial = rol.includes('admin') || rol.includes('gerente')
 
     const nc  = hook.lineas.find(l => l.tipDoc === '07') ?? hook.lineas.find(l => l.cargo > 0)
     const fac = hook.lineas.find(l => l.tipDoc === '01' || l.tipDoc === '03') ?? hook.lineas.find(l => l.abono > 0)
