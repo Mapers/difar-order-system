@@ -777,7 +777,7 @@ export default function HojaEnBlanco() {
                         value={codCliente}
                         items={clientes}
                         getKey={(i) => i.codigo}
-                        getLabel={(i) => i.Nombre}
+                        getLabel={(i) => i.Nombre ?? ""}
                         getSub={(i) => `${i.codigo}${i.RUC ? ` · RUC ${i.RUC}` : ""}`}
                         onSelect={(it) => setCodCliente(it.codigo)}
                         onClear={() => setCodCliente("")}
@@ -1396,7 +1396,9 @@ function ComboTile<T>({
     const filtrados = useMemo(() => {
         const q = search.trim().toLowerCase()
         if (!q) return items
-        return items.filter((i) => getLabel(i).toLowerCase().includes(q) || subDe(i).toLowerCase().includes(q))
+        // Hay registros sin nombre o sin código (null): se comparan como texto vacío.
+        const texto = (v: unknown) => String(v ?? "").toLowerCase()
+        return items.filter((i) => texto(getLabel(i)).includes(q) || texto(subDe(i)).includes(q))
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [items, search])
 
