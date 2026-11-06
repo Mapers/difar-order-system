@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { ArrowLeftRight, BookOpen, Building2, CalendarClock, Coins, Eraser, FilePlus2, FileText, Hash, Loader2, MessageSquareText, Package, Pencil, Percent, Plus, Printer, Receipt, RefreshCw, Save, Search, Target, Trash2, User, UserCheck } from "lucide-react"
+import { ArrowLeftRight, BookOpen, Building2, CalendarClock, CheckCircle2, Coins, Eraser, FilePlus2, FileText, Hash, Loader2, MessageSquareText, Package, Pencil, Percent, Plus, Printer, Receipt, RefreshCw, Save, Search, Target, Trash2, User, UserCheck } from "lucide-react"
 import InlineAutocomplete from "@/components/tomar-pedido/InlineAutocomplete"
 import { cn } from "@/lib/utils"
 import { toast } from "@/app/hooks/useToast"
@@ -226,7 +226,9 @@ export default function HojaEnBlanco() {
         return [...series].sort((a, b) => Number(b.tipoDocumento === tipo) - Number(a.tipoDocumento === tipo))
     }, [series, tipoDoc])
 
-    // Número: se recalcula al cambiar tipo de documento o serie (no al editar uno abierto)
+    // Número: se recalcula al cambiar tipo de documento o serie (no al editar uno abierto),
+    // y tras emitir uno, para que el siguiente ya traiga el número nuevo.
+    const [recargaNumero, setRecargaNumero] = useState(0)
     useEffect(() => {
         if (ide !== null) return
         setNumero(null)
@@ -238,7 +240,7 @@ export default function HojaEnBlanco() {
             .catch(() => { if (vigente) toast({ title: "Error", description: "No se pudo obtener el número del comprobante.", variant: "destructive" }) })
             .finally(() => { if (vigente) setLoadingNumero(false) })
         return () => { vigente = false }
-    }, [tipoDoc, serie, ide])
+    }, [tipoDoc, serie, ide, recargaNumero])
 
     // Comprobantes de Access (transf_v nulo) o de esta pantalla se pueden editar;
     // los escritos por otros procesos (ej. comprobante electronico) solo se consultan.
@@ -445,6 +447,8 @@ export default function HojaEnBlanco() {
     // ── Guardar: POST /hoja-blanco/comprobantes (nuevo) o PUT /:ide (edición) ──
     // sp_ws_hoja_blanco_guardar graba guia remision encabezado/detalle y centraliza:
     // registro de ventas, kardex clientes, mayor auxiliar y kardex de inventarios.
+    const [emitido, setEmitido] = useState<{ documento: string; numero: string; total: string; editado: boolean } | null>(null)
+
     async function handleGuardar() {
         if (soloLectura) {
             toast({ title: "Solo consulta", description: "Este comprobante lo registró otro proceso y no se puede modificar aquí.", variant: "destructive" })
@@ -526,11 +530,13 @@ export default function HojaEnBlanco() {
                 ? await apiClient.put(`/hoja-blanco/comprobantes/${ide}`, payload)
                 : await apiClient.post("/hoja-blanco/comprobantes", payload)
             const r = res.data?.data
-            toast({
-                title: ide !== null ? "Comprobante actualizado" : "Comprobante guardado",
-                description: r ? `${r.Serie}-${String(r.Numero).padStart(6, "0")} · Total ${simbolo} ${fmt(Number(r.Total))}` : undefined,
+            // Aviso de éxito con cuenta regresiva; al aceptar o terminar, el formulario queda limpio.
+            setEmitido({
+                documento: docSeleccionado?.Descripcion ?? "Comprobante",
+                numero: r ? `${r.Serie}-${String(r.Numero).padStart(6, "0")}` : `${serie}-${numeroTexto}`,
+                total: r ? `${simbolo} ${fmt(Number(r.Total))}` : `${simbolo} ${fmt(totales.total)}`,
+                editado: ide !== null,
             })
-            if (r?.Ide) await abrirComprobante(Number(r.Ide))
         } catch (e) {
             toast({ title: "No se pudo guardar", description: mensajeApi(e, "Error al guardar el comprobante."), variant: "destructive" })
         } finally {
@@ -1187,6 +1193,11 @@ export default function HojaEnBlanco() {
                 </div>
             </Card>
 
+            <EmisionExitosa
+                datos={emitido}
+                onCerrar={() => { setEmitido(null); reiniciarFormulario(); setRecargaNumero((n) => n + 1) }}
+            />
+
             {/* Confirmaciones animadas */}
             <ConfirmacionAnimada
                 open={confirmLimpiarOpen}
@@ -1474,6 +1485,67 @@ function ComboTile<T>({
                 />
             )}
         </div>
+    )
+}
+
+// Aviso de comprobante emitido: cuenta 10 segundos y al aceptar (o al terminar)
+// se cierra para seguir con otra hoja en blanco.
+const SEGUNDOS_AVISO = 10
+
+function EmisionExitosa({ datos, onCerrar }: {
+    datos: { documento: string; numero: string; total: string; editado: boolean } | null
+    onCerrar: () => void
+}) {
+    const [restan, setRestan] = useState(SEGUNDOS_AVISO)
+    const cerrar = useRef(onCerrar)
+    cerrar.current = onCerrar
+
+    useEffect(() => {
+        if (!datos) return
+        setRestan(SEGUNDOS_AVISO)
+        const t = setInterval(() => setRestan((n) => n - 1), 1000)
+        return () => clearInterval(t)
+    }, [datos])
+
+    useEffect(() => {
+        if (datos && restan <= 0) cerrar.current()
+    }, [datos, restan])
+
+    return (
+        <AlertDialog open={!!datos} onOpenChange={(v) => { if (!v) onCerrar() }}>
+            <AlertDialogContent className="max-w-md overflow-hidden">
+                <div className="flex flex-col items-center gap-3 pt-2 text-center">
+                    <div className="relative flex h-16 w-16 items-center justify-center">
+                        <span className="absolute inset-0 animate-ping rounded-full bg-emerald-400/40" />
+                        <span className="relative flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-950/60">
+                            <CheckCircle2 className="h-8 w-8 text-emerald-600 dark:text-emerald-400" />
+                        </span>
+                    </div>
+                    <AlertDialogHeader className="items-center space-y-1.5 sm:text-center">
+                        <AlertDialogTitle className="text-center text-lg">
+                            {datos?.editado ? "Cambios guardados" : "Emitido exitosamente"}
+                        </AlertDialogTitle>
+                        <AlertDialogDescription className="text-center">
+                            {datos?.documento} <span className="font-mono font-semibold text-foreground">{datos?.numero}</span>{" "}
+                            {datos?.editado ? "ha sido actualizada" : "ha sido emitida exitosamente"}.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <p className="font-mono text-2xl font-bold text-emerald-700 dark:text-emerald-400">{datos?.total}</p>
+                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                        <div className="h-full rounded-full bg-emerald-500 transition-[width] duration-1000 ease-linear"
+                             style={{ width: `${(Math.max(restan, 0) / SEGUNDOS_AVISO) * 100}%` }} />
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                        El formulario se limpiará en <b className="tabular-nums text-foreground">{Math.max(restan, 0)}</b> s para registrar otra hoja en blanco.
+                    </p>
+                </div>
+                <AlertDialogFooter className="sm:justify-center">
+                    <AlertDialogAction onClick={onCerrar} className="min-w-[160px] bg-emerald-600 hover:bg-emerald-700">
+                        Aceptar
+                    </AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
     )
 }
 
