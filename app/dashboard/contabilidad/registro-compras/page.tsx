@@ -15,7 +15,7 @@ import {
     Loader2, Save, Plus, Trash2, Lock, AlertCircle, X, Search, ChevronDown, Check,
     ClipboardCheck, Wallet, Truck, Printer, ShoppingBag, Hash, FileText, ArrowRight,
     Receipt, Coins, Percent, Scale, Banknote, SlidersHorizontal, ListOrdered, PackagePlus,
-    CalendarClock, Warehouse, CalendarDays, Calendar, Building2, Tags, Eraser,
+    CalendarClock, Warehouse, CalendarDays, Calendar, Building2, Tags, Eraser, PackageX,
     type LucideIcon,
 } from "lucide-react"
 import { ComboSelect } from "@/components/ui/combo-select"
@@ -598,6 +598,46 @@ export default function RegistroComprasPage() {
                     </div>
                 </section>
             </div>
+
+            {/* Productos escaneados que no existen en el catálogo */}
+            <AlertDialog open={!!c.faltantes} onOpenChange={v => { if (!v) c.cerrarFaltantes() }}>
+                {/* La caja que se sacude va adentro: así no pisa la animación de entrada del modal */}
+                <AlertDialogContent className="max-w-md border-0 bg-transparent p-0 shadow-none">
+                  <div className="lf-sacudir grid gap-4 rounded-xl border-2 border-red-300 bg-background p-6 shadow-2xl shadow-red-600/20 dark:border-red-900">
+                    <div className="flex flex-col items-center gap-3 pt-1 text-center">
+                        <div className="relative flex h-16 w-16 items-center justify-center">
+                            <span className="absolute inset-0 animate-ping rounded-full bg-red-400/40" />
+                            <span className="relative flex h-16 w-16 items-center justify-center rounded-full bg-red-100 dark:bg-red-950/60">
+                                <PackageX className="h-8 w-8 text-red-600 dark:text-red-400" />
+                            </span>
+                        </div>
+                        <AlertDialogHeader className="items-center space-y-1.5 sm:text-center">
+                            <AlertDialogTitle className="text-center text-lg text-red-700 dark:text-red-400">
+                                {c.faltantes?.length === 1 ? 'Este producto no existe' : `${c.faltantes?.length} productos no existen`}
+                            </AlertDialogTitle>
+                            <AlertDialogDescription className="text-center">
+                                {c.faltantes?.length === 1 ? 'Está en el comprobante escaneado, pero no en el catálogo de DIFAR.' : 'Están en el comprobante escaneado, pero no en el catálogo de DIFAR.'}
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <ul className="w-full space-y-1.5 text-left">
+                            {c.faltantes?.map(p => (
+                                <li key={p} className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm font-medium text-red-800 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300">
+                                    <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" /> <span className="break-words">{p}</span>
+                                </li>
+                            ))}
+                        </ul>
+                        <p className="text-xs text-muted-foreground">
+                            Créalos en Lista de Precios por Lote o elige el artículo en su línea (marcada en ámbar). No se puede guardar hasta resolverlos.
+                        </p>
+                    </div>
+                    <AlertDialogFooter className="sm:justify-center">
+                        <AlertDialogAction onClick={c.cerrarFaltantes} className="min-w-[160px] bg-red-600 hover:bg-red-700">
+                            Entendido
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </div>
+                </AlertDialogContent>
+            </AlertDialog>
 
             <AlertDialog open={confirmNueva} onOpenChange={setConfirmNueva}>
                 <AlertDialogContent>

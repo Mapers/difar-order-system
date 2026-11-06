@@ -31,11 +31,18 @@ export function EstilosLectura() {
 }
 @keyframes lf-latido { 0% { transform: scale(1); opacity: .7; } 70%, 100% { transform: scale(1.18, 1.45); opacity: 0; } }
 .lf-latido { animation: lf-latido 1.8s ease-out infinite; }
+/* Se sacude al abrir y vuelve a vibrar cada 2.5 s mientras siga abierto */
+@keyframes lf-sacudir {
+  0%, 24%, 100% { translate: 0 0; }
+  3%, 11%, 19% { translate: -9px 0; }
+  7%, 15% { translate: 9px 0; }
+}
+.lf-sacudir { animation: lf-sacudir 2.5s ease-in-out .15s infinite; }
 @keyframes lf-entrar { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
 .lf-pintando { animation: lf-pintar .9s ease-out; border-radius: .75rem; }
 .lf-pintado  { outline: 2px solid rgb(139 92 246 / .45); outline-offset: 2px; border-radius: .75rem; transition: outline-color 1s; }
 .lf-fila     { animation: lf-entrar .35s ease-out, lf-pintar 1.1s ease-out; }
-@media (prefers-reduced-motion: reduce) { .lf-pintando, .lf-fila, .lf-latido { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .lf-pintando, .lf-fila, .lf-latido, .lf-sacudir { animation: none; } }
         `}</style>
     )
 }

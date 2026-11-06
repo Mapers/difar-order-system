@@ -313,6 +313,8 @@ export function useRegistroCompras() {
     const [lineasLeidas, setLineasLeidas] = useState<Set<number>>(new Set())
     const [lectura, setLectura] = useState<Pick<LecturaFactura, 'avisos' | 'yaRegistrado' | 'productosNuevos'> | null>(null)
     const nroLectura = useRef(0)
+    // Productos del comprobante que no están en el catálogo: se avisan al terminar de llenar.
+    const [faltantes, setFaltantes] = useState<string[] | null>(null)
 
     const aplicarLectura = useCallback(async (d: LecturaFactura) => {
         const mia = ++nroLectura.current
@@ -370,6 +372,7 @@ export function useRegistroCompras() {
         }
         setProximaKey(key)
         setPintando(null)
+        if ((d.productosNuevos ?? []).length > 0) setFaltantes(d.productosNuevos)
 
         await pausa(2500)
         if (sigue()) setPintados(new Set())
@@ -597,6 +600,7 @@ export function useRegistroCompras() {
         clave, cab, filas, totales, totalesEnVivo, cerrado, vecesRegistrado,
         cargando, guardando, esContado,
         pintando, pintados, lineasLeidas, lectura, aplicarLectura, descartarLectura,
+        faltantes, cerrarFaltantes: () => setFaltantes(null),
         nuevo, abrir, setCampoCab, setProveedor, setCampoFila, setArticulo,
         agregarFila, quitarFilaNueva, guardar, eliminarMarcadas, eliminarDocumento,
     }
