@@ -187,32 +187,17 @@ function construirPdf(data: ComprobantePreviewData, empresa: Empresa, logo: Logo
     // Franja superior
     doc.setFillColor(...AZUL).rect(0, 0, ancho, 4, "F")
 
-    // Emisor
-    let yEmisor = 14
-    if (logo) {
-        // 21mm de alto, ancho segun proporcion del logo recortado (max 62mm)
-        const altoLogo = Math.min(21, 62 / logo.aspecto)
-        try { doc.addImage(logo.src, "PNG", m, 9, altoLogo * logo.aspecto, altoLogo, undefined, "FAST"); yEmisor = 9 + altoLogo + 5 } catch { /* sin logo */ }
-    }
-    doc.setFont("helvetica", "bold").setFontSize(10.5).setTextColor(...PIZARRA)
-    const lineasRazon = doc.splitTextToSize(empresa.razonSocial, 110)
-    doc.text(lineasRazon, m, yEmisor)
-    doc.setFont("helvetica", "normal").setFontSize(8.5).setTextColor(...GRIS)
-    doc.text(`RUC ${empresa.ruc}`, m, yEmisor + lineasRazon.length * 4.4 + 0.6)
-
-    // Recuadro del comprobante
-    const bw = 64, bx = ancho - m - bw, by = 10
-    doc.setDrawColor(...AZUL).setLineWidth(0.7).roundedRect(bx, by, bw, 30, 2, 2, "S")
-    doc.setTextColor(...AZUL).setFont("helvetica", "bold").setFontSize(9.5)
-    doc.text(`R.U.C. N° ${empresa.ruc}`, bx + bw / 2, by + 7, { align: "center" })
-    doc.setFillColor(...AZUL).rect(bx + 0.35, by + 10, bw - 0.7, 9, "F")
-    doc.setTextColor(255).setFontSize(10.5)
-    doc.text((data.documento || "Comprobante").toUpperCase(), bx + bw / 2, by + 16, { align: "center" })
-    doc.setTextColor(...PIZARRA).setFontSize(12)
-    doc.text(`${data.serie || "----"} - ${data.numero}`, bx + bw / 2, by + 26.5, { align: "center" })
+    // Solo el número del comprobante: sin logo, razón social, RUC ni tipo de documento
+    const bw = 58, bx = ancho - m - bw, by = 10
+    doc.setDrawColor(...AZUL).setLineWidth(0.7).roundedRect(bx, by, bw, 19, 2, 2, "S")
+    doc.setFillColor(...AZUL).roundedRect(bx, by, bw, 7, 2, 2, "F").rect(bx, by + 4, bw, 3, "F")
+    doc.setTextColor(255).setFont("helvetica", "bold").setFontSize(8.5)
+    doc.text("N°", bx + bw / 2, by + 5, { align: "center" })
+    doc.setTextColor(...PIZARRA).setFontSize(13)
+    doc.text(`${data.serie || "----"} - ${data.numero}`, bx + bw / 2, by + 15, { align: "center" })
 
     // Bloques de datos: cliente (izq) y comprobante (der)
-    let y = 50
+    let y = 36
     const gap = 4
     const wIzq = util * 0.58, wDer = util - wIzq - gap
     const xDer = m + wIzq + gap
@@ -552,17 +537,11 @@ function HojaComprobante({
             </div>
 
             <div className="relative flex flex-1 flex-col">
-                {/* Emisor + recuadro del comprobante */}
-                <div className="flex items-start justify-between gap-8">
-                    <div className="min-w-0 max-w-[420px]">
-                        {logo && <img src={logo.src} alt="DIFAR" className="mb-3 h-[80px] w-auto max-w-[235px] object-contain" />}
-                        <p className="text-[14px] font-bold leading-snug text-slate-900">{empresa.razonSocial}</p>
-                        <p className="mt-0.5 text-slate-500">RUC {empresa.ruc}</p>
-                    </div>
-                    <div className="w-[242px] shrink-0 overflow-hidden rounded-lg border-[2.5px] border-blue-800 text-center">
-                        <p className="py-2 text-[12.5px] font-bold text-blue-800">R.U.C. N° {empresa.ruc}</p>
-                        <p className="bg-blue-800 py-2 text-[13.5px] font-bold uppercase tracking-wide text-white">{data.documento || "Comprobante"}</p>
-                        <p className="py-2.5 text-[16px] font-bold tracking-wide text-slate-900">{data.serie || "----"} - {data.numero}</p>
+                {/* Solo el número del comprobante */}
+                <div className="flex justify-end">
+                    <div className="w-[220px] shrink-0 overflow-hidden rounded-lg border-[2.5px] border-blue-800 text-center">
+                        <p className="bg-blue-800 py-1 text-[11.5px] font-bold uppercase tracking-wide text-white">N°</p>
+                        <p className="py-2.5 text-[17px] font-bold tracking-wide text-slate-900">{data.serie || "----"} - {data.numero}</p>
                     </div>
                 </div>
 
