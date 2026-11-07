@@ -1102,7 +1102,7 @@ export default function ComprobantesPage() {
                     {SHOW_TOMAR_PEDIDO_HOJA_BLANCO && isAdmin && (
                         <Button variant="outline" onClick={() => setShowHojaBlanco(true)} className="flex items-center gap-2">
                           <FilePlus2 className="h-4 w-4"/>
-                          Hoja en Blanco
+                          Donación
                         </Button>
                     )}
                     {comprobantes.length > 0 && <Button variant="outline" onClick={() => setShowValidacionModal(true)}
@@ -1453,10 +1453,10 @@ export default function ComprobantesPage() {
                              onInteractOutside={(e) => e.preventDefault()}>
                 <DialogHeader>
                   <DialogTitle className="flex items-center gap-2">
-                    <FilePlus2 className="h-5 w-5 text-blue-600" /> Hoja en Blanco
+                    <FilePlus2 className="h-5 w-5 text-blue-600" /> Donación
                   </DialogTitle>
                   <DialogDescription>
-                    Registro de comprobantes en hoja en blanco: facturas, boletas y notas de crédito o débito.
+                    Registro de comprobantes de donación: facturas, boletas y notas de crédito o débito.
                   </DialogDescription>
                 </DialogHeader>
                 <HojaEnBlanco />

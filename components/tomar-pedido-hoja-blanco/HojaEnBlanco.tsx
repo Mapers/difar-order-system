@@ -1582,7 +1582,7 @@ function EmisionExitosa({ datos, onCerrar }: {
                              style={{ width: `${(Math.max(restan, 0) / SEGUNDOS_AVISO) * 100}%` }} />
                     </div>
                     <p className="text-xs text-muted-foreground">
-                        El formulario se limpiará en <b className="tabular-nums text-foreground">{Math.max(restan, 0)}</b> s para registrar otra hoja en blanco.
+                        El formulario se limpiará en <b className="tabular-nums text-foreground">{Math.max(restan, 0)}</b> s para registrar otra donación.
                     </p>
                 </div>
                 <AlertDialogFooter className="sm:justify-center">

@@ -321,7 +321,7 @@ function construirPdf(data: ComprobantePreviewData, empresa: Empresa, logo: Logo
     // Pie
     doc.setDrawColor(...BORDE).setLineWidth(0.3).line(m, alto - 16, ancho - m, alto - 16)
     doc.setFont("helvetica", "normal").setFontSize(7).setTextColor(...GRIS)
-    doc.text("Vista previa generada desde Tomar Pedido Hoja en Blanco — no válida como comprobante electrónico.", m, alto - 11)
+    doc.text("Vista previa generada desde Donación — no válida como comprobante electrónico.", m, alto - 11)
     doc.text(`Generado el ${ahoraLegible()} · Página 1 de 1`, ancho - m, alto - 11, { align: "right" })
 
     return doc
@@ -665,7 +665,7 @@ function HojaComprobante({
 
                 {/* Pie */}
                 <div className="mt-auto flex items-center justify-between gap-4 border-t border-slate-200 pt-3 text-[9.5px] text-slate-500">
-                    <span>Vista previa generada desde Tomar Pedido Hoja en Blanco — no válida como comprobante electrónico.</span>
+                    <span>Vista previa generada desde Donación — no válida como comprobante electrónico.</span>
                     <span className="shrink-0">Generado el {generado} · Página 1 de 1</span>
                 </div>
             </div>
