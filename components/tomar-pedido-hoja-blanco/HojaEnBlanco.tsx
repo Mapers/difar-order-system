@@ -1088,7 +1088,11 @@ export default function HojaEnBlanco() {
                                                     onPriceTypeChange={(pt) => setLinea(idx, { TipoPrecio: pt, PUTexto: undefined, PU: precioDe(l.Producto!, pt, l.PU) })}
                                                     priceEdit={l.TipoPrecio === "custom" ? (l.PUTexto ?? l.PU) : 0}
                                                     onPriceEditChange={(v) => setLinea(idx, { TipoPrecio: "custom", PUTexto: String(v), PU: Number(v) || 0 })}
-                                                    onPriceEditBlur={() => {}}
+                                                    // Al salir del campo queda con dos decimales (7.6 → 7.60)
+                                                    onPriceEditBlur={(e) => {
+                                                        const n = Math.round((parseFloat(e.target.value) || 0) * 100) / 100
+                                                        setLinea(idx, { TipoPrecio: "custom", PUTexto: n.toFixed(2), PU: n })
+                                                    }}
                                                     currency={monedas.find((m) => m.value === moneda) || null}
                                                 />
                                             </div>
