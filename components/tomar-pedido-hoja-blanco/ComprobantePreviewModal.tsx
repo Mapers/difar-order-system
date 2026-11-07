@@ -187,17 +187,31 @@ function construirPdf(data: ComprobantePreviewData, empresa: Empresa, logo: Logo
     // Franja superior
     doc.setFillColor(...AZUL).rect(0, 0, ancho, 4, "F")
 
-    // Solo el número del comprobante: sin logo, razón social, RUC ni tipo de documento
-    const bw = 58, bx = ancho - m - bw, by = 10
-    doc.setDrawColor(...AZUL).setLineWidth(0.7).roundedRect(bx, by, bw, 19, 2, 2, "S")
-    doc.setFillColor(...AZUL).roundedRect(bx, by, bw, 7, 2, 2, "F").rect(bx, by + 4, bw, 3, "F")
-    doc.setTextColor(255).setFont("helvetica", "bold").setFontSize(8.5)
-    doc.text("N°", bx + bw / 2, by + 5, { align: "center" })
-    doc.setTextColor(...PIZARRA).setFontSize(13)
-    doc.text(`${data.serie || "----"} - ${data.numero}`, bx + bw / 2, by + 15, { align: "center" })
+    // Cabecera sin logo, razón social, RUC ni tipo de documento: el número
+    // destacado a la izquierda y tres datos clave a la derecha.
+    const hy = 10, hh = 26
+    doc.setFillColor(...AZUL).roundedRect(m, hy, util, hh, 3, 3, "F")
+    doc.setFillColor(37, 99, 235).roundedRect(m + util * 0.55, hy, util * 0.45, hh, 3, 3, "F")
+        .rect(m + util * 0.55, hy, 4, hh, "F")
+    doc.setFont("helvetica", "bold").setFontSize(7.5).setTextColor(191, 219, 254)
+    doc.text("N° DE COMPROBANTE", m + 7, hy + 8.5)
+    doc.setFontSize(20).setTextColor(255)
+    doc.text(`${data.serie || "----"} - ${data.numero}`, m + 7, hy + 19)
+    const chips: [string, string][] = [
+        ["EMISIÓN", fechaLegible(data.fecha)],
+        ["MONEDA", data.monedaCodigo || "—"],
+        ["TOTAL", `${data.simbolo} ${fmt(data.totales.total)}`],
+    ]
+    const cx0 = m + util * 0.55 + 6, cw = (util * 0.45 - 12) / 3
+    chips.forEach(([et, val], i) => {
+        const cx = cx0 + i * cw
+        if (i > 0) doc.setDrawColor(147, 197, 253).setLineWidth(0.25).line(cx - 1.5, hy + 6, cx - 1.5, hy + hh - 6)
+        doc.setFont("helvetica", "bold").setFontSize(6.8).setTextColor(191, 219, 254).text(et, cx + 1, hy + 10.5)
+        doc.setFontSize(i === 2 ? 10.5 : 9.5).setTextColor(255).text(val, cx + 1, hy + 17.5)
+    })
 
     // Bloques de datos: cliente (izq) y comprobante (der)
-    let y = 36
+    let y = 42
     const gap = 4
     const wIzq = util * 0.58, wDer = util - wIzq - gap
     const xDer = m + wIzq + gap
@@ -537,11 +551,19 @@ function HojaComprobante({
             </div>
 
             <div className="relative flex flex-1 flex-col">
-                {/* Solo el número del comprobante */}
-                <div className="flex justify-end">
-                    <div className="w-[220px] shrink-0 overflow-hidden rounded-lg border-[2.5px] border-blue-800 text-center">
-                        <p className="bg-blue-800 py-1 text-[11.5px] font-bold uppercase tracking-wide text-white">N°</p>
-                        <p className="py-2.5 text-[17px] font-bold tracking-wide text-slate-900">{data.serie || "----"} - {data.numero}</p>
+                {/* Cabecera: número destacado y datos clave (sin logo, razón social, RUC ni tipo) */}
+                <div className="flex overflow-hidden rounded-xl bg-blue-800 text-white">
+                    <div className="flex-[55] px-6 py-4">
+                        <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-blue-200">N° de comprobante</p>
+                        <p className="mt-1 text-[28px] font-bold leading-none tracking-wide">{data.serie || "----"} - {data.numero}</p>
+                    </div>
+                    <div className="grid flex-[45] grid-cols-3 divide-x divide-blue-300/60 bg-blue-600 px-4 py-4">
+                        {([["Emisión", fechaLegible(data.fecha)], ["Moneda", data.monedaCodigo || "—"], ["Total", `${data.simbolo} ${fmt(data.totales.total)}`]] as const).map(([et, val]) => (
+                            <div key={et} className="px-3">
+                                <p className="text-[9.5px] font-bold uppercase tracking-wider text-blue-200">{et}</p>
+                                <p className="mt-1.5 whitespace-nowrap text-[13.5px] font-bold">{val}</p>
+                            </div>
+                        ))}
                     </div>
                 </div>
 
