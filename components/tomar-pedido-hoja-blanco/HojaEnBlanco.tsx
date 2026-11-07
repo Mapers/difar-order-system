@@ -96,6 +96,8 @@ interface LineaDetalle {
     // guardados no se tiene el producto: se ve solo el PU guardado.
     Producto?: IProduct | null
     TipoPrecio?: PriceType
+    // Texto tal como se escribe en "Personalizado" (para poder escribir "7." o "7.5")
+    PUTexto?: string
 }
 const lineaVacia = (centro = "", cuenta = ""): LineaDetalle => ({
     idArticulo: "", CodigoArticulo: "", Articulo: "", Cantidad: 1, PU: 0, Afecto: true,
@@ -1083,9 +1085,9 @@ export default function HojaEnBlanco() {
                                                 <PriceSelector
                                                     selectedProduct={l.Producto}
                                                     priceType={l.TipoPrecio ?? "contado"}
-                                                    onPriceTypeChange={(pt) => setLinea(idx, { TipoPrecio: pt, PU: precioDe(l.Producto!, pt, l.PU) })}
-                                                    priceEdit={l.TipoPrecio === "custom" ? l.PU : 0}
-                                                    onPriceEditChange={(v) => setLinea(idx, { TipoPrecio: "custom", PU: Number(v) || 0 })}
+                                                    onPriceTypeChange={(pt) => setLinea(idx, { TipoPrecio: pt, PUTexto: undefined, PU: precioDe(l.Producto!, pt, l.PU) })}
+                                                    priceEdit={l.TipoPrecio === "custom" ? (l.PUTexto ?? l.PU) : 0}
+                                                    onPriceEditChange={(v) => setLinea(idx, { TipoPrecio: "custom", PUTexto: String(v), PU: Number(v) || 0 })}
                                                     onPriceEditBlur={() => {}}
                                                     currency={monedas.find((m) => m.value === moneda) || null}
                                                 />
@@ -1110,7 +1112,7 @@ export default function HojaEnBlanco() {
                                         </div>
                                         <div className="flex min-w-0 flex-col gap-1.5">
                                             <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{l.Afecto ? "PU con IGV" : "PU sin IGV"} ({simbolo})</Label>
-                                            <Input type="number" min={0} step="0.01" value={l.PU} onChange={(e) => setLinea(idx, { PU: Number(e.target.value), ...(l.Producto ? { TipoPrecio: "custom" as PriceType } : {}) })} className="h-[62px] text-right font-mono text-base" />
+                                            <Input type="number" min={0} step="0.01" value={l.PU} onChange={(e) => setLinea(idx, { PU: Number(e.target.value), PUTexto: undefined, ...(l.Producto ? { TipoPrecio: "custom" as PriceType } : {}) })} className="h-[62px] text-right font-mono text-base" />
                                         </div>
                                         <div className="col-span-2 flex min-w-0 flex-col gap-1 lg:col-span-1">
                                             <ComboTile
