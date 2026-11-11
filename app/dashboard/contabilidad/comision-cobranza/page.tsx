@@ -312,7 +312,56 @@ export default function ComisionCobranzaPage() {
                                                    columnasFijas="Código, vendedor, cobranza, tramos y comisión siempre se incluyen." />
                             )}
                         </div>
-                        <div className="overflow-auto">
+                        {/* Celular: una tarjeta por vendedor */}
+                        <div className="divide-y md:hidden">
+                            {resumen.filas.length === 0 ? (
+                                <p className="py-12 text-center text-sm text-muted-foreground">Sin cobranza en el período</p>
+                            ) : resumen.filas.map(f => {
+                                const activo = seleccion?.Codigo_Vend === f.Codigo_Vend
+                                const partes = [f.CobranzaTramo1, f.CobranzaTramo2, f.CobranzaTramo3, f.CobranzaOtrosTramos, f.CobranzaFueraDePlazo]
+                                const estilos = [estiloTramo(1), estiloTramo(2), estiloTramo(3), estiloTramo(4), estiloTramo(0)]
+                                const tramos = [[1, f.CobranzaTramo1], [2, f.CobranzaTramo2], [3, f.CobranzaTramo3], [0, f.CobranzaFueraDePlazo]] as const
+                                return (
+                                    <button key={f.Codigo_Vend} type="button" onClick={() => verDetalle(f)}
+                                            className={`block w-full px-4 py-3 text-left active:bg-muted/60 ${activo ? 'bg-blue-50 shadow-[inset_3px_0_0_#2563eb] dark:bg-blue-950/40' : ''}`}>
+                                        <div className="flex items-start justify-between gap-3">
+                                            <div className="min-w-0">
+                                                <p className="text-sm font-semibold leading-tight">{f.Vendedor}</p>
+                                                <p className="mt-0.5 text-xs text-muted-foreground">
+                                                    <span className="font-mono">{f.Codigo_Vend}</span> · {f.Cobros} cobros · {money(f.Cobranza)}
+                                                </p>
+                                                {!f.TasaVendedor && (
+                                                    <span className="mt-1 inline-block rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold text-slate-500 dark:bg-slate-800">no cobra comisión</span>
+                                                )}
+                                            </div>
+                                            <div className="shrink-0 text-right">
+                                                <p className="text-[10px] uppercase text-muted-foreground">Comisión</p>
+                                                <p className="font-mono text-base font-bold text-emerald-700 dark:text-emerald-400">{money(f.Comision)}</p>
+                                            </div>
+                                        </div>
+                                        <div className="mt-2 flex h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                                            {partes.map((v, i) => (
+                                                <div key={i} className={`h-full ${estilos[i].barra}`} style={{ width: `${f.Cobranza ? (v / f.Cobranza) * 100 : 0}%` }} />
+                                            ))}
+                                        </div>
+                                        <div className="mt-2 flex flex-wrap gap-1.5">
+                                            {tramos.filter(([, v]) => v).map(([n, v]) => (
+                                                <span key={n} className={`rounded-md px-1.5 py-0.5 text-[10px] font-semibold ${estiloTramo(n).chip}`}>
+                                                    {etiquetaTramo(n)}: {money(v)}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </button>
+                                )
+                            })}
+                            {resumen.filas.length > 0 && (
+                                <div className="flex items-center justify-between bg-blue-50/60 px-4 py-3 text-sm font-bold dark:bg-blue-950/30">
+                                    <span>Totales · {money(t.cobranza)}</span>
+                                    <span className="font-mono text-blue-700 dark:text-blue-400">{money(t.comision)}</span>
+                                </div>
+                            )}
+                        </div>
+                        <div className="hidden overflow-auto md:block">
                             <table className="w-full min-w-[980px] text-xs border-collapse">
                                 <thead>
                                     <tr className="sticky top-0 z-10 bg-gradient-to-b from-muted/60 to-muted">
@@ -423,7 +472,34 @@ export default function ComisionCobranzaPage() {
                                             </FiltroChip>
                                         ))}
                                     </div>
-                                    <div className="max-h-[520px] overflow-auto">
+                                    {/* Celular: una tarjeta por cobro */}
+                                    <div className="max-h-[70vh] divide-y overflow-y-auto md:hidden">
+                                        {filasDetalle.length === 0 ? (
+                                            <p className="py-10 text-center text-sm text-muted-foreground">Sin cobros en este tramo</p>
+                                        ) : filasDetalle.map((d, i) => {
+                                            const e = estiloTramo(d.Tramo)
+                                            return (
+                                                <div key={`m-${d.SerieDoc}-${d.NumeroDoc}-${i}`} className="px-4 py-2.5" style={{ boxShadow: `inset 3px 0 0 ${e.borde}` }}>
+                                                    <div className="flex items-center justify-between gap-2 text-xs">
+                                                        <span>
+                                                            <span className="mr-1.5 inline-flex rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-300">{d.Tipo_Doc}</span>
+                                                            <span className="font-mono">{d.SerieDoc}-{d.NumeroDoc}</span>
+                                                        </span>
+                                                        <span className={`inline-flex rounded-md px-1.5 py-0.5 text-[10px] font-bold ${e.chip}`}>{d.DiasVencido} días</span>
+                                                    </div>
+                                                    <p className="mt-1 text-sm leading-tight">{d.Cliente}</p>
+                                                    <p className="mt-0.5 text-[11px] text-muted-foreground">
+                                                        Cobro {fechaDMY(d.Fecha_Amortizacion)} · vence {fechaDMY(d.Fecha_Vcto)} · planilla {d.NroPlanilla ?? '—'}
+                                                    </p>
+                                                    <div className="mt-1 flex items-center justify-between text-xs">
+                                                        <span>Cobrado <b className="font-mono">{money(d.Amortizacion)}</b> · VV {money(d.ImporteVV)} × {pct(d.TasaPorcentaje)}</span>
+                                                        <span className="font-mono font-bold text-emerald-700 dark:text-emerald-400">{money(d.Comision)}</span>
+                                                    </div>
+                                                </div>
+                                            )
+                                        })}
+                                    </div>
+                                    <div className="hidden max-h-[520px] overflow-auto md:block">
                                         <table className="w-full min-w-[1100px] text-xs border-collapse">
                                             <thead>
                                                 <tr className="sticky top-0 z-10 bg-gradient-to-b from-muted/60 to-muted">

@@ -12,7 +12,7 @@ import {
     Wallet,
     ShoppingBag,
     Receipt, GoalIcon, UserCog, Notebook, Gift, Map, Settings, FileDiff, CalendarClock,
-    TrendingUp, ReceiptText, HandCoins, BadgePercent
+    TrendingUp, ReceiptText, HandCoins, BadgePercent, ClipboardList
 } from "lucide-react";
 
 export interface NavItem {
@@ -57,6 +57,7 @@ export const ICON_MAP: Record<string, React.ComponentType<{ className?: string }
     "/dashboard/reportes/metas": GoalIcon,
     "/dashboard/reportes/ventas-totales": TrendingUp,
     "/dashboard/reportes/hoja-en-blanco": FileText,
+    "/dashboard/reportes/toma-inventario": ClipboardList,
     "/dashboard/recibo-cuenta-cliente": ReceiptText,
     "/dashboard/usuarios": UserCog,
     "/dashboard/roles": Notebook,
