@@ -64,6 +64,8 @@ export interface ComprobantePreviewData {
     tasaIgv: number
     lineas: ComprobantePreviewLinea[]
     totales: { vvna: number; vva: number; igv: number; total: number }
+    /** Descuento global (Donación): % sobre el total y saldo a pagar */
+    descuento?: { porcentaje: number; monto: number; saldo: number }
 }
 
 interface Empresa { razonSocial: string; ruc: string }
@@ -73,6 +75,7 @@ const ZOOM_MAX = 2
 const ZOOM_PASO = 0.1
 const ANCHO_HOJA_PX = 794 // A4 a 96dpi
 
+const fmtPct = (n: number) => String(Math.round(n * 100) / 100)
 const fmt = (n: number) => n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 const fechaLegible = (iso: string) => {
     if (!iso) return "—"
@@ -304,6 +307,21 @@ function construirPdf(data: ComprobantePreviewData, empresa: Empresa, logo: Logo
     doc.setFont("helvetica", "bold").setFontSize(10.5).setTextColor(255)
     doc.text("IMPORTE TOTAL", tx + 4, ty + 3.6)
     doc.text(`${data.simbolo} ${fmt(data.totales.total)}`, tx + tw - 4, ty + 3.6, { align: "right" })
+
+    // Cuadro del descuento global y el saldo a pagar
+    const dsc = data.descuento
+    if (dsc && dsc.porcentaje > 0) {
+        const dy = ty + 11
+        doc.setDrawColor(245, 158, 11).setLineWidth(0.5).setFillColor(255, 251, 235).roundedRect(tx, dy, tw, 25, 2, 2, "FD")
+        doc.setFont("helvetica", "normal").setFontSize(8.5).setTextColor(...GRIS).text("Total", tx + 4, dy + 6)
+        doc.setTextColor(...PIZARRA).text(`${data.simbolo} ${fmt(data.totales.total)}`, tx + tw - 4, dy + 6, { align: "right" })
+        doc.setTextColor(180, 83, 9).text(`Descuento ${fmtPct(dsc.porcentaje)}%`, tx + 4, dy + 12)
+        doc.text(`- ${data.simbolo} ${fmt(dsc.monto)}`, tx + tw - 4, dy + 12, { align: "right" })
+        doc.setFillColor(245, 158, 11).roundedRect(tx, dy + 15, tw, 10, 2, 2, "F")
+        doc.setFont("helvetica", "bold").setFontSize(10).setTextColor(255)
+        doc.text("SALDO A PAGAR", tx + 4, dy + 21.3)
+        doc.text(`${data.simbolo} ${fmt(dsc.saldo)}`, tx + tw - 4, dy + 21.3, { align: "right" })
+    }
 
     const wl = util - tw - 6
     doc.setFillColor(...AZUL_CLARO).roundedRect(m, y, wl, 13, 2, 2, "F")
@@ -661,6 +679,24 @@ function HojaComprobante({
                             <span className="text-[12px] font-bold tracking-wide">IMPORTE TOTAL</span>
                             <span className="text-[16px] font-bold tabular-nums">{data.simbolo} {fmt(data.totales.total)}</span>
                         </div>
+                        {data.descuento && data.descuento.porcentaje > 0 && (
+                            <div className="border-t-2 border-amber-400 bg-amber-50">
+                                <div className="px-4 py-2">
+                                    <div className="flex justify-between py-1">
+                                        <span className="text-slate-500">Total</span>
+                                        <span className="tabular-nums">{data.simbolo} {fmt(data.totales.total)}</span>
+                                    </div>
+                                    <div className="flex justify-between py-1 font-semibold text-amber-700">
+                                        <span>Descuento {fmtPct(data.descuento.porcentaje)}%</span>
+                                        <span className="tabular-nums">- {data.simbolo} {fmt(data.descuento.monto)}</span>
+                                    </div>
+                                </div>
+                                <div className="flex items-center justify-between bg-amber-500 px-4 py-3 text-white">
+                                    <span className="text-[12px] font-bold tracking-wide">SALDO A PAGAR</span>
+                                    <span className="text-[16px] font-bold tabular-nums">{data.simbolo} {fmt(data.descuento.saldo)}</span>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
 
