@@ -9,30 +9,18 @@ import {
     DialogTitle, DialogFooter, DialogDescription,
 } from '@/components/ui/dialog'
 import {
-    Select, SelectContent, SelectItem,
-    SelectTrigger, SelectValue,
-} from '@/components/ui/select'
-import { Label } from '@/components/ui/label'
-import {
     CheckCircle2, XCircle, Loader2,
-    PlayCircle, AlertTriangle, CheckCheck, Trash2,
+    Send, CheckCheck, Trash2, Clock,
 } from 'lucide-react'
 import { toast } from '@/app/hooks/useToast'
 import apiClient from '@/app/api/client'
 import {
     AdminInfo, CatalogosBanco,
-    PlanillaCabecera, PlanillaDetalle, TipoComprobante,
+    PlanillaCabecera, PlanillaCajaEstado, PlanillaDetalle, TipoComprobante,
 } from "@/app/types/planilla-types"
-import { TipoAmortizacion, EmpresaOption } from "@/app/types/amortizacion-types"
-import { fmtHora, fmtMoney } from "@/lib/planilla.helper"
+import { fmtFecha, fmtHora, fmtMoney } from "@/lib/planilla.helper"
 import MiniTabla from "@/components/contabilidad/planilla-cobranza/Minitabla"
 import { ExportarPlanillaFormato } from "@/components/contabilidad/planilla-cobranza/ExportarPlanillaFormato"
-
-/** Identifica un documento cobrado: cliente, tipo, serie y número. */
-const claveDoc = (cliente: unknown, tipo: unknown, serie: unknown, numero: unknown) =>
-    [cliente, tipo, serie, Number(numero) || numero]
-        .map(v => String(v ?? '').trim().toUpperCase())
-        .join('|')
 
 interface Props {
     planilla:         PlanillaCabecera
@@ -40,8 +28,6 @@ interface Props {
     loadingDet:       boolean
     tiposComprobante: TipoComprobante[]
     bancos:           CatalogosBanco[]
-    tiposAmort:       TipoAmortizacion[]
-    empresas:         EmpresaOption[]
     adminInfo:        AdminInfo
     procesando:       boolean
     onValidar:        (id: number) => void
@@ -52,88 +38,55 @@ interface Props {
 export default function DetalleAdmin({
                                          planilla, detalle, loadingDet,
                                          tiposComprobante, bancos,
-                                         tiposAmort, empresas,
                                          adminInfo, procesando,
                                          onValidar, onRechazar, onEliminar,
                                      }: Props) {
 
-    const [obsTexto,     setObsTexto]     = useState('')
-    const [isProcesando, setIsProcesando] = useState(false)
-
-    const [modalOpen,       setModalOpen]       = useState(false)
-    const [tipoAmortSel,    setTipoAmortSel]    = useState<string>('')
-    const [empresaSel,      setEmpresaSel]      = useState<string>(
-        () => empresas[0]?.CodigoEmpresa ?? ''
-    )
-
-    // Filas de la planilla que todavía no tienen su amortización registrada.
-    // null mientras se consulta o si la consulta falló.
-    const [pendientes,   setPendientes]   = useState<PlanillaDetalle[] | null>(null)
-    const [verificando,  setVerificando]  = useState(false)
-    // Avance del procesamiento: cuántas van de cuántas.
-    const [progreso,     setProgreso]     = useState<{ hechas: number; total: number } | null>(null)
+    const [obsTexto, setObsTexto] = useState('')
 
     const yaGestionada = planilla.estado === 'validado' || planilla.estado === 'rechazado'
     const tDocs = detalle.reduce((s, r) => s + Number(r.importe), 0)
     const tCbza = detalle.reduce((s, r) => s + Number(r.importe_cobrado), 0)
-    // Solo las filas con importe cobrado se convierten en amortización; las que están en 0 no hubo pago.
+    // Solo las filas con importe cobrado van a caja; las que están en 0 no hubo pago.
     const conCobro  = detalle.filter(r => Number(r.importe_cobrado) > 0)
     const sinCobro  = detalle.length - conCobro.length
 
-    const handleAbrirModal = () => {
-        setTipoAmortSel(tiposAmort[0]?.Cod_Tipo_Amort ?? '')
-        setEmpresaSel(empresas[0]?.CodigoEmpresa ?? '')
-        setModalOpen(true)
-    }
+    // Estado en Libro Caja de cada registro enviado. null mientras se consulta o si falló.
+    const [estadoCaja,  setEstadoCaja]  = useState<PlanillaCajaEstado[] | null>(null)
+    const [consultando, setConsultando] = useState(false)
+    const [enviarOpen,  setEnviarOpen]  = useState(false)
+    const [enviando,    setEnviando]    = useState(false)
 
-    /**
-     * Consulta las amortizaciones ya registradas con el número de esta planilla
-     * y devuelve las filas que faltan. Si un documento aparece dos veces en la
-     * planilla, cada registro encontrado descuenta una sola fila.
-     */
-    const consultarPendientes = async (): Promise<PlanillaDetalle[]> => {
-        const res = await apiClient.get('/amortizacion/buscar', { params: { nroPlanilla: planilla.numero_planilla } })
-        const registradas: any[] = res.data?.data?.data ?? []
-        const cuenta = new Map<string, number>()
-        for (const r of registradas) {
-            const k = claveDoc(r.Cod_Clie, r.TipoDoc, r.SerieDoc, r.NumeroDoc)
-            cuenta.set(k, (cuenta.get(k) ?? 0) + 1)
+    const cargarEstadoCaja = async () => {
+        setConsultando(true)
+        try {
+            const res = await apiClient.get(`/planilla/${planilla.id_planilla}/caja`)
+            setEstadoCaja(res.data?.data?.data ?? [])
+        } catch {
+            setEstadoCaja(null)
+        } finally {
+            setConsultando(false)
         }
-        return conCobro.filter(item => {
-            const k = claveDoc(item.codigo_cliente, item.tipo_documento, item.serie, item.numero_doc)
-            const n = cuenta.get(k) ?? 0
-            if (n === 0) return true
-            cuenta.set(k, n - 1)
-            return false
-        })
     }
 
     useEffect(() => {
-        if (planilla.estado !== 'validado' || loadingDet || conCobro.length === 0) {
-            setPendientes(null)
-            return
-        }
-        let vivo = true
-        setVerificando(true)
-        consultarPendientes()
-            .then(p => { if (vivo) setPendientes(p) })
-            .catch(() => { if (vivo) setPendientes(null) })
-            .finally(() => { if (vivo) setVerificando(false) })
-        return () => { vivo = false }
+        if (planilla.estado !== 'validado') { setEstadoCaja(null); return }
+        cargarEstadoCaja()
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [planilla.id_planilla, planilla.estado, planilla.numero_planilla, detalle, loadingDet])
+    }, [planilla.id_planilla, planilla.estado])
 
-    // Mientras se procesa, el navegador pide confirmación antes de cerrar o recargar la página.
-    useEffect(() => {
-        if (!isProcesando) return
-        const avisar = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = '' }
-        window.addEventListener('beforeunload', avisar)
-        return () => window.removeEventListener('beforeunload', avisar)
-    }, [isProcesando])
+    const porId = new Map((estadoCaja ?? []).map(e => [e.id_detalle, e]))
+    const pendientesCaja = (estadoCaja ?? []).filter(e => e.estado === 'pendiente').length
+    const aceptadosCaja  = (estadoCaja ?? []).filter(e => e.estado === 'aceptado').length
+    const rechazadosCaja = (estadoCaja ?? []).filter(e => e.estado === 'rechazado')
+    // Lo que se mandaría al pulsar el botón: lo nunca enviado más lo rechazado.
+    const porEnviar = conCobro.filter(r => {
+        const e = porId.get(r.id_detalle)
+        return !e || e.estado === 'rechazado'
+    })
+    const todoEnLibro = conCobro.length > 0 && aceptadosCaja === conCobro.length
 
-    const procesada = pendientes !== null && conCobro.length > 0 && pendientes.length === 0
-    const puedeEliminar = planilla.estado !== 'validado' || conCobro.length === 0
-        || (pendientes !== null && pendientes.length === conCobro.length)
+    const puedeEliminar = planilla.estado !== 'validado' || (estadoCaja !== null && aceptadosCaja === 0)
 
     const [eliminarOpen, setEliminarOpen] = useState(false)
     const [eliminando,   setEliminando]   = useState(false)
@@ -144,97 +97,26 @@ export default function DetalleAdmin({
         setEliminando(false)
         if (ok) setEliminarOpen(false)
     }
-    const parcial   = pendientes !== null && pendientes.length > 0 && pendientes.length < conCobro.length
 
-    // DEUDA TÉCNICA: la fecha de depósito, el N° de operación y el N° de cheque del
-    // registro (lo que ahora se lee del voucher) no llegan al cobro: sp_ws_amortizacion_guardar
-    // no tiene parámetros para ellos y fecha_mvto recibe la fecha de ruta. Validar en la base
-    // de datos qué soporta el SP (o usar p_Fecha_Mvto / p_Observaciones) antes de cambiarlo.
-    const buildPayload = (item: PlanillaDetalle) => ({
-        id_amort_clie:     null,
-        nroPlanilla:       planilla.numero_planilla,
-        cod_clie:          item.codigo_cliente     ?? "",
-        tipo_doc:          item.tipo_documento,
-        serie_doc:         item.serie              ?? "",
-        numero_doc:        item.numero_doc         ?? "",
-        fecha_mvto:        planilla.fecha_ruta,
-        importe_amortiz:   Number(item.importe_cobrado),
-        tipo_amort:        tipoAmortSel,
-        nro_doc_amortiza:  item.numero_recibo       ?? "",
-        entida_financiera: item.cod_banco           ?? "",
-        observaciones:     planilla.observacion_admin ?? "",
-        cod_vend:          planilla.codigo_vendedor,
-        empresa:           empresaSel,
-        moneda:            "NSO",
-    })
-
-    const handleConfirmarProcesar = async () => {
-        if (!tipoAmortSel) {
-            toast({ title: 'Campo requerido', description: 'Selecciona el tipo de amortización.', variant: 'warning' })
-            return
-        }
-        if (!empresaSel) {
-            toast({ title: 'Campo requerido', description: 'Selecciona la empresa.', variant: 'warning' })
-            return
-        }
-        if (conCobro.length === 0) {
-            toast({ title: 'Sin cobros', description: 'No hay registros con importe cobrado para procesar.', variant: 'warning' })
-            return
-        }
-
-        setModalOpen(false)
-        setIsProcesando(true)
+    const handleEnviarCaja = async () => {
+        setEnviando(true)
         try {
-            // Se vuelve a consultar justo antes: otro usuario pudo procesarla mientras tanto.
-            let porRegistrar: PlanillaDetalle[]
-            try {
-                porRegistrar = await consultarPendientes()
-            } catch {
-                toast({
-                    title:       'No se pudo verificar',
-                    description: 'No se pudo revisar qué documentos ya están registrados. Intenta de nuevo.',
-                    variant:     'destructive',
-                })
-                return
-            }
-            if (porRegistrar.length === 0) {
-                setPendientes([])
-                toast({ title: 'Planilla ya procesada', description: 'Todos los documentos ya tienen su amortización registrada.' })
-                return
-            }
-
-            // Uno por uno, para saber exactamente cuáles se registraron y cuáles no.
-            let registradas = 0
-            const fallas: string[] = []
-            setProgreso({ hechas: 0, total: porRegistrar.length })
-            for (const [i, item] of porRegistrar.entries()) {
-                setProgreso({ hechas: i + 1, total: porRegistrar.length })
-                try {
-                    await apiClient.post('/amortizacion', buildPayload(item))
-                    registradas++
-                } catch (error: any) {
-                    const doc = `${item.serie ?? ''}-${item.numero_doc ?? ''}`
-                    fallas.push(`${doc} (${error?.response?.data?.message || 'error'})`)
-                }
-            }
-
-            if (fallas.length === 0) {
-                toast({
-                    title:       'Procesado',
-                    description: `${registradas} amortización(es) registradas correctamente.`,
-                })
-            } else {
-                toast({
-                    title:       registradas > 0 ? 'Procesado con errores' : 'Error al procesar',
-                    description: `${registradas} registrada(s), ${fallas.length} con error: ${fallas.join(', ')}. Vuelve a procesar para reintentar solo las que faltan.`,
-                    variant:     'destructive',
-                })
-            }
-
-            setPendientes(await consultarPendientes().catch(() => null))
+            const res = await apiClient.put(`/planilla/${planilla.id_planilla}/enviar-caja`, { id_admin: adminInfo.id_admin })
+            const r = res.data?.data?.resumen ?? {}
+            toast({
+                title:       'Enviada a Libro Caja',
+                description: `${Number(r.pendientes ?? 0)} cobro(s) esperan que contabilidad los acepte en Libro Caja y Bancos > Planillas de cobranza.`,
+            })
+            setEnviarOpen(false)
+        } catch (error: any) {
+            toast({
+                title:       'No se pudo enviar',
+                description: error?.response?.data?.message || error?.response?.data?.error || 'Error al enviar la planilla a caja.',
+                variant:     'destructive',
+            })
         } finally {
-            setIsProcesando(false)
-            setProgreso(null)
+            setEnviando(false)
+            cargarEstadoCaja()
         }
     }
 
@@ -252,7 +134,7 @@ export default function DetalleAdmin({
             <div className="border-t border-border p-4 bg-muted/30 space-y-3 animate-in slide-in-from-top-2 duration-200">
 
                 <div className="flex flex-wrap items-center justify-end gap-2">
-                    {puedeEliminar && !loadingDet && !verificando && !isProcesando && (
+                    {puedeEliminar && !loadingDet && !consultando && !enviando && (
                         <Button
                             variant="ghost" size="sm"
                             className="mr-auto gap-1.5 text-red-600 hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-950/40"
@@ -264,7 +146,7 @@ export default function DetalleAdmin({
                     )}
                     {!puedeEliminar && planilla.estado === 'validado' && (
                         <span className="mr-auto text-[11px] text-muted-foreground">
-                            Tiene cobros registrados: para eliminarla, primero revierte la planilla en Cliente Cobranza.
+                            Tiene cobros aceptados en Libro Caja: para eliminarla, primero revierte esos cobros en Libro Caja y Bancos &gt; Planillas de cobranza &gt; Historial.
                         </span>
                     )}
                     <ExportarPlanillaFormato planilla={planilla} detalle={detalle} disabled={loadingDet}
@@ -287,29 +169,40 @@ export default function DetalleAdmin({
 
                         {planilla.estado === 'validado' && !loadingDet && conCobro.length === 0 ? (
                             <div className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-muted px-3 py-1.5 text-xs font-semibold text-muted-foreground">
-                                Sin cobros para procesar
+                                Sin cobros para enviar a caja
                             </div>
-                        ) : planilla.estado === 'validado' && (procesada ? (
-                            <div className="inline-flex items-center gap-1.5 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700 dark:border-indigo-900 dark:bg-indigo-950/40 dark:text-indigo-300">
-                                <CheckCheck className="h-3.5 w-3.5" />
-                                Procesada · {conCobro.length} amortización(es) registradas
-                            </div>
-                        ) : (
-                            <Button
-                                size="sm"
-                                className="gap-1.5 bg-indigo-600 hover:bg-indigo-700"
-                                onClick={handleAbrirModal}
-                                disabled={isProcesando || verificando}
-                            >
-                                {isProcesando || verificando
-                                    ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                                    : <PlayCircle className="h-3.5 w-3.5" />}
-                                {isProcesando ? (progreso ? `Procesando ${progreso.hechas} de ${progreso.total}...` : 'Procesando...')
-                                    : verificando ? 'Verificando...'
-                                    : parcial ? `Procesar pendientes (${pendientes!.length} de ${conCobro.length})`
-                                    : 'Procesar'}
-                            </Button>
-                        ))}
+                        ) : planilla.estado === 'validado' && (
+                            <>
+                                {todoEnLibro && (
+                                    <div className="inline-flex items-center gap-1.5 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700 dark:border-indigo-900 dark:bg-indigo-950/40 dark:text-indigo-300">
+                                        <CheckCheck className="h-3.5 w-3.5" />
+                                        En el libro · {aceptadosCaja} cobro(s) aceptados en caja
+                                    </div>
+                                )}
+                                {!todoEnLibro && pendientesCaja > 0 && (
+                                    <div className="inline-flex items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700 dark:border-blue-900 dark:bg-blue-950/40 dark:text-blue-300">
+                                        <Clock className="h-3.5 w-3.5" />
+                                        En caja · {pendientesCaja} pendiente(s){aceptadosCaja > 0 && ` · ${aceptadosCaja} aceptado(s)`}
+                                    </div>
+                                )}
+                                {porEnviar.length > 0 && (
+                                    <Button
+                                        size="sm"
+                                        className="gap-1.5 bg-indigo-600 hover:bg-indigo-700"
+                                        onClick={() => setEnviarOpen(true)}
+                                        disabled={enviando || consultando || estadoCaja === null}
+                                    >
+                                        {enviando || consultando
+                                            ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                            : <Send className="h-3.5 w-3.5" />}
+                                        {consultando ? 'Verificando...'
+                                            : rechazadosCaja.length > 0 && porEnviar.length === rechazadosCaja.length
+                                                ? `Reenviar rechazados a caja (${rechazadosCaja.length})`
+                                                : 'Enviar a caja'}
+                                    </Button>
+                                )}
+                            </>
+                        )}
                     </div>
                 )}
 
@@ -320,6 +213,44 @@ export default function DetalleAdmin({
                         : 'bg-red-50 border border-red-200 text-red-700'}`}>
                         {planilla.observacion_admin}
                     </div>
+                )}
+
+                {rechazadosCaja.length > 0 && (
+                    <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300">
+                        <p className="font-semibold">Contabilidad rechazó {rechazadosCaja.length} cobro(s) en Libro Caja:</p>
+                        <ul className="mt-1.5 space-y-1 text-xs">
+                            {rechazadosCaja.map(e => {
+                                const r = detalle.find(d => d.id_detalle === e.id_detalle)
+                                return (
+                                    <li key={e.id_detalle}>
+                                        <span className="font-mono font-semibold">{r ? `${r.serie ?? ''}-${r.numero_doc ?? ''}` : e.id_detalle}</span>
+                                        {r && <> · {r.nombre_cliente} · {fmtMoney(r.importe_cobrado)}</>}
+                                        {' — '}{e.motivo}
+                                    </li>
+                                )
+                            })}
+                        </ul>
+                        <p className="mt-2 text-xs">Revísalos y vuelve a enviarlos con el botón de arriba.</p>
+                    </div>
+                )}
+
+                {aceptadosCaja > 0 && (
+                    <details className="rounded-lg border bg-background p-3 text-xs">
+                        <summary className="cursor-pointer font-semibold text-foreground">
+                            Ver en qué voucher entró cada cobro ({aceptadosCaja})
+                        </summary>
+                        <ul className="mt-2 space-y-1 text-muted-foreground">
+                            {(estadoCaja ?? []).filter(e => e.estado === 'aceptado').map(e => {
+                                const r = detalle.find(d => d.id_detalle === e.id_detalle)
+                                return (
+                                    <li key={e.id_detalle}>
+                                        <span className="font-mono font-semibold text-foreground">{r ? `${r.serie ?? ''}-${r.numero_doc ?? ''}` : e.id_detalle}</span>
+                                        {' · '}{e.caja} · voucher {e.voucher} · {fmtFecha(e.fecha_mvto)}
+                                    </li>
+                                )
+                            })}
+                        </ul>
+                    </details>
                 )}
 
                 {loadingDet ? (
@@ -388,90 +319,28 @@ export default function DetalleAdmin({
                 )}
             </div>
 
-            <Dialog open={modalOpen} onOpenChange={setModalOpen}>
+            <Dialog open={enviarOpen} onOpenChange={v => { if (!enviando) setEnviarOpen(v) }}>
                 <DialogContent className="max-w-md">
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2 text-base">
-                            <AlertTriangle className="h-5 w-5 text-amber-500" />
-                            Confirmar procesamiento
+                            <Send className="h-5 w-5 text-indigo-600" />
+                            Enviar a Libro Caja
                         </DialogTitle>
                         <DialogDescription className="text-sm text-muted-foreground pt-1">
-                            {parcial
-                                ? <>Se registrarán las {pendientes!.length} amortización(es) que faltan (de {conCobro.length}) para</>
-                                : <>Se registrarán {conCobro.length} amortización(es) para</>}
-                            {' '}la planilla <span className="font-mono font-semibold text-foreground">{planilla.numero_planilla}</span>.
-                            {sinCobro > 0 && <> {sinCobro} documento(s) sin importe cobrado no se registran.</>}{' '}
-                            Completa los campos requeridos antes de continuar.
+                            Se enviarán {porEnviar.length} cobro(s) de la planilla{' '}
+                            <span className="font-mono font-semibold text-foreground">{planilla.numero_planilla}</span>{' '}
+                            por {fmtMoney(porEnviar.reduce((s, r) => s + Number(r.importe_cobrado), 0))}.
+                            {sinCobro > 0 && <> {sinCobro} documento(s) sin importe cobrado no se envían.</>}{' '}
+                            Contabilidad los aceptará en Libro Caja y Bancos: recién ahí baja la deuda de cada cliente.
                         </DialogDescription>
                     </DialogHeader>
-
-                    <div className="space-y-4 py-2">
-
-                        <div className="bg-muted border border-border rounded-lg px-4 py-3 grid grid-cols-2 gap-2 text-xs">
-                            <div>
-                                <p className="text-muted-foreground uppercase tracking-wider text-[10px]">Vendedor</p>
-                                <p className="font-medium text-foreground mt-0.5 truncate">{planilla.nombre_vendedor}</p>
-                            </div>
-                            <div>
-                                <p className="text-muted-foreground uppercase tracking-wider text-[10px]">Total cobrado</p>
-                                <p className="font-mono font-semibold text-emerald-600 mt-0.5">{fmtMoney(tCbza)}</p>
-                            </div>
-                        </div>
-
-                        <div className="space-y-1.5">
-                            <Label className="text-sm">
-                                Tipo de amortización <span className="text-red-500">*</span>
-                            </Label>
-                            <Select value={tipoAmortSel} onValueChange={setTipoAmortSel}>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Seleccionar tipo..." />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {tiposAmort.map(t => (
-                                        <SelectItem key={t.Cod_Tipo_Amort} value={t.Cod_Tipo_Amort}>
-                                            {t.Descripcion}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-
-                        <div className="space-y-1.5">
-                            <Label className="text-sm">
-                                Empresa <span className="text-red-500">*</span>
-                            </Label>
-                            <Select value={empresaSel} onValueChange={setEmpresaSel} disabled>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Seleccionar empresa..." />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {empresas.map(e => (
-                                        <SelectItem key={e.CodigoEmpresa} value={e.CodigoEmpresa}>
-                                            {e.NombreRazSocial}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                    </div>
-
                     <DialogFooter className="gap-2">
-                        <Button
-                            variant="outline"
-                            onClick={() => setModalOpen(false)}
-                            disabled={isProcesando}
-                        >
+                        <Button variant="outline" onClick={() => setEnviarOpen(false)} disabled={enviando}>
                             Cancelar
                         </Button>
-                        <Button
-                            className="bg-indigo-600 hover:bg-indigo-700 gap-1.5"
-                            onClick={handleConfirmarProcesar}
-                            disabled={isProcesando || !tipoAmortSel || !empresaSel}
-                        >
-                            {isProcesando
-                                ? <Loader2 className="h-4 w-4 animate-spin" />
-                                : <PlayCircle className="h-4 w-4" />}
-                            Confirmar y procesar
+                        <Button className="bg-indigo-600 hover:bg-indigo-700 gap-1.5" onClick={handleEnviarCaja} disabled={enviando}>
+                            {enviando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                            Enviar
                         </Button>
                     </DialogFooter>
                 </DialogContent>

@@ -237,9 +237,19 @@ export default function SeccionAdmin({
                                             {planilla.numero_planilla}
                                         </p>
                                         <EstadoPill estado={planilla.estado} />
-                                        {!!planilla.procesado && (
+                                        {Number(planilla.caja_pendientes) > 0 && (
+                                            <span className="rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-[10px] font-semibold text-blue-700 dark:border-blue-900 dark:bg-blue-950 dark:text-blue-300">
+                                                En caja · {planilla.caja_pendientes}
+                                            </span>
+                                        )}
+                                        {Number(planilla.caja_rechazados) > 0 && (
+                                            <span className="rounded-full border border-red-200 bg-red-50 px-2 py-0.5 text-[10px] font-semibold text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-300">
+                                                Rechazados en caja · {planilla.caja_rechazados}
+                                            </span>
+                                        )}
+                                        {Number(planilla.caja_aceptados) > 0 && !Number(planilla.caja_pendientes) && !Number(planilla.caja_rechazados) && (
                                             <span className="rounded-full border border-indigo-200 bg-indigo-50 px-2 py-0.5 text-[10px] font-semibold text-indigo-700 dark:border-indigo-900 dark:bg-indigo-950 dark:text-indigo-300">
-                                                Procesada
+                                                En el libro
                                             </span>
                                         )}
                                     </div>
@@ -312,8 +322,6 @@ export default function SeccionAdmin({
                                 onValidar={handleValidar}
                                 onRechazar={handleRechazar}
                                 onEliminar={onEliminar}
-                                tiposAmort={tiposAmort}
-                                empresas={empresas}
                             />
                         )}
                     </Card>

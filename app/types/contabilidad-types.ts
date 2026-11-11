@@ -131,6 +131,7 @@ export interface CajaDetalleFila {
     idGalpon:          number | null
     idcajaconceptos:   number | null
     EliminaCja:        number
+    Planilla?:         string | null
 }
 
 export interface CajaDetallePayload {
@@ -169,6 +170,67 @@ export interface CajaVoucherResumen {
 }
 
 export const TIPO_PAGO_DEFECTO = '009'
+
+export interface CajaPlanillaPendiente {
+    id_detalle:          number
+    id_planilla:         number
+    fecha_envio:         string | null
+    numero_planilla:     string
+    fecha_ruta:          string | null
+    codigo_vendedor:     string | null
+    nombre_vendedor:     string | null
+    codigo_cliente:      string | null
+    nombre_cliente:      string
+    tipo_documento:      string
+    desc_tipo_documento: string | null
+    serie:               string | null
+    numero_doc:          string | null
+    importe_cobrado:     number | string
+    numero_recibo:       string | null
+    cod_banco:           string | null
+    desc_banco:          string | null
+    fecha_deposito:      string | null
+    numero_operacion:    string | null
+    numero_cheque:       string | null
+    fecha_sugerida:      string | null
+    tipo_pago:           string
+    moneda:              string
+    cuenta_cliente:      string | null
+    id_caja_sugerida:    number | null
+}
+
+export type EstadoCobroCaja = 'pendiente' | 'aceptado' | 'rechazado'
+
+export interface CajaPlanillaHistorial {
+    id_detalle:       number
+    id_planilla:      number
+    estado:           EstadoCobroCaja
+    motivo:           string | null
+    fecha_envio:      string | null
+    fecha_resuelve:   string | null
+    fecha_mvto:       string | null
+    item_caja:        number | null
+    id_caja:          number | null
+    caja:             string | null
+    voucher:          string | null
+    usuario_resuelve: string | null
+    numero_planilla:  string
+    nombre_vendedor:  string | null
+    codigo_cliente:   string | null
+    nombre_cliente:   string
+    tipo_documento:   string
+    serie:            string | null
+    numero_doc:       string | null
+    importe_cobrado:  number | string
+    desc_banco:       string | null
+    numero_operacion: string | null
+}
+
+export interface CajaPlanillaAceptarFila {
+    idDetalle: number
+    idCaja:    number
+    fecha:     string
+}
 
 
 // ─── Registro Compras Inventarios ─────────────────────────────────────────────

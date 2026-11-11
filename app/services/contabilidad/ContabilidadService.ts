@@ -11,6 +11,9 @@ import {
     ProveedorCompras,
     CajaCatalogos,
     CajaDetallePayload,
+    CajaPlanillaAceptarFila,
+    CajaPlanillaHistorial,
+    CajaPlanillaPendiente,
     CajaVoucher,
     CajaVoucherResumen,
     PersonaEmpresa,
@@ -108,6 +111,35 @@ export const CajaBancosService = {
 
     eliminarVoucher: async (item: number) => {
         const res = await apiClient.delete(`/contabilidad/caja/voucher/${item}`)
+        return res.data?.data ?? null
+    },
+
+    // ─── Cobros de Planilla de Cobranza ───
+
+    planillasPendientes: async (): Promise<CajaPlanillaPendiente[]> => {
+        const res = await apiClient.get('/contabilidad/caja/planillas/pendientes')
+        return res.data?.data?.data ?? []
+    },
+
+    planillasHistorial: async (desde?: string, hasta?: string): Promise<CajaPlanillaHistorial[]> => {
+        const res = await apiClient.get('/contabilidad/caja/planillas/historial', {
+            params: { desde: desde || undefined, hasta: hasta || undefined },
+        })
+        return res.data?.data?.data ?? []
+    },
+
+    planillasAceptar: async (usuario: number | null, filas: CajaPlanillaAceptarFila[]) => {
+        const res = await apiClient.post('/contabilidad/caja/planillas/aceptar', { usuario, filas })
+        return res.data?.data ?? null
+    },
+
+    planillasRechazar: async (usuario: number | null, ids: number[], motivo: string) => {
+        const res = await apiClient.post('/contabilidad/caja/planillas/rechazar', { usuario, ids, motivo })
+        return res.data?.data ?? null
+    },
+
+    planillasRevertir: async (usuario: number | null, idDetalle: number) => {
+        const res = await apiClient.post(`/contabilidad/caja/planillas/${idDetalle}/revertir`, { usuario })
         return res.data?.data ?? null
     },
 }

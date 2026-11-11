@@ -29,6 +29,7 @@ export interface FilaEdicion {
     idGalpon:      string
     idConcepto:    string
     eliminar:      boolean
+    planilla:      string
 }
 
 const hoyISO = () => new Date().toLocaleDateString('en-CA')
@@ -50,6 +51,7 @@ const desdeBD = (d: CajaDetalleFila): FilaEdicion => ({
     idGalpon:      d.idGalpon != null ? String(d.idGalpon) : '',
     idConcepto:    d.idcajaconceptos != null ? String(d.idcajaconceptos) : '',
     eliminar:      Number(d.EliminaCja) === 1,
+    planilla:      d.Planilla ?? '',
 })
 
 const numeroONull = (v: string) => {
@@ -161,7 +163,7 @@ export function useLibroCaja() {
             tipoDoc: '', serie: '', numeroDoc: '', persona: '', personaNombre: '',
             concepto: '', ingreso: '', egreso: '', tipoPago: TIPO_PAGO_DEFECTO,
             ctaContable: '', centroCostos: '', idGalpon: '', idConcepto: '',
-            eliminar: false,
+            eliminar: false, planilla: '',
         }])
         setProximaKey(k => k - 1)
     }

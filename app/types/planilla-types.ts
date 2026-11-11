@@ -40,6 +40,21 @@ export interface PlanillaCabecera {
     total_cobrado?:     number
     total_registros?:   number
     procesado?:         number | boolean
+    caja_pendientes?:   number
+    caja_aceptados?:    number
+    caja_rechazados?:   number
+}
+
+export interface PlanillaCajaEstado {
+    id_detalle:     number
+    estado:         'pendiente' | 'aceptado' | 'rechazado'
+    motivo:         string | null
+    fecha_envio:    string | null
+    fecha_resuelve: string | null
+    fecha_mvto:     string | null
+    id_caja:        number | null
+    caja:           string | null
+    voucher:        string | null
 }
 
 export interface PlanillaDetalle {
