@@ -8,8 +8,10 @@ import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { ComboSelect } from "@/components/ui/combo-select"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Textarea } from "@/components/ui/textarea"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import {
-    AlertCircle, AlertTriangle, Boxes, CalendarClock, ClipboardList, FlaskConical, Layers, Loader2, Package, Search, Warehouse,
+    AlertCircle, AlertTriangle, Boxes, CalendarClock, ClipboardList, ClipboardPlus, FlaskConical, History, Layers, Loader2, Package, Search, Warehouse,
 } from "lucide-react"
 import { toast } from "@/app/hooks/useToast"
 import { TomaInventarioService } from "@/app/services/inventario/TomaInventarioService"
@@ -17,8 +19,11 @@ import { TomaCombo, TomaListado, TomaListadoFila, TomaLoteFila, TomaLotes } from
 import { ExportComisionPdf } from "@/components/contabilidad/comisiones/ExportComisionPdf"
 import { ReportePdf } from "@/components/contabilidad/comisiones/pdfComision"
 import { fechaDMY, KpiCard, Th } from "@/components/contabilidad/comisiones/ui"
+import { LoteBadge, LotesBadges, lotesTexto } from "@/components/inventario/toma/LoteBadge"
+import { HistorialTomas } from "@/components/inventario/toma/HistorialTomas"
+import { EditorToma } from "@/components/inventario/toma/EditorToma"
 
-type Modo = 'listado' | 'lotes'
+type Modo = 'listado' | 'lotes' | 'historial'
 
 const TODOS: TomaCombo = { valor: '', codigo: '', texto: 'Todos los laboratorios' }
 const LINEA = '________________'
@@ -59,6 +64,12 @@ export default function TomaInventarioPage() {
     const [generando, setGenerando] = useState(false)
     const [error, setError] = useState<string | null>(null)
 
+    // Tomas del usuario
+    const [tomaAbierta, setTomaAbierta] = useState<number | null>(null)
+    const [dialogoCrear, setDialogoCrear] = useState(false)
+    const [observacion, setObservacion] = useState('')
+    const [creando, setCreando] = useState(false)
+
     useEffect(() => {
         TomaInventarioService.combos()
             .then(c => { setLaboratorios([TODOS, ...c.laboratorios]); setAlmacenes(c.almacenes) })
@@ -66,6 +77,7 @@ export default function TomaInventarioPage() {
     }, [])
 
     const generar = useCallback(async () => {
+        if (modo === 'historial') return
         setGenerando(true)
         setError(null)
         try {
@@ -90,6 +102,32 @@ export default function TomaInventarioPage() {
     const tituloLab = nombreLab && nombreLab.valor ? `${nombreLab.codigo}  ${nombreLab.texto}` : 'Todos los laboratorios'
     const nombreAlm = almacen === 'todos' ? 'Todos los almacenes' : `Almacén ${almacenes.find(a => a.valor === almacen)?.texto ?? almacen}`
 
+    /** Crea la toma con los mismos filtros del reporte generado y la abre para contar. */
+    const crearToma = async () => {
+        setCreando(true)
+        try {
+            const r = await TomaInventarioService.crear(modo === 'lotes'
+                ? { modo: 'LOTE', laboratorio, almacen: almacen === 'todos' ? '' : almacen, fecha: lotes?.fechaCorte ?? fecha, observacion }
+                : { modo: 'LISTADO', laboratorio, observacion })
+            toast({ title: 'Toma de inventario creada', description: `N.º ${String(r.idToma).padStart(5, '0')} con ${r.lineas} líneas para contar.` })
+            setDialogoCrear(false)
+            setObservacion('')
+            setModo('historial')
+            setTomaAbierta(r.idToma)
+        } catch (e: any) {
+            toast({ title: 'No se pudo crear la toma', description: e?.response?.data?.message || 'Inténtalo de nuevo.', variant: 'destructive' })
+        } finally {
+            setCreando(false)
+        }
+    }
+    const lineasACrear = modo === 'lotes' ? lotes?.filas.length ?? 0 : listado?.filas.length ?? 0
+    const botonCrear = (
+        <Button onClick={() => setDialogoCrear(true)} disabled={!lineasACrear}
+                className="h-9 gap-1.5 bg-emerald-600 font-semibold text-white shadow-md shadow-emerald-600/25 hover:bg-emerald-700">
+            <ClipboardPlus className="h-4 w-4" /> <span className="hidden sm:inline">Crear toma de inventario</span><span className="sm:hidden">Crear toma</span>
+        </Button>
+    )
+
     // ── PDF ──────────────────────────────────────────────────────────────────
     const pdfListado = useMemo<ReportePdf | null>(() => listado && ({
         recuadroTitulo: 'Listado Toma de Inventarios',
@@ -100,11 +138,12 @@ export default function TomaInventarioPage() {
             { clave: 'cod', titulo: 'Código', ancho: 66 },
             { clave: 'prod', titulo: 'Item', ancho: 0 },
             { clave: 'und', titulo: 'Und', ancho: 34 },
+            { clave: 'lote', titulo: 'Lote referencial (vence)', ancho: 150, opcional: true },
             { clave: 'inv', titulo: 'Inventario', ancho: 110 },
         ],
         filas: agrupar(filasListado, f => `${f.CodigoLaboratorio}|${f.CodigoSublinea}`).flatMap(([, fs]) => [
             { valores: { cod: fs[0].CodigoSublinea, prod: `${fs[0].Laboratorio}${fs[0].Sublinea !== fs[0].Laboratorio ? ' · ' + fs[0].Sublinea : ''}` }, colores: { cod: 'tema', prod: 'tema' } as const },
-            ...fs.map(f => ({ valores: { cod: f.Codigo, prod: f.Producto, und: f.Unidad, inv: LINEA }, colores: { cod: 'gris', und: 'gris', inv: 'gris' } as const })),
+            ...fs.map(f => ({ valores: { cod: f.Codigo, prod: f.Producto, und: f.Unidad, lote: lotesTexto(f.Lotes), inv: LINEA }, colores: { cod: 'gris', und: 'gris', lote: 'gris', inv: 'gris' } as const })),
         ]),
         pie: `Toma de inventario · ${tituloLab}`,
     }), [listado, filasListado, tituloLab])
@@ -140,6 +179,14 @@ export default function TomaInventarioPage() {
 
     const hayDatos = modo === 'listado' ? !!listado : !!lotes
 
+    if (tomaAbierta) {
+        return (
+            <div className="grid grid-cols-1 gap-5 p-4 md:p-6">
+                <EditorToma key={tomaAbierta} idToma={tomaAbierta} onVolver={() => { setTomaAbierta(null); setModo('historial') }} />
+            </div>
+        )
+    }
+
     return (
         <div className="grid grid-cols-1 gap-5 p-4 md:p-6">
             <div className="flex items-center gap-3.5">
@@ -154,16 +201,21 @@ export default function TomaInventarioPage() {
                 </div>
             </div>
 
-            <div className="flex h-10 w-fit rounded-lg border bg-muted p-0.5" role="tablist" aria-label="Modo">
-                {([['listado', 'Listado para contar', ClipboardList], ['lotes', 'Por lote', Layers]] as const).map(([v, t, Icono]) => (
-                    <button key={v} type="button" role="tab" aria-selected={modo === v} onClick={() => { setModo(v); setError(null) }}
-                            className={`inline-flex items-center gap-1.5 rounded-md px-3.5 text-sm whitespace-nowrap transition-colors ${
-                                modo === v ? 'bg-background font-semibold text-blue-700 shadow-sm dark:text-blue-400' : 'text-muted-foreground hover:text-foreground'}`}>
-                        <Icono className="h-4 w-4" /> {t}
-                    </button>
-                ))}
+            <div className="-mx-4 overflow-x-auto px-4 md:mx-0 md:px-0">
+                <div className="flex h-10 w-fit rounded-lg border bg-muted p-0.5" role="tablist" aria-label="Modo">
+                    {([['listado', 'Listado para contar', ClipboardList], ['lotes', 'Por lote', Layers], ['historial', 'Mis tomas', History]] as const).map(([v, t, Icono]) => (
+                        <button key={v} type="button" role="tab" aria-selected={modo === v} onClick={() => { setModo(v); setError(null) }}
+                                className={`inline-flex items-center gap-1.5 rounded-md px-3 text-sm whitespace-nowrap transition-colors md:px-3.5 ${
+                                    modo === v ? 'bg-background font-semibold text-blue-700 shadow-sm dark:text-blue-400' : 'text-muted-foreground hover:text-foreground'}`}>
+                            <Icono className="h-4 w-4" /> {t}
+                        </button>
+                    ))}
+                </div>
             </div>
 
+            {modo === 'historial' && <HistorialTomas onAbrir={setTomaAbierta} />}
+
+            {modo !== 'historial' && <>
             <Card className="border-t-[3px] border-t-blue-600 bg-gradient-to-b from-background to-muted/30 shadow-sm">
                 <CardContent className="p-4">
                     <div className="flex flex-col gap-4 xl:flex-row xl:items-end">
@@ -237,7 +289,7 @@ export default function TomaInventarioPage() {
                         </KpiCard>
                     </div>
                     <ListadoTabla filas={filasListado} buscar={buscar} setBuscar={setBuscar} titulo={tituloLab}
-                                  pdf={pdfListado} />
+                                  pdf={pdfListado} corte={listado.fechaLotes ?? hoyISO()} accion={botonCrear} />
                 </>
             )}
 
@@ -262,15 +314,49 @@ export default function TomaInventarioPage() {
                         </KpiCard>
                     </div>
                     <LotesTabla filas={filasLotes} buscar={buscar} setBuscar={setBuscar} verSaldo={verSaldo} vencido={vencido}
-                                titulo={`${nombreAlm} · ${tituloLab} · corte ${fechaDMY(lotes.fechaCorte)}`} pdf={pdfLotes} />
+                                titulo={`${nombreAlm} · ${tituloLab} · corte ${fechaDMY(lotes.fechaCorte)}`} pdf={pdfLotes}
+                                corte={lotes.fechaCorte} accion={botonCrear} />
                 </>
             )}
+            </>}
+
+            <Dialog open={dialogoCrear} onOpenChange={v => !creando && setDialogoCrear(v)}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2"><ClipboardPlus className="h-5 w-5 text-emerald-600" /> Crear toma de inventario</DialogTitle>
+                        <DialogDescription>
+                            Se guarda con tu usuario y aparece en <b>Mis tomas</b>. Luego escribes el conteo de cada línea y la exportas a PDF.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-2 rounded-lg border bg-muted/40 p-3 text-sm">
+                        <div className="flex justify-between gap-3"><span className="text-muted-foreground">Tipo</span><b>{modo === 'lotes' ? 'Por lote' : 'Por artículo (listado)'}</b></div>
+                        <div className="flex justify-between gap-3"><span className="text-muted-foreground">Laboratorio</span><b className="truncate text-right">{tituloLab}</b></div>
+                        {modo === 'lotes' && <>
+                            <div className="flex justify-between gap-3"><span className="text-muted-foreground">Almacén</span><b>{nombreAlm}</b></div>
+                            <div className="flex justify-between gap-3"><span className="text-muted-foreground">Fecha de corte</span><b>{fechaDMY(lotes?.fechaCorte ?? fecha)}</b></div>
+                        </>}
+                        <div className="flex justify-between gap-3"><span className="text-muted-foreground">Líneas a contar</span><b className="font-mono">{lineasACrear}</b></div>
+                    </div>
+                    {buscar.trim() && <p className="text-xs text-amber-700 dark:text-amber-400">El buscador no filtra la toma: se incluyen todas las líneas del reporte.</p>}
+                    <div className="grid gap-1.5">
+                        <Label htmlFor="obs-toma" className="text-xs font-semibold text-muted-foreground">Observación (opcional)</Label>
+                        <Textarea id="obs-toma" rows={2} maxLength={500} value={observacion} onChange={e => setObservacion(e.target.value)}
+                                  placeholder="Ej: Inventario mensual almacén Chimbote" />
+                    </div>
+                    <DialogFooter className="gap-2">
+                        <Button variant="outline" onClick={() => setDialogoCrear(false)} disabled={creando}>Cancelar</Button>
+                        <Button onClick={crearToma} disabled={creando} className="gap-1.5 bg-emerald-600 text-white hover:bg-emerald-700">
+                            {creando ? <Loader2 className="h-4 w-4 animate-spin" /> : <ClipboardPlus className="h-4 w-4" />} Crear y empezar a contar
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     )
 }
 
-function Cabecera({ titulo, sub, buscar, setBuscar, pdf, archivo }: {
-    titulo: string; sub: string; buscar: string; setBuscar: (v: string) => void; pdf: ReportePdf | null; archivo: string
+function Cabecera({ titulo, sub, buscar, setBuscar, pdf, archivo, accion }: {
+    titulo: string; sub: string; buscar: string; setBuscar: (v: string) => void; pdf: ReportePdf | null; archivo: string; accion?: React.ReactNode
 }) {
     return (
         <div className="flex flex-col gap-3 border-b px-4 py-3 md:flex-row md:items-center md:justify-between">
@@ -278,8 +364,8 @@ function Cabecera({ titulo, sub, buscar, setBuscar, pdf, archivo }: {
                 <h2 className="text-sm font-semibold">{titulo}</h2>
                 <p className="text-xs text-muted-foreground">{sub}</p>
             </div>
-            <div className="flex items-center gap-2">
-                <div className="relative flex-1 md:w-64">
+            <div className="flex flex-wrap items-center gap-2">
+                <div className="relative min-w-[10rem] flex-1 md:w-64 md:flex-none">
                     <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                     <Input className="h-9 pl-8 text-sm" value={buscar} onChange={e => setBuscar(e.target.value)} placeholder="Buscar código o producto" />
                 </div>
@@ -287,19 +373,21 @@ function Cabecera({ titulo, sub, buscar, setBuscar, pdf, archivo }: {
                     <ExportComisionPdf reporte={pdf} tituloDefecto={pdf.recuadroTitulo.toUpperCase()} archivoDefecto={archivo}
                                        descripcion={pdf.recuadroDetalle} columnasFijas="La columna para anotar el conteo siempre se incluye." />
                 )}
+                {accion}
             </div>
         </div>
     )
 }
 
-function ListadoTabla({ filas, buscar, setBuscar, titulo, pdf }: {
+function ListadoTabla({ filas, buscar, setBuscar, titulo, pdf, corte, accion }: {
     filas: TomaListadoFila[]; buscar: string; setBuscar: (v: string) => void; titulo: string; pdf: ReportePdf | null
+    corte: string; accion?: React.ReactNode
 }) {
     const grupos = agrupar(filas, f => `${f.CodigoLaboratorio}|${f.CodigoSublinea}`)
     return (
         <Card className="overflow-hidden shadow-sm">
-            <Cabecera titulo="Listado Toma de Inventarios" sub={`${titulo} · ${filas.length} artículos`} buscar={buscar} setBuscar={setBuscar}
-                      pdf={pdf} archivo="toma-inventario-listado" />
+            <Cabecera titulo="Listado Toma de Inventarios" sub={`${titulo} · ${filas.length} artículos · lotes con saldo al ${fechaDMY(corte)}`} buscar={buscar} setBuscar={setBuscar}
+                      pdf={pdf} archivo="toma-inventario-listado" accion={accion} />
             {grupos.length === 0 && <p className="py-12 text-center text-sm text-muted-foreground">Sin artículos</p>}
             {grupos.map(([k, fs]) => (
                 <div key={k}>
@@ -312,19 +400,20 @@ function ListadoTabla({ filas, buscar, setBuscar, titulo, pdf }: {
                     {/* Celular */}
                     <div className="divide-y md:hidden">
                         {fs.map(f => (
-                            <div key={f.IdArticulo} className="flex items-center justify-between gap-3 px-4 py-2.5">
+                            <div key={f.IdArticulo} className="flex items-start justify-between gap-3 px-4 py-2.5">
                                 <div className="min-w-0">
                                     <p className="text-sm leading-tight">{f.Producto}</p>
                                     <p className="font-mono text-[11px] text-muted-foreground">{f.Codigo} · {f.Unidad}</p>
+                                    <div className="mt-1.5"><LotesBadges lotes={f.Lotes} corte={corte} max={3} /></div>
                                 </div>
-                                <span className="h-7 w-20 shrink-0 rounded border border-dashed border-muted-foreground/40" aria-label="Conteo" />
+                                <span className="mt-0.5 h-7 w-20 shrink-0 rounded border border-dashed border-muted-foreground/40" aria-label="Conteo" />
                             </div>
                         ))}
                     </div>
                     {/* Escritorio */}
                     <table className="hidden w-full text-xs md:table">
                         <thead>
-                            <tr className="bg-muted/40"><Th className="w-32">Código</Th><Th>Item</Th><Th className="w-20">Und</Th><Th className="w-56">Inventario</Th></tr>
+                            <tr className="bg-muted/40"><Th className="w-32">Código</Th><Th>Item</Th><Th className="w-20">Und</Th><Th className="w-[30%]">Lote referencial · vence</Th><Th className="w-48">Inventario</Th></tr>
                         </thead>
                         <tbody>
                             {fs.map(f => (
@@ -332,6 +421,7 @@ function ListadoTabla({ filas, buscar, setBuscar, titulo, pdf }: {
                                     <td className="py-2 px-3 font-mono text-muted-foreground">{f.Codigo}</td>
                                     <td className="py-2 px-3">{f.Producto}</td>
                                     <td className="py-2 px-3 text-muted-foreground">{f.Unidad}</td>
+                                    <td className="py-1.5 px-3"><LotesBadges lotes={f.Lotes} corte={corte} max={3} /></td>
                                     <td className="py-2 px-3"><div className="h-5 border-b border-dashed border-muted-foreground/50" /></td>
                                 </tr>
                             ))}
@@ -343,15 +433,15 @@ function ListadoTabla({ filas, buscar, setBuscar, titulo, pdf }: {
     )
 }
 
-function LotesTabla({ filas, buscar, setBuscar, verSaldo, vencido, titulo, pdf }: {
+function LotesTabla({ filas, buscar, setBuscar, verSaldo, vencido, titulo, pdf, corte, accion }: {
     filas: TomaLoteFila[]; buscar: string; setBuscar: (v: string) => void; verSaldo: boolean
-    vencido: (f: TomaLoteFila) => boolean; titulo: string; pdf: ReportePdf | null
+    vencido: (f: TomaLoteFila) => boolean; titulo: string; pdf: ReportePdf | null; corte: string; accion?: React.ReactNode
 }) {
     const grupos = agrupar(filas, f => `${f.IdAlmacen}|${f.IdLaboratorio}`)
     return (
         <Card className="overflow-hidden shadow-sm">
             <Cabecera titulo="Toma de inventario por lote" sub={`${titulo} · ${filas.length} lotes`} buscar={buscar} setBuscar={setBuscar}
-                      pdf={pdf} archivo="toma-inventario-lotes" />
+                      pdf={pdf} archivo="toma-inventario-lotes" accion={accion} />
             {grupos.length === 0 && <p className="py-12 text-center text-sm text-muted-foreground">Sin lotes con saldo</p>}
             {grupos.map(([k, fs]) => (
                 <div key={k}>
@@ -368,11 +458,9 @@ function LotesTabla({ filas, buscar, setBuscar, verSaldo, vencido, titulo, pdf }
                             return (
                                 <div key={i} className={`px-4 py-2.5 ${neg ? 'shadow-[inset_3px_0_0_#ef4444]' : ven ? 'shadow-[inset_3px_0_0_#f59e0b]' : ''}`}>
                                     <p className="text-sm leading-tight">{f.Producto}</p>
-                                    <div className="mt-1 flex items-center justify-between gap-2 text-[11px]">
-                                        <span className="text-muted-foreground">
-                                            <span className="font-mono">{f.Codigo}</span> · lote <b className="font-mono text-foreground">{f.Lote || '(sin lote)'}</b>
-                                            {' '}· vence <span className={ven ? 'font-semibold text-amber-700' : ''}>{fechaDMY(f.Vencimiento) || '—'}</span>
-                                        </span>
+                                    <p className="font-mono text-[11px] text-muted-foreground">{f.Codigo} · {f.Unidad}</p>
+                                    <div className="mt-1.5 flex items-center justify-between gap-2 text-[11px]">
+                                        <LoteBadge lote={f.Lote} vencimiento={f.Vencimiento} corte={corte} />
                                         {verSaldo
                                             ? <span className={`font-mono font-semibold ${neg ? 'text-red-600' : ''}`}>{cant(f.SaldoSistema)} {f.Unidad}</span>
                                             : <span className="h-6 w-16 shrink-0 rounded border border-dashed border-muted-foreground/40" />}
@@ -385,8 +473,8 @@ function LotesTabla({ filas, buscar, setBuscar, verSaldo, vencido, titulo, pdf }
                     <table className="hidden w-full text-xs md:table">
                         <thead>
                             <tr className="bg-muted/40">
-                                <Th className="w-28">Código</Th><Th>Producto</Th><Th className="w-14">Und</Th><Th className="w-32">Lote</Th>
-                                <Th className="w-28">Vence</Th>{verSaldo && <Th right className="w-24">Saldo sist.</Th>}<Th className="w-44">Conteo</Th>
+                                <Th className="w-28">Código</Th><Th>Producto</Th><Th className="w-14">Und</Th><Th className="w-60">Lote · vence</Th>
+                                {verSaldo && <Th right className="w-24">Saldo sist.</Th>}<Th className="w-44">Conteo</Th>
                             </tr>
                         </thead>
                         <tbody>
@@ -397,11 +485,7 @@ function LotesTabla({ filas, buscar, setBuscar, verSaldo, vencido, titulo, pdf }
                                         <td className={`py-2 px-3 font-mono text-muted-foreground ${neg ? 'shadow-[inset_3px_0_0_#ef4444]' : ven ? 'shadow-[inset_3px_0_0_#f59e0b]' : ''}`}>{f.Codigo}</td>
                                         <td className="py-2 px-3">{f.Producto}</td>
                                         <td className="py-2 px-3 text-muted-foreground">{f.Unidad}</td>
-                                        <td className="py-2 px-3 font-mono">{f.Lote || <span className="text-muted-foreground">(sin lote)</span>}</td>
-                                        <td className="py-2 px-3 font-mono">
-                                            {ven ? <span className="rounded bg-amber-100 px-1.5 py-0.5 font-semibold text-amber-800 dark:bg-amber-950 dark:text-amber-300">{fechaDMY(f.Vencimiento)}</span>
-                                                 : fechaDMY(f.Vencimiento) || '—'}
-                                        </td>
+                                        <td className="py-1.5 px-3"><LoteBadge lote={f.Lote} vencimiento={f.Vencimiento} corte={corte} /></td>
                                         {verSaldo && <td className={`py-2 px-3 text-right font-mono font-semibold ${neg ? 'text-red-600' : ''}`}>{cant(f.SaldoSistema)}</td>}
                                         <td className="py-2 px-3"><div className="h-5 border-b border-dashed border-muted-foreground/50" /></td>
                                     </tr>
@@ -413,7 +497,7 @@ function LotesTabla({ filas, buscar, setBuscar, verSaldo, vencido, titulo, pdf }
             ))}
             <div className="flex items-start gap-2 border-t bg-muted/40 px-4 py-3 text-xs text-muted-foreground">
                 <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                <span>Borde rojo = saldo negativo en el sistema; borde ámbar = lote vencido al corte. Saldo = ingresos − salidas del kardex hasta la fecha de corte.</span>
+                <span>Etiqueta roja = lote vencido al corte; ámbar = vence en 90 días o menos; verde = vigente. Borde rojo = saldo negativo en el sistema. Saldo = ingresos − salidas del kardex hasta la fecha de corte.</span>
             </div>
         </Card>
     )
