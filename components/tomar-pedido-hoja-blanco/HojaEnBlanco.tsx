@@ -105,6 +105,19 @@ const lineaVacia = (centro = "", cuenta = ""): LineaDetalle => ({
 })
 const hoy = () => new Date().toISOString().slice(0, 10)
 
+// Descuento global (pronto pago). No hay campo en la base: se guarda en las
+// observaciones con esta marca y los precios van ya descontados; al abrir el
+// comprobante se lee la marca y se recalculan los precios originales.
+const PORCENTAJES_DESCUENTO = [3, 4, 5]
+// La marca "[DSCTO 4%]" ocupa hasta 14 caracteres de los 100 de observaciones
+const MAX_OBS = 86
+const MARCA_DESCUENTO = /\s*\[DSCTO ([\d.]+)%\]\s*$/
+const leerDescuento = (obs: string) => {
+    const m = (obs ?? "").match(MARCA_DESCUENTO)
+    return { porcentaje: m ? Number(m[1]) || 0 : 0, observaciones: (obs ?? "").replace(MARCA_DESCUENTO, "") }
+}
+const conMarcaDescuento = (obs: string, pct: number) => (pct > 0 ? `${obs.trim()} [DSCTO ${pct}%]`.trim() : obs)
+
 // Precio de la línea según el tipo elegido en el selector (mismos campos que Tomar Pedido).
 const precioDe = (p: IProduct, tipo: PriceType, actual: number) => {
     switch (tipo) {
@@ -230,6 +243,7 @@ export default function HojaEnBlanco() {
     const [tasaIgv, setTasaIgv] = useState<number | null>(IGV_POR_DEFECTO)
     const tasaIgvCalculo = tasaIgv ?? 0
     const [observaciones, setObservaciones] = useState("Venta")
+    const [descuento, setDescuento] = useState(0)
     const [tipoDocOriginal, setTipoDocOriginal] = useState("")
     const [serieDocOriginal, setSerieDocOriginal] = useState("")
     const [numeroDocOriginal, setNumeroDocOriginal] = useState("")
@@ -390,6 +404,9 @@ export default function HojaEnBlanco() {
         return { vva, igv, vvna, total: Math.round((vva + igv + vvna) * 100) / 100 }
     }, [detalle, tasaIgvCalculo])
 
+    const montoDescuento = Math.round(totales.total * descuento) / 100
+    const saldoPagar = Math.round((totales.total - montoDescuento) * 100) / 100
+
     const simbolo = moneda === "USD" ? "US$" : "S/"
     const itemsConProducto = detalle.filter((l) => l.idArticulo).length
     const docSeleccionado = tiposDocumento.find((t) => t.Cod_Tipo === tipoDoc)
@@ -436,10 +453,11 @@ export default function HojaEnBlanco() {
                 }
             }),
             totales,
+            descuento: descuento > 0 ? { porcentaje: descuento, monto: montoDescuento, saldo: saldoPagar } : undefined,
         }
     }, [clientes, codCliente, vendedoresReal, codVendedor, tiposDocumento, tipoDocOriginal, docSeleccionado, serie, numero, fecha,
         condicionesReal, condicion, diasCredito, moneda, simbolo, operacion, selectedAlmacen, observaciones, esNotaCreditoDebito,
-        serieDocOriginal, numeroDocOriginal, fechaDocOriginal, tasaIgv, detalle, totales, operaciones])
+        serieDocOriginal, numeroDocOriginal, fechaDocOriginal, tasaIgv, detalle, totales, operaciones, descuento, montoDescuento, saldoPagar])
 
     // ── Cambio de almacén: si ya hay productos, confirmar antes (se limpia el detalle) ──
     const [confirmAlmacenOpen, setConfirmAlmacenOpen] = useState(false)
@@ -468,6 +486,7 @@ export default function HojaEnBlanco() {
         setMoneda("PEN")
         setTasaIgv(IGV_POR_DEFECTO)
         setObservaciones("Venta")
+        setDescuento(0)
         setTipoDocOriginal("")
         setSerieDocOriginal("")
         setNumeroDocOriginal("")
@@ -524,6 +543,8 @@ export default function HojaEnBlanco() {
             return
         }
 
+        const conDescuento = (pu: number) => Math.round(pu * (1 - descuento / 100) * 10000) / 10000
+
         // Nombres de api-hoja-blanco.md. Moneda PEN → NSO; afecto lleva el precio
         // en PUIncluidoIGV y no afecto en PUNoAfecto.
         const payload = {
@@ -537,7 +558,7 @@ export default function HojaEnBlanco() {
             operacion,
             moneda: aMonedaContable(moneda),
             tasaIgv,
-            observaciones,
+            observaciones: conMarcaDescuento(observaciones, descuento),
             codVend: codVendedor,
             docReferencia: esNotaCreditoDebito ? tipoDocOriginal : null,
             fechaDocRef: esNotaCreditoDebito ? fechaDocOriginal : null,
@@ -548,8 +569,9 @@ export default function HojaEnBlanco() {
                 idArticulo: Number(l.idArticulo),
                 CodigoArticulo: l.CodigoArticulo || null,
                 Cantidad: l.Cantidad,
-                PUIncluidoIGV: l.Afecto ? Number(l.PU || 0) : 0,
-                PUNoAfecto: l.Afecto ? 0 : Number(l.PU || 0),
+                // Con descuento global el precio va ya descontado (4 decimales, como la base)
+                PUIncluidoIGV: l.Afecto ? conDescuento(Number(l.PU || 0)) : 0,
+                PUNoAfecto: l.Afecto ? 0 : conDescuento(Number(l.PU || 0)),
                 CtaContb: Number(l.CuentaContab),
                 Centro_Costos: l.CentroCostos || null,
                 Lote: l.Lote || null,
@@ -600,7 +622,11 @@ export default function HojaEnBlanco() {
             setOperacion(cab.Operacion ?? "")
             setMoneda(DE_MONEDA_CONTABLE[cab.Moneda] ?? "PEN")
             setTasaIgv(cab.TasaIGV != null ? Number(cab.TasaIGV) : null)
-            setObservaciones(cab.Observaciones ?? "")
+            const leido = leerDescuento(cab.Observaciones ?? "")
+            setObservaciones(leido.observaciones)
+            setDescuento(leido.porcentaje)
+            // Cálculo inverso: los precios se guardaron descontados
+            const sinDescuento = (pu: number) => leido.porcentaje > 0 ? Math.round(pu / (1 - leido.porcentaje / 100) * 100) / 100 : pu
             setTipoDocOriginal(cab.Doc_Referencia ?? "")
             setFechaDocOriginal(cab.Fecha_Doc_Ref ? String(cab.Fecha_Doc_Ref).slice(0, 10) : "")
             setSerieDocOriginal(cab.Serie_Doc_Ref ?? "")
@@ -614,7 +640,7 @@ export default function HojaEnBlanco() {
                     CodigoArticulo: d.CodigoArticulo ?? "",
                     Articulo: `${d.CodigoArticulo ?? ""} - ${d.NombreItem ?? ""}`,
                     Cantidad: Number(d.Cantidad || 0),
-                    PU: Number(afecto ? d.PUIncluidoIGV : d.PUNoAfecto) || 0,
+                    PU: sinDescuento(Number(afecto ? d.PUIncluidoIGV : d.PUNoAfecto) || 0),
                     Afecto: afecto,
                     CuentaContab: d.CtaContb != null ? String(d.CtaContb) : "",
                     CentroCostos: d.Centro_Costos ?? "",
@@ -749,7 +775,39 @@ export default function HojaEnBlanco() {
                         <TotalCard label="VVNA" hint="Valor venta no afecto" valor={`${simbolo} ${fmt(totales.vvna)}`} />
                         <TotalCard label="VVA" hint="Valor venta afecto" valor={`${simbolo} ${fmt(totales.vva)}`} />
                         <TotalCard label="IGV" hint={tasaIgv === null ? "Sin tasa" : `Impuesto ${(tasaIgv * 100).toFixed(tasaIgv * 100 % 1 ? 1 : 0)}%`} valor={`${simbolo} ${fmt(totales.igv)}`} />
-                        <TotalCard label="Total" hint="A pagar" valor={`${simbolo} ${fmt(totales.total)}`} destacado />
+                        <TotalCard label="Total" hint={descuento > 0 ? "Antes del descuento" : "A pagar"} valor={`${simbolo} ${fmt(totales.total)}`} destacado={descuento === 0} />
+                    </div>
+
+                    {/* Descuento global (pronto pago) */}
+                    <div className={cn("flex flex-col gap-3 rounded-xl border p-3 sm:flex-row sm:items-center sm:justify-between",
+                        descuento > 0 ? "border-amber-300 bg-amber-50 dark:border-amber-900/60 dark:bg-amber-950/30" : "border-dashed border-border")}>
+                        <div className="flex flex-wrap items-center gap-2">
+                            <span className="mr-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Descuento global</span>
+                            {[0, ...PORCENTAJES_DESCUENTO].map((p) => (
+                                <button key={p} type="button" disabled={bloqueado} onClick={() => setDescuento(p)}
+                                    className={cn("h-8 rounded-full border px-3 text-xs font-semibold transition-colors disabled:opacity-50",
+                                        descuento === p ? "border-amber-500 bg-amber-500 text-white" : "border-border bg-background hover:border-amber-300")}>
+                                    {p === 0 ? "Sin descuento" : `${p}%`}
+                                </button>
+                            ))}
+                            <div className="flex h-8 items-center gap-1 rounded-full border border-border bg-background pl-3 pr-2">
+                                <span className="text-xs text-muted-foreground">Otro</span>
+                                <input type="number" min={0} max={99} step="0.5" disabled={bloqueado}
+                                    value={PORCENTAJES_DESCUENTO.includes(descuento) || descuento === 0 ? "" : descuento}
+                                    onChange={(e) => setDescuento(Math.min(Math.max(Number(e.target.value) || 0, 0), 99))}
+                                    className="w-12 bg-transparent text-right text-xs font-semibold outline-none" placeholder="—" />
+                                <span className="text-xs text-muted-foreground">%</span>
+                            </div>
+                        </div>
+                        {descuento > 0 && (
+                            <div className="flex items-center gap-4 text-sm">
+                                <span className="text-amber-700 dark:text-amber-400">- {simbolo} {fmt(montoDescuento)}</span>
+                                <div className="rounded-lg bg-amber-500 px-3 py-1.5 text-white">
+                                    <span className="mr-2 text-[11px] font-bold uppercase tracking-wide">Saldo a pagar</span>
+                                    <span className="font-mono text-base font-bold">{simbolo} {fmt(saldoPagar)}</span>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             </Card>
@@ -920,8 +978,8 @@ export default function HojaEnBlanco() {
                         <div className="flex min-w-0 flex-col gap-1.5 sm:col-span-2">
                             <div className="flex items-center justify-between">
                                 <Label htmlFor="observaciones" className="text-sm font-semibold text-foreground">Observaciones</Label>
-                                <span className={cn("text-xs tabular-nums", observaciones.length >= 90 ? "font-semibold text-amber-600 dark:text-amber-400" : "text-muted-foreground")}>
-                                    {observaciones.length}/100
+                                <span className={cn("text-xs tabular-nums", observaciones.length >= MAX_OBS - 10 ? "font-semibold text-amber-600 dark:text-amber-400" : "text-muted-foreground")}>
+                                    {observaciones.length}/{MAX_OBS}
                                 </span>
                             </div>
                             <div className="relative">
@@ -929,7 +987,7 @@ export default function HojaEnBlanco() {
                                 <textarea
                                     id="observaciones"
                                     value={observaciones}
-                                    maxLength={100}
+                                    maxLength={MAX_OBS}
                                     rows={2}
                                     onChange={(e) => setObservaciones(e.target.value)}
                                     placeholder="Notas del comprobante (opcional)"
