@@ -214,7 +214,49 @@ export function GlobalLaboratorio({ vendedores }: { vendedores: ComboItem[] }) {
                                                    columnasFijas="Laboratorio/producto, cajas, ventas, S/ x caja y comisión siempre se incluyen." />
                             )}
                         </div>
-                        <div className="overflow-x-auto">
+                        {/* Celular: tarjeta por laboratorio, se despliega con sus productos */}
+                        <div className="divide-y md:hidden">
+                            {labs.map(l => {
+                                const abierto = abiertos.has(l.idLaboratorio)
+                                return (
+                                    <div key={`m-${l.idLaboratorio}`}>
+                                        <button type="button" onClick={() => alternar(l.idLaboratorio)}
+                                                className={`block w-full px-4 py-3 text-left active:bg-muted/60 ${abierto ? 'bg-blue-50 shadow-[inset_3px_0_0_#2563eb] dark:bg-blue-950/30' : ''}`}>
+                                            <div className="flex items-start justify-between gap-3">
+                                                <span className="inline-flex min-w-0 items-center gap-1.5 text-sm font-semibold leading-tight">
+                                                    <ChevronRight className={`h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform ${abierto ? 'rotate-90 text-blue-600' : ''}`} />
+                                                    {l.laboratorio}
+                                                </span>
+                                                <span className="shrink-0 font-mono text-sm font-bold text-emerald-700 dark:text-emerald-400">{money(l.comision)}</span>
+                                            </div>
+                                            <div className="mt-2 grid grid-cols-3 gap-2 text-xs">
+                                                <div><p className="text-muted-foreground">Productos</p><p>{l.productos.length}</p></div>
+                                                <div><p className="text-muted-foreground">Cajas</p><p className="font-mono">{cajas(l.cajas)}</p></div>
+                                                <div className="text-right"><p className="text-muted-foreground">Ventas netas</p><p className="font-mono font-semibold">{money(l.ventasNetas)}</p></div>
+                                            </div>
+                                        </button>
+                                        {abierto && (
+                                            <div className="divide-y bg-muted/20">
+                                                {l.productos.map(p => (
+                                                    <div key={p.codigo} className="px-5 py-2 text-xs">
+                                                        <p className="font-medium leading-tight">{p.producto}</p>
+                                                        <div className="mt-1 flex items-center justify-between gap-2 text-muted-foreground">
+                                                            <span><span className="font-mono">{p.codigo}</span> · {cajas(p.cantidad)} {p.unidad?.toLowerCase()} · {money(p.ventasNetas)}</span>
+                                                            <span className="font-mono font-semibold text-emerald-700 dark:text-emerald-400">{money(comisionDe(p))}</span>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                )
+                            })}
+                            <div className="flex items-center justify-between bg-blue-50/60 px-4 py-3 text-sm font-bold dark:bg-blue-950/30">
+                                <span>Totales · {cajas(tot.cajas)} cajas</span>
+                                <span className="font-mono text-blue-700 dark:text-blue-400">{money(tot.comision)}</span>
+                            </div>
+                        </div>
+                        <div className="hidden overflow-x-auto md:block">
                             <table className="w-full min-w-[900px] text-xs border-collapse">
                                 <thead>
                                     <tr className="bg-gradient-to-b from-muted/60 to-muted">

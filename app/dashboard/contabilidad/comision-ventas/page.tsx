@@ -271,7 +271,46 @@ export default function ComisionVentasPage() {
                                                    columnasFijas="Código, vendedor, ventas total, ventas netas, tasa y comisión siempre se incluyen." />
                             )}
                         </div>
-                        <div className="overflow-auto">
+                        {/* Celular: una tarjeta por vendedor */}
+                        <div className="divide-y md:hidden">
+                            {resumen.filas.length === 0 ? (
+                                <p className="py-12 text-center text-sm text-muted-foreground">Sin ventas en el período</p>
+                            ) : resumen.filas.map(f => {
+                                const activo = seleccion?.Codigo_Vend === f.Codigo_Vend
+                                return (
+                                    <button key={f.Codigo_Vend} type="button" onClick={() => verDetalle(f)}
+                                            className={`block w-full px-4 py-3 text-left active:bg-muted/60 ${activo ? 'bg-blue-50 shadow-[inset_3px_0_0_#2563eb] dark:bg-blue-950/40' : ''}`}>
+                                        <div className="flex items-start justify-between gap-3">
+                                            <div className="min-w-0">
+                                                <p className="text-sm font-semibold leading-tight">{f.Vendedor}</p>
+                                                <p className="mt-0.5 text-xs text-muted-foreground">
+                                                    <span className="font-mono">{f.Codigo_Vend}</span> · tasa {pct(f.TasaPorcentaje)}
+                                                </p>
+                                            </div>
+                                            <div className="shrink-0 text-right">
+                                                <p className="text-[10px] uppercase text-muted-foreground">Comisión</p>
+                                                <p className="font-mono text-base font-bold text-emerald-700 dark:text-emerald-400">{money(f.Comision)}</p>
+                                            </div>
+                                        </div>
+                                        <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-muted">
+                                            <div className="h-full bg-blue-500/70" style={{ width: `${Math.max(0, (f.VentasNetas / maxNetas) * 100)}%` }} />
+                                        </div>
+                                        <div className="mt-2 grid grid-cols-3 gap-2 text-xs">
+                                            <div><p className="text-muted-foreground">Total</p><p className="font-mono">{money(f.VentasTotal)}</p></div>
+                                            <div><p className="text-muted-foreground">Rep. lab.</p><p className="font-mono text-red-700 dark:text-red-400">{f.VentasRepLab ? money(f.VentasRepLab) : '—'}</p></div>
+                                            <div className="text-right"><p className="text-muted-foreground">Netas</p><p className="font-mono font-semibold">{money(f.VentasNetas)}</p></div>
+                                        </div>
+                                    </button>
+                                )
+                            })}
+                            {resumen.filas.length > 0 && (
+                                <div className="flex items-center justify-between bg-blue-50/60 px-4 py-3 text-sm font-bold dark:bg-blue-950/30">
+                                    <span>Totales · netas {money(t.ventasNetas)}</span>
+                                    <span className="font-mono text-blue-700 dark:text-blue-400">{money(t.comision)}</span>
+                                </div>
+                            )}
+                        </div>
+                        <div className="hidden overflow-auto md:block">
                             <table className="w-full min-w-[900px] text-xs border-collapse">
                                 <thead>
                                     <tr className="sticky top-0 z-10 bg-gradient-to-b from-muted/60 to-muted">
@@ -370,7 +409,30 @@ export default function ComisionVentasPage() {
                                 </div>
                             ) : detalle && (
                                 <>
-                                    <div className="overflow-x-auto">
+                                    {/* Celular: una tarjeta por comprobante */}
+                                    <div className="divide-y md:hidden">
+                                        {detalle.filas.map((d, i) => {
+                                            const negativo = d.VentasNetas < 0
+                                            return (
+                                                <div key={`m-${d.Codigo_Doc}-${d.Serie_Doc}-${d.Nro_Doc}-${i}`}
+                                                     className={`px-4 py-2.5 ${negativo ? 'shadow-[inset_3px_0_0_#fca5a5]' : 'shadow-[inset_3px_0_0_#6ee7b7]'}`}>
+                                                    <div className="flex items-center justify-between gap-2 text-xs">
+                                                        <span>
+                                                            <span className="mr-1.5 inline-flex rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-300">{d.Codigo_Doc}</span>
+                                                            <span className="font-mono">{d.Serie_Doc}-{d.Nro_Doc}</span>
+                                                        </span>
+                                                        <span className="font-mono text-muted-foreground">{fechaDMY(d.Fecha_Mvto)}</span>
+                                                    </div>
+                                                    <p className="mt-1 text-sm leading-tight">{d.Cliente}</p>
+                                                    <div className="mt-1 flex items-center justify-between text-xs">
+                                                        <span className="text-muted-foreground">{d.Operacion} · {d.Items} ítem{d.Items !== 1 ? 's' : ''}</span>
+                                                        <span className={`font-mono font-semibold ${negativo ? 'text-red-700 dark:text-red-400' : ''}`}>{money(d.VentasNetas)}</span>
+                                                    </div>
+                                                </div>
+                                            )
+                                        })}
+                                    </div>
+                                    <div className="hidden overflow-x-auto md:block">
                                         <table className="w-full min-w-[900px] text-xs border-collapse">
                                             <thead>
                                                 <tr className="sticky top-0 z-10 bg-gradient-to-b from-muted/60 to-muted">
