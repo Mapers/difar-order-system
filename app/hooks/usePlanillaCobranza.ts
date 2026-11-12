@@ -1,6 +1,8 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import apiClient from '@/app/api/client'
+import { cabeceraSesion } from '@/app/api/sesion'
 import { toast } from '@/app/hooks/useToast'
+import { prepararParaEnvio } from '@/lib/subida-archivos'
 import {
     AdminInfo,
     Catalogo,
@@ -43,18 +45,29 @@ export function usePlanillaCobranza() {
     const generarCorrelativo = useCallback(async (
         vendedor: VendedorInfo,
         fecha_ruta: string,
-        zona: string
+        zona: string,
+        opciones: { admin?: boolean } = {}
     ) => {
         try {
-            const res = await apiClient.post('/planilla-cobranza/correlativo', {
-                id_vendedor:     vendedor.id_vendedor,
-                codigo_vendedor: vendedor.codigo_vendedor || null,
-                nombre_vendedor: vendedor.nombre_vendedor || null,
-                ciudad:          vendedor.ciudad          || null,
-                fecha_ruta,
-                zona,
-            })
+            // Administración: crea la planilla a nombre del vendedor elegido; el backend
+            // registra quién la creó (creado_por) con el token de la sesión.
+            const res = opciones.admin
+                ? await apiClient.post('/planilla-cobranza/admin/correlativo', {
+                    id_vendedor: vendedor.id_vendedor,
+                    fecha_ruta,
+                    zona,
+                }, { headers: cabeceraSesion() })
+                : await apiClient.post('/planilla-cobranza/correlativo', {
+                    id_vendedor:     vendedor.id_vendedor,
+                    codigo_vendedor: vendedor.codigo_vendedor || null,
+                    nombre_vendedor: vendedor.nombre_vendedor || null,
+                    ciudad:          vendedor.ciudad          || null,
+                    fecha_ruta,
+                    zona,
+                })
             const planilla = res.data?.data?.planilla
+            // Si mientras tanto se cambió de vendedor (modo administración), no se muestra.
+            if (consultaVendedor.current !== vendedor.id_vendedor && consultaVendedor.current !== null) return planilla
             setPlanillaActiva(planilla)
             setDetalle([])
             return planilla
@@ -73,6 +86,31 @@ export function usePlanillaCobranza() {
         setDetalle([])
     }, [])
 
+    const ultimaConsultaMis = useRef(0)
+    // Vendedor elegido en modo administración (null = el usuario de la sesión).
+    const consultaVendedor = useRef<number | string | null>(null)
+    const fijarVendedor = useCallback((id: number | string | null) => { consultaVendedor.current = id }, [])
+
+    /** Al cambiar de vendedor (modo administración): nada del anterior queda a la vista. */
+    const reiniciarVendedor = useCallback(() => {
+        ultimaConsultaMis.current++
+        setPlanillaActiva(null)
+        setDetalle([])
+        setMisPlanillas([])
+    }, [])
+
+    /** Vuelve a leer los registros de la planilla en curso (sin avisos si falla). */
+    const recargarDetalle = useCallback(async (id_planilla: number) => {
+        try {
+            const res = await apiClient.get(`/planilla-cobranza/${id_planilla}/detalle`)
+            const det: PlanillaDetalle[] = res.data?.data?.detalle || []
+            setDetalle(det)
+            return det
+        } catch {
+            return null
+        }
+    }, [])
+
     const cargarBorrador = useCallback((planilla: PlanillaCabecera, detalleRegs: PlanillaDetalle[]) => {
         setPlanillaActiva(planilla)
         setDetalle(detalleRegs)
@@ -86,11 +124,20 @@ export function usePlanillaCobranza() {
     const agregarDetalle = useCallback(async (
         id_planilla: number,
         registro: NuevoDetalle,
-        vouchers: File[] = []
+        vouchers: File[] = [],
+        opciones: { silencioso?: boolean } = {}
     ) => {
         setLoadingDetalle(true)
         try {
             let res: any
+
+            // El servidor no acepta envíos de más de ~1 MB: las fotos se reducen antes.
+            try {
+                vouchers = await prepararParaEnvio(vouchers)
+            } catch (e: any) {
+                toast({ title: 'Archivos muy pesados', description: e?.message, variant: 'destructive' })
+                return null
+            }
 
             if (vouchers.length > 0) {
                 const form = new FormData()
@@ -115,9 +162,20 @@ export function usePlanillaCobranza() {
                 )
             }
 
-            const nuevo = res.data?.data?.detalle
-            setDetalle(prev => [...prev, nuevo])
-            toast({
+            let nuevo = res.data?.data?.detalle
+            if (nuevo) {
+                setDetalle(prev => [...prev, nuevo])
+            } else {
+                // Sin el registro en la respuesta: se vuelve a leer la planilla.
+                const det = await recargarDetalle(id_planilla)
+                if (!det) {
+                    // Se guardó, pero no se pudo releer: avisar para no volver a agregarlo.
+                    toast({ title: 'Registro agregado', description: 'No se pudo actualizar la lista. Recarga la planilla antes de agregar otro.', variant: 'warning' })
+                    return { ...registro }
+                }
+                nuevo = det[det.length - 1] ?? { ...registro }
+            }
+            if (!opciones.silencioso) toast({
                 title: 'Registro agregado',
                 description: `${registro.nombre_cliente} — S/ ${Number(registro.importe).toFixed(2)}` +
                     (vouchers.length > 0 ? ` · ${vouchers.length} voucher${vouchers.length > 1 ? 's' : ''}` : '')
@@ -133,7 +191,7 @@ export function usePlanillaCobranza() {
         } finally {
             setLoadingDetalle(false)
         }
-    }, [])
+    }, [recargarDetalle])
 
     /** Elimina una planilla en borrador del vendedor, con sus registros y vouchers. */
     const eliminarPlanilla = useCallback(async (id_planilla: number, vendedor: VendedorInfo) => {
@@ -253,6 +311,7 @@ export function usePlanillaCobranza() {
         fecha_desde?: string
         fecha_hasta?: string
     }) => {
+        const consulta = ++ultimaConsultaMis.current
         setLoadingMisPlanillas(true)
         try {
             const qs = new URLSearchParams(
@@ -264,6 +323,8 @@ export function usePlanillaCobranza() {
             ).toString()
             const res = await apiClient.get(`/planilla-cobranza/mis-planillas?${qs}`)
             const planillas = res.data?.data?.data || []
+            // Solo vale la última consulta: al cambiar de vendedor, una respuesta vieja no pisa la nueva.
+            if (consulta !== ultimaConsultaMis.current) return planillas
             setMisPlanillas(planillas)
             return planillas
         } catch {
@@ -371,7 +432,7 @@ export function usePlanillaCobranza() {
     return {
         tiposComprobante, bancos, loadingCatalogos, fetchCatalogos,
         planillaActiva, detalle, loadingDetalle, consultarDetalle, eliminarPlanilla,
-        generarCorrelativo, limpiarPlanillaActiva, cargarBorrador,
+        generarCorrelativo, limpiarPlanillaActiva, cargarBorrador, reiniciarVendedor, recargarDetalle, fijarVendedor,
         agregarDetalle, eliminarDetalle, fetchDetalle,
         enviarPlanilla, reenviarPlanilla,
         misPlanillas, loadingMisPlanillas, fetchMisPlanillas,
