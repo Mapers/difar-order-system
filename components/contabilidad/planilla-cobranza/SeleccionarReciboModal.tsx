@@ -29,6 +29,11 @@ interface Props {
     onOpenChange:   (v: boolean) => void
     /** Usuario web del vendedor: solo se listan sus recibos. */
     idUsuarioWeb:   number | null | undefined
+    /**
+     * Modo administración: código del vendedor elegido. Se listan sus recibos
+     * (cod_vendedor) en lugar de los del usuario de la sesión.
+     */
+    codVendedor?:   string
     /** Si ya hay un cliente elegido, se filtra por él (se puede desactivar). */
     codCliente?:    string
     onImportar:     (recibo: ReciboCabecera, documento: ReciboDocumento) => void
@@ -38,7 +43,7 @@ interface Props {
  * Elegir un recibo de cuenta emitido por el vendedor, ver su PDF y escoger el
  * documento que se liquida en la planilla.
  */
-export function SeleccionarReciboModal({ open, onOpenChange, idUsuarioWeb, codCliente, onImportar }: Props) {
+export function SeleccionarReciboModal({ open, onOpenChange, idUsuarioWeb, codVendedor, codCliente, onImportar }: Props) {
     const [recibos,   setRecibos]   = useState<ReciboCabecera[]>([])
     const [cargando,  setCargando]  = useState(false)
     const [busqueda,  setBusqueda]  = useState('')
@@ -51,15 +56,18 @@ export function SeleccionarReciboModal({ open, onOpenChange, idUsuarioWeb, codCl
     useEffect(() => {
         if (!open) return
         setElegido(null); setDocumentos([]); setDocElegido(null); setBusqueda(''); setSoloCliente(true)
-        if (idUsuarioWeb == null) { setRecibos([]); return }
+        if (!codVendedor && idUsuarioWeb == null) { setRecibos([]); return }
         let vivo = true
         setCargando(true)
-        apiClient.get('/recibos', { params: { id_usuario_web: idUsuarioWeb, estado: 'EMITIDO' } })
+        const params = codVendedor
+            ? { estado: 'EMITIDO', cod_vendedor: codVendedor }
+            : { id_usuario_web: idUsuarioWeb, estado: 'EMITIDO' }
+        apiClient.get('/recibos', { params })
             .then(res => { if (vivo) setRecibos(res.data?.data?.data ?? []) })
             .catch(() => { if (vivo) setRecibos([]) })
             .finally(() => { if (vivo) setCargando(false) })
         return () => { vivo = false }
-    }, [open, idUsuarioWeb])
+    }, [open, idUsuarioWeb, codVendedor])
 
     const elegir = async (r: ReciboCabecera) => {
         setElegido(r); setDocumentos([]); setDocElegido(null); setCargandoDet(true)
@@ -97,7 +105,7 @@ export function SeleccionarReciboModal({ open, onOpenChange, idUsuarioWeb, codCl
                         Seleccionar recibo de cuenta
                     </DialogTitle>
                     <DialogDescription>
-                        Tus recibos emitidos. Revisa el PDF y elige el documento que se liquida en la planilla.
+                        {codVendedor ? `Recibos emitidos del vendedor ${codVendedor}.` : 'Tus recibos emitidos.'} Revisa el PDF y elige el documento que se liquida en la planilla.
                     </DialogDescription>
                 </DialogHeader>
 
