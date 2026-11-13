@@ -55,6 +55,27 @@ const apiClient = axios.create({
 // )
 
 /**
+ * Rutas que exigen sesión en el backend (auditoría C1, 13/11/2026): cobranza y amortización.
+ * Solo a ellas se les agrega el token, para no mandar una cabecera de ~8 KB en todas las peticiones.
+ */
+const RUTAS_CON_SESION = /^\/?(amortizacion|planilla-cobranza|recibos|cobranza)(\/|\?|$)/;
+
+apiClient.interceptors.request.use((config) => {
+  try {
+    const ruta = config.url || '';
+    if (typeof window !== 'undefined' && RUTAS_CON_SESION.test(ruta)) {
+      const token = localStorage.getItem('token');
+      const cabeceras: any = config.headers;
+      const yaTiene = cabeceras?.Authorization || cabeceras?.authorization;
+      if (token && cabeceras && !yaTiene) {
+        cabeceras.Authorization = `Bearer ${token}`;
+      }
+    }
+  } catch { /* sin token la petición sigue; el backend responde 401 */ }
+  return config;
+});
+
+/**
  * Sesión demasiado grande para el servidor.
  * nginx rechaza cabeceras de más de ~8 KB ("400 Request Header Or Cookie Too Large") SIN cabeceras CORS,
  * así que el navegador solo ve un error de red y cada pantalla mostraba su mensaje genérico.
