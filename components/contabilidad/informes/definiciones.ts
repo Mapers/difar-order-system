@@ -27,6 +27,12 @@ const referencia = (fecha: string, serie: string, numero: string) =>
         valor: (f: FilaInforme) => f[serie] ? `${fmtFecha(f[fecha])} ${f[serie]}-${f[numero] ?? ''}` : null,
     })
 
+/** Campos del plan contable que apuntan a cta_registros: 0 = "Si Registros", 1 = "No" (al revés de un booleano). */
+const siRegistros = (campo: string, titulo: string) =>
+    c(`_sr_${campo}`, titulo, 'texto', { valor: (f: FilaInforme) => f[campo] === null || f[campo] === undefined ? null : Number(f[campo]) === 0 ? 'Sí' : 'No' })
+
+const LEYENDA_KARDEX = 'Provisión y amortización en la moneda de cada documento; saldo separado en soles (S/) y dólares (US$)'
+
 const DOC_VENTA = [c('Fecha', 'F. Emisión', 'fecha'), comprobante('Cod_Tipo', 'Serie', 'Numero')]
 const DOC_COMPRA = [c('RegNro', 'Reg.', 'mono'), c('Fecha', 'F. Emisión', 'fecha'), comprobante('Cod_Tipo', 'SerieDoc', 'NumeroDoc')]
 const COMPRA_SOLES = [...DOC_COMPRA, c('Nombre', 'Proveedor', 'texto', { movil: 'subtitulo' }), c('RUC', 'RUC', 'mono'), c('TipoCambio', 'T/C', 'tc'),
@@ -145,11 +151,54 @@ export const DEFINICIONES: Record<ClaveReporte, DefinicionReporte> = {
     'sire-compras-anexo11': sireCompras('sire-compras-anexo11', '11', 'Todas las compras del mes, importes en soles (37 campos).', false),
     'sire-compras-anexo12': sireCompras('sire-compras-anexo12', '12', 'Solo los documentos que elijas, en moneda original y con su CAR SIRE.', true),
     'sire-compras-anexo8': sireCompras('sire-compras-anexo8', '8', 'Solo los documentos que elijas, en moneda original.', false),
+
+    // ---------------- Informes Proveedores
+    'proveedores-cta-cte': {
+        clave: 'proveedores-cta-cte', titulo: 'Cuenta corriente', filtro: 'ninguno', extras: ['proveedor', 'documento'], leyenda: LEYENDA_KARDEX,
+        access: 'Provedores › CtaGeneral / CtaProveedor / UnDocumento',
+        descripcion: 'Movimientos (provisión y pagos) de cada documento. Sin proveedor: todos; con proveedor: solo ese; con documento: solo ese documento.',
+        columnas: [c('NombreProveedor', 'Proveedor', 'texto', { movil: 'subtitulo' }), c('RucProveedor', 'RUC', 'mono'),
+            comprobante('Documento', 'Serie', 'Numero'), c('FechaEmision', 'F. Emisión', 'fecha'), c('FechaVcto', 'F. Vcto', 'fecha'),
+            c('FechaAmortizacion', 'F. Pago', 'fecha'), montoOriginal('Provision', 'Provisión'), montoOriginal('Amortizacion', 'Amortiz.'),
+            monto('SaldoSoles', 'Saldo S/', 'importe'), { ...monto('SaldoDolares', 'Saldo US$'), moneda: 'US$' }, c('Descripcion', 'Descripción')],
+    },
+    'proveedores-programa-pagos': {
+        clave: 'proveedores-programa-pagos', titulo: 'Programa de pagos', filtro: 'rango', extras: ['tipo-doc'], leyenda: LEYENDA_KARDEX,
+        access: 'Provedores › ProgramaPagos',
+        descripcion: 'Documentos con saldo pendiente que vencen en el rango, ordenados por fecha de vencimiento.',
+        columnas: [c('FechaVcto', 'F. Vcto', 'fecha'), c('NombreProveedor', 'Proveedor', 'texto', { movil: 'subtitulo' }), c('RucProveedor', 'RUC', 'mono'),
+            comprobante('Documento', 'Serie', 'Numero'), c('FechaEmision', 'F. Emisión', 'fecha'),
+            montoOriginal('Provision', 'Provisión'), montoOriginal('Amortizacion', 'Amortiz.'),
+            monto('SaldoSoles', 'Saldo S/', 'importe'), { ...monto('SaldoDolares', 'Saldo US$'), moneda: 'US$' }],
+    },
+    'proveedores-detalle-anio': {
+        clave: 'proveedores-detalle-anio', titulo: 'Detalle por año', filtro: 'anio', extras: ['proveedor-obligatorio'],
+        access: 'Provedores › DetalleDocs',
+        descripcion: 'Comprobantes del Registro de Compras de un proveedor en el año (útil para DAOT y confirmaciones).',
+        columnas: [c('FechaEmision', 'F. Emisión', 'fecha'), comprobante('Documento', 'Serie', 'Numero'), c('PeriodoTributario', 'Periodo', 'mono'),
+            montoOriginal('ValorVenta', 'Valor venta'), montoOriginal('IGV', 'IGV'), montoOriginal('ImporteTotal', 'Total', 'importe')],
+    },
+
+    // ---------------- Plan Contable (consulta)
+    'plan-cuentas': {
+        clave: 'plan-cuentas', titulo: 'Plan de cuentas', filtro: 'ninguno', extras: ['buscar', 'nivel'],
+        access: 'Datos Fijos › Datos Generales › PlanCuenta',
+        descripcion: 'Plan contable de la empresa (cuentas generales y propias). Nivel = largo del código: 2 principal, 3 sub cuenta, 5 sub cuenta 2, 7 cuenta de registros.',
+        columnas: [c('Cuenta', 'Cuenta', 'mono', { movil: 'titulo' }), c('Descripcion', 'Descripción', 'texto', { movil: 'subtitulo' }),
+            c('Nivel', 'Nivel', 'entero'), c('TipoCuenta', 'Tipo'), c('ConceptoEEFF', 'Concepto EEFF'), c('EstadoFlujo', 'Estado flujo'),
+            c('AmarreCargo', 'Amarre cargo', 'mono'), c('AmarreAbono', 'Amarre abono', 'mono'),
+            siRegistros('CtaCaja', 'Caja control'), siRegistros('CtaBcos', 'Ctas. bancos'),
+            siRegistros('CtaRegistrosCaja', 'Libro caja'), siRegistros('CtaRegistrosBancos', 'Libro bancos'),
+            siRegistros('CtaRegistroCompras', 'Reg. compras'), siRegistros('CtaRegistroVentas', 'Reg. ventas'),
+            c('CuentaSunat', 'Cta. SUNAT', 'mono')],
+    },
 }
 
 /** Pestañas de cada página (en el orden del menú de Access). */
 export const PESTANAS_VENTAS: ClaveReporte[] = ['ventas-soles', 'ventas-dolares', 'ventas-resumido-bv', 'ventas-correlativos', 'ventas-guias-facturadas', 'ventas-por-anio']
 export const PESTANAS_COMPRAS: ClaveReporte[] = ['compras-soles', 'compras-usd', 'compras-percepciones', 'compras-sire-pendientes', 'compras-por-anio']
+export const PESTANAS_PROVEEDORES: ClaveReporte[] = ['proveedores-cta-cte', 'proveedores-programa-pagos', 'proveedores-detalle-anio']
+export const PESTANAS_PLAN: ClaveReporte[] = ['plan-cuentas']
 
 /** Archivos TXT: de qué reporte salen y si el usuario elige los documentos. */
 export interface DefinicionArchivo {

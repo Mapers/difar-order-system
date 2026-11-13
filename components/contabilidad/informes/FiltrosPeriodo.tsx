@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { FiltroInforme, TipoFiltro } from '@/app/types/informes-contables-types'
 import { MESES } from './formato'
+import { cn } from '@/lib/utils'
 
 interface Props {
     tipo: TipoFiltro
@@ -17,6 +18,8 @@ interface Props {
     cargando: boolean
     /** Botones extra a la derecha (exportar, descargar). */
     acciones?: React.ReactNode
+    /** Filtros adicionales del reporte (proveedor, documento...), después del periodo. */
+    extras?: React.ReactNode
 }
 
 const ANIOS = (() => {
@@ -25,11 +28,11 @@ const ANIOS = (() => {
 })()
 
 /** Filtro de periodo: mes y año, solo año, o rango de fechas, según el reporte. */
-export function FiltrosPeriodo({ tipo, filtro, onChange, onBuscar, cargando, acciones }: Props) {
+export function FiltrosPeriodo({ tipo, filtro, onChange, onBuscar, cargando, acciones, extras }: Props) {
     const set = (p: Partial<FiltroInforme>) => onChange({ ...filtro, ...p })
     return (
         <div className="grid grid-cols-2 md:grid-cols-12 gap-3 md:gap-4 items-end">
-            {tipo === 'rango' ? (
+            {tipo === 'ninguno' ? null : tipo === 'rango' ? (
                 <>
                     <div className="flex flex-col gap-1.5 md:col-span-3">
                         <Label htmlFor="fdesde">Desde</Label>
@@ -62,7 +65,9 @@ export function FiltrosPeriodo({ tipo, filtro, onChange, onBuscar, cargando, acc
                     )}
                 </>
             )}
-            <div className="col-span-2 flex flex-col sm:flex-row gap-2 md:col-span-6 md:col-start-7 md:justify-end">
+            {extras}
+            <div className={cn('col-span-2 flex flex-col sm:flex-row gap-2 md:justify-end',
+                extras ? 'md:col-span-12' : 'md:col-span-6 md:col-start-7')}>
                 <Button onClick={onBuscar} disabled={cargando} className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white">
                     {cargando ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Search className="mr-2 h-4 w-4" />} Consultar
                 </Button>

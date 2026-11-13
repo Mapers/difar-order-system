@@ -1,22 +1,25 @@
 'use client'
 
-import React, { useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { FileSearch, Info } from 'lucide-react'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { cn } from '@/lib/utils'
-import { ClaveReporte, FiltroInforme } from '@/app/types/informes-contables-types'
+import { ClaveReporte, FilaInforme, FiltroInforme } from '@/app/types/informes-contables-types'
 import { DEFINICIONES } from './definiciones'
 import { FiltrosPeriodo, filtroInicial } from './FiltrosPeriodo'
 import { TablaInforme } from './TablaInforme'
 import { ExportarExcelInforme } from './ExportarExcelInforme'
 import { ExportarPdfInforme } from './ExportarPdfInforme'
 import { useInforme } from './useInforme'
+import { FiltrosExtra } from './FiltrosExtra'
+import { toast } from '@/app/hooks/useToast'
 import { fmtFecha, MESES, simboloDe, textoTotal } from './formato'
 import { DefinicionReporte } from '@/app/types/informes-contables-types'
 
 /** Leyenda de la moneda de los importes, como "Expresado en Nuevos Soles" del reporte Access. */
 function leyendaMoneda(def: DefinicionReporte) {
+    if (def.leyenda !== undefined) return def.leyenda
     const montos = def.columnas.filter(c => c.tipo === 'monto')
     if (!montos.length) return ''   // sin importes (p. ej. correlativos): no se indica moneda
     const originales = montos.filter(c => simboloDe(c, def.moneda) === '')
@@ -29,20 +32,35 @@ interface Props {
     titulo: string
     descripcion: string
     pestanas: ClaveReporte[]
+    /** Contenido extra bajo el título (por ejemplo, enlace a una página relacionada o botones). */
+    aviso?: React.ReactNode
+    /** Clic en una fila de la tabla (por ejemplo, abrir la ficha de la cuenta). */
+    onFila?: (fila: FilaInforme) => void
+    /** Al cambiar este número se vuelve a consultar (después de guardar o eliminar). */
+    recargar?: number
 }
 
-/** Texto del periodo consultado, para la cabecera del Excel y los avisos. */
-function textoPeriodo(tipo: string, f: FiltroInforme) {
-    if (tipo === 'rango') return `Del ${fmtFecha(f.fechaDesde)} al ${fmtFecha(f.fechaHasta)}`
-    if (tipo === 'anio') return `Año ${f.anio}`
-    return `${MESES[Number(f.mes) - 1]} ${f.anio}`
+/** Texto del periodo consultado (y filtros extra), para la cabecera del PDF/Excel y los avisos. */
+function textoPeriodo(def: DefinicionReporte, f: FiltroInforme) {
+    const ex = def.extras ?? []
+    const partes: string[] = []
+    if (def.filtro === 'rango') partes.push(`Del ${fmtFecha(f.fechaDesde)} al ${fmtFecha(f.fechaHasta)}`)
+    else if (def.filtro === 'anio') partes.push(`Año ${f.anio}`)
+    else if (def.filtro === 'mes') partes.push(`${MESES[Number(f.mes) - 1]} ${f.anio}`)
+    if ((ex.includes('proveedor') || ex.includes('proveedor-obligatorio')))
+        partes.push(f.codProveedor ? `Proveedor ${f.nomProveedor || f.codProveedor}` : 'Todos los proveedores')
+    if (ex.includes('documento') && f.documento) partes.push(`Documento ${f.documento}`)
+    if (ex.includes('tipo-doc')) partes.push(({ '01': 'Solo facturas', '80': 'Solo letras' } as Record<string, string>)[f.tipoDoc || ''] ?? 'Todos los documentos')
+    if (ex.includes('buscar') && f.buscar) partes.push(`Búsqueda "${f.buscar}"`)
+    if (ex.includes('nivel') && f.nivel) partes.push(`Nivel ${f.nivel}`)
+    return partes.join(' · ') || 'Todo'
 }
 
 /**
  * Página con pestañas de informes (Registro de Ventas / Registro de Compras).
  * Todo sale de las definiciones: la página solo recibe la lista de pestañas.
  */
-export function PaginaInformes({ titulo, descripcion, pestanas }: Props) {
+export function PaginaInformes({ titulo, descripcion, pestanas, aviso, onFila, recargar }: Props) {
     const [activa, setActiva] = useState<ClaveReporte>(pestanas[0])
     const [filtro, setFiltro] = useState<FiltroInforme>(filtroInicial())
     const { filas, cargando, consulta, cargar, limpiar } = useInforme()
@@ -57,14 +75,33 @@ export function PaginaInformes({ titulo, descripcion, pestanas }: Props) {
     }, [actuales, def])
 
     const cambiarPestana = (v: string) => { setActiva(v as ClaveReporte); limpiar() }
-    const periodo = textoPeriodo(def.filtro, filtro)
-    const nombreArchivo = `${activa}_${def.filtro === 'rango' ? `${filtro.fechaDesde}_${filtro.fechaHasta}` : filtro.anio + (def.filtro === 'mes' ? filtro.mes : '')}`
+    const periodo = textoPeriodo(def, filtro)
+    const extras = def.extras ?? []
+    const sufijo = def.filtro === 'rango' ? `${filtro.fechaDesde}_${filtro.fechaHasta}`
+        : def.filtro === 'ninguno' ? new Date().toISOString().slice(0, 10)
+            : filtro.anio + (def.filtro === 'mes' ? filtro.mes : '')
+    const nombreArchivo = [activa, sufijo, extras.some(e => e.startsWith('proveedor')) ? filtro.codProveedor : ''].filter(Boolean).join('_')
+
+    const consultar = () => {
+        if (extras.includes('proveedor-obligatorio') && !filtro.codProveedor) {
+            toast({ title: 'Falta el proveedor', description: 'Elige un proveedor para este informe.', variant: 'destructive' })
+            return
+        }
+        cargar(activa, def.filtro, filtro, extras)
+    }
+
+    // recarga la consulta actual (si hay una) cuando el padre lo pide
+    useEffect(() => {
+        if (recargar && consulta) cargar(consulta.clave, DEFINICIONES[consulta.clave].filtro, consulta.filtro, DEFINICIONES[consulta.clave].extras ?? [])
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [recargar])
 
     return (
         <div className="grid grid-cols-1 gap-6 p-0 md:p-2">
             <div className="flex flex-col gap-2">
                 <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">{titulo}</h1>
                 <p className="text-sm md:text-base text-muted-foreground">{descripcion}</p>
+                {aviso}
             </div>
 
             <Tabs value={activa} onValueChange={cambiarPestana}>
@@ -87,7 +124,8 @@ export function PaginaInformes({ titulo, descripcion, pestanas }: Props) {
                     </div>
                     <FiltrosPeriodo
                         tipo={def.filtro} filtro={filtro} onChange={setFiltro} cargando={cargando}
-                        onBuscar={() => cargar(activa, def.filtro, filtro)}
+                        onBuscar={consultar}
+                        extras={extras.length ? <FiltrosExtra extras={extras} filtro={filtro} onChange={setFiltro} onEnter={consultar} /> : undefined}
                         acciones={<>
                             <ExportarPdfInforme titulo={`${titulo} - ${def.titulo}`} subtitulo={[periodo, leyendaMoneda(def)].filter(Boolean).join(' · ')}
                                                 nombreArchivo={nombreArchivo} columnas={def.columnas} filas={actuales} moneda={def.moneda} />
@@ -101,7 +139,7 @@ export function PaginaInformes({ titulo, descripcion, pestanas }: Props) {
                     {!actuales && !cargando && (
                         <div className="flex flex-col items-center gap-2 py-14 text-muted-foreground">
                             <FileSearch className="h-10 w-10 opacity-40" />
-                            <p className="text-sm">Elige el periodo y pulsa <b>Consultar</b>.</p>
+                            <p className="text-sm">{def.filtro === 'ninguno' ? 'Escribe una cuenta o deja vacío para ver todo, y' : 'Elige el periodo y'} pulsa <b>Consultar</b>.</p>
                         </div>
                     )}
                     {actuales && (
@@ -120,7 +158,7 @@ export function PaginaInformes({ titulo, descripcion, pestanas }: Props) {
                                     <p className="px-4 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground bg-muted/40 border-b">
                                         {[leyendaMoneda(def), periodo].filter(Boolean).join(' · ')}
                                     </p>
-                                    <TablaInforme columnas={def.columnas} filas={actuales} moneda={def.moneda} />
+                                    <TablaInforme columnas={def.columnas} filas={actuales} moneda={def.moneda} onFila={onFila} />
                                 </div>}
                         </>
                     )}

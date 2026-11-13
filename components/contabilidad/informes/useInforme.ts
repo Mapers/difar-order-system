@@ -3,7 +3,7 @@
 import { useCallback, useState } from 'react'
 import { toast } from '@/app/hooks/useToast'
 import { InformesContablesService, mensajeError, parametrosDe } from '@/app/services/contabilidad/InformesContablesService'
-import { ClaveReporte, FilaInforme, FiltroInforme, TipoFiltro } from '@/app/types/informes-contables-types'
+import { ClaveReporte, FilaInforme, FiltroExtra, FiltroInforme, TipoFiltro } from '@/app/types/informes-contables-types'
 
 /** Estado y carga de un reporte. Desacopla la UI del servicio HTTP. */
 export function useInforme() {
@@ -11,10 +11,10 @@ export function useInforme() {
     const [cargando, setCargando] = useState(false)
     const [consulta, setConsulta] = useState<{ clave: ClaveReporte; filtro: FiltroInforme } | null>(null)
 
-    const cargar = useCallback(async (clave: ClaveReporte, tipo: TipoFiltro, filtro: FiltroInforme) => {
+    const cargar = useCallback(async (clave: ClaveReporte, tipo: TipoFiltro, filtro: FiltroInforme, extras: FiltroExtra[] = []) => {
         setCargando(true)
         try {
-            const r = await InformesContablesService.reporte(clave, parametrosDe(tipo, filtro))
+            const r = await InformesContablesService.reporte(clave, parametrosDe(tipo, filtro, extras))
             setFilas(r?.filas ?? [])
             setConsulta({ clave, filtro })
             return r?.filas ?? []
