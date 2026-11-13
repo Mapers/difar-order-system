@@ -81,6 +81,11 @@ const mismoCodigo = (a: unknown, b: unknown) => {
     return x !== '' && (x === y || (/^\d+$/.test(x) && /^\d+$/.test(y) && Number(x) === Number(y)))
 }
 
+// Auditoría C2 (13/11/2026): guardar un cobro nuevo está bloqueado (también en el backend) hasta
+// corregir los SP del kardex y del mayor. Buscar, ver kardex y ver mayor siguen funcionando.
+const GUARDAR_BLOQUEADO = true
+const MENSAJE_GUARDAR_BLOQUEADO = 'El registro de cobros desde la web está en mantenimiento. Por ahora regístralo en el sistema anterior (Access).'
+
 export default function ClienteCobranzaPage() {
     const { user } = useAuth()
 
@@ -310,6 +315,10 @@ export default function ClienteCobranzaPage() {
         !!(form.Cod_Clie && form.TipoDoc && form.SerieDoc && form.Fecha_Mvto && form.Importe_Amortiz)
 
     const handleGuardarClick = () => {
+        if (GUARDAR_BLOQUEADO) {
+            toast({ title: "Guardar en mantenimiento", description: MENSAJE_GUARDAR_BLOQUEADO, variant: "warning" })
+            return
+        }
         if (isEditing) {
             toast({
                 title: "Edición no disponible",
@@ -340,10 +349,11 @@ export default function ClienteCobranzaPage() {
             resetForm()
             fetchSiguientePlanilla()
         } catch (error: any) {
+            const bloqueado = error?.response?.status === 423
             toast({
-                title: "Error",
+                title: bloqueado ? "Guardar en mantenimiento" : "Error",
                 description: error?.response?.data?.message || "No se pudo guardar.",
-                variant: "destructive"
+                variant: bloqueado ? "warning" : "destructive"
             })
         } finally {
             setIsSaving(false)
@@ -422,6 +432,13 @@ export default function ClienteCobranzaPage() {
                 <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">Cliente Cobranza</h1>
                 <p className="text-sm md:text-base text-muted-foreground">Registro de amortizaciones y pagos de clientes.</p>
             </div>
+
+            {GUARDAR_BLOQUEADO && (
+                <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
+                    <Info className="mt-0.5 h-4 w-4 shrink-0" />
+                    <span>{MENSAJE_GUARDAR_BLOQUEADO} Puedes buscar cobros y ver su kardex y mayor.</span>
+                </div>
+            )}
 
             <Card className="shadow-md">
                 <CardHeader className="bg-muted border-b border-border p-4">
@@ -933,8 +950,8 @@ export default function ClienteCobranzaPage() {
                             size="sm"
                             className="gap-1.5 bg-emerald-600 hover:bg-emerald-700 ml-auto"
                             onClick={handleGuardarClick}
-                            disabled={isSaving || isEditing}
-                            title={isEditing ? 'La edición de cobros está deshabilitada' : undefined}
+                            disabled={GUARDAR_BLOQUEADO || isSaving || isEditing}
+                            title={GUARDAR_BLOQUEADO ? MENSAJE_GUARDAR_BLOQUEADO : isEditing ? 'La edición de cobros está deshabilitada' : undefined}
                         >
                             {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                             Guardar
