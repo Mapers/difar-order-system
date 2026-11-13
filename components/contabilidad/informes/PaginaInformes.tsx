@@ -13,7 +13,6 @@ import { ExportarExcelInforme } from './ExportarExcelInforme'
 import { ExportarPdfInforme } from './ExportarPdfInforme'
 import { useInforme } from './useInforme'
 import { FiltrosExtra } from './FiltrosExtra'
-import { toast } from '@/app/hooks/useToast'
 import { fmtFecha, MESES, simboloDe, textoTotal } from './formato'
 import { DefinicionReporte } from '@/app/types/informes-contables-types'
 
@@ -64,6 +63,8 @@ export function PaginaInformes({ titulo, descripcion, pestanas, aviso, onFila, r
     const [activa, setActiva] = useState<ClaveReporte>(pestanas[0])
     const [filtro, setFiltro] = useState<FiltroInforme>(filtroInicial())
     const { filas, cargando, consulta, cargar, limpiar } = useInforme()
+    // validación del filtro (no es un error): marca el campo que falta y abre su lista
+    const [pedirProveedor, setPedirProveedor] = useState(0)
 
     const def = DEFINICIONES[activa]
     const actuales = consulta?.clave === activa ? filas : null
@@ -74,7 +75,7 @@ export function PaginaInformes({ titulo, descripcion, pestanas, aviso, onFila, r
             ...montos.map(c => ({ t: c.titulo, v: textoTotal(c, actuales, def.moneda) }))]
     }, [actuales, def])
 
-    const cambiarPestana = (v: string) => { setActiva(v as ClaveReporte); limpiar() }
+    const cambiarPestana = (v: string) => { setActiva(v as ClaveReporte); limpiar(); setPedirProveedor(0) }
     const periodo = textoPeriodo(def, filtro)
     const extras = def.extras ?? []
     const sufijo = def.filtro === 'rango' ? `${filtro.fechaDesde}_${filtro.fechaHasta}`
@@ -84,7 +85,7 @@ export function PaginaInformes({ titulo, descripcion, pestanas, aviso, onFila, r
 
     const consultar = () => {
         if (extras.includes('proveedor-obligatorio') && !filtro.codProveedor) {
-            toast({ title: 'Falta el proveedor', description: 'Elige un proveedor para este informe.', variant: 'destructive' })
+            setPedirProveedor(n => n + 1)
             return
         }
         cargar(activa, def.filtro, filtro, extras)
@@ -125,7 +126,7 @@ export function PaginaInformes({ titulo, descripcion, pestanas, aviso, onFila, r
                     <FiltrosPeriodo
                         tipo={def.filtro} filtro={filtro} onChange={setFiltro} cargando={cargando}
                         onBuscar={consultar}
-                        extras={extras.length ? <FiltrosExtra extras={extras} filtro={filtro} onChange={setFiltro} onEnter={consultar} /> : undefined}
+                        extras={extras.length ? <FiltrosExtra extras={extras} filtro={filtro} onChange={setFiltro} onEnter={consultar} pedirProveedor={pedirProveedor} /> : undefined}
                         acciones={<>
                             <ExportarPdfInforme titulo={`${titulo} - ${def.titulo}`} subtitulo={[periodo, leyendaMoneda(def)].filter(Boolean).join(' · ')}
                                                 nombreArchivo={nombreArchivo} columnas={def.columnas} filas={actuales} moneda={def.moneda} />
