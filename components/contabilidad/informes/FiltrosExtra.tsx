@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
-import { Check, ChevronsUpDown, Loader2, X } from 'lucide-react'
+import { Check, ChevronsUpDown, Loader2, MousePointerClick, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -19,8 +19,11 @@ const NIVELES = [{ v: '', t: 'Todos' }, { v: '2', t: '2 · Cuenta principal' }, 
     { v: '5', t: '5 · Sub cuenta 2' }, { v: '7', t: '7 · Cuenta de registros' }]
 
 /** Buscador de proveedores: consulta al servidor mientras se escribe (RUC o nombre). */
-function BuscadorProveedor({ filtro, onChange, obligatorio }: { filtro: FiltroInforme; onChange: (p: Partial<FiltroInforme>) => void; obligatorio: boolean }) {
+function BuscadorProveedor({ filtro, onChange, obligatorio, pedir = 0 }: { filtro: FiltroInforme; onChange: (p: Partial<FiltroInforme>) => void; obligatorio: boolean; pedir?: number }) {
     const [abierto, setAbierto] = useState(false)
+    // "Consultar" sin proveedor: se marca el campo (ámbar, no rojo) y se abre la lista para elegir
+    const falta = obligatorio && pedir > 0 && !filtro.codProveedor
+    useEffect(() => { if (pedir > 0 && obligatorio && !filtro.codProveedor) setAbierto(true) }, [pedir]) // eslint-disable-line react-hooks/exhaustive-deps
     const [texto, setTexto] = useState('')
     const [items, setItems] = useState<ProveedorBusqueda[]>([])
     const [cargando, setCargando] = useState(false)
@@ -46,7 +49,9 @@ function BuscadorProveedor({ filtro, onChange, obligatorio }: { filtro: FiltroIn
             <div className="flex gap-1">
                 <Popover open={abierto} onOpenChange={setAbierto}>
                     <PopoverTrigger asChild>
-                        <Button variant="outline" role="combobox" className="flex-1 justify-between bg-background font-normal min-w-0">
+                        <Button variant="outline" role="combobox" aria-invalid={falta}
+                                className={cn('flex-1 justify-between bg-background font-normal min-w-0 transition-shadow',
+                                    falta && 'border-amber-400 ring-2 ring-amber-200 dark:border-amber-500 dark:ring-amber-900/60')}>
                             <span className={cn('truncate', !filtro.codProveedor && 'text-muted-foreground')}>
                                 {filtro.nomProveedor || (obligatorio ? 'Elige un proveedor' : 'Todos los proveedores')}
                             </span>
@@ -78,6 +83,12 @@ function BuscadorProveedor({ filtro, onChange, obligatorio }: { filtro: FiltroIn
                     </Button>
                 )}
             </div>
+            {falta && (
+                <p className="flex items-center gap-1.5 text-xs text-amber-700 dark:text-amber-400 animate-in fade-in-0 slide-in-from-top-1 duration-300">
+                    <MousePointerClick className="h-3.5 w-3.5 shrink-0" />
+                    Elige un proveedor para ver este informe: escribe su RUC o nombre.
+                </p>
+            )}
         </div>
     )
 }
@@ -87,16 +98,18 @@ interface Props {
     filtro: FiltroInforme
     onChange: (f: FiltroInforme) => void
     onEnter?: () => void
+    /** Aumenta cada vez que se intenta consultar sin el proveedor obligatorio. */
+    pedirProveedor?: number
 }
 
 /** Filtros adicionales al periodo, declarados por cada reporte en sus definiciones. */
-export function FiltrosExtra({ extras, filtro, onChange, onEnter }: Props) {
+export function FiltrosExtra({ extras, filtro, onChange, onEnter, pedirProveedor = 0 }: Props) {
     const set = (p: Partial<FiltroInforme>) => onChange({ ...filtro, ...p })
     const enter = (e: React.KeyboardEvent) => { if (e.key === 'Enter') onEnter?.() }
     return (
         <>
             {(extras.includes('proveedor') || extras.includes('proveedor-obligatorio')) && (
-                <BuscadorProveedor filtro={filtro} onChange={set} obligatorio={extras.includes('proveedor-obligatorio')} />
+                <BuscadorProveedor filtro={filtro} onChange={set} obligatorio={extras.includes('proveedor-obligatorio')} pedir={pedirProveedor} />
             )}
             {extras.includes('documento') && (
                 <div className="flex flex-col gap-1.5 col-span-2 md:col-span-3">
