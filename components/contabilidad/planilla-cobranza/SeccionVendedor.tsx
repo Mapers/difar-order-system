@@ -220,7 +220,7 @@ export default function SeccionVendedor({
     const zonaEfectiva = usaCombo ? zonaCombo : zonaLibre
 
     const [selectedClient,  setSelectedClient]  = useState<IClient | null>(null)
-    const { user, isAdmin } = useAuth()
+    const { user } = useAuth()
 
     const [formReg, setFormReg] = useState<FormRegistro>(FORM_INICIAL)
     const fc = (f: keyof FormRegistro, v: string) => setFormReg(p => ({ ...p, [f]: v }))
@@ -785,7 +785,7 @@ export default function SeccionVendedor({
                 open={docModalOpen}
                 onOpenChange={setDocModalOpen}
                 codCliente={formReg.codigo_cliente}
-                codVendedor={isAdmin() ? undefined : user?.codigo}
+                // Sin filtrar por vendedor: se cobra lo que debe el cliente, aunque lo haya vendido otro código.
                 soloVigentes={false}
                 consolidar
                 onSelect={handleDocumentoSelect}
