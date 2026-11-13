@@ -12,7 +12,8 @@ import {
     Wallet,
     ShoppingBag,
     Receipt, GoalIcon, UserCog, Notebook, Gift, Map, Settings, FileDiff, CalendarClock,
-    TrendingUp, ReceiptText, HandCoins, BadgePercent, ClipboardList
+    TrendingUp, ReceiptText, HandCoins, BadgePercent, ClipboardList,
+    FileBarChart, FileSpreadsheet, FileCode2, FileCheck2, Truck, ListTree
 } from "lucide-react";
 
 export interface NavItem {
@@ -50,6 +51,12 @@ export const ICON_MAP: Record<string, React.ComponentType<{ className?: string }
     "/dashboard/contabilidad/movimiento-subcuenta": BookOpen,
     "/dashboard/contabilidad/comision-ventas": HandCoins,
     "/dashboard/contabilidad/comision-cobranza": BadgePercent,
+    "/dashboard/contabilidad/informes-registro-ventas": FileBarChart,
+    "/dashboard/contabilidad/informes-registro-compras": FileSpreadsheet,
+    "/dashboard/contabilidad/ple": FileCode2,
+    "/dashboard/contabilidad/sire": FileCheck2,
+    "/dashboard/contabilidad/informes-proveedores": Truck,
+    "/dashboard/contabilidad/plan-contable": ListTree,
     "/dashboard/reportes": BarChart2,
     "/dashboard/reportes/documento-cliente": LineChart,
     "/dashboard/reportes/cobrar-cliente": LineChart,

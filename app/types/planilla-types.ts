@@ -43,6 +43,16 @@ export interface PlanillaCabecera {
     caja_pendientes?:   number
     caja_aceptados?:    number
     caja_rechazados?:   number
+    /** Usuario de administración que la creó a nombre del vendedor (null si la creó él). */
+    creado_por?:        string | null
+}
+
+/** Vendedor elegible en "Crear planilla" (GET /planilla-cobranza/vendedores). */
+export interface VendedorPlanilla {
+    id_vendedor:     number
+    codigo_vendedor: string
+    nombre_completo: string
+    ciudad:          string | null
 }
 
 export interface PlanillaCajaEstado {
