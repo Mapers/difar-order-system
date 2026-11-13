@@ -54,6 +54,40 @@ const apiClient = axios.create({
 //   }
 // )
 
+/**
+ * Sesión demasiado grande para el servidor.
+ * nginx rechaza cabeceras de más de ~8 KB ("400 Request Header Or Cookie Too Large") SIN cabeceras CORS,
+ * así que el navegador solo ve un error de red y cada pantalla mostraba su mensaje genérico.
+ * Si una petición falla sin respuesta, hay internet y el token guardado es de ese tamaño, la sesión se
+ * renueva: se avisa (sin rojo) y se vuelve a iniciar sesión, que genera un token nuevo.
+ */
+const LIMITE_TOKEN_SEGURO = 8000;
+let renovandoSesion = false;
+
+apiClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    try {
+      if (typeof window !== 'undefined' && !error?.response && error?.code !== 'ECONNABORTED' && !renovandoSesion) {
+        const token = localStorage.getItem('token') || '';
+        const enLinea = typeof navigator === 'undefined' || navigator.onLine;
+        if (enLinea && token.length > LIMITE_TOKEN_SEGURO) {
+          renovandoSesion = true;
+          toast({
+            title: 'Tu sesión necesita renovarse',
+            description: 'Se actualizaron tus permisos. Vuelve a iniciar sesión para continuar.',
+            variant: 'warning',
+          });
+          localStorage.removeItem('token');
+          localStorage.removeItem('lastActivityTime');
+          setTimeout(() => { window.location.href = '/'; }, 2500);
+        }
+      }
+    } catch { /* la validación nunca debe romper la petición original */ }
+    return Promise.reject(error);
+  }
+);
+
 export default apiClient;
 
 
