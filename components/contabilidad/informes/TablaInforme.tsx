@@ -18,13 +18,15 @@ interface Props {
     limite?: number
     /** Moneda de los importes del reporte ('S/' o 'US$'). */
     moneda?: string
+    /** Clic en una fila (por ejemplo, abrir la ficha de la cuenta). */
+    onFila?: (fila: FilaInforme) => void
 }
 
 /**
  * Tabla genérica dirigida por las definiciones de columnas:
  * tabla con pie de totales en escritorio y tarjetas en el celular.
  */
-export function TablaInforme({ columnas, filas, campoId, seleccion, onSeleccion, limite = 500, moneda = 'S/' }: Props) {
+export function TablaInforme({ columnas, filas, campoId, seleccion, onSeleccion, limite = 500, moneda = 'S/', onFila }: Props) {
     const t = useMemo(() => totales(columnas, filas), [columnas, filas])
     const visibles = filas.slice(0, limite)
     const seleccionable = !!(campoId && seleccion && onSeleccion)
@@ -64,7 +66,7 @@ export function TablaInforme({ columnas, filas, campoId, seleccion, onSeleccion,
                         const id = campoId ? Number(f[campoId]) : i
                         const marcada = seleccionable && seleccion!.has(id)
                         return (
-                            <tr key={`${id}-${i}`} className={cn('hover:bg-muted transition-colors', marcada && 'bg-blue-50 dark:bg-blue-950/40',
+                            <tr key={`${id}-${i}`} onClick={onFila ? () => onFila(f) : undefined} className={cn('hover:bg-muted transition-colors', onFila && 'cursor-pointer', marcada && 'bg-blue-50 dark:bg-blue-950/40',
                                 Number(f[importe?.campo ?? '']) < 0 && 'text-red-600')}>
                                 {seleccionable && <td className="px-3 py-1.5"><Checkbox checked={marcada} onCheckedChange={() => alternar(id)} aria-label="Elegir documento" /></td>}
                                 {columnas.map(col => (
@@ -102,7 +104,7 @@ export function TablaInforme({ columnas, filas, campoId, seleccion, onSeleccion,
                     const id = campoId ? Number(f[campoId]) : i
                     const marcada = seleccionable && seleccion!.has(id)
                     return (
-                        <div key={`${id}-${i}`} onClick={() => seleccionable && alternar(id)}
+                        <div key={`${id}-${i}`} onClick={() => { if (seleccionable) alternar(id); else onFila?.(f) }}
                              className={cn('rounded-lg border p-3 flex flex-col gap-2', marcada ? 'border-blue-300 bg-blue-50 dark:bg-blue-950/40' : 'border-border bg-muted/30')}>
                             <div className="flex justify-between items-start gap-2">
                                 <div className="min-w-0 flex items-start gap-2">

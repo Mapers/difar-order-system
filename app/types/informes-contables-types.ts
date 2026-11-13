@@ -6,17 +6,40 @@ export type ClaveReporte =
     | 'compras-soles' | 'compras-usd' | 'compras-sire-pendientes' | 'compras-percepciones' | 'compras-por-anio'
     | 'ple-ventas-141' | 'ple-compras-081'
     | 'sire-ventas-anexo03' | 'sire-compras-anexo11' | 'sire-compras-anexo12' | 'sire-compras-anexo8'
+    | 'proveedores-cta-cte' | 'proveedores-programa-pagos' | 'proveedores-detalle-anio'
+    | 'plan-cuentas'
 
 export type ClaveArchivo = 'ple-141' | 'ple-081' | 'ple-082' | 'sire-03' | 'sire-11' | 'sire-12' | 'sire-8'
 
 /** Filtro que pide un reporte: un mes, un año completo o un rango de fechas. */
-export type TipoFiltro = 'mes' | 'anio' | 'rango'
+export type TipoFiltro = 'mes' | 'anio' | 'rango' | 'ninguno'
+
+/**
+ * Filtros adicionales de un reporte (además del periodo):
+ *   proveedor / proveedor-obligatorio · documento (TT-SERIE-NUMERO) · tipo-doc (programa de pagos) · buscar · nivel (plan de cuentas)
+ */
+export type FiltroExtra = 'proveedor' | 'proveedor-obligatorio' | 'documento' | 'tipo-doc' | 'buscar' | 'nivel'
 
 export interface FiltroInforme {
     anio: string
     mes: string
     fechaDesde: string
     fechaHasta: string
+    codProveedor?: string
+    /** Solo para mostrar ("RUC Nombre"); no se envía. */
+    nomProveedor?: string
+    documento?: string
+    tipoDoc?: string
+    buscar?: string
+    nivel?: string
+}
+
+/** Proveedor del buscador (sp_ws_regcompras_buscar_proveedores). */
+export interface ProveedorBusqueda {
+    Codigo: string
+    RUC: string
+    Nombre: string
+    Proveedor: string
 }
 
 /** Fila genérica tal como la devuelve el SP (las columnas dependen del reporte). */
@@ -70,4 +93,8 @@ export interface DefinicionReporte {
     vacio?: string
     /** Moneda de los importes del reporte: 'S/' (por defecto) o 'US$'. */
     moneda?: string
+    /** Filtros adicionales al periodo (proveedor, documento, búsqueda...). */
+    extras?: FiltroExtra[]
+    /** Leyenda de moneda propia (si la automática no describe bien el reporte). */
+    leyenda?: string
 }

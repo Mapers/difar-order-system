@@ -1,7 +1,7 @@
 import apiClient from '@/app/api/client'
 import { cabeceraSesion } from '@/app/api/sesion'
 import {
-    ArchivoSunat, ClaveArchivo, ClaveReporte, FiltroInforme, RespuestaReporte, TipoFiltro,
+    ArchivoSunat, ClaveArchivo, ClaveReporte, FiltroExtra, FiltroInforme, ProveedorBusqueda, RespuestaReporte, TipoFiltro,
 } from '@/app/types/informes-contables-types'
 
 /**
@@ -11,10 +11,19 @@ import {
 const BASE = '/contabilidad/informes'
 
 /** Parámetros que se envían según el filtro del reporte. */
-export function parametrosDe(filtro: TipoFiltro, f: FiltroInforme): Record<string, string> {
-    if (filtro === 'rango') return { fechaDesde: f.fechaDesde, fechaHasta: f.fechaHasta }
-    if (filtro === 'anio') return { anio: f.anio }
-    return { anio: f.anio, mes: f.mes }
+export function parametrosDe(filtro: TipoFiltro, f: FiltroInforme, extras: FiltroExtra[] = []): Record<string, string> {
+    const p: Record<string, string> =
+        filtro === 'rango' ? { fechaDesde: f.fechaDesde, fechaHasta: f.fechaHasta }
+            : filtro === 'anio' ? { anio: f.anio }
+                : filtro === 'ninguno' ? {}
+                    : { anio: f.anio, mes: f.mes }
+    const poner = (k: string, v?: string) => { if (v && v.trim()) p[k] = v.trim() }
+    if (extras.includes('proveedor') || extras.includes('proveedor-obligatorio')) poner('codProveedor', f.codProveedor)
+    if (extras.includes('documento')) poner('documento', f.documento)
+    if (extras.includes('tipo-doc')) poner('tipoDoc', f.tipoDoc)
+    if (extras.includes('buscar')) poner('buscar', f.buscar)
+    if (extras.includes('nivel')) poner('nivel', f.nivel)
+    return p
 }
 
 /** Nombre de archivo de la cabecera Content-Disposition. */
@@ -26,6 +35,12 @@ function nombreDe(cabeceras: Record<string, any>, porDefecto: string): string {
 }
 
 export const InformesContablesService = {
+    /** Buscador de proveedores para los filtros (reporte auxiliar del catálogo). */
+    buscarProveedores: async (texto: string): Promise<ProveedorBusqueda[]> => {
+        const res = await apiClient.get(`${BASE}/reportes/proveedores-buscar`, { params: { buscar: texto }, headers: cabeceraSesion() })
+        return res.data?.data?.filas ?? []
+    },
+
     reporte: async (clave: ClaveReporte, params: Record<string, string>): Promise<RespuestaReporte> => {
         const res = await apiClient.get(`${BASE}/reportes/${clave}`, { params, headers: cabeceraSesion() })
         return res.data?.data
