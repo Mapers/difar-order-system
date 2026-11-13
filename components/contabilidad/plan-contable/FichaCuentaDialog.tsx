@@ -182,10 +182,10 @@ export function FichaCuentaDialog({ abierta, ficha, catalogos, plan, onCerrar, o
             <Dialog open={abierta} onOpenChange={(o) => !o && onCerrar()}>
                 <DialogContent className="max-w-5xl gap-0 overflow-hidden p-0 max-h-[94vh] flex flex-col" closeClassName="text-white opacity-90 hover:opacity-100 z-10">
                     {/* ---------- cabecera */}
-                    <DialogHeader className="relative overflow-hidden bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 px-6 py-5 text-left text-white">
+                    <DialogHeader className="relative shrink-0 overflow-hidden bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 px-4 py-4 text-left text-white sm:px-6 sm:py-5">
                         <div aria-hidden className="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full bg-white/10 blur-2xl animate-pulse" />
                         <div aria-hidden className="pointer-events-none absolute -bottom-24 left-1/3 h-48 w-48 rounded-full bg-indigo-400/20 blur-3xl" />
-                        <div className="relative flex flex-wrap items-start justify-between gap-4 pr-8">
+                        <div className="relative flex flex-wrap items-start justify-between gap-3 pr-8 sm:gap-4">
                             <div className="min-w-0 animate-in fade-in-0 slide-in-from-left-4 duration-500">
                                 <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-blue-100">
                                     {f.id ? <BookOpen className="h-3.5 w-3.5" /> : <Sparkles className="h-3.5 w-3.5" />}
@@ -193,7 +193,7 @@ export function FichaCuentaDialog({ abierta, ficha, catalogos, plan, onCerrar, o
                                 </p>
                                 <DialogTitle className="mt-1 flex flex-wrap items-baseline gap-x-3 gap-y-1 text-2xl font-bold">
                                     <span className="font-mono tracking-wider">{f.codigo || '·······'}</span>
-                                    <span className="text-base font-medium text-blue-50/90 truncate max-w-[480px]">{f.descripcion || 'Sin descripción'}</span>
+                                    <span className="max-w-full truncate text-base font-medium text-blue-50/90 sm:max-w-[480px]">{f.descripcion || 'Sin descripción'}</span>
                                 </DialogTitle>
                                 <DialogDescription className="mt-2 flex flex-wrap gap-1.5">
                                     {tipoNombre && <span className="rounded-full bg-white/15 px-2.5 py-0.5 text-[11px] font-medium text-white ring-1 ring-white/20 backdrop-blur">{tipoNombre}</span>}
@@ -202,15 +202,15 @@ export function FichaCuentaDialog({ abierta, ficha, catalogos, plan, onCerrar, o
                                 </DialogDescription>
                             </div>
                             {/* indicador de nivel */}
-                            <div className="flex items-end gap-1.5 animate-in fade-in-0 slide-in-from-right-4 duration-500">
+                            <div className="flex items-end gap-1 animate-in fade-in-0 slide-in-from-right-4 duration-500 sm:gap-1.5">
                                 {NIVELES.map((x, i) => {
                                     const activo = nivel === x.n
                                     const pasado = nivel > x.n
                                     return (
                                         <div key={x.n} className="flex flex-col items-center gap-1" title={`Nivel ${x.n}: ${x.t}`}>
                                             <span className={cn('flex items-center justify-center rounded-lg font-mono text-xs font-bold transition-all duration-500',
-                                                activo ? 'h-10 w-10 bg-white text-blue-700 shadow-lg shadow-blue-900/40 scale-110'
-                                                    : pasado ? 'h-8 w-8 bg-white/35 text-white' : 'h-8 w-8 bg-white/10 text-blue-100 ring-1 ring-white/20')}
+                                                activo ? 'h-8 w-8 bg-white text-blue-700 shadow-lg shadow-blue-900/40 scale-110 sm:h-10 sm:w-10'
+                                                    : pasado ? 'h-7 w-7 bg-white/35 text-white sm:h-8 sm:w-8' : 'h-7 w-7 bg-white/10 text-blue-100 ring-1 ring-white/20 sm:h-8 sm:w-8')}
                                                   style={{ transitionDelay: `${i * 60}ms` }}>{x.n}</span>
                                             <span className={cn('text-[9px] uppercase tracking-wide', activo ? 'text-white font-semibold' : 'text-blue-200/80')}>{x.t}</span>
                                         </div>
@@ -221,7 +221,7 @@ export function FichaCuentaDialog({ abierta, ficha, catalogos, plan, onCerrar, o
                     </DialogHeader>
 
                     {/* ---------- cuerpo */}
-                    <div className="flex-1 overflow-y-auto bg-muted/30 px-5 py-5">
+                    <div className="min-h-0 flex-1 overflow-y-auto bg-muted/30 px-3 py-4 sm:px-5 sm:py-5">
                         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
                             <Seccion icono={<Hash className="h-4 w-4" />} titulo="Identificación" ayuda="Código y nombre con que la cuenta aparece en los libros." retraso={60}>
                                 <div className="grid grid-cols-6 gap-3">
@@ -279,17 +279,17 @@ export function FichaCuentaDialog({ abierta, ficha, catalogos, plan, onCerrar, o
                     </div>
 
                     {/* ---------- pie */}
-                    <div className="flex flex-col-reverse gap-2 border-t border-border bg-background px-5 py-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex shrink-0 flex-col-reverse gap-2 border-t border-border bg-background px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
                         <div>{f.id && (
-                            <Button variant="ghost" className="text-red-600 hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-950/40 transition-colors" disabled={guardando} onClick={() => setPreguntaEliminar(true)}>
+                            <Button variant="ghost" className="w-full text-red-600 sm:w-auto hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-950/40 transition-colors" disabled={guardando} onClick={() => setPreguntaEliminar(true)}>
                                 <Trash2 className="mr-2 h-4 w-4" /> Eliminar registro
                             </Button>
                         )}</div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex w-full items-center gap-2 sm:w-auto">
                             {!completo && <span className="hidden md:inline text-xs text-muted-foreground animate-in fade-in-0">Completa los campos con <span className="text-red-500">*</span></span>}
-                            <Button variant="outline" onClick={onCerrar}>Cerrar</Button>
+                            <Button variant="outline" className="flex-1 sm:flex-none" onClick={onCerrar}>Cerrar</Button>
                             <Button disabled={guardando}
-                                    className="relative overflow-hidden bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-600/25 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-blue-600/40 active:translate-y-0"
+                                    className="relative flex-[2] overflow-hidden bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md sm:flex-none shadow-blue-600/25 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-blue-600/40 active:translate-y-0"
                                     onClick={() => guardar()}>
                                 {guardando ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                                 {f.id ? 'Modificar' : 'Guardar y nuevo'}
