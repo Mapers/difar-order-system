@@ -16,6 +16,8 @@ import {
 } from "@/app/types/contabilidad-types"
 
 export interface CabeceraEdicion {
+    // '1' si la compra ya se concilió con el SIRE. No se muestra; se conserva al editar (auditoría C3).
+    revisadoSIRE:          string
     codProv:               string
     proveedorNombre:       string
     tipoDoc:               string
@@ -84,6 +86,7 @@ const cabVacia = (): CabeceraEdicion => ({
     fechaCancelacion: '', tipoPago: '', centroCostos: '', obsCancelacion: '',
     observaciones: '', entregadoPor: '', responsable: '', idClasificacionBienes: '',
     fecIngreso: '', serieOC: '', nrOC: '',
+    revisadoSIRE: '0',
 })
 
 const num = (v: string) => {
@@ -110,6 +113,13 @@ const desdeBD = (d: ComprasDetalleFila): FilaCompra => ({
     idGalpon:        d.idGalpon != null ? String(d.idGalpon) : '',
     eliminar:        Number(d.EliminaRC) === 1,
 })
+
+// La marca BIT puede llegar como 1, true, '1' o un Buffer serializado ({ data: [1] }).
+const esMarcaUno = (v: unknown): boolean => {
+    if (v === 1 || v === true || v === '1') return true
+    const datos = (v as { data?: unknown })?.data
+    return Array.isArray(datos) && datos[0] === 1
+}
 
 const cabDesdeBD = (c: ComprasCabecera): CabeceraEdicion => ({
     codProv:               c.Cod_Prov ?? '',
@@ -146,6 +156,7 @@ const cabDesdeBD = (c: ComprasCabecera): CabeceraEdicion => ({
     fecIngreso:            c.fecIngreso ? String(c.fecIngreso).slice(0, 10) : '',
     serieOC:               c.serieOC ?? '',
     nrOC:                  c.nrOC ?? '',
+    revisadoSIRE:          esMarcaUno(c.revisadoSIRE) ? '1' : '0',
 })
 
 const aCabPayload = (c: CabeceraEdicion): ComprasCabeceraPayload => ({
@@ -181,7 +192,8 @@ const aCabPayload = (c: CabeceraEdicion): ComprasCabeceraPayload => ({
     fecIngreso:            txt(c.fecIngreso),
     serieOC:               txt(c.serieOC),
     nrOC:                  txt(c.nrOC),
-    revisadoSIRE:          false,
+    // Antes iba siempre false y una compra ya conciliada perdía la marca al editarla (auditoría C3).
+    revisadoSIRE:          c.revisadoSIRE === '1',
 })
 
 const aFilaPayload = (f: FilaCompra): ComprasDetallePayload => ({
