@@ -394,7 +394,7 @@ export default function SeccionVendedor({
     }
 
     const [selectedClient,  setSelectedClient]  = useState<IClient | null>(null)
-    const { user, isAdmin } = useAuth()
+    const { user } = useAuth()
 
     // Modo administración: el buscador lista los clientes del vendedor elegido.
     const [clientesVendedor, setClientesVendedor] = useState<ClienteBusqueda[] | undefined>(undefined)
@@ -1336,7 +1336,7 @@ export default function SeccionVendedor({
                 open={docModalOpen}
                 onOpenChange={setDocModalOpen}
                 codCliente={formReg.codigo_cliente}
-                codVendedor={modoAdmin ? codigoVendedor || undefined : (isAdmin() ? undefined : user?.codigo)}
+                // Sin filtrar por vendedor: se cobra lo que debe el cliente, aunque lo haya vendido otro código.
                 soloVigentes={false}
                 consolidar
                 onSelect={handleDocumentoSelect}
