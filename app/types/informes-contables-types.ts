@@ -1,4 +1,7 @@
-/** Informes Contables: Registros de Ventas/Compras, PLE y SIRE (/api/contabilidad/informes). */
+/**
+ * Informes Contables: Registros de Ventas/Compras, PLE y SIRE, Libro Diario, Libro Mayor,
+ * Estados Financieros y Cuentas Contables (/api/contabilidad/informes).
+ */
 
 export type ClaveReporte =
     | 'ventas-soles' | 'ventas-dolares' | 'ventas-resumido-bv' | 'ventas-correlativos'
@@ -8,23 +11,35 @@ export type ClaveReporte =
     | 'sire-ventas-anexo03' | 'sire-compras-anexo11' | 'sire-compras-anexo12' | 'sire-compras-anexo8'
     | 'proveedores-cta-cte' | 'proveedores-programa-pagos' | 'proveedores-detalle-anio'
     | 'plan-cuentas'
+    | 'ple-diario-051' | 'ple-plan-053' | 'ple-mayor-061'
+    | 'diario-general' | 'diario-mes' | 'diario-revision-asientos' | 'diario-simplificado'
+    | 'mayor-anio' | 'mayor-mes' | 'mayor-resumen-anio' | 'mayor-resumen-principales' | 'mayor-revisa'
+    | 'eeff-balance-general' | 'eeff-resultado-mes' | 'eeff-resultado-anual' | 'eeff-resultado-acumulado'
+    | 'eeff-comprobacion' | 'eeff-comprobacion-sunat' | 'eeff-comprobacion-mes' | 'eeff-flujo-efectivo' | 'eeff-cambio-patrimonio'
+    | 'cuentas-saldos' | 'cuentas-sumas-mayor'
 
-export type ClaveArchivo = 'ple-141' | 'ple-081' | 'ple-082' | 'sire-03' | 'sire-11' | 'sire-12' | 'sire-8'
+export type ClaveArchivo = 'ple-141' | 'ple-081' | 'ple-082' | 'ple-051' | 'ple-053' | 'ple-061'
+    | 'sire-03' | 'sire-11' | 'sire-12' | 'sire-8'
 
-/** Filtro que pide un reporte: un mes, un año completo o un rango de fechas. */
-export type TipoFiltro = 'mes' | 'anio' | 'rango' | 'ninguno'
+/** Filtro que pide un reporte: un mes, un año completo, un rango de fechas o una fecha de corte. */
+export type TipoFiltro = 'mes' | 'anio' | 'rango' | 'fecha' | 'ninguno'
 
 /**
  * Filtros adicionales de un reporte (además del periodo):
  *   proveedor / proveedor-obligatorio · documento (TT-SERIE-NUMERO) · tipo-doc (programa de pagos) · buscar · nivel (plan de cuentas)
+ *   cuenta (prefijo de cuenta del Libro Mayor, opcional)
  */
-export type FiltroExtra = 'proveedor' | 'proveedor-obligatorio' | 'documento' | 'tipo-doc' | 'buscar' | 'nivel'
+export type FiltroExtra = 'proveedor' | 'proveedor-obligatorio' | 'documento' | 'tipo-doc' | 'buscar' | 'nivel' | 'cuenta'
 
 export interface FiltroInforme {
     anio: string
     mes: string
     fechaDesde: string
     fechaHasta: string
+    /** Fecha de corte (Saldos de cuentas). */
+    fechaCorte?: string
+    /** Prefijo de cuenta (Libro Mayor): '10', '1010101'... */
+    cuenta?: string
     codProveedor?: string
     /** Solo para mostrar ("RUC Nombre"); no se envía. */
     nomProveedor?: string
@@ -97,4 +112,50 @@ export interface DefinicionReporte {
     extras?: FiltroExtra[]
     /** Leyenda de moneda propia (si la automática no describe bien el reporte). */
     leyenda?: string
+    /** Cortes del reporte, como los encabezados de grupo de Access (del más general al más fino). */
+    grupos?: GrupoInforme[]
+    /** Filas del pie después del TOTAL ("Vienen Mes Anterior", "Total Acumulado", diferencias...). */
+    pie?: (filas: FilaInforme[], ctx: ContextoInforme) => FilaPie[]
+    /** Sin fila TOTAL (estados financieros: sumar todas las filas no tiene sentido; el pie lleva los totales). */
+    sinTotal?: boolean
+    /** Indicadores propios (después de "Registros"); si no, los 3 últimos importes con total. */
+    kpis?: (filas: FilaInforme[]) => { t: string; v: string }[]
+    /** Cambia la forma de las filas antes de mostrarlas (Diario Simplificado: una fila por celda -> tabla pivote). */
+    transformar?: (filas: FilaInforme[]) => { filas: FilaInforme[]; columnas: ColumnaInforme[] }
+    /** Máximo de filas en pantalla (por defecto 500; el Excel lleva todas). */
+    limite?: number
 }
+
+/** Periodo con que se hizo la consulta (para los textos del pie). */
+export interface ContextoInforme {
+    anio: string
+    mes: string
+    fechaCorte?: string
+}
+
+/** Valores por campo de una fila de subtotal o de pie (solo las columnas que llevan importe). */
+export type ValoresFila = Record<string, number | null>
+
+export interface GrupoInforme {
+    /** Filas CONSECUTIVAS con la misma clave forman el grupo (el SP ya viene ordenado). */
+    clave: (fila: FilaInforme) => string
+    /** Texto del encabezado del grupo (se calcula con la primera fila). */
+    titulo: (fila: FilaInforme) => string
+    /** Encabezado con la suma de las columnas con total (como "Saldo de Cuentas Contables" de Access). */
+    sumasEnEncabezado?: boolean
+    /** Fila de subtotal al cerrar el grupo: true = "Total <titulo>" con las sumas; función = texto y valores propios. */
+    subtotal?: boolean | ((filas: FilaInforme[]) => { texto: string; valores: ValoresFila })
+}
+
+export interface FilaPie {
+    texto: string
+    valores: ValoresFila
+    /** Se pinta como total final (color principal). */
+    destacada?: boolean
+}
+
+/** Renglón de la tabla: una fila del SP, el encabezado de un grupo o su subtotal. */
+export type Renglon =
+    | { tipo: 'fila'; fila: FilaInforme; indice: number }
+    | { tipo: 'grupo'; nivel: number; texto: string; valores?: ValoresFila }
+    | { tipo: 'subtotal'; nivel: number; texto: string; valores: ValoresFila }

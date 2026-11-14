@@ -13,6 +13,7 @@ import { ExportarExcelInforme } from './ExportarExcelInforme'
 import { ExportarPdfInforme } from './ExportarPdfInforme'
 import { useInforme } from './useInforme'
 import { FiltrosExtra } from './FiltrosExtra'
+import { AvisoInforme } from './AvisoInforme'
 import { fmtFecha, MESES, simboloDe, textoTotal } from './formato'
 import { DefinicionReporte } from '@/app/types/informes-contables-types'
 
@@ -44,6 +45,7 @@ function textoPeriodo(def: DefinicionReporte, f: FiltroInforme) {
     const ex = def.extras ?? []
     const partes: string[] = []
     if (def.filtro === 'rango') partes.push(`Del ${fmtFecha(f.fechaDesde)} al ${fmtFecha(f.fechaHasta)}`)
+    else if (def.filtro === 'fecha') partes.push(`Al ${fmtFecha(f.fechaCorte)}`)
     else if (def.filtro === 'anio') partes.push(`Año ${f.anio}`)
     else if (def.filtro === 'mes') partes.push(`${MESES[Number(f.mes) - 1]} ${f.anio}`)
     if ((ex.includes('proveedor') || ex.includes('proveedor-obligatorio')))
@@ -52,40 +54,65 @@ function textoPeriodo(def: DefinicionReporte, f: FiltroInforme) {
     if (ex.includes('tipo-doc')) partes.push(({ '01': 'Solo facturas', '80': 'Solo letras' } as Record<string, string>)[f.tipoDoc || ''] ?? 'Todos los documentos')
     if (ex.includes('buscar') && f.buscar) partes.push(`Búsqueda "${f.buscar}"`)
     if (ex.includes('nivel') && f.nivel) partes.push(`Nivel ${f.nivel}`)
+    if (ex.includes('cuenta')) partes.push(f.cuenta ? `Cuenta ${f.cuenta}` : 'Todas las cuentas')
     return partes.join(' · ') || 'Todo'
 }
 
 /**
- * Página con pestañas de informes (Registro de Ventas / Registro de Compras).
+ * Página con pestañas de informes (Registros, Proveedores, Plan contable, Diario, Mayor, Estados financieros...).
  * Todo sale de las definiciones: la página solo recibe la lista de pestañas.
  */
 export function PaginaInformes({ titulo, descripcion, pestanas, aviso, onFila, recargar }: Props) {
     const [activa, setActiva] = useState<ClaveReporte>(pestanas[0])
     const [filtro, setFiltro] = useState<FiltroInforme>(filtroInicial())
-    const { filas, cargando, consulta, cargar, limpiar } = useInforme()
+    const { filas, cargando, consulta, cargar, limpiar, aviso: avisoCarga, setAviso } = useInforme()
     // validación del filtro (no es un error): marca el campo que falta y abre su lista
     const [pedirProveedor, setPedirProveedor] = useState(0)
 
     const def = DEFINICIONES[activa]
-    const actuales = consulta?.clave === activa ? filas : null
+    const base = consulta?.clave === activa ? filas : null
+    // forma final de las filas y columnas (el Diario Simplificado se pivotea en el front)
+    const vista = useMemo(() => {
+        if (!base) return null
+        return def.transformar ? def.transformar(base) : { filas: base, columnas: def.columnas }
+    }, [base, def])
+    const actuales = vista?.filas ?? null
+    const columnas = vista?.columnas ?? def.columnas
+    const pie = useMemo(() => {
+        if (!actuales || !def.pie || !consulta || actuales.length === 0) return []
+        const f = consulta.filtro
+        return def.pie(actuales, { anio: f.anio, mes: f.mes, fechaCorte: f.fechaCorte })
+    }, [actuales, def, consulta])
+
     const kpis = useMemo(() => {
         if (!actuales) return []
-        const montos = def.columnas.filter(c => c.total && c.tipo === 'monto').slice(-3)
-        return [{ t: 'Registros', v: actuales.length.toLocaleString('en-US') },
-            ...montos.map(c => ({ t: c.titulo, v: textoTotal(c, actuales, def.moneda) }))]
-    }, [actuales, def])
+        const registros = { t: 'Registros', v: actuales.length.toLocaleString('en-US') }
+        if (def.kpis) return [registros, ...(actuales.length ? def.kpis(actuales) : [])]
+        const montos = columnas.filter(c => c.total && c.tipo === 'monto').slice(-3)
+        return [registros, ...montos.map(c => ({ t: c.titulo, v: textoTotal(c, actuales, def.moneda) }))]
+    }, [actuales, def, columnas])
 
     const cambiarPestana = (v: string) => { setActiva(v as ClaveReporte); limpiar(); setPedirProveedor(0) }
     const periodo = textoPeriodo(def, filtro)
     const extras = def.extras ?? []
     const sufijo = def.filtro === 'rango' ? `${filtro.fechaDesde}_${filtro.fechaHasta}`
-        : def.filtro === 'ninguno' ? new Date().toISOString().slice(0, 10)
-            : filtro.anio + (def.filtro === 'mes' ? filtro.mes : '')
-    const nombreArchivo = [activa, sufijo, extras.some(e => e.startsWith('proveedor')) ? filtro.codProveedor : ''].filter(Boolean).join('_')
+        : def.filtro === 'fecha' ? (filtro.fechaCorte ?? '')
+            : def.filtro === 'ninguno' ? new Date().toISOString().slice(0, 10)
+                : filtro.anio + (def.filtro === 'mes' ? filtro.mes : '')
+    const nombreArchivo = [activa, sufijo, extras.some(e => e.startsWith('proveedor')) ? filtro.codProveedor : '', extras.includes('cuenta') ? filtro.cuenta : '']
+        .filter(Boolean).join('_')
 
     const consultar = () => {
         if (extras.includes('proveedor-obligatorio') && !filtro.codProveedor) {
             setPedirProveedor(n => n + 1)
+            return
+        }
+        if (def.filtro === 'fecha' && !filtro.fechaCorte) {
+            setAviso('Elige la fecha de corte para ver los saldos.')
+            return
+        }
+        if (extras.includes('cuenta') && filtro.cuenta && !/^\d{1,12}$/.test(filtro.cuenta)) {
+            setAviso('La cuenta solo lleva números (por ejemplo 10 o 1010101). Déjala vacía para ver todas.')
             return
         }
         cargar(activa, def.filtro, filtro, extras)
@@ -96,6 +123,8 @@ export function PaginaInformes({ titulo, descripcion, pestanas, aviso, onFila, r
         if (recargar && consulta) cargar(consulta.clave, DEFINICIONES[consulta.clave].filtro, consulta.filtro, DEFINICIONES[consulta.clave].extras ?? [])
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [recargar])
+
+    const exportar = { nombreArchivo, columnas, filas: actuales, moneda: def.moneda, grupos: def.grupos, pie, sinTotal: def.sinTotal }
 
     return (
         <div className="grid grid-cols-1 gap-6 p-0 md:p-2">
@@ -124,23 +153,23 @@ export function PaginaInformes({ titulo, descripcion, pestanas, aviso, onFila, r
                         <span>{def.descripcion} <span className="text-xs">(Access: {def.access})</span></span>
                     </div>
                     <FiltrosPeriodo
-                        tipo={def.filtro} filtro={filtro} onChange={setFiltro} cargando={cargando}
+                        tipo={def.filtro} filtro={filtro} onChange={f => { setFiltro(f); setAviso(null) }} cargando={cargando}
                         onBuscar={consultar}
                         extras={extras.length ? <FiltrosExtra extras={extras} filtro={filtro} onChange={setFiltro} onEnter={consultar} pedirProveedor={pedirProveedor} /> : undefined}
                         acciones={<>
-                            <ExportarPdfInforme titulo={`${titulo} - ${def.titulo}`} subtitulo={[periodo, leyendaMoneda(def)].filter(Boolean).join(' · ')}
-                                                nombreArchivo={nombreArchivo} columnas={def.columnas} filas={actuales} moneda={def.moneda} />
-                            <ExportarExcelInforme titulo={`${titulo} - ${def.titulo}`} subtitulo={periodo}
-                                                  nombreArchivo={nombreArchivo} columnas={def.columnas} filas={actuales} moneda={def.moneda} />
+                            <ExportarPdfInforme titulo={`${titulo} - ${def.titulo}`} subtitulo={[periodo, leyendaMoneda(def)].filter(Boolean).join(' · ')} {...exportar} />
+                            <ExportarExcelInforme titulo={`${titulo} - ${def.titulo}`} subtitulo={periodo} {...exportar} />
                         </>}
                     />
+                    <AvisoInforme texto={avisoCarga} onCerrar={() => setAviso(null)} />
                 </CardHeader>
 
                 <CardContent className="p-0">
                     {!actuales && !cargando && (
                         <div className="flex flex-col items-center gap-2 py-14 text-muted-foreground">
                             <FileSearch className="h-10 w-10 opacity-40" />
-                            <p className="text-sm">{def.filtro === 'ninguno' ? 'Escribe una cuenta o deja vacío para ver todo, y' : 'Elige el periodo y'} pulsa <b>Consultar</b>.</p>
+                            <p className="text-sm">{def.filtro === 'ninguno' ? 'Escribe una cuenta o deja vacío para ver todo, y'
+                                : def.filtro === 'fecha' ? 'Elige la fecha de corte y' : 'Elige el periodo y'} pulsa <b>Consultar</b>.</p>
                         </div>
                     )}
                     {actuales && (
@@ -159,7 +188,8 @@ export function PaginaInformes({ titulo, descripcion, pestanas, aviso, onFila, r
                                     <p className="px-4 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground bg-muted/40 border-b">
                                         {[leyendaMoneda(def), periodo].filter(Boolean).join(' · ')}
                                     </p>
-                                    <TablaInforme columnas={def.columnas} filas={actuales} moneda={def.moneda} onFila={onFila} />
+                                    <TablaInforme columnas={columnas} filas={actuales} moneda={def.moneda} onFila={onFila}
+                                                  grupos={def.grupos} pie={pie} sinTotal={def.sinTotal} limite={def.limite} />
                                 </div>}
                         </>
                     )}

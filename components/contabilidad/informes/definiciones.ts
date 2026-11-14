@@ -1,5 +1,8 @@
 import { ClaveArchivo, ClaveReporte, ColumnaInforme, DefinicionReporte, FilaInforme } from '@/app/types/informes-contables-types'
 import { fmtFecha } from './formato'
+import { DEFINICIONES_LIBROS, PESTANAS_CUENTAS, PESTANAS_DIARIO, PESTANAS_EEFF, PESTANAS_MAYOR } from './definicionesLibros'
+
+export { PESTANAS_CUENTAS, PESTANAS_DIARIO, PESTANAS_EEFF, PESTANAS_MAYOR }
 
 /**
  * Registro de reportes del front (patrón Registry): columnas, filtro y textos de cada pestaña.
@@ -192,6 +195,9 @@ export const DEFINICIONES: Record<ClaveReporte, DefinicionReporte> = {
             siRegistros('CtaRegistroCompras', 'Reg. compras'), siRegistros('CtaRegistroVentas', 'Reg. ventas'),
             c('CuentaSunat', 'Cta. SUNAT', 'mono')],
     },
+
+    // ---------------- Libro Diario, Libro Mayor, Estados Financieros, Cuentas Contables y PLE 5.1/5.3/6.1
+    ...DEFINICIONES_LIBROS,
 }
 
 /** Pestañas de cada página (en el orden del menú de Access). */
@@ -213,6 +219,9 @@ export const ARCHIVOS_PLE: DefinicionArchivo[] = [
     { clave: 'ple-141', titulo: '14.1 Registro de Ventas', descripcion: 'Ventas e ingresos del mes', reporte: 'ple-ventas-141' },
     { clave: 'ple-081', titulo: '8.1 Registro de Compras', descripcion: 'Compras de domiciliados del mes', reporte: 'ple-compras-081' },
     { clave: 'ple-082', titulo: '8.2 No Domiciliados', descripcion: 'Sin operaciones: se genera vacío (indicador 0)', reporte: null },
+    { clave: 'ple-051', titulo: '5.1 Libro Diario', descripcion: 'Una línea por movimiento del mayor del mes', reporte: 'ple-diario-051' },
+    { clave: 'ple-053', titulo: '5.3 Detalle del Plan Contable', descripcion: 'Enero: todo el plan; otros meses: cuentas nuevas', reporte: 'ple-plan-053' },
+    { clave: 'ple-061', titulo: '6.1 Libro Mayor', descripcion: 'Movimientos del mes por cuenta', reporte: 'ple-mayor-061' },
 ]
 
 export const ARCHIVOS_SIRE: DefinicionArchivo[] = [

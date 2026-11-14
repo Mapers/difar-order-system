@@ -5,8 +5,8 @@ import ExcelJS from 'exceljs'
 import { FileSpreadsheet, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { toast } from '@/app/hooks/useToast'
-import { ColumnaInforme, FilaInforme } from '@/app/types/informes-contables-types'
-import { esNumerica, formatear, simboloCelda, simboloTotal, totales, valorDe } from './formato'
+import { ColumnaInforme, FilaInforme, FilaPie, GrupoInforme, ValoresFila } from '@/app/types/informes-contables-types'
+import { armarRenglones, celdasEtiqueta, esNumerica, formatear, simboloCelda, simboloDe, simboloTotal, totales, valorDe } from './formato'
 
 interface Props {
     titulo: string
@@ -15,10 +15,14 @@ interface Props {
     columnas: ColumnaInforme[]
     filas: FilaInforme[] | null
     moneda?: string
+    /** Cortes de grupo y filas del pie (los mismos de la tabla en pantalla). */
+    grupos?: GrupoInforme[]
+    pie?: FilaPie[]
+    sinTotal?: boolean
 }
 
-/** Excel genérico de cualquier informe: cabecera, una fila por registro y fila de totales. */
-export function ExportarExcelInforme({ titulo, subtitulo, nombreArchivo, columnas, filas, moneda }: Props) {
+/** Excel genérico de cualquier informe: cabecera, una fila por registro (con sus grupos), totales y pie. */
+export function ExportarExcelInforme({ titulo, subtitulo, nombreArchivo, columnas, filas, moneda, grupos, pie = [], sinTotal }: Props) {
     const [cargando, setCargando] = useState(false)
 
     const exportar = async () => {
@@ -36,14 +40,31 @@ export function ExportarExcelInforme({ titulo, subtitulo, nombreArchivo, columna
             const cab = ws.addRow(columnas.map(c => c.titulo))
             cab.font = { bold: true, color: { argb: 'FFFFFFFF' } }
             cab.eachCell(c => { c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1A66CC' } } })
-            for (const f of filas) {
+
+            /** Fila de grupo, subtotal o pie: el texto en la primera celda y cada importe en su columna. */
+            const filaEtiqueta = (texto: string, valores: ValoresFila | undefined, color?: string) => {
+                const { span } = celdasEtiqueta(columnas, valores)
+                const r = ws.addRow(columnas.map((c, i) => (i === 0 ? texto : i < span ? null : (valores?.[c.campo] ?? null))))
+                r.font = { bold: true }
+                if (color) r.eachCell({ includeEmpty: true }, cel => { cel.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: color } } })
+                columnas.forEach((c, i) => { const s = simboloDe(c, moneda); if (s && i >= span) r.getCell(i + 1).numFmt = `"${s}" #,##0.00` })
+            }
+
+            for (const reng of armarRenglones(columnas, filas, grupos)) {
+                if (reng.tipo === 'grupo') { filaEtiqueta(reng.texto, reng.valores, 'FFE8F0FB'); continue }
+                if (reng.tipo === 'subtotal') { filaEtiqueta(reng.texto, reng.valores, 'FFF1F1F1'); continue }
+                const f = reng.fila
                 const r = ws.addRow(columnas.map(c => esNumerica(c.tipo) ? Number(valorDe(c, f)) || 0 : formatear(c.tipo, valorDe(c, f))))
                 columnas.forEach((c, i) => { const s = simboloCelda(c, f, moneda); if (s) r.getCell(i + 1).numFmt = `"${s}" #,##0.00` })
             }
-            const t = totales(columnas, filas)
-            const rt = ws.addRow(columnas.map((c, i) => i === 0 ? 'TOTAL' : c.total ? t[c.campo] : null))
-            rt.font = { bold: true }
-            columnas.forEach((c, i) => { const s = simboloTotal(c, filas, moneda); if (s) rt.getCell(i + 1).numFmt = `"${s}" #,##0.00` })
+            if (!sinTotal && columnas.some(c => c.total)) {
+                const t = totales(columnas, filas)
+                const rt = ws.addRow(columnas.map((c, i) => i === 0 ? 'TOTAL' : c.total ? t[c.campo] : null))
+                rt.font = { bold: true }
+                columnas.forEach((c, i) => { const s = simboloTotal(c, filas, moneda); if (s) rt.getCell(i + 1).numFmt = `"${s}" #,##0.00` })
+            }
+            for (const p of pie) filaEtiqueta(p.texto, p.valores)
+
             columnas.forEach((c, i) => {
                 const col = ws.getColumn(i + 1)
                 col.width = c.movil === 'subtitulo' ? 42 : esNumerica(c.tipo) ? 14 : 12

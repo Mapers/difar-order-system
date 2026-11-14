@@ -14,6 +14,7 @@ const BASE = '/contabilidad/informes'
 export function parametrosDe(filtro: TipoFiltro, f: FiltroInforme, extras: FiltroExtra[] = []): Record<string, string> {
     const p: Record<string, string> =
         filtro === 'rango' ? { fechaDesde: f.fechaDesde, fechaHasta: f.fechaHasta }
+            : filtro === 'fecha' ? { fechaCorte: f.fechaCorte ?? '' }
             : filtro === 'anio' ? { anio: f.anio }
                 : filtro === 'ninguno' ? {}
                     : { anio: f.anio, mes: f.mes }
@@ -23,6 +24,7 @@ export function parametrosDe(filtro: TipoFiltro, f: FiltroInforme, extras: Filtr
     if (extras.includes('tipo-doc')) poner('tipoDoc', f.tipoDoc)
     if (extras.includes('buscar')) poner('buscar', f.buscar)
     if (extras.includes('nivel')) poner('nivel', f.nivel)
+    if (extras.includes('cuenta')) poner('cuenta', f.cuenta)
     return p
 }
 

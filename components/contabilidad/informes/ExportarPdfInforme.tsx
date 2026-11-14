@@ -8,8 +8,8 @@ import { toast } from '@/app/hooks/useToast'
 import { cargarLogoPdf, dibujarCabeceraPdf, sanitizarPdf, truncarPdf } from '@/components/reporte/pdfCabecera'
 import { aclarar, crearPdfReporte, hexARgb, OpcionesPdfReporte } from '@/components/reporte/pdfOpciones'
 import { PdfVistaPreviaDialog } from '@/components/reporte/PdfVistaPreviaDialog'
-import { ColumnaInforme, FilaInforme, TipoColumna } from '@/app/types/informes-contables-types'
-import { esNumerica, formatearCelda, textoTotal, totales, valorDe } from './formato'
+import { ColumnaInforme, FilaInforme, FilaPie, GrupoInforme, TipoColumna, ValoresFila } from '@/app/types/informes-contables-types'
+import { armarRenglones, celdasEtiqueta, esNumerica, formatearCelda, textoTotal, textoValor, totales, valorDe } from './formato'
 
 interface Props {
     /** Título por defecto del PDF (editable en la vista previa). */
@@ -20,6 +20,10 @@ interface Props {
     columnas: ColumnaInforme[]
     filas: FilaInforme[] | null
     moneda?: string
+    /** Cortes de grupo y filas del pie (los mismos de la tabla en pantalla). */
+    grupos?: GrupoInforme[]
+    pie?: FilaPie[]
+    sinTotal?: boolean
 }
 
 /** Peso de ancho de cada tipo de columna; se reparte el ancho de la página en esa proporción. */
@@ -33,7 +37,7 @@ const PESO: Record<TipoColumna, number> = {
  * encabezado de tabla gris, filas con separador, negativos en rojo y franja de totales con el color principal).
  * Las columnas son las mismas del informe en pantalla y del Excel.
  */
-export function ExportarPdfInforme({ titulo, subtitulo, nombreArchivo, columnas, filas, moneda }: Props) {
+export function ExportarPdfInforme({ titulo, subtitulo, nombreArchivo, columnas, filas, moneda, grupos, pie = [], sinTotal }: Props) {
     const [abierto, setAbierto] = useState(false)
     const muchas = columnas.length > 7
     const DEFECTO: OpcionesPdfReporte = {
@@ -106,8 +110,28 @@ export function ExportarPdfInforme({ titulo, subtitulo, nombreArchivo, columnas,
         cabecera()
         encabezadoTabla()
 
+        /** Fila de grupo, subtotal o pie: texto sobre las columnas sin valor y cada importe en su columna. */
+        const filaEtiqueta = (texto: string, valores: ValoresFila | undefined, fondo?: ReturnType<typeof rgb>, color = rgb(0, 0, 0)) => {
+            salto(13)
+            if (fondo) page.drawRectangle({ x: M, y: y - 4, width: ancho, height: 12, color: fondo })
+            const { span } = celdasEtiqueta(columnas, valores)
+            const anchoTexto = cols.slice(0, span).reduce((a, b) => a + b, 0)
+            page.drawText(truncarPdf(texto, anchoTexto - 5, size, bold), { x: M + 3, y, size, font: bold, color })
+            let x = M + anchoTexto
+            columnas.slice(span).forEach((c, k) => {
+                const i = span + k
+                const txt = truncarPdf(textoValor(c, valores, moneda), cols[i] - 5, size, bold)
+                if (txt) page.drawText(txt, { x: x + cols[i] - bold.widthOfTextAtSize(txt, size) - 3, y, size, font: bold, color })
+                x += cols[i]
+            })
+            y -= 12
+        }
+
         const importe = columnas.find(c => c.movil === 'importe')
-        for (const f of datos) {
+        for (const reng of armarRenglones(columnas, datos, grupos)) {
+            if (reng.tipo === 'grupo') { filaEtiqueta(reng.texto, reng.valores, rgb(0.91, 0.94, 0.98)); continue }
+            if (reng.tipo === 'subtotal') { filaEtiqueta(reng.texto, reng.valores, rgb(0.95, 0.95, 0.95)); continue }
+            const f = reng.fila
             salto(13)
             const negativo = importe ? Number(valorDe(importe, f)) < 0 : false
             const alerta = columnas.some(c => c.alerta?.(f))
@@ -118,21 +142,26 @@ export function ExportarPdfInforme({ titulo, subtitulo, nombreArchivo, columnas,
         }
 
         // franja de totales con el color principal (igual que "TOTAL GENERAL" de los otros reportes)
-        salto(30)
-        y -= 4
-        page.drawRectangle({ x: M, y: y - 8, width: ancho, height: 18, color: aclarar(principal, 0.85), borderColor: principal, borderWidth: 0.8 })
-        let x = M + 3
-        columnas.forEach((c, i) => {
-            let txt = ''
-            if (i === 0) txt = `TOTAL (${datos.length})`
-            else if (c.total) txt = c.tipo === 'monto' ? textoTotal(c, datos, moneda) : t[c.campo].toLocaleString('en-US')
-            if (txt) {
-                const s = truncarPdf(txt, (i === 0 ? cols[0] + cols[1] : cols[i]) - 4, size + 0.4, bold)
-                const tx = i === 0 ? x : x + cols[i] - bold.widthOfTextAtSize(s, size + 0.4) - 3
-                page.drawText(s, { x: tx, y: y - 2, size: size + 0.4, font: bold, color: principal })
-            }
-            x += cols[i]
-        })
+        if (!sinTotal && columnas.some(c => c.total)) {
+            salto(30)
+            y -= 4
+            page.drawRectangle({ x: M, y: y - 8, width: ancho, height: 18, color: aclarar(principal, 0.85), borderColor: principal, borderWidth: 0.8 })
+            let x = M + 3
+            columnas.forEach((c, i) => {
+                let txt = ''
+                if (i === 0) txt = `TOTAL (${datos.length})`
+                else if (c.total) txt = c.tipo === 'monto' ? textoTotal(c, datos, moneda) : t[c.campo].toLocaleString('en-US')
+                if (txt) {
+                    const s = truncarPdf(txt, (i === 0 ? cols[0] + cols[1] : cols[i]) - 4, size + 0.4, bold)
+                    const tx = i === 0 ? x : x + cols[i] - bold.widthOfTextAtSize(s, size + 0.4) - 3
+                    page.drawText(s, { x: tx, y: y - 2, size: size + 0.4, font: bold, color: principal })
+                }
+                x += cols[i]
+            })
+            y -= 20
+        }
+        // pie del reporte ("Vienen Mes Anterior", "Total Acumulado", diferencias...)
+        for (const p of pie) filaEtiqueta(p.texto, p.valores, p.destacada ? aclarar(principal, 0.85) : undefined, p.destacada ? principal : rgb(0, 0, 0))
 
         // número de página en el pie
         const paginas = pdfDoc.getPages()

@@ -47,6 +47,8 @@ export default function MovimientoSubcuentaPage() {
     const [reporte, setReporte] = useState<SubctaMvtoReporte | null>(null)
     const [generando, setGenerando] = useState(false)
     const [error, setError] = useState<string | null>(null)
+    // vista anual ("Todo el ejercicio" = SubCuentaPorAño de Access): agrega las columnas L y Personas/Empresas
+    const [anual, setAnual] = useState(false)
 
     useEffect(() => {
         const cargar = async () => {
@@ -75,6 +77,7 @@ export default function MovimientoSubcuentaPage() {
         setError(null)
         try {
             setReporte(await ContabilidadService.reporteSubcuentaMovimiento(params))
+            setAnual(!params.mes)
         } catch (e: any) {
             setReporte(null)
             setError(e?.response?.data?.message || "No se pudo generar el reporte.")
@@ -300,12 +303,14 @@ export default function MovimientoSubcuentaPage() {
                         </div>
 
                         <div className="overflow-auto">
-                            <table className="w-full min-w-[820px] text-xs border-collapse">
+                            <table className={`w-full ${anual ? 'min-w-[1040px]' : 'min-w-[820px]'} text-xs border-collapse`}>
                                 <thead>
                                     <tr className="sticky top-0 z-10 bg-gradient-to-b from-muted/60 to-muted">
                                         <Th>Fecha</Th>
                                         <Th>Libro</Th>
+                                        {anual && <Th>L</Th>}
                                         <Th>Documento</Th>
+                                        {anual && <Th>Personas/Empresas</Th>}
                                         <Th>Concepto del registro</Th>
                                         <Th right>Ingreso</Th>
                                         <Th right>Salida</Th>
@@ -315,7 +320,7 @@ export default function MovimientoSubcuentaPage() {
                                 </thead>
                                 <tbody>
                                     <tr className="border-b border-border bg-muted/40">
-                                        <td colSpan={6} className="py-2 px-3 font-semibold italic text-muted-foreground">
+                                        <td colSpan={anual ? 8 : 6} className="py-2 px-3 font-semibold italic text-muted-foreground">
                                             Saldo inicial
                                         </td>
                                         <td className="py-2 px-3 text-right font-mono font-bold italic">{money(cab.SaldoInicial)}</td>
@@ -324,7 +329,7 @@ export default function MovimientoSubcuentaPage() {
 
                                     {filas.length === 0 ? (
                                         <tr>
-                                            <td colSpan={8} className="text-center py-12 text-muted-foreground">
+                                            <td colSpan={anual ? 10 : 8} className="text-center py-12 text-muted-foreground">
                                                 Sin movimientos en el período
                                             </td>
                                         </tr>
@@ -350,7 +355,9 @@ export default function MovimientoSubcuentaPage() {
                                                         {d.Libro}
                                                     </span>
                                                 </td>
+                                                {anual && <td className="py-2 px-3 font-mono text-[11px]">{d.LibroContab}</td>}
                                                 <td className="py-2 px-3 font-mono text-[11px] whitespace-nowrap">{d.Documento}</td>
+                                                {anual && <td className="py-2 px-3 min-w-[160px] max-w-[240px] leading-tight">{d.ClieProv}</td>}
                                                 <td className="py-2 px-3">{d.Concepto}</td>
                                                 <td className="py-2 px-3 text-right font-mono font-semibold text-emerald-700 dark:text-emerald-400">
                                                     {esIngreso ? `+ ${money(d.Ingreso)}` : <span className="text-muted-foreground/50">—</span>}
