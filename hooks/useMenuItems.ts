@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { Home, LineChart, Sparkles } from "lucide-react";
+import { Home, LineChart, Sparkles, HandCoins, ArrowLeftRight, BookText, FileBarChart, Landmark, BadgePercent, Settings2 } from "lucide-react";
 import { useAuth } from "@/context/authContext";
 import { ICON_MAP } from "@/constants/roles";
 import { SHOW_TOMAR_PEDIDO_ALPHA } from "@/constants/featureFlags";
@@ -11,7 +11,20 @@ export interface NavChild {
   title: string;
   href: string;
   icon: NavIcon;
+  /** Tercer nivel: si el hijo es un GRUPO (menú sin ruta con sus propias opciones). */
+  children?: NavChild[];
 }
+
+/** Íconos de los grupos (no tienen ruta, así que no están en ICON_MAP). */
+const ICONOS_GRUPO: Record<string, NavIcon> = {
+  "Cobranzas": HandCoins,
+  "Datos de Movimientos": ArrowLeftRight,
+  "Libros Contables": BookText,
+  "Registros e Informes": FileBarChart,
+  "SUNAT": Landmark,
+  "Comisiones": BadgePercent,
+  "Datos Fijos": Settings2,
+};
 
 export interface NavItem {
   id: string;
@@ -34,15 +47,26 @@ export function useMenuItems(): NavItem[] {
     const rootMenus = user.menus.filter((menu) => !menu.id_padre);
     const childMenus = user.menus.filter((menu) => menu.id_padre);
 
-    const items = rootMenus.map((menu) => {
+    const items: NavItem[] = rootMenus.map((menu) => {
       const children = childMenus
-        .filter((child) => child.id_padre === menu.id)
-        .map((child) => ({
-          id: child.id,
-          title: child.nombre,
-          href: child.ruta,
-          icon: ICON_MAP[child.ruta] || LineChart,
-        }));
+        .filter((child) => String(child.id_padre) === String(menu.id))
+        .map((child) => {
+          // Tercer nivel: opciones cuyo padre es este hijo (el hijo es un grupo).
+          const nietos = childMenus
+            .filter((n) => String(n.id_padre) === String(child.id))
+            .map((n) => ({ id: n.id, title: n.nombre, href: n.ruta, icon: ICON_MAP[n.ruta] || LineChart }));
+          return {
+            id: child.id,
+            title: child.nombre,
+            href: child.ruta || nietos[0]?.href || menu.ruta,
+            icon: ICON_MAP[child.ruta] || ICONOS_GRUPO[child.nombre] || LineChart,
+            children: nietos.length > 0 ? nietos : undefined,
+            tieneRuta: !!child.ruta,
+          };
+        })
+        // Un grupo (sin ruta) que no tiene opciones habilitadas para el rol no se muestra.
+        .filter((child) => child.children || child.tieneRuta)
+        .map(({ tieneRuta, ...child }) => child);
 
       return {
         id: menu.id,

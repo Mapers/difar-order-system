@@ -26,6 +26,17 @@ export function NavMenu({ onNavigate }: NavMenuProps) {
   const toggleItem = (title: string) =>
     setOpenItem((prev) => (prev === title ? null : title));
 
+  // Grupos del tercer nivel: el usuario los abre y cierra; el que contiene la pantalla actual empieza abierto.
+  const [gruposManual, setGruposManual] = useState<Record<string, boolean>>({});
+  const toggleGrupo = (id: string) =>
+    setGruposManual((prev) => ({ ...prev, [id]: !grupoAbiertoPorId(id, prev) }));
+  const grupoAbiertoPorId = (id: string, estado: Record<string, boolean>) => {
+    if (id in estado) return estado[id];
+    const grupo = menuItems.flatMap((i) => i.children ?? []).find((s) => s.id === id);
+    return !!grupo?.children?.some((n) => n.href === pathname);
+  };
+  const grupoAbierto = (sub: { id: string }) => grupoAbiertoPorId(sub.id, gruposManual);
+
   if (collapsed) {
     return (
       <TooltipProvider delayDuration={100}>
@@ -71,7 +82,18 @@ export function NavMenu({ onNavigate }: NavMenuProps) {
                         </span>
                       </div>
                       <div className="flex max-h-[60vh] flex-col gap-0.5 overflow-y-auto p-1.5">
-                        {item.children.map((sub) => {
+                        {item.children.flatMap((sub) => sub.children ? [
+                          { ...sub, esTitulo: true },
+                          ...sub.children.map((n) => ({ ...n, esTitulo: false })),
+                        ] : [{ ...sub, esTitulo: false }]).map((sub) => {
+                          if (sub.esTitulo) {
+                            return (
+                              <div key={`grupo-${sub.id}`} className="mt-1.5 flex items-center gap-2 px-2.5 pb-0.5 pt-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground first:mt-0">
+                                <sub.icon className="h-3.5 w-3.5" />
+                                {sub.title}
+                              </div>
+                            );
+                          }
                           const subActivo = pathname === sub.href;
                           return (
                             <Link
@@ -180,7 +202,46 @@ export function NavMenu({ onNavigate }: NavMenuProps) {
             {/* sub‑items */}
             {item.children && openItem === item.title && (
               <div className="ml-8 mt-1 flex flex-col gap-1">
-                {item.children.map((sub) => (
+                {item.children.map((sub) => sub.children ? (
+                  /* ───── grupo (tercer nivel) ───── */
+                  <div key={sub.id} className="flex flex-col">
+                    <button
+                      type="button"
+                      onClick={() => toggleGrupo(sub.id)}
+                      className={cn(
+                        "group flex w-full items-center justify-between rounded-lg px-3 py-2 text-xs font-semibold uppercase tracking-wide transition-all hover:bg-blue-50",
+                        sub.children.some((n) => n.href === pathname) ? "text-blue-700" : "text-muted-foreground/90 hover:text-blue-700",
+                      )}
+                    >
+                      <span className="flex items-center gap-2.5 text-left">
+                        <sub.icon className="h-4 w-4 shrink-0" />
+                        {sub.title}
+                      </span>
+                      <span className="flex items-center gap-1.5">
+                        <span className="rounded-full bg-muted px-1.5 text-[10px] font-semibold">{sub.children.length}</span>
+                        <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", grupoAbierto(sub) ? "rotate-180" : "rotate-0")} />
+                      </span>
+                    </button>
+                    {grupoAbierto(sub) && (
+                      <div className="ml-3 flex flex-col gap-0.5 border-l border-border pl-2">
+                        {sub.children.map((nieto) => (
+                          <Link
+                            key={nieto.id}
+                            href={nieto.href}
+                            onClick={onNavigate}
+                            className={cn(
+                              "group flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-sm font-medium transition-all hover:bg-blue-50",
+                              pathname === nieto.href ? "bg-blue-100 text-blue-700" : "text-muted-foreground hover:text-blue-700",
+                            )}
+                          >
+                            <nieto.icon className={cn("h-4 w-4 shrink-0", pathname === nieto.href ? "text-blue-700" : "text-muted-foreground group-hover:text-blue-600")} />
+                            <span className="leading-tight">{nieto.title}</span>
+                          </Link>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ) : (
                   <Link
                     key={sub.id}
                     href={sub.href}
