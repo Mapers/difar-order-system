@@ -29,6 +29,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const router = useRouter();
     const [globalConfigs, setGlobalConfigs] = useState<AppConfig[]>([]);
     const tokenRef = useRef("");
+    // true si el backend todavía no tiene el inicio de sesión con código (despliegue en curso): ver sendDni.
+    const modoAntiguoRef = useRef(false);
 
     const clearAuthState = useCallback(() => {
         setUser(null);
@@ -101,9 +103,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             // Seguro (auditoría 14/11/2026): el servidor manda el código al teléfono registrado y NO entrega el
             // token todavía; el token llega recién al verificar el código (signin, más abajo).
             tokenRef.current = '';
-            const response = await AuthService.solicitarCodigo(userData.dni);
-            if (response && response.success) {
-                return response.data?.telefono || 'tu teléfono registrado'
+            modoAntiguoRef.current = false;
+            try {
+                const response = await AuthService.solicitarCodigo(userData.dni);
+                if (response && response.success) {
+                    return response.data?.telefono || 'tu teléfono registrado'
+                }
+                return undefined
+            } catch (e: any) {
+                // Compatibilidad de despliegue: si el backend todavía es el anterior (no tiene la ruta: 404), se usa
+                // el inicio de sesión antiguo. Así el front se puede publicar ANTES que el backend sin cortar a nadie.
+                if (e?.response?.status !== 404) throw e
+                modoAntiguoRef.current = true
+                const antiguo = await AuthService.loginRequest(userData)
+                if (!antiguo?.success) return undefined
+                const tokenResult = decodeToken(antiguo.data)
+                if (!tokenResult.isValid || !tokenResult.user) return undefined
+                tokenRef.current = antiguo.data
+                const resInsert = await AuthService.insertToken({ dni: userData.dni, telefono: tokenResult.user.telefono })
+                return resInsert?.success ? 'tu teléfono registrado' : undefined
             }
         } catch (error: any) {
             if (error.response) {
@@ -124,7 +142,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const signin = async (smsCheck: SmsCheck) => {
         try {
             setLoading(true);
-            const resCheck = await AuthService.verificarCodigo(smsCheck);
+            // Backend anterior (ver sendDni): se valida con la ruta antigua y se usa el token ya recibido.
+            const resCheck = modoAntiguoRef.current
+                ? { ...(await AuthService.checkToken(smsCheck)), data: tokenRef.current }
+                : await AuthService.verificarCodigo(smsCheck);
             if (resCheck.success && resCheck.data) {
                 tokenRef.current = resCheck.data;
                 localStorage.setItem("token", tokenRef.current);
