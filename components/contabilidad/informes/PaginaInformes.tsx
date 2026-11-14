@@ -93,13 +93,16 @@ export function PaginaInformes({ titulo, descripcion, pestanas, aviso, onFila, r
     }, [actuales, def, columnas])
 
     const cambiarPestana = (v: string) => { setActiva(v as ClaveReporte); limpiar(); setPedirProveedor(0) }
-    const periodo = textoPeriodo(def, filtro)
+    // B6 (auditoría 14/11/2026): con datos en pantalla, el periodo de la cabecera, del PDF/Excel y del nombre del
+    // archivo es el de la consulta HECHA, no el que se acaba de elegir en los filtros sin volver a consultar.
+    const fd: FiltroInforme = actuales && consulta && consulta.clave === activa ? consulta.filtro : filtro
+    const periodo = textoPeriodo(def, fd)
     const extras = def.extras ?? []
-    const sufijo = def.filtro === 'rango' ? `${filtro.fechaDesde}_${filtro.fechaHasta}`
-        : def.filtro === 'fecha' ? (filtro.fechaCorte ?? '')
+    const sufijo = def.filtro === 'rango' ? `${fd.fechaDesde}_${fd.fechaHasta}`
+        : def.filtro === 'fecha' ? (fd.fechaCorte ?? '')
             : def.filtro === 'ninguno' ? new Date().toISOString().slice(0, 10)
-                : filtro.anio + (def.filtro === 'mes' ? filtro.mes : '')
-    const nombreArchivo = [activa, sufijo, extras.some(e => e.startsWith('proveedor')) ? filtro.codProveedor : '', extras.includes('cuenta') ? filtro.cuenta : '']
+                : fd.anio + (def.filtro === 'mes' ? fd.mes : '')
+    const nombreArchivo = [activa, sufijo, extras.some(e => e.startsWith('proveedor')) ? fd.codProveedor : '', extras.includes('cuenta') ? fd.cuenta : '']
         .filter(Boolean).join('_')
 
     const consultar = () => {
@@ -152,6 +155,12 @@ export function PaginaInformes({ titulo, descripcion, pestanas, aviso, onFila, r
                         <Info className="h-4 w-4 mt-0.5 shrink-0 text-blue-600" />
                         <span>{def.descripcion} <span className="text-xs">(Access: {def.access})</span></span>
                     </div>
+                    {def.advertencia && (
+                        <div className="flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-100">
+                            <Info className="mt-0.5 h-4 w-4 shrink-0" />
+                            <span>{def.advertencia}</span>
+                        </div>
+                    )}
                     <FiltrosPeriodo
                         tipo={def.filtro} filtro={filtro} onChange={f => { setFiltro(f); setAviso(null) }} cargando={cargando}
                         onBuscar={consultar}

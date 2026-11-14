@@ -35,6 +35,8 @@ export default function RolesPage() {
   const [roles, setRoles] = useState<Rol[]>([])
   const [selectedRol, setSelectedRol] = useState<Rol | null>(null)
   const [menus, setMenus] = useState<Menu[]>([])
+  // Evita el doble envío al guardar permisos (auditoría 14/11/2026)
+  const [guardandoMenus, setGuardandoMenus] = useState(false)
   const [expandedMenus, setExpandedMenus] = useState<number[]>([])
   const [loading, setLoading] = useState(true)
   const [showMenusDialog, setShowMenusDialog] = useState(false)
@@ -133,6 +135,8 @@ export default function RolesPage() {
   }
 
   const handleUpdateMenus = async () => {
+    if (guardandoMenus) return;
+    setGuardandoMenus(true);
     try {
       if (!selectedRol) return;
       const flattenMenus = (menusList: Menu[]): { id: number; habilitado: boolean }[] => {
@@ -150,7 +154,9 @@ export default function RolesPage() {
       toast({ title: 'Éxito', description: 'Menús actualizados correctamente' });
       setShowMenusDialog(false);
     } catch (error) {
-      toast({ title: 'Error', description: 'No se pudieron actualizar los menús' });
+      toast({ title: 'Error', description: 'No se pudieron actualizar los menús', variant: 'warning' });
+    } finally {
+      setGuardandoMenus(false);
     }
   };
 
@@ -373,7 +379,7 @@ export default function RolesPage() {
               <Button variant="outline" onClick={() => setShowMenusDialog(false)}>
                 Cancelar
               </Button>
-              <Button onClick={handleUpdateMenus}>
+              <Button onClick={handleUpdateMenus} disabled={guardandoMenus}>
                 Guardar Cambios
               </Button>
             </DialogFooter>

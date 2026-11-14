@@ -58,6 +58,8 @@ export interface CatalogoDef {
     soloLectura?: boolean
     sinAlta?: boolean
     sinEliminar?: boolean
+    /** B5: el código no cambia al modificar (series: pueden tener comprobantes emitidos). */
+    codigoFijo?: boolean
     /** El uso se consulta por el código (las tablas hijas guardan el código, no el id). */
     usoPorCodigo?: boolean
     sinUso?: boolean
@@ -133,12 +135,12 @@ export const CATALOGOS: Record<ClaveCatalogo, CatalogoDef> = {
         nota: 'El número de cuenta es un dato sensible: en la lista solo se ven los últimos 4 dígitos.',
         campos: [
             COD(4, 'Código banco'), DESC(50),
-            { clave: 'nroCuenta', etiqueta: 'N° de cuenta', tipo: 'texto', obligatorio: true, max: 50 },
+            { clave: 'nroCuenta', etiqueta: 'N° de cuenta', tipo: 'texto', obligatorio: true, max: 50, ayuda: 'Por seguridad se muestra enmascarado. Déjalo así para no cambiarlo, o escribe el número completo para reemplazarlo.' },
             { clave: 'moneda', etiqueta: 'Moneda', tipo: 'combo', combo: 'monedas', obligatorio: true },
             { clave: 'entidad', etiqueta: 'Entidad financiera', tipo: 'combo', combo: 'entidades', obligatorio: true },
             { clave: 'cuentaContable', etiqueta: 'Cuenta contable', tipo: 'combo', combo: 'cuentasBanco', porId: true, numerico: true, ancho: 'completo' },
         ],
-        columnas: [colCodigo(), colDesc(), { etiqueta: 'N° cuenta', valor: (f) => enmascarar(d(f, 'nroCuenta')), mono: true },
+        columnas: [colCodigo(), colDesc(), { etiqueta: 'N° cuenta', valor: (f) => { const n = d(f, 'nroCuenta'); return n.includes('••••') ? n : enmascarar(n) }, mono: true },
             { etiqueta: 'Moneda', valor: (f) => d(f, 'moneda'), secundaria: true },
             { etiqueta: 'Entidad', valor: (f) => d(f, 'entidadDescripcion'), secundaria: true }],
     },
@@ -242,8 +244,8 @@ export const CATALOGOS: Record<ClaveCatalogo, CatalogoDef> = {
         columnas: [colCodigo(), colDesc('Zona')],
     },
     serie: {
-        clave: 'serie', titulo: 'Series', access: 'Form [Series] · tabla serie_docs', usoPorCodigo: true,
-        nota: 'La facturación web usa sus propios correlativos (Configuraciones › Comprobantes).',
+        clave: 'serie', titulo: 'Series', access: 'Form [Series] · tabla serie_docs', usoPorCodigo: true, sinEliminar: true, codigoFijo: true,
+        nota: 'La facturación web usa sus propios correlativos (Configuraciones › Comprobantes). Las series no se eliminan ni cambian de código desde la web: pueden tener comprobantes emitidos.',
         campos: [
             { ...COD(4, 'Serie'), ayuda: '4 caracteres (p. ej. F001).' },
             { clave: 'tipoDocumento', etiqueta: 'Tipo de documento', tipo: 'catalogo', catalogo: 'tipo-documento' },

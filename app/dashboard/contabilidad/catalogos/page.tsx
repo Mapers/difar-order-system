@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { Database, Eye, Info, Loader2, Plus, RefreshCw, Search, Trash2, Users } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -52,14 +52,19 @@ export default function CatalogosPage() {
         DatosControlService.combos().then(setCombos).catch(() => setCombos(null))
     }, [])
 
+    // B3 (auditoría 14/11/2026): si un catálogo responde tarde, su lista NO debe aparecer bajo el que se eligió
+    // después (se podría modificar o eliminar con el id de otro catálogo). Solo cuenta la última petición.
+    const peticion = useRef(0)
     const cargar = useCallback(async () => {
         if (!actual.catalogos.includes(catalogo)) return
+        const mia = ++peticion.current
         setCargando(true); setError(null)
         try {
-            setFilas(await DatosControlService.listar(catalogo))
+            const datos = await DatosControlService.listar(catalogo)
+            if (mia === peticion.current) setFilas(datos)
         } catch (e) {
-            setFilas([]); setError(await mensajeError(e, 'No se pudo cargar el catálogo.'))
-        } finally { setCargando(false) }
+            if (mia === peticion.current) { setFilas([]); setError(await mensajeError(e, 'No se pudo cargar el catálogo.')) }
+        } finally { if (mia === peticion.current) setCargando(false) }
     }, [catalogo, actual])
     useEffect(() => { setFilas([]) }, [catalogo])
     useEffect(() => { cargar() }, [cargar])

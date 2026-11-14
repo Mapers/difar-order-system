@@ -81,7 +81,7 @@ export function FichaCatalogoDialog({ def, fila, abierta, combos, onCerrar, onCa
     }
 
     function campo(c: CampoDef) {
-        const bloqueadoPorUso = !!fila && !!c.esCodigo && enUso
+        const bloqueadoPorUso = !!fila && !!c.esCodigo && (enUso || !!def.codigoFijo)
         const deshabilitado = soloConsulta || !!c.soloVista || bloqueadoPorUso || guardando
         const valor = v[c.clave] ?? ''
         let control: React.ReactNode

@@ -245,6 +245,7 @@ export const DEFINICIONES_LIBROS: Record<ClaveLibro, DefinicionReporte> = {
     'eeff-flujo-efectivo': {
         clave: 'eeff-flujo-efectivo', titulo: 'Flujo Efectivo', filtro: 'anio', access: 'InventBalances › FlujoEfectivo', leyenda: SOLES,
         descripcion: 'Formato 3.18 Estado de Flujo de Efectivo (desde las líneas de caja). Cada pago se cuenta una vez (Access lo repetía por cada ítem del documento).',
+        advertencia: 'EN REVISIÓN — no usar para decisiones ni para SUNAT. La fuente (centralización de caja) incluye traslados entre cajas y no los cobros por bancos: en 2025 da un neto de −2.1 millones cuando la caja del mayor varió −37 mil. Se rehará desde el Libro Mayor.',
         columnas: [c('Cod_Contab', 'Cuenta', 'mono', { movil: 'titulo' }), c('Descripcion', 'Descripción', 'texto', { movil: 'subtitulo' }),
             imp('Cobros', 'Cobranza S/.'), imp('Pagos', 'Pagos S/.'), imp('Neto', 'Neto', { movil: 'importe' })],
         grupos: [{

@@ -96,6 +96,8 @@ export interface ColumnaInforme {
 }
 
 export interface DefinicionReporte {
+    /** Aviso ámbar visible sobre el informe (por ejemplo, un informe en revisión). */
+    advertencia?: string
     clave: ClaveReporte
     titulo: string
     descripcion: string
