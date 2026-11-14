@@ -14,7 +14,8 @@ import {
     Receipt, GoalIcon, UserCog, Notebook, Gift, Map, Settings, FileDiff, CalendarClock,
     TrendingUp, ReceiptText, HandCoins, BadgePercent, ClipboardList,
     FileBarChart, FileSpreadsheet, FileCode2, FileCheck2, Truck, ListTree,
-    BookText, Library, Landmark, Calculator, Database
+    BookText, Library, Landmark, Calculator, Database,
+    Contact, DollarSign, Boxes, Percent, CalendarDays
 } from "lucide-react";
 
 export interface NavItem {
@@ -63,6 +64,11 @@ export const ICON_MAP: Record<string, React.ComponentType<{ className?: string }
     "/dashboard/contabilidad/estados-financieros": Landmark,
     "/dashboard/contabilidad/cuentas-contables": Calculator,
     "/dashboard/contabilidad/catalogos": Database,
+    "/dashboard/contabilidad/personas-empresas": Contact,
+    "/dashboard/contabilidad/tipo-cambio": DollarSign,
+    "/dashboard/contabilidad/articulos": Boxes,
+    "/dashboard/contabilidad/igv": Percent,
+    "/dashboard/contabilidad/anio-meses": CalendarDays,
     "/dashboard/reportes": BarChart2,
     "/dashboard/reportes/documento-cliente": LineChart,
     "/dashboard/reportes/cobrar-cliente": LineChart,
