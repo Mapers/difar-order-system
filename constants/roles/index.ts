@@ -13,7 +13,8 @@ import {
     ShoppingBag,
     Receipt, GoalIcon, UserCog, Notebook, Gift, Map, Settings, FileDiff, CalendarClock,
     TrendingUp, ReceiptText, HandCoins, BadgePercent, ClipboardList,
-    FileBarChart, FileSpreadsheet, FileCode2, FileCheck2, Truck, ListTree
+    FileBarChart, FileSpreadsheet, FileCode2, FileCheck2, Truck, ListTree,
+    Contact, DollarSign, Boxes, Percent, CalendarDays
 } from "lucide-react";
 
 export interface NavItem {
@@ -57,6 +58,11 @@ export const ICON_MAP: Record<string, React.ComponentType<{ className?: string }
     "/dashboard/contabilidad/sire": FileCheck2,
     "/dashboard/contabilidad/informes-proveedores": Truck,
     "/dashboard/contabilidad/plan-contable": ListTree,
+    "/dashboard/contabilidad/personas-empresas": Contact,
+    "/dashboard/contabilidad/tipo-cambio": DollarSign,
+    "/dashboard/contabilidad/articulos": Boxes,
+    "/dashboard/contabilidad/igv": Percent,
+    "/dashboard/contabilidad/anio-meses": CalendarDays,
     "/dashboard/reportes": BarChart2,
     "/dashboard/reportes/documento-cliente": LineChart,
     "/dashboard/reportes/cobrar-cliente": LineChart,
