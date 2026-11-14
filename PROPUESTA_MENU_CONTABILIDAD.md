@@ -1,7 +1,7 @@
 # Propuesta: rediseño del menú Contabilidad (rama `contabilidad_v3`, 14/11/2026)
 
 > **Solo es una propuesta.** No se ejecutó nada en la base. El script está en
-> `docs/contabilidad/propuesta_menu_contabilidad_v3.sql` y se ejecuta solo con aprobación.
+> `docs/contabilidad/scripts_v3/03_menus_contabilidad_v3.sql` (todos los scripts, en orden, en `docs/contabilidad/scripts_v3/`) y se ejecuta solo con aprobación.
 
 ## Problema actual
 - "Contabilidad" (menú 23) tiene **16 opciones a un solo nivel**, en un orden que salió de cómo se fueron agregando. Hay órdenes repetidos (4, 12) y un reporte movido desde Reportes (44).
