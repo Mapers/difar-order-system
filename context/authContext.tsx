@@ -98,15 +98,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const sendDni = async (userData: UserLoginDTO) => {
         try {
             setLoading(true);
-            const response = await AuthService.loginRequest(userData);
+            // Seguro (auditoría 14/11/2026): el servidor manda el código al teléfono registrado y NO entrega el
+            // token todavía; el token llega recién al verificar el código (signin, más abajo).
+            tokenRef.current = '';
+            const response = await AuthService.solicitarCodigo(userData.dni);
             if (response && response.success) {
-                const token = response.data;
-                const tokenResult = decodeToken(token);
-                if (tokenResult.isValid && tokenResult.user) {
-                    tokenRef.current = response.data;
-                    const telefono = tokenResult.user.telefono
-                    return telefono
-                }
+                return response.data?.telefono || 'tu teléfono registrado'
             }
         } catch (error: any) {
             if (error.response) {
@@ -127,8 +124,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const signin = async (smsCheck: SmsCheck) => {
         try {
             setLoading(true);
-            const resCheck = await AuthService.checkToken(smsCheck);
-            if (resCheck.success) {
+            const resCheck = await AuthService.verificarCodigo(smsCheck);
+            if (resCheck.success && resCheck.data) {
+                tokenRef.current = resCheck.data;
                 localStorage.setItem("token", tokenRef.current);
                 localStorage.setItem("lastActivityTime", Date.now().toString());
                 const tokenResult = decodeToken(tokenRef.current);
