@@ -8,6 +8,21 @@ export class AuthService {
    * @param user 
    * @returns 
    */
+  /**
+   * Inicio de sesión seguro (auditoría 14/11/2026): el servidor manda el código al teléfono registrado del DNI
+   * y no entrega el token hasta verificarlo.
+   */
+  static async solicitarCodigo(dni: string) {
+    const response = await apiClient.post(`auth/solicitar-codigo`, { dni });
+    return response.data as { success: boolean; message: string; data?: { telefono: string; minutos: number } };
+  };
+
+  static async verificarCodigo(data: SmsCheck) {
+    const response = await apiClient.post(`auth/verificar-codigo`, data);
+    return response.data as { success: boolean; message: string; data?: string };
+  };
+
+  /** @deprecated inicio de sesión antiguo (token con solo el DNI). El backend lo apaga en la fase 2. */
   static async loginRequest(user: UserLoginDTO) {
     const response = await apiClient.post(`auth/signin`, user);
     return response.data

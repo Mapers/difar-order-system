@@ -41,17 +41,12 @@ export function LoginForm() {
     setLoading(true);
     try {
       const formData: UserLoginDTO = { dni };
-      const numTelefono = await sendDni(formData);
-      if (numTelefono) {
-        const smsSend: SmsSend = {
-          dni: dni,
-          telefono: numTelefono,
-        };
-        const resInsert = await AuthService.insertToken(smsSend);
-        if (resInsert.success) {
-          setShowVerification(true);
-          setVerificationCode(["", "", "", "", "", ""]);
-        }
+      // El servidor ya envió el código al teléfono registrado (sendDni -> /auth/solicitar-codigo).
+      const telefonoEnmascarado = await sendDni(formData);
+      if (telefonoEnmascarado) {
+        setShowVerification(true);
+        setVerificationCode(["", "", "", "", "", ""]);
+        toast({ title: "Código enviado", description: `Te enviamos un código por WhatsApp al ${telefonoEnmascarado}.` });
       }
     } catch (error: any) {
       console.error(error);
