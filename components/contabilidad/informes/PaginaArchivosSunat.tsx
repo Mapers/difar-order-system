@@ -15,6 +15,7 @@ import { TablaInforme } from './TablaInforme'
 import { useInforme } from './useInforme'
 import { MESES } from './formato'
 import { TxtVistaPreviaDialog } from './TxtVistaPreviaDialog'
+import { AvisoInforme } from './AvisoInforme'
 
 interface Props {
     titulo: string
@@ -36,7 +37,7 @@ export function PaginaArchivosSunat({ titulo, descripcion, archivos }: Props) {
     const [descargando, setDescargando] = useState<string | null>(null)
     const [generados, setGenerados] = useState<Record<string, Generado>>({})
     const [previa, setPrevia] = useState<{ titulo: string; archivo: ArchivoSunat } | null>(null)
-    const { filas, cargando, consulta, cargar, limpiar } = useInforme()
+    const { filas, cargando, consulta, cargar, limpiar, aviso, setAviso } = useInforme()
 
     const periodo = `${MESES[Number(filtro.mes) - 1]} ${filtro.anio}`
     const def = activo.reporte ? DEFINICIONES[activo.reporte] : null
@@ -51,13 +52,15 @@ export function PaginaArchivosSunat({ titulo, descripcion, archivos }: Props) {
             return
         }
         setDescargando(a.clave)
+        setAviso(null)
         try {
             // se genera el archivo y se abre la VISTA PREVIA; la descarga se hace desde el modal
             const r = await InformesContablesService.archivo(a.clave, filtro.anio, filtro.mes, a.seleccionable ? [...seleccion] : undefined)
             setGenerados(g => ({ ...g, [a.clave]: { nombre: r.nombre, lineas: r.lineas, indicador: r.indicador } }))
             setPrevia({ titulo: a.titulo, archivo: r })
         } catch (e) {
-            toast({ title: 'No se pudo generar el archivo', description: await mensajeError(e, 'Intenta nuevamente.'), variant: 'destructive' })
+            // aviso ámbar (validación), no error rojo
+            setAviso(`No se pudo generar ${a.titulo}: ${await mensajeError(e, 'intenta nuevamente.')}`)
         } finally {
             setDescargando(null)
         }
@@ -74,6 +77,7 @@ export function PaginaArchivosSunat({ titulo, descripcion, archivos }: Props) {
                 <CardHeader className="bg-muted border-b border-border p-4">
                     <FiltrosPeriodo tipo="mes" filtro={filtro} onChange={f => { setFiltro(f); limpiar(); setGenerados({}) }}
                                     cargando={cargando} onBuscar={verPrevia} />
+                    <AvisoInforme texto={aviso} onCerrar={() => setAviso(null)} className="mt-3" />
                 </CardHeader>
                 <CardContent className="p-3 md:p-4">
                     <div className={cn('grid grid-cols-1 sm:grid-cols-2 gap-3', archivos.length > 3 ? 'lg:grid-cols-4' : 'lg:grid-cols-3')}>

@@ -1,4 +1,4 @@
-import { ColumnaInforme, FilaInforme, TipoColumna } from '@/app/types/informes-contables-types'
+import { ColumnaInforme, FilaInforme, GrupoInforme, Renglon, TipoColumna, ValoresFila } from '@/app/types/informes-contables-types'
 
 /** Formatos de presentación de los informes contables (funciones puras). */
 
@@ -88,6 +88,62 @@ export function totales(columnas: ColumnaInforme[], filas: FilaInforme[]): Recor
         t[c.campo] = filas.reduce((a, f) => a + (Number(f[c.campo]) || 0), 0)
     }
     return t
+}
+
+/** Suma de las columnas con total en un grupo de filas. */
+function sumasDe(columnas: ColumnaInforme[], filas: FilaInforme[]): ValoresFila {
+    const v: ValoresFila = {}
+    for (const c of columnas.filter(x => x.total)) v[c.campo] = filas.reduce((a, f) => a + (Number(valorDe(c, f)) || 0), 0)
+    return v
+}
+
+/**
+ * Renglones de la tabla con los cortes de grupo (encabezado y subtotal), como los reportes de Access.
+ * Las filas consecutivas con la misma clave forman un grupo; dentro, los grupos del nivel siguiente.
+ * Sin grupos devuelve las filas tal cual. Función pura: la usan la tabla, el Excel y el PDF.
+ */
+export function armarRenglones(columnas: ColumnaInforme[], filas: FilaInforme[], grupos: GrupoInforme[] = []): Renglon[] {
+    const salida: Renglon[] = []
+    const recorrer = (lista: { fila: FilaInforme; indice: number }[], nivel: number) => {
+        if (nivel >= grupos.length) {
+            for (const x of lista) salida.push({ tipo: 'fila', fila: x.fila, indice: x.indice })
+            return
+        }
+        const g = grupos[nivel]
+        let i = 0
+        while (i < lista.length) {
+            const clave = g.clave(lista[i].fila)
+            let j = i
+            while (j < lista.length && g.clave(lista[j].fila) === clave) j++
+            const parte = lista.slice(i, j)
+            const filasParte = parte.map(x => x.fila)
+            const texto = g.titulo(parte[0].fila)
+            salida.push({ tipo: 'grupo', nivel, texto, valores: g.sumasEnEncabezado ? sumasDe(columnas, filasParte) : undefined })
+            recorrer(parte, nivel + 1)
+            if (typeof g.subtotal === 'function') salida.push({ tipo: 'subtotal', nivel, ...g.subtotal(filasParte) })
+            else if (g.subtotal) salida.push({ tipo: 'subtotal', nivel, texto: `Total ${texto}`, valores: sumasDe(columnas, filasParte) })
+            i = j
+        }
+    }
+    recorrer(filas.map((fila, indice) => ({ fila, indice })), 0)
+    return salida
+}
+
+/**
+ * Celdas de una fila de subtotal o de pie: el texto ocupa las columnas que no llevan valor
+ * (hasta la primera con valor) y cada importe va en su columna.
+ */
+export function celdasEtiqueta(columnas: ColumnaInforme[], valores: ValoresFila = {}): { span: number; resto: ColumnaInforme[] } {
+    const primera = columnas.findIndex(c => valores[c.campo] !== undefined && valores[c.campo] !== null)
+    const span = primera <= 0 ? (primera === 0 ? 1 : columnas.length) : primera
+    return { span, resto: columnas.slice(span) }
+}
+
+/** Texto de un valor de subtotal o pie, con el formato de su columna ('' si no lleva). */
+export const textoValor = (col: ColumnaInforme, valores: ValoresFila = {}, moneda?: string) => {
+    const v = valores[col.campo]
+    if (v === undefined || v === null) return ''
+    return col.tipo === 'monto' ? conSimbolo(simboloDe(col, moneda), v) : formatear(col.tipo, v)
 }
 
 export const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']

@@ -134,6 +134,13 @@ export function FiltrosExtra({ extras, filtro, onChange, onEnter, pedirProveedor
                            onChange={e => set({ buscar: e.target.value })} onKeyDown={enter} maxLength={60} />
                 </div>
             )}
+            {extras.includes('cuenta') && (
+                <div className="flex flex-col gap-1.5 col-span-2 md:col-span-3">
+                    <Label htmlFor="fcuenta">Cuenta <span className="text-xs text-muted-foreground">(opcional: 10, 101 o 1010101)</span></Label>
+                    <Input id="fcuenta" className="bg-background font-mono" placeholder="Todas las cuentas" inputMode="numeric" value={filtro.cuenta ?? ''}
+                           onChange={e => set({ cuenta: e.target.value.replace(/\D/g, '') })} onKeyDown={enter} maxLength={12} />
+                </div>
+            )}
             {extras.includes('nivel') && (
                 <div className="flex flex-col gap-1.5 md:col-span-3">
                     <Label>Nivel</Label>

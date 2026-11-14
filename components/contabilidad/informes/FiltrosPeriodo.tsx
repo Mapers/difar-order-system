@@ -32,7 +32,12 @@ export function FiltrosPeriodo({ tipo, filtro, onChange, onBuscar, cargando, acc
     const set = (p: Partial<FiltroInforme>) => onChange({ ...filtro, ...p })
     return (
         <div className="grid grid-cols-2 md:grid-cols-12 gap-3 md:gap-4 items-end">
-            {tipo === 'ninguno' ? null : tipo === 'rango' ? (
+            {tipo === 'ninguno' ? null : tipo === 'fecha' ? (
+                <div className="flex flex-col gap-1.5 md:col-span-3">
+                    <Label htmlFor="fcorte">Fecha de corte</Label>
+                    <Input id="fcorte" type="date" className="bg-background" value={filtro.fechaCorte ?? ''} onChange={e => set({ fechaCorte: e.target.value })} />
+                </div>
+            ) : tipo === 'rango' ? (
                 <>
                     <div className="flex flex-col gap-1.5 md:col-span-3">
                         <Label htmlFor="fdesde">Desde</Label>
@@ -85,5 +90,6 @@ export function filtroInicial(): FiltroInforme {
     const anio = String(d.getFullYear())
     const mes = String(d.getMonth() + 1).padStart(2, '0')
     const fin = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate()
-    return { anio, mes, fechaDesde: `${anio}-${mes}-01`, fechaHasta: `${anio}-${mes}-${String(fin).padStart(2, '0')}` }
+    const ultimo = `${anio}-${mes}-${String(fin).padStart(2, '0')}`
+    return { anio, mes, fechaDesde: `${anio}-${mes}-01`, fechaHasta: ultimo, fechaCorte: ultimo }
 }
