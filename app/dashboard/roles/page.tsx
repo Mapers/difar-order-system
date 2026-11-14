@@ -336,14 +336,31 @@ export default function RolesPage() {
                     {expandedMenus.includes(menuPadre.id) && menuPadre.hijos.length > 0 && (
                         <div className="divide-y bg-background">
                           {menuPadre.hijos.map(menuHijo => (
-                              <div key={menuHijo.id} className="flex items-center justify-between p-3 pl-10 hover:bg-muted">
-                                <span className="text-sm text-muted-foreground">{menuHijo.nombre}</span>
-                                <input
-                                    type="checkbox"
-                                    checked={menuHijo.habilitado}
-                                    onChange={() => toggleHabilitado(menuHijo.id)}
-                                    className="h-4 w-4 rounded border-border text-blue-600 focus:ring-blue-500"
-                                />
+                              <div key={menuHijo.id}>
+                                <div className="flex items-center justify-between p-3 pl-10 hover:bg-muted">
+                                  <span className={menuHijo.hijos?.length ? "text-xs font-semibold uppercase tracking-wide text-foreground/80" : "text-sm text-muted-foreground"}>
+                                    {menuHijo.nombre}
+                                    {menuHijo.hijos?.length ? <span className="ml-2 font-normal normal-case text-muted-foreground">(grupo · {menuHijo.hijos.length})</span> : null}
+                                  </span>
+                                  <input
+                                      type="checkbox"
+                                      checked={menuHijo.habilitado}
+                                      onChange={() => toggleHabilitado(menuHijo.id)}
+                                      className="h-4 w-4 rounded border-border text-blue-600 focus:ring-blue-500"
+                                  />
+                                </div>
+                                {/* Tercer nivel: opciones de un grupo (se guardan junto con el resto; ver flattenMenus) */}
+                                {menuHijo.hijos?.map(menuNieto => (
+                                    <div key={menuNieto.id} className="flex items-center justify-between p-2.5 pl-16 hover:bg-muted">
+                                      <span className="text-sm text-muted-foreground">{menuNieto.nombre}</span>
+                                      <input
+                                          type="checkbox"
+                                          checked={menuNieto.habilitado}
+                                          onChange={() => toggleHabilitado(menuNieto.id)}
+                                          className="h-4 w-4 rounded border-border text-blue-600 focus:ring-blue-500"
+                                      />
+                                    </div>
+                                ))}
                               </div>
                           ))}
                         </div>
