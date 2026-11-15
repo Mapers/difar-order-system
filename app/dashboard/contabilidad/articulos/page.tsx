@@ -55,7 +55,7 @@ export default function ArticulosContablesPage() {
         medida: distintos(todos, 'Medida'), tipo: distintos(todos, 'Presentacion'), modelo: distintos(todos, 'PrincipioAdictivo'),
         marca: distintos(todos, 'idMarca'), otros1: distintos(todos, 'otros1'), otros2: distintos(todos, 'otros2'), control: distintos(todos, 'CodigoAsisa'),
     }), [todos])
-    const subGrupos = useMemo<Opcion[]>(() => (catalogos?.subGrupos ?? []).map((s) => ({ id: s.id, codigo: s.codigo, nombre: s.nombre })), [catalogos])
+    const subGrupos = useMemo<Opcion[]>(() => (catalogos?.subGrupos ?? []).map((s) => ({ id: s.id, codigo: s.codigo, nombre: s.nombre ?? `(sin nombre) ${s.codigo ?? s.id}` })), [catalogos])
 
     const abrir = (a: FilaArticulo | null) => { setFila(a); setFicha(a ? fichaArticuloDe(a) : fichaArticuloVacia()); setAbierta(true) }
 

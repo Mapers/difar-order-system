@@ -65,7 +65,7 @@ export function FichaArticuloDialog({ abierta, ficha, fila, catalogos, listas, o
     useEffect(() => { if (abierta) { setF(ficha ?? fichaArticuloVacia()); setAviso('') } }, [abierta, ficha])
     const set = (p: Partial<FichaArticulo>) => { setF((x) => ({ ...x, ...p })); setAviso('') }
 
-    const subGrupos = useMemo<Opcion[]>(() => (catalogos?.subGrupos ?? []).map((s) => ({ id: s.id, codigo: s.codigo, nombre: `${s.nombre}${s.grupo ? ` · ${s.grupo}` : ''}` })), [catalogos])
+    const subGrupos = useMemo<Opcion[]>(() => (catalogos?.subGrupos ?? []).map((s) => ({ id: s.id, codigo: s.codigo, nombre: `${s.nombre ?? "(sin nombre)"}${s.grupo ? ` · ${s.grupo}` : ''}` })), [catalogos])
     const unidades = useMemo<Opcion[]>(() => (catalogos?.unidades ?? []).map((u) => ({ id: u.id, nombre: `${u.nombre}${u.abreviatura ? ` (${u.abreviatura})` : ''}` })), [catalogos])
 
     const faltantes = [!f.subGrupo && 'SubGrupo', !f.nombre.trim() && 'Descripción del item', !f.unidad && 'Unidad Medida', !f.tipoExistencia && 'TipoExistencia'].filter(Boolean) as string[]

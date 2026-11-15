@@ -91,25 +91,27 @@ const cabVacia = (): CabeceraEdicion => ({
 
 const num = (v: string) => {
     const n = Number(v)
-    return v.trim() !== '' && Number.isFinite(n) ? n : null
+    return String(v ?? '').trim() !== '' && Number.isFinite(n) ? n : null
 }
 const num0 = (v: string) => Number(v) || 0
-const x0 = (v: string) => (v.trim() === '' ? 'vacía' : v)
-const txt = (v: string) => (v.trim() === '' ? null : v.trim())
+const x0 = (v: string) => (String(v ?? '').trim() === '' ? 'vacía' : v)
+const txt = (v: unknown) => (String(v ?? '').trim() === '' ? null : String(v).trim())
+// Texto desde la base: algunas columnas (p. ej. Responsable) llegan como número y .trim() reventaba al guardar.
+const tx = (v: unknown): string => (v == null ? '' : String(v))
 
 const desdeBD = (d: ComprasDetalleFila): FilaCompra => ({
     id:              d.Id_Compras_Detalle,
     key:             d.Id_Compras_Detalle,
     idArticulo:      d.idArticulo != null ? String(d.idArticulo) : '',
-    articulo:        d.Articulo ?? '',
-    nombreItem:      d.NombreItem ?? '',
+    articulo:        tx(d.Articulo),
+    nombreItem:      tx(d.NombreItem),
     cantidad:        d.Cantidad != null ? String(d.Cantidad) : '',
-    lote:            d.Lote ?? '',
+    lote:            tx(d.Lote),
     vctoArt:         d.VctoArt ? String(d.VctoArt).slice(0, 10) : '',
     importeAfecto:   Number(d.ImporteAfecto) ? String(d.ImporteAfecto) : '',
     importeNoAfecto: Number(d.ImporteNoAfecto) ? String(d.ImporteNoAfecto) : '',
     cuentaContab:    d.CuentaContab != null ? String(d.CuentaContab) : '',
-    centroCostos:    d.CentroCostos ?? '',
+    centroCostos:    tx(d.CentroCostos),
     idGalpon:        d.idGalpon != null ? String(d.idGalpon) : '',
     eliminar:        Number(d.EliminaRC) === 1,
 })
@@ -122,40 +124,40 @@ const esMarcaUno = (v: unknown): boolean => {
 }
 
 const cabDesdeBD = (c: ComprasCabecera): CabeceraEdicion => ({
-    codProv:               c.Cod_Prov ?? '',
-    proveedorNombre:       c.ProveedorNombre ?? '',
-    tipoDoc:               c.Tipo_Doc ?? '',
-    serie:                 c.SerieDoc ?? '',
+    codProv:               tx(c.Cod_Prov),
+    proveedorNombre:       tx(c.ProveedorNombre),
+    tipoDoc:               tx(c.Tipo_Doc),
+    serie:                 tx(c.SerieDoc),
     numero:                c.NumeroDoc != null ? String(c.NumeroDoc) : '',
     fechaEmision:          c.Fecha_Emision ? String(c.Fecha_Emision).slice(0, 10) : '',
     moneda:                c.Moneda ?? 'NSO',
     importeTotal:          c.ImporteTotal != null ? String(c.ImporteTotal) : '',
     // La base guarda 0.1800 y el catálogo 0.18: se normaliza para que el combo lo encuentre.
     tasaIGV:               c.TasaIGV != null ? String(Number(c.TasaIGV)) : '',
-    condicion:             c.Condision ?? '',
+    condicion:             tx(c.Condision),
     almacen:               c.Almacen != null ? String(c.Almacen) : '',
-    periodo:               c.PeriodoTributario ?? '',
-    anio:                  c.Anio ?? '',
+    periodo:               tx(c.PeriodoTributario),
+    anio:                  tx(c.Anio),
     exonerado:             c.Exonerado != null ? String(c.Exonerado) : '',
     inafecto:              c.Inafecto != null ? String(c.Inafecto) : '',
     icbper:                c.icbper != null ? String(c.icbper) : '',
-    tipoDocOriginal:       c.TipoDocOriginal ?? '',
+    tipoDocOriginal:       tx(c.TipoDocOriginal),
     fechaDocOriginal:      c.FechaDocOriginal ? String(c.FechaDocOriginal).slice(0, 10) : '',
-    serieDocOriginal:      c.SerieDocOriginal ?? '',
+    serieDocOriginal:      tx(c.SerieDocOriginal),
     numeroDocOriginal:     c.NumeroDocOriginal != null ? String(c.NumeroDocOriginal) : '',
-    nroDepositoDetra:      c.NroDpstoDetra ?? '',
+    nroDepositoDetra:      tx(c.NroDpstoDetra),
     fechaDetra:            c.FechaDetra ? String(c.FechaDetra).slice(0, 10) : '',
     fechaCancelacion:      c.FechaCancelacion ? String(c.FechaCancelacion).slice(0, 10) : '',
-    tipoPago:              c.TipoPago ?? '',
+    tipoPago:              tx(c.TipoPago),
     centroCostos:          c.CentroCostos != null ? String(c.CentroCostos) : '',
-    obsCancelacion:        c.ObsCancelacion ?? '',
-    observaciones:         c.Observaciones ?? '',
-    entregadoPor:          c.EntregadoPor ?? '',
-    responsable:           c.Responsable ?? '',
+    obsCancelacion:        tx(c.ObsCancelacion),
+    observaciones:         tx(c.Observaciones),
+    entregadoPor:          tx(c.EntregadoPor),
+    responsable:           tx(c.Responsable),
     idClasificacionBienes: c.idClasificacionBienes != null ? String(c.idClasificacionBienes) : '',
     fecIngreso:            c.fecIngreso ? String(c.fecIngreso).slice(0, 10) : '',
-    serieOC:               c.serieOC ?? '',
-    nrOC:                  c.nrOC ?? '',
+    serieOC:               tx(c.serieOC),
+    nrOC:                  tx(c.nrOC),
     revisadoSIRE:          esMarcaUno(c.revisadoSIRE) ? '1' : '0',
 })
 

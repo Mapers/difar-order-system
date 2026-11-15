@@ -81,7 +81,8 @@ export function ComboSelect<T>({
                             {items.map(item => (
                                 <CommandItem
                                     key={getKey(item)}
-                                    value={getSub ? `${getLabel(item)} ${getSub(item)}` : getLabel(item)}
+                                    // Blindado: un nombre null dejaba la pantalla en blanco (cmdk hace toLowerCase del value).
+                                    value={getSub ? `${getLabel(item) ?? ''} ${getSub(item) ?? ''}` : String(getLabel(item) ?? '')}
                                     onSelect={() => {
                                         onChange(item)
                                         setOpen(false)

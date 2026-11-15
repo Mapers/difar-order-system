@@ -60,7 +60,7 @@ export default function DetalleAdmin({
     const cargarEstadoCaja = async () => {
         setConsultando(true)
         try {
-            const res = await apiClient.get(`/planilla/${planilla.id_planilla}/caja`)
+            const res = await apiClient.get(`/planilla-cobranza/${planilla.id_planilla}/caja`)
             setEstadoCaja(res.data?.data?.data ?? [])
         } catch {
             setEstadoCaja(null)
@@ -101,7 +101,7 @@ export default function DetalleAdmin({
     const handleEnviarCaja = async () => {
         setEnviando(true)
         try {
-            const res = await apiClient.put(`/planilla/${planilla.id_planilla}/enviar-caja`, { id_admin: adminInfo.id_admin })
+            const res = await apiClient.put(`/planilla-cobranza/${planilla.id_planilla}/enviar-caja`, { id_admin: adminInfo.id_admin })
             const r = res.data?.data?.resumen ?? {}
             toast({
                 title:       'Enviada a Libro Caja',
