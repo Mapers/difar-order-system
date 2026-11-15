@@ -11,8 +11,10 @@ import { AvisoAmbar, Buscador, textoError } from '../comunes'
  * Buscador de códigos OSCE (form Access [ITEM ocse]): busca por descripción que EMPIEZA con el texto
  * o por el código exacto (256 mil códigos, sin índice: mínimo 3 letras, máximo 50 resultados).
  */
-export function BuscarOsceDialog({ abierto, textoInicial, onElegir, onCerrar }: {
+export function BuscarOsceDialog({ abierto, textoInicial, onElegir, onCerrar, buscarCodigos = ArticulosService.osceBuscar }: {
     abierto: boolean; textoInicial?: string; onElegir: (c: CodigoOsce) => void; onCerrar: () => void
+    /** Endpoint del buscador (Crear Producto usa el de logística, que no exige la pantalla de Contabilidad). */
+    buscarCodigos?: (texto: string, limite?: number) => Promise<CodigoOsce[]>
 }) {
     const [texto, setTexto] = useState('')
     const [resultados, setResultados] = useState<CodigoOsce[] | null>(null)
@@ -23,7 +25,7 @@ export function BuscarOsceDialog({ abierto, textoInicial, onElegir, onCerrar }: 
     async function buscar() {
         if (texto.trim().length < 3) { setAviso('Escribe al menos 3 letras (la descripción debe empezar con ese texto) o el código OSCE completo.'); return }
         setCargando(true); setAviso('')
-        try { setResultados(await ArticulosService.osceBuscar(texto.trim(), 50)) } catch (e) { setAviso(await textoError(e)) } finally { setCargando(false) }
+        try { setResultados(await buscarCodigos(texto.trim(), 50)) } catch (e) { setAviso(await textoError(e)) } finally { setCargando(false) }
     }
 
     return (
