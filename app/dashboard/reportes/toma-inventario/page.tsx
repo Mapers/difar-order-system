@@ -496,7 +496,7 @@ function ListadoTabla({ filas, buscar, setBuscar, titulo, pdf, corte, laboratori
                     {/* Escritorio */}
                     <table className="hidden w-full text-xs md:table">
                         <thead>
-                            <tr className="bg-muted/40"><Th className="w-28">Código</Th><Th>Item</Th><Th className="w-14">Und</Th><Th className="w-[22%]">Lote referencial · vence</Th><Th className="w-[30rem]">Inventario (stock · lote · vence) y nuevo saldo</Th></tr>
+                            <tr className="bg-muted/40"><Th className="w-28">Código</Th><Th>Item</Th><Th className="w-14">Und</Th><Th className="w-[18%]">Lote referencial · vence</Th><Th className="w-[34rem]">Inventario (stock · lote · vence) y nuevo saldo</Th></tr>
                         </thead>
                         <tbody>
                             {fs.map(f => (

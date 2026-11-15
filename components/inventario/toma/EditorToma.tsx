@@ -314,7 +314,7 @@ export function EditorToma({ idToma, onVolver }: { idToma: number; onVolver: () 
                             <thead>
                                 <tr className="bg-muted/40">
                                     <Th className="w-28">Código</Th><Th>Producto</Th><Th className="w-14">Und</Th>
-                                    <Th className="w-[22%]">{esLote ? 'Lote · vence' : 'Lote referencial · vence'}</Th><Th className="w-[30rem]">Inventario (stock · lote · vence) y nuevo saldo</Th>
+                                    <Th className="w-[22%]">{esLote ? 'Lote · vence' : 'Lote referencial · vence'}</Th><Th className="w-[34rem]">Inventario (stock · lote · vence) y nuevo saldo</Th>
                                 </tr>
                             </thead>
                             <tbody>

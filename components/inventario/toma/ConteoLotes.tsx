@@ -274,15 +274,15 @@ export function CeldaConteoLotes({ clave, codigo, unidad, conteo, lotesRef, cort
                             <Input data-conteo-lote value={f.cantidad} disabled={bloqueado} inputMode="decimal" placeholder="Stock"
                                    onChange={e => set(f.k, { cantidad: e.target.value })}
                                    onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); enfocarSiguiente(e.currentTarget) } }}
-                                   className="h-8 w-20 shrink-0 px-2 text-right font-mono text-xs" aria-label={`Stock contado ${i + 1}`} />
+                                   className="h-8 w-16 shrink-0 px-2 text-right font-mono text-xs" aria-label={`Stock contado ${i + 1}`} />
                             <Input data-conteo-lote value={f.lote} disabled={bloqueado} list={idLista} placeholder="Lote" maxLength={50}
                                    onChange={e => set(f.k, { lote: e.target.value.toUpperCase() })} onBlur={() => alSalirLote(f)}
                                    onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); alSalirLote(f); enfocarSiguiente(e.currentTarget) } }}
-                                   className="h-8 min-w-0 flex-1 px-2 font-mono text-xs uppercase" aria-label={`Lote ${i + 1}`} />
+                                   className="h-8 min-w-[6.5rem] flex-1 px-2 font-mono text-xs uppercase" aria-label={`Lote ${i + 1}`} />
                             <Input data-conteo-lote type="date" value={f.vencimiento} disabled={bloqueado} min="2000-01-01" max="2100-12-31"
                                    onChange={e => set(f.k, { vencimiento: e.target.value })}
                                    onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); enfocarSiguiente(e.currentTarget) } }}
-                                   className="h-8 w-[8.5rem] shrink-0 px-1.5 text-xs" aria-label={`Vencimiento ${i + 1}`} />
+                                   className="h-8 w-[8.25rem] shrink-0 px-1.5 text-xs" aria-label={`Vencimiento ${i + 1}`} />
                             {!bloqueado && (filas.length > 1 || !enBlanco(f)) && (
                                 <button type="button" onClick={() => quitar(f.k)} className="shrink-0 rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground" aria-label="Quitar fila">
                                     <X className="h-3.5 w-3.5" />
