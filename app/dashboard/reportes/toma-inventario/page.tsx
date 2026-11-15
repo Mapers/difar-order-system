@@ -28,6 +28,7 @@ type Modo = 'listado' | 'lotes' | 'historial'
 
 const TODOS: TomaCombo = { valor: '', codigo: '', texto: 'Todos los laboratorios' }
 const LINEA = '________________'
+const PASO = 60
 const hoyISO = () => {
     const d = new Date()
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
@@ -396,7 +397,10 @@ function ListadoTabla({ filas, buscar, setBuscar, titulo, pdf, corte, laboratori
     filas: TomaListadoFila[]; buscar: string; setBuscar: (v: string) => void; titulo: string; pdf: ReportePdf | null
     corte: string; laboratorio: string; onAbrirToma: (id: number) => void
 }) {
-    const grupos = agrupar(filas, f => `${f.CodigoLaboratorio}|${f.CodigoSublinea}`)
+    // Se dibujan por tandas: con todos los laboratorios (2 000+ artículos) el celular se ponía lento.
+    const [mostrar, setMostrar] = useState(PASO)
+    useEffect(() => { setMostrar(PASO) }, [filas])
+    const grupos = agrupar(filas.slice(0, mostrar), f => `${f.CodigoLaboratorio}|${f.CodigoSublinea}`)
     const [toma, setToma] = useState<{ id: number; porCodigo: Map<string, number>; porId: Map<number, string>; anterior: Map<string, string> } | null>(null)
     const [buscandoToma, setBuscandoToma] = useState(true)
     const [errorToma, setErrorToma] = useState('')
@@ -512,6 +516,12 @@ function ListadoTabla({ filas, buscar, setBuscar, titulo, pdf, corte, laboratori
                     </table>
                 </div>
             ))}
+            {filas.length > mostrar && (
+                <div className="flex flex-col items-center gap-1 border-t px-4 py-3">
+                    <Button variant="outline" size="sm" onClick={() => setMostrar(m => m + PASO * 2)}>Mostrar {Math.min(PASO * 2, filas.length - mostrar)} más</Button>
+                    <span className="text-[11px] text-muted-foreground">Mostrando {mostrar} de {filas.length}. Usa el buscador para ir directo a un artículo.</span>
+                </div>
+            )}
             <div className="border-t bg-muted/40 px-4 py-2.5 text-xs text-muted-foreground">
                 Usa <b>Otro lote</b> si el artículo tiene varios. Un lote que no está en el kardex se marca como <b>Lote nuevo</b> y exige su vencimiento.
                 Nuevo saldo = lo contado; se compara con el saldo del sistema de hoy. <b>Enter</b> pasa al siguiente campo.

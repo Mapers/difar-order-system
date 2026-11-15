@@ -23,7 +23,8 @@ let sec = 0
 const nuevaFila = (lote = '', vencimiento = '', cantidad = '1'): LoteEscaneado => ({ k: `e${++sec}`, lote, vencimiento, cantidad })
 const RE_LOTE = /^[A-Z0-9][A-Z0-9\-/.]{0,49}$/
 const RE_CANT = /^\d+([.,]\d{1,2})?$/
-const ANCHO_MAX = 1280
+const ANCHO_MAX = 1024
+const MARGEN_RECORTE = 0.12
 
 function errorFila(f: LoteEscaneado, todas: LoteEscaneado[]): string {
     const l = normLote(f.lote)
@@ -47,6 +48,7 @@ export function ModalCamaraLotes({ abierto, onCerrar, onAplicar, codigo, product
     const videoRef = useRef<HTMLVideoElement>(null)
     const streamRef = useRef<MediaStream | null>(null)
     const archivoRef = useRef<HTMLInputElement>(null)
+    const guiaRef = useRef<HTMLDivElement>(null)
     const [camara, setCamara] = useState<'iniciando' | 'lista' | 'sin-permiso' | 'no-disponible'>('iniciando')
     const [leyendo, setLeyendo] = useState(false)
     const [aviso, setAviso] = useState('')
@@ -130,14 +132,31 @@ export function ModalCamaraLotes({ abierto, onCerrar, onAplicar, codigo, product
         }
     }, [lotesRef, producto, sumarLectura])
 
+    /**
+     * Recorta del video solo el recuadro guía (con un margen): imagen más liviana, lectura más rápida y sin
+     * distraer a la IA con el resto de la escena. El video se muestra con object-cover, así que se traduce
+     * el rectángulo de pantalla a píxeles del video.
+     */
     const capturar = useCallback(async () => {
         const v = videoRef.current
         if (!v || camara !== 'lista' || leyendo || !v.videoWidth) return
-        const escala = Math.min(1, ANCHO_MAX / v.videoWidth)
+        const vw = v.videoWidth, vh = v.videoHeight
+        let sx = 0, sy = 0, sw = vw, sh = vh
+        const caja = v.getBoundingClientRect(), guia = guiaRef.current?.getBoundingClientRect()
+        if (guia && caja.width && caja.height) {
+            const esc = Math.max(caja.width / vw, caja.height / vh)
+            const offX = (vw * esc - caja.width) / 2, offY = (vh * esc - caja.height) / 2
+            const mx = guia.width * MARGEN_RECORTE, my = guia.height * MARGEN_RECORTE * 2
+            sx = Math.max(0, (guia.left - caja.left - mx + offX) / esc)
+            sy = Math.max(0, (guia.top - caja.top - my + offY) / esc)
+            sw = Math.min(vw - sx, (guia.width + 2 * mx) / esc)
+            sh = Math.min(vh - sy, (guia.height + 2 * my) / esc)
+        }
+        const escala = Math.min(1, ANCHO_MAX / sw)
         const c = document.createElement('canvas')
-        c.width = Math.round(v.videoWidth * escala); c.height = Math.round(v.videoHeight * escala)
-        c.getContext('2d')!.drawImage(v, 0, 0, c.width, c.height)
-        const foto = await new Promise<Blob | null>(ok => c.toBlob(ok, 'image/jpeg', 0.85))
+        c.width = Math.round(sw * escala); c.height = Math.round(sh * escala)
+        c.getContext('2d')!.drawImage(v, sx, sy, sw, sh, 0, 0, c.width, c.height)
+        const foto = await new Promise<Blob | null>(ok => c.toBlob(ok, 'image/jpeg', 0.82))
         if (foto) enviarFoto(foto)
     }, [camara, leyendo, enviarFoto])
 
@@ -200,7 +219,7 @@ export function ModalCamaraLotes({ abierto, onCerrar, onAplicar, codigo, product
                 <div className="relative min-h-0 flex-1 bg-black">
                     <video ref={videoRef} playsInline muted className="h-full w-full object-cover" />
                     {camara === 'lista' && (
-                        <div className="pointer-events-none absolute inset-x-8 top-1/2 h-32 -translate-y-1/2 rounded-xl border-2 border-white/80 shadow-[0_0_0_9999px_rgba(0,0,0,0.35)]">
+                        <div ref={guiaRef} className="pointer-events-none absolute inset-x-8 top-1/2 h-32 -translate-y-1/2 rounded-xl border-2 border-white/80 shadow-[0_0_0_9999px_rgba(0,0,0,0.35)]">
                             <span className="absolute -top-6 left-0 right-0 text-center text-xs font-medium text-white">Pon aquí el lote y el vencimiento</span>
                         </div>
                     )}

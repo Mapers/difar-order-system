@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { Input } from "@/components/ui/input"
 import { AlertTriangle, Camera, CheckCircle2, Loader2, Plus, Sparkles, X } from "lucide-react"
 import { ModalCamaraLotes } from "./ModalCamaraLotes"
@@ -193,7 +193,20 @@ function enfocarSiguiente(el: HTMLElement) {
  * Celda "Inventario": filas cantidad + lote + vencimiento y, al costado, el nuevo saldo.
  * `lotesRef` son los lotes con saldo del artículo (para completar el vencimiento y comparar).
  */
-export function CeldaConteoLotes({ clave, codigo, producto, unidad, conteo, lotesRef, corte, editable, deshabilitado, conteoAnterior, alEditar }: {
+type PropsCelda = Parameters<typeof CeldaConteoLotesBase>[0]
+const mismosLotes = (a: TomaLoteRef[], b: TomaLoteRef[]) => a === b || (a.length === b.length && a.every((x, i) => x.lote === b[i].lote && x.vencimiento === b[i].vencimiento && x.saldo === b[i].saldo))
+/**
+ * Con 2 000+ artículos en pantalla, volver a dibujar todas las celdas por cada tecla volvía lenta la página
+ * (sobre todo en celular). Cada celda se redibuja solo si cambia su conteo, su error, los lotes verificados o sus props.
+ */
+export const CeldaConteoLotes = memo(CeldaConteoLotesBase, (a: PropsCelda, b: PropsCelda) =>
+    a.clave === b.clave && a.codigo === b.codigo && a.producto === b.producto && a.unidad === b.unidad && a.corte === b.corte
+    && a.editable === b.editable && a.deshabilitado === b.deshabilitado && a.conteoAnterior === b.conteoAnterior && a.alEditar === b.alEditar
+    && mismosLotes(a.lotesRef, b.lotesRef)
+    && a.conteo.filas[a.clave] === b.conteo.filas[b.clave] && a.conteo.errores[a.clave] === b.conteo.errores[b.clave]
+    && a.conteo.buscados === b.conteo.buscados && a.conteo.cambiar === b.conteo.cambiar)
+
+function CeldaConteoLotesBase({ clave, codigo, producto, unidad, conteo, lotesRef, corte, editable, deshabilitado, conteoAnterior, alEditar }: {
     clave: string
     codigo: string
     producto?: string | null

@@ -25,6 +25,7 @@ import { Avance, EstadoBadge, fechaHora, ModoBadge } from "./HistorialTomas"
 
 const LINEA = '________________'
 const TODOS_LAB = '__todos__'
+const PASO = 60
 
 function agrupar<T>(filas: T[], clave: (f: T) => string): [string, T[]][] {
     const m = new Map<string, T[]>()
@@ -134,9 +135,12 @@ export function EditorToma({ idToma, onVolver }: { idToma: number; onVolver: () 
         && (!pendientesFijos || pendientesFijos.has(l.IdLinea))), [toma, q, pendientesFijos, laboratorio])
 
     const esLote = cab?.Modo === 'LOTE'
-    const grupos = useMemo(() => agrupar(filas, l => esLote
+    // Se dibujan por tandas: con 2 000+ líneas el celular se ponía lento.
+    const [mostrar, setMostrar] = useState(PASO)
+    useEffect(() => { setMostrar(PASO) }, [q, laboratorio, pendientesFijos])
+    const grupos = useMemo(() => agrupar(filas.slice(0, mostrar), l => esLote
         ? `${l.IdAlmacen}|${l.CodigoLaboratorio}`
-        : `${l.CodigoLaboratorio}|${l.CodigoSublinea}`), [filas, esLote])
+        : `${l.CodigoLaboratorio}|${l.CodigoSublinea}`), [filas, esLote, mostrar])
 
     // ── PDF con el conteo escrito ───────────────────────────────────────────
     const pdf = useMemo<ReportePdf | null>(() => {
@@ -331,6 +335,12 @@ export function EditorToma({ idToma, onVolver }: { idToma: number; onVolver: () 
                         </table>
                     </div>
                 ))}
+                {filas.length > mostrar && (
+                    <div className="flex flex-col items-center gap-1 border-t px-4 py-3">
+                        <Button variant="outline" size="sm" onClick={() => setMostrar(m => m + PASO * 2)}>Mostrar {Math.min(PASO * 2, filas.length - mostrar)} más</Button>
+                        <span className="text-[11px] text-muted-foreground">Mostrando {mostrar} de {filas.length}. Usa el buscador o el filtro de laboratorio.</span>
+                    </div>
+                )}
                 {editable && (
                     <div className="border-t bg-muted/40 px-4 py-2.5 text-xs text-muted-foreground">
                         Ingresa el stock contado, el lote y su vencimiento; usa <b>Otro lote</b> si el artículo tiene varios. Un lote que no está en el kardex se marca como <b>Lote nuevo</b> y exige vencimiento. Se guarda solo; <b>Enter</b> pasa al siguiente campo.
