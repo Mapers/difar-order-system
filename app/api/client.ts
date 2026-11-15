@@ -85,7 +85,9 @@ apiClient.interceptors.request.use((config) => {
  *   - si no responde: el servidor está caído o reiniciándose (p. ej. pm2) -> NO se cierra la sesión.
  * Antes se cerraba la sesión ante cualquier corte de red con un token grande.
  */
-const LIMITE_TOKEN_SEGURO = 8000;
+// 15/11/2026: nginx ya acepta cabeceras de 32 KB; el límite real ahora es el de Node (16 KB).
+// Con 8000, los tokens de Gerente/Adm. AWS (~11 KB, menú agrupado) disparaban un nuevo login ante un corte de red.
+const LIMITE_TOKEN_SEGURO = 15000;
 let renovandoSesion = false;
 
 async function servidorRespondeSinToken(): Promise<boolean> {
