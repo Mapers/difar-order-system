@@ -58,7 +58,8 @@ const apiClient = axios.create({
  * Rutas que exigen sesión en el backend (auditoría 13–14/11/2026: C1, S2, S3): cobranza, amortización,
  * usuarios y roles. Solo a ellas se les agrega el token, para no mandar una cabecera de ~8 KB en todas.
  */
-const RUTAS_CON_SESION = /^\/?(amortizacion|planilla-cobranza|recibos|cobranza|usuarios|roles)(\/|\?|$)/;
+// contabilidad/caja y contabilidad/compras: sus escrituras piden sesión desde la re-auditoría del 15/11/2026.
+const RUTAS_CON_SESION = /^\/?(amortizacion|planilla-cobranza|recibos|cobranza|usuarios|roles|contabilidad\/caja|contabilidad\/compras)(\/|\?|$)/;
 
 apiClient.interceptors.request.use((config) => {
   try {

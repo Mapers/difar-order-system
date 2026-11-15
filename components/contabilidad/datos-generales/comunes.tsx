@@ -31,7 +31,8 @@ export const fraccionDePct = (v: string) => (v.trim() === '' ? '' : String(Numbe
 export const errorPct = (nombre: string, v: string) => {
     const t = v.trim().replace(',', '.')
     if (!t) return ''
-    if (!/^-?\d+(\.\d{1,2})?$/.test(t)) return `${nombre} debe ser un número con hasta 2 decimales (por ejemplo 18 o 7.05).`
+    if (t.startsWith('-')) return `${nombre} no puede ser negativo.`
+    if (!/^\d+(\.\d{1,2})?$/.test(t)) return `${nombre} debe ser un número con hasta 2 decimales (por ejemplo 18 o 7.05).`
     return ''
 }
 /** Mensaje del backend (400 de validación / SIGNAL del SP, 403, 500) para el aviso ámbar. */

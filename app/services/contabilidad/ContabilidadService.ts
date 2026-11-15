@@ -90,9 +90,10 @@ export const CajaBancosService = {
     obtenerVoucher: async (
         caja: number, fecha: string, usuario: number | null, crear: boolean,
     ): Promise<CajaVoucher> => {
-        const res = await apiClient.get('/contabilidad/caja/voucher', {
-            params: { caja, fecha, usuario: usuario ?? undefined, crear: crear ? 1 : 0 },
-        })
+        // Crear la cabecera es una escritura: va por POST (antes era un GET con crear=1).
+        const res = crear
+            ? await apiClient.post('/contabilidad/caja/voucher', { caja, fecha, usuario: usuario ?? undefined })
+            : await apiClient.get('/contabilidad/caja/voucher', { params: { caja, fecha, usuario: usuario ?? undefined, crear: 0 } })
         const d = res.data?.data ?? {}
         return { cabecera: d.cabecera ?? null, detalle: d.detalle ?? [] }
     },
