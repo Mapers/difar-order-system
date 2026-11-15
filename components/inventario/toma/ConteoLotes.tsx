@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { Input } from "@/components/ui/input"
-import { AlertTriangle, CheckCircle2, Loader2, Plus, Sparkles, X } from "lucide-react"
+import { AlertTriangle, Camera, CheckCircle2, Loader2, Plus, Sparkles, X } from "lucide-react"
+import { ModalCamaraLotes } from "./ModalCamaraLotes"
 import { TomaInventarioService } from "@/app/services/inventario/TomaInventarioService"
 import { TomaLoteBuscado, TomaLoteRef } from "@/app/types/toma-inventario-types"
 import { fechaDMY } from "@/components/contabilidad/comisiones/ui"
@@ -192,9 +193,10 @@ function enfocarSiguiente(el: HTMLElement) {
  * Celda "Inventario": filas cantidad + lote + vencimiento y, al costado, el nuevo saldo.
  * `lotesRef` son los lotes con saldo del artículo (para completar el vencimiento y comparar).
  */
-export function CeldaConteoLotes({ clave, codigo, unidad, conteo, lotesRef, corte, editable, deshabilitado, conteoAnterior, alEditar }: {
+export function CeldaConteoLotes({ clave, codigo, producto, unidad, conteo, lotesRef, corte, editable, deshabilitado, conteoAnterior, alEditar }: {
     clave: string
     codigo: string
+    producto?: string | null
     unidad?: string | null
     conteo: ConteoLotes
     lotesRef: TomaLoteRef[]
@@ -226,6 +228,25 @@ export function CeldaConteoLotes({ clave, codigo, unidad, conteo, lotesRef, cort
         conteo.cambiar(clave, resto.length ? resto : [filaVacia()])
     }
     const agregar = () => { alEditar?.(); conteo.cambiar(clave, [...filas, filaVacia()]) }
+    const [camara, setCamara] = useState(false)
+
+    /** Lo contado con la cámara se suma a las filas: mismo lote = suma la cantidad; lote nuevo = fila nueva. */
+    const aplicarCamara = (leidas: { lote: string; vencimiento: string; cantidad: number }[]) => {
+        alEditar?.()
+        let nuevas = filas.filter(f => !enBlanco(f))
+        for (const x of leidas) {
+            const i = nuevas.findIndex(f => normLote(f.lote) === x.lote)
+            if (i >= 0) {
+                const f = nuevas[i]
+                const suma = Math.round(((RE_CANT.test(f.cantidad.trim()) ? num(f.cantidad) : 0) + x.cantidad) * 100) / 100
+                nuevas = nuevas.map((y, j) => j === i ? { ...y, cantidad: String(suma), vencimiento: y.vencimiento || x.vencimiento } : y)
+            } else {
+                nuevas = [...nuevas, { ...filaVacia(x.lote, x.vencimiento), cantidad: String(x.cantidad) }]
+            }
+        }
+        conteo.cambiar(clave, nuevas.length ? nuevas : [filaVacia()])
+        for (const x of leidas) if (x.lote && !refPorLote.has(x.lote)) conteo.buscarLote(codigo, x.lote)
+    }
 
     /** Al salir del lote: si existe, completa el vencimiento; si no está en los lotes con saldo, lo busca en el kardex. */
     const alSalirLote = async (f: FilaLote) => {
@@ -298,10 +319,19 @@ export function CeldaConteoLotes({ clave, codigo, unidad, conteo, lotesRef, cort
                             <Plus className="h-3 w-3" /> Otro lote
                         </button>
                     )}
+                    {!bloqueado && (
+                        <button type="button" onClick={() => setCamara(true)} className="inline-flex items-center gap-1 rounded-full bg-violet-600 px-2 py-0.5 text-[11px] font-semibold text-white hover:bg-violet-700">
+                            <Camera className="h-3 w-3" /> Contar con cámara (IA)
+                        </button>
+                    )}
                     {conteoAnterior && !hayConteo && <span className="text-[10.5px] text-muted-foreground" title="Conteo escrito antes como texto libre">Anotado antes: “{conteoAnterior}”</span>}
                 </div>
                 {error && <p className="flex items-start gap-1 text-[11px] text-amber-700 dark:text-amber-400"><AlertTriangle className="mt-px h-3 w-3 shrink-0" />{error} No se guarda hasta corregirlo.</p>}
             </div>
+            {camara && (
+                <ModalCamaraLotes abierto={camara} onCerrar={() => setCamara(false)} onAplicar={aplicarCamara}
+                                  codigo={codigo} producto={producto} unidad={unidad} lotesRef={lotesRef} corte={corte} />
+            )}
             <div className={`shrink-0 rounded-md border px-2 py-1 text-right sm:w-28 ${hayConteo ? (conSaldo && dif !== 0 ? 'border-amber-300 bg-amber-50/60 dark:border-amber-900 dark:bg-amber-950/30' : 'border-emerald-300 bg-emerald-50/60 dark:border-emerald-900 dark:bg-emerald-950/30') : 'border-dashed'}`}>
                 <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Nuevo saldo</p>
                 <p className="font-mono text-sm font-bold">{hayConteo ? fmt(contado) : '—'} <span className="text-[10px] font-normal text-muted-foreground">{unidad}</span></p>

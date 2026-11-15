@@ -127,6 +127,14 @@ export interface TomaLoteBuscado {
     movimientos?: number
 }
 
+/** Lectura con IA de la etiqueta (lote y vencimiento). */
+export interface TomaEtiquetaLeida {
+    legible: boolean
+    lote: string
+    vencimiento: string
+    textoVisto: string
+}
+
 export interface TomaCrear {
     modo: TomaModo
     laboratorio?: string

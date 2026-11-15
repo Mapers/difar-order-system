@@ -441,7 +441,7 @@ function ListadoTabla({ filas, buscar, setBuscar, titulo, pdf, corte, laboratori
     const conteo = useConteoLotes({ idToma: toma?.id ?? null, editable: true, claveDe, idDe, alGuardarError })
 
     const celda = (f: TomaListadoFila) => (
-        <CeldaConteoLotes clave={f.Codigo} codigo={f.Codigo} unidad={f.Unidad} conteo={conteo} lotesRef={f.Lotes} corte={corte}
+        <CeldaConteoLotes clave={f.Codigo} codigo={f.Codigo} producto={f.Producto} unidad={f.Unidad} conteo={conteo} lotesRef={f.Lotes} corte={corte}
                           editable={!buscandoToma} alEditar={asegurarToma}
                           conteoAnterior={toma && !conteo.filas[f.Codigo] ? toma.anterior.get(f.Codigo) : null}
                           deshabilitado={toma && !toma.porCodigo.has(f.Codigo) ? `No está en tu toma N.º ${toma.id} (se creó antes que este artículo). Finalízala y crea otra para contarlo.` : undefined} />

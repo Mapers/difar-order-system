@@ -1,6 +1,6 @@
 import apiClient from '@/app/api/client'
 import { cabeceraSesion } from '@/app/api/sesion'
-import { TomaCabecera, TomaCombos, TomaConteoLote, TomaCrear, TomaDetalle, TomaListado, TomaLoteBuscado, TomaLotes } from '@/app/types/toma-inventario-types'
+import { TomaCabecera, TomaCombos, TomaConteoLote, TomaCrear, TomaDetalle, TomaEtiquetaLeida, TomaListado, TomaLoteBuscado, TomaLotes } from '@/app/types/toma-inventario-types'
 
 /**
  * Toma de inventario: /api/inventario/toma.
@@ -50,6 +50,15 @@ export const TomaInventarioService = {
     },
     buscarLote: async (codigo: string, lote: string): Promise<TomaLoteBuscado> => {
         const res = await apiClient.get('/inventario/toma/lote', { params: { codigo, lote }, headers: cabeceraSesion() })
+        return res.data?.data
+    },
+    /** Cámara + IA: lee lote y vencimiento de la foto (no se guarda). */
+    leerEtiqueta: async (foto: Blob, datos: { producto: string; lotes: string }): Promise<TomaEtiquetaLeida> => {
+        const fd = new FormData()
+        fd.append('foto', foto, 'etiqueta.jpg')
+        fd.append('producto', datos.producto)
+        fd.append('lotes', datos.lotes)
+        const res = await apiClient.post('/inventario/toma/leer-etiqueta', fd, { headers: { ...cabeceraSesion(), 'Content-Type': 'multipart/form-data' }, timeout: 60000 })
         return res.data?.data
     },
     cerrar: async (idToma: number): Promise<void> => {

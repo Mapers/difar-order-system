@@ -218,7 +218,7 @@ export function EditorToma({ idToma, onVolver }: { idToma: number; onVolver: () 
         : (saldos.get(l.Codigo) ?? l.Lotes)
 
     const casilla = (l: TomaLinea) => (
-        <CeldaConteoLotes clave={String(l.IdLinea)} codigo={l.Codigo} unidad={l.Unidad} conteo={conteo} lotesRef={lotesDe(l)}
+        <CeldaConteoLotes clave={String(l.IdLinea)} codigo={l.Codigo} producto={l.Producto} unidad={l.Unidad} conteo={conteo} lotesRef={lotesDe(l)}
                           corte={corte} editable={!!editable} conteoAnterior={conteo.filas[String(l.IdLinea)] ? null : l.Conteo} />
     )
 
