@@ -109,6 +109,24 @@ export interface TomaDetalle {
     lineas: TomaLinea[]
 }
 
+/** Lote contado (t_ws_toma_inventario_conteo_lote). */
+export interface TomaConteoLote {
+    IdLinea: number
+    Lote: string
+    Vencimiento: string | null
+    Cantidad: number
+    LoteNuevo: boolean
+}
+
+/** Resultado de buscar un lote en el kardex. */
+export interface TomaLoteBuscado {
+    existe: boolean
+    lote: string
+    vencimiento?: string | null
+    saldo?: number
+    movimientos?: number
+}
+
 export interface TomaCrear {
     modo: TomaModo
     laboratorio?: string

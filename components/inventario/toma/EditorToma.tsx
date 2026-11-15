@@ -10,21 +10,21 @@ import {
     AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import {
-    AlertCircle, ArrowLeft, CalendarDays, Check, CloudUpload, FlaskConical, Lock, Loader2, Save, Search, UserRound, Warehouse,
+    AlertCircle, ArrowLeft, CalendarDays, FlaskConical, Lock, Loader2, Save, Search, UserRound, Warehouse,
 } from "lucide-react"
 import { toast } from "@/app/hooks/useToast"
 import { TomaInventarioService } from "@/app/services/inventario/TomaInventarioService"
-import { TomaDetalle, TomaLinea } from "@/app/types/toma-inventario-types"
+import { TomaCombo, TomaDetalle, TomaLinea, TomaLoteRef } from "@/app/types/toma-inventario-types"
+import { ComboSelect } from "@/components/ui/combo-select"
+import { CeldaConteoLotes, EstadoGuardadoLotes, lineaContada, resumenLinea, useConteoLotes } from "./ConteoLotes"
 import { ExportComisionPdf } from "@/components/contabilidad/comisiones/ExportComisionPdf"
 import { ReportePdf } from "@/components/contabilidad/comisiones/pdfComision"
 import { fechaDMY, Th } from "@/components/contabilidad/comisiones/ui"
 import { LoteBadge, LotesBadges, loteVencido, lotesTexto } from "./LoteBadge"
 import { Avance, EstadoBadge, fechaHora, ModoBadge } from "./HistorialTomas"
 
-const MAX_CONTEO = 200
-const LOTE_ENVIO = 200
-const AUTOGUARDADO_MS = 2500
 const LINEA = '________________'
+const TODOS_LAB = '__todos__'
 
 function agrupar<T>(filas: T[], clave: (f: T) => string): [string, T[]][] {
     const m = new Map<string, T[]>()
@@ -36,43 +36,27 @@ function agrupar<T>(filas: T[], clave: (f: T) => string): [string, T[]][] {
     return [...m.entries()]
 }
 
-/** Enfoca la siguiente casilla de conteo visible (Enter para avanzar rápido al contar). */
-function enfocarSiguiente(actual: number) {
-    const visibles = Array.from(document.querySelectorAll<HTMLInputElement>('input[data-conteo]'))
-        .filter(el => el.offsetParent !== null)
-    const i = visibles.findIndex(el => Number(el.dataset.conteo) === actual)
-    const sig = visibles[i + 1]
-    if (sig) { sig.focus(); sig.select() }
-}
-
 /**
- * Toma de inventario de un usuario: escribe el conteo (texto libre) en cada
- * línea, se guarda solo (y con el botón), se cierra y se exporta a PDF.
+ * Toma de inventario de un usuario: por cada línea ingresa stock + lote + vencimiento (una o varias filas),
+ * ve al costado el nuevo saldo, se guarda solo (y con el botón), se cierra y se exporta a PDF.
  */
 export function EditorToma({ idToma, onVolver }: { idToma: number; onVolver: () => void }) {
     const [toma, setToma] = useState<TomaDetalle | null>(null)
     const [error, setError] = useState<string | null>(null)
-    const [valores, setValores] = useState<Record<number, string>>({})
-    const [guardados, setGuardados] = useState<Record<number, string>>({})
-    const [guardando, setGuardando] = useState(false)
-    const [ultimoGuardado, setUltimoGuardado] = useState<Date | null>(null)
     const [buscar, setBuscar] = useState('')
-    // Pendientes fijados al activar el filtro: la línea no desaparece mientras se escribe.
+    const [laboratorio, setLaboratorio] = useState(TODOS_LAB)
+    // Pendientes fijados al activar el filtro: la línea no desaparece mientras se cuenta.
     const [pendientesFijos, setPendientesFijos] = useState<Set<number> | null>(null)
     const soloPendientes = pendientesFijos !== null
     const [confirmarCierre, setConfirmarCierre] = useState(false)
     const [cerrando, setCerrando] = useState(false)
-    const guardandoRef = useRef(false)
+    // Saldo actual por lote (para "Nuevo saldo" vs sistema en tomas por artículo)
+    const [saldos, setSaldos] = useState<Map<string, TomaLoteRef[]>>(new Map())
 
     const cargar = useCallback(async () => {
         setError(null)
         try {
-            const d = await TomaInventarioService.obtener(idToma)
-            const v: Record<number, string> = {}
-            for (const l of d.lineas) v[l.IdLinea] = l.Conteo ?? ''
-            setToma(d)
-            setValores(v)
-            setGuardados(v)
+            setToma(await TomaInventarioService.obtener(idToma))
         } catch (e: any) {
             setError(e?.response?.data?.message || 'No se pudo abrir la toma.')
         }
@@ -83,62 +67,43 @@ export function EditorToma({ idToma, onVolver }: { idToma: number; onVolver: () 
     const cab = toma?.cabecera
     const editable = cab?.Estado === 'BORRADOR'
     const corte = cab?.FechaCorte ?? ''
-    const pendientesGuardar = useMemo(
-        () => Object.keys(valores).map(Number).filter(id => (valores[id] ?? '').trim() !== (guardados[id] ?? '').trim()),
-        [valores, guardados],
-    )
-    const sucio = pendientesGuardar.length > 0
-    const contadas = useMemo(() => Object.values(valores).filter(v => v.trim() !== '').length, [valores])
 
-    const guardar = useCallback(async (silencioso = false) => {
-        if (!toma || guardandoRef.current) return true
-        const ids = Object.keys(valores).map(Number).filter(id => (valores[id] ?? '').trim() !== (guardados[id] ?? '').trim())
-        if (!ids.length) return true
-        guardandoRef.current = true
-        setGuardando(true)
-        const enviados: Record<number, string> = {}
-        try {
-            for (let i = 0; i < ids.length; i += LOTE_ENVIO) {
-                const bloque = ids.slice(i, i + LOTE_ENVIO).map(id => ({ id, conteo: (valores[id] ?? '').trim() }))
-                await TomaInventarioService.guardar(toma.cabecera.IdToma, bloque)
-                for (const b of bloque) enviados[b.id] = b.conteo
-            }
-            setGuardados(g => ({ ...g, ...enviados }))
-            setUltimoGuardado(new Date())
-            if (!silencioso) toast({ title: 'Conteo guardado', description: `${ids.length} línea(s) actualizadas.` })
-            return true
-        } catch (e: any) {
-            if (Object.keys(enviados).length) setGuardados(g => ({ ...g, ...enviados }))
-            toast({ title: 'No se pudo guardar', description: e?.response?.data?.message || 'Revisa tu conexión e inténtalo de nuevo.', variant: 'destructive' })
-            return false
-        } finally {
-            guardandoRef.current = false
-            setGuardando(false)
-        }
-    }, [toma, valores, guardados])
-
-    // Autoguardado: unos segundos después de dejar de escribir.
     useEffect(() => {
-        if (!editable || !sucio) return
-        const t = setTimeout(() => { guardar(true) }, AUTOGUARDADO_MS)
-        return () => clearTimeout(t)
-    }, [valores, editable, sucio, guardar])
+        if (!cab || cab.Modo !== 'LISTADO') return
+        TomaInventarioService.listado(cab.IdLaboratorio ? String(cab.IdLaboratorio) : undefined)
+            .then(l => setSaldos(new Map(l.filas.map(f => [f.Codigo, f.Lotes]))))
+            .catch(() => { /* sin saldo: solo se muestra lo contado */ })
+    }, [cab?.IdToma, cab?.Modo, cab?.IdLaboratorio]) // eslint-disable-line react-hooks/exhaustive-deps
 
-    // Aviso al cerrar la pestaña con cambios sin guardar.
-    useEffect(() => {
-        if (!sucio) return
-        const h = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = '' }
-        window.addEventListener('beforeunload', h)
-        return () => window.removeEventListener('beforeunload', h)
-    }, [sucio])
+    const claveDe = useCallback((id: number) => String(id), [])
+    const idDe = useCallback((k: string) => Number(k) || undefined, [])
+    const alGuardarError = useCallback((m: string) => toast({ title: 'No se pudo guardar', description: m, variant: 'destructive' }), [])
+    const conteo = useConteoLotes({ idToma: toma ? idToma : null, editable: !!editable, claveDe, idDe, alGuardarError })
+
+    const contadaLinea = useCallback((l: TomaLinea) => {
+        const f = conteo.filas[String(l.IdLinea)]
+        return f ? lineaContada(f) : !!(l.Conteo ?? '').trim()
+    }, [conteo.filas])
+    const contadas = useMemo(() => (toma?.lineas ?? []).filter(contadaLinea).length, [toma, contadaLinea])
+
+    const guardar = async (silencioso = false) => {
+        const ok = await conteo.guardar()
+        if (ok && !silencioso) toast({ title: 'Conteo guardado' })
+        return ok
+    }
 
     const volver = async () => {
-        if (sucio && editable && !(await guardar(true))) return
+        if (conteo.sinGuardar && editable && !(await guardar(true))) return
         onVolver()
     }
 
     const cerrar = async () => {
         if (!toma) return
+        if (conteo.conError) {
+            toast({ title: 'Hay líneas por corregir', description: 'Corrige las líneas marcadas en ámbar antes de finalizar.' })
+            setConfirmarCierre(false)
+            return
+        }
         setCerrando(true)
         try {
             if (!(await guardar(true))) return
@@ -153,10 +118,20 @@ export function EditorToma({ idToma, onVolver }: { idToma: number; onVolver: () 
         }
     }
 
+    const laboratorios = useMemo<TomaCombo[]>(() => {
+        const m = new Map<string, TomaCombo>()
+        for (const l of toma?.lineas ?? []) {
+            const k = l.CodigoLaboratorio ?? ''
+            if (!m.has(k)) m.set(k, { valor: k, codigo: k, texto: l.Laboratorio ?? k })
+        }
+        return [{ valor: TODOS_LAB, codigo: '', texto: 'Todos los laboratorios' }, ...[...m.values()].sort((x, y) => x.texto.localeCompare(y.texto))]
+    }, [toma])
+
     const q = buscar.trim().toUpperCase()
     const filas = useMemo(() => (toma?.lineas ?? []).filter(l =>
         (!q || l.Codigo.includes(q) || (l.Producto ?? '').toUpperCase().includes(q) || (l.Lote ?? '').toUpperCase().includes(q))
-        && (!pendientesFijos || pendientesFijos.has(l.IdLinea))), [toma, q, pendientesFijos])
+        && (laboratorio === TODOS_LAB || (l.CodigoLaboratorio ?? '') === laboratorio)
+        && (!pendientesFijos || pendientesFijos.has(l.IdLinea))), [toma, q, pendientesFijos, laboratorio])
 
     const esLote = cab?.Modo === 'LOTE'
     const grupos = useMemo(() => agrupar(filas, l => esLote
@@ -201,25 +176,26 @@ export function EditorToma({ idToma, onVolver }: { idToma: number; onVolver: () 
                     colores: { cod: 'tema', prod: 'tema' } as const,
                 },
                 ...ls.map(l => {
-                    const conteo = (valores[l.IdLinea] ?? '').trim()
+                    const f = conteo.filas[String(l.IdLinea)]
+                    const texto = (f ? resumenLinea(f) : (l.Conteo ?? '')).trim()
                     return {
                         valores: {
                             cod: l.Codigo, prod: l.Producto ?? '', und: l.Unidad ?? '',
                             lote: lote ? (l.Lote || '(sin lote)') : lotesTexto(l.Lotes),
                             vcto: fechaDMY(l.Vencimiento),
-                            conteo: conteo || LINEA,
+                            conteo: texto || LINEA,
                         },
                         colores: {
                             cod: 'gris', und: 'gris',
                             vcto: lote && loteVencido(l.Vencimiento, c.FechaCorte) ? 'rojo' : 'texto',
-                            conteo: conteo ? 'texto' : 'gris',
+                            conteo: texto ? 'texto' : 'gris',
                         } as const,
                     }
                 }),
             ]),
             pie: `Toma de inventario N.º ${c.IdToma} · ${c.Laboratorio || 'Todos los laboratorios'}`,
         }
-    }, [toma, valores, contadas])
+    }, [toma, conteo.filas, contadas])
 
     if (error) {
         return (
@@ -235,24 +211,15 @@ export function EditorToma({ idToma, onVolver }: { idToma: number; onVolver: () 
 
     const estadoGuardado = !editable
         ? <span className="inline-flex items-center gap-1 text-muted-foreground"><Lock className="h-3.5 w-3.5" /> Solo lectura</span>
-        : guardando
-            ? <span className="inline-flex items-center gap-1 text-blue-700 dark:text-blue-400"><Loader2 className="h-3.5 w-3.5 animate-spin" /> Guardando…</span>
-            : sucio
-                ? <span className="inline-flex items-center gap-1 text-amber-700 dark:text-amber-400"><CloudUpload className="h-3.5 w-3.5" /> {pendientesGuardar.length} sin guardar</span>
-                : <span className="inline-flex items-center gap-1 text-emerald-700 dark:text-emerald-400"><Check className="h-3.5 w-3.5" /> {ultimoGuardado ? `Guardado ${ultimoGuardado.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' })}` : 'Todo guardado'}</span>
+        : <EstadoGuardadoLotes conteo={conteo} editable={!!editable} />
 
-    const casilla = (l: TomaLinea, clase = '') => (
-        <Input
-            data-conteo={l.IdLinea}
-            value={valores[l.IdLinea] ?? ''}
-            disabled={!editable}
-            maxLength={MAX_CONTEO}
-            placeholder={editable ? 'Escribe el conteo' : '—'}
-            onChange={e => setValores(v => ({ ...v, [l.IdLinea]: e.target.value }))}
-            onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); enfocarSiguiente(l.IdLinea) } }}
-            className={`h-9 text-sm ${(valores[l.IdLinea] ?? '').trim() ? 'border-emerald-300 bg-emerald-50/50 dark:border-emerald-800 dark:bg-emerald-950/20' : ''} ${clase}`}
-            aria-label={`Conteo de ${l.Producto ?? l.Codigo}`}
-        />
+    const lotesDe = (l: TomaLinea): TomaLoteRef[] => esLote
+        ? [{ lote: l.Lote, vencimiento: l.Vencimiento, saldo: l.SaldoSistema ?? undefined }]
+        : (saldos.get(l.Codigo) ?? l.Lotes)
+
+    const casilla = (l: TomaLinea) => (
+        <CeldaConteoLotes clave={String(l.IdLinea)} codigo={l.Codigo} unidad={l.Unidad} conteo={conteo} lotesRef={lotesDe(l)}
+                          corte={corte} editable={!!editable} conteoAnterior={conteo.filas[String(l.IdLinea)] ? null : l.Conteo} />
     )
 
     const etiquetas = (l: TomaLinea) => esLote
@@ -284,7 +251,7 @@ export function EditorToma({ idToma, onVolver }: { idToma: number; onVolver: () 
                         <Avance contadas={contadas} lineas={toma.lineas.length} />
                         <div className="hidden flex-wrap justify-end gap-2 md:flex">
                             {editable && (
-                                <Button variant="outline" size="sm" onClick={() => guardar()} disabled={guardando || !sucio} className="gap-1.5">
+                                <Button variant="outline" size="sm" onClick={() => guardar()} disabled={conteo.guardando || !conteo.sinGuardar} className="gap-1.5">
                                     <Save className="h-3.5 w-3.5" /> Guardar
                                 </Button>
                             )}
@@ -299,12 +266,21 @@ export function EditorToma({ idToma, onVolver }: { idToma: number; onVolver: () 
                     </div>
                 </div>
                 <div className="flex flex-col gap-2 border-t bg-muted/30 px-4 py-2.5 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="relative sm:w-72">
-                        <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-                        <Input className="h-9 pl-8 text-sm" value={buscar} onChange={e => setBuscar(e.target.value)} placeholder="Buscar código, producto o lote" />
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                        <div className="relative sm:w-72">
+                            <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                            <Input className="h-9 pl-8 text-sm" value={buscar} onChange={e => setBuscar(e.target.value)} placeholder="Buscar código, producto o lote" />
+                        </div>
+                        {laboratorios.length > 2 && (
+                            <div className="sm:w-72">
+                                <ComboSelect<TomaCombo> value={laboratorio} onChange={x => setLaboratorio(x.valor)} items={laboratorios}
+                                                        getKey={x => x.valor} getLabel={x => x.valor === TODOS_LAB ? x.texto : `${x.codigo} · ${x.texto}`}
+                                                        placeholder="Todos los laboratorios" searchPlaceholder="Buscar laboratorio..." emptyText="Sin laboratorios" />
+                            </div>
+                        )}
                     </div>
                     <div className="flex items-center justify-between gap-4 text-xs">
-                        <label className="flex items-center gap-2"><Switch checked={soloPendientes} onCheckedChange={v => setPendientesFijos(v ? new Set(Object.keys(valores).map(Number).filter(id => (valores[id] ?? '').trim() === '')) : null)} /> Solo pendientes</label>
+                        <label className="flex items-center gap-2"><Switch checked={soloPendientes} onCheckedChange={v => setPendientesFijos(v ? new Set((toma?.lineas ?? []).filter(l => !contadaLinea(l)).map(l => l.IdLinea)) : null)} /> Solo pendientes</label>
                         {estadoGuardado}
                     </div>
                 </div>
@@ -338,7 +314,7 @@ export function EditorToma({ idToma, onVolver }: { idToma: number; onVolver: () 
                             <thead>
                                 <tr className="bg-muted/40">
                                     <Th className="w-28">Código</Th><Th>Producto</Th><Th className="w-14">Und</Th>
-                                    <Th className="w-[30%]">{esLote ? 'Lote · vence' : 'Lote referencial · vence'}</Th><Th className="w-56">Conteo</Th>
+                                    <Th className="w-[22%]">{esLote ? 'Lote · vence' : 'Lote referencial · vence'}</Th><Th className="w-[30rem]">Inventario (stock · lote · vence) y nuevo saldo</Th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -357,7 +333,7 @@ export function EditorToma({ idToma, onVolver }: { idToma: number; onVolver: () 
                 ))}
                 {editable && (
                     <div className="border-t bg-muted/40 px-4 py-2.5 text-xs text-muted-foreground">
-                        Escribe lo contado (por ejemplo <i>12 cajas + 3 und</i>). Se guarda solo; pulsa <b>Enter</b> para pasar a la siguiente línea.
+                        Ingresa el stock contado, el lote y su vencimiento; usa <b>Otro lote</b> si el artículo tiene varios. Un lote que no está en el kardex se marca como <b>Lote nuevo</b> y exige vencimiento. Se guarda solo; <b>Enter</b> pasa al siguiente campo.
                     </div>
                 )}
             </Card>
@@ -366,7 +342,7 @@ export function EditorToma({ idToma, onVolver }: { idToma: number; onVolver: () 
             <div className="fixed inset-x-0 bottom-0 z-30 flex items-center gap-2 border-t bg-background/95 px-4 py-2.5 backdrop-blur md:hidden">
                 <div className="min-w-0 flex-1 text-xs">{estadoGuardado}</div>
                 {editable && (
-                    <Button variant="outline" size="sm" onClick={() => guardar()} disabled={guardando || !sucio} aria-label="Guardar"><Save className="h-4 w-4" /></Button>
+                    <Button variant="outline" size="sm" onClick={() => guardar()} disabled={conteo.guardando || !conteo.sinGuardar} aria-label="Guardar"><Save className="h-4 w-4" /></Button>
                 )}
                 {pdf && <ExportComisionPdf reporte={pdf} tituloDefecto="TOMA DE INVENTARIO" archivoDefecto={`toma-inventario-${cab.IdToma}`}
                                            descripcion={pdf.recuadroDetalle} etiqueta="PDF" />}

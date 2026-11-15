@@ -1,6 +1,6 @@
 import apiClient from '@/app/api/client'
 import { cabeceraSesion } from '@/app/api/sesion'
-import { TomaCabecera, TomaCombos, TomaCrear, TomaDetalle, TomaListado, TomaLotes } from '@/app/types/toma-inventario-types'
+import { TomaCabecera, TomaCombos, TomaConteoLote, TomaCrear, TomaDetalle, TomaListado, TomaLoteBuscado, TomaLotes } from '@/app/types/toma-inventario-types'
 
 /**
  * Toma de inventario: /api/inventario/toma.
@@ -38,6 +38,19 @@ export const TomaInventarioService = {
     guardar: async (idToma: number, conteos: { id: number; conteo: string }[]): Promise<number> => {
         const res = await apiClient.put(`/inventario/toma/tomas/${idToma}/conteos`, { conteos }, { headers: cabeceraSesion() })
         return res.data?.data?.actualizadas ?? 0
+    },
+    /** Conteo por lote: cantidad + lote + vencimiento por línea. */
+    obtenerLotes: async (idToma: number): Promise<TomaConteoLote[]> => {
+        const res = await apiClient.get(`/inventario/toma/tomas/${idToma}/lotes`, { headers: cabeceraSesion() })
+        return res.data?.data ?? []
+    },
+    guardarLotes: async (idToma: number, lineas: { id: number; lotes: { lote: string; vencimiento: string | null; cantidad: string }[] }[]): Promise<number> => {
+        const res = await apiClient.put(`/inventario/toma/tomas/${idToma}/lotes`, { lineas }, { headers: cabeceraSesion() })
+        return res.data?.data?.actualizadas ?? 0
+    },
+    buscarLote: async (codigo: string, lote: string): Promise<TomaLoteBuscado> => {
+        const res = await apiClient.get('/inventario/toma/lote', { params: { codigo, lote }, headers: cabeceraSesion() })
+        return res.data?.data
     },
     cerrar: async (idToma: number): Promise<void> => {
         await apiClient.post(`/inventario/toma/tomas/${idToma}/cerrar`, {}, { headers: cabeceraSesion() })

@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import {
-    AlertCircle, AlertTriangle, Boxes, CalendarClock, ClipboardList, ClipboardPlus, FlaskConical, History, Layers, Loader2, Package, Search, Warehouse,
+    AlertCircle, AlertTriangle, Boxes, CalendarClock, ClipboardList, ClipboardPlus, FlaskConical, History, Layers, Loader2, Package, PencilLine, Search, Warehouse,
 } from "lucide-react"
 import { toast } from "@/app/hooks/useToast"
 import { TomaInventarioService } from "@/app/services/inventario/TomaInventarioService"
@@ -22,6 +22,7 @@ import { fechaDMY, KpiCard, Th } from "@/components/contabilidad/comisiones/ui"
 import { LoteBadge, LotesBadges, lotesTexto } from "@/components/inventario/toma/LoteBadge"
 import { HistorialTomas } from "@/components/inventario/toma/HistorialTomas"
 import { EditorToma } from "@/components/inventario/toma/EditorToma"
+import { CeldaConteoLotes, EstadoGuardadoLotes, useConteoLotes } from "@/components/inventario/toma/ConteoLotes"
 
 type Modo = 'listado' | 'lotes' | 'historial'
 
@@ -60,6 +61,8 @@ export default function TomaInventarioPage() {
     const [buscar, setBuscar] = useState('')
 
     const [listado, setListado] = useState<TomaListado | null>(null)
+    const [labListado, setLabListado] = useState('')
+    const [generacion, setGeneracion] = useState(0)
     const [lotes, setLotes] = useState<TomaLotes | null>(null)
     const [generando, setGenerando] = useState(false)
     const [error, setError] = useState<string | null>(null)
@@ -81,7 +84,11 @@ export default function TomaInventarioPage() {
         setGenerando(true)
         setError(null)
         try {
-            if (modo === 'listado') setListado(await TomaInventarioService.listado(laboratorio))
+            if (modo === 'listado') {
+                setListado(await TomaInventarioService.listado(laboratorio))
+                setLabListado(laboratorio)
+                setGeneracion(g => g + 1)
+            }
             else setLotes(await TomaInventarioService.lotes({ fecha, laboratorio, almacen: almacen === 'todos' ? '' : almacen }))
         } catch (e: any) {
             if (modo === 'listado') setListado(null); else setLotes(null)
@@ -288,8 +295,9 @@ export default function TomaInventarioPage() {
                             <p className="mt-1 font-mono text-lg font-bold sm:text-xl text-blue-700 dark:text-blue-400">{listado.totales.articulos}</p>
                         </KpiCard>
                     </div>
-                    <ListadoTabla filas={filasListado} buscar={buscar} setBuscar={setBuscar} titulo={tituloLab}
-                                  pdf={pdfListado} corte={listado.fechaLotes ?? hoyISO()} accion={botonCrear} />
+                    <ListadoTabla key={`${labListado}-${generacion}`} filas={filasListado} buscar={buscar} setBuscar={setBuscar} titulo={tituloLab}
+                                  pdf={pdfListado} corte={listado.fechaLotes ?? hoyISO()} laboratorio={labListado}
+                                  onAbrirToma={id => { setModo('historial'); setTomaAbierta(id) }} />
                 </>
             )}
 
@@ -379,15 +387,92 @@ function Cabecera({ titulo, sub, buscar, setBuscar, pdf, archivo, accion }: {
     )
 }
 
-function ListadoTabla({ filas, buscar, setBuscar, titulo, pdf, corte, accion }: {
+/**
+ * Listado para contar. En la columna "Inventario" se ingresa stock + lote + vencimiento por artículo y al costado
+ * se ve el nuevo saldo. Lo ingresado se guarda en la toma del usuario para el laboratorio generado: si ya tiene
+ * una abierta (borrador) se reutiliza; si no, se crea sola con el primer dato.
+ */
+function ListadoTabla({ filas, buscar, setBuscar, titulo, pdf, corte, laboratorio, onAbrirToma }: {
     filas: TomaListadoFila[]; buscar: string; setBuscar: (v: string) => void; titulo: string; pdf: ReportePdf | null
-    corte: string; accion?: React.ReactNode
+    corte: string; laboratorio: string; onAbrirToma: (id: number) => void
 }) {
     const grupos = agrupar(filas, f => `${f.CodigoLaboratorio}|${f.CodigoSublinea}`)
+    const [toma, setToma] = useState<{ id: number; porCodigo: Map<string, number>; porId: Map<number, string>; anterior: Map<string, string> } | null>(null)
+    const [buscandoToma, setBuscandoToma] = useState(true)
+    const [errorToma, setErrorToma] = useState('')
+    const creandoRef = useRef<Promise<void> | null>(null)
+
+    const abrirDatos = useCallback(async (id: number) => {
+        const d = await TomaInventarioService.obtener(id)
+        const porCodigo = new Map(d.lineas.map(l => [l.Codigo, l.IdLinea]))
+        setToma({ id, porCodigo, porId: new Map(d.lineas.map(l => [l.IdLinea, l.Codigo])),
+                  anterior: new Map(d.lineas.filter(l => (l.Conteo ?? '').trim()).map(l => [l.Codigo, l.Conteo!])) })
+    }, [])
+
+    // ¿Ya tiene una toma abierta de este laboratorio? Se reutiliza (lo contado aparece en el listado).
+    useEffect(() => {
+        let vivo = true
+        TomaInventarioService.historial().then(async ts => {
+            const lab = laboratorio ? Number(laboratorio) : null
+            const abierta = ts.find(t => t.Estado === 'BORRADOR' && t.Modo === 'LISTADO' && (t.IdLaboratorio ?? null) === lab)
+            if (abierta && vivo) await abrirDatos(abierta.IdToma)
+        }).catch(() => { /* sin historial: se creará al ingresar el primer dato */ }).finally(() => vivo && setBuscandoToma(false))
+        return () => { vivo = false }
+    }, [laboratorio, abrirDatos])
+
+    /** Primer dato ingresado sin toma: se crea la toma del laboratorio (una sola vez). */
+    const asegurarToma = useCallback(() => {
+        if (toma || creandoRef.current || buscandoToma) return
+        creandoRef.current = (async () => {
+            try {
+                const r = await TomaInventarioService.crear({ modo: 'LISTADO', laboratorio, observacion: 'Creada desde el listado para contar' })
+                await abrirDatos(r.idToma)
+                toast({ title: `Toma N.º ${String(r.idToma).padStart(5, '0')} creada`, description: 'Lo que ingreses se guarda solo y la verás en Mis tomas.' })
+            } catch (e: any) {
+                setErrorToma(e?.response?.data?.message || 'No se pudo crear la toma para guardar el conteo.')
+                creandoRef.current = null
+            }
+        })()
+    }, [toma, buscandoToma, laboratorio, abrirDatos])
+
+    const claveDe = useCallback((id: number) => toma?.porId.get(id), [toma])
+    const idDe = useCallback((codigo: string) => toma?.porCodigo.get(codigo), [toma])
+    const alGuardarError = useCallback((m: string) => toast({ title: 'No se pudo guardar', description: m, variant: 'destructive' }), [])
+    const conteo = useConteoLotes({ idToma: toma?.id ?? null, editable: true, claveDe, idDe, alGuardarError })
+
+    const celda = (f: TomaListadoFila) => (
+        <CeldaConteoLotes clave={f.Codigo} codigo={f.Codigo} unidad={f.Unidad} conteo={conteo} lotesRef={f.Lotes} corte={corte}
+                          editable={!buscandoToma} alEditar={asegurarToma}
+                          conteoAnterior={toma && !conteo.filas[f.Codigo] ? toma.anterior.get(f.Codigo) : null}
+                          deshabilitado={toma && !toma.porCodigo.has(f.Codigo) ? `No está en tu toma N.º ${toma.id} (se creó antes que este artículo). Finalízala y crea otra para contarlo.` : undefined} />
+    )
+
+    const barraToma = (
+        <div className="flex flex-col gap-1.5 border-b bg-muted/30 px-4 py-2 text-xs sm:flex-row sm:items-center sm:justify-between">
+            <span className="inline-flex items-center gap-1.5 text-muted-foreground">
+                <PencilLine className="h-3.5 w-3.5" />
+                {buscandoToma ? 'Buscando tu toma abierta…'
+                    : toma ? <>Guardando en tu toma <b className="font-mono text-foreground">N.º {String(toma.id).padStart(5, '0')}</b></>
+                        : 'Ingresa stock, lote y vencimiento: la toma se crea sola con el primer dato.'}
+            </span>
+            <div className="flex items-center gap-3">
+                {errorToma ? <span className="inline-flex items-center gap-1 text-amber-700 dark:text-amber-400"><AlertTriangle className="h-3.5 w-3.5" />{errorToma}</span>
+                    : toma && <EstadoGuardadoLotes conteo={conteo} editable />}
+                {toma && (
+                    <Button size="sm" variant="outline" className="h-7 gap-1 text-xs"
+                            onClick={async () => { if (await conteo.guardar()) onAbrirToma(toma.id) }}>
+                        <ClipboardList className="h-3.5 w-3.5" /> Abrir en Mis tomas
+                    </Button>
+                )}
+            </div>
+        </div>
+    )
+
     return (
         <Card className="overflow-hidden shadow-sm">
             <Cabecera titulo="Listado Toma de Inventarios" sub={`${titulo} · ${filas.length} artículos · lotes con saldo al ${fechaDMY(corte)}`} buscar={buscar} setBuscar={setBuscar}
-                      pdf={pdf} archivo="toma-inventario-listado" accion={accion} />
+                      pdf={pdf} archivo="toma-inventario-listado" />
+            {barraToma}
             {grupos.length === 0 && <p className="py-12 text-center text-sm text-muted-foreground">Sin artículos</p>}
             {grupos.map(([k, fs]) => (
                 <div key={k}>
@@ -400,35 +485,37 @@ function ListadoTabla({ filas, buscar, setBuscar, titulo, pdf, corte, accion }: 
                     {/* Celular */}
                     <div className="divide-y md:hidden">
                         {fs.map(f => (
-                            <div key={f.IdArticulo} className="flex items-start justify-between gap-3 px-4 py-2.5">
-                                <div className="min-w-0">
-                                    <p className="text-sm leading-tight">{f.Producto}</p>
-                                    <p className="font-mono text-[11px] text-muted-foreground">{f.Codigo} · {f.Unidad}</p>
-                                    <div className="mt-1.5"><LotesBadges lotes={f.Lotes} corte={corte} max={3} /></div>
-                                </div>
-                                <span className="mt-0.5 h-7 w-20 shrink-0 rounded border border-dashed border-muted-foreground/40" aria-label="Conteo" />
+                            <div key={f.IdArticulo} className="px-4 py-2.5">
+                                <p className="text-sm leading-tight">{f.Producto}</p>
+                                <p className="font-mono text-[11px] text-muted-foreground">{f.Codigo} · {f.Unidad}</p>
+                                <div className="mt-1.5"><LotesBadges lotes={f.Lotes} corte={corte} max={3} /></div>
+                                <div className="mt-2">{celda(f)}</div>
                             </div>
                         ))}
                     </div>
                     {/* Escritorio */}
                     <table className="hidden w-full text-xs md:table">
                         <thead>
-                            <tr className="bg-muted/40"><Th className="w-32">Código</Th><Th>Item</Th><Th className="w-20">Und</Th><Th className="w-[30%]">Lote referencial · vence</Th><Th className="w-48">Inventario</Th></tr>
+                            <tr className="bg-muted/40"><Th className="w-28">Código</Th><Th>Item</Th><Th className="w-14">Und</Th><Th className="w-[22%]">Lote referencial · vence</Th><Th className="w-[30rem]">Inventario (stock · lote · vence) y nuevo saldo</Th></tr>
                         </thead>
                         <tbody>
                             {fs.map(f => (
-                                <tr key={f.IdArticulo} className="border-b border-border even:bg-muted/20">
+                                <tr key={f.IdArticulo} className="border-b border-border align-top even:bg-muted/20">
                                     <td className="py-2 px-3 font-mono text-muted-foreground">{f.Codigo}</td>
                                     <td className="py-2 px-3">{f.Producto}</td>
                                     <td className="py-2 px-3 text-muted-foreground">{f.Unidad}</td>
                                     <td className="py-1.5 px-3"><LotesBadges lotes={f.Lotes} corte={corte} max={3} /></td>
-                                    <td className="py-2 px-3"><div className="h-5 border-b border-dashed border-muted-foreground/50" /></td>
+                                    <td className="py-1.5 px-3">{celda(f)}</td>
                                 </tr>
                             ))}
                         </tbody>
                     </table>
                 </div>
             ))}
+            <div className="border-t bg-muted/40 px-4 py-2.5 text-xs text-muted-foreground">
+                Usa <b>Otro lote</b> si el artículo tiene varios. Un lote que no está en el kardex se marca como <b>Lote nuevo</b> y exige su vencimiento.
+                Nuevo saldo = lo contado; se compara con el saldo del sistema de hoy. <b>Enter</b> pasa al siguiente campo.
+            </div>
         </Card>
     )
 }
