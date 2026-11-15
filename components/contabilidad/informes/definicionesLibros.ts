@@ -19,10 +19,10 @@ type ClaveLibro = Extract<ClaveReporte,
 // ---- utilidades
 const c = (campo: string, titulo: string, tipo: ColumnaInforme['tipo'] = 'texto', extra: Partial<ColumnaInforme> = {}): ColumnaInforme =>
     ({ campo, titulo, tipo, ...extra })
-/** Importe en soles con total (sin símbolo en cada celda, como Access; la leyenda dice "Expresado en soles"). */
-const imp = (campo: string, titulo: string, extra: Partial<ColumnaInforme> = {}) => c(campo, titulo, 'monto', { total: true, moneda: '', ...extra })
-/** Importe sin total (saldos corridos, estados financieros). */
-const valor = (campo: string, titulo: string, extra: Partial<ColumnaInforme> = {}) => c(campo, titulo, 'monto', { moneda: '', ...extra })
+/** Importe en soles con total. Lleva "S/" en cada celda, subtotal y pie, igual que el resto de informes (pedido 15/11/2026). */
+const imp = (campo: string, titulo: string, extra: Partial<ColumnaInforme> = {}) => c(campo, titulo, 'monto', { total: true, ...extra })
+/** Importe sin total (saldos corridos, estados financieros), también con "S/". */
+const valor = (campo: string, titulo: string, extra: Partial<ColumnaInforme> = {}) => c(campo, titulo, 'monto', { ...extra })
 const n = (v: unknown) => Number(v) || 0
 /** Redondeo a centavos sin "-0.00". */
 const r2 = (x: number) => Math.round(x * 100) / 100 || 0
