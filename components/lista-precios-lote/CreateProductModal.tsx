@@ -9,7 +9,7 @@ import { ProductosService } from "@/app/services/logistica/ProductosService";
 import { CatalogosArticulos, FichaArticulo, GrupoCuenta, Opcion } from "@/app/types/datos-generales-types";
 import { fichaArticuloVacia, ListasAbiertas } from "@/components/contabilidad/datos-generales/articulos/FichaArticuloDialog";
 import { BuscarOsceDialog } from "@/components/contabilidad/datos-generales/articulos/BuscarOsceDialog";
-import { AvisoAmbar, Campo, claseInput, Combo, Seccion, textoError } from "@/components/contabilidad/datos-generales/comunes";
+import { AvisoAmbar, Campo, claseInput, Combo, errorPct, Seccion, textoError } from "@/components/contabilidad/datos-generales/comunes";
 
 /**
  * Crear Producto = ficha completa del form Access [Bienes y Servicios 2] (Inventarios / Contabilidad › Datos Fijos ›
@@ -37,6 +37,8 @@ export const CreateProductModal = ({ laboratories, user, onProductCreated }: any
     const [loading, setLoading] = useState(false);
     const [aviso, setAviso] = useState("");
     const [exito, setExito] = useState("");
+    /** Producto ya grabado en esta apertura: no se puede volver a guardar (evita "código ya existe" al reintentar). */
+    const [creado, setCreado] = useState(false);
 
     const [f, setF] = useState<FichaArticulo>(fichaInicial());
     const set = (p: Partial<FichaArticulo>) => { setF((x) => ({ ...x, ...p })); setAviso(""); };
@@ -121,6 +123,41 @@ export const CreateProductModal = ({ laboratories, user, onProductCreated }: any
         setBonos([]);
         setAviso("");
         setExito("");
+        setCreado(false);
+    };
+
+    /** Al cerrar: si se creó algo, recién ahí se recarga la lista (antes se recargaba al instante y no se veía ningún mensaje). */
+    const cerrar = (recienCreado = false) => {
+        const recargar = recienCreado || creado;
+        setOpen(false);
+        resetForm();
+        if (recargar && onProductCreated) onProductCreated();
+    };
+
+    const num = (v: unknown) => Number(String(v ?? "").trim().replace(",", "."));
+    const esNum = (v: unknown) => String(v ?? "").trim() !== "" && Number.isFinite(num(v));
+    /** Escalas y bonificaciones se revisan ANTES de crear el producto (antes una celda vacía fallaba con el producto ya creado). */
+    const errorEscalasBonos = (): string => {
+        const vistos = new Set<string>();
+        for (const [i, e] of escalas.entries()) {
+            const n = `Escala ${i + 1}`;
+            if (!esNum(e.desde) || !esNum(e.hasta) || !esNum(e.precio)) return `${n}: completa mínimo, máximo y precio con números.`;
+            if (num(e.desde) < 1 || !Number.isInteger(num(e.desde)) || !Number.isInteger(num(e.hasta))) return `${n}: mínimo y máximo deben ser cantidades enteras desde 1.`;
+            if (num(e.hasta) < num(e.desde)) return `${n}: el máximo no puede ser menor que el mínimo.`;
+            if (num(e.precio) <= 0) return `${n}: el precio debe ser mayor a 0.`;
+            if (!/^\d+([.,]\d{1,2})?$/.test(String(e.precio).trim())) return `${n}: el precio admite hasta 2 decimales.`;
+            const k = `${num(e.desde)}-${num(e.hasta)}`;
+            if (vistos.has(k)) return `${n}: ya hay otra escala de ${num(e.desde)} a ${num(e.hasta)}.`;
+            vistos.add(k);
+        }
+        for (const [i, b] of bonos.entries()) {
+            const n = `Bonificación ${i + 1}`;
+            if (!esNum(b.compra) || num(b.compra) <= 0 || !Number.isInteger(num(b.compra))) return `${n}: "Compra" debe ser una cantidad entera mayor a 0.`;
+            if (!esNum(b.lleva) || num(b.lleva) <= 0 || !Number.isInteger(num(b.lleva))) return `${n}: "Lleva" debe ser una cantidad entera mayor a 0.`;
+            if (!String(b.descripcion ?? "").trim()) return `${n}: escribe la descripción de la promoción.`;
+            if (!b.esMismoProducto && (!String(b.productoBonificado ?? "").trim() || !String(b.descripcionProducto ?? "").trim())) return `${n}: indica código y nombre del producto de regalo.`;
+        }
+        return "";
     };
 
     const handleSave = async () => {
@@ -132,49 +169,54 @@ export const CreateProductModal = ({ laboratories, user, onProductCreated }: any
         if (faltan.length) { setAviso(`Completa la información, luego guarda: ${faltan.join(", ")}.`); return; }
         if (!/^\d{1,9}$/.test(f.codigo.trim()) || Number(f.codigo) === 0) { setAviso("El código debe ser numérico, mayor a 0 y de hasta 9 dígitos."); return; }
         if (codigoEnUso) { setAviso(`El código ${f.codigo} ya lo usa "${codigoEnUso.nombreItem}". Elige otro.`); return; }
+        for (const [k, v] of [["% Precio 1", f.precio1], ["% Precio 2", f.precio2], ["% Precio 3", f.precio3], ["% Precio 4", f.precio4]] as const) {
+            const e = errorPct(k, v); if (e) { setAviso(e); return; }
+        }
         const numeros: [string, string][] = [
-            ["% Precio 1", f.precio1], ["% Precio 2", f.precio2], ["% Precio 3", f.precio3], ["% Precio 4", f.precio4],
             ["Equivalencia", f.equivalencia], ["Marca", f.marca],
             ["PU Contado", prices.PUContado], ["PU Crédito", prices.PUCredito], ["PU Por Mayor", prices.PUPorMayor], ["PU Por Menor", prices.PUPorMenor],
         ];
         for (const [k, v] of numeros) {
             if (v.trim() && !Number.isFinite(Number(v.replace(",", ".")))) { setAviso(`${k} debe ser un número.`); return; }
         }
-        for (const [k, v] of numeros.slice(6)) {
+        for (const [k, v] of numeros.slice(2)) {
             if (v.trim() && Number(v.replace(",", ".")) < 0) { setAviso(`${k} no puede ser negativo.`); return; }
+            if (v.trim() && !/^\d+([.,]\d{1,2})?$/.test(v.trim())) { setAviso(`${k} admite hasta 2 decimales.`); return; }
         }
+        const eb = errorEscalasBonos();
+        if (eb) { setAviso(eb); return; }
 
         setLoading(true);
         try {
             const r = await ProductosService.crear(f, prices);
             const codigo = r.codigo || f.codigo.trim();
+            setCreado(true);
 
-            if (escalas.length > 0) {
-                await Promise.all(escalas.map(escala =>
-                    apiClient.post('/articulos/scale/upsert', {
-                        code: codigo, min: escala.desde, max: escala.hasta, price: escala.precio, user: user?.nombreCompleto
-                    })
-                ));
-            }
-            if (bonos.length > 0) {
-                await Promise.all(bonos.map(bonus =>
-                    apiClient.post('/articulos/bonus/upsert', {
-                        code: codigo, description: bonus.descripcion, factor: bonus.compra, qty: bonus.lleva,
-                        user: user?.nombreCompleto, sameProduct: bonus.esMismoProducto,
-                        codProdBonus: bonus.esMismoProducto ? codigo : bonus.productoBonificado,
-                        descProdBonus: bonus.esMismoProducto ? f.nombre : bonus.descripcionProducto
-                    })
-                ));
-            }
+            const extras = await Promise.allSettled([
+                ...escalas.map(escala => apiClient.post('/articulos/scale/upsert', {
+                    code: codigo, min: num(escala.desde), max: num(escala.hasta), price: num(escala.precio), user: user?.nombreCompleto
+                })),
+                ...bonos.map(bonus => apiClient.post('/articulos/bonus/upsert', {
+                    code: codigo, description: String(bonus.descripcion).trim(), factor: num(bonus.compra), qty: num(bonus.lleva),
+                    user: user?.nombreCompleto, sameProduct: bonus.esMismoProducto,
+                    codProdBonus: bonus.esMismoProducto ? codigo : String(bonus.productoBonificado).trim(),
+                    descProdBonus: bonus.esMismoProducto ? f.nombre : String(bonus.descripcionProducto).trim()
+                })),
+            ]);
+            const fallaEscalas = extras.slice(0, escalas.length).filter(x => x.status === "rejected").length;
+            const fallaBonos = extras.slice(escalas.length).filter(x => x.status === "rejected").length;
 
-            if (onProductCreated) onProductCreated();
-            if (!r.preciosGuardados) {
-                // El producto ya existe: se avisa (sin cerrar) para que registre los precios con "Editar precios".
-                setAviso(r.aviso || "El producto se creó, pero sus precios base no se guardaron. Regístralos con \"Editar precios\".");
+            // El producto YA existe: lo que falte se avisa en ámbar, sin cerrar, y no se puede volver a guardar.
+            const pendientes: string[] = [];
+            if (!r.preciosGuardados) pendientes.push('sus precios base (regístralos con "Editar precios")');
+            if (fallaEscalas) pendientes.push(`${fallaEscalas} de ${escalas.length} escala(s)`);
+            if (fallaBonos) pendientes.push(`${fallaBonos} de ${bonos.length} bonificación(es)`);
+            if (pendientes.length) {
+                setAviso(`El producto ${codigo} se creó, pero no se guardaron: ${pendientes.join("; ")}. Regístralos desde la lista de precios.`);
                 return;
             }
             setExito(`Producto ${codigo} creado.`);
-            setTimeout(() => { setOpen(false); resetForm(); }, 1500);
+            setTimeout(() => cerrar(true), 1500);
         } catch (error) {
             setAviso(await textoError(error, "No se pudo crear el producto. Intenta nuevamente."));
         } finally {
@@ -200,8 +242,7 @@ export const CreateProductModal = ({ laboratories, user, onProductCreated }: any
 
     return (
         <Dialog open={open} onOpenChange={(isOpen) => {
-            setOpen(isOpen);
-            if (!isOpen) resetForm();
+            if (isOpen) setOpen(true); else cerrar();
         }}>
             <DialogTrigger asChild>
                 <Button className="gap-2 bg-blue-600 hover:bg-blue-700 text-white">
@@ -282,7 +323,7 @@ export const CreateProductModal = ({ laboratories, user, onProductCreated }: any
                         <Seccion titulo="3. Porcentajes para cálculo de precios">
                             <div className="grid grid-cols-2 gap-3 sm:grid-cols-5 sm:items-end">
                                 {(["precio1", "precio2", "precio3", "precio4"] as const).map((p, i) => (
-                                    <Campo key={p} label={`% Precio ${i + 1}`}>{input(p, { inputMode: "decimal", placeholder: "0.00", className: `${claseInput} text-right font-mono` })}</Campo>
+                                    <Campo key={p} label={`% Precio ${i + 1} (%)`}>{input(p, { inputMode: "decimal", placeholder: "0", className: `${claseInput} text-right font-mono` })}</Campo>
                                 ))}
                                 <label className="col-span-2 flex h-9 cursor-pointer items-center gap-2 text-sm sm:col-span-1">
                                     <input type="checkbox" className="h-4 w-4 accent-blue-600" checked={f.icbper} onChange={(e) => set({ icbper: e.target.checked })} /> ICBPER
@@ -320,10 +361,10 @@ export const CreateProductModal = ({ laboratories, user, onProductCreated }: any
 
                     <Seccion titulo="7. Precios base (S/)">
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                            <Campo label="PU Contado (S/)"><Input type="number" min={0} placeholder="0.00" value={prices.PUContado} onChange={e => setPrices({ ...prices, PUContado: e.target.value })} /></Campo>
-                            <Campo label="PU Crédito (S/)"><Input type="number" min={0} placeholder="0.00" value={prices.PUCredito} onChange={e => setPrices({ ...prices, PUCredito: e.target.value })} /></Campo>
-                            <Campo label="PU Por Mayor (S/)"><Input type="number" min={0} placeholder="0.00" value={prices.PUPorMayor} onChange={e => setPrices({ ...prices, PUPorMayor: e.target.value })} /></Campo>
-                            <Campo label="PU Por Menor (S/)"><Input type="number" min={0} placeholder="0.00" value={prices.PUPorMenor} onChange={e => setPrices({ ...prices, PUPorMenor: e.target.value })} /></Campo>
+                            <Campo label="PU Contado (S/)"><Input inputMode="decimal" placeholder="0.00" className="text-right font-mono" value={prices.PUContado} onChange={e => setPrices({ ...prices, PUContado: e.target.value })} /></Campo>
+                            <Campo label="PU Crédito (S/)"><Input inputMode="decimal" placeholder="0.00" className="text-right font-mono" value={prices.PUCredito} onChange={e => setPrices({ ...prices, PUCredito: e.target.value })} /></Campo>
+                            <Campo label="PU Por Mayor (S/)"><Input inputMode="decimal" placeholder="0.00" className="text-right font-mono" value={prices.PUPorMayor} onChange={e => setPrices({ ...prices, PUPorMayor: e.target.value })} /></Campo>
+                            <Campo label="PU Por Menor (S/)"><Input inputMode="decimal" placeholder="0.00" className="text-right font-mono" value={prices.PUPorMenor} onChange={e => setPrices({ ...prices, PUPorMenor: e.target.value })} /></Campo>
                         </div>
                     </Seccion>
 
@@ -393,8 +434,8 @@ export const CreateProductModal = ({ laboratories, user, onProductCreated }: any
                 )}
 
                 <div className="flex justify-end gap-3 pt-4 border-t mt-2">
-                    <Button variant="outline" onClick={() => setOpen(false)} disabled={loading}>Cancelar</Button>
-                    <Button onClick={handleSave} disabled={loading}>{loading ? "Guardando..." : "Guardar Producto"}</Button>
+                    <Button variant="outline" onClick={() => cerrar()} disabled={loading}>{creado ? "Cerrar" : "Cancelar"}</Button>
+                    {!creado && <Button onClick={handleSave} disabled={loading}>{loading ? "Guardando..." : "Guardar Producto"}</Button>}
                 </div>
             </DialogContent>
 

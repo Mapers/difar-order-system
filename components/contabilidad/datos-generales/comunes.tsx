@@ -21,6 +21,19 @@ export const hoy = () => {
     const d = new Date()
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
+/**
+ * "% Precio 1..4" de Bienes y Servicios: Access los muestra con formato Percent y la base guarda la FRACCIÓN
+ * (18 % = 0.18; así están los artículos existentes). En pantalla se escribe el porcentaje (18) y se graba 0.18.
+ */
+export const pctDeFraccion = (v: unknown) => (v === null || v === undefined || v === '' ? '' : String(Number((Number(v) * 100).toFixed(2))))
+export const fraccionDePct = (v: string) => (v.trim() === '' ? '' : String(Number((Number(v.trim().replace(',', '.')) / 100).toFixed(4))))
+/** Aviso si un % Precio no es número de hasta 2 decimales (más decimales no caben en la fracción de 4 decimales). */
+export const errorPct = (nombre: string, v: string) => {
+    const t = v.trim().replace(',', '.')
+    if (!t) return ''
+    if (!/^-?\d+(\.\d{1,2})?$/.test(t)) return `${nombre} debe ser un número con hasta 2 decimales (por ejemplo 18 o 7.05).`
+    return ''
+}
 /** Mensaje del backend (400 de validación / SIGNAL del SP, 403, 500) para el aviso ámbar. */
 export const textoError = (e: unknown, porDefecto = 'No se pudo completar la operación. Intenta nuevamente.') => mensajeError(e, porDefecto)
 

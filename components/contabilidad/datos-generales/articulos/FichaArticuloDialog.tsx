@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { toast } from '@/app/hooks/useToast'
 import { ArticulosService } from '@/app/services/contabilidad/DatosGeneralesService'
 import { CatalogosArticulos, FichaArticulo, FilaArticulo, GrupoCuenta, Opcion, Uso } from '@/app/types/datos-generales-types'
-import { AlertaUso, AvisoAmbar, Campo, claseInput, Combo, Confirmar, Seccion, texto, textoError } from '../comunes'
+import { AlertaUso, AvisoAmbar, Campo, claseInput, Combo, Confirmar, errorPct, fraccionDePct, pctDeFraccion, Seccion, texto, textoError } from '../comunes'
 import { BuscarOsceDialog } from './BuscarOsceDialog'
 
 export const fichaArticuloVacia = (): FichaArticulo => ({
@@ -18,12 +18,11 @@ export const fichaArticuloVacia = (): FichaArticulo => ({
     ctaCargoCosto: '', ctaAbonoCosto: '', ctaCostoVentas: '', ctaExistencias: '', ctaProduccion: '', ctaVentas: '',
 })
 
-const num = (v: unknown) => (v === null || v === undefined || v === '' ? '' : String(Number(v)))
 /** Fila de la lista -> ficha (modificación). Conserva también los campos que no se ven (item relacionado). */
 export const fichaArticuloDe = (a: FilaArticulo): FichaArticulo => ({
     id: a.IdArticulo, subGrupo: texto(a.SubLinea), codigo: texto(a.Codigo_Art), nombre: texto(a.NombreItem), unidad: texto(a.Unidad), tipoExistencia: texto(a.TipoExistencia),
     medida: texto(a.Medida), tipo: texto(a.Presentacion), modelo: texto(a.PrincipioAdictivo), marca: texto(a.idMarca), otros1: texto(a.otros1), otros2: texto(a.otros2),
-    precio1: num(a.precio1), precio2: num(a.precio2), precio3: num(a.precio3), precio4: num(a.precio4), icbper: Number(a.icbper) === 1,
+    precio1: pctDeFraccion(a.precio1), precio2: pctDeFraccion(a.precio2), precio3: pctDeFraccion(a.precio3), precio4: pctDeFraccion(a.precio4), icbper: Number(a.icbper) === 1,
     equivalencia: texto(a.Equivalencia), fiscalizado: texto(a.Id_Fiscalizado), abreviado: texto(a.AbreviadoRelacionado),
     osce: texto(a.osce), osceTexto: a.osce ? `${texto(a.CodigoOsce)} ${texto(a.DescripcionOsce)}`.trim() : '', control: texto(a.CodigoAsisa),
     itemRelacionado: texto(a.Item_Relacionado),
@@ -74,7 +73,10 @@ export function FichaArticuloDialog({ abierta, ficha, fila, catalogos, listas, o
     async function guardar(confirmado = false) {
         if (faltantes.length) { setAviso(`Complete la información, luego guardar: ${faltantes.join(', ')}.`); return }
         if (f.codigo.trim() && (!/^\d{1,9}$/.test(f.codigo.trim()) || Number(f.codigo) === 0)) { setAviso('El código del item debe ser numérico, mayor a 0 y de hasta 9 dígitos (o déjalo vacío para que se genere).'); return }
-        for (const [k, v] of [['% Precio 1', f.precio1], ['% Precio 2', f.precio2], ['% Precio 3', f.precio3], ['% Precio 4', f.precio4], ['Equivalencia', f.equivalencia], ['Marca', f.marca]] as const) {
+        for (const [k, v] of [['% Precio 1', f.precio1], ['% Precio 2', f.precio2], ['% Precio 3', f.precio3], ['% Precio 4', f.precio4]] as const) {
+            const e = errorPct(k, v); if (e) { setAviso(e); return }
+        }
+        for (const [k, v] of [['Equivalencia', f.equivalencia], ['Marca', f.marca]] as const) {
             if (v.trim() && !Number.isFinite(Number(v.replace(',', '.')))) { setAviso(`${k} debe ser un número.`); return }
         }
         if (!confirmado) {
@@ -85,7 +87,7 @@ export function FichaArticuloDialog({ abierta, ficha, fila, catalogos, listas, o
         }
         setGuardando(true)
         try {
-            const r = await ArticulosService.guardar({ ...f, precio1: f.precio1.replace(',', '.'), precio2: f.precio2.replace(',', '.'), precio3: f.precio3.replace(',', '.'), precio4: f.precio4.replace(',', '.') })
+            const r = await ArticulosService.guardar({ ...f, precio1: fraccionDePct(f.precio1), precio2: fraccionDePct(f.precio2), precio3: fraccionDePct(f.precio3), precio4: fraccionDePct(f.precio4) })
             toast({ title: f.id ? 'Artículo modificado' : 'Artículo guardado', description: `${r.codigo || f.codigo} ${f.nombre}` })
             onCambio()
             if (f.id) onCerrar(); else setF({ ...fichaArticuloVacia(), subGrupo: f.subGrupo, unidad: f.unidad, tipoExistencia: f.tipoExistencia })
@@ -169,7 +171,7 @@ export function FichaArticuloDialog({ abierta, ficha, fila, catalogos, listas, o
                             <Seccion titulo="Procentajes para calculo de precios">
                                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-5 sm:items-end">
                                     {(['precio1', 'precio2', 'precio3', 'precio4'] as const).map((p, i) => (
-                                        <Campo key={p} label={`% Precio ${i + 1}`}>{input(p, { inputMode: 'decimal', className: `${claseInput} text-right font-mono` })}</Campo>
+                                        <Campo key={p} label={`% Precio ${i + 1} (%)`}>{input(p, { inputMode: 'decimal', placeholder: '0', className: `${claseInput} text-right font-mono` })}</Campo>
                                     ))}
                                     <label className="col-span-2 flex h-9 cursor-pointer items-center gap-2 text-sm sm:col-span-1">
                                         <input type="checkbox" className="h-4 w-4 accent-blue-600" checked={f.icbper} onChange={(e) => set({ icbper: e.target.checked })} /> ICBPER
