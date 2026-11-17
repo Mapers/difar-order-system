@@ -16,7 +16,6 @@ import { ProductoConLotes } from "@/app/types/order/order-interface"
 import SelectedProductsTable from "@/components/tomar-pedido/Selectedproductstable";
 import { calcularTotal, getCurrencySymbol } from "@/app/utils/order-helpers"
 import ConfirmOrderDialog from "@/components/tomar-pedido/ConfirmOrderDialog";
-import { EnviarDesdeApp } from "@/components/tomar-pedido/SoloAppAviso";
 
 interface SummaryStepProps {
     selectedClient: IClient | null
@@ -37,15 +36,13 @@ interface SummaryStepProps {
     handleSaveDraft: () => void,
     onConfirmOrder: () => void
     metasMap?: Map<string, IItemDashboard> | null
-    /** Vendedores: el pedido se envía desde la app, no desde la web */
-    soloApp?: boolean
 }
 
 export default function SummaryStep({
                                         selectedClient, sucursal, contactoPedido, nameZone, condition, currency,
                                         selectedProducts, productosConLotes, note, onNoteChange,
                                         onRemoveItem, onPrev, isLoadingSave, handleSaveDraft, onConfirmOrder,
-                                        metasMap, soloApp = false,
+                                        metasMap,
                                     }: SummaryStepProps) {
     const [confirmOpen, setConfirmOpen] = useState(false)
     const sym = getCurrencySymbol(currency?.value)
@@ -208,7 +205,6 @@ export default function SummaryStep({
                         <span className="hidden lg:inline">Guardar Borrador</span>
                     </Button>
                 </div>
-                {soloApp ? <EnviarDesdeApp /> : (<>
                 <Button
                     type="button"
                     className="bg-green-600 hover:bg-green-700"
@@ -229,7 +225,6 @@ export default function SummaryStep({
                         onConfirmOrder()
                     }}
                 />
-                </>)}
             </CardFooter>
         </Card>
     )

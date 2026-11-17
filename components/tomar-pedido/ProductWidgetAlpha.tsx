@@ -23,7 +23,6 @@ import ClearAllDialog from "@/components/tomar-pedido/product-step/ClearAllDialo
 import EditQuantityDialog from "@/components/tomar-pedido/product-step/EditQuantityDialog"
 import InlineAutocomplete from "@/components/tomar-pedido/InlineAutocomplete"
 import ConfirmOrderDialog from "@/components/tomar-pedido/ConfirmOrderDialog"
-import { EnviarDesdeApp } from "@/components/tomar-pedido/SoloAppAviso"
 import CollapsibleWidget from "@/components/tomar-pedido/CollapsibleWidget"
 import { calcularTotal, getCurrencySymbol } from "@/app/utils/order-helpers"
 
@@ -65,8 +64,6 @@ interface ProductWidgetAlphaProps {
     onNoteChange: (val: string) => void
     isLoadingSave: boolean
     onConfirmOrder: () => void
-    /** Vendedores: el pedido se envía desde la app, no desde la web */
-    soloApp?: boolean
     selectedAlmacen: IAlmacen | null
     almacenes: IAlmacen[]
     loadingAlmacenes?: boolean
@@ -99,7 +96,7 @@ export default function ProductWidgetAlpha({
     onIsLoadingChange, laboratories, selectedLaboratorio, onLaboratorioChange,
     selectedProducts, productosConLotes, onRemoveItem, onChangeLote, onClearAll,
     isStepValid, onUpdateProducts, metasMap, note, onNoteChange, isLoadingSave,
-    onConfirmOrder, soloApp = false, selectedAlmacen, almacenes, loadingAlmacenes = false, onSelectAlmacen, autoFocusSearch = false,
+    onConfirmOrder, selectedAlmacen, almacenes, loadingAlmacenes = false, onSelectAlmacen, autoFocusSearch = false,
     onClearOrder, open, onOpenChange,
 }: ProductWidgetAlphaProps) {
     const [labModalSearchOpen, setLabModalSearchOpen] = useState(false)
@@ -145,7 +142,6 @@ export default function ProductWidgetAlpha({
                 </span>
             </div>
 
-            {soloApp ? <div className="sm:order-3"><EnviarDesdeApp /></div> : (
             <Button
                 type="button"
                 className="sm:order-3 w-full sm:w-auto bg-green-600 hover:bg-green-700"
@@ -155,7 +151,6 @@ export default function ProductWidgetAlpha({
                 <Check className="mr-2 h-4 w-4" />
                 Confirmar Pedido
             </Button>
-            )}
 
             {onClearOrder && (
                 <Button
