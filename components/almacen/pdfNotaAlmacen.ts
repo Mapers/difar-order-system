@@ -1,121 +1,168 @@
 import { StandardFonts, rgb } from 'pdf-lib'
-import { format } from 'date-fns'
-import { es } from 'date-fns/locale'
 import { cargarLogoPdf, dibujarCabeceraPdf, sanitizarPdf, truncarPdf } from '@/components/reporte/pdfCabecera'
 import { aclarar, crearPdfReporte, hexARgb, OpcionesPdfReporte } from '@/components/reporte/pdfOpciones'
 
 /**
- * PDF de la Nota de Ingreso / Salida de Almacén con el formato de los reportes de la web
- * (logo, razón social, RUC, colores y tamaño del modal de vista previa) y el contenido del
- * informe Access ("Nota Ingreso Almacen" / "Nota Salida Almacen"): Motivo, Documento,
- * Almacen / Nombre / Concepto / Fecha y las columnas PRODUCTO · UND. · LOTE · FECHA VCTO. · CANTIDAD.
- * Pie en cada página: fecha de impresión, domicilio y "Página x de y".
+ * PDF de la Nota de Ingreso / Salida de Almacén con el mismo diseño de los PDF de Contabilidad
+ * (Registro de Compra): cabecera con logo y empresa, tarjeta con el documento en grande y los datos
+ * con su etiqueta arriba, tabla con encabezado del color principal y numeración, filas alternas,
+ * línea de total y pie con el documento y "Página x de y".
+ * El contenido es el del informe Access ("Nota Ingreso Almacen" / "Nota Salida Almacen"):
+ * Motivo, Documento, Almacén / Nombre / Concepto / Fecha y PRODUCTO · UND. · LOTE · FECHA VCTO. · CANTIDAD.
  */
+
+const MARGIN = 30
+const PAD = 3
+const CLR_ETIQUETA = rgb(0.45, 0.45, 0.45)
+const CLR_TEXTO = rgb(0.08, 0.08, 0.08)
+
+interface Columna { h: string; w: number; align: 'left' | 'right' | 'center' }
+
 export async function generarPdfNotaAlmacen(filas: any[], esSalida: boolean, op: OpcionesPdfReporte): Promise<Uint8Array> {
     const c = filas[0] ?? {}
-    const principal = hexARgb(op.color)
     const pdfDoc = await crearPdfReporte(op.tamanoLetra)
     const font = await pdfDoc.embedFont(StandardFonts.Helvetica)
     const bold = await pdfDoc.embedFont(StandardFonts.HelveticaBold)
     const logo = await cargarLogoPdf(pdfDoc)
 
-    const W = 595.28, H = 841.89, M = 40, ancho = W - M * 2
-    const gris = rgb(0.35, 0.35, 0.35)
-    const fmt = (v: any) => Number(v ?? 0).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-    const dmy = (v: any) => {
+    const PAGE_W = 595.28, PAGE_H = 841.89
+    const CONTENT_W = PAGE_W - MARGIN * 2
+    const ROW_H = 15
+
+    const principal = hexARgb(op.color)
+    const alterna = aclarar(principal, 0.94)
+    const caja = aclarar(principal, 0.95)
+    const borde = aclarar(principal, 0.8)
+
+    const txt = (v: any) => (v == null ? '' : String(v).trim())
+    const num = (v: any) => Number(v ?? 0).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    const fecha = (v: any) => {
         if (!v) return ''
         const s = String(typeof v === 'string' ? v : new Date(v).toISOString()).slice(0, 10)
-        return `${s.slice(8, 10)}/${s.slice(5, 7)}/${s.slice(0, 4)}`
+        return /^\d{4}-\d{2}-\d{2}$/.test(s) ? `${s.slice(8, 10)}/${s.slice(5, 7)}/${s.slice(0, 4)}` : s
     }
-    const nombreCP = String(c.ClienteProveedor ?? '').replace(/^[^:]*:\s*/, '')
+    const cantidad = (f: any) => Number(esSalida ? f.Cantidad_Sal : f.Cantidad_Ing) || 0
+    const lote = (f: any) => txt(esSalida ? (f.LOTE2 ?? f.Lote) : f.Lote)
 
-    // columnas: PRODUCTO · UND. · LOTE · FECHA VCTO. · CANTIDAD (cantidad al final, como Access)
-    const cols = [245, 45, 80, 70, ancho - 245 - 45 - 80 - 70]
-    const titulos = ['PRODUCTO', 'UND.', 'LOTE', 'FECHA VCTO.', 'CANTIDAD']
+    const documento = txt(c.Documento)
+    const tipo = esSalida ? 'NOTA DE SALIDA' : 'NOTA DE INGRESO'
+    const nombreCP = txt(c.ClienteProveedor).replace(/^[^:]*:\s*/, '')
+    const totalCant = filas.reduce((a, f) => a + cantidad(f), 0)
+    const ahora = new Date()
+    const impreso = `Impreso: ${ahora.toLocaleDateString('es-PE')} ${ahora.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' })}`
 
-    let page = pdfDoc.addPage([W, H])
+    // # · PRODUCTO · UND. · LOTE · FECHA VCTO. · CANTIDAD (el producto se queda con el sobrante)
+    const cols: Columna[] = [
+        { h: '#', w: 20, align: 'center' },
+        { h: 'Producto', w: 0, align: 'left' },
+        { h: 'Und', w: 34, align: 'center' },
+        { h: 'Lote', w: 76, align: 'center' },
+        { h: 'Fecha vcto.', w: 62, align: 'center' },
+        { h: 'Cantidad', w: 60, align: 'right' },
+    ]
+    cols[1].w = CONTENT_W - cols.reduce((a, x) => a + x.w, 0)
+
+    let page = pdfDoc.addPage([PAGE_W, PAGE_H])
     let y = 0
 
     const cabecera = () => {
         y = dibujarCabeceraPdf({
-            page, font, boldFont: bold, logo, pageWidth: W, pageHeight: H, margin: M,
-            subtitulo: op.titulo, razonSocial: c.NombreRazSocial, ruc: c.RUC,
-            infoDerecha: c.Documento ?? '', infoDerechaSec: `Fecha: ${dmy(c.Fecha_Mvto)}`,
+            page, font, boldFont: bold, logo,
+            pageWidth: PAGE_W, pageHeight: PAGE_H, margin: MARGIN,
+            subtitulo: op.titulo.trim() || tipo,
+            razonSocial: txt(c.NombreRazSocial) || undefined,
+            ruc: txt(c.RUC) || undefined,
+            infoDerecha: documento,
+            infoDerechaSec: impreso,
             filtros: op.nota.trim() || undefined,
         })
     }
-    const encabezadoTabla = () => {
-        page.drawRectangle({ x: M, y: y - 5, width: ancho, height: 18, color: aclarar(principal, 0.85) })
-        let x = M
-        titulos.forEach((t, i) => {
-            const tx = i === 4 ? x + cols[i] - bold.widthOfTextAtSize(t, 8) - 4 : x + 4
-            page.drawText(t, { x: tx, y, size: 8, font: bold, color: principal })
-            x += cols[i]
+
+    const filaTabla = (celdas: string[], encabezado: boolean, fondo: boolean) => {
+        if (encabezado || fondo) {
+            page.drawRectangle({ x: MARGIN, y: y - ROW_H + 4, width: CONTENT_W, height: ROW_H, color: encabezado ? principal : alterna })
+        }
+        const f = encabezado ? bold : font
+        const size = encabezado ? 7.5 : 8
+        let x = MARGIN
+        cols.forEach((col, i) => {
+            const t = truncarPdf(celdas[i] ?? '', col.w - PAD * 2, size, f)
+            const w = f.widthOfTextAtSize(t, size)
+            const tx = col.align === 'right' ? x + col.w - w - PAD : col.align === 'center' ? x + (col.w - w) / 2 : x + PAD
+            page.drawText(t, { x: tx, y: y - ROW_H + 4 + (ROW_H - size) / 2 + 1, size, font: f, color: encabezado ? rgb(1, 1, 1) : CLR_TEXTO })
+            x += col.w
         })
-        y -= 18
-    }
-    const saltoSiFalta = (alto: number) => {
-        if (y - alto < M + 30) { page = pdfDoc.addPage([W, H]); cabecera(); encabezadoTabla() }
+        y -= ROW_H
     }
 
-    // ---------------------------------------------------------------- cabecera de la nota
     cabecera()
-    const motivo = sanitizarPdf(c.Motivo ?? '')
-    page.drawText(motivo, { x: (W - bold.widthOfTextAtSize(motivo, 11)) / 2, y, size: 11, font: bold, color: principal })
-    y -= 20
 
-    const datos: [string, string][] = [
-        ['Almacen:', c.Almacen ?? ''], ['Fecha:', dmy(c.Fecha_Mvto)],
-        [esSalida ? 'Nombre:' : 'Nombre:', nombreCP], ['Concepto:', c.Glosa ?? ''],
+    // ── Datos de la nota ─────────────────────────────────────────────────
+    const cajaH = 92
+    page.drawRectangle({ x: MARGIN, y: y - cajaH, width: CONTENT_W, height: cajaH, color: caja, borderColor: borde, borderWidth: 0.8 })
+    const titulo = sanitizarPdf(`${tipo} ${documento}`.trim())
+    page.drawText(truncarPdf(titulo, CONTENT_W - 150, 14, bold), { x: MARGIN + 12, y: y - 22, size: 14, font: bold, color: principal })
+    const etqTotal = 'CANTIDAD TOTAL'
+    page.drawText(etqTotal, { x: PAGE_W - MARGIN - 12 - font.widthOfTextAtSize(etqTotal, 7), y: y - 12, size: 7, font, color: CLR_ETIQUETA })
+    const totalTxt = num(totalCant)
+    page.drawText(totalTxt, { x: PAGE_W - MARGIN - 12 - bold.widthOfTextAtSize(totalTxt, 13), y: y - 26, size: 13, font: bold, color: principal })
+
+    const meta: [string, string][] = [
+        [esSalida ? 'Cliente / destino' : 'Proveedor / origen', nombreCP],
+        ['Fecha', fecha(c.Fecha_Mvto)],
+        ['Almacén', txt(c.Almacen)],
+        ['Motivo', txt(c.Motivo)],
+        ['Concepto', txt(c.Glosa)],
     ]
-    const altoCaja = 44
-    page.drawRectangle({ x: M, y: y - altoCaja + 10, width: ancho, height: altoCaja, color: aclarar(principal, 0.95), borderColor: aclarar(principal, 0.75), borderWidth: 0.6 })
-    const colX = [M + 10, M + ancho / 2 + 10]
-    datos.forEach(([k, v], i) => {
-        const cx = colX[i % 2], cy = y - Math.floor(i / 2) * 16
-        page.drawText(k, { x: cx, y: cy, size: 8.5, font: bold, color: gris })
-        page.drawText(truncarPdf(v, ancho / 2 - 75, 8.5, font), { x: cx + 55, y: cy, size: 8.5, font })
+    const q = CONTENT_W / 4
+    const posiciones: [number, number, number][] = [
+        [MARGIN + 12, y - 44, q * 2 - 24],
+        [MARGIN + q * 2, y - 44, q - 12],
+        [MARGIN + q * 3, y - 44, q - 24],
+        [MARGIN + 12, y - 70, q * 2 - 24],
+        [MARGIN + q * 2, y - 70, q * 2 - 24],
+    ]
+    meta.forEach(([etq, val], i) => {
+        const [mx, my, ancho] = posiciones[i]
+        page.drawText(sanitizarPdf(etq.toUpperCase()), { x: mx, y: my, size: 6.5, font, color: CLR_ETIQUETA })
+        page.drawText(truncarPdf(val || '-', ancho, 9, bold), { x: mx, y: my - 11, size: 9, font: bold, color: CLR_TEXTO })
     })
-    y -= altoCaja + 6
+    y -= cajaH + 16
 
-    // ---------------------------------------------------------------- detalle
-    encabezadoTabla()
-    let total = 0
-    filas.forEach((f, idx) => {
-        saltoSiFalta(14)
-        if (idx % 2 === 1) page.drawRectangle({ x: M, y: y - 4, width: ancho, height: 14, color: aclarar(principal, 0.97) })
-        const cant = Number(esSalida ? f.Cantidad_Sal : f.Cantidad_Ing) || 0
-        total += cant
-        const valores = [f.BienesServicios ?? '', f.AbrevUnidMed ?? '', esSalida ? (f.LOTE2 ?? f.Lote ?? '') : (f.Lote ?? ''), dmy(f.FechaVctoLote), fmt(cant)]
-        let x = M
-        valores.forEach((v, i) => {
-            const t = truncarPdf(String(v), cols[i] - 8, 8, font)
-            const tx = i === 4 ? x + cols[i] - font.widthOfTextAtSize(t, 8) - 4 : x + 4
-            page.drawText(t, { x: tx, y, size: 8, font })
-            x += cols[i]
-        })
-        page.drawLine({ start: { x: M, y: y - 4.5 }, end: { x: W - M, y: y - 4.5 }, thickness: 0.4, color: rgb(0.86, 0.86, 0.86) })
-        y -= 14
+    // ── Detalle ──────────────────────────────────────────────────────────
+    filaTabla(cols.map(x => x.h), true, false)
+    filas.forEach((f, i) => {
+        if (y - ROW_H < MARGIN + 50) {
+            page = pdfDoc.addPage([PAGE_W, PAGE_H])
+            cabecera()
+            filaTabla(cols.map(x => x.h), true, false)
+        }
+        filaTabla([String(i + 1), txt(f.BienesServicios), txt(f.AbrevUnidMed), lote(f), fecha(f.FechaVctoLote), num(cantidad(f))], false, i % 2 === 1)
     })
-    saltoSiFalta(22)
+
+    // ── Total, alineado con la columna Cantidad ──────────────────────────
+    if (y - 30 < MARGIN + 20) { page = pdfDoc.addPage([PAGE_W, PAGE_H]); cabecera() }
     y -= 4
-    page.drawRectangle({ x: M, y: y - 5, width: ancho, height: 18, color: aclarar(principal, 0.9) })
-    const etiquetaTotal = `TOTAL (${filas.length} ítem${filas.length === 1 ? '' : 's'})`
-    page.drawText(sanitizarPdf(etiquetaTotal), { x: M + 4, y, size: 8.5, font: bold, color: principal })
-    const txtTotal = fmt(total)
-    page.drawText(txtTotal, { x: W - M - bold.widthOfTextAtSize(txtTotal, 8.5) - 4, y, size: 8.5, font: bold, color: principal })
+    page.drawLine({ start: { x: MARGIN, y }, end: { x: PAGE_W - MARGIN, y }, thickness: 1, color: principal })
+    y -= 16
+    const anchoTotal = bold.widthOfTextAtSize(totalTxt, 9)
+    const finTotal = PAGE_W - MARGIN
+    page.drawText('TOTAL', { x: finTotal - PAD - anchoTotal - 12 - bold.widthOfTextAtSize('TOTAL', 9), y, size: 9, font: bold })
+    page.drawText(totalTxt, { x: finTotal - PAD - anchoTotal, y, size: 9, font: bold, color: principal })
 
-    // ---------------------------------------------------------------- pie en todas las páginas
+    // ── Pie: documento, domicilio y número de página ─────────────────────
     const paginas = pdfDoc.getPages()
-    const fechaLarga = sanitizarPdf(format(new Date(), "EEEE, d 'de' MMMM 'de' yyyy", { locale: es }))
-    const domicilio = c.Domicilio ?? ''
+    const pieIzq = sanitizarPdf(`${tipo.charAt(0)}${tipo.slice(1).toLowerCase()} ${documento}`.trim())
+    const domicilio = txt(c.Domicilio)
     paginas.forEach((p, i) => {
-        p.drawLine({ start: { x: M, y: M - 2 }, end: { x: W - M, y: M - 2 }, thickness: 0.5, color: rgb(0.8, 0.8, 0.8) })
-        p.drawText(fechaLarga, { x: M, y: M - 14, size: 7.5, font, color: gris })
-        const pag = `Página ${i + 1} de ${paginas.length}`
-        p.drawText(sanitizarPdf(pag), { x: W - M - font.widthOfTextAtSize(sanitizarPdf(pag), 7.5), y: M - 14, size: 7.5, font, color: gris })
-        const dom = truncarPdf(domicilio, ancho - 220, 7, font)
-        p.drawText(dom, { x: (W - font.widthOfTextAtSize(dom, 7)) / 2, y: M - 14, size: 7, font, color: gris })
+        const t = `Página ${i + 1} de ${paginas.length}`
+        p.drawText(sanitizarPdf(t), { x: PAGE_W - MARGIN - font.widthOfTextAtSize(sanitizarPdf(t), 7.5), y: MARGIN - 12, size: 7.5, font, color: CLR_ETIQUETA })
+        p.drawText(pieIzq, { x: MARGIN, y: MARGIN - 12, size: 7.5, font, color: CLR_ETIQUETA })
+        if (domicilio) {
+            const dom = truncarPdf(domicilio, CONTENT_W - 260, 7, font)
+            p.drawText(dom, { x: (PAGE_W - font.widthOfTextAtSize(dom, 7)) / 2, y: MARGIN - 12, size: 7, font, color: CLR_ETIQUETA })
+        }
     })
+
     return pdfDoc.save()
 }
