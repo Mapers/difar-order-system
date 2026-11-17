@@ -1,3 +1,4 @@
+import { cabeceraSesion } from "./sesion";
 
 import apiClient from "./client";
 import { Customer, Document } from "@/app/types/report/report-interface";
@@ -58,5 +59,6 @@ export const hojaEnBlancoRequest = async (params: {
     vendedores?: string[]
     cliente?: string | null
 }): Promise<any> => {
-    return apiClient.post(`/reportes/hoja-en-blanco`, params);
+    // Lee el documento real de Hoja en Blanco (registro de ventas de difar-p2025), como Access.
+    return apiClient.post(`/reportes/hoja-en-blanco-2b`, params, { headers: cabeceraSesion() });
 };
