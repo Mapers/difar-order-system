@@ -21,6 +21,7 @@ import LotesModal from "@/components/tomar-pedido/Lotesmodal";
 import AutoCreateClientModal from "@/components/tomar-pedido/Autocreateclientmodal";
 import ClientDataConfirmModal from "@/components/tomar-pedido/Clientdataconfirmmodal";
 import SummaryStep from "@/components/tomar-pedido/Summarystep";
+import ModalPedidoApp from "@/components/tomar-pedido/ModalPedidoApp";
 import ProductDetailsModal from "@/components/tomar-pedido/Productdetailsmodal";
 import DraftsModal from "@/components/tomar-pedido/DraftsModal";
 import {OrderDraft, useOrderDrafts} from "@/app/hooks/useOrderDrafts";
@@ -171,6 +172,10 @@ export default function OrderPage() {
       extraAction?.()
     })
   }
+
+  // Vendedores: los pedidos se toman solo desde la app. No se muestra el
+  // formulario, solo el aviso (que no se puede cerrar).
+  if (isVendedor()) return <ModalPedidoApp />
 
   return (
       <div className="grid gap-6">
