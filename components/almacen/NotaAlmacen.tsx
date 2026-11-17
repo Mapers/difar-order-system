@@ -332,6 +332,20 @@ export function NotaAlmacen({ tipo }: { tipo: TipoMovimiento }) {
         try {
             const filasR = await AlmacenService.reporte(tipo, id)
             if (!filasR.length) return fallar('La nota no tiene líneas para imprimir.')
+            // El reporte (como el de Access) no trae el costo: en ingresos se toma del detalle de la
+            // nota (Cost_Tot) para mostrar los importes en soles. Se cruza por artículo y lote.
+            if (!esSalida && filasR.every((f: any) => f.Cost_Tot == null)) {
+                try {
+                    const { detalle } = await AlmacenService.obtener(tipo, id)
+                    const usados = new Set<number>()
+                    const clave = (n: any, l: any) => `${String(n ?? '').trim().toUpperCase()}|${String(l ?? '').trim().toUpperCase()}`
+                    filasR.forEach((f: any) => {
+                        const k = clave(f.BienesServicios, f.Lote)
+                        const i = detalle.findIndex((d: any, j: number) => !usados.has(j) && clave(d.NombreItem, d.Lote) === k)
+                        if (i >= 0) { usados.add(i); f.Cost_Tot = detalle[i].Cost_Tot }
+                    })
+                } catch { /* sin costo: el PDF sale solo con cantidades */ }
+            }
             setPdfFilas(filasR)
         } catch (e) { fallar(mensajeError(e, 'No se pudo preparar la impresión.')) }
     }

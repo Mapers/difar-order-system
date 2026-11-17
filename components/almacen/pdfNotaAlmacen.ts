@@ -43,11 +43,16 @@ export async function generarPdfNotaAlmacen(filas: any[], esSalida: boolean, op:
     }
     const cantidad = (f: any) => Number(esSalida ? f.Cantidad_Sal : f.Cantidad_Ing) || 0
     const lote = (f: any) => txt(esSalida ? (f.LOTE2 ?? f.Lote) : f.Lote)
+    const soles = (v: number) => `S/ ${num(v)}`
+    // Importes en soles: solo los ingresos tienen costo (Cost_Tot); las salidas van solo con cantidades.
+    const conCosto = !esSalida && filas.some(f => f.Cost_Tot != null)
+    const costo = (f: any) => Number(f.Cost_Tot) || 0
 
     const documento = txt(c.Documento)
     const tipo = esSalida ? 'NOTA DE SALIDA' : 'NOTA DE INGRESO'
     const nombreCP = txt(c.ClienteProveedor).replace(/^[^:]*:\s*/, '')
     const totalCant = filas.reduce((a, f) => a + cantidad(f), 0)
+    const totalCosto = filas.reduce((a, f) => a + costo(f), 0)
     const ahora = new Date()
     const impreso = `Impreso: ${ahora.toLocaleDateString('es-PE')} ${ahora.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' })}`
 
@@ -59,7 +64,9 @@ export async function generarPdfNotaAlmacen(filas: any[], esSalida: boolean, op:
         { h: 'Lote', w: 76, align: 'center' },
         { h: 'Fecha vcto.', w: 62, align: 'center' },
         { h: 'Cantidad', w: 60, align: 'right' },
+        ...(conCosto ? [{ h: 'Costo unit.', w: 64, align: 'right' as const }, { h: 'Costo total', w: 72, align: 'right' as const }] : []),
     ]
+    if (conCosto) { cols[3].w = 64; cols[4].w = 56; cols[5].w = 50 }
     cols[1].w = CONTENT_W - cols.reduce((a, x) => a + x.w, 0)
 
     let page = pdfDoc.addPage([PAGE_W, PAGE_H])
@@ -102,10 +109,11 @@ export async function generarPdfNotaAlmacen(filas: any[], esSalida: boolean, op:
     page.drawRectangle({ x: MARGIN, y: y - cajaH, width: CONTENT_W, height: cajaH, color: caja, borderColor: borde, borderWidth: 0.8 })
     const titulo = sanitizarPdf(`${tipo} ${documento}`.trim())
     page.drawText(truncarPdf(titulo, CONTENT_W - 150, 14, bold), { x: MARGIN + 12, y: y - 22, size: 14, font: bold, color: principal })
-    const etqTotal = 'CANTIDAD TOTAL'
+    const etqTotal = conCosto ? 'COSTO TOTAL' : 'CANTIDAD TOTAL'
     page.drawText(etqTotal, { x: PAGE_W - MARGIN - 12 - font.widthOfTextAtSize(etqTotal, 7), y: y - 12, size: 7, font, color: CLR_ETIQUETA })
     const totalTxt = num(totalCant)
-    page.drawText(totalTxt, { x: PAGE_W - MARGIN - 12 - bold.widthOfTextAtSize(totalTxt, 13), y: y - 26, size: 13, font: bold, color: principal })
+    const destacado = conCosto ? soles(totalCosto) : totalTxt
+    page.drawText(destacado, { x: PAGE_W - MARGIN - 12 - bold.widthOfTextAtSize(destacado, 13), y: y - 26, size: 13, font: bold, color: principal })
 
     const meta: [string, string][] = [
         [esSalida ? 'Cliente / destino' : 'Proveedor / origen', nombreCP],
@@ -137,7 +145,9 @@ export async function generarPdfNotaAlmacen(filas: any[], esSalida: boolean, op:
             cabecera()
             filaTabla(cols.map(x => x.h), true, false)
         }
-        filaTabla([String(i + 1), txt(f.BienesServicios), txt(f.AbrevUnidMed), lote(f), fecha(f.FechaVctoLote), num(cantidad(f))], false, i % 2 === 1)
+        const fila = [String(i + 1), txt(f.BienesServicios), txt(f.AbrevUnidMed), lote(f), fecha(f.FechaVctoLote), num(cantidad(f))]
+        if (conCosto) fila.push(soles(cantidad(f) ? costo(f) / cantidad(f) : 0), soles(costo(f)))
+        filaTabla(fila, false, i % 2 === 1)
     })
 
     // ── Total, alineado con la columna Cantidad ──────────────────────────
@@ -145,10 +155,16 @@ export async function generarPdfNotaAlmacen(filas: any[], esSalida: boolean, op:
     y -= 4
     page.drawLine({ start: { x: MARGIN, y }, end: { x: PAGE_W - MARGIN, y }, thickness: 1, color: principal })
     y -= 16
+    // Total de cantidades bajo "Cantidad" y, en ingresos, total en soles bajo "Costo total"
+    const finDe = (n: number) => MARGIN + cols.slice(0, n + 1).reduce((a, x) => a + x.w, 0)
+    const finCant = finDe(5)
     const anchoTotal = bold.widthOfTextAtSize(totalTxt, 9)
-    const finTotal = PAGE_W - MARGIN
-    page.drawText('TOTAL', { x: finTotal - PAD - anchoTotal - 12 - bold.widthOfTextAtSize('TOTAL', 9), y, size: 9, font: bold })
-    page.drawText(totalTxt, { x: finTotal - PAD - anchoTotal, y, size: 9, font: bold, color: principal })
+    page.drawText('TOTAL', { x: MARGIN + cols[0].w + PAD, y, size: 9, font: bold })
+    page.drawText(totalTxt, { x: finCant - PAD - anchoTotal, y, size: 9, font: bold, color: principal })
+    if (conCosto) {
+        const t = soles(totalCosto)
+        page.drawText(t, { x: finDe(7) - PAD - bold.widthOfTextAtSize(t, 9), y, size: 9, font: bold, color: principal })
+    }
 
     // ── Pie: documento, domicilio y número de página ─────────────────────
     const paginas = pdfDoc.getPages()
