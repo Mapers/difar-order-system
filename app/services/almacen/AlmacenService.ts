@@ -17,10 +17,13 @@ export interface CatalogosAlmacen {
     series: { Serie_Doc: string }[]
     almacenes: OpcionAlmacen[]
     centrosCosto: OpcionCentroCosto[]
+    /** "Unidad Costo" (mgalpon). Ingresos la llama galpones y Salidas unidadesCosto; hoy está vacía. */
+    galpones?: { IdGalpon: number; Descripcion: string }[]
+    unidadesCosto?: { IdGalpon: number; Descripcion: string }[]
     fechaCierre: string | null
 }
 
-export interface PersonaAlmacen { Codigo: string; Nombre: string; NombreComercial?: string | null; RUC?: string | null }
+export interface PersonaAlmacen { Codigo: string; Nombre: string; NombreComercial?: string | null; RUC?: string | null; Relacion?: string | null; RelacionDescripcion?: string | null }
 export interface ArticuloAlmacen { Codigo_Art: string; NombreItem: string; AbrevUnidMed?: string; MueveKardex?: number; Kardex?: number }
 export interface LoteConSaldo { Lote: string; MinVctoItem: string | null; SumaDeSaldo: string | number }
 
@@ -57,6 +60,8 @@ export interface LineaNota {
     fechaVcto: string
     centroCostos: string
     almacenDestino: string
+    /** "Unidad Costo" / "Und Costo" (idGalpon). */
+    idGalpon: string
 }
 
 export interface NotaParaGuardar {
@@ -68,6 +73,8 @@ export interface NotaParaGuardar {
     proveedor?: string
     cliente?: string
     almacen: number | null
+    /** Salidas: "UndCosto Transferencia" (idUndCosto). */
+    undCosto?: number | null
     observaciones: string
     detalle: Partial<LineaNota>[]
 }
@@ -84,7 +91,7 @@ export const AlmacenService = {
         (await apiClient.get(`/almacen/salidas/lotes`, { params: { articulo, almacen, excluir: excluir || undefined } })).data.data ?? [],
     siguienteNumero: async (t: TipoMovimiento, documento: string, serie: string): Promise<number> =>
         (await apiClient.get(`${base(t)}/siguiente-numero`, { params: { documento, serie } })).data.data.numero,
-    listar: async (t: TipoMovimiento, f: { desde?: string; hasta?: string; buscar?: string }): Promise<FilaListado[]> =>
+    listar: async (t: TipoMovimiento, f: { desde?: string; hasta?: string; buscar?: string; concepto?: string; almacen?: string }): Promise<FilaListado[]> =>
         (await apiClient.get(base(t), { params: { ...f, limite: 500 } })).data.data.filas ?? [],
     obtener: async (t: TipoMovimiento, id: number): Promise<{ cabecera: any; detalle: any[] }> => (await apiClient.get(`${base(t)}/${id}`)).data.data,
     reporte: async (t: TipoMovimiento, id: number): Promise<any[]> => (await apiClient.get(`${base(t)}/${id}/reporte`)).data.data ?? [],
