@@ -13,6 +13,7 @@ import { useAuth } from "@/context/authContext"
 import { useMetasItems } from "@/app/hooks/useMetasItems"
 import ClientWidgetAlpha from "@/components/tomar-pedido/ClientWidgetAlpha";
 import ProductWidgetAlpha from "@/components/tomar-pedido/ProductWidgetAlpha";
+import { AvisoPedidoApp } from "@/components/tomar-pedido/SoloAppAviso";
 import OrderSummarySidebar from "@/components/tomar-pedido/OrderSummarySidebar";
 import LotesModal from "@/components/tomar-pedido/Lotesmodal";
 import AutoCreateClientModal from "@/components/tomar-pedido/Autocreateclientmodal";
@@ -37,7 +38,9 @@ import AlmacenModal from "@/components/tomar-pedido/AlmacenModal";
 export default function OrderPageAlpha() {
   const { laboratories } = useLaboratoriesData()
   const order = useOrderPage()
-  const { user } = useAuth()
+  const { user, isVendedor } = useAuth()
+  // Vendedores: cotizan en la web, pero el pedido se envía desde la app
+  const soloApp = isVendedor()
 
   const codVendedor = order.isAdmin()
       ? (order.seller?.codigo ?? null)
@@ -84,8 +87,10 @@ export default function OrderPageAlpha() {
           </div>
         </div>
 
+        {soloApp && <AvisoPedidoApp />}
+
         <div className={showSummary ? "grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-6 items-start" : "grid grid-cols-1 gap-6 max-w-4xl mx-auto w-full"}>
-        <form onSubmit={(e) => order.handleSubmit(e)} className="min-w-0">
+        <form onSubmit={(e) => { if (soloApp) { e.preventDefault(); return } order.handleSubmit(e) }} className="min-w-0">
           <div className="grid grid-cols-1 gap-6">
             <ClientWidgetAlpha
                 search={order.search}
@@ -161,6 +166,7 @@ export default function OrderPageAlpha() {
                 onNoteChange={order.setNote}
                 isLoadingSave={order.isLoadingSave}
                 onConfirmOrder={() => order.handleSaveOrder()}
+                soloApp={soloApp}
                 selectedAlmacen={order.selectedAlmacen}
                 almacenes={order.almacenes}
                 loadingAlmacenes={order.loading.almacenes}

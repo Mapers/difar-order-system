@@ -21,6 +21,7 @@ import LotesModal from "@/components/tomar-pedido/Lotesmodal";
 import AutoCreateClientModal from "@/components/tomar-pedido/Autocreateclientmodal";
 import ClientDataConfirmModal from "@/components/tomar-pedido/Clientdataconfirmmodal";
 import SummaryStep from "@/components/tomar-pedido/Summarystep";
+import { AvisoPedidoApp } from "@/components/tomar-pedido/SoloAppAviso";
 import ProductDetailsModal from "@/components/tomar-pedido/Productdetailsmodal";
 import DraftsModal from "@/components/tomar-pedido/DraftsModal";
 import {OrderDraft, useOrderDrafts} from "@/app/hooks/useOrderDrafts";
@@ -39,6 +40,8 @@ export default function OrderPage() {
   const { laboratories } = useLaboratoriesData()
   const order = useOrderPage()
   const { user, isVendedor } = useAuth()
+  // Vendedores: cotizan en la web, pero el pedido se envía desde la app
+  const soloApp = isVendedor()
 
   const codVendedor = order.isAdmin()
       ? (order.seller?.codigo ?? null)
@@ -195,13 +198,15 @@ export default function OrderPage() {
           )}
         </div>
 
+        {soloApp && <AvisoPedidoApp />}
+
         <Card className="mb-6 shadow-md bg-background">
           <CardContent className="pt-6">
             <StepProgress steps={steps} currentStep={order.currentStep} onStepClick={order.goToStep} />
           </CardContent>
         </Card>
 
-        <form onSubmit={(e) => order.handleSubmit(e, cleanupDraft)}>
+        <form onSubmit={(e) => { if (soloApp) { e.preventDefault(); return } order.handleSubmit(e, cleanupDraft) }}>
           {order.currentStep === 0 && (
               <ClientStep
                   search={order.search}
@@ -302,6 +307,7 @@ export default function OrderPage() {
                   handleSaveDraft={handleSaveDraft}
                   onConfirmOrder={() => handleSaveOrderWithCleanup()}
                   metasMap={metasMap}
+                  soloApp={soloApp}
               />
           )}
         </form>
