@@ -5,6 +5,8 @@ import { writeFileSync } from "node:fs"
 // Versión de este despliegue: el commit que compila Amplify (AWS_COMMIT_ID).
 // Se graba en el front (NEXT_PUBLIC_APP_VERSION) y en public/version.json;
 // si el servidor tiene otra versión, el front pide volver a iniciar sesión.
+// APP_BUILD_TIME: las sesiones iniciadas antes de esta compilación también se cierran.
+const APP_BUILD_TIME = String(Date.now())
 const APP_VERSION = (() => {
   if (process.env.AWS_COMMIT_ID) return process.env.AWS_COMMIT_ID.slice(0, 12)
   try { return execSync("git rev-parse --short=12 HEAD").toString().trim() } catch { return String(Date.now()) }
@@ -33,6 +35,7 @@ try {
 const nextConfig = {
   env: {
     NEXT_PUBLIC_APP_VERSION: APP_VERSION,
+    NEXT_PUBLIC_APP_BUILD_TIME: APP_BUILD_TIME,
   },
   eslint: {
     ignoreDuringBuilds: true,

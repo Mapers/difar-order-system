@@ -15,6 +15,23 @@ const vibrar = (patron: number | number[]) => {
 }
 
 const VERSION_ACTUAL = process.env.NEXT_PUBLIC_APP_VERSION ?? ""
+const COMPILADO_MS = Number(process.env.NEXT_PUBLIC_APP_BUILD_TIME) || 0
+
+// Sesión iniciada antes de esta compilación (iat del token): también debe
+// volver a entrar. Así el despliegue bota a todos aunque vinieran de una
+// versión vieja que no tenía este aviso.
+function sesionAnteriorAlDespliegue(): boolean {
+    if (!COMPILADO_MS) return false
+    try {
+        const token = localStorage.getItem("token")
+        if (!token) return false
+        const b64 = token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")
+        const iat = Number(JSON.parse(atob(b64))?.iat)
+        return Number.isFinite(iat) && iat > 0 && iat * 1000 < COMPILADO_MS
+    } catch {
+        return false
+    }
+}
 const CADA_MS = 5 * 60 * 1000
 
 async function versionDelServidor(): Promise<string | null> {
@@ -46,6 +63,7 @@ export function AvisoVersionNueva() {
     }
 
     const revisar = useCallback(async () => {
+        if (sesionAnteriorAlDespliegue()) { setNueva(true); return }
         if (!VERSION_ACTUAL) return
         const v = await versionDelServidor()
         if (v && v !== VERSION_ACTUAL) setNueva(true)
