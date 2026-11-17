@@ -157,3 +157,13 @@ body {
   .ivan-onda, .ivan-destello, .ivan-invitacion { animation: none; }
   .ivan-onda { display: none; }
 }
+
+/* Almacén (Ingresos / Salidas): efectos del modal de la nota. */
+@keyframes almacen-sacudir { 0%, 100% { transform: translateX(0); } 20% { transform: translateX(-7px); } 40% { transform: translateX(6px); } 60% { transform: translateX(-4px); } 80% { transform: translateX(3px); } }
+.almacen-sacudir { animation: almacen-sacudir .42s ease-in-out; }
+@keyframes almacen-exito { 0% { transform: scale(.4); opacity: 0; } 60% { transform: scale(1.12); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
+.almacen-exito { animation: almacen-exito .45s cubic-bezier(.2, .9, .3, 1.2) both; }
+@keyframes almacen-brillo { 0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, .55); } 100% { box-shadow: 0 0 0 14px rgba(16, 185, 129, 0); } }
+.almacen-brillo { animation: almacen-brillo .9s ease-out 2; }
+@keyframes almacen-campo { 0%, 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); } 50% { box-shadow: 0 0 0 4px rgba(245, 158, 11, .35); } }
+.almacen-campo-error { border-color: rgb(251 191 36) !important; animation: almacen-campo 1s ease-in-out 2; }
