@@ -28,6 +28,7 @@ interface ProductoVenta {
     Ventas:       number
     Costo:        number
     Utilidad:     number
+    Linea?:       string | null
 }
 
 interface LaboratorioVenta {
@@ -441,7 +442,10 @@ export default function VentasTotalesPage() {
                                                         <tbody>
                                                             {lab.productos.map(p => (
                                                                 <tr key={p.Codigo_Art} className="border-b border-border transition-colors last:border-0 hover:bg-muted">
-                                                                    <td className="px-3 py-2 font-medium text-foreground">{p.Producto}</td>
+                                                                    <td className="px-3 py-2 font-medium text-foreground">
+                                                                        {p.Producto}
+                                                                        {p.Linea && <span className="block text-[11px] font-normal text-muted-foreground">Línea {p.Linea}</span>}
+                                                                    </td>
                                                                     <td className="px-3 py-2">{p.AbrevUnidMed}</td>
                                                                     <td className="px-3 py-2 text-right font-mono">{fmtCant(p.Cantidad)}</td>
                                                                     <td className={cn("px-3 py-2 text-right font-mono font-bold", ACENTO.ventas, TINTE.ventas)}>
@@ -466,6 +470,7 @@ export default function VentasTotalesPage() {
                                                     {lab.productos.map(p => (
                                                         <div key={p.Codigo_Art} className="flex flex-col gap-2 rounded-lg border border-border bg-background p-4 shadow-sm">
                                                             <span className="pr-2 text-sm font-bold leading-tight text-foreground">{p.Producto}</span>
+                                                            {p.Linea && <span className="text-[11px] text-muted-foreground">Línea {p.Linea}</span>}
                                                             <div className="mt-1 border-t border-border pt-2">
                                                                 <FilaMovil label={`Cantidad (${p.AbrevUnidMed})`} valor={fmtCant(p.Cantidad)} />
                                                                 <FilaMovil label="Ventas"   valor={`S/ ${fmt(p.Ventas)}`} acento={ACENTO.ventas} />

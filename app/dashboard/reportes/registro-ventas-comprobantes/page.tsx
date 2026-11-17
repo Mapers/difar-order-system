@@ -15,6 +15,7 @@ import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { cn } from "@/lib/utils"
 import apiClient from "@/app/api/client"
+import { cabeceraSesion } from "@/app/api/sesion"
 import { toast } from "@/app/hooks/useToast"
 import { useAuth } from "@/context/authContext"
 import { ExportRegistroVentasComprobantesPdf } from "@/components/reporte/exportRegistroVentasComprobantesPdf"
@@ -85,7 +86,8 @@ export default function RegistroVentasComprobantesPage() {
             if (auth.isRepresentante()) params.append('representante', auth.user?.codRepres || '')
             if (busqueda.trim()) params.append('busqueda', busqueda.trim())
 
-            const res = await apiClient.get(`/pedidos/registro-ventas-comprobantes?${params.toString()}`)
+            // Versión corregida: guías repetidas una sola vez, sin flete, por fecha de emisión (cuadra con el Registro de Ventas).
+            const res = await apiClient.get(`/reportes/registro-ventas-cpe-2b?${params.toString()}`, { headers: cabeceraSesion() })
             setFilas(res.data?.data?.data || [])
             setConsultado(true)
         } catch (error) {

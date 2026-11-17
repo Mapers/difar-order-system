@@ -132,7 +132,8 @@ export function agruparRegistroVentas(filas: RegistroVentaFila[]): RegistroVenta
     }
 
     const comprobantes = [...porComprobante.values()]
-    const totales = comprobantes.reduce(
+    // Los anulados se listan (con su marca) pero no suman al total.
+    const totales = comprobantes.filter(c => !c.anulado).reduce(
         (acumulado, c) => ({
             no_afecto: acumulado.no_afecto + c.no_afecto,
             afecto:    acumulado.afecto    + c.afecto,

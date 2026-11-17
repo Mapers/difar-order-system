@@ -50,7 +50,8 @@ export const ventasTotalesRequest = async (params: {
     laboratorios?: number[]
     vendedores?: string[]
 }): Promise<any> => {
-    return apiClient.post(`/reportes/ventas-totales`, params);
+    // Agrupa por el laboratorio real (el mismo del filtro) y la línea del artículo, como Access.
+    return apiClient.post(`/reportes/ventas-totales-2b`, params, { headers: cabeceraSesion() });
 };
 
 export const hojaEnBlancoRequest = async (params: {
