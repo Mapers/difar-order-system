@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { toast } from '@/app/hooks/useToast'
 import { PersonasService } from '@/app/services/contabilidad/DatosGeneralesService'
 import { CatalogosPersonas, FichaPersona, FilaPersona, Uso } from '@/app/types/datos-generales-types'
-import { AlertaUso, AvisoAmbar, Campo, claseInput, Combo, Confirmar, hoy, texto, textoError } from '../comunes'
+import { AlertaUso, AvisoAmbar, AvisoExito, Campo, claseInput, Combo, Confirmar, hoy, texto, textoError, useSacudir } from '../comunes'
 
 const CLIENTE = '01'
 
@@ -31,18 +31,24 @@ interface Props {
     catalogos: CatalogosPersonas | null
     onCerrar: () => void
     onCambio: () => void
+    /** Efectos (sacudir con error, aviso verde al guardar). Lo activa Almacén; Contabilidad queda igual. */
+    animado?: boolean
+    /** Persona recién grabada (Almacén la pone en la nota). */
+    onGuardado?: (p: { codigo: string; nombre: string; ruc: string }) => void
 }
 
 /** Ficha de Personas y Empresas (form Access [Perosnas y Empresas]): GuardarNuevo / Modificar / Limpiar / Eliminar Registro. */
-export function FichaPersonaDialog({ abierta, ficha, catalogos, onCerrar, onCambio }: Props) {
+export function FichaPersonaDialog({ abierta, ficha, catalogos, onCerrar, onCambio, animado, onGuardado }: Props) {
     const [f, setF] = useState<FichaPersona>(fichaPersonaVacia())
     const [guardando, setGuardando] = useState(false)
     const [aviso, setAviso] = useState('')
     const [avisos, setAvisos] = useState<string[] | null>(null)
     const [preguntaEliminar, setPreguntaEliminar] = useState(false)
     const [usos, setUsos] = useState<Uso[] | null>(null)
-    useEffect(() => { if (abierta) { setF(ficha ?? fichaPersonaVacia()); setAviso('') } }, [abierta, ficha])
-    const set = (p: Partial<FichaPersona>) => { setF((x) => ({ ...x, ...p })); setAviso('') }
+    const [exito, setExito] = useState('')
+    const refSacudir = useSacudir(animado, aviso)
+    useEffect(() => { if (abierta) { setF(ficha ?? fichaPersonaVacia()); setAviso(''); setExito('') } }, [abierta, ficha])
+    const set = (p: Partial<FichaPersona>) => { setF((x) => ({ ...x, ...p })); setAviso(''); setExito('') }
 
     const esCliente = f.relacion === CLIENTE
     const relacionNombre = catalogos?.relaciones.find((r) => String(r.id) === f.relacion)?.nombre
@@ -85,6 +91,8 @@ export function FichaPersonaDialog({ abierta, ficha, catalogos, onCerrar, onCamb
             toast({ title: f.nuevo ? 'Persona registrada' : 'Persona modificada', description: `${f.codigo.trim()} ${f.nombre}` })
             if (r.otrosConMismoRuc > 0) setAviso(`Guardado. Aviso: hay ${r.otrosConMismoRuc} código(s) más con el mismo Nro. Doc. Identidad.`)
             onCambio()
+            onGuardado?.({ codigo: f.codigo.trim(), nombre: f.nombre.trim(), ruc: (f.ruc || f.codigo).trim() })
+            if (animado) setExito(`${f.nuevo ? 'Registrado' : 'Modificado'}: ${f.codigo.trim()} ${f.nombre.trim()}`)
             // Con aviso de RUC repetido la ficha queda abierta (ya grabada: pasa a "Modificar").
             if (r.otrosConMismoRuc) setF((x) => ({ ...x, nuevo: false }))
             else if (f.nuevo) setF(fichaPersonaVacia(f.relacion))
@@ -114,7 +122,7 @@ export function FichaPersonaDialog({ abierta, ficha, catalogos, onCerrar, onCamb
     return (
         <>
             <Dialog open={abierta} onOpenChange={(o) => !o && onCerrar()}>
-                <DialogContent className="flex max-h-[94vh] max-w-4xl flex-col gap-0 overflow-hidden p-0" closeClassName="text-white opacity-90 hover:opacity-100 z-10">
+                <DialogContent ref={refSacudir} className="flex max-h-[94vh] max-w-4xl flex-col gap-0 overflow-hidden p-0" closeClassName="text-white opacity-90 hover:opacity-100 z-10">
                     <DialogHeader className="shrink-0 bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 px-4 py-4 text-left text-white sm:px-6">
                         <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-blue-100">
                             <UserRound className="h-3.5 w-3.5" /> {f.nuevo ? 'Nueva persona / empresa' : 'Personas y empresas'}
@@ -127,6 +135,7 @@ export function FichaPersonaDialog({ abierta, ficha, catalogos, onCerrar, onCamb
                     </DialogHeader>
 
                     <div className="min-h-0 flex-1 space-y-3 overflow-y-auto bg-muted/30 px-3 py-4 sm:px-5">
+                        <AvisoExito mensaje={exito} onCerrar={() => setExito('')} />
                         <AvisoAmbar mensaje={aviso} onCerrar={() => setAviso('')} />
                         <div className="grid grid-cols-1 gap-3 rounded-xl border border-border bg-card p-3 shadow-sm sm:grid-cols-12 sm:p-4">
                             <Campo label="Codigo" obligatorio className="sm:col-span-3">

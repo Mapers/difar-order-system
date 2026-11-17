@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { toast } from '@/app/hooks/useToast'
 import { ArticulosService } from '@/app/services/contabilidad/DatosGeneralesService'
 import { CatalogosArticulos, FichaArticulo, FilaArticulo, GrupoCuenta, Opcion, Uso } from '@/app/types/datos-generales-types'
-import { AlertaUso, AvisoAmbar, Campo, claseInput, Combo, Confirmar, errorPct, fraccionDePct, pctDeFraccion, Seccion, texto, textoError } from '../comunes'
+import { AlertaUso, AvisoAmbar, AvisoExito, Campo, claseInput, Combo, Confirmar, errorPct, fraccionDePct, pctDeFraccion, Seccion, texto, textoError, useSacudir } from '../comunes'
 import { BuscarOsceDialog } from './BuscarOsceDialog'
 
 export const fichaArticuloVacia = (): FichaArticulo => ({
@@ -42,6 +42,10 @@ interface Props {
     listas: ListasAbiertas
     onCerrar: () => void
     onCambio: () => void
+    /** Efectos (sacudir con error, aviso verde al guardar). Lo activa Almacén; Contabilidad queda igual. */
+    animado?: boolean
+    /** Artículo recién grabado (Almacén lo agrega a la nota). */
+    onGuardado?: (a: { codigo: string; nombre: string }) => void
 }
 
 const CUENTAS: { campo: keyof FichaArticulo; grupo: GrupoCuenta; label: string; codigo: keyof FilaArticulo }[] = [
@@ -54,7 +58,7 @@ const CUENTAS: { campo: keyof FichaArticulo; grupo: GrupoCuenta; label: string; 
 ]
 
 /** Ficha contable del artículo (form Access [Bienes y Servicios 2]): Guardar y nuevo / Modificar / Eliminar Registro. */
-export function FichaArticuloDialog({ abierta, ficha, fila, catalogos, listas, onCerrar, onCambio }: Props) {
+export function FichaArticuloDialog({ abierta, ficha, fila, catalogos, listas, onCerrar, onCambio, animado, onGuardado }: Props) {
     const [f, setF] = useState<FichaArticulo>(fichaArticuloVacia())
     const [guardando, setGuardando] = useState(false)
     const [aviso, setAviso] = useState('')
@@ -62,8 +66,10 @@ export function FichaArticuloDialog({ abierta, ficha, fila, catalogos, listas, o
     const [preguntaEliminar, setPreguntaEliminar] = useState(false)
     const [usos, setUsos] = useState<Uso[] | null>(null)
     const [buscarOsce, setBuscarOsce] = useState(false)
-    useEffect(() => { if (abierta) { setF(ficha ?? fichaArticuloVacia()); setAviso('') } }, [abierta, ficha])
-    const set = (p: Partial<FichaArticulo>) => { setF((x) => ({ ...x, ...p })); setAviso('') }
+    const [exito, setExito] = useState('')
+    const refSacudir = useSacudir(animado, aviso)
+    useEffect(() => { if (abierta) { setF(ficha ?? fichaArticuloVacia()); setAviso(''); setExito('') } }, [abierta, ficha])
+    const set = (p: Partial<FichaArticulo>) => { setF((x) => ({ ...x, ...p })); setAviso(''); setExito('') }
 
     const subGrupos = useMemo<Opcion[]>(() => (catalogos?.subGrupos ?? []).map((s) => ({ id: s.id, codigo: s.codigo, nombre: `${s.nombre ?? `(sin nombre) ${s.codigo ?? s.id}`}${s.grupo ? ` · ${s.grupo}` : ''}` })), [catalogos])
     const unidades = useMemo<Opcion[]>(() => (catalogos?.unidades ?? []).map((u) => ({ id: u.id, nombre: `${u.nombre}${u.abreviatura ? ` (${u.abreviatura})` : ''}` })), [catalogos])
@@ -90,6 +96,8 @@ export function FichaArticuloDialog({ abierta, ficha, fila, catalogos, listas, o
             const r = await ArticulosService.guardar({ ...f, precio1: fraccionDePct(f.precio1), precio2: fraccionDePct(f.precio2), precio3: fraccionDePct(f.precio3), precio4: fraccionDePct(f.precio4) })
             toast({ title: f.id ? 'Artículo modificado' : 'Artículo guardado', description: `${r.codigo || f.codigo} ${f.nombre}` })
             onCambio()
+            onGuardado?.({ codigo: String(r.codigo || f.codigo).trim(), nombre: f.nombre.trim() })
+            if (animado) setExito(`${f.id ? 'Modificado' : 'Guardado'}: ${r.codigo || f.codigo} ${f.nombre.trim()}`)
             if (f.id) onCerrar(); else setF({ ...fichaArticuloVacia(), subGrupo: f.subGrupo, unidad: f.unidad, tipoExistencia: f.tipoExistencia })
         } catch (e) { setAviso(await textoError(e)) } finally { setGuardando(false) }
     }
@@ -129,7 +137,7 @@ export function FichaArticuloDialog({ abierta, ficha, fila, catalogos, listas, o
     return (
         <>
             <Dialog open={abierta} onOpenChange={(o) => !o && onCerrar()}>
-                <DialogContent className="flex max-h-[94vh] max-w-5xl flex-col gap-0 overflow-hidden p-0" closeClassName="text-white opacity-90 hover:opacity-100 z-10">
+                <DialogContent ref={refSacudir} className="flex max-h-[94vh] max-w-5xl flex-col gap-0 overflow-hidden p-0" closeClassName="text-white opacity-90 hover:opacity-100 z-10">
                     <DialogHeader className="shrink-0 bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 px-4 py-4 text-left text-white sm:px-6">
                         <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-blue-100">
                             <Package className="h-3.5 w-3.5" /> {f.id ? 'Bienes y servicios' : 'Nuevo bien o servicio'}
@@ -142,6 +150,7 @@ export function FichaArticuloDialog({ abierta, ficha, fila, catalogos, listas, o
                     </DialogHeader>
 
                     <div className="min-h-0 flex-1 space-y-3 overflow-y-auto bg-muted/30 px-3 py-4 sm:px-5">
+                        <AvisoExito mensaje={exito} onCerrar={() => setExito('')} />
                         <AvisoAmbar mensaje={aviso} onCerrar={() => setAviso('')} />
                         <Seccion titulo="Item">
                             <div className="grid grid-cols-1 gap-3 sm:grid-cols-12">

@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { format, startOfMonth } from "date-fns"
 import {
-    ArrowRightLeft, Building2, CheckCircle2, ClipboardList, FilePlus2, ListX, Loader2, PackageMinus, PackagePlus,
+    ArrowRightLeft, Boxes, Building2, CheckCircle2, ClipboardList, Contact, FilePlus2, ListX, Loader2, PackageMinus, PackagePlus,
     Plus, Printer, RefreshCw, Save, Search, Trash2, User, X,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -13,6 +13,10 @@ import { toast } from "@/app/hooks/useToast"
 import { cn } from "@/lib/utils"
 import { AvisoAmbar, Campo, Combo, Confirmar, Seccion, claseInput } from "@/components/contabilidad/datos-generales/comunes"
 import { BuscadorRemoto } from "./BuscadorRemoto"
+import { FichaArticuloDialog, fichaArticuloVacia, ListasAbiertas } from "@/components/contabilidad/datos-generales/articulos/FichaArticuloDialog"
+import { FichaPersonaDialog, fichaPersonaVacia } from "@/components/contabilidad/datos-generales/personas/FichaPersonaDialog"
+import { ArticulosService, PersonasService } from "@/app/services/contabilidad/DatosGeneralesService"
+import { CatalogosArticulos, CatalogosPersonas } from "@/app/types/datos-generales-types"
 import {
     AlmacenService, ArticuloAlmacen, CatalogosAlmacen, FilaListado, LineaNota, LoteConSaldo, PersonaAlmacen,
     TipoMovimiento, mensajeError,
@@ -25,6 +29,8 @@ const dmy = (v: any) => { const f = soloFecha(v); return f ? `${f.slice(8, 10)}/
 const num = (v: any) => Number(v ?? 0)
 const fmt = (v: any, d = 2) => num(v).toLocaleString('es-PE', { minimumFractionDigits: d, maximumFractionDigits: d })
 const soles = (v: any) => `S/ ${fmt(v)}`
+/** Listas abiertas de la ficha de artículo (sugerencias de Medida, Tipo, etc.): desde Almacén van vacías. */
+const LISTAS_VACIAS: ListasAbiertas = { medida: [], tipo: [], modelo: [], marca: [], otros1: [], otros2: [], control: [] }
 let contador = 0
 const nuevaClave = () => `n${++contador}`
 
@@ -98,6 +104,38 @@ export function NotaAlmacen({ tipo }: { tipo: TipoMovimiento }) {
     const [confirmar, setConfirmar] = useState<null | 'nota' | 'filas'>(null)
     const [lotes, setLotes] = useState<Record<string, LoteConSaldo[]>>({})
     const numeroManual = useRef(false)
+
+    // Botones BienesServicios / PersonasEmpresas de Access: abren las mismas fichas de Contabilidad › Datos Fijos.
+    const [fichaArt, setFichaArt] = useState(false)
+    const [fichaPer, setFichaPer] = useState(false)
+    const [catArt, setCatArt] = useState<CatalogosArticulos | null>(null)
+    const [catPer, setCatPer] = useState<CatalogosPersonas | null>(null)
+    const [fichaArtVacia] = useState(() => fichaArticuloVacia())
+    const [fichaPerVacia] = useState(() => fichaPersonaVacia(esSalida ? '01' : '02'))
+    const abrirBienes = () => {
+        setFichaArt(true)
+        if (!catArt) ArticulosService.catalogos().then(setCatArt).catch(e => fallar(mensajeError(e, 'No se pudo abrir Bienes y Servicios (revisa que tu rol tenga ese menú en Contabilidad).')))
+    }
+    const abrirPersonas = () => {
+        setFichaPer(true)
+        if (!catPer) PersonasService.catalogos().then(setCatPer).catch(e => fallar(mensajeError(e, 'No se pudo abrir Personas y Empresas (revisa que tu rol tenga ese menú en Contabilidad).')))
+    }
+    /** Artículo recién creado: va a la primera fila vacía o a una fila nueva. */
+    const usarArticuloNuevo = (a: { codigo: string; nombre: string }) => {
+        if (!a.codigo) return
+        setLineas(ls => {
+            const i = ls.findIndex(l => !l.codigoArt)
+            if (i >= 0) return ls.map((l, k) => (k === i ? { ...l, codigoArt: a.codigo, articulo: a.nombre, lote: '' } : l))
+            return [...ls, { ...lineaVacia(centroDefecto), codigoArt: a.codigo, articulo: a.nombre }]
+        })
+        setExito(`Artículo ${a.codigo} ${a.nombre} agregado a la nota.`)
+    }
+    /** Persona recién creada: queda como proveedor / cliente de la nota. */
+    const usarPersonaNueva = (p: { codigo: string; nombre: string }) => {
+        if (!p.codigo) return
+        setCab(c => (c ? { ...c, persona: p.codigo, personaNombre: p.nombre } : c))
+        setExito(`${T.persona} ${p.nombre} puesto en la nota.`)
+    }
 
     const centroDefecto = cat?.centrosCosto.find(c => c.PorDefecto)?.Cod_CC ?? cat?.centrosCosto[0]?.Cod_CC ?? ''
     const concepto = cat?.conceptos.find(c => c.Codigo_Op === cab?.concepto)
@@ -498,6 +536,13 @@ export function NotaAlmacen({ tipo }: { tipo: TipoMovimiento }) {
                         {/* Botones abajo (estilo Contabilidad) */}
                         <div className="flex shrink-0 flex-col-reverse gap-2 border-t bg-background px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
                             <div className="flex flex-wrap gap-1.5">
+                                <Button variant="ghost" disabled={guardando} onClick={abrirBienes} title="Crear o modificar un artículo (Access: BienesServicios)">
+                                    <Boxes className="mr-2 h-4 w-4" /> Bienes y Servicios
+                                </Button>
+                                <Button variant="ghost" disabled={guardando} onClick={abrirPersonas} title="Crear o modificar un proveedor / cliente (Access: PersonasEmpresas)">
+                                    <Contact className="mr-2 h-4 w-4" /> Personas y Empresas
+                                </Button>
+                                <span className="mx-1 hidden w-px self-stretch bg-border sm:block" />
                                 {cab.id && (
                                     <Button variant="ghost" className="text-red-600 hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-950/40" disabled={guardando || cerrado} onClick={() => setConfirmar('nota')}>
                                         <Trash2 className="mr-2 h-4 w-4" /> Eliminar nota
@@ -524,6 +569,11 @@ export function NotaAlmacen({ tipo }: { tipo: TipoMovimiento }) {
                     </DialogContent>
                 )}
             </Dialog>
+
+            <FichaArticuloDialog abierta={fichaArt} ficha={fichaArtVacia} fila={null} catalogos={catArt} listas={LISTAS_VACIAS}
+                                 onCerrar={() => setFichaArt(false)} onCambio={() => {}} animado onGuardado={usarArticuloNuevo} />
+            <FichaPersonaDialog abierta={fichaPer} ficha={fichaPerVacia} catalogos={catPer}
+                                onCerrar={() => setFichaPer(false)} onCambio={() => {}} animado onGuardado={usarPersonaNueva} />
 
             <Confirmar abierto={confirmar === 'nota'} peligro textoAccion="Eliminar nota"
                        titulo={`¿Eliminar la ${T.nota.toLowerCase()} ${cab?.serie}-${cab?.numero}?`}

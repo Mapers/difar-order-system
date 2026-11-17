@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { AlertTriangle, Loader2, Search, X } from 'lucide-react'
+import { AlertTriangle, CheckCircle2, Loader2, Search, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { ComboSelect } from '@/components/ui/combo-select'
@@ -37,6 +37,32 @@ export const errorPct = (nombre: string, v: string) => {
 }
 /** Mensaje del backend (400 de validación / SIGNAL del SP, 403, 500) para el aviso ámbar. */
 export const textoError = (e: unknown, porDefecto = 'No se pudo completar la operación. Intenta nuevamente.') => mensajeError(e, porDefecto)
+
+/**
+ * Efecto "sacudir" del modal cuando hay un aviso (opcional, lo usa Almacén). Devuelve la ref para el DialogContent:
+ * cada vez que cambia `disparador` (y no está vacío) vuelve a correr la animación sin desmontar el contenido.
+ */
+export function useSacudir(activo: boolean | undefined, disparador: unknown) {
+    const ref = React.useRef<HTMLDivElement>(null)
+    React.useEffect(() => {
+        const el = ref.current
+        if (!activo || !disparador || !el) return
+        el.classList.remove('almacen-sacudir'); void el.offsetWidth; el.classList.add('almacen-sacudir')
+    }, [activo, disparador])
+    return ref
+}
+
+/** Aviso verde con check animado (guardado correcto). */
+export function AvisoExito({ mensaje, onCerrar }: { mensaje: React.ReactNode; onCerrar?: () => void }) {
+    if (!mensaje) return null
+    return (
+        <div role="status" className="flex items-center gap-3 rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2.5 text-sm text-emerald-900 animate-in fade-in-0 slide-in-from-top-1 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200">
+            <span className="almacen-exito almacen-brillo flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-white"><CheckCircle2 className="h-4 w-4" /></span>
+            <span className="min-w-0 flex-1 break-words font-medium">{mensaje}</span>
+            {onCerrar && <button type="button" onClick={onCerrar} className="rounded p-0.5 hover:bg-emerald-100 dark:hover:bg-emerald-900/40" aria-label="Cerrar aviso"><X className="h-4 w-4" /></button>}
+        </div>
+    )
+}
 
 /** Aviso ámbar (validaciones, errores del servidor). */
 export function AvisoAmbar({ mensaje, onCerrar, className }: { mensaje: React.ReactNode; onCerrar?: () => void; className?: string }) {
