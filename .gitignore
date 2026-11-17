@@ -26,6 +26,9 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# versión del despliegue (la genera next.config.mjs al compilar)
+/public/version.json
+
 # local 
 .vscode/
 docs

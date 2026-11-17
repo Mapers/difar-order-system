@@ -11,6 +11,7 @@ import { SidebarProvider, useSidebar } from "@/context/sidebarContext"
 import { IvanWidget } from "@/components/ivan/IvanWidget"
 import { AvisoEstadoSunat } from "@/components/comprobantes/AvisoEstadoSunat"
 import { GuardaMenu } from "@/components/auth/GuardaMenu"
+import { AvisoVersionNueva } from "@/components/auth/AvisoVersionNueva"
 
 function DashboardContent({ children }: { children: React.ReactNode }) {
     const { isAuthenticated, loading } = useAuth()
@@ -34,6 +35,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
             <NotificationArrivalModal />
             <AvisoEstadoSunat />
             <IvanWidget />
+            <AvisoVersionNueva />
         </div>
     )
 }
