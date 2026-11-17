@@ -59,7 +59,8 @@ const apiClient = axios.create({
  * usuarios y roles. Solo a ellas se les agrega el token, para no mandar una cabecera de ~8 KB en todas.
  */
 // contabilidad/caja y contabilidad/compras: sus escrituras piden sesión desde la re-auditoría del 15/11/2026.
-const RUTAS_CON_SESION = /^\/?(amortizacion|planilla-cobranza|recibos|cobranza|usuarios|roles|contabilidad\/caja|contabilidad\/compras)(\/|\?|$)/;
+// almacen: Ingresos y Salidas de almacén (17/11/2026), permiso por menú en todas sus rutas.
+const RUTAS_CON_SESION = /^\/?(amortizacion|planilla-cobranza|recibos|cobranza|usuarios|roles|contabilidad\/caja|contabilidad\/compras|almacen)(\/|\?|$)/;
 
 apiClient.interceptors.request.use((config) => {
   try {

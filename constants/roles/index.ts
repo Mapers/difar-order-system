@@ -15,7 +15,8 @@ import {
     TrendingUp, ReceiptText, HandCoins, BadgePercent, ClipboardList,
     FileBarChart, FileSpreadsheet, FileCode2, FileCheck2, Truck, ListTree,
     BookText, Library, Landmark, Calculator, Database,
-    Contact, DollarSign, Boxes, Percent, CalendarDays
+    Contact, DollarSign, Boxes, Percent, CalendarDays,
+    Warehouse, PackagePlus, PackageMinus
 } from "lucide-react";
 
 export interface NavItem {
@@ -77,6 +78,9 @@ export const ICON_MAP: Record<string, React.ComponentType<{ className?: string }
     "/dashboard/reportes/ventas-totales": TrendingUp,
     "/dashboard/reportes/hoja-en-blanco": FileText,
     "/dashboard/reportes/toma-inventario": ClipboardList,
+    "/dashboard/almacen": Warehouse,
+    "/dashboard/almacen/ingresos": PackagePlus,
+    "/dashboard/almacen/salidas": PackageMinus,
     "/dashboard/recibo-cuenta-cliente": ReceiptText,
     "/dashboard/usuarios": UserCog,
     "/dashboard/roles": Notebook,
