@@ -14,6 +14,10 @@ import { toast } from "@/app/hooks/useToast"
 import { cn } from "@/lib/utils"
 import { AvisoAmbar, AvisoExito, Campo, Combo, Confirmar, Seccion, claseInput, useSacudir } from "@/components/contabilidad/datos-generales/comunes"
 import { BuscadorRemoto } from "./BuscadorRemoto"
+import { ConfirmarEliminacion } from "./ConfirmarEliminacion"
+import { generarPdfNotaAlmacen } from "./pdfNotaAlmacen"
+import { PdfVistaPreviaDialog } from "@/components/reporte/PdfVistaPreviaDialog"
+import { OpcionesPdfReporte } from "@/components/reporte/pdfOpciones"
 import { FichaArticuloDialog, fichaArticuloVacia, ListasAbiertas } from "@/components/contabilidad/datos-generales/articulos/FichaArticuloDialog"
 import { FichaPersonaDialog, fichaPersonaVacia } from "@/components/contabilidad/datos-generales/personas/FichaPersonaDialog"
 import { ArticulosService, PersonasService } from "@/app/services/contabilidad/DatosGeneralesService"
@@ -128,7 +132,9 @@ export function NotaAlmacen({ tipo }: { tipo: TipoMovimiento }) {
     const [exito, setExito] = useState<{ texto: string; id?: number } | null>(null)
     const [guardando, setGuardando] = useState(false)
     const [abriendo, setAbriendo] = useState<number | null>(null)
-    const [confirmar, setConfirmar] = useState<null | 'nota' | 'filas' | 'cerrar' | 'nueva'>(null)
+    const [confirmar, setConfirmar] = useState<null | string>(null)
+    /** Datos del informe para el PDF (modal de vista previa estándar de la web). */
+    const [pdfFilas, setPdfFilas] = useState<any[] | null>(null)
     const [lotes, setLotes] = useState<Record<string, LoteConSaldo[]>>({})
     const numeroManual = useRef(false)
     const original = useRef('')
@@ -231,7 +237,11 @@ export function NotaAlmacen({ tipo }: { tipo: TipoMovimiento }) {
         setLineas(ls => ls.map(l => (l.clave === clave ? { ...l, ...cambios } : l)))
         Object.keys(cambios).forEach(k => limpiarError(`${clave}:${k}`))
     }
-    const quitarFila = (clave: string) => setLineas(ls => { const r = ls.filter(l => l.clave !== clave); return r.length ? r : [lineaVacia(centroDefecto)] })
+    const quitarFilaYa = (clave: string) => setLineas(ls => { const r = ls.filter(l => l.clave !== clave); return r.length ? r : [lineaVacia(centroDefecto)] })
+    const quitarFila = (clave: string) => {
+        const l = lineas.find(x => x.clave === clave)
+        if (l && (l.codigoArt || l.cantidad)) setConfirmar(`fila:${clave}`); else quitarFilaYa(clave)
+    }
 
     // ------------------------------------------------------------ guardar (Access: cmdSaveandNew)
     const guardar = async () => {
@@ -276,20 +286,31 @@ export function NotaAlmacen({ tipo }: { tipo: TipoMovimiento }) {
 
     // ------------------------------------------------------------ eliminar (EliminarRegistro / EliminaDetalle)
     const pedirEliminarFilas = () => {
-        const nuevasMarcadas = lineas.filter(l => l.marcada && !l.id)
-        const guardadasMarcadas = lineas.filter(l => l.marcada && l.id)
-        const resto = lineas.filter(l => !(l.marcada && !l.id))
-        // Filas aún no guardadas: se quitan al momento.
-        if (nuevasMarcadas.length) setLineas(resto.length ? resto : [lineaVacia(centroDefecto)])
-        if (!guardadasMarcadas.length) { if (!nuevasMarcadas.length) fallar('Marque en la columna E las filas a eliminar.'); return }
+        const marcadasL = lineas.filter(l => l.marcada)
+        if (!marcadasL.length) return fallar('Marque en la columna E las filas a eliminar.')
+        const guardadasMarcadas = marcadasL.filter(l => l.id)
         // Access guarda antes de eliminar (SaveRecord); aquí se pide guardar primero para no perder lo escrito.
-        if (huella(cab, resto) !== original.current) return fallar('Guarde primero los cambios de la nota y luego elimine las filas marcadas.')
+        if (guardadasMarcadas.length && huella(cab, lineas.filter(l => !(l.marcada && !l.id))) !== original.current)
+            return fallar('Guarde primero los cambios de la nota y luego elimine las filas marcadas.')
         setConfirmar('filas')
     }
 
     const eliminar = async () => {
+        const que = confirmar
+        if (que?.startsWith('fila:')) { quitarFilaYa(que.slice(5)); setConfirmar(null); return }
+        if (que === 'filas') {
+            const nuevas = lineas.filter(l => l.marcada && !l.id)
+            const guardadas = lineas.filter(l => l.marcada && l.id)
+            if (!guardadas.length || !cab?.id) {
+                const resto = lineas.filter(l => !l.marcada)
+                setLineas(resto.length ? resto : [lineaVacia(centroDefecto)])
+                setConfirmar(null)
+                setExito({ texto: `${nuevas.length} fila${nuevas.length === 1 ? '' : 's'} quitada${nuevas.length === 1 ? '' : 's'} (aún no estaban guardadas).` })
+                return
+            }
+        }
         if (!cab?.id) return
-        const que = confirmar; setConfirmar(null); setAviso(null)
+        setAviso(null)
         try {
             if (que === 'nota') {
                 const r = await AlmacenService.eliminar(tipo, cab.id)
@@ -303,6 +324,7 @@ export function NotaAlmacen({ tipo }: { tipo: TipoMovimiento }) {
                 cargarLista()
             }
         } catch (e) { fallar(mensajeError(e, 'No se pudo eliminar.')) }
+        finally { setConfirmar(null) }
     }
 
     const imprimir = async (id = cab?.id) => {
@@ -310,7 +332,7 @@ export function NotaAlmacen({ tipo }: { tipo: TipoMovimiento }) {
         try {
             const filasR = await AlmacenService.reporte(tipo, id)
             if (!filasR.length) return fallar('La nota no tiene líneas para imprimir.')
-            imprimirNota(T.informe, filasR, esSalida)
+            setPdfFilas(filasR)
         } catch (e) { fallar(mensajeError(e, 'No se pudo preparar la impresión.')) }
     }
 
@@ -753,49 +775,26 @@ export function NotaAlmacen({ tipo }: { tipo: TipoMovimiento }) {
                        descripcion="La nota tiene cambios sin guardar. Vuelve y pulsa Guardar, o descártalos."
                        onCancelar={() => setConfirmar(null)}
                        onAceptar={() => { const q = confirmar; setConfirmar(null); if (q === 'nueva') nueva(); else setAbierta(false) }} />
-            <Confirmar abierto={confirmar === 'nota'} peligro textoAccion="Eliminar nota"
+            <ConfirmarEliminacion abierto={confirmar === 'nota'} textoAccion="Eliminar nota"
                        titulo={`¿Eliminar la ${T.nota.toLowerCase()} ${cab?.serie}-${cab?.numero}?`}
-                       descripcion="Se borran la nota, su detalle y sus movimientos de kardex. No se puede deshacer."
+                       descripcion={`Se borran la nota, sus ${lineas.filter(l => l.id).length} línea(s) y sus movimientos de kardex${esSalida ? '' : ' y lotes'}.`}
+                       detalle={lineas.filter(l => l.id).map(l => `${l.cantidad} × ${l.articulo}${l.lote ? ` · lote ${l.lote}` : ''}`)}
                        onCancelar={() => setConfirmar(null)} onAceptar={eliminar} />
-            <Confirmar abierto={confirmar === 'filas'} peligro textoAccion="Eliminar filas"
-                       titulo={`¿Eliminar ${lineas.filter(l => l.marcada && l.id).length} fila(s) marcada(s)?`}
-                       descripcion="Se borran las filas marcadas y se recalcula el kardex de la nota. No se puede deshacer."
+            <ConfirmarEliminacion abierto={confirmar === 'filas'} textoAccion="Eliminar filas"
+                       titulo={`¿Eliminar ${marcadas} fila${marcadas === 1 ? '' : 's'} marcada${marcadas === 1 ? '' : 's'}?`}
+                       descripcion={lineas.some(l => l.marcada && l.id) ? 'Las filas guardadas se borran de la nota y se recalcula su kardex; las nuevas solo se quitan de la pantalla.' : 'Estas filas aún no están guardadas: solo se quitan de la pantalla.'}
+                       detalle={lineas.filter(l => l.marcada).map(l => `${l.cantidad || 0} × ${l.articulo || '(sin artículo)'}${l.lote ? ` · lote ${l.lote}` : ''}${l.id ? '' : ' (nueva)'}`)}
                        onCancelar={() => setConfirmar(null)} onAceptar={eliminar} />
+            <ConfirmarEliminacion abierto={!!confirmar?.startsWith('fila:')} textoAccion="Quitar fila"
+                       titulo="¿Quitar esta fila?" descripcion="La fila aún no está guardada; se quita de la pantalla."
+                       detalle={lineas.filter(l => `fila:${l.clave}` === confirmar).map(l => `${l.cantidad || 0} × ${l.articulo || '(sin artículo)'}`)}
+                       onCancelar={() => setConfirmar(null)} onAceptar={eliminar} />
+
+            <PdfVistaPreviaDialog abierto={!!pdfFilas} onCerrar={() => setPdfFilas(null)}
+                                  titulo={`${T.nota} ${pdfFilas?.[0]?.Documento ?? ''}`}
+                                  defecto={{ titulo: T.informe, nota: '', color: '#163161', tamanoLetra: 'normal' } as OpcionesPdfReporte}
+                                  archivoDefecto={`${esSalida ? 'Nota-Salida' : 'Nota-Ingreso'}-${String(pdfFilas?.[0]?.Documento ?? '').replace(/[^\w-]+/g, '')}`}
+                                  generar={(op) => generarPdfNotaAlmacen(pdfFilas ?? [], esSalida, op)} />
         </div>
     )
-}
-
-/**
- * Impresión como el informe Access ("Nota Ingreso Almacen" / "Nota Salida Almacen"): título, Motivo y Documento,
- * etiquetas Almacen / Nombre / Concepto / Fecha, columnas PRODUCTO · UND. · LOTE · FECHA VCTO. · CANTIDAD (sin costos),
- * y pie con la fecha de impresión, "Página x de y" y el domicilio.
- */
-function imprimirNota(titulo: string, filas: any[], esSalida: boolean) {
-    const c = filas[0]
-    const esc = (v: any) => String(v ?? '').replace(/[&<>"]/g, s => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[s] as string))
-    const nombreCP = String(c.ClienteProveedor ?? '').replace(/^[^:]*:\s*/, '')
-    const lineas = filas.map(f => `<tr><td>${esc(f.BienesServicios)}</td><td>${esc(f.AbrevUnidMed)}</td><td>${esc(esSalida ? (f.LOTE2 ?? f.Lote) : f.Lote)}</td><td>${dmy(f.FechaVctoLote)}</td><td class="n">${fmt(esSalida ? f.Cantidad_Sal : f.Cantidad_Ing)}</td></tr>`).join('')
-    const fechaLarga = format(new Date(), "EEEE, d 'de' MMMM 'de' yyyy", { locale: es })
-    const w = window.open('', '_blank', 'width=900,height=700')
-    if (!w) return
-    w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${esc(titulo)} ${esc(c.Documento)}</title>
-<style>
-@page { margin: 16mm 14mm 20mm; @bottom-left { content: "${esc(fechaLarga)}"; font: 10px Arial; } @bottom-center { content: "${esc(c.Domicilio)}"; font: 9px Arial; } @bottom-right { content: "Página " counter(page) " de " counter(pages); font: 10px Arial; } }
-body{font-family:Arial,sans-serif;font-size:12px;color:#111;margin:0}
-.top{display:flex;justify-content:space-between;align-items:flex-start}
-h1{font-size:18px;margin:10px 0 2px;text-align:center}
-.mot{text-align:center;font-weight:bold;margin-bottom:8px}.doc{font-weight:bold;font-size:14px}
-.g{display:grid;grid-template-columns:90px 1fr;gap:3px 10px;margin:8px 0}
-table{width:100%;border-collapse:collapse;margin-top:10px}th,td{border-bottom:1px solid #bbb;padding:5px 6px;text-align:left}
-th{border-top:1.5px solid #333;border-bottom:1.5px solid #333;font-size:11px}.n{text-align:right;white-space:nowrap}
-.pie{display:none}@media screen{.pie{display:flex;justify-content:space-between;margin-top:18px;font-size:10px;color:#555}}
-</style></head><body>
-<div class="top"><div><b>${esc(c.NombreRazSocial)}</b><br>${esc(c.RUC)}</div><div class="doc">${esc(c.Documento)}</div></div>
-<h1>${esc(titulo)}</h1>
-<div class="mot">${esc(c.Motivo)}</div>
-<div class="g"><span>Almacen:</span><span>${esc(c.Almacen)}</span><span>Nombre:</span><span>${esc(nombreCP)}</span><span>Concepto:</span><span>${esc(c.Glosa)}</span><span>Fecha:</span><b>${dmy(c.Fecha_Mvto)}</b></div>
-<table><thead><tr><th>PRODUCTO</th><th>UND.</th><th>LOTE</th><th>FECHA VCTO.</th><th class="n">CANTIDAD</th></tr></thead><tbody>${lineas}</tbody></table>
-<div class="pie"><span>${esc(fechaLarga)}</span><span>${esc(c.Domicilio)}</span></div>
-<script>window.onload=()=>window.print()</script></body></html>`)
-    w.document.close()
 }
