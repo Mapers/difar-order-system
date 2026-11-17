@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useEffect, useMemo, useState } from 'react'
-import { Loader2, Package, Save, Search, Trash2, X } from 'lucide-react'
+import { Boxes, Calculator, Landmark, Layers, Loader2, Package, Percent, Ruler, Save, Search, Settings2, Tag, Trash2, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { toast } from '@/app/hooks/useToast'
@@ -58,7 +58,7 @@ const CUENTAS: { campo: keyof FichaArticulo; grupo: GrupoCuenta; label: string; 
 ]
 
 /** Ficha contable del artículo (form Access [Bienes y Servicios 2]): Guardar y nuevo / Modificar / Eliminar Registro. */
-export function FichaArticuloDialog({ abierta, ficha, fila, catalogos, listas, onCerrar, onCambio, animado, onGuardado }: Props) {
+export function FichaArticuloDialog({ abierta, ficha, fila, catalogos, listas, onCerrar, onCambio, animado = true, onGuardado }: Props) {
     const [f, setF] = useState<FichaArticulo>(fichaArticuloVacia())
     const [guardando, setGuardando] = useState(false)
     const [aviso, setAviso] = useState('')
@@ -67,23 +67,33 @@ export function FichaArticuloDialog({ abierta, ficha, fila, catalogos, listas, o
     const [usos, setUsos] = useState<Uso[] | null>(null)
     const [buscarOsce, setBuscarOsce] = useState(false)
     const [exito, setExito] = useState('')
-    const refSacudir = useSacudir(animado, aviso)
-    useEffect(() => { if (abierta) { setF(ficha ?? fichaArticuloVacia()); setAviso(''); setExito('') } }, [abierta, ficha])
-    const set = (p: Partial<FichaArticulo>) => { setF((x) => ({ ...x, ...p })); setAviso(''); setExito('') }
+    /** Campos marcados en ámbar después de un intento de guardar con datos faltantes o inválidos. */
+    const [marcados, setMarcados] = useState<Set<string>>(new Set())
+    const [golpe, setGolpe] = useState(0)
+    const refSacudir = useSacudir(animado, golpe)
+    useEffect(() => { if (abierta) { setF(ficha ?? fichaArticuloVacia()); setAviso(''); setExito(''); setMarcados(new Set()) } }, [abierta, ficha])
+    useEffect(() => { if (aviso) setGolpe((g) => g + 1) }, [aviso])
+    const set = (p: Partial<FichaArticulo>) => {
+        setF((x) => ({ ...x, ...p })); setAviso(''); setExito('')
+        setMarcados((m) => { if (!Object.keys(p).some((k) => m.has(k))) return m; const n = new Set(m); Object.keys(p).forEach((k) => n.delete(k)); return n })
+    }
+    const mal = (campo: string) => marcados.has(campo)
+    const fallar = (msg: string, campos: string[]) => { setMarcados(new Set(campos)); setAviso(msg) }
 
     const subGrupos = useMemo<Opcion[]>(() => (catalogos?.subGrupos ?? []).map((s) => ({ id: s.id, codigo: s.codigo, nombre: `${s.nombre ?? `(sin nombre) ${s.codigo ?? s.id}`}${s.grupo ? ` · ${s.grupo}` : ''}` })), [catalogos])
     const unidades = useMemo<Opcion[]>(() => (catalogos?.unidades ?? []).map((u) => ({ id: u.id, nombre: `${u.nombre}${u.abreviatura ? ` (${u.abreviatura})` : ''}` })), [catalogos])
 
-    const faltantes = [!f.subGrupo && 'SubGrupo', !f.nombre.trim() && 'Descripción del item', !f.unidad && 'Unidad Medida', !f.tipoExistencia && 'TipoExistencia'].filter(Boolean) as string[]
+    const faltantesCampos = ([[!f.subGrupo, 'subGrupo', 'SubGrupo'], [!f.nombre.trim(), 'nombre', 'Descripción del item'], [!f.unidad, 'unidad', 'Unidad Medida'], [!f.tipoExistencia, 'tipoExistencia', 'TipoExistencia']] as const).filter((x) => x[0])
+    const faltantes = faltantesCampos.map((x) => x[2])
 
     async function guardar(confirmado = false) {
-        if (faltantes.length) { setAviso(`Complete la información, luego guardar: ${faltantes.join(', ')}.`); return }
-        if (f.codigo.trim() && (!/^\d{1,9}$/.test(f.codigo.trim()) || Number(f.codigo) === 0)) { setAviso('El código del item debe ser numérico, mayor a 0 y de hasta 9 dígitos (o déjalo vacío para que se genere).'); return }
+        if (faltantes.length) { fallar(`Complete la información, luego guardar: ${faltantes.join(', ')}.`, faltantesCampos.map((x) => x[1])); return }
+        if (f.codigo.trim() && (!/^\d{1,9}$/.test(f.codigo.trim()) || Number(f.codigo) === 0)) { fallar('El código del item debe ser numérico, mayor a 0 y de hasta 9 dígitos (o déjalo vacío para que se genere).', ['codigo']); return }
         for (const [k, v] of [['% Precio 1', f.precio1], ['% Precio 2', f.precio2], ['% Precio 3', f.precio3], ['% Precio 4', f.precio4]] as const) {
-            const e = errorPct(k, v); if (e) { setAviso(e); return }
+            const e = errorPct(k, v); if (e) { fallar(e, [`precio${k.slice(-1)}`]); return }
         }
         for (const [k, v] of [['Equivalencia', f.equivalencia], ['Marca', f.marca]] as const) {
-            if (v.trim() && !Number.isFinite(Number(v.replace(',', '.')))) { setAviso(`${k} debe ser un número.`); return }
+            if (v.trim() && !Number.isFinite(Number(v.replace(',', '.')))) { fallar(`${k} debe ser un número.`, [k === 'Marca' ? 'marca' : 'equivalencia']); return }
         }
         if (!confirmado) {
             const a: string[] = []
@@ -97,6 +107,7 @@ export function FichaArticuloDialog({ abierta, ficha, fila, catalogos, listas, o
             toast({ title: f.id ? 'Artículo modificado' : 'Artículo guardado', description: `${r.codigo || f.codigo} ${f.nombre}` })
             onCambio()
             onGuardado?.({ codigo: String(r.codigo || f.codigo).trim(), nombre: f.nombre.trim() })
+            setMarcados(new Set())
             if (animado) setExito(`${f.id ? 'Modificado' : 'Guardado'}: ${r.codigo || f.codigo} ${f.nombre.trim()}`)
             if (f.id) onCerrar(); else setF({ ...fichaArticuloVacia(), subGrupo: f.subGrupo, unidad: f.unidad, tipoExistencia: f.tipoExistencia })
         } catch (e) { setAviso(await textoError(e)) } finally { setGuardando(false) }
@@ -118,7 +129,7 @@ export function FichaArticuloDialog({ abierta, ficha, fila, catalogos, listas, o
     )
     /** Lista abierta de Access: se escribe libre o se elige un valor ya usado. */
     const abierta_ = (campo: keyof ListasAbiertas, max: number, label: string) => (
-        <Campo label={label} className="col-span-1">
+        <Campo label={label} className="col-span-1" error={mal(campo)}>
             {input(campo, { list: `dg-lista-${campo}`, maxLength: max })}
             <datalist id={`dg-lista-${campo}`}>{listas[campo].map((v) => <option key={v} value={v} />)}</datalist>
         </Campo>
@@ -129,7 +140,7 @@ export function FichaArticuloDialog({ abierta, ficha, fila, catalogos, listas, o
         const fuera = valor && !items.some((i) => String(i.id) === valor)
         return (
             <Campo key={c.campo} label={c.label} ayuda={fuera ? `Actual: ${texto(fila?.[c.codigo]) || valor} (no está en la lista)` : !items.length ? 'No hay cuentas de registros con ese prefijo' : undefined}>
-                <Combo items={items} valor={valor} onCambio={(v) => set({ [c.campo]: v } as Partial<FichaArticulo>)} conCodigo vaciable placeholder={fuera ? texto(fila?.[c.codigo]) : 'Seleccionar…'} />
+                <Combo items={items} valor={valor} onCambio={(v) => set({ [c.campo]: v } as Partial<FichaArticulo>)} conCodigo vaciable placeholder={fuera ? texto(fila?.[c.codigo]) : 'Seleccionar…'} icono={Landmark} />
             </Campo>
         )
     }
@@ -152,20 +163,20 @@ export function FichaArticuloDialog({ abierta, ficha, fila, catalogos, listas, o
                     <div className="min-h-0 flex-1 space-y-3 overflow-y-auto bg-muted/30 px-3 py-4 sm:px-5">
                         <AvisoExito mensaje={exito} onCerrar={() => setExito('')} />
                         <AvisoAmbar mensaje={aviso} onCerrar={() => setAviso('')} />
-                        <Seccion titulo="Item">
+                        <Seccion titulo="Item" icono={Package}>
                             <div className="grid grid-cols-1 gap-3 sm:grid-cols-12">
-                                <Campo label="SubGrupo" obligatorio className="sm:col-span-6"><Combo items={subGrupos} valor={f.subGrupo} onCambio={(v) => set({ subGrupo: v })} conCodigo /></Campo>
+                                <Campo label="SubGrupo" obligatorio className="sm:col-span-6" error={mal('subGrupo')}><Combo items={subGrupos} valor={f.subGrupo} onCambio={(v) => set({ subGrupo: v })} conCodigo icono={Layers} /></Campo>
                                 <Campo label="Id Item" className="sm:col-span-2"><input className={claseInput} value={f.id ?? ''} disabled /></Campo>
-                                <Campo label="Codigo Item" obligatorio className="sm:col-span-4" ayuda={f.id ? undefined : 'Vacío = automático'}>
+                                <Campo label="Codigo Item" obligatorio className="sm:col-span-4" ayuda={f.id ? undefined : 'Vacío = automático'} error={mal('codigo') && 'Inválido'}>
                                     {input('codigo', { maxLength: 9, inputMode: 'numeric', placeholder: f.id ? '' : 'Automático', className: `${claseInput} font-mono` })}
                                 </Campo>
-                                <Campo label="Descripcion del Item" obligatorio className="sm:col-span-6">{input('nombre', { maxLength: 255 })}</Campo>
-                                <Campo label="Unidad Medida" obligatorio className="sm:col-span-3"><Combo items={unidades} valor={f.unidad} onCambio={(v) => set({ unidad: v })} /></Campo>
-                                <Campo label="TipoExistencia" obligatorio className="sm:col-span-3"><Combo items={catalogos?.tiposExistencia} valor={f.tipoExistencia} onCambio={(v) => set({ tipoExistencia: v })} /></Campo>
+                                <Campo label="Descripcion del Item" obligatorio className="sm:col-span-6" error={mal('nombre')}>{input('nombre', { maxLength: 255 })}</Campo>
+                                <Campo label="Unidad Medida" obligatorio className="sm:col-span-3" error={mal('unidad')}><Combo items={unidades} valor={f.unidad} onCambio={(v) => set({ unidad: v })} icono={Ruler} /></Campo>
+                                <Campo label="TipoExistencia" obligatorio className="sm:col-span-3" error={mal('tipoExistencia')}><Combo items={catalogos?.tiposExistencia} valor={f.tipoExistencia} onCambio={(v) => set({ tipoExistencia: v })} icono={Boxes} /></Campo>
                             </div>
                         </Seccion>
 
-                        <Seccion titulo="Caracteristicas del items">
+                        <Seccion titulo="Caracteristicas del items" icono={Tag}>
                             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
                                 {abierta_('medida', 50, 'Medida')}
                                 {abierta_('tipo', 255, 'Tipo')}
@@ -177,20 +188,20 @@ export function FichaArticuloDialog({ abierta, ficha, fila, catalogos, listas, o
                         </Seccion>
 
                         <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-                            <Seccion titulo="Procentajes para calculo de precios">
+                            <Seccion titulo="Procentajes para calculo de precios" icono={Percent}>
                                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-5 sm:items-end">
                                     {(['precio1', 'precio2', 'precio3', 'precio4'] as const).map((p, i) => (
-                                        <Campo key={p} label={`% Precio ${i + 1} (%)`}>{input(p, { inputMode: 'decimal', placeholder: '0', className: `${claseInput} text-right font-mono` })}</Campo>
+                                        <Campo key={p} label={`% Precio ${i + 1} (%)`} error={mal(p) && 'Inválido'}>{input(p, { inputMode: 'decimal', placeholder: '0', className: `${claseInput} text-right font-mono` })}</Campo>
                                     ))}
                                     <label className="col-span-2 flex h-9 cursor-pointer items-center gap-2 text-sm sm:col-span-1">
                                         <input type="checkbox" className="h-4 w-4 accent-blue-600" checked={f.icbper} onChange={(e) => set({ icbper: e.target.checked })} /> ICBPER
                                     </label>
                                 </div>
                             </Seccion>
-                            <Seccion titulo="Otras caracteristicas del items">
+                            <Seccion titulo="Otras caracteristicas del items" icono={Settings2}>
                                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                                    <Campo label="Equivalencia">{input('equivalencia', { inputMode: 'numeric', className: `${claseInput} text-right` })}</Campo>
-                                    <Campo label="Fiscalizado"><Combo items={catalogos?.fiscalizados} valor={f.fiscalizado} onCambio={(v) => set({ fiscalizado: v })} vaciable /></Campo>
+                                    <Campo label="Equivalencia" error={mal('equivalencia') && 'Inválido'}>{input('equivalencia', { inputMode: 'numeric', className: `${claseInput} text-right` })}</Campo>
+                                    <Campo label="Fiscalizado"><Combo items={catalogos?.fiscalizados} valor={f.fiscalizado} onCambio={(v) => set({ fiscalizado: v })} vaciable icono={Settings2} /></Campo>
                                     <Campo label="Item Abreviado">{input('abreviado', { maxLength: 255 })}</Campo>
                                     <Campo label="Codigo OSCE" className="col-span-2">
                                         <div className="flex gap-1">
@@ -208,10 +219,10 @@ export function FichaArticuloDialog({ abierta, ficha, fila, catalogos, listas, o
                         </div>
 
                         <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
-                            <Seccion titulo="Para registro del uso o consumo del item">
+                            <Seccion titulo="Para registro del uso o consumo del item" icono={Calculator}>
                                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-1">{CUENTAS.slice(0, 2).map(cuentaCombo)}</div>
                             </Seccion>
-                            <Seccion titulo="Para registro de costo de ventas del item" className="lg:col-span-2">
+                            <Seccion titulo="Para registro de costo de ventas del item" className="lg:col-span-2" icono={Landmark}>
                                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">{CUENTAS.slice(2).map(cuentaCombo)}</div>
                             </Seccion>
                         </div>

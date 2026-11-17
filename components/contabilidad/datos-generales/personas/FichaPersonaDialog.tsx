@@ -1,13 +1,13 @@
 'use client'
 
 import React, { useEffect, useMemo, useState } from 'react'
-import { Loader2, Save, Trash2, UserRound } from 'lucide-react'
+import { BadgeCheck, Briefcase, CalendarDays, CreditCard, FileText, IdCard, Landmark, Loader2, MapPin, Save, Trash2, UserRound, Users } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { toast } from '@/app/hooks/useToast'
 import { PersonasService } from '@/app/services/contabilidad/DatosGeneralesService'
 import { CatalogosPersonas, FichaPersona, FilaPersona, Uso } from '@/app/types/datos-generales-types'
-import { AlertaUso, AvisoAmbar, AvisoExito, Campo, claseInput, Combo, Confirmar, hoy, texto, textoError, useSacudir } from '../comunes'
+import { AlertaUso, AvisoAmbar, AvisoExito, Campo, claseInput, Combo, Confirmar, hoy, Seccion, texto, textoError, useSacudir } from '../comunes'
 
 const CLIENTE = '01'
 
@@ -38,7 +38,7 @@ interface Props {
 }
 
 /** Ficha de Personas y Empresas (form Access [Perosnas y Empresas]): GuardarNuevo / Modificar / Limpiar / Eliminar Registro. */
-export function FichaPersonaDialog({ abierta, ficha, catalogos, onCerrar, onCambio, animado, onGuardado }: Props) {
+export function FichaPersonaDialog({ abierta, ficha, catalogos, onCerrar, onCambio, animado = true, onGuardado }: Props) {
     const [f, setF] = useState<FichaPersona>(fichaPersonaVacia())
     const [guardando, setGuardando] = useState(false)
     const [aviso, setAviso] = useState('')
@@ -46,9 +46,17 @@ export function FichaPersonaDialog({ abierta, ficha, catalogos, onCerrar, onCamb
     const [preguntaEliminar, setPreguntaEliminar] = useState(false)
     const [usos, setUsos] = useState<Uso[] | null>(null)
     const [exito, setExito] = useState('')
-    const refSacudir = useSacudir(animado, aviso)
-    useEffect(() => { if (abierta) { setF(ficha ?? fichaPersonaVacia()); setAviso(''); setExito('') } }, [abierta, ficha])
-    const set = (p: Partial<FichaPersona>) => { setF((x) => ({ ...x, ...p })); setAviso(''); setExito('') }
+    /** Campos marcados en ámbar después de un intento de guardar con datos faltantes. */
+    const [marcados, setMarcados] = useState<Set<string>>(new Set())
+    const [golpe, setGolpe] = useState(0)
+    const refSacudir = useSacudir(animado, golpe)
+    useEffect(() => { if (abierta) { setF(ficha ?? fichaPersonaVacia()); setAviso(''); setExito(''); setMarcados(new Set()) } }, [abierta, ficha])
+    useEffect(() => { if (aviso) setGolpe((g) => g + 1) }, [aviso])
+    const set = (p: Partial<FichaPersona>) => {
+        setF((x) => ({ ...x, ...p })); setAviso(''); setExito('')
+        setMarcados((m) => { if (!Object.keys(p).some((k) => m.has(k))) return m; const n = new Set(m); Object.keys(p).forEach((k) => n.delete(k)); return n })
+    }
+    const mal = (campo: string) => marcados.has(campo)
 
     const esCliente = f.relacion === CLIENTE
     const relacionNombre = catalogos?.relaciones.find((r) => String(r.id) === f.relacion)?.nombre
@@ -60,22 +68,23 @@ export function FichaPersonaDialog({ abierta, ficha, catalogos, onCerrar, onCamb
     }
 
     /** Lo mismo que revisa el SP (A1, A2): se avisa en ámbar antes de enviar. */
-    const faltantes = useMemo(() => {
-        const x: string[] = []
-        if (!f.codigo.trim()) x.push('código')
-        if (!f.nombre.trim()) x.push('nombre / razón social')
-        if (!f.tipoDoc) x.push('doc. identidad')
-        if (!f.idDistrito) x.push('distrito / provincia / departamento')
-        if (!f.fechaInicio) x.push('fecha inicio')
-        if (!f.relacion) x.push('tipo de relación')
-        if (!f.ctaContable) x.push('cta contable')
-        if (esCliente && !f.codigoVendedor) x.push('vendedor')
-        if (esCliente && !f.idZona) x.push('zona')
+    const faltantesCampos = useMemo(() => {
+        const x: [string, string][] = []
+        if (!f.codigo.trim()) x.push(['codigo', 'código'])
+        if (!f.nombre.trim()) x.push(['nombre', 'nombre / razón social'])
+        if (!f.tipoDoc) x.push(['tipoDoc', 'doc. identidad'])
+        if (!f.idDistrito) x.push(['idDistrito', 'distrito / provincia / departamento'])
+        if (!f.fechaInicio) x.push(['fechaInicio', 'fecha inicio'])
+        if (!f.relacion) x.push(['relacion', 'tipo de relación'])
+        if (!f.ctaContable) x.push(['ctaContable', 'cta contable'])
+        if (esCliente && !f.codigoVendedor) x.push(['codigoVendedor', 'vendedor'])
+        if (esCliente && !f.idZona) x.push(['idZona', 'zona'])
         return x
     }, [f, esCliente])
+    const faltantes = faltantesCampos.map((x) => x[1])
 
     async function guardar(confirmado = false) {
-        if (faltantes.length) { setAviso(`Datos no completos: ingrese información en los campos (*): ${faltantes.join(', ')}.`); return }
+        if (faltantes.length) { setMarcados(new Set(faltantesCampos.map((x) => x[0]))); setAviso(`Datos no completos: ingrese información en los campos (*): ${faltantes.join(', ')}.`); return }
         if (!confirmado) {
             const a: string[] = []
             if (!f.nombreComercial.trim()) a.push('Falta el nombre comercial (marcado (*) en Access).')
@@ -92,6 +101,7 @@ export function FichaPersonaDialog({ abierta, ficha, catalogos, onCerrar, onCamb
             if (r.otrosConMismoRuc > 0) setAviso(`Guardado. Aviso: hay ${r.otrosConMismoRuc} código(s) más con el mismo Nro. Doc. Identidad.`)
             onCambio()
             onGuardado?.({ codigo: f.codigo.trim(), nombre: f.nombre.trim(), ruc: (f.ruc || f.codigo).trim() })
+            setMarcados(new Set())
             if (animado) setExito(`${f.nuevo ? 'Registrado' : 'Modificado'}: ${f.codigo.trim()} ${f.nombre.trim()}`)
             // Con aviso de RUC repetido la ficha queda abierta (ya grabada: pasa a "Modificar").
             if (r.otrosConMismoRuc) setF((x) => ({ ...x, nuevo: false }))
@@ -137,20 +147,25 @@ export function FichaPersonaDialog({ abierta, ficha, catalogos, onCerrar, onCamb
                     <div className="min-h-0 flex-1 space-y-3 overflow-y-auto bg-muted/30 px-3 py-4 sm:px-5">
                         <AvisoExito mensaje={exito} onCerrar={() => setExito('')} />
                         <AvisoAmbar mensaje={aviso} onCerrar={() => setAviso('')} />
-                        <div className="grid grid-cols-1 gap-3 rounded-xl border border-border bg-card p-3 shadow-sm sm:grid-cols-12 sm:p-4">
-                            <Campo label="Codigo" obligatorio className="sm:col-span-3">
+                        <Seccion titulo="Identificación" icono={IdCard}>
+                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-12">
+                            <Campo label="Codigo" obligatorio className="sm:col-span-3" error={mal('codigo')}>
                                 {input('codigo', { maxLength: 11, disabled: !f.nuevo, className: `${claseInput} font-mono`,
                                     onBlur: () => { if (f.nuevo && !f.ruc.trim() && f.codigo.trim()) set({ ruc: f.codigo.trim() }) } })}
                             </Campo>
-                            <Campo label="Nombre / Razon Social" obligatorio className="sm:col-span-9">{input('nombre', { maxLength: 255 })}</Campo>
+                            <Campo label="Nombre / Razon Social" obligatorio className="sm:col-span-9" error={mal('nombre')}>{input('nombre', { maxLength: 255 })}</Campo>
 
                             <Campo label="NombreComercial" obligatorio className="sm:col-span-5">{input('nombreComercial', { maxLength: 255 })}</Campo>
-                            <Campo label="Doc. Identidad" obligatorio className="sm:col-span-4"><Combo items={catalogos?.documentos} valor={f.tipoDoc} onCambio={(v) => set({ tipoDoc: v })} /></Campo>
+                            <Campo label="Doc. Identidad" obligatorio className="sm:col-span-4" error={mal('tipoDoc')}><Combo items={catalogos?.documentos} valor={f.tipoDoc} onCambio={(v) => set({ tipoDoc: v })} icono={FileText} /></Campo>
                             <Campo label="Nro.Doc.Identidad" obligatorio className="sm:col-span-3" ayuda="Vacío = se copia el código">{input('ruc', { maxLength: 11, className: `${claseInput} font-mono` })}</Campo>
+                        </div>
+                        </Seccion>
 
+                        <Seccion titulo="Ubicación y contacto" icono={MapPin}>
+                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-12">
                             <Campo label="Dirección" obligatorio className="sm:col-span-7">{input('direccion', { maxLength: 100 })}</Campo>
-                            <Campo label="Distrito / Provincia / Departamento" obligatorio className="sm:col-span-5">
-                                <Combo items={catalogos?.distritos} valor={f.idDistrito} onCambio={(v) => set({ idDistrito: v })} placeholder="Buscar distrito…" />
+                            <Campo label="Distrito / Provincia / Departamento" obligatorio className="sm:col-span-5" error={mal('idDistrito')}>
+                                <Combo items={catalogos?.distritos} valor={f.idDistrito} onCambio={(v) => set({ idDistrito: v })} placeholder="Buscar distrito…" icono={MapPin} />
                             </Campo>
 
                             <Campo label="Referencia Direccion" className="sm:col-span-12">{input('referencia', { maxLength: 255 })}</Campo>
@@ -158,20 +173,26 @@ export function FichaPersonaDialog({ abierta, ficha, catalogos, onCerrar, onCamb
                             <Campo label="Email" className="sm:col-span-6">{input('correo', { maxLength: 255, type: 'email' })}</Campo>
                             <Campo label="Otros Datos" className="sm:col-span-6">{input('otros', { maxLength: 255 })}</Campo>
 
-                            <Campo label="Telefonos" className="sm:col-span-4">{input('telefono', { maxLength: 100 })}</Campo>
-                            <Campo label="Fecha inicio" obligatorio className="sm:col-span-2">{input('fechaInicio', { type: 'date' })}</Campo>
-                            <Campo label="Tipo de Relacion" obligatorio className="sm:col-span-3"><Combo items={catalogos?.relaciones} valor={f.relacion} onCambio={cambiarRelacion} /></Campo>
-                            <Campo label="Cta Contable" obligatorio className="sm:col-span-3"><Combo items={catalogos?.cuentas} valor={f.ctaContable} onCambio={(v) => set({ ctaContable: v })} conCodigo /></Campo>
+                            <Campo label="Telefonos" className="sm:col-span-12">{input('telefono', { maxLength: 100 })}</Campo>
+                        </div>
+                        </Seccion>
 
-                            <Campo label="Vendedor" obligatorio={esCliente} className="sm:col-span-4">
-                                <Combo items={catalogos?.vendedores} valor={f.codigoVendedor} onCambio={(v) => set({ codigoVendedor: v })} disabled={!esCliente} placeholder={esCliente ? 'Seleccionar…' : 'Solo clientes'} />
+                        <Seccion titulo="Datos comerciales y contables" icono={Briefcase}>
+                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-12">
+                            <Campo label="Fecha inicio" obligatorio className="sm:col-span-3" error={mal('fechaInicio')}>{input('fechaInicio', { type: 'date' })}</Campo>
+                            <Campo label="Tipo de Relacion" obligatorio className="sm:col-span-4" error={mal('relacion')}><Combo items={catalogos?.relaciones} valor={f.relacion} onCambio={cambiarRelacion} icono={Users} /></Campo>
+                            <Campo label="Cta Contable" obligatorio className="sm:col-span-5" error={mal('ctaContable')}><Combo items={catalogos?.cuentas} valor={f.ctaContable} onCambio={(v) => set({ ctaContable: v })} conCodigo icono={Landmark} /></Campo>
+
+                            <Campo label="Vendedor" obligatorio={esCliente} className="sm:col-span-4" error={mal('codigoVendedor')}>
+                                <Combo items={catalogos?.vendedores} valor={f.codigoVendedor} onCambio={(v) => set({ codigoVendedor: v })} disabled={!esCliente} placeholder={esCliente ? 'Seleccionar…' : 'Solo clientes'} icono={BadgeCheck} />
                             </Campo>
-                            <Campo label="Zona" obligatorio={esCliente} className="sm:col-span-4">
-                                <Combo items={catalogos?.zonas} valor={f.idZona} onCambio={(v) => set({ idZona: v })} disabled={!esCliente} placeholder={esCliente ? 'Seleccionar…' : 'Solo clientes'} />
+                            <Campo label="Zona" obligatorio={esCliente} className="sm:col-span-4" error={mal('idZona')}>
+                                <Combo items={catalogos?.zonas} valor={f.idZona} onCambio={(v) => set({ idZona: v })} disabled={!esCliente} placeholder={esCliente ? 'Seleccionar…' : 'Solo clientes'} icono={MapPin} />
                             </Campo>
                             <Campo label="Linea Credito" className="sm:col-span-2">{input('lineaCredito', { inputMode: 'decimal', disabled: !esCliente, className: `${claseInput} text-right` })}</Campo>
                             <Campo label="Tipo Cliente" className="sm:col-span-2">{input('tipoCliente', { maxLength: 10, disabled: !esCliente })}</Campo>
                         </div>
+                        </Seccion>
                     </div>
 
                     <div className="flex shrink-0 flex-col-reverse gap-2 border-t border-border bg-background px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">

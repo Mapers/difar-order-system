@@ -5,7 +5,7 @@ import { format, startOfMonth } from "date-fns"
 import { es } from "date-fns/locale"
 import {
     ArrowRightLeft, Boxes, Building2, ClipboardList, Contact, FilePlus2, ListX, Loader2, Lock, PackageMinus, PackagePlus,
-    Plus, Printer, RotateCcw, Save, Search, Trash2, User, X,
+    ChevronRight, MessageSquareText, Plus, Printer, RotateCcw, Save, Search, Trash2, User, Warehouse, X,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -420,7 +420,7 @@ export function NotaAlmacen({ tipo }: { tipo: TipoMovimiento }) {
             <AvisoAmbar mensaje={avisoLista} onCerrar={() => setAvisoLista(null)} />
 
             {/* Filtros (botón Buscar del Access) */}
-            <div className="rounded-xl border bg-card p-3 shadow-sm sm:p-4">
+            <div className="rounded-2xl border bg-card p-3 shadow-md shadow-slate-900/5 sm:p-4 dark:shadow-black/30">
                 <form className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-[9.5rem_9.5rem_minmax(11rem,1fr)_minmax(9rem,0.8fr)_minmax(12rem,1.2fr)_auto] lg:items-end"
                       onSubmit={e => { e.preventDefault(); cargarLista() }}>
                     <Campo label="Desde"><input type="date" className={claseInput} value={desde} onChange={e => setDesde(e.target.value)} /></Campo>
@@ -439,56 +439,82 @@ export function NotaAlmacen({ tipo }: { tipo: TipoMovimiento }) {
                 </form>
             </div>
 
-            {/* Listado */}
-            <div className="overflow-hidden rounded-xl border bg-card shadow-sm">
-                <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                        <thead className="border-b bg-muted/50 text-left text-[11px] uppercase tracking-wide text-muted-foreground">
-                            <tr>
-                                <th className="px-3 py-2.5">Fecha</th><th className="px-3 py-2.5">Documento</th><th className="px-3 py-2.5">Concepto</th>
-                                <th className="px-3 py-2.5">{T.persona}</th><th className="px-3 py-2.5">Almacén</th>
-                                <th className="px-3 py-2.5 text-right">Ítems</th><th className="px-3 py-2.5 text-right">Cantidad</th>
-                                {!esSalida && <th className="px-3 py-2.5 text-right">Costo total</th>}
-                                <th className="px-3 py-2.5">Observaciones</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y">
-                            {cargandoLista && filas.length === 0 && (
-                                <tr><td colSpan={9} className="px-3 py-10 text-center text-muted-foreground"><Loader2 className="mx-auto h-5 w-5 animate-spin" /></td></tr>
-                            )}
-                            {filas.map(f => (
-                                <tr key={f.Codigo_Mvto} onClick={() => abrir(f.Codigo_Mvto)} className="cursor-pointer transition-colors hover:bg-blue-50/60 dark:hover:bg-blue-950/20">
-                                    <td className="whitespace-nowrap px-3 py-2">{dmy(f.Fecha_Mvto)}</td>
-                                    <td className="whitespace-nowrap px-3 py-2">
-                                        <span className="font-mono font-semibold text-blue-700 dark:text-blue-300">{f.Serie_Doc}-{f.Nro_Doc}</span>
-                                        <span className="ml-1.5 text-[10px] text-muted-foreground">{f.Codigo_Doc}</span>
-                                        {abriendo === f.Codigo_Mvto && <Loader2 className="ml-1.5 inline h-3.5 w-3.5 animate-spin" />}
-                                    </td>
-                                    <td className="px-3 py-2">
-                                        {f.Operacion}
-                                        {f.Transferencia === '1' && <Badge variant="outline" className="ml-1.5 gap-1 border-indigo-300 text-[10px] text-indigo-700 dark:text-indigo-300"><ArrowRightLeft className="h-3 w-3" />{f.AlmacenesDestino ?? 'Transferencia'}</Badge>}
-                                    </td>
-                                    <td className="max-w-[16rem] truncate px-3 py-2">{f.Proveedor ?? f.Cliente}</td>
-                                    <td className="px-3 py-2">{f.Almacen}</td>
-                                    <td className="px-3 py-2 text-right">{f.Items ?? f.Lineas}</td>
-                                    <td className="px-3 py-2 text-right font-mono">{fmt(f.CantidadTotal)}</td>
-                                    {!esSalida && <td className="whitespace-nowrap px-3 py-2 text-right font-mono">{soles(f.CostoTotal)}</td>}
-                                    <td className="max-w-[14rem] truncate px-3 py-2 text-muted-foreground">{f.Glosa}</td>
-                                </tr>
-                            ))}
-                            {!cargandoLista && filas.length === 0 && (
-                                <tr><td colSpan={9} className="px-3 py-12 text-center text-muted-foreground">
-                                    <ClipboardList className="mx-auto mb-2 h-7 w-7 opacity-50" /> No hay notas con esos filtros.
-                                </td></tr>
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-                <div className="flex flex-wrap items-center justify-between gap-2 border-t bg-muted/30 px-4 py-2 text-xs text-muted-foreground">
-                    <span>{filas.length} nota{filas.length === 1 ? '' : 's'} · clic en una fila para abrirla</span>
-                    {!esSalida && filas.length > 0 && <span>Costo total del periodo: <b className="font-mono text-foreground">{soles(totalLista)}</b></span>}
-                </div>
+            {/* Listado en tarjetas */}
+            <div className="flex flex-wrap items-center justify-between gap-2 px-1 text-xs text-muted-foreground">
+                <span><b className="text-foreground">{filas.length}</b> nota{filas.length === 1 ? '' : 's'} · clic en una tarjeta para abrirla</span>
+                {!esSalida && filas.length > 0 && <span>Costo total del periodo: <b className="font-mono text-foreground">{soles(totalLista)}</b></span>}
             </div>
+            {cargandoLista && filas.length === 0 ? (
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                    {[0, 1, 2, 3, 4, 5].map(i => <div key={i} className="h-44 animate-pulse rounded-2xl border bg-card shadow-sm" />)}
+                </div>
+            ) : filas.length === 0 ? (
+                <div className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-dashed bg-card px-6 py-14 text-center text-muted-foreground shadow-sm">
+                    <ClipboardList className="h-9 w-9 opacity-50" />
+                    <p className="font-medium text-foreground">No hay notas con esos filtros</p>
+                    <p className="text-sm">Cambia el rango de fechas o crea una {T.nota.toLowerCase()} nueva.</p>
+                </div>
+            ) : (
+                <div className={cn("grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3", cargandoLista && "opacity-60")}>
+                    {filas.map((f, i) => {
+                        const transf = f.Transferencia === '1'
+                        return (
+                            <button key={f.Codigo_Mvto} type="button" onClick={() => abrir(f.Codigo_Mvto)}
+                                    style={{ animationDelay: `${Math.min(i, 12) * 35}ms` }}
+                                    className={cn(
+                                        "group relative flex flex-col overflow-hidden rounded-2xl border bg-card text-left shadow-md shadow-slate-900/5 transition-all duration-200 animate-in fade-in-0 slide-in-from-bottom-2 fill-mode-both",
+                                        "hover:-translate-y-1 hover:border-blue-300 hover:shadow-xl hover:shadow-blue-600/15 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-500/25 dark:shadow-black/30 dark:hover:border-blue-700 dark:hover:shadow-blue-900/30",
+                                    )}>
+                                {/* franja de color arriba */}
+                                <span className={cn("h-1.5 w-full bg-gradient-to-r", transf ? "from-indigo-500 via-violet-500 to-fuchsia-500" : esSalida ? "from-orange-500 to-rose-500" : "from-emerald-500 to-teal-500")} />
+                                <div className="flex flex-1 flex-col gap-3 p-4">
+                                    <div className="flex items-start justify-between gap-2">
+                                        <div className="flex min-w-0 items-center gap-2.5">
+                                            <span className={cn("flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-white shadow-md transition-transform duration-200 group-hover:scale-110",
+                                                transf ? "bg-gradient-to-br from-indigo-500 to-violet-600 shadow-indigo-600/30" : esSalida ? "bg-gradient-to-br from-orange-500 to-rose-500 shadow-orange-600/30" : "bg-gradient-to-br from-emerald-500 to-teal-600 shadow-emerald-600/30")}>
+                                                {transf ? <ArrowRightLeft className="h-5 w-5" /> : <IconoTipo className="h-5 w-5" />}
+                                            </span>
+                                            <div className="min-w-0">
+                                                <p className="font-mono text-base font-bold leading-tight text-blue-700 dark:text-blue-300">{f.Serie_Doc}-{f.Nro_Doc}</p>
+                                                <p className="text-[11px] text-muted-foreground">{f.Codigo_Doc} · {dmy(f.Fecha_Mvto)}</p>
+                                            </div>
+                                        </div>
+                                        {abriendo === f.Codigo_Mvto
+                                            ? <Loader2 className="h-4 w-4 shrink-0 animate-spin text-blue-600" />
+                                            : <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">{f.Items ?? f.Lineas} ítem{(f.Items ?? f.Lineas) === 1 ? '' : 's'}</span>}
+                                    </div>
+
+                                    <p className="line-clamp-2 text-sm font-semibold leading-snug">{f.Operacion}</p>
+
+                                    <div className="space-y-1.5 text-xs text-muted-foreground">
+                                        <p className="flex items-center gap-1.5 truncate"><Building2 className="h-3.5 w-3.5 shrink-0" /><span className="truncate">{f.Proveedor ?? f.Cliente}</span></p>
+                                        <p className="flex items-center gap-1.5">
+                                            <Warehouse className="h-3.5 w-3.5 shrink-0" /> {f.Almacen}
+                                            {transf && <><ArrowRightLeft className="mx-0.5 h-3 w-3 text-indigo-500" /><span className="font-medium text-indigo-600 dark:text-indigo-300">{f.AlmacenesDestino ?? 'Otro almacén'}</span></>}
+                                        </p>
+                                        {f.Glosa && <p className="flex items-start gap-1.5"><MessageSquareText className="mt-px h-3.5 w-3.5 shrink-0" /><span className="line-clamp-1">{f.Glosa}</span></p>}
+                                    </div>
+
+                                    <div className="mt-auto flex items-end justify-between gap-2 border-t border-dashed pt-3">
+                                        <div>
+                                            <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Cantidad</p>
+                                            <p className="font-mono text-sm font-bold">{fmt(f.CantidadTotal)}</p>
+                                        </div>
+                                        {!esSalida ? (
+                                            <div className="text-right">
+                                                <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Costo total</p>
+                                                <p className="font-mono text-sm font-bold text-emerald-700 dark:text-emerald-400">{soles(f.CostoTotal)}</p>
+                                            </div>
+                                        ) : (
+                                            <span className="flex items-center gap-1 text-xs font-medium text-blue-600 opacity-0 transition-opacity group-hover:opacity-100 dark:text-blue-300">Abrir <ChevronRight className="h-3.5 w-3.5" /></span>
+                                        )}
+                                    </div>
+                                </div>
+                            </button>
+                        )
+                    })}
+                </div>
+            )}
 
             {/* Modal de la nota */}
             <Dialog open={abierta} onOpenChange={o => { if (!o) intentarCerrar() }}>

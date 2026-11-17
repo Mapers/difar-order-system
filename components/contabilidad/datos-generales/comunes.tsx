@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { AlertTriangle, CheckCircle2, Loader2, Search, X } from 'lucide-react'
+import { AlertTriangle, CheckCircle2, Loader2, Search, X, type LucideIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { ComboSelect } from '@/components/ui/combo-select'
@@ -113,45 +113,65 @@ export function Buscador({ valor, onCambio, onBuscar, placeholder, cargando }: {
     )
 }
 
-/** Tarjeta de sección de la ficha, con título subrayado como en Access. */
-export function Seccion({ titulo, ayuda, children, className }: { titulo: string; ayuda?: string; children: React.ReactNode; className?: string }) {
+/** Tarjeta de sección de la ficha: ícono, título (como en Access) y ayuda opcional. */
+export function Seccion({ titulo, ayuda, children, className, icono: Icono }: { titulo: string; ayuda?: string; children: React.ReactNode; className?: string; icono?: LucideIcon }) {
     return (
-        <section className={cn('rounded-xl border border-border bg-card p-3 shadow-sm sm:p-4', className)}>
-            <header className="mb-3">
-                <h3 className="text-xs font-semibold uppercase tracking-wide text-blue-700 underline underline-offset-4 dark:text-blue-300">{titulo}</h3>
-                {ayuda && <p className="mt-1 text-[11px] text-muted-foreground">{ayuda}</p>}
+        <section className={cn('rounded-xl border border-border bg-card p-3 shadow-sm transition-shadow hover:shadow-md sm:p-4', className)}>
+            <header className="mb-3 flex items-start gap-2.5 border-b border-dashed border-border pb-2.5">
+                {Icono && (
+                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500/15 to-indigo-500/15 text-blue-600 ring-1 ring-blue-500/20 dark:text-blue-300">
+                        <Icono className="h-3.5 w-3.5" />
+                    </span>
+                )}
+                <div className="min-w-0">
+                    <h3 className="text-xs font-semibold uppercase tracking-wide text-blue-700 dark:text-blue-300">{titulo}</h3>
+                    {ayuda && <p className="mt-0.5 text-[11px] text-muted-foreground">{ayuda}</p>}
+                </div>
             </header>
             {children}
         </section>
     )
 }
 
-/** Campo con etiqueta igual a la de Access; (*) = obligatorio. */
-export function Campo({ label, obligatorio, children, className, ayuda }: { label: string; obligatorio?: boolean; children: React.ReactNode; className?: string; ayuda?: string }) {
+/** Campo con etiqueta igual a la de Access; (*) = obligatorio. Con `error` parpadea en ámbar y dice "Requerido". */
+export function Campo({ label, obligatorio, children, className, ayuda, error }: { label: string; obligatorio?: boolean; children: React.ReactNode; className?: string; ayuda?: string; error?: boolean | string }) {
     return (
         <div className={cn('flex min-w-0 flex-col gap-1', className)}>
-            <Label className="text-[11px] font-medium text-muted-foreground">
+            <Label className={cn('flex items-center gap-1 text-[11px] font-medium text-muted-foreground transition-colors', error && 'text-amber-700 dark:text-amber-400')}>
                 {obligatorio && <span className="text-amber-600">(*)</span>}{label}
+                {error && <span className="ml-auto rounded bg-amber-100 px-1.5 py-px text-[9px] font-semibold uppercase tracking-wide text-amber-800 animate-in fade-in-0 zoom-in-95 dark:bg-amber-900/50 dark:text-amber-200">{typeof error === 'string' ? error : 'Requerido'}</span>}
             </Label>
-            {children}
+            <div className={cn('min-w-0 rounded-lg', error && 'almacen-campo-error ring-1 ring-amber-400')}>{children}</div>
             {ayuda && <span className="text-[10px] text-muted-foreground">{ayuda}</span>}
         </div>
     )
 }
 
-export const claseInput = 'h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-sm outline-none focus-visible:ring-2 focus-visible:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-60'
+export const claseInput = 'h-9 w-full rounded-lg border border-input bg-background px-3 text-sm shadow-sm outline-none transition-all duration-150 placeholder:text-muted-foreground/70 hover:border-blue-300 focus-visible:border-blue-500 focus-visible:ring-4 focus-visible:ring-blue-500/15 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:border-input dark:hover:border-blue-700'
 
-/** Combo con buscador; con botón para dejarlo vacío si no es obligatorio. */
-export function Combo({ items, valor, onCambio, placeholder = 'Seleccionar…', conCodigo, vaciable, disabled }: {
+/** Combo con buscador (estilo Contabilidad); con botón para dejarlo vacío si no es obligatorio. */
+export function Combo({ items, valor, onCambio, placeholder = 'Seleccionar…', conCodigo, vaciable, disabled, icono: Icono, error }: {
     items: Opcion[] | undefined; valor: string; onCambio: (v: string) => void; placeholder?: string; conCodigo?: boolean; vaciable?: boolean; disabled?: boolean
+    /** Ícono a la izquierda dentro del combo. */
+    icono?: LucideIcon
+    error?: boolean
 }) {
+    const elegido = !!valor && (items ?? []).some((i) => String(i.id) === String(valor))
     return (
         <div className="flex min-w-0 gap-1">
-            <div className="min-w-0 flex-1">
+            <div className="relative min-w-0 flex-1">
+                {Icono && <Icono className={cn('pointer-events-none absolute left-2.5 top-1/2 z-10 h-4 w-4 -translate-y-1/2', elegido ? 'text-blue-600 dark:text-blue-300' : 'text-muted-foreground')} />}
                 <ComboSelect<Opcion> value={valor} onChange={(i) => onCambio(String(i.id))} items={items ?? []} getKey={(i) => String(i.id)}
                                      getLabel={(i) => (conCodigo && i.codigo ? i.codigo : i.nombre)} getSub={conCodigo ? (i) => i.nombre : undefined}
                                      subEnBoton={conCodigo ? 'debajo' : true} placeholder={placeholder} disabled={disabled}
-                                     triggerClassName={cn('bg-background', conCodigo ? 'h-auto min-h-9' : 'h-9')} contentClassName="min-w-[300px]" />
+                                     triggerClassName={cn(
+                                         'rounded-lg bg-background shadow-sm transition-all duration-150 hover:border-blue-300 hover:bg-background data-[state=open]:border-blue-500 data-[state=open]:ring-4 data-[state=open]:ring-blue-500/15 dark:hover:border-blue-700',
+                                         conCodigo ? 'h-auto min-h-9' : 'h-9',
+                                         Icono && 'pl-8',
+                                         elegido ? 'border-blue-200 bg-blue-50/60 font-medium text-blue-950 dark:border-blue-900 dark:bg-blue-950/30 dark:text-blue-100' : 'text-muted-foreground',
+                                         error && 'almacen-campo-error',
+                                     )}
+                                     contentClassName="min-w-[300px]" />
             </div>
             {vaciable && valor && !disabled && (
                 <Button type="button" variant="ghost" size="icon" className="h-9 w-8 shrink-0" title="Quitar" onClick={() => onCambio('')}><X className="h-4 w-4" /></Button>
