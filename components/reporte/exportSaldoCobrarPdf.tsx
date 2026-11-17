@@ -121,7 +121,7 @@ export const ExportSaldoCobrarPdf: React.FC<ExportPdfProps> = ({ data, dateCorte
                     formatDateString(doc.Fecha_Emision),
                     formatDateString(doc.Fecha_Vcto),
                     doc.TipoDocumento,
-                    `${doc.SerieDoc}-${doc.NumeroDoc}`,
+                    `${doc.SerieDoc}-${doc.NumeroDoc}${doc.SinEfectoTributario ? ' *' : ''}`,
                     doc.Moneda,
                     formatMoney(doc.SumaProvision),
                     formatMoney(doc.SumaAmortizacion),
@@ -235,6 +235,16 @@ export const ExportSaldoCobrarPdf: React.FC<ExportPdfProps> = ({ data, dateCorte
             font: boldFont,
             color: rgb(1, 1, 1)
         });
+
+        // Documentos de Hoja en Blanco (serie 0800): no van a SUNAT.
+        const sinEfS = Number(data.TotalSinEfectoSoles) || 0, sinEfD = Number(data.TotalSinEfectoDolares) || 0;
+        if (sinEfS || sinEfD) {
+            yPosition -= 36;
+            checkPageBreak(20);
+            currentPage.drawText(
+                `* Sin efecto tributario (Hoja en Blanco, no se declara a SUNAT). Incluido en el total: S/ ${formatMoney(sinEfS)}${sinEfD ? `   US$ ${formatMoney(sinEfD)}` : ''}`,
+                { x: margin + 5, y: yPosition, size: 7.5, font, color: rgb(0.45, 0.3, 0.05) });
+        }
 
         return pdfDoc.save();
     };

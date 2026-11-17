@@ -16,6 +16,7 @@ import { useAuth } from "@/context/authContext"
 import { fetchAvailableZones } from "@/app/api/reports"
 import { BuscadorClienteReporte, ClienteBusqueda } from "@/components/reporte/BuscadorClienteReporte"
 import apiClient from "@/app/api/client"
+import { cabeceraSesion } from "@/app/api/sesion"
 import { ClientService } from "@/app/services/client/ClientService"
 
 import { ExportSaldoCobrarPdf } from "@/components/reporte/exportSaldoCobrarPdf"
@@ -31,6 +32,14 @@ interface DatosCliente {
     telefono:        string;
     nombreComercial: string;
 }
+
+/** Documentos de Hoja en Blanco (serie 0800, base difar-p2025): no se declaran a SUNAT. */
+const EtiquetaSinEfecto = () => (
+    <span title="Documento de Hoja en Blanco: no se declara a SUNAT"
+          className="ml-1.5 inline-flex items-center rounded border border-amber-300 bg-amber-100 px-1.5 py-px font-sans text-[10px] font-bold uppercase tracking-wide text-amber-800 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-300">
+        Sin efecto tributario
+    </span>
+)
 
 const fmtSoles = (v: number) =>
     `S/ ${v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
@@ -149,7 +158,8 @@ export default function SaldoCobrarClientePage() {
             }
 
             const [response, datosClientes] = await Promise.all([
-                apiClient.post('/reportes/saldo-por-cobrar-cliente', body),
+                // Lee las dos bases como Access: facturación (difar2025) y Hoja en Blanco (difar-p2025, serie 0800).
+                apiClient.post('/reportes/saldo-por-cobrar-2b', body, { headers: cabeceraSesion() }),
                 cargarDatosClientes(),
             ]);
 
@@ -170,6 +180,8 @@ export default function SaldoCobrarClientePage() {
                 if (allowedVendors.length > 0) {
                     let newTotalSoles = 0;
                     let newTotalDolares = 0;
+                    let newSinEfectoSoles = 0;
+                    let newSinEfectoDolares = 0;
 
                     const filteredClientes = reportData.Clientes.map((cli: any) => {
                         const filteredVends = cli.vendedores.filter((v: any) => {
@@ -182,10 +194,13 @@ export default function SaldoCobrarClientePage() {
                     filteredClientes.forEach((cli: any) => {
                         cli.vendedores.forEach((v: any) => {
                             v.documentos.forEach((doc: any) => {
+                                const saldo = Number(doc.Saldo) || 0;
                                 if (doc.Tipo_Moneda === 'NSO' || doc.Moneda === 'S/.') {
-                                    newTotalSoles += Number(doc.Saldo) || 0;
+                                    newTotalSoles += saldo;
+                                    if (doc.SinEfectoTributario) newSinEfectoSoles += saldo;
                                 } else {
-                                    newTotalDolares += Number(doc.Saldo) || 0;
+                                    newTotalDolares += saldo;
+                                    if (doc.SinEfectoTributario) newSinEfectoDolares += saldo;
                                 }
                             });
                         });
@@ -195,7 +210,9 @@ export default function SaldoCobrarClientePage() {
                         ...reportData,
                         Clientes: filteredClientes,
                         TotalSoles: newTotalSoles,
-                        TotalDolares: newTotalDolares
+                        TotalDolares: newTotalDolares,
+                        TotalSinEfectoSoles: newSinEfectoSoles,
+                        TotalSinEfectoDolares: newSinEfectoDolares,
                     };
                 }
             }
@@ -324,12 +341,13 @@ export default function SaldoCobrarClientePage() {
                     {documentos.map((doc: any, dIdx: number) => {
                         const isSoles = esSoles(doc);
                         return (
-                            <tr key={dIdx} className="hover:bg-muted transition-colors">
+                            <tr key={dIdx} className={cn("hover:bg-muted transition-colors", doc.SinEfectoTributario && "bg-amber-50/60 dark:bg-amber-950/20")}>
                                 <td className="px-3 py-2 whitespace-nowrap">{formatDateToDDMMYYYY(doc.Fecha_Emision)}</td>
                                 <td className="px-3 py-2 whitespace-nowrap text-red-600 font-medium">{formatDateToDDMMYYYY(doc.Fecha_Vcto)}</td>
                                 <td className="px-3 py-2 font-medium">{doc.TipoDocumento}</td>
                                 <td className="px-3 py-2 font-mono font-semibold">
                                     <DocumentoPdfLink numeroComprobante={doc.SerieDoc && doc.NumeroDoc ? `${doc.SerieDoc}-${doc.NumeroDoc}` : null} existeComprobante={!!doc.existeComprobante} />
+                                    {doc.SinEfectoTributario && <EtiquetaSinEfecto />}
                                 </td>
                                 <td className="px-3 py-2 text-center font-bold">{doc.Moneda}</td>
                                 <td className="px-3 py-2 text-right">{formatMoney(doc.SumaProvision)}</td>
@@ -355,6 +373,7 @@ export default function SaldoCobrarClientePage() {
                             <div className="flex justify-between items-start gap-2">
                                 <div className="min-w-0">
                                     <span className="text-[10px] uppercase font-bold text-muted-foreground">{doc.TipoDocumento}</span>
+                                    {doc.SinEfectoTributario && <EtiquetaSinEfecto />}
                                     <p className="font-mono font-bold text-sm text-foreground">
                                         <DocumentoPdfLink numeroComprobante={doc.SerieDoc && doc.NumeroDoc ? `${doc.SerieDoc}-${doc.NumeroDoc}` : null} existeComprobante={!!doc.existeComprobante} />
                                     </p>
@@ -670,6 +689,13 @@ export default function SaldoCobrarClientePage() {
                                     </div>
                                 </div>
                             </div>
+                            {(Number(data.TotalSinEfectoSoles) || Number(data.TotalSinEfectoDolares)) ? (
+                                <p className="text-right text-xs text-amber-800 dark:text-amber-300">
+                                    Incluye documentos <b>sin efecto tributario</b> (Hoja en Blanco, no van a SUNAT):
+                                    S/ {formatMoney(Number(data.TotalSinEfectoSoles) || 0)}
+                                    {Number(data.TotalSinEfectoDolares) ? ` · US$ ${formatMoney(Number(data.TotalSinEfectoDolares))}` : ''}
+                                </p>
+                            ) : null}
                         </div>
                     ) : (
                         <div className="flex flex-col items-center justify-center py-16 bg-background rounded-lg border-2 border-dashed border-border">
