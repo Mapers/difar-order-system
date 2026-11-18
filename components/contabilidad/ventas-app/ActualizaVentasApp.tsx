@@ -3,7 +3,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
     AlertTriangle, ArrowRight, BookOpen, CalendarDays, CheckCircle2, CircleDashed, Clock, CloudUpload, Database,
-    Eye, FileMinus2, FileText, Filter, Layers, ListChecks, Loader2, RefreshCw, Search, Sigma, TableProperties, Upload, Users, XCircle,
+    Eye, FileMinus2, FileText, Filter, Layers, ListChecks, Loader2, RefreshCw, Search, ShieldCheck, Sigma, TableProperties, Upload, Users, XCircle,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { cn } from '@/lib/utils'
 import { AvisoAmbar, AvisoExito, Combo, claseInput, textoError, useSacudir } from '@/components/contabilidad/datos-generales/comunes'
 import { ComprobanteApp, EstadoCarga, Origen, ResumenMes, ResumenSunat, TablasAfectadas, VentasAppService } from '@/app/services/contabilidad/VentasAppService'
+import { ValidarSire } from './ValidarSire'
 
 // ------------------------------------------------------------------ utilidades
 const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
@@ -51,6 +52,7 @@ export function ActualizaVentasApp() {
     const [filas, setFilas] = useState<ComprobanteApp[]>([])
     const [resumen, setResumen] = useState<ResumenMes | null>(null)
     const [sunat, setSunat] = useState<ResumenSunat | null>(null)
+    const [sireAbierto, setSireAbierto] = useState(false)
     const [cargando, setCargando] = useState(false)
     const [aviso, setAviso] = useState<string | null>(null)
     const [golpe, setGolpe] = useState(0)
@@ -143,6 +145,10 @@ export function ActualizaVentasApp() {
                     </div>
                 </div>
                 <div className="flex flex-wrap gap-2">
+                    <Button variant="outline" onClick={() => setSireAbierto(true)}
+                            className="border-indigo-300 text-indigo-700 hover:bg-indigo-50 dark:border-indigo-800 dark:text-indigo-300 dark:hover:bg-indigo-950/40">
+                        <ShieldCheck className="mr-2 h-4 w-4" /> Validar SIRE
+                    </Button>
                     <Button variant="outline" onClick={consultar} disabled={cargando}>
                         <RefreshCw className={cn('mr-2 h-4 w-4', cargando && 'animate-spin')} /> Actualizar
                     </Button>
@@ -333,6 +339,7 @@ export function ActualizaVentasApp() {
                 </div>
             </div>
 
+            <ValidarSire abierto={sireAbierto} onCerrar={() => setSireAbierto(false)} />
             {cola && <ModalCarga items={cola} onCerrar={(cargados) => { setCola(null); alTerminarCola(cargados) }} onVer={(fila, tablas) => setVer({ fila: { ...fila, estado_carga: 'CARGADO' }, tablas, previa: false, cargando: false })} />}
             {ver && <ModalTablas ver={ver} onCerrar={() => setVer(null)}
                                  onCargar={ver.previa && cargable(ver.fila) ? () => { const f = ver.fila; setVer(null); abrirCola([f]) } : undefined} />}

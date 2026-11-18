@@ -60,7 +60,7 @@ const apiClient = axios.create({
  */
 // contabilidad/caja y contabilidad/compras: sus escrituras piden sesión desde la re-auditoría del 15/11/2026.
 // almacen: Ingresos y Salidas de almacén (17/11/2026), permiso por menú en todas sus rutas.
-const RUTAS_CON_SESION = /^\/?(amortizacion|planilla-cobranza|recibos|cobranza|usuarios|roles|contabilidad\/caja|contabilidad\/compras|contabilidad\/ventas-app|almacen)(\/|\?|$)/;
+const RUTAS_CON_SESION = /^\/?(amortizacion|planilla-cobranza|recibos|cobranza|usuarios|roles|contabilidad\/caja|contabilidad\/compras|contabilidad\/ventas-app|contabilidad\/sire-ventas|almacen)(\/|\?|$)/;
 
 apiClient.interceptors.request.use((config) => {
   try {
