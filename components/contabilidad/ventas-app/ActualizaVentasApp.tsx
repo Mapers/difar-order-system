@@ -256,7 +256,7 @@ export function ActualizaVentasApp() {
             {/* Tabla de comprobantes */}
             <div className="relative overflow-hidden rounded-2xl border bg-card shadow-md shadow-slate-900/5 dark:shadow-black/30">
                 <div className="flex flex-wrap items-center justify-between gap-2 border-b bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
-                    <span><b className="text-foreground">{visibles.length}</b> comprobante{visibles.length === 1 ? '' : 's'} · clic en una fila para ver sus tablas</span>
+                    <span className="flex items-center gap-2"><Checkbox checked={todasSel} onCheckedChange={alternarTodas} disabled={!pendientesVisibles.length} aria-label="Seleccionar pendientes" /><b className="text-foreground">{visibles.length}</b> comprobante{visibles.length === 1 ? '' : 's'} · clic en una tarjeta para ver sus tablas</span>
                     {sel.size > 0 && <span className="font-medium text-blue-700 dark:text-blue-300">{sel.size} seleccionado{sel.size === 1 ? '' : 's'} · <button className="underline" onClick={() => setSel(new Set())}>quitar</button></span>}
                 </div>
                 {cargando && filas.length > 0 && (
@@ -266,83 +266,79 @@ export function ActualizaVentasApp() {
                         </div>
                     </div>
                 )}
-                <div className="max-h-[62vh] overflow-auto">
-                    <table className="w-full min-w-[980px] text-sm">
-                        <thead className="sticky top-0 z-10 bg-card text-xs uppercase tracking-wide text-muted-foreground shadow-sm">
-                            <tr>
-                                <th className="w-10 px-3 py-2 text-left"><Checkbox checked={todasSel} onCheckedChange={alternarTodas} disabled={!pendientesVisibles.length} aria-label="Seleccionar pendientes" /></th>
-                                <th className="px-2 py-2 text-left">Estado</th>
-                                <th className="px-2 py-2 text-left">Comprobante</th>
-                                <th className="px-2 py-2 text-left">Fecha</th>
-                                <th className="px-2 py-2 text-left">Cliente</th>
-                                <th className="px-2 py-2 text-right">Valor venta</th>
-                                <th className="px-2 py-2 text-right">IGV</th>
-                                <th className="px-2 py-2 text-right">Total</th>
-                                <th className="px-2 py-2 text-center">Tablas</th>
-                                <th className="px-3 py-2 text-right">Acción</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {cargando && filas.length === 0 && Array.from({ length: 8 }).map((_, i) => (
-                                <tr key={i}><td colSpan={10} className="px-3 py-2"><div className="h-6 animate-pulse rounded bg-muted" /></td></tr>
-                            ))}
-                            {!cargando && visibles.length === 0 && (
-                                <tr><td colSpan={10} className="px-3 py-12 text-center text-muted-foreground">
-                                    <ListChecks className="mx-auto mb-2 h-8 w-8 opacity-50" /> No hay comprobantes con esos filtros.
-                                </td></tr>
-                            )}
-                            {visibles.map(f => {
-                                const e = ESTADO[f.estado_carga], t = TIPO[f.tipo_doc] ?? TIPO['01']
-                                return (
-                                    <tr key={clave(f)} onClick={() => abrirVer(f)}
-                                        className={cn('cursor-pointer border-b border-l-4 transition-colors', e.fila,
-                                            f.estado_carga === 'CARGADO' ? 'border-l-emerald-500' : f.estado_carga === 'PARCIAL' ? 'border-l-rose-500' : 'border-l-amber-400',
-                                            recien.has(clave(f)) && 'ventasapp-recien', cargando && 'opacity-60')}>
-                                        <td className="px-3 py-2" onClick={ev => ev.stopPropagation()}>
-                                            <Checkbox checked={sel.has(clave(f))} onCheckedChange={() => alternar(f)} disabled={!cargable(f)} aria-label={`Seleccionar ${doc(f)}`} />
-                                        </td>
-                                        <td className="px-2 py-2">
-                                            <span className={cn('inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-semibold ring-1 ring-inset', e.chip)}>
-                                                <i className={cn('h-1.5 w-1.5 rounded-full', e.punto)} /> {e.texto}
+                <div className="max-h-[70vh] overflow-auto p-3 sm:p-4">
+                    {cargando && filas.length === 0 && (
+                        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                            {Array.from({ length: 6 }).map((_, i) => <div key={i} className="h-44 animate-pulse rounded-2xl bg-muted" />)}
+                        </div>
+                    )}
+                    {!cargando && visibles.length === 0 && (
+                        <div className="py-12 text-center text-sm text-muted-foreground">
+                            <ListChecks className="mx-auto mb-2 h-8 w-8 opacity-50" /> No hay comprobantes con esos filtros.
+                        </div>
+                    )}
+                    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                        {visibles.map((f, i) => {
+                            const e = ESTADO[f.estado_carga], t = TIPO[f.tipo_doc] ?? TIPO['01']
+                            const acento = f.estado_carga === 'CARGADO' ? 'from-emerald-400 to-teal-500' : f.estado_carga === 'PARCIAL' ? 'from-rose-400 to-pink-500' : 'from-amber-400 to-orange-500'
+                            return (
+                                <div key={clave(f)} onClick={() => abrirVer(f)} role="button" tabIndex={0}
+                                    onKeyDown={ev => { if (ev.key === 'Enter') abrirVer(f) }}
+                                    style={{ animationDelay: `${Math.min(i, 15) * 35}ms` }}
+                                    className={cn('group relative cursor-pointer overflow-hidden rounded-2xl border bg-card p-4 pt-5 shadow-md shadow-slate-900/5 transition-all duration-300',
+                                        'hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-900/10 dark:shadow-black/30 dark:hover:shadow-black/50',
+                                        'animate-in fade-in-0 slide-in-from-bottom-3 fill-mode-both',
+                                        sel.has(clave(f)) && 'ring-2 ring-blue-500/70',
+                                        recien.has(clave(f)) && 'ventasapp-recien', cargando && 'opacity-60')}>
+                                    <div className={cn('absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r', acento)} />
+                                    <div className={cn('pointer-events-none absolute -right-10 -top-10 h-28 w-28 rounded-full bg-gradient-to-br opacity-20 blur-2xl transition-opacity duration-300 group-hover:opacity-40', acento)} />
+
+                                    <div className="relative flex items-start justify-between gap-2">
+                                        <div className="flex min-w-0 items-center gap-2">
+                                            <span onClick={ev => ev.stopPropagation()}>
+                                                <Checkbox checked={sel.has(clave(f))} onCheckedChange={() => alternar(f)} disabled={!cargable(f)} aria-label={`Seleccionar ${doc(f)}`} />
                                             </span>
-                                        </td>
-                                        <td className="px-2 py-2">
-                                            <div className="flex items-center gap-2">
-                                                <span className={cn('rounded px-1.5 py-0.5 text-[10px] font-bold', t.clase)}>{t.corto}</span>
-                                                <span className="font-mono font-semibold">{doc(f)}</span>
-                                            </div>
-                                            {f.doc_ref && <p className="mt-0.5 text-[11px] text-violet-700 dark:text-violet-300">Modifica {f.doc_ref}{f.motivo ? ` · ${MOTIVO[f.motivo] ?? `motivo ${f.motivo}`}` : ''}</p>}
-                                        </td>
-                                        <td className="whitespace-nowrap px-2 py-2">{dmy(f.fecha)}</td>
-                                        <td className="max-w-[260px] px-2 py-2">
-                                            <p className="truncate font-medium">{f.cliente}</p>
-                                            <p className="font-mono text-[11px] text-muted-foreground">{f.ruc}</p>
-                                            {f.problema && <p className="mt-0.5 flex items-center gap-1 text-[11px] font-medium text-amber-700 dark:text-amber-300"><AlertTriangle className="h-3 w-3" />{f.problema}</p>}
-                                        </td>
-                                        <td className="whitespace-nowrap px-2 py-2 text-right font-mono">{soles(f.valor_venta)}</td>
-                                        <td className="whitespace-nowrap px-2 py-2 text-right font-mono">{soles(f.igv)}</td>
-                                        <td className={cn('whitespace-nowrap px-2 py-2 text-right font-mono font-bold', f.total < 0 && 'text-violet-700 dark:text-violet-300')}>{soles(f.total)}</td>
-                                        <td className="px-2 py-2">
-                                            <div className="flex justify-center gap-1">
-                                                <Pastilla titulo="Registro de ventas" corto="RV" n={f.rv_filas} />
-                                                <Pastilla titulo="Mayor auxiliar (libro 14)" corto="MA" n={f.ma_filas} />
-                                                <Pastilla titulo="Kardex clientes (lo graba la web al emitir)" corto="KC" n={f.kc_filas} neutro />
-                                            </div>
-                                        </td>
-                                        <td className="px-3 py-2 text-right" onClick={ev => ev.stopPropagation()}>
+                                            <span className={cn('rounded px-1.5 py-0.5 text-[10px] font-bold', t.clase)}>{t.corto}</span>
+                                            <span className="truncate font-mono text-sm font-semibold">{doc(f)}</span>
+                                        </div>
+                                        <span className={cn('inline-flex shrink-0 items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-semibold ring-1 ring-inset', e.chip)}>
+                                            <i className={cn('h-1.5 w-1.5 rounded-full', e.punto)} /> {e.texto}
+                                        </span>
+                                    </div>
+
+                                    <div className="relative mt-3 min-h-[3.25rem]">
+                                        <p className="truncate font-medium leading-tight">{f.cliente}</p>
+                                        <p className="mt-0.5 font-mono text-[11px] text-muted-foreground">{f.ruc} · {dmy(f.fecha)}</p>
+                                        {f.doc_ref && <p className="mt-0.5 text-[11px] text-violet-700 dark:text-violet-300">Modifica {f.doc_ref}{f.motivo ? ` · ${MOTIVO[f.motivo] ?? `motivo ${f.motivo}`}` : ''}</p>}
+                                        {f.problema && <p className="mt-0.5 flex items-center gap-1 text-[11px] font-medium text-amber-700 dark:text-amber-300"><AlertTriangle className="h-3 w-3" />{f.problema}</p>}
+                                    </div>
+
+                                    <div className="relative mt-3 grid grid-cols-3 gap-2 rounded-xl bg-muted/50 p-2.5 text-center">
+                                        <div><p className="text-[10px] uppercase tracking-wide text-muted-foreground">Valor venta</p><p className="font-mono text-xs font-medium">{soles(f.valor_venta)}</p></div>
+                                        <div><p className="text-[10px] uppercase tracking-wide text-muted-foreground">IGV</p><p className="font-mono text-xs font-medium">{soles(f.igv)}</p></div>
+                                        <div><p className="text-[10px] uppercase tracking-wide text-muted-foreground">Total</p><p className={cn('font-mono text-sm font-bold', f.total < 0 && 'text-violet-700 dark:text-violet-300')}>{soles(f.total)}</p></div>
+                                    </div>
+
+                                    <div className="relative mt-3 flex items-center justify-between gap-2">
+                                        <div className="flex gap-1">
+                                            <Pastilla titulo="Registro de ventas" corto="RV" n={f.rv_filas} />
+                                            <Pastilla titulo="Mayor auxiliar (libro 14)" corto="MA" n={f.ma_filas} />
+                                            <Pastilla titulo="Kardex clientes (lo graba la web al emitir)" corto="KC" n={f.kc_filas} neutro />
+                                        </div>
+                                        <span onClick={ev => ev.stopPropagation()}>
                                             {cargable(f) ? (
-                                                <Button size="sm" className="h-7 bg-gradient-to-r from-amber-500 to-orange-500 px-2.5 text-xs text-white shadow-sm hover:from-amber-600 hover:to-orange-600" onClick={() => abrirCola([f])}>
+                                                <Button size="sm" className="h-8 bg-gradient-to-r from-amber-500 to-orange-500 px-3 text-xs text-white shadow-md shadow-orange-500/25 transition-transform hover:scale-105 hover:from-amber-600 hover:to-orange-600" onClick={() => abrirCola([f])}>
                                                     <Upload className="mr-1 h-3.5 w-3.5" /> Cargar
                                                 </Button>
                                             ) : (
-                                                <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={() => abrirVer(f)}><Eye className="mr-1 h-3.5 w-3.5" /> Ver</Button>
+                                                <Button size="sm" variant="ghost" className="h-8 px-2 text-xs" onClick={() => abrirVer(f)}><Eye className="mr-1 h-3.5 w-3.5" /> Ver</Button>
                                             )}
-                                        </td>
-                                    </tr>
-                                )
-                            })}
-                        </tbody>
-                    </table>
+                                        </span>
+                                    </div>
+                                </div>
+                            )
+                        })}
+                    </div>
                 </div>
             </div>
 
