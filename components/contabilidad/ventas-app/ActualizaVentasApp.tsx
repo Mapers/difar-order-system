@@ -3,7 +3,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
     AlertTriangle, ArrowRight, BookOpen, CalendarDays, CheckCircle2, CircleDashed, Clock, CloudUpload, Database,
-    Calculator, Eye, FileMinus2, FileText, Filter, Layers, ListChecks, Loader2, RefreshCw, Search, TableProperties, Upload, Users, XCircle,
+    Eye, FileMinus2, FileText, Filter, Layers, ListChecks, Loader2, RefreshCw, Search, Sigma, TableProperties, Upload, Users, XCircle,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -221,7 +221,7 @@ export function ActualizaVentasApp() {
                 <Tarjeta icono={Clock} titulo="Pendientes" valor={resumen?.pendientes ?? '—'} sub={resumen ? soles(resumen.montoPendiente) : ''} color="from-amber-500 to-orange-500" cargando={cargando} />
                 <Tarjeta icono={FileMinus2} titulo="NC pendientes" valor={cargando ? '—' : ncPendientes} sub="Notas de crédito sin cargar" color="from-violet-500 to-fuchsia-600" cargando={cargando} />
                 <Tarjeta icono={AlertTriangle} titulo="Con observación" valor={resumen ? resumen.conProblema + resumen.parciales : '—'} sub="Parciales o sin ficha/cuenta" color="from-rose-500 to-red-500" cargando={cargando} />
-                <Tarjeta icono={Calculator} titulo="Suma total" valor={resumen ? soles(sumaVentas + sumaNC) : '—'}
+                <Tarjeta icono={Sigma} titulo="Suma total" valor={resumen ? soles(sumaVentas + sumaNC) : '—'}
                          sub={resumen ? `Ventas ${soles(sumaVentas)} · NC ${soles(sumaNC)}` : ''} color="from-cyan-500 to-sky-600" cargando={cargando}
                          className="ring-1 ring-cyan-500/30" />
             </div>
