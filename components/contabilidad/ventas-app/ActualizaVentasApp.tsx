@@ -381,7 +381,7 @@ function Tarjeta({ icono: Icono, titulo, valor, sub, color, cargando, className 
 function TarjetaSunat({ s, cargando }: { s: ResumenSunat | null; cargando?: boolean }) {
     const linea = (etiqueta: string, valor: number, fuerte?: boolean) => (
         <div className={cn('flex items-baseline justify-between gap-2', fuerte && 'mt-0.5 border-t border-dashed pt-0.5 font-semibold text-foreground')}>
-            <span className="truncate">{etiqueta}</span><span className="shrink-0 font-mono">{num(valor)}</span>
+            <span className="truncate">{etiqueta}</span><span className="shrink-0 font-mono">{soles(valor)}</span>
         </div>
     )
     return (
