@@ -30,6 +30,7 @@ import { SaldoDialog } from "./SaldoDialog"
 import { PagosDialog } from "./PagosDialog"
 import { TransporteDialog } from "./TransporteDialog"
 import { BotonLeerFactura, EstilosLectura } from "./LectorFactura"
+import { BannerBorrador, ConflictosBorrador, IndicadorBorrador } from "@/components/contabilidad/borrador/BannerBorrador"
 
 // La tasa llega como fracción (0.18) o como porcentaje (18).
 const tasaTexto = (t: number) => `${Number(t) < 1 ? Math.round(Number(t) * 10000) / 100 : Number(t)}%`
@@ -60,7 +61,7 @@ export default function RegistroComprasPage() {
     const simbolo = c.cab.moneda === 'USD' ? 'US$' : 'S/'
 
     // Nueva y Limpiar vacían el formulario: si ya hay algo llenado, se confirma antes.
-    const empezarNueva = () => { setBuscarClave(""); c.nuevo() }
+    const empezarNueva = () => { setBuscarClave(""); c.nuevo(true) }
     const pedirNueva = () => {
         const hayDatos = !!c.clave || !!c.cab.codProv || !!c.cab.serie.trim() || !!c.cab.numero.trim() || c.filas.length > 0
         if (hayDatos) setConfirmNueva(true)
@@ -142,6 +143,7 @@ export default function RegistroComprasPage() {
                     </div>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
+                    <IndicadorBorrador estado={c.borradorEstado} guardadoEn={c.borradorGuardadoEn} />
                     {c.clave && (
                         <span className="inline-flex items-center gap-1.5 rounded-full border bg-muted px-3 py-1.5 text-xs text-muted-foreground">
                             <Hash className="h-3.5 w-3.5" /> Clave {c.clave}
@@ -158,6 +160,31 @@ export default function RegistroComprasPage() {
                     )}
                 </div>
             </div>
+
+            {/* Borradores en el servidor: cambios sin grabar (de este documento o de otros) */}
+            {(c.borradorPendiente || c.conflictosBorrador.length > 0 || c.pendientes.length > 0) && (
+                <div className="mt-4 flex flex-col gap-3">
+                    {c.borradorPendiente && c.borradorResumen && (
+                        <BannerBorrador resumen={c.borradorResumen} actualizado={c.borradorPendiente.actualizado}
+                            cabeceraCambiada={c.borradorCabeceraCambiada}
+                            onRecuperar={c.recuperarBorrador} onDescartar={c.descartarBorrador} />
+                    )}
+                    <ConflictosBorrador items={c.conflictosBorrador} onCerrar={c.cerrarConflictos} />
+                    {c.pendientes.length > 0 && (
+                        <div className="flex flex-wrap items-center gap-2 rounded-xl border border-dashed border-amber-300 bg-amber-50/60 px-3 py-2 text-xs text-amber-900 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-100">
+                            <span className="font-semibold">Otras compras con cambios sin grabar:</span>
+                            {c.pendientes.map(p => (
+                                <button key={p.Clave} type="button" onClick={() => c.abrirPendiente(p)}
+                                    className="rounded-full border border-amber-300 bg-white px-2.5 py-1 font-medium shadow-sm hover:bg-amber-100 dark:border-amber-700 dark:bg-transparent">
+                                    {Number(p.Clave) > 0 ? `Clave ${p.Clave}` : 'Compra nueva'}
+                                    {p.Serie || p.Numero ? ` · ${p.Serie ?? ''}-${p.Numero ?? ''}` : ''}
+                                    {p.Proveedor ? ` · ${p.Proveedor}` : ''} · {p.Lineas} línea(s)
+                                </button>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            )}
 
             {/* Barra de acciones: queda fija arriba al bajar por el formulario */}
             <div className="sticky top-16 z-30 mt-5 md:top-14">

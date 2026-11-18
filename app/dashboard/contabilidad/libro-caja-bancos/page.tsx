@@ -20,6 +20,7 @@ import {
 import { useLibroCaja, FilaEdicion } from "./useLibroCaja"
 import { PersonaPicker } from "./PersonaPicker"
 import { PlanillasCaja } from "./PlanillasCaja"
+import { BannerBorrador, ConflictosBorrador, IndicadorBorrador } from "@/components/contabilidad/borrador/BannerBorrador"
 
 const money = (v: number) =>
     Number(v ?? 0).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
@@ -172,6 +173,24 @@ export default function LibroCajaBancosPage() {
                         </CardContent>
                     </Card>
 
+                    {/* Borradores en el servidor: cambios sin grabar (de este voucher o de otros) */}
+                    {c.borradorPendiente && c.borradorResumen && (
+                        <BannerBorrador resumen={c.borradorResumen} actualizado={c.borradorPendiente.actualizado}
+                            onRecuperar={c.recuperarBorrador} onDescartar={c.descartarBorrador} />
+                    )}
+                    <ConflictosBorrador items={c.conflictosBorrador} onCerrar={c.cerrarConflictos} />
+                    {c.pendientes.length > 0 && (
+                        <div className="flex flex-wrap items-center gap-2 rounded-xl border border-dashed border-amber-300 bg-amber-50/60 px-3 py-2 text-xs text-amber-900 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-100">
+                            <span className="font-semibold">Otros vouchers con cambios sin grabar:</span>
+                            {c.pendientes.map(p => (
+                                <button key={p.Item} type="button" onClick={() => c.abrirPendiente(p)}
+                                    className="rounded-full border border-amber-300 bg-white px-2.5 py-1 font-medium shadow-sm hover:bg-amber-100 dark:border-amber-700 dark:bg-transparent">
+                                    {p.CajaNombre ?? `Caja ${p.Caja}`} · {p.Fecha?.split('-').reverse().join('/')} · {Number(p.Nuevas) + Number(p.Editadas) + Number(p.Eliminadas)} cambio(s)
+                                </button>
+                            ))}
+                        </div>
+                    )}
+
                     {c.error && (
                         <div className="flex items-start gap-2 p-3 rounded-lg border border-amber-200 bg-amber-50 text-amber-800 text-sm">
                             <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
@@ -309,6 +328,7 @@ export default function LibroCajaBancosPage() {
                                                 <span className="h-2 w-2 rounded-full bg-amber-500" /> Cambios sin guardar
                                             </span>
                                         )}
+                                        <IndicadorBorrador estado={c.borradorEstado} guardadoEn={c.borradorGuardadoEn} />
                                         <Button
                                             variant="outline" size="sm" className="gap-1.5"
                                             onClick={() => c.abrir(false)} disabled={c.cargando}

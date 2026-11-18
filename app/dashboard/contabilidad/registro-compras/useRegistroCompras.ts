@@ -14,6 +14,9 @@ import {
     ComprasTotales,
     LecturaFactura,
 } from "@/app/types/contabilidad-types"
+import { BorradorContableService, PendienteCompras, BorradorCompras } from "@/app/services/contabilidad/BorradorContableService"
+import { aplicarBorrador, aplicarCabecera, calcularCambios, resumir } from "@/lib/borradorContable"
+import { useBorradorServidor } from "@/components/contabilidad/borrador/useBorradorServidor"
 
 export interface CabeceraEdicion {
     // '1' si la compra ya se concilió con el SIRE. No se muestra; se conserva al editar (auditoría C3).
@@ -249,6 +252,46 @@ export function useRegistroCompras() {
     const [guardando, setGuardando] = useState(false)
     const [proximaKey, setProximaKey] = useState(-1)
 
+    // ─── Borrador en el servidor (tmp_reg_compras_encabezado / _detalle). Clave 0 = compra nueva ───
+    // baseCab / baseFilas = cómo estaba el documento en la base al abrirlo (o la compra vacía).
+    const [baseCab, setBaseCab] = useState<CabeceraEdicion>(cabVacia)
+    const [baseFilas, setBaseFilas] = useState<FilaCompra[]>([])
+    const [borradorRevisado, setBorradorRevisado] = useState(false)
+    const [borradorPendiente, setBorradorPendiente] = useState<BorradorCompras<CabeceraEdicion, FilaCompra> | null>(null)
+    const [conflictosBorrador, setConflictosBorrador] = useState<string[]>([])
+    const [pendientes, setPendientes] = useState<PendienteCompras[]>([])
+    const cargarPendientes = useCallback(() => {
+        BorradorContableService.comprasPendientes().then(setPendientes).catch(() => setPendientes([]))
+    }, [])
+
+    const claveBorrador = clave ?? 0
+    const rutaBorrador = BorradorContableService.ruta("compras", claveBorrador)
+    const cambiosBorrador = useMemo(() => calcularCambios(baseFilas, filas, aFilaPayload), [baseFilas, filas])
+    const cabCambiada = useMemo(() => JSON.stringify(cab) !== JSON.stringify(baseCab), [cab, baseCab])
+    const borrador = useBorradorServidor({
+        ruta: rutaBorrador,
+        cuerpo: cambiosBorrador.length || cabCambiada ? { cabecera: cab, baseCabecera: baseCab, lineas: cambiosBorrador } : null,
+        habilitado: !!catalogos && !cerrado && !cargando && !guardando && borradorRevisado && !borradorPendiente,
+    })
+
+    /** Revisa si el documento (o la compra nueva, clave 0) tiene cambios sin grabar en el servidor. */
+    const revisarBorrador = useCallback(async (c: number) => {
+        setBorradorRevisado(false)
+        setBorradorPendiente(null)
+        setConflictosBorrador([])
+        const ruta = BorradorContableService.ruta("compras", c)
+        try {
+            const b = await BorradorContableService.comprasObtener<CabeceraEdicion, FilaCompra>(c)
+            borrador.conocerServidor(ruta, !!b)
+            if (b) setBorradorPendiente(b)
+        } catch {
+            borrador.conocerServidor(ruta, false)
+        } finally {
+            setBorradorRevisado(true)
+            cargarPendientes()
+        }
+    }, [borrador.conocerServidor, cargarPendientes])
+
     useEffect(() => {
         const cargar = async () => {
             try {
@@ -265,9 +308,12 @@ export function useRegistroCompras() {
             }
         }
         cargar()
+        revisarBorrador(0) // ¿quedó una compra nueva sin grabar?
     }, [])
 
-    const nuevo = useCallback(async () => {
+    /** descartarBorradorNuevo: el usuario pidió "Nueva" y confirmó vaciar: la compra nueva sin grabar se descarta. */
+    const nuevo = useCallback(async (descartarBorradorNuevo = false) => {
+        if (descartarBorradorNuevo) await borrador.borrar(BorradorContableService.ruta("compras", 0))
         nroLectura.current++
         setLectura(null)
         setClave(null)
@@ -277,9 +323,10 @@ export function useRegistroCompras() {
         setVecesRegistrado(0)
 
         const vacia = cabVacia()
+        let inicial = vacia
         try {
             const v = await ComprasService.valoresIniciales(vacia.anio, vacia.periodo)
-            setCab({
+            inicial = {
                 ...vacia,
                 tasaIGV:   v?.TasaIGV   != null ? String(v.TasaIGV)   : '',
                 condicion: v?.Condision ?? '',
@@ -287,11 +334,13 @@ export function useRegistroCompras() {
                 almacen:   v?.Almacen   != null ? String(v.Almacen)   : '',
                 periodo:   v?.PeriodoTributario ?? vacia.periodo,
                 anio:      v?.Anio ?? vacia.anio,
-            })
-        } catch {
-            setCab(vacia)
-        }
-    }, [])
+            }
+        } catch { /* queda la vacía */ }
+        setCab(inicial)
+        setBaseCab(inicial)
+        setBaseFilas([])
+        await revisarBorrador(0)
+    }, [borrador.borrar, revisarBorrador])
 
     const abrir = useCallback(async (claveDoc: number) => {
         nroLectura.current++
@@ -304,11 +353,16 @@ export function useRegistroCompras() {
                 return
             }
             setClave(d.cabecera.Clave)
-            setCab(cabDesdeBD(d.cabecera))
-            setFilas(d.detalle.map(desdeBD))
+            const cabBD = cabDesdeBD(d.cabecera)
+            const filasBD = d.detalle.map(desdeBD)
+            setCab(cabBD)
+            setBaseCab(cabBD)
+            setFilas(filasBD)
+            setBaseFilas(filasBD)
             setTotales(d.totales)
             setCerrado(Number(d.cabecera.Cerrado) === 1)
             setVecesRegistrado(Number(d.cabecera.VecesRegistrado ?? 0))
+            await revisarBorrador(d.cabecera.Clave)
         } catch (e: any) {
             toast({
                 title: "Error",
@@ -318,7 +372,41 @@ export function useRegistroCompras() {
         } finally {
             setCargando(false)
         }
-    }, [])
+    }, [revisarBorrador])
+
+    const recuperarBorrador = () => {
+        const b = borradorPendiente
+        if (!b) return
+        const cabR = aplicarCabecera<CabeceraEdicion & Record<string, unknown>>(
+            baseCab as any, b.cabecera as any, (claveBorrador > 0 ? b.baseCabecera : null) as any)
+        const r = aplicarBorrador(baseFilas, b.lineas, aFilaPayload, proximaKey)
+        setCab({ ...cabVacia(), ...cabR.cabecera })
+        setFilas(r.filas)
+        setProximaKey(r.proximaKey)
+        setConflictosBorrador([
+            ...cabR.conflictos.map(k => `Cabecera, campo "${k}": otra persona lo modificó`),
+            ...r.conflictos.map(x => `${x.linea.datos?.nombreItem?.trim() || "Línea sin artículo"} (${x.linea.accion}): ${x.tipo === "ya-no-existe" ? "la línea ya no existe" : "otra persona la modificó"}`),
+        ])
+        setBorradorPendiente(null)
+        const a = r.aplicado
+        toast({
+            title: "Cambios recuperados",
+            description: `Se recuperaron ${a.nuevas} nueva(s), ${a.editadas} editada(s) y ${a.eliminadas} para eliminar.`
+                + (r.yaGrabadas ? ` ${r.yaGrabadas} ya estaban grabadas y no se repitieron.` : "")
+                + " Revisa y pulsa Guardar.",
+        })
+    }
+
+    const descartarBorrador = async () => {
+        setBorradorPendiente(null)
+        await borrador.borrar(rutaBorrador)
+        cargarPendientes()
+    }
+
+    const abrirPendiente = (p: PendienteCompras) => {
+        if (Number(p.Clave) > 0) abrir(Number(p.Clave))
+        else nuevo(false)
+    }
 
     // ─── Lectura de la factura ───────────────────────────────────────────────
     // Los campos se van llenando uno por uno para que se vea qué se leyó.
@@ -554,6 +642,7 @@ export function useRegistroCompras() {
                 clave, aCabPayload(cab), filas.map(aFilaPayload), usuario,
             )
             const nuevaClave = Number(res?.Clave ?? res?.clave ?? clave)
+            await borrador.borrar(rutaBorrador) // ya está en la base: el borrador sobra
             toast({
                 title: "Guardado",
                 description: "El documento se guardó y se regeneró el asiento, el kardex y los lotes.",
@@ -577,6 +666,7 @@ export function useRegistroCompras() {
             await ComprasService.guardar(clave, aCabPayload(cab), filas.map(aFilaPayload), usuario)
             const res: any = await ComprasService.eliminarLineasMarcadas(clave, usuario)
             const eliminadas = Number(res?.Eliminadas ?? 0)
+            await borrador.borrar(rutaBorrador)
 
             toast(eliminadas > 0
                 ? { title: "Líneas eliminadas", description: `Se quitaron ${eliminadas} línea${eliminadas !== 1 ? 's' : ''}.` }
@@ -598,8 +688,9 @@ export function useRegistroCompras() {
         if (!clave) return
         try {
             await ComprasService.eliminarDocumento(clave)
+            await borrador.borrar(rutaBorrador)
             toast({ title: "Documento eliminado", description: "Se eliminó junto con su asiento y kardex." })
-            await nuevo()
+            await nuevo(false)
         } catch (e: any) {
             toast({
                 title: "Error",
@@ -617,5 +708,12 @@ export function useRegistroCompras() {
         faltantes, cerrarFaltantes: () => setFaltantes(null),
         nuevo, abrir, setCampoCab, setProveedor, setCampoFila, setArticulo,
         agregarFila, quitarFilaNueva, guardar, eliminarMarcadas, eliminarDocumento,
+        // borrador en el servidor
+        borradorEstado: borrador.estado, borradorGuardadoEn: borrador.guardadoEn,
+        borradorPendiente, borradorResumen: borradorPendiente ? resumir(borradorPendiente.lineas) : null,
+        borradorCabeceraCambiada: !!borradorPendiente && JSON.stringify(borradorPendiente.cabecera) !== JSON.stringify(borradorPendiente.baseCabecera),
+        recuperarBorrador, descartarBorrador,
+        conflictosBorrador, cerrarConflictos: () => setConflictosBorrador([]),
+        pendientes: pendientes.filter(p => Number(p.Clave) !== claveBorrador), abrirPendiente,
     }
 }
