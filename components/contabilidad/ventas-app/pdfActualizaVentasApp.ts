@@ -1,7 +1,7 @@
 import { StandardFonts, rgb, RGB } from 'pdf-lib'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
-import { cargarLogoPdf, dibujarCabeceraPdf, sanitizarPdf, truncarPdf } from '@/components/reporte/pdfCabecera'
+import { cargarLogoPdf, sanitizarPdf, truncarPdf } from '@/components/reporte/pdfCabecera'
 import { aclarar, crearPdfReporte, hexARgb, OpcionesPdfReporte } from '@/components/reporte/pdfOpciones'
 import type { ComprobanteApp, EstadoCarga, ResumenMes, ResumenSunat } from '@/app/services/contabilidad/VentasAppService'
 
@@ -18,6 +18,9 @@ export interface DatosPdfVentasApp {
     filtroEstado: string
     buscar:       string
 }
+
+/** Razón social legal (como el Registro de Ventas, el SIRE y el Registro de Compras). */
+const EMPRESA_LEGAL = { nombre: 'IMPORTADORA FARMACEUTICA SAC', ruc: '20481321892' }
 
 const TIPO: Record<string, string> = { '01': 'FAC', '03': 'BOL', '07': 'NC' }
 const MOTIVO: Record<string, string> = {
@@ -72,13 +75,29 @@ export async function generarPdfActualizaVentasApp(d: DatosPdfVentasApp, op: Opc
     let page = pdfDoc.addPage([W, H])
     let y = 0
 
+    // Cabecera de los libros de Contabilidad (como Movimiento por subcuenta): banda de color arriba, logo,
+    // razón social, RUC y título del reporte; a la derecha fecha de impresión y "Periodo · Moneda"; línea de cierre.
     const cabecera = () => {
-        y = dibujarCabeceraPdf({
-            page, font, boldFont: bold, logo, pageWidth: W, pageHeight: H, margin: M,
-            subtitulo: op.titulo, infoDerecha: d.periodo,
-            infoDerechaSec: `Impreso: ${format(ahora, 'dd/MM/yyyy HH:mm')}`,
-            filtros: `Filtros aplicados: ${filtros}`,
-        })
+        page.drawRectangle({ x: 0, y: H - 6, width: W, height: 6, color: principal })
+        const arriba = H - M
+        let xT = M
+        if (logo) {
+            page.drawImage(logo, { x: M, y: arriba - 18, width: 52, height: 31 })
+            xT = M + 62
+        }
+        const anchoT = ancho - (xT - M) - 170
+        page.drawText(truncarPdf(EMPRESA_LEGAL.nombre, anchoT, 12, bold), { x: xT, y: arriba, size: 12, font: bold })
+        page.drawText(`RUC: ${EMPRESA_LEGAL.ruc}`, { x: xT, y: arriba - 13, size: 8.5, font, color: gris })
+        page.drawText(truncarPdf(op.titulo || 'Actualiza Ventas APP - Registro de Ventas', anchoT, 10, bold), { x: xT, y: arriba - 26, size: 10, font: bold, color: principal })
+        const impreso = `Impreso: ${format(ahora, 'dd/MM/yyyy HH:mm')}`
+        page.drawText(impreso, { x: W - M - font.widthOfTextAtSize(impreso, 8), y: arriba, size: 8, font, color: gris })
+        const per = sanitizarPdf(`${d.periodo} · Soles`)
+        page.drawText(per, { x: W - M - bold.widthOfTextAtSize(per, 8.5), y: arriba - 13, size: 8.5, font: bold, color: principal })
+        y = arriba - 40
+        page.drawLine({ start: { x: M, y }, end: { x: W - M, y }, thickness: 0.8, color: principal })
+        y -= 12
+        page.drawText(truncarPdf(`Filtros aplicados: ${filtros}`, ancho, 7.5, font), { x: M, y, size: 7.5, font, color: gris })
+        y -= 14
     }
     const texto = (t: string, i: number, yy: number, size: number, f: any, color: RGB = rgb(0, 0, 0)) => {
         const s = truncarPdf(t, cols[i] - 8, size, f)
@@ -189,9 +208,9 @@ export async function generarPdfActualizaVentasApp(d: DatosPdfVentasApp, op: Opc
         texto(f.cliente ?? '', 4, y, 7.5, font)
         texto(f.ruc ?? '', 5, y, 7.5, font)
         const colorMonto = total < 0 ? violeta : negro
-        texto(num(valor), 6, y, 7.5, font, colorMonto)
-        texto(num(igv), 7, y, 7.5, font, colorMonto)
-        texto(num(total), 8, y, 7.5, bold, colorMonto)
+        texto(soles(valor), 6, y, 7.5, font, colorMonto)
+        texto(soles(igv), 7, y, 7.5, font, colorMonto)
+        texto(soles(total), 8, y, 7.5, bold, colorMonto)
         texto(`RV ${f.rv_filas ?? 0} · MA ${f.ma_filas ?? 0} · KC ${f.kc_filas ?? 0}`, 9, y, 7, font, gris)
 
         if (refNc) {
@@ -213,9 +232,9 @@ export async function generarPdfActualizaVentasApp(d: DatosPdfVentasApp, op: Opc
     page.drawRectangle({ x: M, y: y - 5, width: ancho, height: 18, color: aclarar(principal, 0.85) })
     const etiqueta = `TOTAL (${d.filas.length} comprobante${d.filas.length === 1 ? '' : 's'})`
     page.drawText(sanitizarPdf(etiqueta), { x: M + 6, y, size: 8.5, font: bold, color: principal })
-    texto(num(tValor), 6, y, 8, bold, principal)
-    texto(num(tIgv), 7, y, 8, bold, principal)
-    texto(num(tTotal), 8, y, 8, bold, principal)
+    texto(soles(tValor), 6, y, 8, bold, principal)
+    texto(soles(tIgv), 7, y, 8, bold, principal)
+    texto(soles(tTotal), 8, y, 8, bold, principal)
 
     // ---------------------------------------------------------------- pie en todas las páginas
     const paginas = pdfDoc.getPages()

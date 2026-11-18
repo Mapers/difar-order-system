@@ -236,10 +236,10 @@ function Montos({ titulo, m, otros }: { titulo: string; m: { base: number; igv: 
             <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">{titulo}</p>
             {m ? (
                 <div className="mt-0.5 space-y-0.5 font-mono text-[11px]">
-                    <div className="flex justify-between gap-2"><span className="font-sans text-muted-foreground">Base</span>{num(m.base)}</div>
-                    <div className="flex justify-between gap-2"><span className="font-sans text-muted-foreground">IGV</span>{num(m.igv)}</div>
-                    {!!otros && <div className="flex justify-between gap-2"><span className="font-sans text-muted-foreground">Flete (Y)</span>{num(otros)}</div>}
-                    <div className="flex justify-between gap-2 font-bold"><span className="font-sans font-semibold text-muted-foreground">Total</span>{num(m.total)}</div>
+                    <div className="flex justify-between gap-2"><span className="font-sans text-muted-foreground">Base</span>{soles(m.base)}</div>
+                    <div className="flex justify-between gap-2"><span className="font-sans text-muted-foreground">IGV</span>{soles(m.igv)}</div>
+                    {!!otros && <div className="flex justify-between gap-2"><span className="font-sans text-muted-foreground">Flete (Y)</span>{soles(otros)}</div>}
+                    <div className="flex justify-between gap-2 font-bold"><span className="font-sans font-semibold text-muted-foreground">Total</span>{soles(m.total)}</div>
                 </div>
             ) : <p className="mt-1 text-xs italic text-muted-foreground">No está</p>}
         </div>
@@ -271,8 +271,8 @@ function TarjetaDocumento({ d, i }: { d: DocumentoSire; i: number }) {
                 </div>
                 {d.nivel === 'aviso' && (
                     <div className="flex flex-wrap gap-1.5 text-[11px]">
-                        {Math.abs(d.dif.base) >= 0.01 && <span className="rounded-md bg-amber-100 px-1.5 py-0.5 font-mono font-semibold text-amber-900 dark:bg-amber-950 dark:text-amber-200">Base {d.dif.base > 0 ? '+' : ''}{num(d.dif.base)}</span>}
-                        {Math.abs(d.dif.igv) >= 0.01 && <span className="rounded-md bg-amber-100 px-1.5 py-0.5 font-mono font-semibold text-amber-900 dark:bg-amber-950 dark:text-amber-200">IGV {d.dif.igv > 0 ? '+' : ''}{num(d.dif.igv)}</span>}
+                        {Math.abs(d.dif.base) >= 0.01 && <span className="rounded-md bg-amber-100 px-1.5 py-0.5 font-mono font-semibold text-amber-900 dark:bg-amber-950 dark:text-amber-200">Base {d.dif.base > 0 ? '+' : ''}{soles(d.dif.base)}</span>}
+                        {Math.abs(d.dif.igv) >= 0.01 && <span className="rounded-md bg-amber-100 px-1.5 py-0.5 font-mono font-semibold text-amber-900 dark:bg-amber-950 dark:text-amber-200">IGV {d.dif.igv > 0 ? '+' : ''}{soles(d.dif.igv)}</span>}
                     </div>
                 )}
                 {d.explicacionIA ? (

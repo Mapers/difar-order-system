@@ -319,8 +319,8 @@ export function ActualizaVentasApp() {
                                             <p className="font-mono text-[11px] text-muted-foreground">{f.ruc}</p>
                                             {f.problema && <p className="mt-0.5 flex items-center gap-1 text-[11px] font-medium text-amber-700 dark:text-amber-300"><AlertTriangle className="h-3 w-3" />{f.problema}</p>}
                                         </td>
-                                        <td className="whitespace-nowrap px-2 py-2 text-right font-mono">{num(f.valor_venta)}</td>
-                                        <td className="whitespace-nowrap px-2 py-2 text-right font-mono">{num(f.igv)}</td>
+                                        <td className="whitespace-nowrap px-2 py-2 text-right font-mono">{soles(f.valor_venta)}</td>
+                                        <td className="whitespace-nowrap px-2 py-2 text-right font-mono">{soles(f.igv)}</td>
                                         <td className={cn('whitespace-nowrap px-2 py-2 text-right font-mono font-bold', f.total < 0 && 'text-violet-700 dark:text-violet-300')}>{soles(f.total)}</td>
                                         <td className="px-2 py-2">
                                             <div className="flex justify-center gap-1">
@@ -648,16 +648,16 @@ function TarjetaRegistroVentas({ r, i, previa }: { r: Record<string, any>; i: nu
                     <p className={cn('font-mono text-2xl font-bold', total < 0 ? 'text-violet-700 dark:text-violet-300' : 'text-foreground')}>{soles(total)}</p>
                 </div>
                 <div className="flex gap-4 text-right">
-                    <div><p className="text-[10px] uppercase text-muted-foreground">Valor venta</p><p className="font-mono text-sm font-semibold">{num(r.ValorVta)}</p></div>
-                    <div><p className="text-[10px] uppercase text-muted-foreground">IGV</p><p className="font-mono text-sm font-semibold">{num(r.IGV)}</p></div>
+                    <div><p className="text-[10px] uppercase text-muted-foreground">Valor venta</p><p className="font-mono text-sm font-semibold">{soles(r.ValorVta)}</p></div>
+                    <div><p className="text-[10px] uppercase text-muted-foreground">IGV</p><p className="font-mono text-sm font-semibold">{soles(r.IGV)}</p></div>
                 </div>
             </div>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                 <Dato etiqueta="Cliente" valor={r.CodCliente} mono />
                 <Dato etiqueta="Vence" valor={dmy(r.VctoDoc)} />
                 <Dato etiqueta="Moneda" valor={r.Moneda} />
-                {Number(r.Exonerado) !== 0 && <Dato etiqueta="Exonerado" valor={num(r.Exonerado)} mono />}
-                {Number(r.Inafecto) !== 0 && <Dato etiqueta="Inafecto" valor={num(r.Inafecto)} mono />}
+                {Number(r.Exonerado) !== 0 && <Dato etiqueta="Exonerado" valor={soles(r.Exonerado)} mono />}
+                {Number(r.Inafecto) !== 0 && <Dato etiqueta="Inafecto" valor={soles(r.Inafecto)} mono />}
                 {r.SerieDocOriginal && <Dato etiqueta="Documento original" valor={`${r.TipoDocOriginal ?? ''} ${r.SerieDocOriginal}-${r.NumeroDocOriginal ?? ''}`} mono className="col-span-2 sm:col-span-1" />}
                 <Dato etiqueta="Origen" valor={r.transf_v ?? 'Access / manual'} />
             </div>
