@@ -479,11 +479,135 @@ function Afectada({ icono: Icono, titulo, texto, tono }: { icono: React.ElementT
 }
 
 // ------------------------------------------------------------------ modal de tablas afectadas / vista previa
-const COLUMNAS: Record<'registroVentas' | 'mayorAuxiliar' | 'kardexClientes', [string, string, ('num' | 'fecha')?][]> = {
-    registroVentas: [['idregvtas', 'Id'], ['Fecha', 'Fecha', 'fecha'], ['TipoDoc', 'Tipo'], ['Serie', 'Serie'], ['Numero', 'Número'], ['CodCliente', 'Cliente'],
-        ['ValorVta', 'Valor venta', 'num'], ['IGV', 'IGV', 'num'], ['Total', 'Total', 'num'], ['VctoDoc', 'Vence', 'fecha'], ['SerieDocOriginal', 'Serie orig.'], ['NumeroDocOriginal', 'Nro orig.'], ['transf_v', 'Origen']],
-    mayorAuxiliar: [['IdLibroMayor', 'Id'], ['Fecha', 'Fecha', 'fecha'], ['CtaContable', 'Cuenta'], ['Concepto', 'Concepto'], ['Cargo', 'Cargo', 'num'], ['Abono', 'Abono', 'num'], ['TipoDoc', 'Tipo'], ['SerieDoc', 'Serie'], ['NroDoc', 'Número'], ['transf_v', 'Origen']],
-    kardexClientes: [['IdKardexClientes', 'Id'], ['Fecha_Emision', 'Emisión', 'fecha'], ['Cod_Clie', 'Cliente'], ['Tipo_Doc', 'Tipo'], ['SerieDoc', 'Serie'], ['NumeroDoc', 'Número'], ['Provision', 'Provisión', 'num'], ['Amortizacion', 'Amortización', 'num'], ['ModuloTrabajo', 'Módulo'], ['Observaciones', 'Observación']],
+/** Nombre corto de la cuenta según su elemento (para leer el asiento sin buscar el plan contable). */
+const nombreCuenta = (cta: unknown) => {
+    const c = String(cta ?? '')
+    if (c.startsWith('12')) return 'Cuentas por cobrar · clientes'
+    if (c.startsWith('40')) return 'Tributos · IGV'
+    if (c.startsWith('70')) return 'Ventas'
+    return 'Cuenta contable'
+}
+
+/** Dato de una tarjeta: etiqueta pequeña arriba y valor abajo. */
+function Dato({ etiqueta, valor, mono, className }: { etiqueta: string; valor: React.ReactNode; mono?: boolean; className?: string }) {
+    if (valor === null || valor === undefined || valor === '') return null
+    return (
+        <div className={cn('min-w-0 rounded-lg bg-muted/40 px-2.5 py-1.5', className)}>
+            <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">{etiqueta}</p>
+            <p className={cn('truncate text-sm font-semibold', mono && 'font-mono')}>{valor}</p>
+        </div>
+    )
+}
+
+/** Envoltura de tarjeta con franja de color, sombra y entrada escalonada. */
+function TarjetaRegistro({ i, franja, previa, children }: { i: number; franja: string; previa: boolean; children: React.ReactNode }) {
+    return (
+        <div style={{ animationDelay: `${i * 70}ms` }}
+             className={cn('relative overflow-hidden rounded-2xl border bg-card shadow-md shadow-slate-900/5 transition-all duration-200 animate-in fade-in-0 slide-in-from-bottom-2 fill-mode-both hover:-translate-y-0.5 hover:shadow-lg dark:shadow-black/30',
+                 previa && 'border-dashed border-amber-300 dark:border-amber-800')}>
+            <span className={cn('absolute inset-y-0 left-0 w-1.5 bg-gradient-to-b', franja)} />
+            <div className="space-y-3 py-3 pl-5 pr-4">{children}</div>
+        </div>
+    )
+}
+
+const IdRegistro = ({ id, previa }: { id: unknown; previa: boolean }) => (
+    <span className={cn('shrink-0 rounded-full px-2 py-0.5 font-mono text-[10px] font-bold', id == null && previa ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-200' : 'bg-muted text-muted-foreground')}>
+        {id == null ? (previa ? 'NUEVO' : '—') : `Id ${id}`}
+    </span>
+)
+
+function TarjetaRegistroVentas({ r, i, previa }: { r: Record<string, any>; i: number; previa: boolean }) {
+    const total = Number(r.Total ?? 0), nc = r.TipoDoc === '07'
+    return (
+        <TarjetaRegistro i={i} previa={previa} franja={nc ? 'from-violet-500 to-fuchsia-500' : 'from-blue-500 to-indigo-600'}>
+            <div className="flex items-start justify-between gap-2">
+                <div className="flex min-w-0 items-center gap-2.5">
+                    <span className={cn('flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br text-white shadow-md', nc ? 'from-violet-500 to-fuchsia-600' : 'from-blue-500 to-indigo-600')}><BookOpen className="h-5 w-5" /></span>
+                    <div className="min-w-0">
+                        <p className="font-mono text-base font-bold leading-tight">{r.Serie}-{r.Numero}</p>
+                        <p className="text-[11px] text-muted-foreground">{(TIPO[r.TipoDoc] ?? TIPO['01']).largo} · {dmy(r.Fecha)}</p>
+                    </div>
+                </div>
+                <IdRegistro id={r.idregvtas} previa={previa} />
+            </div>
+            <div className="flex flex-wrap items-end justify-between gap-2 rounded-xl bg-gradient-to-r from-muted/60 to-transparent px-3 py-2">
+                <div>
+                    <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Total</p>
+                    <p className={cn('font-mono text-2xl font-bold', total < 0 ? 'text-violet-700 dark:text-violet-300' : 'text-foreground')}>{soles(total)}</p>
+                </div>
+                <div className="flex gap-4 text-right">
+                    <div><p className="text-[10px] uppercase text-muted-foreground">Valor venta</p><p className="font-mono text-sm font-semibold">{num(r.ValorVta)}</p></div>
+                    <div><p className="text-[10px] uppercase text-muted-foreground">IGV</p><p className="font-mono text-sm font-semibold">{num(r.IGV)}</p></div>
+                </div>
+            </div>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                <Dato etiqueta="Cliente" valor={r.CodCliente} mono />
+                <Dato etiqueta="Vence" valor={dmy(r.VctoDoc)} />
+                <Dato etiqueta="Moneda" valor={r.Moneda} />
+                {Number(r.Exonerado) !== 0 && <Dato etiqueta="Exonerado" valor={num(r.Exonerado)} mono />}
+                {Number(r.Inafecto) !== 0 && <Dato etiqueta="Inafecto" valor={num(r.Inafecto)} mono />}
+                {r.SerieDocOriginal && <Dato etiqueta="Documento original" valor={`${r.TipoDocOriginal ?? ''} ${r.SerieDocOriginal}-${r.NumeroDocOriginal ?? ''}`} mono className="col-span-2 sm:col-span-1" />}
+                <Dato etiqueta="Origen" valor={r.transf_v ?? 'Access / manual'} />
+            </div>
+        </TarjetaRegistro>
+    )
+}
+
+function TarjetaMayor({ r, i, previa }: { r: Record<string, any>; i: number; previa: boolean }) {
+    const cargo = Number(r.Cargo ?? 0), abono = Number(r.Abono ?? 0), esCargo = cargo !== 0 || abono === 0
+    return (
+        <TarjetaRegistro i={i} previa={previa} franja={esCargo ? 'from-sky-500 to-blue-600' : 'from-emerald-500 to-teal-600'}>
+            <div className="flex items-start justify-between gap-2">
+                <div className="flex min-w-0 items-center gap-2.5">
+                    <span className={cn('flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br text-white shadow-md', esCargo ? 'from-sky-500 to-blue-600' : 'from-emerald-500 to-teal-600')}><Layers className="h-5 w-5" /></span>
+                    <div className="min-w-0">
+                        <p className="font-mono text-base font-bold leading-tight">{r.CtaContable}</p>
+                        <p className="truncate text-[11px] text-muted-foreground">{nombreCuenta(r.CtaContable)}</p>
+                    </div>
+                </div>
+                <IdRegistro id={r.IdLibroMayor} previa={previa} />
+            </div>
+            <div className="flex items-end justify-between gap-2">
+                <span className={cn('rounded-full px-2.5 py-1 text-[11px] font-bold', esCargo ? 'bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-200' : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200')}>
+                    {esCargo ? 'DEBE · Cargo' : 'HABER · Abono'}
+                </span>
+                <p className="font-mono text-xl font-bold">{soles(esCargo ? cargo : abono)}</p>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+                <Dato etiqueta="Fecha" valor={dmy(r.Fecha)} />
+                <Dato etiqueta="Libro" valor={r.LibroContab ? `Libro ${r.LibroContab}` : ''} />
+                <Dato etiqueta="Concepto" valor={r.Concepto} className="col-span-2" />
+            </div>
+        </TarjetaRegistro>
+    )
+}
+
+function TarjetaKardex({ r, i }: { r: Record<string, any>; i: number }) {
+    const prov = Number(r.Provision ?? 0), amort = Number(r.Amortizacion ?? 0), esProv = prov !== 0 || amort === 0
+    const monto = esProv ? prov : amort
+    return (
+        <TarjetaRegistro i={i} previa={false} franja={esProv ? 'from-slate-400 to-slate-600' : 'from-teal-500 to-cyan-600'}>
+            <div className="flex items-start justify-between gap-2">
+                <div className="flex min-w-0 items-center gap-2.5">
+                    <span className={cn('flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br text-white shadow-md', esProv ? 'from-slate-500 to-slate-700' : 'from-teal-500 to-cyan-600')}><Users className="h-5 w-5" /></span>
+                    <div className="min-w-0">
+                        <p className="text-sm font-bold leading-tight">{esProv ? 'Provisión' : 'Amortización'}</p>
+                        <p className="font-mono text-[11px] text-muted-foreground">{r.SerieDoc}-{r.NumeroDoc} · cliente {r.Cod_Clie}</p>
+                    </div>
+                </div>
+                <IdRegistro id={r.IdKardexClientes} previa={false} />
+            </div>
+            <p className={cn('text-right font-mono text-xl font-bold', monto < 0 && 'text-violet-700 dark:text-violet-300')}>{soles(monto)}</p>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                <Dato etiqueta="Emisión" valor={dmy(r.Fecha_Emision)} />
+                <Dato etiqueta="Vence" valor={dmy(r.Fecha_Vcto)} />
+                <Dato etiqueta="Módulo" valor={r.ModuloTrabajo} />
+                <Dato etiqueta="Tipo amort." valor={r.Tipo_Amortizacion} />
+                <Dato etiqueta="Observación" valor={r.Observaciones} className="col-span-2 sm:col-span-4" />
+            </div>
+        </TarjetaRegistro>
+    )
 }
 
 function ModalTablas({ ver, onCerrar, onCargar }: {
@@ -536,32 +660,27 @@ function ModalTablas({ ver, onCerrar, onCargar }: {
                             ))}
                         </div>
                         {tab === 'kardexClientes' && <p className="mb-2 text-xs text-muted-foreground">El kardex de clientes lo graba la web al emitir el comprobante; esta carga no lo modifica.</p>}
-                        {tab === 'mayorAuxiliar' && actual.filas.length > 0 && (
-                            <p className={cn('mb-2 text-xs font-medium', Math.abs(cargo - abono) < 0.01 ? 'text-emerald-700 dark:text-emerald-300' : 'text-amber-700')}>
-                                Cargo {num(cargo)} · Abono {num(abono)} · {Math.abs(cargo - abono) < 0.01 ? 'asiento cuadrado' : 'asiento descuadrado'}
-                            </p>
-                        )}
+                        {tab === 'mayorAuxiliar' && actual.filas.length > 0 && (() => {
+                            const cuadra = Math.abs(cargo - abono) < 0.01
+                            return (
+                                <div className="mb-3 grid grid-cols-3 gap-2">
+                                    <div className="rounded-xl border bg-sky-50 px-3 py-2 dark:bg-sky-950/30"><p className="text-[10px] font-medium uppercase text-sky-700 dark:text-sky-300">Total debe</p><p className="font-mono text-base font-bold">{soles(cargo)}</p></div>
+                                    <div className="rounded-xl border bg-emerald-50 px-3 py-2 dark:bg-emerald-950/30"><p className="text-[10px] font-medium uppercase text-emerald-700 dark:text-emerald-300">Total haber</p><p className="font-mono text-base font-bold">{soles(abono)}</p></div>
+                                    <div className={cn('flex items-center gap-2 rounded-xl border px-3 py-2', cuadra ? 'bg-emerald-50 dark:bg-emerald-950/30' : 'bg-amber-50 dark:bg-amber-950/30')}>
+                                        {cuadra ? <CheckCircle2 className="almacen-exito h-6 w-6 shrink-0 text-emerald-600" /> : <AlertTriangle className="h-6 w-6 shrink-0 text-amber-600" />}
+                                        <p className="text-xs font-bold">{cuadra ? 'Asiento cuadrado' : 'Asiento descuadrado'}</p>
+                                    </div>
+                                </div>
+                            )
+                        })()}
                         {actual.filas.length === 0 ? (
                             <div className="rounded-xl border border-dashed py-10 text-center text-sm text-muted-foreground">Sin registros en {actual.titulo.toLowerCase()}.</div>
                         ) : (
-                            <div className="overflow-x-auto rounded-xl border">
-                                <table className="w-full text-xs">
-                                    <thead className="bg-muted/50 text-[10px] uppercase tracking-wide text-muted-foreground">
-                                        <tr>{COLUMNAS[tab].map(([k, titulo, fmt]) => <th key={k} className={cn('whitespace-nowrap px-2 py-2', fmt === 'num' ? 'text-right' : 'text-left')}>{titulo}</th>)}</tr>
-                                    </thead>
-                                    <tbody>
-                                        {actual.filas.map((r, i) => (
-                                            <tr key={i} className={cn('border-t animate-in fade-in-0 slide-in-from-bottom-1 fill-mode-both', ver.previa ? 'bg-amber-50/50 dark:bg-amber-950/20' : 'odd:bg-muted/20')}
-                                                style={{ animationDelay: `${i * 60}ms` }}>
-                                                {COLUMNAS[tab].map(([k, , fmt]) => (
-                                                    <td key={k} className={cn('whitespace-nowrap px-2 py-1.5', fmt === 'num' && 'text-right font-mono', k.startsWith('Id') || k === 'idregvtas' ? 'text-muted-foreground' : '')}>
-                                                        {r[k] === undefined ? (ver.previa && k.toLowerCase().startsWith('id') ? <i className="text-muted-foreground">nuevo</i> : '') : fmt === 'num' ? num(r[k]) : fmt === 'fecha' ? dmy(r[k]) : String(r[k] ?? '')}
-                                                    </td>
-                                                ))}
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
+                            <div className={cn('grid gap-3', tab === 'mayorAuxiliar' ? 'sm:grid-cols-2 lg:grid-cols-3' : 'sm:grid-cols-2')}>
+                                {actual.filas.map((r, i) =>
+                                    tab === 'registroVentas' ? <div key={i} className={cn(actual.filas.length === 1 && 'sm:col-span-2')}><TarjetaRegistroVentas r={r} i={i} previa={ver.previa} /></div>
+                                    : tab === 'mayorAuxiliar' ? <TarjetaMayor key={i} r={r} i={i} previa={ver.previa} />
+                                    : <TarjetaKardex key={i} r={r} i={i} />)}
                             </div>
                         )}
                     </>)}
