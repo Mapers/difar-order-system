@@ -3,7 +3,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
     AlertTriangle, ArrowRight, BookOpen, CalendarDays, CheckCircle2, CircleDashed, Clock, CloudUpload, Database,
-    Eye, FileMinus2, FileText, Filter, Layers, ListChecks, Loader2, RefreshCw, Search, ShieldCheck, Sigma, TableProperties, Upload, Users, XCircle,
+    Eye, FileDown, FileMinus2, FileText, Filter, Layers, ListChecks, Loader2, RefreshCw, Search, ShieldCheck, Sigma, TableProperties, Upload, Users, XCircle,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -12,6 +12,9 @@ import { cn } from '@/lib/utils'
 import { AvisoAmbar, AvisoExito, Combo, claseInput, textoError, useSacudir } from '@/components/contabilidad/datos-generales/comunes'
 import { ComprobanteApp, EstadoCarga, Origen, ResumenMes, ResumenSunat, TablasAfectadas, VentasAppService } from '@/app/services/contabilidad/VentasAppService'
 import { ValidarSire } from './ValidarSire'
+import { generarPdfActualizaVentasApp } from './pdfActualizaVentasApp'
+import { PdfVistaPreviaDialog } from '@/components/reporte/PdfVistaPreviaDialog'
+import { OpcionesPdfReporte } from '@/components/reporte/pdfOpciones'
 
 // ------------------------------------------------------------------ utilidades
 const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
@@ -53,6 +56,7 @@ export function ActualizaVentasApp() {
     const [resumen, setResumen] = useState<ResumenMes | null>(null)
     const [sunat, setSunat] = useState<ResumenSunat | null>(null)
     const [sireAbierto, setSireAbierto] = useState(false)
+    const [pdfAbierto, setPdfAbierto] = useState(false)
     const [cargando, setCargando] = useState(false)
     const [aviso, setAviso] = useState<string | null>(null)
     const [golpe, setGolpe] = useState(0)
@@ -148,6 +152,9 @@ export function ActualizaVentasApp() {
                     <Button variant="outline" onClick={() => setSireAbierto(true)}
                             className="border-indigo-300 text-indigo-700 hover:bg-indigo-50 dark:border-indigo-800 dark:text-indigo-300 dark:hover:bg-indigo-950/40">
                         <ShieldCheck className="mr-2 h-4 w-4" /> Validar SIRE
+                    </Button>
+                    <Button variant="outline" onClick={() => setPdfAbierto(true)} disabled={cargando || visibles.length === 0}>
+                        <FileDown className="mr-2 h-4 w-4" /> Exportar PDF
                     </Button>
                     <Button variant="outline" onClick={consultar} disabled={cargando}>
                         <RefreshCw className={cn('mr-2 h-4 w-4', cargando && 'animate-spin')} /> Actualizar
@@ -340,6 +347,17 @@ export function ActualizaVentasApp() {
             </div>
 
             <ValidarSire abierto={sireAbierto} onCerrar={() => setSireAbierto(false)} />
+            <PdfVistaPreviaDialog abierto={pdfAbierto} onCerrar={() => setPdfAbierto(false)}
+                                  titulo={`Actualiza Ventas APP · ${MESES[Number(mes) - 1]} ${anio}`}
+                                  defecto={{ titulo: 'Actualiza Ventas APP - Registro de Ventas', nota: '', color: '#163161', tamanoLetra: 'normal' } as OpcionesPdfReporte}
+                                  archivoDefecto={`Actualiza-Ventas-APP-${anio}-${mes.padStart(2, '0')}`}
+                                  generar={(op) => generarPdfActualizaVentasApp({
+                                      filas: visibles, resumen, sunat, ncPendientes,
+                                      periodo: `${MESES[Number(mes) - 1]} ${anio}`,
+                                      filtroTipo: ({ todos: 'Todos', '01': 'Facturas', '03': 'Boletas', '07': 'Notas de crédito' } as Record<FiltroTipo, string>)[tipo],
+                                      filtroEstado: estado === 'todos' ? 'Todos' : ESTADO[estado].texto,
+                                      buscar,
+                                  }, op)} />
             {cola && <ModalCarga items={cola} onCerrar={(cargados) => { setCola(null); alTerminarCola(cargados) }} onVer={(fila, tablas) => setVer({ fila: { ...fila, estado_carga: 'CARGADO' }, tablas, previa: false, cargando: false })} />}
             {ver && <ModalTablas ver={ver} onCerrar={() => setVer(null)}
                                  onCargar={ver.previa && cargable(ver.fila) ? () => { const f = ver.fila; setVer(null); abrirCola([f]) } : undefined} />}
