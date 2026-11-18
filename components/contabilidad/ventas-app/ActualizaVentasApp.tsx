@@ -63,13 +63,19 @@ export function ActualizaVentasApp() {
     const anios = useMemo(() => Array.from({ length: hoy.getFullYear() - 2023 }, (_, i) => String(hoy.getFullYear() - i)).map(a => ({ id: a, nombre: a })), [])
     const meses = useMemo(() => MESES.map((m, i) => ({ id: String(i + 1), nombre: m })), [])
 
+    // Cada consulta lleva un número: si el usuario cambia de mes rápido, solo se pinta la última respuesta.
+    const consulta = useRef(0)
     const consultar = useCallback(async () => {
-        setCargando(true); setAviso(null)
+        const yo = ++consulta.current
+        setCargando(true); setAviso(null); setSel(new Set())
         try {
             const r = await VentasAppService.listado(Number(anio), Number(mes))
-            setFilas(r.filas); setResumen(r.resumen); setSel(new Set())
-        } catch (e) { setAviso(await textoError(e, 'No se pudo leer las ventas del mes.')); setGolpe(g => g + 1) }
-        finally { setCargando(false) }
+            if (yo !== consulta.current) return
+            setFilas(r.filas); setResumen(r.resumen)
+        } catch (e) {
+            if (yo !== consulta.current) return
+            setAviso(await textoError(e, 'No se pudo leer las ventas del mes.')); setGolpe(g => g + 1)
+        } finally { if (yo === consulta.current) setCargando(false) }
     }, [anio, mes])
     useEffect(() => { consultar() }, [consultar])
 
@@ -176,6 +182,35 @@ export function ActualizaVentasApp() {
                 </div>
             </div>
 
+            {/* Aviso animado mientras se leen las ventas del mes elegido */}
+            {cargando && (
+                <div role="status" aria-live="polite"
+                     className="relative overflow-hidden rounded-2xl border border-blue-200 bg-gradient-to-r from-blue-50 via-indigo-50 to-blue-50 px-4 py-3 shadow-md shadow-blue-600/10 animate-in fade-in-0 slide-in-from-top-1 dark:border-blue-900 dark:from-blue-950/50 dark:via-indigo-950/40 dark:to-blue-950/50">
+                    <div className="flex items-center gap-3">
+                        <span className="ventasapp-latido flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-600/30">
+                            <Database className="h-5 w-5" />
+                        </span>
+                        <div className="min-w-0 flex-1">
+                            <p className="text-sm font-semibold text-blue-900 dark:text-blue-100">
+                                Leyendo las ventas de {MESES[Number(mes) - 1]} {anio}
+                                <span className="ventasapp-puntos ml-0.5"><i>.</i><i>.</i><i>.</i></span>
+                            </p>
+                            <p className="text-xs text-blue-700/80 dark:text-blue-300/80">Facturas, boletas y notas de crédito, y su estado en el Registro de Ventas y el Mayor.</p>
+                        </div>
+                        <div className="relative hidden h-8 w-40 overflow-hidden sm:block" style={{ ['--ventasapp-dist' as any]: '150px' }}>
+                            <div className="absolute inset-x-0 top-1/2 border-t border-dashed border-blue-300 dark:border-blue-800" />
+                            {[0, 1, 2].map(i => (
+                                <span key={i} className="ventasapp-viaje absolute left-0 top-1/2 -mt-2.5 flex h-5 w-4 items-center justify-center rounded-sm bg-white text-[8px] font-bold text-blue-700 shadow ring-1 ring-blue-200 dark:bg-blue-900 dark:text-blue-100 dark:ring-blue-700"
+                                      style={{ animationDelay: `${i * 0.45}s` }}>{i === 1 ? 'NC' : 'F'}</span>
+                            ))}
+                        </div>
+                    </div>
+                    <div className="absolute inset-x-0 bottom-0 h-1 overflow-hidden bg-blue-100 dark:bg-blue-950">
+                        <div className="ventasapp-indeterminado h-full w-1/3 rounded-full bg-gradient-to-r from-blue-500 to-indigo-500" />
+                    </div>
+                </div>
+            )}
+
             {/* Estado del mes */}
             <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
                 <Tarjeta icono={FileText} titulo="Comprobantes" valor={resumen?.total ?? '—'} sub={`${MESES[Number(mes) - 1]} ${anio}`} color="from-blue-500 to-indigo-600" cargando={cargando} />
@@ -184,7 +219,7 @@ export function ActualizaVentasApp() {
                 <Tarjeta icono={FileMinus2} titulo="NC pendientes" valor={cargando ? '—' : ncPendientes} sub="Notas de crédito sin cargar" color="from-violet-500 to-fuchsia-600" cargando={cargando} />
                 <Tarjeta icono={AlertTriangle} titulo="Con observación" valor={resumen ? resumen.conProblema + resumen.parciales : '—'} sub="Parciales o sin ficha/cuenta" color="from-rose-500 to-red-500" cargando={cargando} className="col-span-2 lg:col-span-1" />
             </div>
-            {resumen && resumen.total > 0 && (
+            {!cargando && resumen && resumen.total > 0 && (
                 <div className="rounded-2xl border bg-card p-3 shadow-sm">
                     <div className="mb-1.5 flex items-center justify-between text-xs">
                         <span className="font-medium">Avance de carga del mes</span>
@@ -204,11 +239,18 @@ export function ActualizaVentasApp() {
             )}
 
             {/* Tabla de comprobantes */}
-            <div className="overflow-hidden rounded-2xl border bg-card shadow-md shadow-slate-900/5 dark:shadow-black/30">
+            <div className="relative overflow-hidden rounded-2xl border bg-card shadow-md shadow-slate-900/5 dark:shadow-black/30">
                 <div className="flex flex-wrap items-center justify-between gap-2 border-b bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
                     <span><b className="text-foreground">{visibles.length}</b> comprobante{visibles.length === 1 ? '' : 's'} · clic en una fila para ver sus tablas</span>
                     {sel.size > 0 && <span className="font-medium text-blue-700 dark:text-blue-300">{sel.size} seleccionado{sel.size === 1 ? '' : 's'} · <button className="underline" onClick={() => setSel(new Set())}>quitar</button></span>}
                 </div>
+                {cargando && filas.length > 0 && (
+                    <div className="absolute inset-0 top-9 z-20 flex items-start justify-center bg-background/55 pt-16 backdrop-blur-[2px] animate-in fade-in-0">
+                        <div className="flex items-center gap-2.5 rounded-full border bg-card px-4 py-2 text-sm font-medium shadow-lg shadow-blue-600/10">
+                            <Loader2 className="h-4 w-4 animate-spin text-blue-600" /> Cargando {MESES[Number(mes) - 1]} {anio}…
+                        </div>
+                    </div>
+                )}
                 <div className="max-h-[62vh] overflow-auto">
                     <table className="w-full min-w-[980px] text-sm">
                         <thead className="sticky top-0 z-10 bg-card text-xs uppercase tracking-wide text-muted-foreground shadow-sm">
@@ -317,8 +359,13 @@ function Tarjeta({ icono: Icono, titulo, valor, sub, color, cargando, className 
                 <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br text-white shadow-md transition-transform group-hover:scale-110', color)}><Icono className="h-4 w-4" /></span>
                 <div className="min-w-0">
                     <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">{titulo}</p>
-                    <p className={cn('text-xl font-bold leading-tight', cargando && 'animate-pulse')}>{valor}</p>
-                    <p className="truncate text-[11px] text-muted-foreground">{sub}</p>
+                    {cargando ? (<>
+                        <span className="my-1 block h-5 w-14 animate-pulse rounded-md bg-muted" />
+                        <span className="block h-3 w-24 animate-pulse rounded bg-muted/70" />
+                    </>) : (<>
+                        <p className="text-xl font-bold leading-tight animate-in fade-in-0 zoom-in-95">{valor}</p>
+                        <p className="truncate text-[11px] text-muted-foreground">{sub}</p>
+                    </>)}
                 </div>
             </div>
         </div>
