@@ -34,6 +34,18 @@ export interface ResumenMes {
     montoPendiente: number; montoCargado: number
 }
 
+/** Totales del Registro de Ventas del mes con las columnas de la propuesta SIRE (SUNAT). */
+export interface ResumenSunat {
+    comprobantes: number; ventas: number; notas_credito: number
+    base_imponible: number   // O + P
+    igv: number              // Q + R
+    exonerado: number        // S
+    inafecto: number         // T
+    flete: number            // Y (otros cargos)
+    total_registro: number   // Total del Registro de Ventas
+    total_cp: number         // Z = Total del registro + flete
+}
+
 export interface TablasAfectadas {
     registroVentas: Record<string, any>[]
     mayorAuxiliar: Record<string, any>[]
@@ -47,7 +59,7 @@ export interface ResultadoCarga extends TablasAfectadas {
 const base = '/contabilidad/ventas-app'
 
 export const VentasAppService = {
-    async listado(anio: number, mes: number): Promise<{ filas: ComprobanteApp[]; resumen: ResumenMes }> {
+    async listado(anio: number, mes: number): Promise<{ filas: ComprobanteApp[]; resumen: ResumenMes; resumenSunat: ResumenSunat | null }> {
         const { data } = await apiClient.get(`${base}/listado`, { params: { anio, mes } })
         return data.data
     },

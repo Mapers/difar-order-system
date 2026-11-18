@@ -10,7 +10,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { cn } from '@/lib/utils'
 import { AvisoAmbar, AvisoExito, Combo, claseInput, textoError, useSacudir } from '@/components/contabilidad/datos-generales/comunes'
-import { ComprobanteApp, EstadoCarga, Origen, ResumenMes, TablasAfectadas, VentasAppService } from '@/app/services/contabilidad/VentasAppService'
+import { ComprobanteApp, EstadoCarga, Origen, ResumenMes, ResumenSunat, TablasAfectadas, VentasAppService } from '@/app/services/contabilidad/VentasAppService'
 
 // ------------------------------------------------------------------ utilidades
 const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
@@ -50,6 +50,7 @@ export function ActualizaVentasApp() {
     const [buscar, setBuscar] = useState('')
     const [filas, setFilas] = useState<ComprobanteApp[]>([])
     const [resumen, setResumen] = useState<ResumenMes | null>(null)
+    const [sunat, setSunat] = useState<ResumenSunat | null>(null)
     const [cargando, setCargando] = useState(false)
     const [aviso, setAviso] = useState<string | null>(null)
     const [golpe, setGolpe] = useState(0)
@@ -71,7 +72,7 @@ export function ActualizaVentasApp() {
         try {
             const r = await VentasAppService.listado(Number(anio), Number(mes))
             if (yo !== consulta.current) return
-            setFilas(r.filas); setResumen(r.resumen)
+            setFilas(r.filas); setResumen(r.resumen); setSunat(r.resumenSunat ?? null)
         } catch (e) {
             if (yo !== consulta.current) return
             setAviso(await textoError(e, 'No se pudo leer las ventas del mes.')); setGolpe(g => g + 1)
@@ -100,9 +101,6 @@ export function ActualizaVentasApp() {
 
     const conteo = (t: FiltroTipo) => filas.filter(f => t === 'todos' || f.tipo_doc === t).length
     const ncPendientes = filas.filter(f => f.tipo_doc === '07' && f.estado_carga === 'PENDIENTE').length
-    // Suma total del mes: ventas (facturas y boletas) + notas de crédito (en negativo).
-    const sumaVentas = filas.filter(f => f.tipo_doc !== '07').reduce((s, f) => s + f.total, 0)
-    const sumaNC = filas.filter(f => f.tipo_doc === '07').reduce((s, f) => s + f.total, 0)
 
     // ------------------------------------------------------------ carga (cola con animación)
     const abrirCola = (lista: ComprobanteApp[]) => {
@@ -221,9 +219,7 @@ export function ActualizaVentasApp() {
                 <Tarjeta icono={Clock} titulo="Pendientes" valor={resumen?.pendientes ?? '—'} sub={resumen ? soles(resumen.montoPendiente) : ''} color="from-amber-500 to-orange-500" cargando={cargando} />
                 <Tarjeta icono={FileMinus2} titulo="NC pendientes" valor={cargando ? '—' : ncPendientes} sub="Notas de crédito sin cargar" color="from-violet-500 to-fuchsia-600" cargando={cargando} />
                 <Tarjeta icono={AlertTriangle} titulo="Con observación" valor={resumen ? resumen.conProblema + resumen.parciales : '—'} sub="Parciales o sin ficha/cuenta" color="from-rose-500 to-red-500" cargando={cargando} />
-                <Tarjeta icono={Sigma} titulo="Suma total" valor={resumen ? soles(sumaVentas + sumaNC) : '—'}
-                         sub={resumen ? `Ventas ${soles(sumaVentas)} · NC ${soles(sumaNC)}` : ''} color="from-cyan-500 to-sky-600" cargando={cargando}
-                         className="ring-1 ring-cyan-500/30" />
+                <TarjetaSunat s={sunat} cargando={cargando} />
             </div>
             {!cargando && resumen && resumen.total > 0 && (
                 <div className="rounded-2xl border bg-card p-3 shadow-sm">
@@ -374,6 +370,43 @@ function Tarjeta({ icono: Icono, titulo, valor, sub, color, cargando, className 
                     </>)}
                 </div>
             </div>
+        </div>
+    )
+}
+
+/**
+ * Suma total del mes con las columnas de la propuesta SIRE (SUNAT), tomada del Registro de Ventas:
+ * base imponible O+P, IGV Q+R, inafecto T, flete/otros Y y Total CP Z (= Total del registro + flete).
+ */
+function TarjetaSunat({ s, cargando }: { s: ResumenSunat | null; cargando?: boolean }) {
+    const linea = (etiqueta: string, valor: number, fuerte?: boolean) => (
+        <div className={cn('flex items-baseline justify-between gap-2', fuerte && 'mt-0.5 border-t border-dashed pt-0.5 font-semibold text-foreground')}>
+            <span className="truncate">{etiqueta}</span><span className="shrink-0 font-mono">{num(valor)}</span>
+        </div>
+    )
+    return (
+        <div title="Montos del Registro de Ventas del mes con las columnas de la propuesta SIRE de SUNAT: O+P base imponible, Q+R IGV, T inafecto, Y flete/otros y Z total del comprobante."
+             className="group relative overflow-hidden rounded-2xl border bg-card p-3 shadow-md shadow-slate-900/5 ring-1 ring-cyan-500/30 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg dark:shadow-black/30">
+            <span className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-cyan-500 to-sky-600" />
+            <div className="flex items-center gap-3">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-500 to-sky-600 text-white shadow-md transition-transform group-hover:scale-110"><Sigma className="h-4 w-4" /></span>
+                <div className="min-w-0">
+                    <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Suma total · SUNAT</p>
+                    {cargando ? <span className="my-1 block h-5 w-24 animate-pulse rounded-md bg-muted" /> : (
+                        <p className="truncate text-xl font-bold leading-tight animate-in fade-in-0 zoom-in-95">{s ? soles(s.base_imponible) : '—'}</p>
+                    )}
+                    <p className="truncate text-[11px] text-muted-foreground">Base imponible (O+P)</p>
+                </div>
+            </div>
+            {!cargando && s && (
+                <div className="mt-2 space-y-0.5 rounded-lg bg-muted/40 px-2 py-1.5 text-[11px] text-muted-foreground animate-in fade-in-0">
+                    {linea('IGV (Q+R)', s.igv)}
+                    {s.exonerado !== 0 && linea('Exonerado (S)', s.exonerado)}
+                    {s.inafecto !== 0 && linea('Inafecto (T)', s.inafecto)}
+                    {s.flete !== 0 && linea('Flete / otros (Y)', s.flete)}
+                    {linea('Total CP (Z)', s.total_cp, true)}
+                </div>
+            )}
         </div>
     )
 }
