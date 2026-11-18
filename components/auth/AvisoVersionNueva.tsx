@@ -1,7 +1,28 @@
 "use client"
 import React, { useCallback, useEffect, useRef, useState } from "react"
-import { RefreshCw, Sparkles, LogIn } from "lucide-react"
+import { RefreshCw, Sparkles, LogIn, Wrench, Rocket, Wand2 } from "lucide-react"
 import { useAuth } from "@/context/authContext"
+import apiClient from "@/app/api/client"
+
+// Novedades de la última versión publicada (tabla sis_version_cambios, sp_ws_version_cambios_ultima_2b).
+// Si no hay o falla, el modal se ve como antes.
+type Cambio = { id: number; modulo: string; tipo: "nuevo" | "mejora" | "correccion"; titulo: string; descripcion: string | null }
+type Novedades = { version: string | null; fecha: string | null; cambios: Cambio[] }
+const TIPO = {
+    nuevo: { texto: "Nuevo", icono: Rocket, clase: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-200" },
+    mejora: { texto: "Mejora", icono: Wand2, clase: "bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-200" },
+    correccion: { texto: "Corrección", icono: Wrench, clase: "bg-amber-100 text-amber-900 dark:bg-amber-950/60 dark:text-amber-200" },
+} as const
+
+async function traerNovedades(): Promise<Novedades | null> {
+    try {
+        const r = await apiClient.get("/sistema/version-cambios/ultima")
+        const d = r?.data?.data
+        return d && Array.isArray(d.cambios) && d.cambios.length ? d : null
+    } catch {
+        return null
+    }
+}
 
 // Cada despliegue graba su versión en el front (NEXT_PUBLIC_APP_VERSION, ver
 // next.config.mjs) y en /version.json. Si el servidor ya tiene otra versión,
@@ -49,10 +70,14 @@ export function AvisoVersionNueva() {
     const { logout } = useAuth()
     const [nueva, setNueva] = useState(false)
     const [saliendo, setSaliendo] = useState(false)
+    const [novedades, setNovedades] = useState<Novedades | null>(null)
     const tarjeta = useRef<HTMLDivElement>(null)
 
     // Al aparecer el aviso: vibra en el celular
     useEffect(() => { if (nueva) vibrar([300, 120, 300, 120, 500]) }, [nueva])
+
+    // Al aparecer el aviso: trae qué cambió en esta versión
+    useEffect(() => { if (nueva) traerNovedades().then(setNovedades) }, [nueva])
 
     // Toque fuera del recuadro: sacudida fuerte y vibración corta
     const sacudir = () => {
@@ -124,6 +149,36 @@ export function AvisoVersionNueva() {
                         Para usar las últimas mejoras, vuelve a iniciar sesión.
                     </p>
                 </div>
+
+                {novedades && (
+                    <div className="border-b px-6 pb-4 pt-5">
+                        <div className="mb-3 flex items-baseline justify-between gap-2">
+                            <h3 className="text-sm font-bold text-foreground">Qué hay de nuevo</h3>
+                            {novedades.fecha && (
+                                <span className="text-[11px] text-muted-foreground">
+                                    {new Date(novedades.fecha).toLocaleDateString("es-PE", { day: "2-digit", month: "2-digit", year: "numeric" })}
+                                </span>
+                            )}
+                        </div>
+                        <ul className="max-h-[40vh] space-y-2.5 overflow-y-auto pr-1">
+                            {novedades.cambios.map((c, i) => {
+                                const t = TIPO[c.tipo] ?? TIPO.mejora
+                                const Icono = t.icono
+                                return (
+                                    <li key={c.id} style={{ animationDelay: `${Math.min(i, 10) * 60}ms` }}
+                                        className="flex gap-3 rounded-xl border bg-card p-3 shadow-sm animate-in fade-in-0 slide-in-from-bottom-2 fill-mode-both">
+                                        <span className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${t.clase}`}><Icono className="h-4 w-4" /></span>
+                                        <div className="min-w-0">
+                                            <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">{c.modulo} · {t.texto}</p>
+                                            <p className="text-sm font-semibold leading-snug text-foreground">{c.titulo}</p>
+                                            {c.descripcion && <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">{c.descripcion}</p>}
+                                        </div>
+                                    </li>
+                                )
+                            })}
+                        </ul>
+                    </div>
+                )}
 
                 <div className="flex items-start gap-3 px-6 py-5 text-sm text-muted-foreground">
                     <RefreshCw className="mt-0.5 h-4 w-4 shrink-0 text-blue-600" />
