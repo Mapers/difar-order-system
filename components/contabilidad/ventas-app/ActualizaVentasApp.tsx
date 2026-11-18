@@ -3,7 +3,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
     AlertTriangle, ArrowRight, BookOpen, CalendarDays, CheckCircle2, CircleDashed, Clock, CloudUpload, Database,
-    Eye, FileMinus2, FileText, Filter, Layers, ListChecks, Loader2, RefreshCw, Search, TableProperties, Upload, Users, XCircle,
+    Calculator, Eye, FileMinus2, FileText, Filter, Layers, ListChecks, Loader2, RefreshCw, Search, TableProperties, Upload, Users, XCircle,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -100,6 +100,9 @@ export function ActualizaVentasApp() {
 
     const conteo = (t: FiltroTipo) => filas.filter(f => t === 'todos' || f.tipo_doc === t).length
     const ncPendientes = filas.filter(f => f.tipo_doc === '07' && f.estado_carga === 'PENDIENTE').length
+    // Suma total del mes: ventas (facturas y boletas) + notas de crédito (en negativo).
+    const sumaVentas = filas.filter(f => f.tipo_doc !== '07').reduce((s, f) => s + f.total, 0)
+    const sumaNC = filas.filter(f => f.tipo_doc === '07').reduce((s, f) => s + f.total, 0)
 
     // ------------------------------------------------------------ carga (cola con animación)
     const abrirCola = (lista: ComprobanteApp[]) => {
@@ -212,12 +215,15 @@ export function ActualizaVentasApp() {
             )}
 
             {/* Estado del mes */}
-            <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+            <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
                 <Tarjeta icono={FileText} titulo="Comprobantes" valor={resumen?.total ?? '—'} sub={`${MESES[Number(mes) - 1]} ${anio}`} color="from-blue-500 to-indigo-600" cargando={cargando} />
                 <Tarjeta icono={CheckCircle2} titulo="Cargados" valor={resumen?.cargados ?? '—'} sub={resumen ? soles(resumen.montoCargado) : ''} color="from-emerald-500 to-teal-600" cargando={cargando} />
                 <Tarjeta icono={Clock} titulo="Pendientes" valor={resumen?.pendientes ?? '—'} sub={resumen ? soles(resumen.montoPendiente) : ''} color="from-amber-500 to-orange-500" cargando={cargando} />
                 <Tarjeta icono={FileMinus2} titulo="NC pendientes" valor={cargando ? '—' : ncPendientes} sub="Notas de crédito sin cargar" color="from-violet-500 to-fuchsia-600" cargando={cargando} />
-                <Tarjeta icono={AlertTriangle} titulo="Con observación" valor={resumen ? resumen.conProblema + resumen.parciales : '—'} sub="Parciales o sin ficha/cuenta" color="from-rose-500 to-red-500" cargando={cargando} className="col-span-2 lg:col-span-1" />
+                <Tarjeta icono={AlertTriangle} titulo="Con observación" valor={resumen ? resumen.conProblema + resumen.parciales : '—'} sub="Parciales o sin ficha/cuenta" color="from-rose-500 to-red-500" cargando={cargando} />
+                <Tarjeta icono={Calculator} titulo="Suma total" valor={resumen ? soles(sumaVentas + sumaNC) : '—'}
+                         sub={resumen ? `Ventas ${soles(sumaVentas)} · NC ${soles(sumaNC)}` : ''} color="from-cyan-500 to-sky-600" cargando={cargando}
+                         className="ring-1 ring-cyan-500/30" />
             </div>
             {!cargando && resumen && resumen.total > 0 && (
                 <div className="rounded-2xl border bg-card p-3 shadow-sm">
