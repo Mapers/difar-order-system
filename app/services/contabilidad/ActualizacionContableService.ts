@@ -72,6 +72,16 @@ export const ActualizacionContableService = {
         const { data } = await apiClient.get(`${base}/${bloque}/revisar`, { params: { anio }, timeout: 180000 })
         return data.data
     },
+    /** Arreglar: el backend vuelve a revisar y acepta solo las copias que siguen duplicadas. */
+    async repararPreparar(anio: number, bloque: BloqueClave, seleccion: { tabla: string; id: number }[]): Promise<{ token: string; lotes: number; total: number; porTabla: { tabla: string; filas: number; backup: string }[]; rechazadas: number }> {
+        const { data } = await apiClient.post(`${base}/reparar/preparar`, { anio, bloque, seleccion }, { timeout: 180000 })
+        return data.data
+    },
+    /** Un lote: copia al backup y recién después borra (todo o nada). */
+    async repararEjecutar(token: string, lote: number): Promise<{ lote: number; de: number; tabla: string; respaldadas: number; eliminadas: number; yaNoExistian: number; tablaBackup: string; loteBackup: string }> {
+        const { data } = await apiClient.post(`${base}/reparar/ejecutar`, { token, lote }, { timeout: 180000 })
+        return data.data
+    },
     async alcanceElimina(anio: number): Promise<{ anio: string; filas: FilaAlcance[]; resumen: { totalFilas: number; filasQueNoVuelven: number } }> {
         const { data } = await apiClient.get(`${base}/alcance-elimina`, { params: { anio }, timeout: 180000 })
         return data.data

@@ -3,7 +3,7 @@
 import React, { useMemo, useRef, useState } from 'react'
 import {
     AlertTriangle, CalendarDays, CheckCircle2, CircleDashed, Copy, FileDown, GitCompare, Landmark, Loader2,
-    PlayCircle, Search, ShieldAlert, ShoppingCart, Trash2, Users, Wallet, BookOpen, XCircle,
+    PlayCircle, Search, Wrench, ShieldAlert, ShoppingCart, Trash2, Users, Wallet, BookOpen, XCircle,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -113,7 +113,7 @@ export function ActualizacionContable() {
     const turno = useRef(0)
     const reiniciar = (nuevo: string) => {
         turno.current++
-        setAnio(nuevo); setAlcance(null); setPagina(1)
+        setAnio(nuevo); setAlcance(null); setPagina(1); setSel(new Set())
         setBloques(Object.fromEntries(BLOQUES.map(b => [b.clave, { estado: 'espera' }])) as Record<BloqueClave, EstadoBloque>)
     }
 
@@ -162,6 +162,36 @@ export function ActualizacionContable() {
     const visibles = detalle.slice((pagina - 1) * POR_PAGINA, pagina * POR_PAGINA)
     const cuenta = (e: 'todos' | EstadoDiferencia) => casosTodos.filter(c => e === 'todos' || c.estado === e).length
     const [verTecnico, setVerTecnico] = useState(false)
+    const [sel, setSel] = useState<Set<string>>(new Set())
+    const [arreglo, setArreglo] = useState<EstadoArreglo | null>(null)
+    const duplicadosVisibles = detalle.filter(c => c.estado === 'DUPLICADO')
+    const seleccionados = casosTodos.filter(c => sel.has(c.clave) && c.estado === 'DUPLICADO')
+    const copiasSel = seleccionados.reduce((s, c) => s + copiasDe(c).length, 0)
+    const todosSel = duplicadosVisibles.length > 0 && duplicadosVisibles.every(c => sel.has(c.clave))
+    const alternar = (c: Caso) => setSel(p => { const n = new Set(p); n.has(c.clave) ? n.delete(c.clave) : n.add(c.clave); return n })
+    const alternarTodos = () => setSel(p => { const n = new Set(p); if (todosSel) duplicadosVisibles.forEach(c => n.delete(c.clave)); else duplicadosVisibles.forEach(c => n.add(c.clave)); return n })
+
+    /** Arreglar: prepara (el backend vuelve a revisar) y ejecuta lote por lote: primero backup, luego borra. */
+    const arreglar = async () => {
+        const seleccion = seleccionados.flatMap(copiasDe)
+        setArreglo({ paso: 'preparando', hechos: 0, lotes: 0, respaldadas: 0, eliminadas: 0, total: seleccion.length, porTabla: [] })
+        try {
+            const p = await ActualizacionContableService.repararPreparar(Number(anio), activo, seleccion)
+            setArreglo(a => ({ ...a!, paso: 'ejecutando', lotes: p.lotes, total: p.total, porTabla: p.porTabla, rechazadas: p.rechazadas }))
+            let respaldadas = 0, eliminadas = 0, loteBackup = ''
+            for (let i = 0; i < p.lotes; i++) {
+                const r = await ActualizacionContableService.repararEjecutar(p.token, i)
+                respaldadas += r.respaldadas; eliminadas += r.eliminadas; loteBackup = r.loteBackup
+                setArreglo(a => ({ ...a!, hechos: i + 1, respaldadas, eliminadas, tablaActual: r.tabla, loteBackup }))
+            }
+            setArreglo(a => ({ ...a!, paso: 'listo' }))
+            setSel(new Set())
+            revisar([activo])
+        } catch (e) {
+            const msg = await textoError(e, 'No se pudo arreglar.')
+            setArreglo(a => ({ ...(a ?? { hechos: 0, lotes: 0, respaldadas: 0, eliminadas: 0, total: 0, porTabla: [] }), paso: 'error', error: msg }))
+        }
+    }
 
     const global = useMemo(() => {
         const t = { revisados: 0, duplicados: 0, faltantes: 0, sobrantes: 0, importe_distinto: 0 }
@@ -239,7 +269,7 @@ export function ActualizacionContable() {
                     const problemas = t ? t.duplicados + t.faltantes + t.sobrantes + t.importe_distinto : 0
                     const Icono = b.icono
                     return (
-                        <button key={b.clave} type="button" onClick={() => { setActivo(b.clave); setPagina(1) }}
+                        <button key={b.clave} type="button" onClick={() => { setActivo(b.clave); setPagina(1); setSel(new Set()) }}
                                 className={cn('rounded-xl border bg-card p-3 text-left shadow-md shadow-slate-900/10 transition duration-200 animate-in fade-in-0 slide-in-from-top-2 hover:-translate-y-0.5 hover:shadow-lg dark:shadow-black/40', activo === b.clave && 'ring-2 ring-blue-500', e.estado === 'revisando' && 'animate-pulse')}>
                             <div className="flex items-center justify-between gap-2">
                                 <span className="flex items-center gap-2 font-semibold"><Icono className="h-4 w-4 text-blue-600" /> {b.nombre}</span>
@@ -332,12 +362,26 @@ export function ActualizacionContable() {
                             </div>
                         </div>
 
+                        {duplicadosVisibles.length > 0 && (
+                            <div className="sticky top-2 z-10 mt-3 flex flex-wrap items-center gap-3 rounded-xl border bg-card/95 px-3 py-2 shadow-lg backdrop-blur animate-in fade-in-0 slide-in-from-top-2">
+                                <label className="flex cursor-pointer items-center gap-2 text-sm font-medium">
+                                    <input type="checkbox" className="h-4 w-4 accent-rose-600" checked={todosSel} onChange={alternarTodos} />
+                                    Seleccionar todos los duplicados ({entero(duplicadosVisibles.length)})
+                                </label>
+                                <span className="text-sm text-muted-foreground">{entero(seleccionados.length)} caso{seleccionados.length === 1 ? '' : 's'} · {entero(copiasSel)} copia{copiasSel === 1 ? '' : 's'} para quitar</span>
+                                <Button size="sm" disabled={!copiasSel || revisando || !!arreglo && arreglo.paso !== 'listo' && arreglo.paso !== 'error'} onClick={() => setArreglo({ paso: 'confirmar', hechos: 0, lotes: 0, respaldadas: 0, eliminadas: 0, total: copiasSel, porTabla: resumenPorTabla(seleccionados) })}
+                                        className="ml-auto bg-gradient-to-r from-rose-600 to-red-600 text-white shadow-md shadow-rose-600/25 hover:from-rose-700 hover:to-red-700">
+                                    <Wrench className="mr-2 h-4 w-4" /> Arreglar ({entero(copiasSel)})
+                                </Button>
+                            </div>
+                        )}
+
                         {detalle.length === 0 ? (
                             <p className="flex items-center justify-center gap-2 py-6 text-sm text-emerald-700 dark:text-emerald-300"><CheckCircle2 className="h-4 w-4" /> {res.detalle.length ? 'No hay diferencias con ese filtro.' : 'Todo cuadra: no hay diferencias en este bloque.'}</p>
                         ) : (
                             <div className="mt-3 grid grid-cols-1 gap-4 xl:grid-cols-2">
                                 {visibles.map((c, i) => (
-                                    <CardCaso key={`${activo}-${pagina}-${filtro}-${i}`} caso={c} n={(pagina - 1) * POR_PAGINA + i + 1} total={detalle.length} retraso={Math.min(i, 15) * 35} />
+                                    <CardCaso key={`${activo}-${pagina}-${filtro}-${i}`} caso={c} seleccionado={sel.has(c.clave)} onAlternar={() => alternar(c)} n={(pagina - 1) * POR_PAGINA + i + 1} total={detalle.length} retraso={Math.min(i, 15) * 35} />
                                 ))}
                             </div>
                         )}
@@ -351,6 +395,8 @@ export function ActualizacionContable() {
                     </>
                 )}
             </div>
+
+            {arreglo && <DialogoArreglo a={arreglo} onConfirmar={arreglar} onCerrar={() => setArreglo(null)} />}
 
             {/* Lo que borraría "elimina" del Access (informativo) */}
             <div className="rounded-2xl border border-amber-300 bg-amber-50/60 p-3 dark:border-amber-800 dark:bg-amber-950/20 sm:p-4">
@@ -422,6 +468,7 @@ function frase(f: FilaResumen) {
 
 // ------------------------------------------------------------------ casos (lo que ve el usuario)
 interface Caso {
+    clave: string
     estado: EstadoDiferencia
     persona: string | null
     cod: string | null
@@ -432,6 +479,93 @@ interface Caso {
     items: FilaDetalle[]
 }
 
+// ------------------------------------------------------------------ Arreglar
+type EstadoArreglo = {
+    paso: 'confirmar' | 'preparando' | 'ejecutando' | 'listo' | 'error'
+    hechos: number; lotes: number; respaldadas: number; eliminadas: number; total: number
+    porTabla: { tabla: string; filas: number; backup?: string }[]
+    rechazadas?: number; tablaActual?: string; loteBackup?: string; error?: string
+}
+
+/** Las copias de más de un caso duplicado: { tabla, id } de cada fila que sobra. */
+function copiasDe(c: Caso): { tabla: string; id: number }[] {
+    return c.items.filter(f => f.estado === 'DUPLICADO' && f.ids_sobrantes)
+        .flatMap(f => String(f.ids_sobrantes).split(',').map(x => ({ tabla: f.tabla_destino, id: Number(x.trim()) })).filter(x => x.id > 0))
+}
+function resumenPorTabla(casos: Caso[]) {
+    const m = new Map<string, number>()
+    casos.flatMap(copiasDe).forEach(x => m.set(x.tabla, (m.get(x.tabla) ?? 0) + 1))
+    return [...m].map(([tabla, filas]) => ({ tabla, filas, backup: `backup_${tabla}` }))
+}
+
+function DialogoArreglo({ a, onConfirmar, onCerrar }: { a: EstadoArreglo; onConfirmar: () => void; onCerrar: () => void }) {
+    const pct = a.paso === 'listo' ? 100 : a.lotes ? Math.round((a.hechos / a.lotes) * 100) : 0
+    const trabajando = a.paso === 'preparando' || a.paso === 'ejecutando'
+    const pasos: [string, boolean, boolean][] = [
+        ['Verificando que sigan duplicados', a.paso !== 'confirmar', a.paso === 'preparando'],
+        ['Copiando al backup (con fecha y usuario)', a.paso === 'ejecutando' || a.paso === 'listo', a.paso === 'ejecutando'],
+        ['Comprobando que el backup esté completo', a.paso === 'ejecutando' || a.paso === 'listo', a.paso === 'ejecutando'],
+        ['Quitando las copias repetidas', a.paso === 'ejecutando' || a.paso === 'listo', a.paso === 'ejecutando'],
+        ['Listo', a.paso === 'listo', false],
+    ]
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 animate-in fade-in-0">
+            <div className="w-full max-w-lg rounded-2xl border bg-card p-5 shadow-2xl animate-in zoom-in-95 slide-in-from-bottom-4">
+                <h3 className="flex items-center gap-2 text-lg font-bold"><Wrench className="h-5 w-5 text-rose-600" /> Arreglar duplicados</h3>
+
+                {a.paso === 'confirmar' && (
+                    <>
+                        <p className="mt-3 text-sm">Se van a quitar <b>{entero(a.total)}</b> copia{a.total === 1 ? '' : 's'} repetida{a.total === 1 ? '' : 's'}. La fila original de cada movimiento <b>se queda</b>.</p>
+                        <div className="mt-3 space-y-2">
+                            {a.porTabla.map(t => (
+                                <div key={t.tabla} className="rounded-lg border bg-muted/40 px-3 py-2 text-sm">
+                                    <b>{entero(t.filas)}</b> en {donde(t.tabla)}
+                                    <p className="text-xs text-muted-foreground">Primero se copian a la tabla <b>{t.backup}</b> con la fecha y tu usuario; recién después se borran.</p>
+                                </div>
+                            ))}
+                        </div>
+                        <p className="mt-3 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200">Antes de borrar, el sistema vuelve a comprobar que cada fila siga siendo una copia. Si algo no cuadra, no se borra nada de ese grupo.</p>
+                        <div className="mt-4 flex justify-end gap-2">
+                            <Button variant="outline" onClick={onCerrar}>Cancelar</Button>
+                            <Button onClick={onConfirmar} className="bg-gradient-to-r from-rose-600 to-red-600 text-white hover:from-rose-700 hover:to-red-700">Sí, arreglar</Button>
+                        </div>
+                    </>
+                )}
+
+                {a.paso !== 'confirmar' && (
+                    <>
+                        {/* Barra animada */}
+                        <div className="mt-4 h-4 w-full overflow-hidden rounded-full bg-muted">
+                            <div className={cn('h-full rounded-full bg-gradient-to-r from-rose-500 via-red-500 to-emerald-500 transition-all duration-700 ease-out', trabajando && 'animate-pulse')}
+                                 style={{ width: `${a.paso === 'preparando' ? 8 : Math.max(pct, 8)}%` }} />
+                        </div>
+                        <p className="mt-1 text-right text-xs tabular-nums text-muted-foreground">{a.paso === 'preparando' ? 'Preparando…' : `${pct}% · ${entero(a.eliminadas)} de ${entero(a.total)} copias`}</p>
+                        <ul className="mt-3 space-y-1.5 text-sm">
+                            {pasos.map(([t, hecho, activo]) => (
+                                <li key={t} className={cn('flex items-center gap-2 transition', hecho ? 'text-foreground' : 'text-muted-foreground')}>
+                                    {activo ? <Loader2 className="h-4 w-4 animate-spin text-blue-600" /> : hecho ? <CheckCircle2 className="h-4 w-4 text-emerald-500 animate-in zoom-in-50" /> : <CircleDashed className="h-4 w-4" />}
+                                    {t}{activo && a.tablaActual ? ` (${donde(a.tablaActual)})` : ''}
+                                </li>
+                            ))}
+                        </ul>
+                        {a.paso === 'listo' && (
+                            <div className="mt-3 rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm text-emerald-900 animate-in fade-in-0 dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-200">
+                                ✅ Se respaldaron <b>{entero(a.respaldadas)}</b> y se quitaron <b>{entero(a.eliminadas)}</b> copias.
+                                {a.loteBackup && <p className="mt-1 text-xs">Backup: {a.porTabla.map(t => t.backup ?? `backup_${t.tabla}`).join(', ')} · lote <b>{a.loteBackup}</b></p>}
+                                {!!a.rechazadas && <p className="mt-1 text-xs">{entero(a.rechazadas)} ya no estaban duplicadas y no se tocaron.</p>}
+                            </div>
+                        )}
+                        {a.paso === 'error' && <AvisoAmbar className="mt-3" mensaje={<>{a.error}{a.eliminadas ? <> · Ya se habían arreglado {entero(a.eliminadas)} copias (con backup).</> : ' · No se borró nada.'}</>} />}
+                        <div className="mt-4 flex justify-end">
+                            <Button variant="outline" disabled={trabajando} onClick={onCerrar}>{trabajando ? 'Trabajando…' : 'Cerrar'}</Button>
+                        </div>
+                    </>
+                )}
+            </div>
+        </div>
+    )
+}
+
 /** Junta en un caso las filas del mismo documento/voucher con el mismo problema. */
 function agruparCasos(detalle: FilaDetalle[]): Caso[] {
     const m = new Map<string, Caso>()
@@ -439,7 +573,7 @@ function agruparCasos(detalle: FilaDetalle[]): Caso[] {
         const voucher = f.voucher != null && f.voucher !== '' ? String(f.voucher) : null
         const k = [f.estado, f.cod_persona ?? '', f.documento ?? '', voucher ?? '', String(f.fecha ?? '').slice(0, 10)].join('|')
         let c = m.get(k)
-        if (!c) { c = { estado: f.estado, persona: f.nombre_persona, cod: f.cod_persona, documento: documentoClaro(f.documento), fecha: f.fecha, voucher, importe: 0, items: [] }; m.set(k, c) }
+        if (!c) { c = { clave: k, estado: f.estado, persona: f.nombre_persona, cod: f.cod_persona, documento: documentoClaro(f.documento), fecha: f.fecha, voucher, importe: 0, items: [] }; m.set(k, c) }
         c.items.push(f)
         // Importe del movimiento: el de un solo registro correcto (en el mayor, cada lado lleva el mismo monto).
         const uno = f.esperado_filas > 0 ? f.esperado_importe / f.esperado_filas : f.real_filas > 0 ? f.real_importe / f.real_filas : 0
@@ -480,16 +614,19 @@ function Titular({ casos, bloque, anio }: { casos: Caso[]; bloque: string; anio:
 }
 
 /** Una card = un caso, explicado para cualquiera. */
-function CardCaso({ caso: c, n, total, retraso }: { caso: Caso; n: number; total: number; retraso: number }) {
+function CardCaso({ caso: c, n, total, retraso, seleccionado, onAlternar }: { caso: Caso; n: number; total: number; retraso: number; seleccionado: boolean; onAlternar: () => void }) {
     const tipo = queEs(c.items[0].consulta).toLowerCase()
     const quien = c.persona ? <b>{c.persona}</b> : c.cod ? <b>{c.cod}</b> : null
     const color = { DUPLICADO: 'border-rose-300 dark:border-rose-800', FALTA: 'border-amber-300 dark:border-amber-800', SOBRA: 'border-violet-300 dark:border-violet-800', IMPORTE_DISTINTO: 'border-sky-300 dark:border-sky-800' }[c.estado]
     const cabecera = { DUPLICADO: 'bg-rose-600', FALTA: 'bg-amber-500', SOBRA: 'bg-violet-600', IMPORTE_DISTINTO: 'bg-sky-600' }[c.estado]
     return (
         <div style={{ animationDelay: `${retraso}ms`, animationFillMode: 'both' }}
-             className={cn('overflow-hidden rounded-2xl border-2 bg-card shadow-lg shadow-slate-900/10 transition duration-200 animate-in fade-in-0 zoom-in-95 hover:-translate-y-1 hover:shadow-xl dark:shadow-black/40', color)}>
+             className={cn('overflow-hidden rounded-2xl border-2 bg-card shadow-lg shadow-slate-900/10 transition duration-200 animate-in fade-in-0 zoom-in-95 hover:-translate-y-1 hover:shadow-xl dark:shadow-black/40', color, seleccionado && 'ring-4 ring-rose-400/60')}>
             <div className={cn('flex items-center justify-between gap-2 px-4 py-2 text-white', cabecera)}>
-                <span className="text-sm font-extrabold tracking-wide">{TITULO[c.estado]}</span>
+                <span className="flex items-center gap-2 text-sm font-extrabold tracking-wide">
+                    {c.estado === 'DUPLICADO' && <input type="checkbox" aria-label="Seleccionar para arreglar" className="h-4 w-4 cursor-pointer accent-white" checked={seleccionado} onChange={onAlternar} />}
+                    {TITULO[c.estado]}
+                </span>
                 <span className="text-xs opacity-90">Caso {entero(n)} de {entero(total)}</span>
             </div>
             <div className="p-4">
