@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from "react"
+import { useRef, useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -21,6 +21,7 @@ import { useLibroCaja, FilaEdicion } from "./useLibroCaja"
 import { PersonaPicker } from "./PersonaPicker"
 import { PlanillasCaja } from "./PlanillasCaja"
 import { BannerBorrador, ConflictosBorrador, IndicadorBorrador } from "@/components/contabilidad/borrador/BannerBorrador"
+import { useNavegacionEnter } from "@/components/contabilidad/navegacion/useNavegacionEnter"
 
 const money = (v: number) =>
     Number(v ?? 0).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
@@ -50,6 +51,18 @@ const fechaLarga = (fecha?: string) => {
 
 export default function LibroCajaBancosPage() {
     const c = useLibroCaja()
+    // Enter pasa a la casilla siguiente; al final de la última línea con datos agrega una nueva (igual que Access)
+    const grillaRef = useRef<HTMLDivElement>(null)
+    useNavegacionEnter(grillaRef, {
+        activo: !c.cerrado,
+        alFinal: () => {
+            const u = c.filas[c.filas.length - 1]
+            const conDatos = !!u && !!(u.tipoDoc || u.serie || u.numeroDoc || u.persona || u.concepto || Number(u.ingreso) > 0 || Number(u.egreso) > 0)
+            if (!conDatos) return false
+            c.agregarFila()
+            return true
+        },
+    })
     const [confirmEliminarVoucher, setConfirmEliminarVoucher] = useState(false)
     const [confirmEliminarLineas, setConfirmEliminarLineas] = useState(false)
     const [pendientesPlanilla, setPendientesPlanilla] = useState<number | null>(null)
@@ -254,7 +267,7 @@ export default function LibroCajaBancosPage() {
                                     </div>
                                 )}
 
-                                <div className="overflow-auto">
+                                <div className="overflow-auto" ref={grillaRef}>
                                     <table className="w-full min-w-[1100px] text-xs border-collapse">
                                         <thead>
                                             <tr className="sticky top-0 z-10 bg-gradient-to-b from-muted/60 to-muted">

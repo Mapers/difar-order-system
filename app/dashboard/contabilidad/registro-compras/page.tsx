@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useState } from "react"
+import { createContext, useContext, useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -24,6 +24,7 @@ import { toast } from "@/app/hooks/useToast"
 import { useRegistroCompras, CabeceraEdicion, FilaCompra } from "./useRegistroCompras"
 import { BuscadorRemoto } from "./BuscadorRemoto"
 import { ComboTarjeta } from "./ComboTarjeta"
+import { useNavegacionEnter } from "@/components/contabilidad/navegacion/useNavegacionEnter"
 import { ImprimirCompraDialog } from "./ImprimirCompraDialog"
 import { BuscadorDocumentos } from "./BuscadorDocumentos"
 import { SaldoDialog } from "./SaldoDialog"
@@ -68,6 +69,18 @@ export default function RegistroComprasPage() {
         else empezarNueva()
     }
     const ro = c.cerrado
+    // Enter pasa a la casilla siguiente (cabecera y líneas); al final de la última línea con datos agrega una nueva
+    const formRef = useRef<HTMLDivElement>(null)
+    useNavegacionEnter(formRef, {
+        activo: !ro,
+        alFinal: () => {
+            const u = c.filas[c.filas.length - 1]
+            const conDatos = !!u && !!(u.idArticulo || Number(u.cantidad) > 0 || u.lote || Number(u.importeAfecto) > 0 || Number(u.importeNoAfecto) > 0)
+            if (!conDatos) return false
+            c.agregarFila()
+            return true
+        },
+    })
     const t = c.totalesEnVivo
 
     const campo = (k: keyof CabeceraEdicion) => ({
@@ -275,7 +288,7 @@ export default function RegistroComprasPage() {
                        iconoCls={t.descuadrado ? 'bg-red-50 text-red-600 dark:bg-red-950' : 'bg-amber-50 text-amber-600 dark:bg-amber-950'} />
             </div>
 
-            <div className="space-y-5 pt-5">
+            <div className="space-y-5 pt-5" ref={formRef}>
                 {ro && (
                     <Aviso tono="rojo" icono={Lock}>
                         Este documento cayó dentro del cierre contable. Se puede consultar, no modificar.
