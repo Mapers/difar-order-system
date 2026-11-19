@@ -13,7 +13,6 @@ import { useAuth } from "@/context/authContext"
 import { useMetasItems } from "@/app/hooks/useMetasItems"
 import ClientWidgetAlpha from "@/components/tomar-pedido/ClientWidgetAlpha";
 import ProductWidgetAlpha from "@/components/tomar-pedido/ProductWidgetAlpha";
-import ModalPedidoApp from "@/components/tomar-pedido/ModalPedidoApp";
 import OrderSummarySidebar from "@/components/tomar-pedido/OrderSummarySidebar";
 import LotesModal from "@/components/tomar-pedido/Lotesmodal";
 import AutoCreateClientModal from "@/components/tomar-pedido/Autocreateclientmodal";
@@ -38,7 +37,7 @@ import AlmacenModal from "@/components/tomar-pedido/AlmacenModal";
 export default function OrderPageAlpha() {
   const { laboratories } = useLaboratoriesData()
   const order = useOrderPage()
-  const { user, isVendedor } = useAuth()
+  const { user } = useAuth()
 
   const codVendedor = order.isAdmin()
       ? (order.seller?.codigo ?? null)
@@ -70,10 +69,6 @@ export default function OrderPageAlpha() {
     setOpenWidget('client')
     setShowClearOrderDialog(false)
   }
-
-  // Vendedores: los pedidos se toman solo desde la app. No se muestra el
-  // formulario, solo el aviso (que no se puede cerrar).
-  if (isVendedor()) return <ModalPedidoApp />
 
   return (
       <div className="grid gap-6 max-w-6xl mx-auto">
