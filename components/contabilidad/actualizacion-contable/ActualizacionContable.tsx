@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { AvisoAmbar, Combo, claseInput, textoError, useSacudir } from '@/components/contabilidad/datos-generales/comunes'
 import {
-    ActualizacionContableService, BloqueClave, EstadoDiferencia, FilaAlcance, FilaDetalle, ResultadoBloque,
+    ActualizacionContableService, BloqueClave, EstadoDiferencia, FilaAlcance, FilaDetalle, FilaResumen, ResultadoBloque,
 } from '@/app/services/contabilidad/ActualizacionContableService'
 
 // ------------------------------------------------------------------ utilidades
@@ -26,13 +26,70 @@ const BLOQUES: { clave: BloqueClave; nombre: string; consultas: number; icono: R
     { clave: 'prov', nombre: 'Proveedores / Compras', consultas: 17, icono: ShoppingCart },
 ]
 
-const ESTADOS: Record<EstadoDiferencia, { texto: string; chip: string; ayuda: string }> = {
-    DUPLICADO: { texto: 'Duplicado', chip: 'bg-rose-100 text-rose-800 ring-rose-600/20 dark:bg-rose-950/60 dark:text-rose-200', ayuda: 'El movimiento está más veces de lo que corresponde.' },
-    FALTA: { texto: 'Falta', chip: 'bg-amber-100 text-amber-900 ring-amber-600/25 dark:bg-amber-950/60 dark:text-amber-200', ayuda: 'El documento existe pero no tiene su movimiento.' },
-    SOBRA: { texto: 'Sobra', chip: 'bg-violet-100 text-violet-800 ring-violet-600/20 dark:bg-violet-950/60 dark:text-violet-200', ayuda: 'Hay un movimiento cuyo documento ya no existe.' },
-    IMPORTE_DISTINTO: { texto: 'Importe distinto', chip: 'bg-sky-100 text-sky-800 ring-sky-600/20 dark:bg-sky-950/60 dark:text-sky-200', ayuda: 'El movimiento existe pero con otro monto.' },
+const ESTADOS: Record<EstadoDiferencia, { texto: string; plural: string; chip: string; ayuda: string }> = {
+    DUPLICADO: { texto: 'Duplicado', plural: 'Duplicados', chip: 'bg-rose-100 text-rose-800 ring-rose-600/20 dark:bg-rose-950/60 dark:text-rose-200', ayuda: 'El movimiento está más veces de lo que corresponde.' },
+    FALTA: { texto: 'Falta', plural: 'Faltan', chip: 'bg-amber-100 text-amber-900 ring-amber-600/25 dark:bg-amber-950/60 dark:text-amber-200', ayuda: 'El documento existe pero no tiene su movimiento.' },
+    SOBRA: { texto: 'Sobra', plural: 'Sin documento', chip: 'bg-violet-100 text-violet-800 ring-violet-600/20 dark:bg-violet-950/60 dark:text-violet-200', ayuda: 'Hay un movimiento cuyo documento ya no existe.' },
+    IMPORTE_DISTINTO: { texto: 'Importe distinto', plural: 'Otro monto', chip: 'bg-sky-100 text-sky-800 ring-sky-600/20 dark:bg-sky-950/60 dark:text-sky-200', ayuda: 'El movimiento existe pero con otro monto.' },
 }
 const POR_PAGINA = 30
+
+// ------------------------------------------------------------------ textos claros (sin nombres del Access)
+/** Qué es cada consulta del Access, dicho en palabras. Se busca por el primer nombre de la consulta. */
+const QUE_ES: [RegExp, string][] = [
+    [/^BCOS_clientes/i, 'Cobros a clientes por bancos'],
+    [/^BCOS_proveedores/i, 'Pagos a proveedores por bancos'],
+    [/^BCOS_mdestino/i, 'Asiento de destino de bancos'],
+    [/^BCOS_mprovision/i, 'Asiento de bancos (movimiento del banco)'],
+    [/^CAJA_clientes/i, 'Cobros a clientes por caja'],
+    [/^CAJA_proveedores/i, 'Pagos a proveedores por caja'],
+    [/^CAJA_mdestino/i, 'Asiento de destino de caja'],
+    [/^CAJA_megresos/i, 'Asiento de salida de caja (egreso)'],
+    [/^CAJA_mingresos/i, 'Asiento de entrada de caja (ingreso)'],
+    [/^DIAR_clientes_a/i, 'Aplicación a cliente en el diario (NC, canje)'],
+    [/^DIAR_clientes_p/i, 'Cargo a cliente en el diario'],
+    [/^DIAR_proveedores_a/i, 'Aplicación a proveedor en el diario (NC, canje de letras)'],
+    [/^DIAR_proveedores_p/i, 'Cargo a proveedor en el diario (letras)'],
+    [/^DIAR_mprovision/i, 'Asiento del libro diario'],
+    [/^CLIE_msaldoinicial/i, 'Asiento de saldo inicial de clientes'],
+    [/^CLIE_mventas/i, 'Asiento de venta'],
+    [/^CLIE_provision_doc/i, 'Venta (deuda del cliente)'],
+    [/^CLIE_regventas/i, 'Venta en el Registro de Ventas'],
+    [/^CLIE_saldoinicial/i, 'Saldo inicial del cliente (canje de letras)'],
+    [/^CLIE_ventas_inv/i, 'Salida de mercadería por venta'],
+    [/^CLIE_pllacob/i, 'Cobranza de planilla (pago del cliente)'],
+    [/^CLIE_mpllacob/i, 'Asiento de cobranza de planilla'],
+    [/^PROV_compras_ing/i, 'Ingreso de mercadería por compra'],
+    [/^PROV_mcompras_igv/i, 'Asiento del IGV de la compra'],
+    [/^PROV_mcompras_total/i, 'Asiento del total de la compra (deuda con el proveedor)'],
+    [/^PROV_mcompras_vv/i, 'Asiento del valor de la compra (gasto o mercadería)'],
+    [/^PROV_mcompras_d/i, 'Asiento de destino de la compra'],
+    [/^PROV_mpagos/i, 'Asiento del pago de la compra'],
+    [/^PROV_saldoinicial/i, 'Saldo inicial del proveedor (letras)'],
+    [/^PROV_msaldoinicial/i, 'Asiento de saldo inicial de proveedores'],
+    [/^PROV_provision_doc/i, 'Compra (deuda con el proveedor)'],
+    [/^PROV_pagos/i, 'Pago de la compra al proveedor'],
+    [/^PROV_regcompras/i, 'Compra en el Registro de Compras'],
+]
+const queEs = (consulta: string) => QUE_ES.find(([re]) => re.test(consulta.trim()))?.[1] ?? consulta
+const DONDE: Record<string, string> = {
+    'kardex clientes': 'Cuenta corriente de clientes (kardex de clientes)',
+    'kardex proveedores': 'Cuenta corriente de proveedores (kardex de proveedores)',
+    'mayor auxiliar': 'Libro mayor (mayor auxiliar)',
+    'mkardexinventarios': 'Kardex de inventarios',
+    'registro de compras': 'Registro de Compras',
+    'registro de ventas': 'Registro de Ventas',
+}
+const donde = (tabla: string) => DONDE[tabla.trim().toLowerCase()] ?? tabla
+const TIPO_DOC: Record<string, string> = { '00': 'Documento', '01': 'Factura', '02': 'Recibo por honorarios', '03': 'Boleta', '07': 'Nota de crédito', '08': 'Nota de débito', '12': 'Ticket', '14': 'Recibo de servicio', '50': 'DUA', '91': 'Comprobante del exterior' }
+/** "01-F002-82512" → "Factura F002-82512". */
+const documentoClaro = (d: string | null) => {
+    if (!d) return null
+    const [tipo, ...resto] = d.split('-')
+    return TIPO_DOC[tipo] ? `${TIPO_DOC[tipo]} ${resto.join('-')}` : d
+}
+const veces = (n: number) => n === 1 ? '1 vez' : `${entero(n)} veces`
+
 
 type EstadoBloque = { estado: 'espera' | 'revisando' | 'ok' | 'error'; resultado?: ResultadoBloque; error?: string }
 
@@ -92,15 +149,19 @@ export function ActualizacionContable() {
 
     const actual = bloques[activo]
     const res = actual.resultado
+    // Un "caso" = un mismo documento/voucher con el mismo problema (junta, por ejemplo, el cargo y el abono
+    // del mismo pago en el mayor y su fila en la cuenta corriente).
+    const casosTodos = useMemo(() => agruparCasos(res?.detalle ?? []), [res])
     const detalle = useMemo(() => {
         const t = buscar.trim().toLowerCase()
-        return (res?.detalle ?? []).filter(f =>
-            (filtro === 'todos' || f.estado === filtro) &&
-            (!t || `${f.consulta} ${f.tabla_destino} ${f.clave ?? ''} ${f.cod_persona ?? ''} ${f.nombre_persona ?? ''} ${f.documento ?? ''} ${f.cuenta ?? ''} ${f.voucher ?? ''} ${f.ids_reales ?? ''}`.toLowerCase().includes(t)))
-    }, [res, filtro, buscar])
+        return casosTodos.filter(c =>
+            (filtro === 'todos' || c.estado === filtro) &&
+            (!t || c.items.some(f => `${f.consulta} ${f.tabla_destino} ${f.cod_persona ?? ''} ${f.nombre_persona ?? ''} ${f.documento ?? ''} ${documentoClaro(f.documento) ?? ''} ${f.cuenta ?? ''} ${f.voucher ?? ''} ${f.ids_reales ?? ''} ${dmy(f.fecha)}`.toLowerCase().includes(t))))
+    }, [casosTodos, filtro, buscar])
     const paginas = Math.max(1, Math.ceil(detalle.length / POR_PAGINA))
     const visibles = detalle.slice((pagina - 1) * POR_PAGINA, pagina * POR_PAGINA)
-    const cuenta = (e: 'todos' | EstadoDiferencia) => (res?.detalle ?? []).filter(f => e === 'todos' || f.estado === e).length
+    const cuenta = (e: 'todos' | EstadoDiferencia) => casosTodos.filter(c => e === 'todos' || c.estado === e).length
+    const [verTecnico, setVerTecnico] = useState(false)
 
     const global = useMemo(() => {
         const t = { revisados: 0, duplicados: 0, faltantes: 0, sobrantes: 0, importe_distinto: 0 }
@@ -215,7 +276,13 @@ export function ActualizacionContable() {
 
                 {res && (
                     <>
-                        {/* Resumen por consulta del Access (cards) */}
+                        {/* Lo que pasó en este bloque, en una frase */}
+                        <Titular casos={casosTodos} bloque={BLOQUES.find(b => b.clave === activo)?.nombre ?? ''} anio={anio} />
+
+                        <button type="button" onClick={() => setVerTecnico(v => !v)} className="mt-3 text-xs font-medium text-blue-700 underline-offset-2 hover:underline dark:text-blue-300">
+                            {verTecnico ? 'Ocultar el resumen técnico' : 'Ver el resumen técnico (para la contadora)'}
+                        </button>
+                        {verTecnico && (<>
                         <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
                             {res.resumen.map((f, i) => {
                                 const mal = f.duplicados + f.faltantes + f.sobrantes + f.importe_distinto > 0
@@ -225,14 +292,15 @@ export function ActualizacionContable() {
                                              mal ? 'border-amber-300 dark:border-amber-800' : 'border-emerald-200 dark:border-emerald-900')}>
                                         <div className="flex items-start justify-between gap-2">
                                             <div className="min-w-0">
-                                                <p className="break-words font-semibold leading-tight">{f.consulta}</p>
-                                                <p className="mt-0.5 text-xs text-muted-foreground">{f.tabla_destino}{f.modulo ? ` · ${f.modulo}` : ''}</p>
+                                                <p className="break-words font-semibold leading-tight">{queEs(f.consulta)}</p>
+                                                <p className="mt-0.5 text-xs text-muted-foreground">{donde(f.tabla_destino)}</p>
                                             </div>
                                             {mal ? <AlertTriangle className="h-5 w-5 shrink-0 text-amber-500" /> : <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-500" />}
                                         </div>
+                                        <p className={cn('mt-2 text-sm', mal ? 'text-amber-800 dark:text-amber-200' : 'text-emerald-700 dark:text-emerald-300')}>{frase(f)}</p>
                                         <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
-                                            <Dato titulo="Debería haber" valor={entero(f.esperado_filas)} sub={soles(f.esperado_importe)} />
-                                            <Dato titulo="Hay" valor={entero(f.real_filas)} sub={soles(f.real_importe)} resaltar={f.real_filas !== f.esperado_filas} />
+                                            <Dato titulo="Según los documentos" valor={`${entero(f.esperado_filas)} mov.`} sub={soles(f.esperado_importe)} />
+                                            <Dato titulo="En la contabilidad" valor={`${entero(f.real_filas)} mov.`} sub={soles(f.real_importe)} resaltar={f.real_filas !== f.esperado_filas} />
                                         </div>
                                         <div className="mt-3 flex flex-wrap gap-1.5">
                                             <Pastilla texto="OK" v={f.ok} clase="bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-200" siempre />
@@ -247,6 +315,7 @@ export function ActualizacionContable() {
                             })}
                         </div>
                         <p className="mt-1 text-xs text-muted-foreground">"Origen web": movimientos que graba la web (ventas, notas de crédito, facturación electrónica). El formulario del Access no los genera, por eso no se cuentan como sobrantes.</p>
+                        </>)}
 
                         {/* Detalle de diferencias */}
                         <div className="mt-4 flex flex-wrap items-center gap-2">
@@ -254,7 +323,7 @@ export function ActualizacionContable() {
                                 <button key={e} type="button" onClick={() => { setFiltro(e); setPagina(1) }}
                                         className={cn('rounded-full px-3 py-1 text-xs font-medium ring-1 ring-inset transition', filtro === e ? 'bg-blue-600 text-white ring-blue-600' : e === 'todos' ? 'bg-muted ring-border' : ESTADOS[e].chip)}
                                         title={e === 'todos' ? undefined : ESTADOS[e].ayuda}>
-                                    {e === 'todos' ? 'Todas' : ESTADOS[e].texto} ({entero(cuenta(e))})
+                                    {e === 'todos' ? 'Todos los casos' : ESTADOS[e].plural} ({entero(cuenta(e))})
                                 </button>
                             ))}
                             <div className="relative ml-auto w-full sm:w-80">
@@ -266,32 +335,15 @@ export function ActualizacionContable() {
                         {detalle.length === 0 ? (
                             <p className="flex items-center justify-center gap-2 py-6 text-sm text-emerald-700 dark:text-emerald-300"><CheckCircle2 className="h-4 w-4" /> {res.detalle.length ? 'No hay diferencias con ese filtro.' : 'Todo cuadra: no hay diferencias en este bloque.'}</p>
                         ) : (
-                            <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
-                                {visibles.map((f, i) => (
-                                    <div key={`${activo}-${pagina}-${filtro}-${i}`} style={{ animationDelay: `${Math.min(i, 15) * 35}ms`, animationFillMode: 'both' }}
-                                         className="rounded-xl border bg-card p-3 shadow-md shadow-slate-900/10 transition duration-200 animate-in fade-in-0 zoom-in-95 hover:-translate-y-0.5 hover:shadow-lg dark:shadow-black/40">
-                                        <div className="flex items-center justify-between gap-2">
-                                            <span className={cn('rounded-full px-2.5 py-0.5 text-xs font-semibold ring-1 ring-inset', ESTADOS[f.estado]?.chip)}>{ESTADOS[f.estado]?.texto ?? f.estado}</span>
-                                            <span className="text-xs text-muted-foreground">{dmy(f.fecha)}{f.voucher != null && f.voucher !== '' ? ` · Voucher ${f.voucher}` : ''}</span>
-                                        </div>
-                                        <p className="mt-2 break-words font-semibold leading-tight">{f.nombre_persona || 'Sin nombre'}</p>
-                                        <p className="text-xs text-muted-foreground">{[f.cod_persona, f.documento, f.cuenta ? `Cta. ${f.cuenta}` : null].filter(Boolean).join(' · ') || '—'}</p>
-                                        <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
-                                            <Dato titulo="Debería haber" valor={entero(f.esperado_filas)} sub={soles(f.esperado_importe)} />
-                                            <Dato titulo="Hay" valor={entero(f.real_filas)} sub={soles(f.real_importe)} resaltar />
-                                        </div>
-                                        <div className="mt-3 rounded-lg bg-muted/50 px-2.5 py-2 text-xs">
-                                            <p className="text-muted-foreground">{f.consulta} · {f.tabla_destino}</p>
-                                            {f.id_original != null && <p className="mt-0.5">Se conserva Id <b>{f.id_original}</b></p>}
-                                            {f.ids_sobrantes && <p className="mt-0.5 break-all text-rose-700 dark:text-rose-300">De más: {f.ids_sobrantes}</p>}
-                                        </div>
-                                    </div>
+                            <div className="mt-3 grid grid-cols-1 gap-4 xl:grid-cols-2">
+                                {visibles.map((c, i) => (
+                                    <CardCaso key={`${activo}-${pagina}-${filtro}-${i}`} caso={c} n={(pagina - 1) * POR_PAGINA + i + 1} total={detalle.length} retraso={Math.min(i, 15) * 35} />
                                 ))}
                             </div>
                         )}
                         {paginas > 1 && (
                             <div className="mt-2 flex items-center justify-end gap-2 text-sm">
-                                <span className="text-muted-foreground">{entero(detalle.length)} diferencias · página {pagina} de {paginas}</span>
+                                <span className="text-muted-foreground">{entero(detalle.length)} casos · página {pagina} de {paginas}</span>
                                 <Button size="sm" variant="outline" disabled={pagina <= 1} onClick={() => setPagina(p => p - 1)}>Anterior</Button>
                                 <Button size="sm" variant="outline" disabled={pagina >= paginas} onClick={() => setPagina(p => p + 1)}>Siguiente</Button>
                             </div>
@@ -355,6 +407,150 @@ function Tarjeta({ titulo, valor, clase, icono: Icono }: { titulo: string; valor
         </div>
     )
 }
+
+/** Resumen de una consulta en una frase. */
+function frase(f: FilaResumen) {
+    const partes: string[] = []
+    if (f.duplicados) partes.push(`${entero(f.duplicados)} movimiento${f.duplicados === 1 ? ' está' : 's están'} repetido${f.duplicados === 1 ? '' : 's'}`)
+    if (f.faltantes) partes.push(`falta${f.faltantes === 1 ? '' : 'n'} ${entero(f.faltantes)}`)
+    if (f.sobrantes) partes.push(`${entero(f.sobrantes)} sin documento`)
+    if (f.importe_distinto) partes.push(`${entero(f.importe_distinto)} con otro monto`)
+    if (!partes.length) return f.esperado_filas || f.real_filas ? 'Todo cuadra: cada documento tiene su movimiento una sola vez.' : 'No hay movimientos de este tipo en el año.'
+    const t = partes.join(', ')
+    return t.charAt(0).toUpperCase() + t.slice(1) + '.'
+}
+
+// ------------------------------------------------------------------ casos (lo que ve el usuario)
+interface Caso {
+    estado: EstadoDiferencia
+    persona: string | null
+    cod: string | null
+    documento: string | null
+    fecha: string | null
+    voucher: string | null
+    importe: number
+    items: FilaDetalle[]
+}
+
+/** Junta en un caso las filas del mismo documento/voucher con el mismo problema. */
+function agruparCasos(detalle: FilaDetalle[]): Caso[] {
+    const m = new Map<string, Caso>()
+    for (const f of detalle) {
+        const voucher = f.voucher != null && f.voucher !== '' ? String(f.voucher) : null
+        const k = [f.estado, f.cod_persona ?? '', f.documento ?? '', voucher ?? '', String(f.fecha ?? '').slice(0, 10)].join('|')
+        let c = m.get(k)
+        if (!c) { c = { estado: f.estado, persona: f.nombre_persona, cod: f.cod_persona, documento: documentoClaro(f.documento), fecha: f.fecha, voucher, importe: 0, items: [] }; m.set(k, c) }
+        c.items.push(f)
+        // Importe del movimiento: el de un solo registro correcto (en el mayor, cada lado lleva el mismo monto).
+        const uno = f.esperado_filas > 0 ? f.esperado_importe / f.esperado_filas : f.real_filas > 0 ? f.real_importe / f.real_filas : 0
+        c.importe = Math.max(c.importe, Math.abs(uno))
+    }
+    return [...m.values()]
+}
+
+const TITULO: Record<EstadoDiferencia, string> = {
+    DUPLICADO: 'SE DUPLICÓ',
+    FALTA: 'FALTA REGISTRAR',
+    SOBRA: 'REGISTRO SIN DOCUMENTO',
+    IMPORTE_DISTINTO: 'MONTO EQUIVOCADO',
+}
+
+/** Frase grande de lo que pasó en el bloque. */
+function Titular({ casos, bloque, anio }: { casos: Caso[]; bloque: string; anio: string }) {
+    const n = (e: EstadoDiferencia) => casos.filter(c => c.estado === e).length
+    const dup = n('DUPLICADO'), falta = n('FALTA'), sobra = n('SOBRA'), monto = n('IMPORTE_DISTINTO')
+    if (!casos.length) return (
+        <div className="mt-3 flex items-center gap-3 rounded-xl border border-emerald-300 bg-emerald-50 p-4 text-emerald-900 shadow-md animate-in fade-in-0 slide-in-from-bottom-2 dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-200">
+            <CheckCircle2 className="h-8 w-8 shrink-0" />
+            <p className="text-base font-semibold">En {bloque} {anio} todo está bien: cada movimiento está registrado una sola vez y no falta ninguno.</p>
+        </div>
+    )
+    return (
+        <div className="mt-3 rounded-xl border border-amber-300 bg-amber-50 p-4 text-amber-950 shadow-md animate-in fade-in-0 slide-in-from-bottom-2 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-100">
+            <p className="flex items-center gap-2 text-base font-bold"><AlertTriangle className="h-6 w-6 shrink-0 text-amber-500" /> Esto es lo que se encontró en {bloque} {anio}:</p>
+            <ul className="mt-2 space-y-1 pl-8 text-sm sm:text-base">
+                {dup > 0 && <li>🔴 <b>{entero(dup)}</b> movimiento{dup === 1 ? ' está registrado' : 's están registrados'} <b>dos veces</b> (o más). Se cuentan doble en la contabilidad.</li>}
+                {falta > 0 && <li>🟠 <b>{entero(falta)}</b> documento{falta === 1 ? ' no tiene' : 's no tienen'} su registro en la contabilidad.</li>}
+                {sobra > 0 && <li>🟣 <b>{entero(sobra)}</b> registro{sobra === 1 ? '' : 's'} en la contabilidad sin documento que lo respalde.</li>}
+                {monto > 0 && <li>🔵 <b>{entero(monto)}</b> registro{monto === 1 ? '' : 's'} con un monto distinto al del documento.</li>}
+            </ul>
+            <p className="mt-2 pl-8 text-xs opacity-80">Abajo está la lista, uno por uno. Esta pantalla no cambia nada: solo muestra.</p>
+        </div>
+    )
+}
+
+/** Una card = un caso, explicado para cualquiera. */
+function CardCaso({ caso: c, n, total, retraso }: { caso: Caso; n: number; total: number; retraso: number }) {
+    const tipo = queEs(c.items[0].consulta).toLowerCase()
+    const quien = c.persona ? <b>{c.persona}</b> : c.cod ? <b>{c.cod}</b> : null
+    const color = { DUPLICADO: 'border-rose-300 dark:border-rose-800', FALTA: 'border-amber-300 dark:border-amber-800', SOBRA: 'border-violet-300 dark:border-violet-800', IMPORTE_DISTINTO: 'border-sky-300 dark:border-sky-800' }[c.estado]
+    const cabecera = { DUPLICADO: 'bg-rose-600', FALTA: 'bg-amber-500', SOBRA: 'bg-violet-600', IMPORTE_DISTINTO: 'bg-sky-600' }[c.estado]
+    return (
+        <div style={{ animationDelay: `${retraso}ms`, animationFillMode: 'both' }}
+             className={cn('overflow-hidden rounded-2xl border-2 bg-card shadow-lg shadow-slate-900/10 transition duration-200 animate-in fade-in-0 zoom-in-95 hover:-translate-y-1 hover:shadow-xl dark:shadow-black/40', color)}>
+            <div className={cn('flex items-center justify-between gap-2 px-4 py-2 text-white', cabecera)}>
+                <span className="text-sm font-extrabold tracking-wide">{TITULO[c.estado]}</span>
+                <span className="text-xs opacity-90">Caso {entero(n)} de {entero(total)}</span>
+            </div>
+            <div className="p-4">
+                {/* La frase */}
+                <p className="text-[15px] leading-relaxed">
+                    {c.estado === 'DUPLICADO' && <>El movimiento de <b>{soles(c.importe)}</b>{quien && <> de {quien}</>}{c.documento && <> ({c.documento})</>}{c.fecha && <>, del <b>{dmy(c.fecha)}</b></>}{c.voucher && <>, voucher <b>{c.voucher}</b></>}, está registrado <b className="text-rose-700 dark:text-rose-300">más de una vez</b>. Debe estar <b>una sola vez</b>.</>}
+                    {c.estado === 'FALTA' && <>El documento{c.documento && <> <b>{c.documento}</b></>}{quien && <> de {quien}</>}{c.fecha && <>, del <b>{dmy(c.fecha)}</b></>}, por <b>{soles(c.importe)}</b>, <b className="text-amber-700 dark:text-amber-300">no está registrado</b> en la contabilidad.</>}
+                    {c.estado === 'SOBRA' && <>Hay un registro de <b>{soles(c.importe)}</b>{quien && <> de {quien}</>}{c.documento && <> ({c.documento})</>} que <b className="text-violet-700 dark:text-violet-300">no tiene ningún documento</b> que lo respalde.</>}
+                    {c.estado === 'IMPORTE_DISTINTO' && <>El documento{c.documento && <> <b>{c.documento}</b></>}{quien && <> de {quien}</>} está registrado con <b className="text-sky-700 dark:text-sky-300">otro monto</b>.</>}
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">Tipo de movimiento: {tipo}{c.cod && c.persona ? ` · Código ${c.cod}` : ''}</p>
+
+                {/* Dónde y cómo está */}
+                <div className="mt-3 space-y-3">
+                    {c.items.map((f, j) => <Registros key={j} f={f} />)}
+                </div>
+            </div>
+        </div>
+    )
+}
+
+/** Muestra los registros de un lugar como cajitas: ✅ original · ❌ copia que sobra · ⛔ no existe. */
+function Registros({ f }: { f: FilaDetalle }) {
+    const ids = (f.ids_reales ?? '').split(',').map(s => s.trim()).filter(Boolean)
+    const sobran = new Set((f.ids_sobrantes ?? '').split(',').map(s => s.trim()).filter(Boolean))
+    const uno = f.esperado_filas > 0 ? f.esperado_importe / f.esperado_filas : f.real_filas > 0 ? f.real_importe / f.real_filas : 0
+    const faltan = Math.max(0, f.esperado_filas - f.real_filas)
+    return (
+        <div className="rounded-xl border bg-muted/30 p-3">
+            <p className="text-sm font-semibold">{donde(f.tabla_destino)}</p>
+            <p className="text-xs text-muted-foreground">{queEs(f.consulta)}{f.cuenta ? ` · cuenta ${f.cuenta}` : ''}</p>
+            <div className="mt-2 flex flex-wrap gap-2">
+                {ids.map((id, k) => {
+                    const copia = f.estado === 'DUPLICADO' ? sobran.has(id) : f.estado === 'SOBRA'
+                    return (
+                        <div key={id} style={{ animationDelay: `${k * 90}ms`, animationFillMode: 'both' }}
+                             className={cn('min-w-[150px] flex-1 rounded-lg border-2 px-3 py-2 text-sm shadow-sm animate-in fade-in-0 slide-in-from-left-2',
+                                 copia ? 'border-rose-400 bg-rose-50 dark:border-rose-700 dark:bg-rose-950/40' : 'border-emerald-400 bg-emerald-50 dark:border-emerald-700 dark:bg-emerald-950/40')}>
+                            <p className={cn('font-bold', copia ? 'text-rose-700 dark:text-rose-300' : 'text-emerald-700 dark:text-emerald-300')}>
+                                {copia ? (f.estado === 'SOBRA' ? '⚠️ Sin documento' : '❌ Copia repetida') : '✅ Registro correcto'}
+                            </p>
+                            <p className="tabular-nums">{soles(uno)}</p>
+                            <p className="text-xs text-muted-foreground">N.º interno {id}{copia && f.estado === 'DUPLICADO' ? ' · sobra' : ''}</p>
+                        </div>
+                    )
+                })}
+                {Array.from({ length: faltan }).map((_, k) => (
+                    <div key={`f${k}`} className="min-w-[150px] flex-1 rounded-lg border-2 border-dashed border-amber-400 bg-amber-50 px-3 py-2 text-sm animate-in fade-in-0 dark:border-amber-700 dark:bg-amber-950/40">
+                        <p className="font-bold text-amber-700 dark:text-amber-300">⛔ No existe</p>
+                        <p className="tabular-nums">{soles(uno)}</p>
+                        <p className="text-xs text-muted-foreground">Debería estar registrado</p>
+                    </div>
+                ))}
+                {f.estado === 'IMPORTE_DISTINTO' && (
+                    <p className="text-sm">Debería ser <b>{soles(f.esperado_importe)}</b> y está como <b>{soles(f.real_importe)}</b>.</p>
+                )}
+            </div>
+        </div>
+    )
+}
+
 
 function Dato({ titulo, valor, sub, resaltar }: { titulo: string; valor: string; sub?: string; resaltar?: boolean }) {
     return (
