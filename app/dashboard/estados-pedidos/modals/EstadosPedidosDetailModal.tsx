@@ -1,5 +1,6 @@
 'use client'
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
+import { Sucursal } from "@/components/tomar-pedido/SucursalSelector"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import apiClient from "@/app/api/client"
 import { useAuth } from "@/context/authContext"
@@ -23,6 +24,19 @@ export function EstadosPedidosDetailModal({ open, onOpenChange, nroPedido }: Est
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isEditing, setIsEditing] = useState(false)
+  // Sede / dirección de entrega en edición (igual que Mis Pedidos). Arranca en null:
+  // SucursalSelector elige la del cliente al cargar, y si no se toca el PUT no la
+  // manda y el pedido conserva la dirección que tenía.
+  const [sucursal, setSucursal] = useState<Sucursal | null>(null)
+  // La primera sede la elige el selector solo al cargar: esa no cuenta como cambio.
+  const sedeAutomatica = useRef(true)
+  const [sedeTocada, setSedeTocada] = useState(false)
+  const elegirSede = (s: Sucursal) => {
+    setSucursal(s)
+    if (sedeAutomatica.current) sedeAutomatica.current = false
+    else setSedeTocada(true)
+  }
+  const reiniciarSede = () => { setSucursal(null); setSedeTocada(false); sedeAutomatica.current = true }
   const [tempDetalles, setTempDetalles] = useState<PedidoDet[]>([])
 
   const [openAddModal, setOpenAddModal] = useState(false)
@@ -67,6 +81,7 @@ export function EstadosPedidosDetailModal({ open, onOpenChange, nroPedido }: Est
     if (!val) {
       setIsEditing(false)
       setOpenAddModal(false)
+      reiniciarSede()
       agregar.reset()
     }
     onOpenChange(val)
@@ -77,8 +92,10 @@ export function EstadosPedidosDetailModal({ open, onOpenChange, nroPedido }: Est
       setTempDetalles(detalles)
       setSelectedClient(null)
       setSelectedCondition(null)
+      reiniciarSede()
       agregar.reset()
     } else {
+      reiniciarSede()
       setIsLoading(true)
       try {
         const sellerCode = auth.isAdmin() ? "" : (auth.user?.codigo || "")
@@ -113,6 +130,13 @@ export function EstadosPedidosDetailModal({ open, onOpenChange, nroPedido }: Est
         clientePedido: selectedClient?.codigo || selectedClient?.RUC || pedido?.codigoCliente,
         condicionPedido: selectedCondition?.CodigoCondicion || pedido?.condicionPedido,
         idAlmacen: agregar.idAlmacenAGuardar,
+        // La dirección se manda solo si se eligió otra sede o se cambió el cliente
+        ...(sucursal && sucursal.direccion && sucursal.direccion !== pedido?.direccionEntrega
+            && (sedeTocada || (selectedClient?.codigo && selectedClient.codigo !== pedido?.codigoCliente))
+            ? { direccionEntrega: sucursal.direccion,
+                referenciaDireccion: sucursal.referencia || undefined,
+                idSucursal: sucursal.idSucursal || null }
+            : {}),
       }
       const payloadDet = {
         insertedId: pedido?.idPedidocab,
@@ -165,7 +189,9 @@ export function EstadosPedidosDetailModal({ open, onOpenChange, nroPedido }: Est
             onOpenAddModal={setOpenAddModal} addProductSlot={agregar.slot}
             clientsFiltered={filteredClients}
             selectedClient={selectedClient}
-            onClientSelect={setSelectedClient}
+            onClientSelect={c => { setSelectedClient(c); reiniciarSede() }}
+            sucursal={sucursal}
+            onSucursalSelect={elegirSede}
             openClientSearch={openClientSearch}
             setOpenClientSearch={setOpenClientSearch}
             clientSearchQuery={clientSearchQuery}
