@@ -25,6 +25,7 @@ import { useRegistroCompras, CabeceraEdicion, FilaCompra } from "./useRegistroCo
 import { BuscadorRemoto } from "./BuscadorRemoto"
 import { ComboTarjeta } from "./ComboTarjeta"
 import { useNavegacionEnter } from "@/components/contabilidad/navegacion/useNavegacionEnter"
+import { AyudaTeclado } from "@/components/contabilidad/navegacion/AyudaTeclado"
 import { ImprimirCompraDialog } from "./ImprimirCompraDialog"
 import { BuscadorDocumentos } from "./BuscadorDocumentos"
 import { SaldoDialog } from "./SaldoDialog"
@@ -552,6 +553,9 @@ export default function RegistroComprasPage() {
                     )}
 
                     </div>
+
+                    {/* En el celular se usan tarjetas: la ayuda de teclado solo en pantalla grande */}
+                    {!ro && <AyudaTeclado className="hidden lg:flex" />}
 
                     {c.clave && (
                         <div className="flex flex-wrap items-center gap-2 border-t border-border bg-muted/20 px-4 py-2.5">

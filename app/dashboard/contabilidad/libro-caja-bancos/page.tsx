@@ -22,6 +22,7 @@ import { PersonaPicker } from "./PersonaPicker"
 import { PlanillasCaja } from "./PlanillasCaja"
 import { BannerBorrador, ConflictosBorrador, IndicadorBorrador } from "@/components/contabilidad/borrador/BannerBorrador"
 import { useNavegacionEnter } from "@/components/contabilidad/navegacion/useNavegacionEnter"
+import { AyudaTeclado } from "@/components/contabilidad/navegacion/AyudaTeclado"
 
 const money = (v: number) =>
     Number(v ?? 0).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
@@ -308,6 +309,8 @@ export default function LibroCajaBancosPage() {
                                         </tbody>
                                     </table>
                                 </div>
+
+                                {!c.cerrado && <AyudaTeclado />}
 
                                 <div className="flex flex-wrap items-center gap-2 p-4 border-t border-border bg-gradient-to-r from-background to-muted/30">
                                     <Button
