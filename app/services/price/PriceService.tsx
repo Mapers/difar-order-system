@@ -26,6 +26,23 @@ export class PriceService {
     return response.data;
   }
 
+  /**
+   * Para las descargas (Excel / PDF): por almacén también trae los productos con stock 0
+   * (sp_lista_precios_all_2b). Quien llama decide si los quita ("Excluir sin stock").
+   * Si el backend aún no tiene la ruta nueva (404), usa la anterior.
+   */
+  static async getPricesAllDescarga(params?: PriceListParams): Promise<any> {
+    try {
+      const response = await apiClient.get('/price/list-prices-lote/all-2b', { params });
+      return response.data;
+    } catch (error: any) {
+      if (error?.response?.status === 404 && !String(error?.response?.data?.message ?? '').includes('Precios por lote')) {
+        return PriceService.getPricesAll(params);
+      }
+      throw error;
+    }
+  }
+
   static async getLaboratories(): Promise<any> {
     const response = await apiClient.get('/price/laboratories');
     return response.data;

@@ -48,7 +48,7 @@ export async function datosPorAlmacen(
     for (const almacen of almacenes) {
         let filas: any[] = []
         try {
-            const res = await PriceService.getPricesAll({ ...payload, almacen: almacen.IdAlmacen })
+            const res = await PriceService.getPricesAllDescarga({ ...payload, almacen: almacen.IdAlmacen })
             filas = res?.data ?? []
         } catch (error: any) {
             if (error?.response?.status !== 404) throw error

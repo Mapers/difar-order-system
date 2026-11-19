@@ -501,8 +501,9 @@ const ExportPdfButton = ({ payload, filters, porAlmacen = false, almacenSel = nu
   const [loading, setLoading] = useState(false)
 
   const applyFilters = (items: any[]) => {
-    // Siempre se omiten los productos con stock <= 0
-    let result = items.filter(i => Number(i.kardex_saldoCant) > 0)
+    // Igual que el Excel: los productos con stock <= 0 se omiten solo si se marcó "Excluir sin stock"
+    let result = items
+    if (filters?.excludeNoStock) result = result.filter(i => Number(i.kardex_saldoCant) > 0)
     const lowThreshold = Number(filters?.lowStockThreshold);
     if (lowThreshold > 0 && filters?.selectedLabsCount === 1) result = result.filter(i => Number(i.kardex_saldoCant) < lowThreshold)
     if (filters?.selectedPrinciple) result = result.filter(i => i.prod_principio === filters.selectedPrinciple)
@@ -538,7 +539,7 @@ const ExportPdfButton = ({ payload, filters, porAlmacen = false, almacenSel = nu
         }
         datos = { grupos }
       } else {
-        const response = await PriceService.getPricesAll(payload);
+        const response = await PriceService.getPricesAllDescarga(payload);
         datos = { data: applyFilters(response.data || []) }
       }
 

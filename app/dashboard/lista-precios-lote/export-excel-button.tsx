@@ -407,7 +407,7 @@ const ExportExcelButton = ({ payload, filters, porAlmacen = false, almacenSel = 
                 }
                 datos = { grupos }
             } else {
-                const response = await PriceService.getPricesAll(payload)
+                const response = await PriceService.getPricesAllDescarga(payload)
                 datos = { data: applyFilters(response.data || []) }
             }
 
