@@ -1,5 +1,6 @@
 import {
     Home,
+    GitCompare,
     Users,
     Tags,
     Package,
@@ -82,6 +83,7 @@ export const ICON_MAP: Record<string, React.ComponentType<{ className?: string }
     "/dashboard/almacen/ingresos": PackagePlus,
     "/dashboard/almacen/salidas": PackageMinus,
     "/dashboard/contabilidad/actualiza-ventas-app": CloudUpload,
+    "/dashboard/contabilidad/actualizacion-contable": GitCompare,
     "/dashboard/recibo-cuenta-cliente": ReceiptText,
     "/dashboard/usuarios": UserCog,
     "/dashboard/roles": Notebook,
