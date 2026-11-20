@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -67,6 +67,12 @@ export default function LibroCajaBancosPage() {
     const [confirmEliminarVoucher, setConfirmEliminarVoucher] = useState(false)
     const [confirmEliminarLineas, setConfirmEliminarLineas] = useState(false)
     const [pendientesPlanilla, setPendientesPlanilla] = useState<number | null>(null)
+    // ?tab=planillas (enlace "Ir a aceptar" de Planilla de Cobranza) abre la pestaña de planillas.
+    // Se lee en el navegador y no con useSearchParams, que exige un Suspense en la página.
+    const [tab, setTab] = useState("vouchers")
+    useEffect(() => {
+        if (new URLSearchParams(window.location.search).get("tab") === "planillas") setTab("planillas")
+    }, [])
 
     const cat = c.catalogos
     const marcadas = c.filas.filter(f => f.eliminar && f.id !== null).length
@@ -111,7 +117,7 @@ export default function LibroCajaBancosPage() {
                 </div>
             </div>
 
-            <Tabs defaultValue="vouchers" className="grid grid-cols-1 gap-5">
+            <Tabs value={tab} onValueChange={setTab} className="grid grid-cols-1 gap-5">
                 <TabsList className="h-auto w-full justify-start gap-1 sm:w-fit">
                     <TabsTrigger value="vouchers" className="gap-1.5 px-4 py-2 font-semibold">
                         <Receipt className="h-4 w-4" /> Vouchers
