@@ -228,9 +228,10 @@ export function useLibroCaja() {
 
     const agregarFila = () => {
         if (cerrado) return
+        // Como en Access: la línea nueva toma el Tipo doc y la Serie de la línea anterior.
         setFilas(prev => [...prev, {
             id: null, key: proximaKey,
-            tipoDoc: '', serie: '', numeroDoc: '', persona: '', personaNombre: '',
+            tipoDoc: prev[prev.length - 1]?.tipoDoc ?? '', serie: prev[prev.length - 1]?.serie ?? '', numeroDoc: '', persona: '', personaNombre: '',
             concepto: '', ingreso: '', egreso: '', tipoPago: TIPO_PAGO_DEFECTO,
             ctaContable: '', centroCostos: '', idGalpon: '', idConcepto: '',
             eliminar: false, planilla: '',

@@ -183,3 +183,21 @@ body {
 .ventasapp-puntos i:nth-child(2) { animation-delay: .2s; }
 .ventasapp-puntos i:nth-child(3) { animation-delay: .4s; }
 @media (prefers-reduced-motion: reduce) { .ventasapp-indeterminado, .ventasapp-puntos i { animation: none; } }
+/* Formularios de Contabilidad con navegación de teclado (useNavegacionEnter): el foco siempre se ve.
+   La casilla activa lleva borde azul y fondo claro, y su fila queda resaltada. */
+[data-nav-contable] :is(input, select, textarea, button[aria-haspopup]):focus {
+  outline: 2px solid #3b82f6 !important;
+  outline-offset: -1px;
+  background-color: #eff6ff !important;
+  border-color: #3b82f6 !important;
+}
+.dark [data-nav-contable] :is(input, select, textarea, button[aria-haspopup]):focus { background-color: #172554 !important; }
+[data-nav-contable] tbody tr:focus-within > td { background-color: rgb(59 130 246 / 0.07); }
+/* Al pasar de casilla con Enter / flechas: latido azul en la casilla destino */
+@keyframes nav-salto {
+  0%   { box-shadow: 0 0 0 0 rgb(59 130 246 / 0.65); transform: scale(1.04); }
+  60%  { box-shadow: 0 0 0 6px rgb(59 130 246 / 0); transform: scale(1); }
+  100% { box-shadow: 0 0 0 0 rgb(59 130 246 / 0); transform: scale(1); }
+}
+[data-nav-contable] .nav-salto { animation: nav-salto .45s ease-out; position: relative; z-index: 1; }
+@media (prefers-reduced-motion: reduce) { [data-nav-contable] .nav-salto { animation: none; } }
