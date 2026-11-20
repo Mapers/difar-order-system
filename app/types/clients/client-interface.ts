@@ -80,6 +80,12 @@ export interface IEvaluation {
   observacionesGlobal: string
   createdAt: string
   updatedAt: string
+  // Los llena mapEvaluationFromApi y los lee modalClientEdit; faltaban en el tipo.
+  idZona: string | number
+  provincia: string | number
+  idDistrito: string | number
+  numRegistro: string
+  fechaInicio: string
 }
 
 
