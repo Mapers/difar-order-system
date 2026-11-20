@@ -51,6 +51,8 @@ function textoPeriodo(def: DefinicionReporte, f: FiltroInforme) {
     if ((ex.includes('proveedor') || ex.includes('proveedor-obligatorio')))
         partes.push(f.codProveedor ? `Proveedor ${f.nomProveedor || f.codProveedor}` : 'Todos los proveedores')
     if (ex.includes('documento') && f.documento) partes.push(`Documento ${f.documento}`)
+    if (ex.includes('vencimiento') && (f.vctoDesde || f.vctoHasta))
+        partes.push(f.vctoDesde && f.vctoHasta ? `Vence del ${fmtFecha(f.vctoDesde)} al ${fmtFecha(f.vctoHasta)}` : f.vctoDesde ? `Vence desde ${fmtFecha(f.vctoDesde)}` : `Vence hasta ${fmtFecha(f.vctoHasta)}`)
     if (ex.includes('tipo-doc')) partes.push(({ '01': 'Solo facturas', '80': 'Solo letras' } as Record<string, string>)[f.tipoDoc || ''] ?? 'Todos los documentos')
     if (ex.includes('buscar') && f.buscar) partes.push(`Búsqueda "${f.buscar}"`)
     if (ex.includes('nivel') && f.nivel) partes.push(`Nivel ${f.nivel}`)
@@ -116,6 +118,10 @@ export function PaginaInformes({ titulo, descripcion, pestanas, aviso, onFila, r
         }
         if (extras.includes('cuenta') && filtro.cuenta && !/^\d{1,12}$/.test(filtro.cuenta)) {
             setAviso('La cuenta solo lleva números (por ejemplo 10 o 1010101). Déjala vacía para ver todas.')
+            return
+        }
+        if (extras.includes('vencimiento') && filtro.vctoDesde && filtro.vctoHasta && filtro.vctoDesde > filtro.vctoHasta) {
+            setAviso('El vencimiento "desde" no puede ser mayor que el "hasta".')
             return
         }
         cargar(activa, def.filtro, filtro, extras)

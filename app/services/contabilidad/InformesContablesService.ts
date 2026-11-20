@@ -21,6 +21,7 @@ export function parametrosDe(filtro: TipoFiltro, f: FiltroInforme, extras: Filtr
     const poner = (k: string, v?: string) => { if (v && v.trim()) p[k] = v.trim() }
     if (extras.includes('proveedor') || extras.includes('proveedor-obligatorio')) poner('codProveedor', f.codProveedor)
     if (extras.includes('documento')) poner('documento', f.documento)
+    if (extras.includes('vencimiento')) { poner('vctoDesde', f.vctoDesde); poner('vctoHasta', f.vctoHasta) }
     if (extras.includes('tipo-doc')) poner('tipoDoc', f.tipoDoc)
     if (extras.includes('buscar')) poner('buscar', f.buscar)
     if (extras.includes('nivel')) poner('nivel', f.nivel)

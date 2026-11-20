@@ -118,6 +118,20 @@ export function FiltrosExtra({ extras, filtro, onChange, onEnter, pedirProveedor
                            onChange={e => set({ documento: e.target.value.toUpperCase() })} onKeyDown={enter} maxLength={30} />
                 </div>
             )}
+            {extras.includes('vencimiento') && (
+                <>
+                    <div className="flex flex-col gap-1.5 md:col-span-2">
+                        <Label htmlFor="fvdesde">Vencimiento desde <span className="text-xs text-muted-foreground">(opcional)</span></Label>
+                        <Input id="fvdesde" type="date" className="bg-background" value={filtro.vctoDesde ?? ''}
+                               onChange={e => set({ vctoDesde: e.target.value })} onKeyDown={enter} />
+                    </div>
+                    <div className="flex flex-col gap-1.5 md:col-span-2">
+                        <Label htmlFor="fvhasta">Vencimiento hasta <span className="text-xs text-muted-foreground">(opcional)</span></Label>
+                        <Input id="fvhasta" type="date" className="bg-background" value={filtro.vctoHasta ?? ''} min={filtro.vctoDesde || undefined}
+                               onChange={e => set({ vctoHasta: e.target.value })} onKeyDown={enter} />
+                    </div>
+                </>
+            )}
             {extras.includes('tipo-doc') && (
                 <div className="flex flex-col gap-1.5 md:col-span-2">
                     <Label>Documentos</Label>

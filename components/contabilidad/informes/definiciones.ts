@@ -157,9 +157,9 @@ export const DEFINICIONES: Record<ClaveReporte, DefinicionReporte> = {
 
     // ---------------- Informes Proveedores
     'proveedores-cta-cte': {
-        clave: 'proveedores-cta-cte', titulo: 'Cuenta corriente', filtro: 'ninguno', extras: ['proveedor', 'documento'], leyenda: LEYENDA_KARDEX,
+        clave: 'proveedores-cta-cte', titulo: 'Cuenta corriente', filtro: 'ninguno', extras: ['proveedor', 'documento', 'vencimiento'], leyenda: LEYENDA_KARDEX,
         access: 'Provedores › CtaGeneral / CtaProveedor / UnDocumento',
-        descripcion: 'Movimientos (provisión y pagos) de cada documento. Sin proveedor: todos; con proveedor: solo ese; con documento: solo ese documento.',
+        descripcion: 'Movimientos (provisión y pagos) de cada documento. Sin proveedor: todos; con proveedor: solo ese; con documento: solo ese documento; con vencimiento: solo los documentos que vencen en esas fechas.',
         columnas: [c('NombreProveedor', 'Proveedor', 'texto', { movil: 'subtitulo' }), c('RucProveedor', 'RUC', 'mono'),
             comprobante('Documento', 'Serie', 'Numero'), c('FechaEmision', 'F. Emisión', 'fecha'), c('FechaVcto', 'F. Vcto', 'fecha'),
             c('FechaAmortizacion', 'F. Pago', 'fecha'), montoOriginal('Provision', 'Provisión'), montoOriginal('Amortizacion', 'Amortiz.'),

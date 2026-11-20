@@ -29,7 +29,7 @@ export type TipoFiltro = 'mes' | 'anio' | 'rango' | 'fecha' | 'ninguno'
  *   proveedor / proveedor-obligatorio · documento (TT-SERIE-NUMERO) · tipo-doc (programa de pagos) · buscar · nivel (plan de cuentas)
  *   cuenta (prefijo de cuenta del Libro Mayor, opcional)
  */
-export type FiltroExtra = 'proveedor' | 'proveedor-obligatorio' | 'documento' | 'tipo-doc' | 'buscar' | 'nivel' | 'cuenta'
+export type FiltroExtra = 'proveedor' | 'proveedor-obligatorio' | 'documento' | 'tipo-doc' | 'buscar' | 'nivel' | 'cuenta' | 'vencimiento'
 
 export interface FiltroInforme {
     anio: string
@@ -44,6 +44,9 @@ export interface FiltroInforme {
     /** Solo para mostrar ("RUC Nombre"); no se envía. */
     nomProveedor?: string
     documento?: string
+    /** Fecha de vencimiento del documento (cuenta corriente de proveedores), opcional. */
+    vctoDesde?: string
+    vctoHasta?: string
     tipoDoc?: string
     buscar?: string
     nivel?: string
