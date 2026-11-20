@@ -237,7 +237,7 @@ export function ActualizacionContable() {
                     <div className="min-w-0">
                         <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Contabilidad · Datos de movimientos</p>
                         <h1 className="text-xl font-bold leading-tight sm:text-2xl">Actualización Contable</h1>
-                        <p className="mt-0.5 text-sm text-muted-foreground">Compara lo que grabaría el Access con lo que hay en kardex, mayor y registros. <b>No borra ni graba nada.</b></p>
+                        <p className="mt-0.5 text-sm text-muted-foreground">Compara lo que grabaría el Access con lo que hay en kardex, mayor y registros. <b>Revisar no borra ni graba nada.</b> Solo el botón <b>Arreglar</b> quita copias duplicadas, y antes las guarda en su tabla <b>backup_</b>.</p>
                     </div>
                 </div>
                 <div className="flex flex-wrap items-end gap-2">
