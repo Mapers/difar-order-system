@@ -29,6 +29,37 @@ export interface LineaRecibo {
     saldo_documento: number | null
     observaciones: string
     simbolo_moneda: string
+    /** Vencimiento del documento (solo los que vienen de la cuenta del cliente). */
+    fecha_vcto?: string | null
+    /** Recibos vigentes que ya incluyen este documento (para avisar antes de repetir). */
+    en_recibos?: { cantidad: number; importe: number; ultimo: string | null } | null
+}
+
+/** Documento con saldo del cliente (GET /recibos/documentos-cliente). Una fila por documento. */
+export interface DocumentoRecibo {
+    IdKardexClientes: number
+    Cod_Clie: string
+    Tipo_Doc: string
+    Abre_Doc: string | null
+    SerieDoc: string
+    NumeroDoc: number | string
+    documento_completo: string
+    Fecha_Emision: string | null
+    Fecha_Vcto: string | null
+    CodVend: string | null
+    Tipo_Moneda: string | null
+    Simb_Moneda: string | null
+    saldo_pendiente: number | string
+    recibos_vigentes: number | string
+    importe_en_recibos: number | string
+    ultimo_recibo: string | null
+}
+
+/** Respuesta 409 del backend: documentos que ya están en otro recibo vigente. */
+export interface DocumentoRepetido {
+    documento: string
+    ultimo_recibo: string
+    importe_en_recibos: number
 }
 
 export interface ReciboDetalle {
@@ -85,6 +116,8 @@ export interface ReciboCabecera {
 }
 
 export interface NuevoRecibo {
+    /** true = el usuario ya vio el aviso de documentos que están en otro recibo y confirmó. */
+    confirmar_repetidos?: boolean
     fecha_emision: string
     ciudad: string
     cod_cliente: string

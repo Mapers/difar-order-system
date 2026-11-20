@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from 'react'
 import apiClient from '@/app/api/client'
 import { toast } from '@/app/hooks/useToast'
 import {
+    DocumentoRepetido,
     FiltrosHistorial,
     NuevoRecibo,
     ReciboCabecera,
@@ -75,7 +76,14 @@ export function useReciboCliente() {
         }
     }, [])
 
-    const emitirRecibo = useCallback(async (payload: NuevoRecibo): Promise<ReciboEmitido | null> => {
+    /**
+     * Emite el recibo. Si el backend avisa (409) que hay documentos en otro recibo vigente,
+     * no muestra error: llama a `onRepetidos` para que la pantalla pida confirmación.
+     */
+    const emitirRecibo = useCallback(async (
+        payload: NuevoRecibo,
+        onRepetidos?: (repetidos: DocumentoRepetido[]) => void,
+    ): Promise<ReciboEmitido | null> => {
         setEmitiendo(true)
         try {
             const res = await apiClient.post('/recibos', payload)
@@ -93,7 +101,8 @@ export function useReciboCliente() {
             const wp = data.recibo.whatsapp_estado
 
             const aviso =
-                wp === 'OK' ? 'Enviado a Gerencia por WhatsApp.'
+                wp === 'ENVIANDO' ? 'Se está enviando a Gerencia por WhatsApp; el resultado queda en el Historial.'
+                : wp === 'OK' ? 'Enviado a Gerencia por WhatsApp.'
                     : wp === 'PARCIAL' ? 'Enviado a Gerencia con el enlace al PDF; no se pudo adjuntar el archivo.'
                         : wp === 'SIN_DESTINO' ? 'No hay números configurados en el módulo RECIBO.'
                             : 'No se pudo enviar el WhatsApp; el recibo quedó guardado.'
@@ -101,11 +110,16 @@ export function useReciboCliente() {
             toast({
                 title: `✓ Recibo ${data.recibo.numero_recibo} generado`,
                 description: aviso,
-                variant: wp === 'OK' ? 'success' : 'warning',
+                variant: wp === 'OK' || wp === 'ENVIANDO' ? 'success' : 'warning',
             })
 
             return data
         } catch (error: any) {
+            const repetidos = error?.response?.data?.data?.repetidos
+            if (error?.response?.status === 409 && Array.isArray(repetidos) && onRepetidos) {
+                onRepetidos(repetidos)
+                return null
+            }
             toast({
                 title: 'Error',
                 description: error?.response?.data?.message || 'No se pudo generar el recibo.',

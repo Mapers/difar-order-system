@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import { Loader2 } from 'lucide-react'
 import apiClient from '@/app/api/client'
 import { useAuth } from '@/context/authContext'
@@ -13,11 +13,13 @@ import { IClient } from '@/app/types/clients/client-interface'
 import {
     CONCEPTOS, TIPOS_LIQUIDACION, ConceptoRecibo, TipoLiquidacion,
     LineaRecibo, MonedaRecibo, NuevoRecibo, ReciboCabecera, simboloMoneda,
+    DocumentoRecibo, DocumentoRepetido,
 } from '@/app/types/recibo-cliente-types'
 import {
-    DocumentoCliente, consolidarPendientes,
-} from '@/components/contabilidad/planilla-cobranza/SeleccionarDocumentoModal'
-import { ReciboDetalleTabla } from './ReciboDetalleTabla'
+    AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+    AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
+import { ReciboDetalleTabla, erroresDeLineas } from './ReciboDetalleTabla'
 import { FirmaPad } from './FirmaPad'
 import { AutocompleteBuscador, OpcionAutocomplete } from './AutocompleteBuscador'
 
@@ -52,8 +54,21 @@ function componerFecha(dia: string, mesIdx: number, anio: string) {
 }
 
 const CAMPO =
-    'bg-transparent border-0 border-b border-[#8aa0cf] outline-none px-1 py-0.5 ' +
-    'text-[#12388f] placeholder:text-[#b9c4dd] focus:border-[#d21f27] focus:bg-[#f4f7ff]'
+    'bg-transparent border-0 border-b border-[#9a8c6a] outline-none px-1 py-0.5 ' +
+    'text-[#1b2f63] placeholder:text-[#b7aa8a] focus:border-[#9b1c22] focus:bg-[#fbf6e8]'
+
+// Papel antiguo pero sobrio: crema cálido, bordes algo tostados, rayado muy tenue y tinta azul.
+const PAPEL: React.CSSProperties = {
+    backgroundColor: '#f7f0dc',
+    backgroundImage: [
+        'radial-gradient(ellipse at center, rgba(255,252,240,.85) 0%, rgba(247,240,220,0) 60%)',
+        'radial-gradient(ellipse at top left, rgba(160,120,60,.10), transparent 55%)',
+        'radial-gradient(ellipse at bottom right, rgba(140,100,50,.12), transparent 55%)',
+        'repeating-linear-gradient(0deg, rgba(120,95,50,.035) 0px, rgba(120,95,50,.035) 1px, transparent 1px, transparent 28px)',
+    ].join(','),
+    boxShadow: 'inset 0 0 60px rgba(120,90,40,.18), 0 10px 30px rgba(40,30,10,.18)',
+}
+const SERIF = { fontFamily: 'Georgia, "Times New Roman", serif' }
 
 function Casilla({
     marcada, onToggle, children,
@@ -68,9 +83,9 @@ function Casilla({
             role="checkbox"
             aria-checked={marcada}
             onClick={onToggle}
-            className="flex items-center gap-1.5 text-[12px] font-bold text-[#12388f] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[#d21f27]"
+            className="flex items-center gap-1.5 text-[12px] font-bold text-[#1b2f63] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[#9b1c22]"
         >
-            <span className="flex h-[15px] w-[15px] shrink-0 items-center justify-center rounded-[2px] border-[1.5px] border-[#12388f] text-[12px] leading-none">
+            <span className="flex h-[15px] w-[15px] shrink-0 items-center justify-center rounded-[2px] border-[1.5px] border-[#1b2f63] text-[12px] leading-none">
                 {marcada ? '✕' : ''}
             </span>
             {children}
@@ -95,7 +110,8 @@ export function ReciboForm({ onEmitido }: Props) {
     const [observacion, setObservacion] = useState('')
     const [lineas, setLineas] = useState<LineaRecibo[]>([])
     const [moneda, setMoneda] = useState<MonedaRecibo>(1)
-    const [documentos, setDocumentos] = useState<DocumentoCliente[]>([])
+    const [documentos, setDocumentos] = useState<DocumentoRecibo[]>([])
+    const [repetidos, setRepetidos] = useState<DocumentoRepetido[] | null>(null)
     const [cargandoDocs, setCargandoDocs] = useState(false)
     const [firmaCliente, setFirmaCliente] = useState<string | null>(null)
     const [firmaVendedor, setFirmaVendedor] = useState<string | null>(null)
@@ -125,14 +141,14 @@ export function ReciboForm({ onEmitido }: Props) {
         let cancelado = false
         setCargandoDocs(true)
 
+        // Una fila por documento con su saldo real (todos los pagos restados). Si quien entra es
+        // vendedor, el servidor solo le devuelve sus documentos.
         const params = new URLSearchParams({ cod_clie: codCliente })
-        if (isVendedor() && user?.codigo) params.append('cod_vend', user.codigo)
 
-        apiClient.get(`/planilla-cobranza/documentos-cliente?${params}`)
+        apiClient.get(`/recibos/documentos-cliente?${params}`)
             .then(res => {
                 if (cancelado) return
-                const docs: DocumentoCliente[] = res.data?.data?.data ?? []
-                setDocumentos(consolidarPendientes(docs))
+                setDocumentos(res.data?.data?.data ?? [])
             })
             .catch(() => {
                 if (cancelado) return
@@ -190,13 +206,19 @@ export function ReciboForm({ onEmitido }: Props) {
 
             if (prev.length === 0) setMoneda(monedaDoc)
 
+            const enRecibos = Number(doc.recibos_vigentes) > 0
+                ? { cantidad: Number(doc.recibos_vigentes), importe: Number(doc.importe_en_recibos) || 0, ultimo: doc.ultimo_recibo }
+                : null
+
             return [...prev, {
+                fecha_vcto: doc.Fecha_Vcto,
+                en_recibos: enRecibos,
                 uid: `kardex-${doc.IdKardexClientes}`,
                 id_kardex_cliente: doc.IdKardexClientes,
                 tipo_documento: doc.Tipo_Doc ?? '',
                 abre_documento: doc.Abre_Doc ?? '',
                 serie: doc.SerieDoc ?? '',
-                numero_doc: doc.NumeroDoc ?? '',
+                numero_doc: String(doc.NumeroDoc ?? ''),
                 documento_completo: doc.documento_completo ?? '',
                 importe: String(doc.saldo_pendiente ?? 0),
                 saldo_documento: Number(doc.saldo_pendiente ?? 0),
@@ -221,7 +243,10 @@ export function ReciboForm({ onEmitido }: Props) {
             .map(d => ({
                 value: String(d.IdKardexClientes),
                 label: `${d.Abre_Doc ?? ''} ${d.documento_completo ?? ''}`.trim(),
-                descripcion: d.Fecha_Vcto ? `Vence ${String(d.Fecha_Vcto).slice(0, 10)}` : undefined,
+                descripcion: [
+                    d.Fecha_Vcto ? `Vence ${String(d.Fecha_Vcto).slice(0, 10)}` : null,
+                    Number(d.recibos_vigentes) > 0 ? `ya en recibo ${d.ultimo_recibo ?? ''}`.trim() : null,
+                ].filter(Boolean).join(' · ') || undefined,
                 extra: `${d.Simb_Moneda || 'S/'} ${Number(d.saldo_pendiente ?? 0).toFixed(2)}`,
             })),
         [documentos, lineas]
@@ -258,6 +283,8 @@ export function ReciboForm({ onEmitido }: Props) {
             e.lineas = 'Agrega al menos un documento'
         } else if (lineas.some(l => !l.documento_completo.trim() && !l.tipo_documento.trim())) {
             e.lineas = 'Cada fila necesita tipo o número de documento'
+        } else if (Object.keys(erroresDeLineas(lineas)).length > 0) {
+            e.lineas = 'Revisa los importes marcados en rojo'
         }
 
         if (total <= 0) e.total = 'El total debe ser mayor a cero'
@@ -269,10 +296,11 @@ export function ReciboForm({ onEmitido }: Props) {
         return Object.keys(e).length === 0
     }
 
-    const handleEmitir = async () => {
+    const handleEmitir = async (confirmarRepetidos = false) => {
         if (!validate() || !user || !clienteSel) return
 
         const payload: NuevoRecibo = {
+            confirmar_repetidos: confirmarRepetidos,
             fecha_emision: fecha,
             ciudad,
             cod_cliente: codCliente,
@@ -304,7 +332,7 @@ export function ReciboForm({ onEmitido }: Props) {
             })),
         }
 
-        const data = await emitirRecibo(payload)
+        const data = await emitirRecibo(payload, setRepetidos)
         if (!data) return
 
         limpiar()
@@ -313,21 +341,27 @@ export function ReciboForm({ onEmitido }: Props) {
 
     const error = (campo: string) =>
         errors[campo]
-            ? <p className="mt-1 text-[11px] font-semibold text-[#d21f27]">{errors[campo]}</p>
+            ? <p className="mt-1 text-[11px] font-semibold text-[#9b1c22]">{errors[campo]}</p>
             : null
 
     return (
         <div className="mx-auto max-w-[820px]">
-            <div className="rounded-md border border-[#cfd6e6] bg-[#fdfdf8] p-[clamp(14px,3.5vw,30px)] text-[#12388f] shadow-[0_8px_30px_rgba(20,40,90,.15)]">
+            <div
+                className="relative rounded-[3px] border border-[#cdbf98] p-[clamp(14px,3.5vw,30px)] text-[#1b2f63]"
+                style={PAPEL}
+            >
+                {/* Doble filete interior, como los talonarios impresos. */}
+                <div aria-hidden="true" className="pointer-events-none absolute inset-[7px] rounded-[2px] border border-[#b9a777]/60" />
+                <div aria-hidden="true" className="pointer-events-none absolute inset-[10px] rounded-[2px] border border-[#b9a777]/30" />
 
-                <div className="flex flex-wrap justify-between gap-4 border-b-2 border-[#12388f] pb-2.5">
+                <div className="relative flex flex-wrap justify-between gap-4 border-b-2 border-double border-[#1b2f63] pb-2.5">
                     <div className="flex flex-1 flex-col gap-1 sm:min-w-[250px]">
                         <img
                             src="/difar-logo.png"
                             alt="DIFAR — Distribuidora e Importadora Farmacéutica S.A.C."
                             className="h-auto w-[clamp(180px,42vw,260px)]"
                         />
-                        <div className="text-[9.5px] leading-[1.35] text-[#2b52a8]">
+                        <div className="text-[9.5px] leading-[1.35] text-[#3b4f86]">
                             Ofc. Princip. Urb. Santa Edelmira - Los Eucaliptos 218<br />
                             Dpto. 102 - Telf. 044-289196 - TRUJILLO<br />
                             Jr. M. Villavicencio 783 P.J. Bolívar Bajo - Telf. 043-706762 · ANCASH - SANTA - CHIMBOTE
@@ -336,11 +370,11 @@ export function ReciboForm({ onEmitido }: Props) {
 
                     <div className="w-full sm:w-auto sm:min-w-[220px]">
                         <div className="flex flex-wrap items-baseline justify-end gap-2">
-                            <span className="text-[clamp(16px,4vw,22px)] font-extrabold tracking-[2px]">RECIBO</span>
-                            <span className="text-[clamp(18px,4.5vw,26px)] font-extrabold text-[#d21f27]">N°</span>
-                            <span className="w-[120px] border-b border-[#e39aa0] pb-px text-[clamp(18px,4.5vw,26px)] font-extrabold tracking-wider text-[#d21f27]">
+                            <span className="text-[clamp(17px,4vw,24px)] font-bold tracking-[4px]" style={SERIF}>RECIBO</span>
+                            <span className="text-[clamp(18px,4.5vw,26px)] font-bold text-[#9b1c22]" style={SERIF}>N°</span>
+                            <span className="w-[120px] border-b border-[#c98b8e] pb-px text-[clamp(18px,4.5vw,26px)] font-bold tracking-wider text-[#9b1c22]" style={SERIF}>
                                 {siguienteNumero ?? (
-                                    <span className="text-[13px] font-semibold italic tracking-normal text-[#c9a2a6]">
+                                    <span className="text-[13px] font-semibold italic tracking-normal text-[#b98a8d]">
                                         al generar
                                     </span>
                                 )}
@@ -348,7 +382,7 @@ export function ReciboForm({ onEmitido }: Props) {
                         </div>
 
                         {siguienteNumero && (
-                            <p className="mt-0.5 text-right text-[11px] font-semibold italic text-[#c9a2a6]">
+                            <p className="mt-0.5 text-right text-[11px] font-semibold italic text-[#b98a8d]">
                                 siguiente · referencial
                             </p>
                         )}
@@ -429,15 +463,15 @@ export function ReciboForm({ onEmitido }: Props) {
                 <div className="mt-3.5 flex flex-wrap items-baseline gap-x-5 gap-y-1.5 text-[14px]">
                     <span className="flex w-full min-w-0 items-baseline gap-2.5 sm:w-auto sm:flex-1">
                         <span className="whitespace-nowrap font-bold">Código Cliente (RUC):</span>
-                        <span className="min-w-0 flex-1 border-b border-[#8aa0cf] px-1 py-0.5">
-                            {clienteSel?.numeroDocumento || <span className="text-[#b9c4dd]">—</span>}
+                        <span className="min-w-0 flex-1 border-b border-[#9a8c6a] px-1 py-0.5">
+                            {clienteSel?.numeroDocumento || <span className="text-[#b7aa8a]">—</span>}
                         </span>
                     </span>
 
                     <span className="flex w-full min-w-0 items-baseline gap-2.5 sm:w-auto sm:flex-1">
                         <span className="whitespace-nowrap font-bold">Zona:</span>
-                        <span className="min-w-0 flex-1 border-b border-[#8aa0cf] px-1 py-0.5">
-                            {clienteSel?.zona || <span className="text-[#b9c4dd]">—</span>}
+                        <span className="min-w-0 flex-1 border-b border-[#9a8c6a] px-1 py-0.5">
+                            {clienteSel?.zona || <span className="text-[#b7aa8a]">—</span>}
                         </span>
                     </span>
                 </div>
@@ -473,7 +507,7 @@ export function ReciboForm({ onEmitido }: Props) {
                                     ? 'El cliente no tiene documentos pendientes.'
                                     : 'Ya agregaste todos los que coinciden.'
                             }
-                            className="rounded-lg border border-[#1a7a3c] px-3.5 py-2 text-[13px] font-semibold text-[#1a7a3c]"
+                            className="rounded-lg border border-dashed border-[#1b2f63]/70 bg-[#fbf6e8] px-3.5 py-2 text-[13px] font-semibold text-[#1b2f63]"
                         />
                     }
                     simbolo={simbolo}
@@ -487,10 +521,10 @@ export function ReciboForm({ onEmitido }: Props) {
                     <div className="min-w-0 flex-1 text-[13px] sm:min-w-[300px]">
                         <div className="flex items-baseline gap-2">
                             <span className="whitespace-nowrap font-bold">La cantidad de:</span>
-                            <span className="min-w-0 flex-1 border-b border-[#8aa0cf] px-1 py-0.5">
+                            <span className="min-w-0 flex-1 border-b border-[#9a8c6a] px-1 py-0.5">
                                 {total > 0
                                     ? totalLetras
-                                    : <span className="text-[#b9c4dd]">importe en letras</span>}
+                                    : <span className="text-[#b7aa8a]">importe en letras</span>}
                             </span>
                         </div>
                     </div>
@@ -508,7 +542,7 @@ export function ReciboForm({ onEmitido }: Props) {
                                 {t.value === 'PLANILLA' && tipoLiq === 'PLANILLA' && (
                                     <div className="ml-[22px] mt-1.5 flex items-center gap-1.5 text-[13px]">
                                         <span className="whitespace-nowrap font-bold">
-                                            N° Planilla <span className="text-[#d21f27]">*</span>
+                                            N° Planilla <span className="text-[#9b1c22]">*</span>
                                         </span>
                                         <input
                                             value={numeroPlanilla}
@@ -517,7 +551,7 @@ export function ReciboForm({ onEmitido }: Props) {
                                             placeholder="obligatorio"
                                             aria-label="Número de planilla"
                                             className={`${CAMPO} w-[120px] ${
-                                                errors.numeroPlanilla ? 'border-[#d21f27] bg-[#fdecec]' : ''
+                                                errors.numeroPlanilla ? 'border-[#9b1c22] bg-[#f7d9d4]' : ''
                                             }`}
                                         />
                                     </div>
@@ -557,22 +591,46 @@ export function ReciboForm({ onEmitido }: Props) {
                     data-guia="limpiar-todo"
                     onClick={limpiar}
                     disabled={emitiendo}
-                    className="rounded-lg border border-[#12388f] bg-white px-3.5 py-2 text-[13px] font-semibold text-[#12388f] transition-colors hover:bg-[#12388f] hover:text-white disabled:opacity-40"
+                    className="rounded-lg border border-[#1b2f63] bg-white px-3.5 py-2 text-[13px] font-semibold text-[#1b2f63] transition-colors hover:bg-[#1b2f63] hover:text-white disabled:opacity-40"
                 >
                     Limpiar todo
                 </button>
                 <button
                     type="button"
                     data-guia="generar-recibo"
-                    onClick={handleEmitir}
+                    onClick={() => handleEmitir()}
                     disabled={emitiendo}
-                    className="inline-flex items-center gap-2 rounded-lg border border-[#12388f] bg-[#12388f] px-3.5 py-2 text-[13px] font-semibold text-white transition-colors hover:bg-[#2b52a8] disabled:opacity-60"
+                    className="inline-flex items-center gap-2 rounded-lg border border-[#1b2f63] bg-[#1b2f63] px-3.5 py-2 text-[13px] font-semibold text-white transition-colors hover:bg-[#3b4f86] disabled:opacity-60"
                 >
                     {emitiendo && <Loader2 className="h-4 w-4 animate-spin" />}
                     Generar recibo
                 </button>
             </div>
 
+            <AlertDialog open={repetidos !== null} onOpenChange={(v) => { if (!v) setRepetidos(null) }}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Estos documentos ya están en otro recibo</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            El recibo no descuenta el saldo, así que un mismo cobro podría quedar en dos recibos.
+                            Emítelo solo si es un pago distinto (por ejemplo, otra parte de un pago a cuenta).
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <ul className="space-y-1.5 rounded-md border bg-amber-50 p-3 text-[13px] text-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
+                        {(repetidos ?? []).map(r => (
+                            <li key={r.documento}>
+                                <b>{r.documento}</b> · recibo N° {r.ultimo_recibo || '—'} por {simbolo} {Number(r.importe_en_recibos).toFixed(2)}
+                            </li>
+                        ))}
+                    </ul>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Revisar</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => { setRepetidos(null); handleEmitir(true) }}>
+                            Sí, es otro pago: emitir
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     )
 }
