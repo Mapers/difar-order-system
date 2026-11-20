@@ -45,7 +45,7 @@ export default function PersonasEmpresasPage() {
         <div className="flex flex-col gap-4 p-0 md:p-2">
             <CabeceraMantenimiento icono={<Users className="h-5 w-5" />} titulo="Personas y Empresas"
                                    descripcion="Clientes, proveedores, trabajadores y control interno. Haz clic en una fila para ver su ficha.">
-                <Button className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white" onClick={() => abrir(fichaPersonaVacia(relacion))}>
+                <Button data-guia="nueva-persona" className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white" onClick={() => abrir(fichaPersonaVacia(relacion))}>
                     <UserPlus className="mr-1.5 h-4 w-4" /> Nueva persona
                 </Button>
             </CabeceraMantenimiento>
@@ -53,8 +53,8 @@ export default function PersonasEmpresasPage() {
             <AvisoAmbar mensaje={aviso} onCerrar={() => setAviso('')} />
 
             <Card className="overflow-hidden shadow-md">
-                <div className="flex flex-col gap-3 border-b border-border p-3 sm:p-4">
-                    <div className="-mx-1 flex gap-1 overflow-x-auto px-1 pb-1">
+                <div data-guia="busqueda" className="flex flex-col gap-3 border-b border-border p-3 sm:p-4">
+                    <div data-guia="relaciones" className="-mx-1 flex gap-1 overflow-x-auto px-1 pb-1">
                         {[{ id: '', nombre: 'Todas' }, ...RELACIONES].map((r) => (
                             <button key={r.id} onClick={() => setRelacion(r.id)}
                                     className={cn('shrink-0 rounded-full border px-3 py-1 text-xs font-medium transition-colors',
@@ -89,7 +89,7 @@ export default function PersonasEmpresasPage() {
                             ))}
                         </ul>
                         {/* Escritorio: tabla */}
-                        <div className="hidden overflow-x-auto md:block">
+                        <div data-guia="lista" className="hidden overflow-x-auto md:block">
                             <table className="w-full text-sm">
                                 <thead className="bg-muted/60 text-left text-xs uppercase tracking-wide text-muted-foreground">
                                     <tr><th className="px-3 py-2">Código</th><th className="px-3 py-2">Nombre / Razón social</th><th className="px-3 py-2">Doc.</th>

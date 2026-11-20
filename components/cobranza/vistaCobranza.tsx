@@ -81,7 +81,7 @@ const TONOS: Record<Tarjeta['tono'], { valor: string; borde: string; punto: stri
 
 export function TarjetasResumen({ tarjetas, cargando }: { tarjetas: Tarjeta[]; cargando?: boolean }) {
     return (
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <div data-guia="tarjetas-resumen" className="grid grid-cols-2 gap-3 lg:grid-cols-4">
             {tarjetas.map(t => {
                 const tono = TONOS[t.tono]
                 const Comp = t.onClick ? 'button' : 'div'
@@ -161,7 +161,7 @@ export function BarraSeleccion({ cantidad, monto, onLimpiar, onAsignar }: {
 }) {
     if (cantidad === 0) return null
     return (
-        <div className="sticky bottom-20 z-20 lg:bottom-3 mx-auto flex w-full max-w-3xl items-center gap-3 rounded-2xl border border-teal-200 bg-card/95 px-4 py-3 shadow-xl backdrop-blur animate-in fade-in slide-in-from-bottom-2">
+        <div data-guia="barra-asignar" className="sticky bottom-20 z-20 lg:bottom-3 mx-auto flex w-full max-w-3xl items-center gap-3 rounded-2xl border border-teal-200 bg-card/95 px-4 py-3 shadow-xl backdrop-blur animate-in fade-in slide-in-from-bottom-2">
             <div className="min-w-0 flex-1">
                 <div className="text-sm font-semibold">{cantidad} {cantidad === 1 ? 'factura seleccionada' : 'facturas seleccionadas'}</div>
                 <div className="truncate text-xs text-muted-foreground tabular-nums">Saldo: {monto}</div>

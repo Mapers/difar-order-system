@@ -31,15 +31,15 @@ const ANIOS = (() => {
 export function FiltrosPeriodo({ tipo, filtro, onChange, onBuscar, cargando, acciones, extras }: Props) {
     const set = (p: Partial<FiltroInforme>) => onChange({ ...filtro, ...p })
     return (
-        <div className="grid grid-cols-2 md:grid-cols-12 gap-3 md:gap-4 items-end">
+        <div data-guia="filtros" className="grid grid-cols-2 md:grid-cols-12 gap-3 md:gap-4 items-end">
             {tipo === 'ninguno' ? null : tipo === 'fecha' ? (
-                <div className="flex flex-col gap-1.5 md:col-span-3">
+                <div data-guia="periodo" className="flex flex-col gap-1.5 md:col-span-3">
                     <Label htmlFor="fcorte">Fecha de corte</Label>
                     <Input id="fcorte" type="date" className="bg-background" value={filtro.fechaCorte ?? ''} onChange={e => set({ fechaCorte: e.target.value })} />
                 </div>
             ) : tipo === 'rango' ? (
                 <>
-                    <div className="flex flex-col gap-1.5 md:col-span-3">
+                    <div data-guia="periodo" className="flex flex-col gap-1.5 md:col-span-3">
                         <Label htmlFor="fdesde">Desde</Label>
                         <Input id="fdesde" type="date" className="bg-background" value={filtro.fechaDesde} onChange={e => set({ fechaDesde: e.target.value })} />
                     </div>
@@ -50,7 +50,7 @@ export function FiltrosPeriodo({ tipo, filtro, onChange, onBuscar, cargando, acc
                 </>
             ) : (
                 <>
-                    <div className="flex flex-col gap-1.5 md:col-span-2">
+                    <div data-guia="periodo" className="flex flex-col gap-1.5 md:col-span-2">
                         <Label>Año</Label>
                         <Select value={filtro.anio} onValueChange={v => set({ anio: v })}>
                             <SelectTrigger className="bg-background"><SelectValue /></SelectTrigger>
@@ -73,7 +73,7 @@ export function FiltrosPeriodo({ tipo, filtro, onChange, onBuscar, cargando, acc
             {extras}
             <div className={cn('col-span-2 flex flex-col sm:flex-row gap-2 md:justify-end',
                 extras ? 'md:col-span-12' : 'md:col-span-6 md:col-start-7')}>
-                <Button onClick={onBuscar} disabled={cargando} className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white">
+                <Button data-guia="consultar" onClick={onBuscar} disabled={cargando} className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white">
                     {cargando ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Search className="mr-2 h-4 w-4" />} Consultar
                 </Button>
                 {acciones}

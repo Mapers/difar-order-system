@@ -16,7 +16,7 @@ export default function InformesProveedoresPage() {
                 <p className="text-sm text-muted-foreground">
                     <Scale className="inline h-4 w-4 mr-1 text-blue-600" />
                     El saldo de proveedores a una fecha de corte (SaldoProveedores / SaldoUnProveedor) está en{' '}
-                    <Link href="/dashboard/reportes/saldo-proveedores" className="font-medium text-blue-700 underline dark:text-blue-400">
+                    <Link data-guia="enlace-saldo-proveedores" href="/dashboard/reportes/saldo-proveedores" className="font-medium text-blue-700 underline dark:text-blue-400">
                         Saldo de Documentos por Pagar Proveedor
                     </Link>.
                 </p>

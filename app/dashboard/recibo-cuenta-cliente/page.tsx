@@ -49,7 +49,7 @@ export default function ReciboCuentaClientePage() {
             <Tabs value={tab} onValueChange={setTab}>
                 <TabsList>
                     <TabsTrigger value="nuevo">Nuevo recibo</TabsTrigger>
-                    <TabsTrigger value="historial">Historial</TabsTrigger>
+                    <TabsTrigger value="historial" data-guia="tab-historial">Historial</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="nuevo" className="mt-4">

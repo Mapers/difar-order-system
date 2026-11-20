@@ -1987,6 +1987,7 @@ export default function SeccionVendedor({
                                             <Eraser className="h-4 w-4" /> <span className="hidden sm:inline">Limpiar</span>
                                         </Button>
                                         <Button
+                                            data-guia="agregar-registro"
                                             onClick={handleAgregar}
                                             disabled={guardando}
                                             className="h-11 flex-1 border-2 border-dashed border-sky-300 bg-sky-50 text-sky-700 hover:bg-sky-100 hover:border-sky-400"
@@ -2039,6 +2040,7 @@ export default function SeccionVendedor({
                                         Cancelar
                                     </Button>
                                     <Button
+                                        data-guia="cerrar-y-enviar"
                                         size="sm"
                                         className="bg-emerald-600 hover:bg-emerald-700 gap-1.5"
                                         onClick={handleSolicitar}

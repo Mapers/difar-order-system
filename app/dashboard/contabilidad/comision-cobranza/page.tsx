@@ -199,7 +199,7 @@ export default function ComisionCobranzaPage() {
                 )}
             </div>
 
-            <Card className="border-t-[3px] border-t-blue-600 bg-gradient-to-b from-background to-muted/30 shadow-sm">
+            <Card data-guia="filtros" className="border-t-[3px] border-t-blue-600 bg-gradient-to-b from-background to-muted/30 shadow-sm">
                 <CardContent className="p-4">
                     <div className="flex flex-col gap-4 xl:flex-row xl:items-end">
                         <div className="flex min-w-0 flex-1 flex-col gap-1.5">
@@ -216,7 +216,7 @@ export default function ComisionCobranzaPage() {
                             />
                         </div>
                         <SelectorPeriodo anio={anio} mes={mes} onChange={(a, m) => { setAnio(a); setMes(m) }} />
-                        <Button onClick={generar} disabled={generando}
+                        <Button data-guia="generar" onClick={generar} disabled={generando}
                                 className="h-10 gap-1.5 bg-blue-600 font-semibold text-white shadow-md shadow-blue-600/30 hover:bg-blue-700">
                             {generando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
                             Generar
@@ -224,7 +224,7 @@ export default function ComisionCobranzaPage() {
                     </div>
 
                     {/* Escala vigente del periodo (solo consulta; se carga por script) */}
-                    <div className="mt-3 flex flex-wrap items-center gap-2 border-t pt-3 text-xs">
+                    <div data-guia="escala" className="mt-3 flex flex-wrap items-center gap-2 border-t pt-3 text-xs">
                         <span className="inline-flex items-center gap-1.5 font-semibold text-muted-foreground">
                             <Layers className="h-3.5 w-3.5" /> Escala del periodo:
                         </span>
@@ -267,7 +267,7 @@ export default function ComisionCobranzaPage() {
 
             {resumen && t && (
                 <>
-                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-[1.4fr_1fr_1fr_1fr_1.1fr]">
+                    <div data-guia="totales" className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-[1.4fr_1fr_1fr_1fr_1.1fr]">
                         <div className="rounded-xl bg-gradient-to-br from-blue-900 to-blue-600 p-4 text-white shadow-sm sm:col-span-2 xl:col-span-1">
                             <p className="text-[11px] uppercase tracking-wide text-blue-200">Comisión de cobranza</p>
                             <p className="mt-1.5 text-lg font-bold">{periodoTxt}</p>
@@ -299,8 +299,8 @@ export default function ComisionCobranzaPage() {
                         </KpiCard>
                     </div>
 
-                    <Card className="overflow-hidden shadow-sm">
-                        <div className="flex flex-wrap items-center justify-between gap-3 border-b px-4 py-3">
+                    <Card data-guia="tabla-vendedores" className="overflow-hidden shadow-sm">
+                        <div data-guia="exportar-pdf" className="flex flex-wrap items-center justify-between gap-3 border-b px-4 py-3">
                             <div>
                                 <h2 className="text-sm font-semibold">Comisión por vendedor</h2>
                                 <p className="text-xs text-muted-foreground">Cobranza del mes por tramo de atraso. Haz clic en un vendedor para ver sus cobros.</p>
@@ -438,7 +438,7 @@ export default function ComisionCobranzaPage() {
                     </Card>
 
                     {seleccion && (
-                        <Card className="overflow-hidden shadow-sm border-blue-200 dark:border-blue-900">
+                        <Card data-guia="detalle-cobros" className="overflow-hidden shadow-sm border-blue-200 dark:border-blue-900">
                             <div className="flex flex-wrap items-center justify-between gap-3 border-b bg-blue-50/50 px-4 py-3 dark:bg-blue-950/20">
                                 <div>
                                     <h2 className="text-sm font-semibold">Cobros de {seleccion.Codigo_Vend} · {seleccion.Vendedor}</h2>
@@ -462,7 +462,7 @@ export default function ComisionCobranzaPage() {
                                 </div>
                             ) : detalle && (
                                 <>
-                                    <div className="flex flex-wrap gap-1.5 border-b px-4 py-2.5">
+                                    <div data-guia="filtro-tramo" className="flex flex-wrap gap-1.5 border-b px-4 py-2.5">
                                         <FiltroChip activo={filtroTramo === null} onClick={() => setFiltroTramo(null)} cls="bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200">
                                             Todos ({detalle.filas.length})
                                         </FiltroChip>

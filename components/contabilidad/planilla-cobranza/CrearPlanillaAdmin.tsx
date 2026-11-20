@@ -128,7 +128,7 @@ export default function CrearPlanillaAdmin({ tiposComprobante, bancos, zones, no
 
     if (!elegido || !vendedorInfo) {
         return (
-            <Card className="mx-auto max-w-lg overflow-hidden shadow-sm">
+            <Card data-guia="crear-elegir-vendedor" className="mx-auto max-w-lg overflow-hidden shadow-sm">
                 <div className="bg-slate-800 px-6 py-5">
                     <h2 className="mb-1 flex items-center gap-2 text-lg font-semibold text-white">
                         <UserCog className="h-5 w-5" /> Crear planilla para un vendedor

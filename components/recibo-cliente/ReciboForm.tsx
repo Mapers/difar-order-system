@@ -353,7 +353,7 @@ export function ReciboForm({ onEmitido }: Props) {
                             </p>
                         )}
 
-                        <div className="mt-1.5 flex flex-wrap justify-end gap-x-[18px] gap-y-2.5">
+                        <div data-guia="conceptos" className="mt-1.5 flex flex-wrap justify-end gap-x-[18px] gap-y-2.5">
                             {CONCEPTOS.map(c => (
                                 <Casilla
                                     key={c.value}
@@ -409,7 +409,7 @@ export function ReciboForm({ onEmitido }: Props) {
                     />
                 </div>
 
-                <div className="mt-3.5 flex flex-wrap items-baseline gap-x-2.5 gap-y-1.5 text-[14px]">
+                <div data-guia="cliente" className="mt-3.5 flex flex-wrap items-baseline gap-x-2.5 gap-y-1.5 text-[14px]">
                     <span className="whitespace-nowrap font-bold">Hemos recibido de:</span>
                     <div className="min-w-0 flex-1 sm:min-w-[240px]">
                         <AutocompleteBuscador
@@ -495,7 +495,7 @@ export function ReciboForm({ onEmitido }: Props) {
                         </div>
                     </div>
 
-                    <div className="flex min-w-[150px] flex-col gap-2 text-[13px]">
+                    <div data-guia="tipo-liquidacion" className="flex min-w-[150px] flex-col gap-2 text-[13px]">
                         {TIPOS_LIQUIDACION.map(t => (
                             <div key={t.value}>
                                 <Casilla
@@ -529,7 +529,7 @@ export function ReciboForm({ onEmitido }: Props) {
                     </div>
                 </div>
 
-                <div className="mt-6 grid gap-4 sm:grid-cols-2">
+                <div data-guia="firmas" className="mt-6 grid gap-4 sm:grid-cols-2">
                     <div>
                         <FirmaPad
                             key={`cliente-${versionFirmas}`}
@@ -554,6 +554,7 @@ export function ReciboForm({ onEmitido }: Props) {
             <div className="mt-4 flex flex-wrap justify-end gap-2">
                 <button
                     type="button"
+                    data-guia="limpiar-todo"
                     onClick={limpiar}
                     disabled={emitiendo}
                     className="rounded-lg border border-[#12388f] bg-white px-3.5 py-2 text-[13px] font-semibold text-[#12388f] transition-colors hover:bg-[#12388f] hover:text-white disabled:opacity-40"
@@ -562,6 +563,7 @@ export function ReciboForm({ onEmitido }: Props) {
                 </button>
                 <button
                     type="button"
+                    data-guia="generar-recibo"
                     onClick={handleEmitir}
                     disabled={emitiendo}
                     className="inline-flex items-center gap-2 rounded-lg border border-[#12388f] bg-[#12388f] px-3.5 py-2 text-[13px] font-semibold text-white transition-colors hover:bg-[#2b52a8] disabled:opacity-60"

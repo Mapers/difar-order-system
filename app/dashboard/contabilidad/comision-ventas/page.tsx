@@ -175,7 +175,7 @@ export default function ComisionVentasPage() {
                 )}
             </div>
 
-            <div className="flex h-10 w-fit rounded-lg border bg-muted p-0.5" role="tablist" aria-label="Vista">
+            <div data-guia="vistas" className="flex h-10 w-fit rounded-lg border bg-muted p-0.5" role="tablist" aria-label="Vista">
                 {([['vendedor', 'Por vendedor', Users], ['global', 'Global por laboratorio', FlaskConical]] as const).map(([v, t, Icono]) => (
                     <button key={v} type="button" role="tab" aria-selected={vista === v} onClick={() => setVista(v)}
                             className={`inline-flex items-center gap-1.5 rounded-md px-3.5 text-sm whitespace-nowrap transition-colors ${
@@ -186,7 +186,7 @@ export default function ComisionVentasPage() {
             </div>
 
             {vista === 'global' ? <GlobalLaboratorio vendedores={vendedores} /> : (<>
-            <Card className="border-t-[3px] border-t-blue-600 bg-gradient-to-b from-background to-muted/30 shadow-sm">
+            <Card data-guia="filtros" className="border-t-[3px] border-t-blue-600 bg-gradient-to-b from-background to-muted/30 shadow-sm">
                 <CardContent className="p-4">
                     <div className="flex flex-col gap-4 xl:flex-row xl:items-end">
                         <div className="flex min-w-0 flex-1 flex-col gap-1.5">
@@ -203,7 +203,7 @@ export default function ComisionVentasPage() {
                             />
                         </div>
                         <SelectorPeriodo anio={anio} mes={mes} onChange={(a, m) => { setAnio(a); setMes(m) }} />
-                        <Button onClick={generar} disabled={generando}
+                        <Button data-guia="generar" onClick={generar} disabled={generando}
                                 className="h-10 gap-1.5 bg-blue-600 font-semibold text-white shadow-md shadow-blue-600/30 hover:bg-blue-700">
                             {generando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
                             Generar
@@ -230,7 +230,7 @@ export default function ComisionVentasPage() {
 
             {resumen && t && (
                 <>
-                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-[1.4fr_1fr_1fr_1fr_1.1fr]">
+                    <div data-guia="totales" className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-[1.4fr_1fr_1fr_1fr_1.1fr]">
                         <div className="rounded-xl bg-gradient-to-br from-blue-900 to-blue-600 p-4 text-white shadow-sm sm:col-span-2 xl:col-span-1">
                             <p className="text-[11px] uppercase tracking-wide text-blue-200 line-clamp-2">
                                 {resumen.filas[0]?.NombreRazSocial || 'DIFAR'} · RUC {resumen.filas[0]?.RUC || ''}
@@ -258,8 +258,8 @@ export default function ComisionVentasPage() {
                         </KpiCard>
                     </div>
 
-                    <Card className="overflow-hidden shadow-sm">
-                        <div className="flex flex-wrap items-center justify-between gap-3 border-b px-4 py-3">
+                    <Card data-guia="tabla-vendedores" className="overflow-hidden shadow-sm">
+                        <div data-guia="exportar-pdf" className="flex flex-wrap items-center justify-between gap-3 border-b px-4 py-3">
                             <div>
                                 <h2 className="text-sm font-semibold">Comisión por vendedor</h2>
                                 <p className="text-xs text-muted-foreground">Haz clic en un vendedor para ver sus comprobantes.</p>
@@ -381,7 +381,7 @@ export default function ComisionVentasPage() {
                     </Card>
 
                     {seleccion && (
-                        <Card className="overflow-hidden shadow-sm border-blue-200 dark:border-blue-900">
+                        <Card data-guia="detalle-comprobantes" className="overflow-hidden shadow-sm border-blue-200 dark:border-blue-900">
                             <div className="flex flex-wrap items-center justify-between gap-3 border-b bg-blue-50/50 px-4 py-3 dark:bg-blue-950/20">
                                 <div>
                                     <h2 className="text-sm font-semibold">

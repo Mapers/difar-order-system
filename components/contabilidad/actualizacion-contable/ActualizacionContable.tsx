@@ -241,9 +241,9 @@ export function ActualizacionContable() {
                     </div>
                 </div>
                 <div className="flex flex-wrap items-end gap-2">
-                    <div className="w-32 space-y-1"><p className="text-xs font-medium text-muted-foreground">Año</p><Combo items={anios} valor={anio} onCambio={v => v && reiniciar(v)} icono={CalendarDays} disabled={revisando} /></div>
-                    <Button variant="outline" onClick={exportar} disabled={revisando || global.revisados === 0}><FileDown className="mr-2 h-4 w-4" /> Exportar Excel</Button>
-                    <Button onClick={() => revisar(BLOQUES.map(b => b.clave))} disabled={revisando}
+                    <div className="w-32 space-y-1" data-guia="anio"><p className="text-xs font-medium text-muted-foreground">Año</p><Combo items={anios} valor={anio} onCambio={v => v && reiniciar(v)} icono={CalendarDays} disabled={revisando} /></div>
+                    <Button data-guia="exportar-excel" variant="outline" onClick={exportar} disabled={revisando || global.revisados === 0}><FileDown className="mr-2 h-4 w-4" /> Exportar Excel</Button>
+                    <Button data-guia="revisar-todo" onClick={() => revisar(BLOQUES.map(b => b.clave))} disabled={revisando}
                             className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-600/25 hover:from-blue-700 hover:to-indigo-700">
                         {revisando ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlayCircle className="mr-2 h-4 w-4" />} Revisar todo
                     </Button>
@@ -254,7 +254,7 @@ export function ActualizacionContable() {
 
             {/* Totales generales */}
             {global.revisados > 0 && (
-                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4" data-guia="totales">
                     <Tarjeta titulo="Duplicados" valor={global.duplicados} clase="text-rose-700 dark:text-rose-300" icono={Copy} />
                     <Tarjeta titulo="Faltan" valor={global.faltantes} clase="text-amber-700 dark:text-amber-300" icono={CircleDashed} />
                     <Tarjeta titulo="Sobran" valor={global.sobrantes} clase="text-violet-700 dark:text-violet-300" icono={XCircle} />
@@ -263,7 +263,7 @@ export function ActualizacionContable() {
             )}
 
             {/* Bloques del botón "guardar" */}
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-5">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-5" data-guia="bloques">
                 {BLOQUES.map(b => {
                     const e = bloques[b.clave]; const t = e.resultado?.totales
                     const problemas = t ? t.duplicados + t.faltantes + t.sobrantes + t.importe_distinto : 0
@@ -292,10 +292,10 @@ export function ActualizacionContable() {
             </div>
 
             {/* Bloque activo */}
-            <div className="rounded-2xl border bg-card p-3 shadow-md shadow-slate-900/5 dark:shadow-black/30 sm:p-4">
+            <div data-guia="bloque-activo" className="rounded-2xl border bg-card p-3 shadow-md shadow-slate-900/5 dark:shadow-black/30 sm:p-4">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                     <h2 className="text-lg font-semibold">{BLOQUES.find(b => b.clave === activo)?.nombre} · {anio}</h2>
-                    <Button variant="outline" size="sm" onClick={() => revisar([activo])} disabled={revisando}>
+                    <Button data-guia="revisar-bloque" variant="outline" size="sm" onClick={() => revisar([activo])} disabled={revisando}>
                         {actual.estado === 'revisando' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlayCircle className="mr-2 h-4 w-4" />} Revisar este bloque
                     </Button>
                 </div>
@@ -309,7 +309,7 @@ export function ActualizacionContable() {
                         {/* Lo que pasó en este bloque, en una frase */}
                         <Titular casos={casosTodos} bloque={BLOQUES.find(b => b.clave === activo)?.nombre ?? ''} anio={anio} />
 
-                        <button type="button" onClick={() => setVerTecnico(v => !v)} className="mt-3 text-xs font-medium text-blue-700 underline-offset-2 hover:underline dark:text-blue-300">
+                        <button data-guia="resumen-tecnico" type="button" onClick={() => setVerTecnico(v => !v)} className="mt-3 text-xs font-medium text-blue-700 underline-offset-2 hover:underline dark:text-blue-300">
                             {verTecnico ? 'Ocultar el resumen técnico' : 'Ver el resumen técnico (para la contadora)'}
                         </button>
                         {verTecnico && (<>
@@ -348,7 +348,7 @@ export function ActualizacionContable() {
                         </>)}
 
                         {/* Detalle de diferencias */}
-                        <div className="mt-4 flex flex-wrap items-center gap-2">
+                        <div className="mt-4 flex flex-wrap items-center gap-2" data-guia="filtro-casos">
                             {(['todos', 'DUPLICADO', 'FALTA', 'SOBRA', 'IMPORTE_DISTINTO'] as const).map(e => (
                                 <button key={e} type="button" onClick={() => { setFiltro(e); setPagina(1) }}
                                         className={cn('rounded-full px-3 py-1 text-xs font-medium ring-1 ring-inset transition', filtro === e ? 'bg-blue-600 text-white ring-blue-600' : e === 'todos' ? 'bg-muted ring-border' : ESTADOS[e].chip)}
@@ -369,7 +369,7 @@ export function ActualizacionContable() {
                                     Seleccionar todos los duplicados ({entero(duplicadosVisibles.length)})
                                 </label>
                                 <span className="text-sm text-muted-foreground">{entero(seleccionados.length)} caso{seleccionados.length === 1 ? '' : 's'} · {entero(copiasSel)} copia{copiasSel === 1 ? '' : 's'} para quitar</span>
-                                <Button size="sm" disabled={!copiasSel || revisando || !!arreglo && arreglo.paso !== 'listo' && arreglo.paso !== 'error'} onClick={() => setArreglo({ paso: 'confirmar', hechos: 0, lotes: 0, respaldadas: 0, eliminadas: 0, total: copiasSel, porTabla: resumenPorTabla(seleccionados) })}
+                                <Button data-guia="arreglar" size="sm" disabled={!copiasSel || revisando || !!arreglo && arreglo.paso !== 'listo' && arreglo.paso !== 'error'} onClick={() => setArreglo({ paso: 'confirmar', hechos: 0, lotes: 0, respaldadas: 0, eliminadas: 0, total: copiasSel, porTabla: resumenPorTabla(seleccionados) })}
                                         className="ml-auto bg-gradient-to-r from-rose-600 to-red-600 text-white shadow-md shadow-rose-600/25 hover:from-rose-700 hover:to-red-700">
                                     <Wrench className="mr-2 h-4 w-4" /> Arreglar ({entero(copiasSel)})
                                 </Button>
@@ -408,7 +408,7 @@ export function ActualizacionContable() {
                             <p className="text-sm text-amber-900/80 dark:text-amber-200/80">Aquí no existe: solo se muestra cuánto borraría en el Access para {anio} y qué no se volvería a generar.</p>
                         </div>
                     </div>
-                    <Button variant="outline" size="sm" onClick={verAlcance} disabled={revisando || alcance?.cargando} className="border-amber-400">
+                    <Button data-guia="ver-alcance" variant="outline" size="sm" onClick={verAlcance} disabled={revisando || alcance?.cargando} className="border-amber-400">
                         {alcance?.cargando ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />} Ver alcance
                     </Button>
                 </div>

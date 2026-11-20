@@ -141,7 +141,7 @@ export function HistorialRecibos() {
     }
 
     const acciones = (r: ReciboCabecera) => (
-        <div className="flex gap-2">
+        <div data-guia="historial-acciones" className="flex gap-2">
             <Button
                 variant="ghost"
                 size="icon"
@@ -188,7 +188,7 @@ export function HistorialRecibos() {
 
     return (
         <div className="space-y-4">
-            <Card className="bg-background shadow-sm">
+            <Card data-guia="historial-filtros" className="bg-background shadow-sm">
                 <CardContent className="p-3 sm:p-4 lg:p-6">
                     <div className="space-y-4">
                         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-4">

@@ -12,6 +12,7 @@ import { IvanWidget } from "@/components/ivan/IvanWidget"
 import { AvisoEstadoSunat } from "@/components/comprobantes/AvisoEstadoSunat"
 import { GuardaMenu } from "@/components/auth/GuardaMenu"
 import { AvisoVersionNueva } from "@/components/auth/AvisoVersionNueva"
+import { GuiaProvider } from "@/components/contabilidad/guia/GuiaProvider"
 
 function DashboardContent({ children }: { children: React.ReactNode }) {
     const { isAuthenticated, loading } = useAuth()
@@ -43,7 +44,9 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
     return (
         <SidebarProvider>
-            <DashboardContent>{children}</DashboardContent>
+            <GuiaProvider>
+                <DashboardContent>{children}</DashboardContent>
+            </GuiaProvider>
         </SidebarProvider>
     )
 }

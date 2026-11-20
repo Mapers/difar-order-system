@@ -133,7 +133,7 @@ export default function ModalBuscarAmortizacion({ open, onClose, onSelectEditar,
                         </div>
                     </DialogHeader>
 
-                    <div className="px-5 py-3 border-b border-border bg-muted flex-shrink-0">
+                    <div data-guia="buscar-filtros" className="px-5 py-3 border-b border-border bg-muted flex-shrink-0">
                         <div className="flex flex-wrap items-end gap-3">
                             <div className="flex flex-col gap-1 w-[140px]">
                                 <Label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Fecha desde</Label>
@@ -176,7 +176,7 @@ export default function ModalBuscarAmortizacion({ open, onClose, onSelectEditar,
                         </div>
                     </div>
 
-                    <div className="flex-1 overflow-auto">
+                    <div data-guia="buscar-tabla" className="flex-1 overflow-auto">
                         <table className="w-full text-xs border-collapse">
                             <thead>
                             <tr className="bg-muted sticky top-0 z-10">

@@ -50,7 +50,7 @@ export function ReciboDetalleTabla({
     const celdaFija = `${celda} bg-[#eef2fb] font-bold cursor-default`
 
     return (
-        <div className="mt-4">
+        <div data-guia="documentos" className="mt-4">
             <div className="overflow-x-auto">
                 <table className="w-full border-collapse text-[13px] min-w-[560px]">
                     <thead>

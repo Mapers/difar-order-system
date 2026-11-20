@@ -83,11 +83,11 @@ export default function IgvPage() {
     return (
         <div className="flex flex-col gap-4 p-0 md:p-2">
             <CabeceraMantenimiento icono={<Percent className="h-5 w-5" />} titulo="IGV" descripcion="Tasas de IGV con su vigencia y sus cuentas contables.">
-                <Button className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white" onClick={() => abrir(vacia())}><Plus className="mr-1.5 h-4 w-4" /> Nueva tasa</Button>
+                <Button data-guia="nueva-tasa" className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white" onClick={() => abrir(vacia())}><Plus className="mr-1.5 h-4 w-4" /> Nueva tasa</Button>
             </CabeceraMantenimiento>
             <AvisoAmbar mensaje={aviso} onCerrar={() => setAviso('')} />
 
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            <div data-guia="tasas" className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
                 {cargando && !filas.length && <p className="flex items-center gap-2 p-6 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Cargando…</p>}
                 {filas.map((x) => (
                     <Card key={x.idIGV} onClick={() => abrir(fichaDe(x))} className="cursor-pointer p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-md">

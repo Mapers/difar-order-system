@@ -122,6 +122,7 @@ export function BotonLeerFactura({ disabled, llamativo = false, onLeida }: {
                     <span aria-hidden className="lf-latido pointer-events-none absolute inset-0 rounded-md bg-violet-500/50" />
                 )}
                 <Button
+                    data-guia="escanear-comprobante"
                     onClick={() => setEligiendo(true)} disabled={disabled}
                     className="relative z-10 h-10 gap-1.5 bg-gradient-to-r from-violet-600 to-blue-600 px-3 font-semibold text-white shadow-md shadow-violet-600/25 hover:from-violet-700 hover:to-blue-700"
                     title="Sube la foto o el PDF del comprobante (factura, boleta, recibo…) y se llena solo"

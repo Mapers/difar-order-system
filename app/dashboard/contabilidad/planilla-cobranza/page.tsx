@@ -150,7 +150,7 @@ export default function PlanillaCobranzaPage() {
             )}
 
             {puedeValidar && puedeCrear && (
-                <div className="flex bg-background border border-border rounded-lg overflow-hidden shadow-sm">
+                <div data-guia="pestanas-admin" className="flex bg-background border border-border rounded-lg overflow-hidden shadow-sm">
                     {([
                         { id: 'validar', label: 'Validar planillas', icono: ClipboardCheck },
                         { id: 'crear',   label: 'Crear planilla',    icono: FilePlus2 },

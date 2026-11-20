@@ -87,7 +87,7 @@ export function ExportarExcelInforme({ titulo, subtitulo, nombreArchivo, columna
     }
 
     return (
-        <Button variant="outline" className="w-full sm:w-auto" onClick={exportar} disabled={!filas?.length || cargando}>
+        <Button data-guia="exportar-excel" variant="outline" className="w-full sm:w-auto" onClick={exportar} disabled={!filas?.length || cargando}>
             {cargando ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileSpreadsheet className="mr-2 h-4 w-4" />} Excel
         </Button>
     )

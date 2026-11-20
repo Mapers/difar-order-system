@@ -114,7 +114,7 @@ export default function SeccionAdmin({
     return (
         <div className="space-y-4">
 
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <div data-guia="resumen-dia" className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                 {[
                     { label: 'Planillas hoy',   value: resumenDia?.total_planillas ?? '—', sub: 'recibidas en el día',
                       icono: ClipboardList, color: 'text-foreground', iconoCls: 'bg-blue-50 text-blue-600 dark:bg-blue-950' },
@@ -138,7 +138,7 @@ export default function SeccionAdmin({
                 ))}
             </div>
 
-            <Card className="border-t-[3px] border-t-blue-600 bg-gradient-to-b from-background to-muted/30 shadow-sm">
+            <Card data-guia="filtros-planillas" className="border-t-[3px] border-t-blue-600 bg-gradient-to-b from-background to-muted/30 shadow-sm">
                 <CardContent className="p-4">
                     <div className="flex flex-col gap-3 xl:flex-row xl:items-center">
                         <div className="relative min-w-0 flex-1">
@@ -224,6 +224,7 @@ export default function SeccionAdmin({
                 return (
                     <Card key={planilla.id_planilla} className={`shadow-sm overflow-hidden border-l-4 ${colorBorde(planilla.estado)}`}>
                         <div
+                            data-guia="fila-planilla"
                             className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2.5 p-4 cursor-pointer hover:bg-muted/50 transition-colors"
                             onClick={() => toggleRow(planilla)}
                         >

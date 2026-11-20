@@ -70,7 +70,7 @@ export const ExportSaldoProveedoresExcel: React.FC<Props> = ({ grupos, fechaCort
     }
 
     return (
-        <Button variant="outline" className="w-full sm:w-auto" onClick={exportar} disabled={disabled || cargando}>
+        <Button data-guia="saldo-excel" variant="outline" className="w-full sm:w-auto" onClick={exportar} disabled={disabled || cargando}>
             {cargando ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileSpreadsheet className="mr-2 h-4 w-4" />} Excel
         </Button>
     )

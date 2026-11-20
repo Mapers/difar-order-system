@@ -155,7 +155,7 @@ export default function MovimientoSubcuentaPage() {
             <Card className="border-t-[3px] border-t-blue-600 bg-gradient-to-b from-background to-muted/30 shadow-sm">
                 <CardContent className="p-4">
                     <div className="flex flex-col gap-4 xl:flex-row xl:items-end">
-                        <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+                        <div data-guia="subcuenta" className="flex min-w-0 flex-1 flex-col gap-1.5">
                             <Label className="text-xs font-semibold text-muted-foreground">
                                 Sub cuenta contable <span className="text-red-500">*</span>
                             </Label>
@@ -172,7 +172,7 @@ export default function MovimientoSubcuentaPage() {
                             />
                         </div>
 
-                        <div className="flex flex-col gap-1.5">
+                        <div data-guia="periodo" className="flex flex-col gap-1.5">
                             <Label className="text-xs font-semibold text-muted-foreground">Periodo</Label>
                             <div className="flex items-center gap-1.5">
                                 <Button variant="outline" size="icon" className="h-10 w-10 shrink-0" title="Mes anterior"
@@ -213,7 +213,7 @@ export default function MovimientoSubcuentaPage() {
                             </div>
                         </div>
 
-                        <div className="flex flex-col gap-1.5">
+                        <div data-guia="moneda" className="flex flex-col gap-1.5">
                             <Label className="text-xs font-semibold text-muted-foreground">Moneda</Label>
                             <div className="flex h-10 rounded-lg border bg-muted p-0.5" role="group" aria-label="Moneda">
                                 {([['NSO', 'S/ Soles'], ['USD', 'US$ Dólares']] as const).map(([valor, texto]) => (
@@ -234,7 +234,7 @@ export default function MovimientoSubcuentaPage() {
                             </div>
                         </div>
 
-                        <Button onClick={generar} disabled={generando}
+                        <Button data-guia="generar" onClick={generar} disabled={generando}
                                 className="h-10 gap-1.5 bg-blue-600 font-semibold text-white shadow-md shadow-blue-600/30 hover:bg-blue-700">
                             {generando
                                 ? <Loader2 className="h-4 w-4 animate-spin" />
@@ -263,7 +263,7 @@ export default function MovimientoSubcuentaPage() {
 
             {cab && (
                 <>
-                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-[1.4fr_1fr_1fr_1fr_1.1fr]">
+                    <div data-guia="saldos" className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-[1.4fr_1fr_1fr_1fr_1.1fr]">
                         <div className="rounded-xl bg-gradient-to-br from-blue-900 to-blue-600 p-4 text-white shadow-sm sm:col-span-2 xl:col-span-1">
                             <p className="text-[11px] uppercase tracking-wide text-blue-200 line-clamp-2">{cab.Empresa} · RUC {cab.Ruc}</p>
                             <p className="mt-1.5 font-mono text-lg font-bold">{cab.Cuenta}</p>
@@ -302,7 +302,7 @@ export default function MovimientoSubcuentaPage() {
                             <ExportSubctaMvtoPdf cabecera={cab} detalle={reporte!.detalle} />
                         </div>
 
-                        <div className="overflow-auto">
+                        <div data-guia="movimientos" className="overflow-auto">
                             <table className={`w-full ${anual ? 'min-w-[1040px]' : 'min-w-[820px]'} text-xs border-collapse`}>
                                 <thead>
                                     <tr className="sticky top-0 z-10 bg-gradient-to-b from-muted/60 to-muted">

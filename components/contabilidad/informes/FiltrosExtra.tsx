@@ -44,7 +44,7 @@ function BuscadorProveedor({ filtro, onChange, obligatorio, pedir = 0 }: { filtr
     }, [texto, abierto])
 
     return (
-        <div className="flex flex-col gap-1.5 col-span-2 md:col-span-4">
+        <div data-guia="filtro-proveedor" className="flex flex-col gap-1.5 col-span-2 md:col-span-4">
             <Label>Proveedor {obligatorio ? <span className="text-red-600">*</span> : <span className="text-xs text-muted-foreground">(opcional)</span>}</Label>
             <div className="flex gap-1">
                 <Popover open={abierto} onOpenChange={setAbierto}>
@@ -112,7 +112,7 @@ export function FiltrosExtra({ extras, filtro, onChange, onEnter, pedirProveedor
                 <BuscadorProveedor filtro={filtro} onChange={set} obligatorio={extras.includes('proveedor-obligatorio')} pedir={pedirProveedor} />
             )}
             {extras.includes('documento') && (
-                <div className="flex flex-col gap-1.5 col-span-2 md:col-span-3">
+                <div data-guia="filtro-documento" className="flex flex-col gap-1.5 col-span-2 md:col-span-3">
                     <Label htmlFor="fdoc">Documento <span className="text-xs text-muted-foreground">(opcional, TIPO-SERIE-NÚMERO)</span></Label>
                     <Input id="fdoc" className="bg-background font-mono" placeholder="80-08-2025018014" value={filtro.documento ?? ''}
                            onChange={e => set({ documento: e.target.value.toUpperCase() })} onKeyDown={enter} maxLength={30} />
@@ -120,7 +120,7 @@ export function FiltrosExtra({ extras, filtro, onChange, onEnter, pedirProveedor
             )}
             {extras.includes('vencimiento') && (
                 <>
-                    <div className="flex flex-col gap-1.5 md:col-span-2">
+                    <div data-guia="filtro-vencimiento" className="flex flex-col gap-1.5 md:col-span-2">
                         <Label htmlFor="fvdesde">Vencimiento desde <span className="text-xs text-muted-foreground">(opcional)</span></Label>
                         <Input id="fvdesde" type="date" className="bg-background" value={filtro.vctoDesde ?? ''}
                                onChange={e => set({ vctoDesde: e.target.value })} onKeyDown={enter} />
@@ -133,7 +133,7 @@ export function FiltrosExtra({ extras, filtro, onChange, onEnter, pedirProveedor
                 </>
             )}
             {extras.includes('tipo-doc') && (
-                <div className="flex flex-col gap-1.5 md:col-span-2">
+                <div data-guia="filtro-tipo-doc" className="flex flex-col gap-1.5 md:col-span-2">
                     <Label>Documentos</Label>
                     <Select value={filtro.tipoDoc || '00'} onValueChange={v => set({ tipoDoc: v })}>
                         <SelectTrigger className="bg-background"><SelectValue /></SelectTrigger>
@@ -149,7 +149,7 @@ export function FiltrosExtra({ extras, filtro, onChange, onEnter, pedirProveedor
                 </div>
             )}
             {extras.includes('cuenta') && (
-                <div className="flex flex-col gap-1.5 col-span-2 md:col-span-3">
+                <div data-guia="cuenta" className="flex flex-col gap-1.5 col-span-2 md:col-span-3">
                     <Label htmlFor="fcuenta">Cuenta <span className="text-xs text-muted-foreground">(opcional: 10, 101 o 1010101)</span></Label>
                     <Input id="fcuenta" className="bg-background font-mono" placeholder="Todas las cuentas" inputMode="numeric" value={filtro.cuenta ?? ''}
                            onChange={e => set({ cuenta: e.target.value.replace(/\D/g, '') })} onKeyDown={enter} maxLength={12} />

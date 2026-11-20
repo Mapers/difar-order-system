@@ -434,7 +434,7 @@ export default function ClienteCobranzaPage() {
             </div>
 
             {GUARDAR_BLOQUEADO && (
-                <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
+                <div data-guia="aviso-mantenimiento" className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
                     <Info className="mt-0.5 h-4 w-4 shrink-0" />
                     <span>{MENSAJE_GUARDAR_BLOQUEADO} Puedes buscar cobros y ver su kardex y mayor.</span>
                 </div>
@@ -455,7 +455,7 @@ export default function ClienteCobranzaPage() {
                             variant="outline"
                             size="sm"
                             className="gap-1.5 ml-auto bg-background"
-                            onClick={() => setBuscarOpen(true)}
+                            data-guia="buscar-cobros" onClick={() => setBuscarOpen(true)}
                         >
                             <Search className="h-4 w-4" />
                             Buscar
@@ -481,7 +481,7 @@ export default function ClienteCobranzaPage() {
                         title="Identificación"
                         description="Cliente y empresa asociados al movimiento"
                     >
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div data-guia="identificacion" className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="flex flex-col gap-1">
                                 <Label className="text-sm">
                                     Cliente <span className="text-red-500">*</span>
@@ -607,7 +607,7 @@ export default function ClienteCobranzaPage() {
                             <Button
                                 type="button"
                                 variant="outline"
-                                className="justify-start gap-2 h-auto whitespace-normal py-3 border-violet-200 text-violet-700 hover:bg-violet-50"
+                                data-guia="buscar-documento" className="justify-start gap-2 h-auto whitespace-normal py-3 border-violet-200 text-violet-700 hover:bg-violet-50"
                                 disabled={ro}
                                 onClick={() => {
                                     if (!form.Cod_Clie) {
@@ -681,7 +681,7 @@ export default function ClienteCobranzaPage() {
                         title="Cobro y amortización"
                         description="Importe, fecha y forma en que se aplica el pago"
                     >
-                        <div className="flex flex-col gap-4">
+                        <div data-guia="cobro-amortizacion" className="flex flex-col gap-4">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="flex flex-col gap-1">
                                     <Label className="text-sm">
@@ -924,7 +924,7 @@ export default function ClienteCobranzaPage() {
                     >
                         <div className="flex flex-col gap-1">
                             <Textarea
-                                placeholder="Observaciones adicionales..."
+                                data-guia="observaciones" placeholder="Observaciones adicionales..."
                                 value={form.Observaciones}
                                 onChange={e => handleChange('Observaciones', e.target.value)}
                                 readOnly={ro}
@@ -941,7 +941,7 @@ export default function ClienteCobranzaPage() {
                             variant="outline"
                             size="sm"
                             className="gap-1.5 text-muted-foreground"
-                            onClick={() => setConfirmLimpiarOpen(true)}
+                            data-guia="limpiar" onClick={() => setConfirmLimpiarOpen(true)}
                         >
                             <X className="h-4 w-4" />
                             Limpiar
@@ -949,7 +949,7 @@ export default function ClienteCobranzaPage() {
                         <Button
                             size="sm"
                             className="gap-1.5 bg-emerald-600 hover:bg-emerald-700 ml-auto"
-                            onClick={handleGuardarClick}
+                            data-guia="guardar" onClick={handleGuardarClick}
                             disabled={GUARDAR_BLOQUEADO || isSaving || isEditing}
                             title={GUARDAR_BLOQUEADO ? MENSAJE_GUARDAR_BLOQUEADO : isEditing ? 'La edición de cobros está deshabilitada' : undefined}
                         >

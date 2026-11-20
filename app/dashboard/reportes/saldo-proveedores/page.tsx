@@ -217,7 +217,7 @@ export default function SaldoProveedoresPage() {
             <Card className="shadow-md overflow-hidden">
                 <CardHeader className="bg-muted border-b border-border p-4">
                     <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
-                        <div className="flex flex-col gap-1.5 md:col-span-4 min-w-0">
+                        <div data-guia="saldo-proveedor" className="flex flex-col gap-1.5 md:col-span-4 min-w-0">
                             <Label className="flex items-center gap-1.5"><Truck className="h-4 w-4 text-muted-foreground" /> Proveedor (vacío = todos)</Label>
                             <Popover open={abrirCombo} onOpenChange={setAbrirCombo}>
                                 <PopoverTrigger asChild>
@@ -251,12 +251,12 @@ export default function SaldoProveedoresPage() {
                                 </PopoverContent>
                             </Popover>
                         </div>
-                        <div className="flex flex-col gap-1.5 md:col-span-2">
+                        <div data-guia="saldo-fecha-corte" className="flex flex-col gap-1.5 md:col-span-2">
                             <Label htmlFor="fcorte">Fecha de corte</Label>
                             <Input id="fcorte" type="date" className="bg-background" value={fechaCorte} max="2100-12-31"
                                    onChange={e => setFechaCorte(e.target.value || hoy())} />
                         </div>
-                        <div className="flex flex-col gap-1.5 md:col-span-3">
+                        <div data-guia="saldo-duplicados" className="flex flex-col gap-1.5 md:col-span-3">
                             <Label>Duplicados</Label>
                             <label className="flex h-10 items-center gap-3 cursor-pointer">
                                 <Switch checked={excluirDuplicados} onCheckedChange={setExcluirDuplicados} />
@@ -267,7 +267,7 @@ export default function SaldoProveedoresPage() {
                             </label>
                         </div>
                         <div className="flex flex-col sm:flex-row gap-2 md:col-span-3 md:justify-end">
-                            <Button onClick={buscar} disabled={cargando} className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white">
+                            <Button data-guia="saldo-buscar" onClick={buscar} disabled={cargando} className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white">
                                 {cargando ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Search className="mr-2 h-4 w-4" />} Buscar
                             </Button>
                             <ExportSaldoProveedoresPdf grupos={grupos} fechaCorte={consulta?.fechaCorte ?? fechaCorte}
@@ -281,7 +281,7 @@ export default function SaldoProveedoresPage() {
                 {docs && (
                     <CardContent className="p-0">
                         {movDuplicados > 0 && (
-                            <div className={cn('m-3 md:m-4 mb-0 flex flex-col sm:flex-row sm:items-center justify-between gap-2 rounded-lg border px-4 py-2.5 text-sm',
+                            <div data-guia="saldo-aviso-duplicados" className={cn('m-3 md:m-4 mb-0 flex flex-col sm:flex-row sm:items-center justify-between gap-2 rounded-lg border px-4 py-2.5 text-sm',
                                 consulta?.excluirDuplicados
                                     ? 'border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-200'
                                     : 'border-red-200 bg-red-50 text-red-900 dark:border-red-900 dark:bg-red-950 dark:text-red-200')}>
@@ -297,7 +297,7 @@ export default function SaldoProveedoresPage() {
                             </div>
                         )}
 
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-3 md:p-4">
+                        <div data-guia="saldo-resumen" className="grid grid-cols-2 md:grid-cols-4 gap-3 p-3 md:p-4">
                             {[
                                 { t: 'Saldo S/.', v: `S/ ${fmtMonto(tot.soles)}`, c: tot.soles < 0 ? 'text-red-600' : 'text-blue-700 dark:text-blue-400' },
                                 { t: 'Saldo US$', v: `US$ ${fmtMonto(tot.dolares)}`, c: 'text-green-700 dark:text-green-400' },
@@ -315,7 +315,7 @@ export default function SaldoProveedoresPage() {
                             const abierto = abiertos.has(g.codigo)
                             return (
                                 <div key={g.codigo} className="border-t border-border">
-                                    <button type="button" onClick={() => alternar(g.codigo)}
+                                    <button data-guia={g.codigo === grupos[0]?.codigo ? 'saldo-proveedor-grupo' : undefined} type="button" onClick={() => alternar(g.codigo)}
                                             className="flex w-full items-center justify-between gap-3 bg-muted/40 px-3.5 py-3 text-left hover:bg-muted">
                                         <div className="flex min-w-0 items-start gap-2">
                                             {abierto ? <ChevronDown className="mt-0.5 h-4 w-4 shrink-0" /> : <ChevronRight className="mt-0.5 h-4 w-4 shrink-0" />}
@@ -341,7 +341,7 @@ export default function SaldoProveedoresPage() {
                         })}
 
                         {grupos.length > 1 && (
-                            <div className="flex flex-col sm:flex-row justify-between gap-1 border-t-2 border-border bg-muted px-4 py-3 font-extrabold">
+                            <div data-guia="saldo-total-general" className="flex flex-col sm:flex-row justify-between gap-1 border-t-2 border-border bg-muted px-4 py-3 font-extrabold">
                                 <span>TOTAL GENERAL</span>
                                 <span><span className={tot.soles < 0 ? 'text-red-600' : 'text-blue-700 dark:text-blue-400'}>S/ {fmtMonto(tot.soles)}</span>
                                     <span className="ml-3 text-green-700 dark:text-green-400">US$ {fmtMonto(tot.dolares)}</span></span>

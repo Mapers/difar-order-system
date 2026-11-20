@@ -260,7 +260,7 @@ export function SeccionAdminCobranza() {
 
     return (
         <div className="min-w-0 space-y-4">
-            <div className="flex gap-1 border-b">
+            <div data-guia="pestanas-asignacion" className="flex gap-1 border-b">
                 {([
                     ['porAsignar', 'Por asignar', rPA?.total.cantidad ?? 0],
                     ['asignadas', 'Asignadas', rAS?.total.cantidad ?? 0],
@@ -286,7 +286,7 @@ export function SeccionAdminCobranza() {
 
             <TarjetasResumen tarjetas={tarjetas} cargando={!actual.resumen} />
 
-            <Card className="space-y-3 p-3 sm:p-4">
+            <Card data-guia="filtros-asignacion" className="space-y-3 p-3 sm:p-4">
                 <div className="flex flex-col gap-2 lg:flex-row lg:items-center">
                     <div className="relative min-w-0 flex-1">
                         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -346,14 +346,14 @@ export function SeccionAdminCobranza() {
                         <span className="text-muted-foreground">
                             Ordenado por <b className="text-foreground">{({ vence: 'vencimiento', emision: 'emisión', saldo: 'saldo', cliente: 'cliente', vendedor: 'vendedor', factura: 'factura' } as Record<string, string>)[ordenPA.orden]}</b>. Clic en una columna para cambiarlo.
                         </span>
-                        <Button variant="outline" size="sm" onClick={marcarFiltro} disabled={marcandoTodas} className="gap-1.5">
+                        <Button data-guia="seleccionar-filtro" variant="outline" size="sm" onClick={marcarFiltro} disabled={marcandoTodas} className="gap-1.5">
                             {marcandoTodas && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
                             Seleccionar las {pa.total} del filtro
                         </Button>
                     </div>
                 )}
 
-                <Card className="hidden overflow-hidden lg:block">
+                <Card data-guia="tabla-por-asignar" className="hidden overflow-hidden lg:block">
                     <div className="overflow-x-auto">
                         <table className="w-full table-fixed text-sm [&_td]:align-middle">
                             <colgroup>
@@ -462,7 +462,7 @@ export function SeccionAdminCobranza() {
                 </>
             ) : (
                 <>
-                <Card className="hidden overflow-hidden lg:block">
+                <Card data-guia="tabla-asignadas" className="hidden overflow-hidden lg:block">
                     <div className="overflow-x-auto">
                         <table className="w-full table-fixed text-sm [&_td]:align-middle">
                             <colgroup>
@@ -516,7 +516,7 @@ export function SeccionAdminCobranza() {
                                         </td>
                                         <td className="px-3 py-2.5"><EstadoCobranzaBadge estado={estadoVisible(c)} alerta={avisoDescuadre(c)} /></td>
                                         <td className="px-3 py-2.5">
-                                            <div className="flex justify-end gap-1">
+                                            <div data-guia="acciones-asignada" className="flex justify-end gap-1">
                                                 <Button
                                                     variant="ghost" size="icon" className="h-8 w-8"
                                                     disabled={Number(c.tiene_evidencia) !== 1}

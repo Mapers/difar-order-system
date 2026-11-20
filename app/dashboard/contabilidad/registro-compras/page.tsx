@@ -227,7 +227,7 @@ export default function RegistroComprasPage() {
                         </div>
 
                         <div className="flex w-full items-center gap-1.5 sm:w-auto sm:gap-2">
-                            <div className="flex items-center gap-1">
+                            <div className="flex items-center gap-1" data-guia="abrir-clave">
                                 <Input
                                     className="h-10 w-[64px] px-2 sm:w-[96px] sm:px-3" placeholder="Clave"
                                     value={buscarClave}
@@ -251,6 +251,7 @@ export default function RegistroComprasPage() {
                             <BotonLeerFactura disabled={c.cargando || ro} llamativo={!c.clave && c.filas.length === 0} onLeida={c.aplicarLectura} />
 
                             <Button
+                                data-guia="buscar"
                                 onClick={() => setBuscadorAbierto(true)}
                                 variant="outline" className="h-10 gap-1.5 px-3 font-semibold"
                                 title="Buscar por proveedor, serie o número"
@@ -259,7 +260,7 @@ export default function RegistroComprasPage() {
                                 <Search className="h-4 w-4" /> <span className="hidden sm:inline">Buscar</span>
                             </Button>
 
-                            <Button onClick={pedirNueva} variant="outline" className="h-10 gap-1.5 px-3 font-semibold" title="Nueva compra" aria-label="Nueva">
+                            <Button data-guia="nueva" onClick={pedirNueva} variant="outline" className="h-10 gap-1.5 px-3 font-semibold" title="Nueva compra" aria-label="Nueva">
                                 <Plus className="h-4 w-4" /> <span className="hidden sm:inline">Nueva</span>
                             </Button>
 
@@ -269,7 +270,7 @@ export default function RegistroComprasPage() {
             </div>
 
             {/* Totales en vivo */}
-            <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
+            <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5" data-guia="cuadre">
                 <div className={`col-span-2 rounded-xl p-3.5 text-white shadow-sm md:col-span-1 ${
                     t.descuadrado ? 'bg-gradient-to-br from-red-700 to-red-500' : 'bg-gradient-to-br from-emerald-700 to-emerald-500'
                 }`}>
@@ -332,7 +333,7 @@ export default function RegistroComprasPage() {
                     </Aviso>
                 )}
 
-                <Grupo titulo="El documento" nota="Todos estos campos hacen falta para guardar." icono={FileText} acento="blue">
+                <Grupo guia="el-documento" titulo="El documento" nota="Todos estos campos hacen falta para guardar." icono={FileText} acento="blue">
                     <Campos>
                         <Campo k="codProv" etiqueta="Proveedor" requerido className="sm:col-span-2">
                             <BuscadorRemoto
@@ -405,7 +406,7 @@ export default function RegistroComprasPage() {
                 </Grupo>
 
                 {c.esContado && (
-                    <Grupo titulo="Cancelación" icono={Banknote} acento="emerald"
+                    <Grupo guia="cancelacion" titulo="Cancelación" icono={Banknote} acento="emerald"
                            nota="La compra es al contado, así que estos cuatro datos pasan a ser obligatorios.">
                         <Campos>
                             <Campo etiqueta="Fecha de cancelación" requerido>
@@ -426,7 +427,7 @@ export default function RegistroComprasPage() {
 
                 <Collapsible open={otrosAbierto} onOpenChange={setOtrosAbierto}>
                     <CollapsibleTrigger asChild>
-                        <button className={`flex w-full items-center gap-3 rounded-xl border px-4 py-3 text-left shadow-sm transition-colors ${
+                        <button data-guia="datos-adicionales" className={`flex w-full items-center gap-3 rounded-xl border px-4 py-3 text-left shadow-sm transition-colors ${
                             otrosAbierto ? 'border-violet-200 bg-violet-50/60 dark:border-violet-900 dark:bg-violet-950/30' : 'border-border bg-background hover:bg-muted/50'
                         }`}>
                             <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-violet-100 bg-violet-50 text-violet-600 dark:border-violet-900 dark:bg-violet-950">
@@ -486,7 +487,7 @@ export default function RegistroComprasPage() {
                     </CollapsibleContent>
                 </Collapsible>
 
-                <section className="overflow-hidden rounded-xl border border-border bg-background shadow-sm">
+                <section data-guia="detalle" className="overflow-hidden rounded-xl border border-border bg-background shadow-sm">
                     <div className="flex flex-wrap items-center gap-3 border-b border-border bg-gradient-to-b from-muted/40 to-transparent px-4 py-3">
                         <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-blue-100 bg-blue-50 text-blue-600 dark:border-blue-900 dark:bg-blue-950">
                             <ListOrdered className="h-4 w-4" />
@@ -561,25 +562,29 @@ export default function RegistroComprasPage() {
                         <div className="flex flex-wrap items-center gap-2 border-t border-border bg-muted/20 px-4 py-2.5">
                             <span className="mr-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Documento</span>
                             <Button variant="outline" size="sm" className="gap-1.5"
+                                    data-guia="revisa"
                                     onClick={() => setConfirmRevisar(true)} disabled={ro || revisando}
                                     title="Rehace el registro contable sumando el detalle">
                                 {revisando ? <Loader2 className="h-4 w-4 animate-spin" /> : <ClipboardCheck className="h-4 w-4" />}
                                 Revisa
                             </Button>
                             <Button variant="outline" size="sm" className="gap-1.5"
+                                    data-guia="saldo"
                                     onClick={() => setSaldoAbierto(true)}>
                                 <Wallet className="h-4 w-4" /> Saldo
                             </Button>
                             <Button variant="outline" size="sm" className="gap-1.5"
+                                    data-guia="pagos-a-cuenta"
                                     onClick={() => setPagosAbierto(true)} disabled={ro || c.esContado}
                                     title={c.esContado ? 'El documento es al contado' : 'Pagos a cuenta'}>
                                 <Banknote className="h-4 w-4" /> Pagos a cuenta
                             </Button>
                             <Button variant="outline" size="sm" className="gap-1.5"
+                                    data-guia="transporte"
                                     onClick={() => setTranspAbierto(true)} disabled={ro}>
                                 <Truck className="h-4 w-4" /> Transporte
                             </Button>
-                            <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setImprimirAbierto(true)}>
+                            <Button data-guia="imprimir" variant="outline" size="sm" className="gap-1.5" onClick={() => setImprimirAbierto(true)}>
                                 <Printer className="h-4 w-4" /> Imprimir
                             </Button>
                         </div>
@@ -590,6 +595,7 @@ export default function RegistroComprasPage() {
                         <Button
                             variant="outline" size="sm"
                             className="gap-1.5 border-dashed border-blue-300 bg-blue-50 text-blue-700 hover:bg-blue-100 dark:border-blue-800 dark:bg-blue-950 dark:text-blue-300"
+                            data-guia="agregar-linea"
                             onClick={c.agregarFila} disabled={ro}
                         >
                             <Plus className="h-4 w-4" /> Agregar línea
@@ -598,6 +604,7 @@ export default function RegistroComprasPage() {
                         <Button
                             variant="outline" size="sm"
                             className="gap-1.5 text-amber-700 border-amber-200 bg-amber-50 hover:bg-amber-100 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-300"
+                            data-guia="eliminar-marcadas"
                             onClick={() => setConfirmEliminarLineas(true)}
                             disabled={ro || c.guardando || !c.clave || marcadas === 0}
                             title={marcadas === 0 ? 'Marca la casilla de las líneas que quieras eliminar' : undefined}
@@ -609,6 +616,7 @@ export default function RegistroComprasPage() {
                             <Button
                                 variant="ghost" size="sm"
                                 className="gap-1.5 text-red-600 hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-950"
+                                data-guia="eliminar-documento"
                                 onClick={() => setConfirmEliminarDoc(true)}
                             >
                                 <X className="h-4 w-4" /> Eliminar documento
@@ -623,6 +631,7 @@ export default function RegistroComprasPage() {
                             )}
                             <Button
                                 variant="outline" size="sm" className="gap-1.5"
+                                data-guia="limpiar"
                                 onClick={pedirNueva}
                                 disabled={c.guardando}
                                 title="Vaciar el formulario y empezar una compra nueva"
@@ -632,6 +641,7 @@ export default function RegistroComprasPage() {
                             <Button
                                 size="sm"
                                 className="w-full gap-1.5 bg-emerald-600 text-white shadow-md shadow-emerald-600/30 hover:bg-emerald-700 sm:w-auto"
+                                data-guia="guardar"
                                 onClick={c.guardar}
                                 disabled={c.guardando || ro}
                             >
@@ -838,11 +848,11 @@ const ACENTOS = {
     emerald: 'border-emerald-100 bg-emerald-50 text-emerald-600 dark:border-emerald-900 dark:bg-emerald-950',
 }
 
-function Grupo({ titulo, nota, icono: Icono, acento = 'blue', children }: {
-    titulo: string; nota?: string; icono: LucideIcon; acento?: keyof typeof ACENTOS; children: React.ReactNode
+function Grupo({ titulo, nota, icono: Icono, acento = 'blue', guia, children }: {
+    titulo: string; nota?: string; icono: LucideIcon; acento?: keyof typeof ACENTOS; guia?: string; children: React.ReactNode
 }) {
     return (
-        <section className="overflow-hidden rounded-xl border border-border bg-background shadow-sm">
+        <section data-guia={guia} className="overflow-hidden rounded-xl border border-border bg-background shadow-sm">
             <div className="flex items-center gap-3 border-b border-border bg-gradient-to-b from-muted/40 to-transparent px-4 py-3">
                 <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border ${ACENTOS[acento]}`}>
                     <Icono className="h-4 w-4" />

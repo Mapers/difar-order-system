@@ -80,7 +80,7 @@ export function PaginaArchivosSunat({ titulo, descripcion, archivos }: Props) {
                     <AvisoInforme texto={aviso} onCerrar={() => setAviso(null)} className="mt-3" />
                 </CardHeader>
                 <CardContent className="p-3 md:p-4">
-                    <div className={cn('grid grid-cols-1 sm:grid-cols-2 gap-3', archivos.length > 3 ? 'lg:grid-cols-4' : 'lg:grid-cols-3')}>
+                    <div data-guia="archivos-lista" className={cn('grid grid-cols-1 sm:grid-cols-2 gap-3', archivos.length > 3 ? 'lg:grid-cols-4' : 'lg:grid-cols-3')}>
                         {archivos.map(a => {
                             const g = generados[a.clave]
                             const sel = activo.clave === a.clave
@@ -98,7 +98,7 @@ export function PaginaArchivosSunat({ titulo, descripcion, archivos }: Props) {
                                                 <p className="text-xs text-muted-foreground">{a.descripcion}</p>
                                             </div>
                                         </div>
-                                        {a.seleccionable && <Badge variant="outline" className="shrink-0 text-[10px]">Elegir docs</Badge>}
+                                        {a.seleccionable && <Badge data-guia={a.clave === archivos.find(x => x.seleccionable)?.clave ? 'archivo-elegir-docs' : undefined} variant="outline" className="shrink-0 text-[10px]">Elegir docs</Badge>}
                                     </div>
                                     {g && (
                                         <div className="rounded-md bg-emerald-50 px-2 py-1.5 text-[11px] text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
@@ -106,7 +106,7 @@ export function PaginaArchivosSunat({ titulo, descripcion, archivos }: Props) {
                                             <p className="font-mono break-all">{g.nombre}</p>
                                         </div>
                                     )}
-                                    <Button size="sm" className="mt-auto bg-blue-600 hover:bg-blue-700 text-white" disabled={descargando === a.clave}
+                                    <Button data-guia={a.clave === archivos[0].clave ? 'archivo-generar' : undefined} size="sm" className="mt-auto bg-blue-600 hover:bg-blue-700 text-white" disabled={descargando === a.clave}
                                             onClick={e => { e.stopPropagation(); setActivo(a); descargar(a) }}>
                                         {descargando === a.clave ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Eye className="mr-2 h-4 w-4" />}
                                         {a.seleccionable ? `Vista previa TXT (${activo.clave === a.clave ? seleccion.size : 0})` : 'Vista previa TXT'}
@@ -118,7 +118,7 @@ export function PaginaArchivosSunat({ titulo, descripcion, archivos }: Props) {
                 </CardContent>
             </Card>
 
-            <Card className="shadow-md overflow-hidden">
+            <Card data-guia="archivo-registros" className="shadow-md overflow-hidden">
                 <CardHeader className="border-b border-border p-4 flex flex-row items-center justify-between gap-3 space-y-0">
                     <div>
                         <p className="font-bold text-foreground">{activo.titulo} · {periodo}</p>
@@ -127,7 +127,7 @@ export function PaginaArchivosSunat({ titulo, descripcion, archivos }: Props) {
                         </p>
                     </div>
                     {def && (
-                        <Button variant="outline" size="sm" onClick={verPrevia} disabled={cargando}>
+                        <Button data-guia="archivo-cargar" variant="outline" size="sm" onClick={verPrevia} disabled={cargando}>
                             {cargando ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Eye className="mr-2 h-4 w-4" />} {activo.seleccionable ? 'Cargar documentos' : 'Vista previa'}
                         </Button>
                     )}

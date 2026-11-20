@@ -149,17 +149,17 @@ export function ActualizaVentasApp() {
                     </div>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                    <Button variant="outline" onClick={() => setSireAbierto(true)}
+                    <Button data-guia="validar-sire" variant="outline" onClick={() => setSireAbierto(true)}
                             className="border-indigo-300 text-indigo-700 hover:bg-indigo-50 dark:border-indigo-800 dark:text-indigo-300 dark:hover:bg-indigo-950/40">
                         <ShieldCheck className="mr-2 h-4 w-4" /> Validar SIRE
                     </Button>
-                    <Button variant="outline" onClick={() => setPdfAbierto(true)} disabled={cargando || visibles.length === 0}>
+                    <Button data-guia="exportar-pdf" variant="outline" onClick={() => setPdfAbierto(true)} disabled={cargando || visibles.length === 0}>
                         <FileDown className="mr-2 h-4 w-4" /> Exportar PDF
                     </Button>
-                    <Button variant="outline" onClick={consultar} disabled={cargando}>
+                    <Button data-guia="actualizar" variant="outline" onClick={consultar} disabled={cargando}>
                         <RefreshCw className={cn('mr-2 h-4 w-4', cargando && 'animate-spin')} /> Actualizar
                     </Button>
-                    <Button onClick={() => abrirCola(seleccionadas.length ? seleccionadas : filas)} disabled={cargando || !filas.some(cargable)}
+                    <Button data-guia="cargar-pendientes" onClick={() => abrirCola(seleccionadas.length ? seleccionadas : filas)} disabled={cargando || !filas.some(cargable)}
                             className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-600/25 hover:from-blue-700 hover:to-indigo-700">
                         <Upload className="mr-2 h-4 w-4" />
                         {seleccionadas.length ? `Cargar seleccionados (${seleccionadas.length})` : `Cargar pendientes (${filas.filter(cargable).length})`}
@@ -172,7 +172,7 @@ export function ActualizaVentasApp() {
 
             {/* Filtros */}
             <div className="rounded-2xl border bg-card p-3 shadow-md shadow-slate-900/5 dark:shadow-black/30 sm:p-4">
-                <div className="grid grid-cols-2 gap-3 md:grid-cols-[140px_180px_1fr]">
+                <div className="grid grid-cols-2 gap-3 md:grid-cols-[140px_180px_1fr]" data-guia="periodo">
                     <div className="space-y-1"><p className="text-xs font-medium text-muted-foreground">Año</p><Combo items={anios} valor={anio} onCambio={v => v && setAnio(v)} icono={CalendarDays} /></div>
                     <div className="space-y-1"><p className="text-xs font-medium text-muted-foreground">Mes</p><Combo items={meses} valor={mes} onCambio={v => v && setMes(v)} icono={CalendarDays} /></div>
                     <div className="col-span-2 space-y-1 md:col-span-1">
@@ -183,7 +183,7 @@ export function ActualizaVentasApp() {
                         </div>
                     </div>
                 </div>
-                <div className="mt-3 flex flex-wrap items-center gap-2">
+                <div className="mt-3 flex flex-wrap items-center gap-2" data-guia="filtros">
                     <Filter className="h-4 w-4 text-muted-foreground" />
                     {([['todos', 'Todos'], ['01', 'Facturas'], ['03', 'Boletas'], ['07', 'Notas de crédito']] as [FiltroTipo, string][]).map(([v, t]) => (
                         <Chip key={v} activo={tipo === v} onClick={() => setTipo(v)} texto={t} cuenta={conteo(v)} />
@@ -226,7 +226,7 @@ export function ActualizaVentasApp() {
             )}
 
             {/* Estado del mes */}
-            <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
+            <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6" data-guia="estado-mes">
                 <Tarjeta icono={FileText} titulo="Comprobantes" valor={resumen?.total ?? '—'} sub={`${MESES[Number(mes) - 1]} ${anio}`} color="from-blue-500 to-indigo-600" cargando={cargando} />
                 <Tarjeta icono={CheckCircle2} titulo="Cargados" valor={resumen?.cargados ?? '—'} sub={resumen ? soles(resumen.montoCargado) : ''} color="from-emerald-500 to-teal-600" cargando={cargando} />
                 <Tarjeta icono={Clock} titulo="Pendientes" valor={resumen?.pendientes ?? '—'} sub={resumen ? soles(resumen.montoPendiente) : ''} color="from-amber-500 to-orange-500" cargando={cargando} />
@@ -254,9 +254,9 @@ export function ActualizaVentasApp() {
             )}
 
             {/* Tabla de comprobantes */}
-            <div className="relative overflow-hidden rounded-2xl border bg-card shadow-md shadow-slate-900/5 dark:shadow-black/30">
+            <div data-guia="comprobantes" className="relative overflow-hidden rounded-2xl border bg-card shadow-md shadow-slate-900/5 dark:shadow-black/30">
                 <div className="flex flex-wrap items-center justify-between gap-2 border-b bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
-                    <span className="flex items-center gap-2"><Checkbox checked={todasSel} onCheckedChange={alternarTodas} disabled={!pendientesVisibles.length} aria-label="Seleccionar pendientes" /><b className="text-foreground">{visibles.length}</b> comprobante{visibles.length === 1 ? '' : 's'} · clic en una tarjeta para ver sus tablas</span>
+                    <span className="flex items-center gap-2" data-guia="seleccionar"><Checkbox checked={todasSel} onCheckedChange={alternarTodas} disabled={!pendientesVisibles.length} aria-label="Seleccionar pendientes" /><b className="text-foreground">{visibles.length}</b> comprobante{visibles.length === 1 ? '' : 's'} · clic en una tarjeta para ver sus tablas</span>
                     {sel.size > 0 && <span className="font-medium text-blue-700 dark:text-blue-300">{sel.size} seleccionado{sel.size === 1 ? '' : 's'} · <button className="underline" onClick={() => setSel(new Set())}>quitar</button></span>}
                 </div>
                 {cargando && filas.length > 0 && (

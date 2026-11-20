@@ -91,7 +91,7 @@ export default function TipoCambioPage() {
                                    descripcion="Tipo de cambio del dólar por fecha (compra y venta). Se usa en compras, ventas y caja en dólares." />
 
             {/* ---------- ficha (como en Access: Fecha, Compra, Venta) */}
-            <Card className="p-3 shadow-md sm:p-4">
+            <Card data-guia="ficha" className="p-3 shadow-md sm:p-4">
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:items-end">
                     <Campo label="Fecha:" obligatorio className="col-span-2 sm:col-span-1">
                         <input type="date" className={claseInput} value={form.fecha} disabled={form.editando} onChange={(e) => set({ fecha: e.target.value })} />
@@ -103,7 +103,7 @@ export default function TipoCambioPage() {
                         <input inputMode="decimal" placeholder="0.0000" className={`${claseInput} text-right font-mono`} value={form.venta} onChange={(e) => set({ venta: e.target.value })} />
                     </Campo>
                     <div className="col-span-2 flex flex-wrap gap-2 sm:col-span-1">
-                        <Button className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 text-white" disabled={guardando} onClick={() => guardar()}>
+                        <Button data-guia="guardar" className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 text-white" disabled={guardando} onClick={() => guardar()}>
                             {guardando ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : form.editando ? <Pencil className="mr-1.5 h-4 w-4" /> : <Save className="mr-1.5 h-4 w-4" />}
                             {form.editando ? 'Modificar' : 'Guardar y nuevo'}
                         </Button>
@@ -122,7 +122,7 @@ export default function TipoCambioPage() {
             <AvisoAmbar mensaje={aviso} onCerrar={() => setAviso('')} />
             {faltantes.length > 0 && (
                 <AvisoAmbar mensaje={
-                    <div>
+                    <div data-guia="faltantes">
                         <p className="font-medium">Hay {faltantes.length} fecha(s) con documentos en dólares sin tipo de cambio en el rango:</p>
                         <div className="mt-1.5 flex flex-wrap gap-1.5">
                             {faltantes.map((f) => (
@@ -139,7 +139,7 @@ export default function TipoCambioPage() {
 
             {/* ---------- lista */}
             <Card className="overflow-hidden shadow-md">
-                <form className="flex flex-wrap items-end gap-2 border-b border-border p-3 sm:p-4" onSubmit={(e) => { e.preventDefault(); cargar() }}>
+                <form data-guia="rango" className="flex flex-wrap items-end gap-2 border-b border-border p-3 sm:p-4" onSubmit={(e) => { e.preventDefault(); cargar() }}>
                     <Campo label="Desde" className="w-[calc(50%-4px)] sm:w-40"><input type="date" className={claseInput} value={desde} onChange={(e) => setDesde(e.target.value)} /></Campo>
                     <Campo label="Hasta" className="w-[calc(50%-4px)] sm:w-40"><input type="date" className={claseInput} value={hasta} onChange={(e) => setHasta(e.target.value)} /></Campo>
                     <Button type="submit" variant="outline" className="h-9 w-full sm:w-auto" disabled={cargando}>{cargando ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Buscar'}</Button>
@@ -148,7 +148,7 @@ export default function TipoCambioPage() {
                     <p className="p-10 text-center text-sm text-muted-foreground">{cargando ? 'Cargando…' : 'No hay tipo de cambio en ese rango.'}</p>
                 ) : (
                     <>
-                        <table className="w-full text-sm">
+                        <table data-guia="lista" className="w-full text-sm">
                             <thead className="bg-muted/60 text-left text-xs uppercase tracking-wide text-muted-foreground">
                                 <tr><th className="px-3 py-2">Fecha</th><th className="px-3 py-2 text-right">Compra</th><th className="px-3 py-2 text-right">Venta</th>
                                     <th className="hidden px-3 py-2 text-right sm:table-cell">Docs. USD</th></tr>

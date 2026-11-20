@@ -145,7 +145,7 @@ export function PaginaInformes({ titulo, descripcion, pestanas, aviso, onFila, r
 
             <Tabs value={activa} onValueChange={cambiarPestana}>
                 <div className="overflow-x-auto pb-1">
-                    <TabsList className="h-auto w-max gap-1 bg-muted p-1">
+                    <TabsList data-guia="pestanas" className="h-auto w-max gap-1 bg-muted p-1">
                         {pestanas.map(k => (
                             <TabsTrigger key={k} value={k} className="px-3 py-1.5 text-xs md:text-sm data-[state=active]:bg-blue-600 data-[state=active]:text-white">
                                 {DEFINICIONES[k].titulo}
@@ -157,12 +157,12 @@ export function PaginaInformes({ titulo, descripcion, pestanas, aviso, onFila, r
 
             <Card className="shadow-md overflow-hidden">
                 <CardHeader className="bg-muted border-b border-border p-4 gap-3">
-                    <div className="flex items-start gap-2 text-sm text-muted-foreground">
+                    <div data-guia="descripcion-informe" className="flex items-start gap-2 text-sm text-muted-foreground">
                         <Info className="h-4 w-4 mt-0.5 shrink-0 text-blue-600" />
                         <span>{def.descripcion} <span className="text-xs">(Access: {def.access})</span></span>
                     </div>
                     {def.advertencia && (
-                        <div className="flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-100">
+                        <div data-guia="advertencia" className="flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-100">
                             <Info className="mt-0.5 h-4 w-4 shrink-0" />
                             <span>{def.advertencia}</span>
                         </div>
@@ -189,7 +189,7 @@ export function PaginaInformes({ titulo, descripcion, pestanas, aviso, onFila, r
                     )}
                     {actuales && (
                         <>
-                            <div className={cn('grid gap-3 p-3 md:p-4', kpis.length > 2 ? 'grid-cols-2 md:grid-cols-4' : 'grid-cols-2')}>
+                            <div data-guia="resumen" className={cn('grid gap-3 p-3 md:p-4', kpis.length > 2 ? 'grid-cols-2 md:grid-cols-4' : 'grid-cols-2')}>
                                 {kpis.map((k, i) => (
                                     <div key={k.t} className="rounded-lg border border-border p-3 md:p-4">
                                         <p className="text-[10px] md:text-[11px] uppercase tracking-wider text-muted-foreground">{k.t}</p>
@@ -199,7 +199,7 @@ export function PaginaInformes({ titulo, descripcion, pestanas, aviso, onFila, r
                             </div>
                             {actuales.length === 0
                                 ? <p className="px-4 pb-8 pt-2 text-center text-sm text-muted-foreground">{def.vacio ?? `No hay registros para ${periodo}.`}</p>
-                                : <div className="border-t border-border">
+                                : <div data-guia="tabla" className="border-t border-border">
                                     <p className="px-4 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground bg-muted/40 border-b">
                                         {[leyendaMoneda(def), periodo].filter(Boolean).join(' · ')}
                                     </p>

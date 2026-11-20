@@ -263,7 +263,7 @@ export function PlanillasCaja({ catalogos, usuario, onPendientes }: Props) {
     return (
         <div className="grid grid-cols-1 gap-4">
             <div className="flex flex-wrap items-center gap-2">
-                <div className="inline-flex rounded-lg border bg-muted p-1">
+                <div data-guia="pendientes-historial" className="inline-flex rounded-lg border bg-muted p-1">
                     <button
                         type="button"
                         onClick={() => setVista('pendientes')}
@@ -290,7 +290,7 @@ export function PlanillasCaja({ catalogos, usuario, onPendientes }: Props) {
                         <Button
                             variant="outline" size="sm"
                             className="gap-1.5 border-red-200 bg-red-50 text-red-700 hover:bg-red-100 dark:border-red-900 dark:bg-red-950 dark:text-red-300"
-                            onClick={() => { setMotivo(''); setRechazarIds(seleccionados) }}
+                            data-guia="rechazar" onClick={() => { setMotivo(''); setRechazarIds(seleccionados) }}
                             disabled={trabajando || seleccionados.length === 0}
                         >
                             <XCircle className="h-4 w-4" /> Rechazar ({seleccionados.length})
@@ -298,7 +298,7 @@ export function PlanillasCaja({ catalogos, usuario, onPendientes }: Props) {
                         <Button
                             size="sm"
                             className="gap-1.5 bg-emerald-600 text-white shadow-md shadow-emerald-600/30 hover:bg-emerald-700"
-                            onClick={() => pedirAceptar(seleccionados)}
+                            data-guia="aceptar-seleccionados" onClick={() => pedirAceptar(seleccionados)}
                             disabled={trabajando || seleccionados.length === 0}
                         >
                             {trabajando ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCheck className="h-4 w-4" />}
@@ -329,7 +329,7 @@ export function PlanillasCaja({ catalogos, usuario, onPendientes }: Props) {
                     const algunas = !todas && ids.some(id => seleccion.has(id))
                     const total = filas.reduce((s, r) => s + Number(r.importe_cobrado), 0)
                     return (
-                        <Card key={p.id_planilla} className="overflow-hidden shadow-sm">
+                        <Card key={p.id_planilla} data-guia="planilla-pendiente" className="overflow-hidden shadow-sm">
                             <div className="flex flex-wrap items-center gap-3 border-b bg-gradient-to-r from-muted/60 to-background px-4 py-3">
                                 <Checkbox
                                     checked={todas ? true : algunas ? 'indeterminate' : false}

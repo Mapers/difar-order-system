@@ -90,7 +90,7 @@ export default function CatalogosPage() {
             </header>
 
             {/* Botones de Access, en sus 3 filas */}
-            <nav aria-label="Catálogos" className="flex flex-col gap-1.5 rounded-lg border bg-card p-2 sm:p-3">
+            <nav data-guia="botones" aria-label="Catálogos" className="flex flex-col gap-1.5 rounded-lg border bg-card p-2 sm:p-3">
                 {FILAS_ACCESS.map((fila, i) => (
                     <div key={i} className="flex flex-wrap gap-1.5">
                         {fila.map(b => (
@@ -117,7 +117,7 @@ export default function CatalogosPage() {
             {actual.catalogos.length > 0 && (
                 <section className="flex flex-col gap-3 rounded-lg border bg-card p-3 sm:p-4">
                     {actual.catalogos.length > 1 && (
-                        <div role="tablist" className="flex flex-wrap gap-1 border-b pb-2">
+                        <div data-guia="pestanas" role="tablist" className="flex flex-wrap gap-1 border-b pb-2">
                             {actual.catalogos.map(c => (
                                 <button key={c} role="tab" aria-selected={c === catalogo} type="button"
                                         onClick={() => { setCatalogo(c); setBuscar('') }}
@@ -140,17 +140,17 @@ export default function CatalogosPage() {
                         {def.nota && !def.soloLectura && <p className="flex gap-1 text-xs text-muted-foreground"><Info className="mt-0.5 h-3 w-3 shrink-0" />{def.nota}</p>}
                     </div>
 
-                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                    <div data-guia="buscar" className="flex flex-col gap-2 sm:flex-row sm:items-center">
                         <div className="relative flex-1">
                             <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                             <Input className="h-9 pl-8" placeholder="Buscar en la lista" value={buscar} onChange={e => setBuscar(e.target.value)} />
                         </div>
                         <div className="flex gap-2">
-                            <Button variant="outline" size="sm" className="h-9 flex-1 sm:flex-none" onClick={cargar} disabled={cargando}>
+                            <Button data-guia="actualizar" variant="outline" size="sm" className="h-9 flex-1 sm:flex-none" onClick={cargar} disabled={cargando}>
                                 <RefreshCw className={cn('mr-1.5 h-4 w-4', cargando && 'animate-spin')} />Actualizar
                             </Button>
                             {puedeAlta && (
-                                <Button size="sm" className="h-9 flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 text-white sm:flex-none" onClick={() => setFicha({ fila: null })}>
+                                <Button data-guia="nuevo" size="sm" className="h-9 flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 text-white sm:flex-none" onClick={() => setFicha({ fila: null })}>
                                     <Plus className="mr-1.5 h-4 w-4" />Nuevo
                                 </Button>
                             )}
@@ -191,7 +191,7 @@ export default function CatalogosPage() {
                             </ul>
 
                             {/* Escritorio: tabla */}
-                            <div className="hidden max-h-[60vh] overflow-auto rounded-md border md:block">
+                            <div data-guia="lista" className="hidden max-h-[60vh] overflow-auto rounded-md border md:block">
                                 <Table>
                                     <TableHeader className="sticky top-0 bg-muted/80 backdrop-blur">
                                         <TableRow>

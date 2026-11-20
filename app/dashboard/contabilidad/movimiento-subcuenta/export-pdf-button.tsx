@@ -88,6 +88,7 @@ const ExportSubctaMvtoPdf: React.FC<Props> = ({ cabecera, detalle }) => {
     return (
         <>
             <Button
+                data-guia="exportar-pdf"
                 variant="outline"
                 onClick={() => setOpen(true)}
                 className="shrink-0 gap-2 text-blue-700 border-blue-200 hover:bg-blue-50 bg-background"

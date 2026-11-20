@@ -87,7 +87,7 @@ export function TxtVistaPreviaDialog({ abierto, onCerrar, titulo, periodo, archi
 
                 <div className="grid min-h-0 flex-1 grid-cols-1 grid-rows-[auto_1fr] md:grid-cols-[320px_1fr] md:grid-rows-1">
                     {/* Datos del archivo */}
-                    <div className="min-h-0 space-y-5 overflow-y-auto border-b p-5 md:border-b-0 md:border-r">
+                    <div data-guia="txt-datos" className="min-h-0 space-y-5 overflow-y-auto border-b p-5 md:border-b-0 md:border-r">
                         <Seccion icono={Info} titulo="Archivo">
                             <Dato t="Periodo" v={periodo} />
                             <Dato t="Nombre" v={archivo?.nombre ?? '-'} mono />
@@ -100,7 +100,7 @@ export function TxtVistaPreviaDialog({ abierto, onCerrar, titulo, periodo, archi
                         <Seccion icono={Search} titulo="Buscar en el contenido">
                             <div className="space-y-1.5">
                                 <Label className="text-xs">RUC, serie, número o nombre</Label>
-                                <Input value={buscar} onChange={e => setBuscar(e.target.value)} placeholder="Ej: F001-13080 o 20100047218" />
+                                <Input data-guia="txt-buscar" value={buscar} onChange={e => setBuscar(e.target.value)} placeholder="Ej: F001-13080 o 20100047218" />
                                 {buscar && <p className="text-xs text-muted-foreground">{filtradas.length} línea(s) coinciden</p>}
                             </div>
                         </Seccion>
@@ -143,7 +143,7 @@ export function TxtVistaPreviaDialog({ abierto, onCerrar, titulo, periodo, archi
                         <Button variant="outline" className="hidden gap-1.5 md:inline-flex" disabled={!texto} onClick={copiar}>
                             <Copy className="h-4 w-4" /> Copiar
                         </Button>
-                        <Button className="gap-1.5 bg-blue-600 text-white shadow-md shadow-blue-600/30 hover:bg-blue-700" disabled={!archivo} onClick={descargar}>
+                        <Button data-guia="txt-descargar" className="gap-1.5 bg-blue-600 text-white shadow-md shadow-blue-600/30 hover:bg-blue-700" disabled={!archivo} onClick={descargar}>
                             <Download className="h-4 w-4" /> Descargar<span className="hidden sm:inline"> TXT</span>
                         </Button>
                     </div>

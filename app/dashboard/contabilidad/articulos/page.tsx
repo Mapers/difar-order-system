@@ -63,19 +63,19 @@ export default function ArticulosContablesPage() {
         <div className="flex flex-col gap-4 p-0 md:p-2">
             <CabeceraMantenimiento icono={<Boxes className="h-5 w-5" />} titulo="Bienes y Servicios"
                                    descripcion="Ficha contable de los artículos: sub-grupo, unidad, tipo de existencia, cuentas contables y código OSCE.">
-                <Button className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white" onClick={() => abrir(null)}><PackagePlus className="mr-1.5 h-4 w-4" /> Nuevo artículo</Button>
+                <Button data-guia="nuevo-articulo" className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white" onClick={() => abrir(null)}><PackagePlus className="mr-1.5 h-4 w-4" /> Nuevo artículo</Button>
             </CabeceraMantenimiento>
             <AvisoAmbar mensaje={aviso} onCerrar={() => setAviso('')} />
 
             <Tabs defaultValue="articulos">
-                <TabsList className="h-auto gap-1 bg-muted p-1">
+                <TabsList data-guia="pestanas" className="h-auto gap-1 bg-muted p-1">
                     <TabsTrigger value="articulos" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">Bienes y servicios</TabsTrigger>
                     <TabsTrigger value="osce" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">OSCE</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="articulos">
                     <Card className="overflow-hidden shadow-md">
-                        <div className="grid grid-cols-1 gap-2 border-b border-border p-3 sm:grid-cols-[1fr_18rem] sm:p-4">
+                        <div data-guia="filtros" className="grid grid-cols-1 gap-2 border-b border-border p-3 sm:grid-cols-[1fr_18rem] sm:p-4">
                             <Buscador valor={buscar} onCambio={(v) => { setBuscar(v); if (!v) setFiltro('') }} onBuscar={() => setFiltro(buscar)} placeholder="Código (empieza con) o descripción" />
                             <Combo items={subGrupos} valor={subGrupo} onCambio={setSubGrupo} placeholder="Todos los sub-grupos" vaciable />
                         </div>
@@ -99,7 +99,7 @@ export default function ArticulosContablesPage() {
                                         </li>
                                     ))}
                                 </ul>
-                                <div className="hidden overflow-x-auto md:block">
+                                <div data-guia="lista" className="hidden overflow-x-auto md:block">
                                     <table className="w-full text-sm">
                                         <thead className="bg-muted/60 text-left text-xs uppercase tracking-wide text-muted-foreground">
                                             <tr><th className="px-3 py-2">Código</th><th className="px-3 py-2">Descripción</th><th className="px-3 py-2">Sub-grupo</th><th className="px-3 py-2">Unidad</th>

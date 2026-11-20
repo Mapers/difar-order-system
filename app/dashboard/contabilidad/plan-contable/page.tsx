@@ -60,7 +60,7 @@ export default function PlanContablePage() {
                 aviso={
                     <div className="flex flex-wrap gap-2 pt-1">
                         {botones.map((b, i) => (
-                            <Button key={b.t} variant={b.t === 'Nueva cuenta' ? 'default' : 'outline'} size="sm" onClick={b.accion}
+                            <Button key={b.t} data-guia={b.t.toLowerCase().replace(/ /g, '-')} variant={b.t === 'Nueva cuenta' ? 'default' : 'outline'} size="sm" onClick={b.accion}
                                     style={{ animationDelay: `${i * 50}ms`, animationFillMode: 'backwards' }}
                                     className={`animate-in fade-in-0 slide-in-from-top-1 duration-500 transition-all hover:-translate-y-0.5 hover:shadow-md ${b.t === 'Nueva cuenta'
                                         ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-sm shadow-blue-600/30 hover:shadow-blue-600/40'

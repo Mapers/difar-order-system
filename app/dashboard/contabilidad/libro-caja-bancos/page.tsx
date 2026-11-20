@@ -122,7 +122,7 @@ export default function LibroCajaBancosPage() {
                     <TabsTrigger value="vouchers" className="gap-1.5 px-4 py-2 font-semibold">
                         <Receipt className="h-4 w-4" /> Vouchers
                     </TabsTrigger>
-                    <TabsTrigger value="planillas" className="gap-1.5 px-4 py-2 font-semibold">
+                    <TabsTrigger value="planillas" data-guia="tab-planillas" className="gap-1.5 px-4 py-2 font-semibold">
                         <Inbox className="h-4 w-4" /> Planillas de cobranza
                         {!!pendientesPlanilla && (
                             <span className="rounded-full bg-blue-600 px-1.5 text-[11px] text-white tabular-nums">{pendientesPlanilla}</span>
@@ -132,7 +132,7 @@ export default function LibroCajaBancosPage() {
 
                 {/* forceMount: las dos pestañas conservan lo que se estaba haciendo al cambiar de una a otra */}
                 <TabsContent value="vouchers" forceMount className="mt-0 grid grid-cols-1 gap-5 data-[state=inactive]:hidden">
-                    <Card className="border-t-[3px] border-t-blue-600 bg-gradient-to-b from-background to-muted/30 shadow-sm">
+                    <Card data-guia="caja-fecha" className="border-t-[3px] border-t-blue-600 bg-gradient-to-b from-background to-muted/30 shadow-sm">
                         <CardContent className="p-4">
                             <div className="flex flex-col gap-4 lg:flex-row lg:items-end">
                                 <div className="flex flex-col gap-1.5 lg:w-80">
@@ -177,12 +177,12 @@ export default function LibroCajaBancosPage() {
                                 </div>
 
                                 <div className="flex flex-wrap gap-2 lg:ml-auto">
-                                    <Button onClick={() => c.abrir(false)} disabled={c.cargando} variant="outline" className="h-10 gap-1.5 font-semibold"
+                                    <Button data-guia="consultar" onClick={() => c.abrir(false)} disabled={c.cargando} variant="outline" className="h-10 gap-1.5 font-semibold"
                                             title="Carga el voucher de esa caja y fecha, si ya existe">
                                         {c.cargando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
                                         Consultar
                                     </Button>
-                                    <Button onClick={() => c.abrir(true)} disabled={c.cargando}
+                                    <Button data-guia="nuevo-voucher" onClick={() => c.abrir(true)} disabled={c.cargando}
                                             className="h-10 gap-1.5 bg-blue-600 font-semibold text-white shadow-md shadow-blue-600/30 hover:bg-blue-700"
                                             title="Crea el voucher del día; si ya existe, lo abre">
                                         <Plus className="h-4 w-4" />
@@ -274,7 +274,7 @@ export default function LibroCajaBancosPage() {
                                     </div>
                                 )}
 
-                                <div className="overflow-auto" ref={grillaRef}>
+                                <div data-guia="lineas-voucher" className="overflow-auto" ref={grillaRef}>
                                     <table className="w-full min-w-[1100px] text-xs border-collapse">
                                         <thead>
                                             <tr className="sticky top-0 z-10 bg-gradient-to-b from-muted/60 to-muted">
@@ -329,7 +329,7 @@ export default function LibroCajaBancosPage() {
 
                                     <Button
                                         variant="outline" size="sm" className="gap-1.5 text-amber-700 border-amber-200 bg-amber-50 hover:bg-amber-100 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-300"
-                                        onClick={() => setConfirmEliminarLineas(true)}
+                                        data-guia="eliminar-marcadas" onClick={() => setConfirmEliminarLineas(true)}
                                         disabled={c.cerrado || c.guardando || marcadas === 0}
                                         title={marcadas === 0 ? 'Marca la casilla de las líneas que quieras eliminar' : undefined}
                                     >
@@ -338,7 +338,7 @@ export default function LibroCajaBancosPage() {
 
                                     <Button
                                         variant="ghost" size="sm" className="gap-1.5 text-red-600 hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-950"
-                                        onClick={() => setConfirmEliminarVoucher(true)}
+                                        data-guia="eliminar-voucher" onClick={() => setConfirmEliminarVoucher(true)}
                                         disabled={c.cerrado}
                                     >
                                         <X className="h-4 w-4" /> Eliminar voucher
@@ -361,7 +361,7 @@ export default function LibroCajaBancosPage() {
                                         <Button
                                             size="sm"
                                             className="gap-1.5 bg-emerald-600 text-white shadow-md shadow-emerald-600/30 hover:bg-emerald-700"
-                                            onClick={c.guardar}
+                                            data-guia="guardar-voucher" onClick={c.guardar}
                                             disabled={c.guardando || c.cerrado || !c.hayCambios}
                                             title={!c.hayCambios ? 'No hay cambios por guardar' : undefined}
                                         >

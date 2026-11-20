@@ -175,7 +175,7 @@ export function ExportarPdfInforme({ titulo, subtitulo, nombreArchivo, columnas,
 
     return (
         <>
-            <Button variant="outline" className="w-full sm:w-auto" onClick={abrir} disabled={!filas?.length}>
+            <Button data-guia="exportar-pdf" variant="outline" className="w-full sm:w-auto" onClick={abrir} disabled={!filas?.length}>
                 <Download className="mr-2 h-4 w-4" /> PDF
             </Button>
             <PdfVistaPreviaDialog

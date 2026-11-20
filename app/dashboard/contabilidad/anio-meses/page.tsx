@@ -92,7 +92,7 @@ export default function AnioMesesPage() {
                 <Card className="overflow-hidden shadow-md">
                     <div className="border-b border-border p-3 sm:p-4">
                         <h2 className="mb-2 text-sm font-semibold text-foreground">Año</h2>
-                        <form className="flex items-end gap-2" onSubmit={(e) => { e.preventDefault(); crearAnio() }}>
+                        <form data-guia="nuevo-anio" className="flex items-end gap-2" onSubmit={(e) => { e.preventDefault(); crearAnio() }}>
                             <Campo label="Año" obligatorio className="w-32">
                                 <input inputMode="numeric" maxLength={4} placeholder="2035" className={`${claseInput} font-mono`} value={nuevo} onChange={(e) => { setNuevo(e.target.value.replace(/\D/g, '')); setAvisoAnio('') }} />
                             </Campo>
@@ -102,7 +102,7 @@ export default function AnioMesesPage() {
                         </form>
                         <AvisoAmbar className="mt-3" mensaje={avisoAnio} onCerrar={() => setAvisoAnio('')} />
                     </div>
-                    <ul className="max-h-[60vh] divide-y divide-border overflow-y-auto">
+                    <ul data-guia="lista-anios" className="max-h-[60vh] divide-y divide-border overflow-y-auto">
                         {cargando && !anios.length && <li className="p-6 text-center text-sm text-muted-foreground">Cargando…</li>}
                         {anios.map((a) => {
                             const n = registros(a)
@@ -133,7 +133,7 @@ export default function AnioMesesPage() {
                         <p className="text-xs text-muted-foreground">Solo se modifican el nombre y los días. Los meses no se crean ni se eliminan.</p>
                         <AvisoAmbar className="mt-3" mensaje={avisoMes} onCerrar={() => setAvisoMes('')} />
                     </div>
-                    <div className="divide-y divide-border">
+                    <div data-guia="meses" className="divide-y divide-border">
                         {meses.map((m) => (
                             <div key={m.Numero} className="grid grid-cols-[2.5rem_1fr_4.5rem_auto] items-center gap-2 px-3 py-1.5 sm:px-4">
                                 <span className="font-mono text-sm text-muted-foreground">{m.Numero}</span>

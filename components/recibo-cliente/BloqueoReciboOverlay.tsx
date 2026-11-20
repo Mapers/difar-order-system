@@ -58,7 +58,7 @@ export function BloqueoReciboOverlay({
                                     : 'Necesitas autorización de Gerencia para emitir recibos.'}
                         </p>
 
-                        <Button onClick={onSolicitar} disabled={solicitando} className="mt-4 w-full gap-1.5">
+                        <Button data-guia="solicitar-permiso" onClick={onSolicitar} disabled={solicitando} className="mt-4 w-full gap-1.5">
                             {solicitando
                                 ? <Loader2 className="h-4 w-4 animate-spin" />
                                 : <ShieldCheck className="h-4 w-4" />}

@@ -134,7 +134,7 @@ export default function DetalleAdmin({
         <>
             <div className="border-t border-border p-4 bg-muted/30 space-y-3 animate-in slide-in-from-top-2 duration-200">
 
-                <div className="flex flex-wrap items-center justify-end gap-2">
+                <div data-guia="acciones-planilla" className="flex flex-wrap items-center justify-end gap-2">
                     {puedeEliminar && !loadingDet && !consultando && !enviando && (
                         <Button
                             variant="ghost" size="sm"
@@ -188,6 +188,7 @@ export default function DetalleAdmin({
                                 )}
                                 {porEnviar.length > 0 && (
                                     <Button
+                                        data-guia="enviar-caja"
                                         size="sm"
                                         className="gap-1.5 bg-indigo-600 hover:bg-indigo-700"
                                         onClick={() => setEnviarOpen(true)}
@@ -284,7 +285,7 @@ export default function DetalleAdmin({
 
                 {/* Enviar a caja no cancela las facturas: contabilidad tiene que aceptar los cobros. */}
                 {planilla.estado === 'validado' && pendientesCaja > 0 && (
-                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg border border-amber-300 bg-amber-50 px-3.5 py-2.5 text-[13px] text-amber-800 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
+                    <div data-guia="aviso-caja" className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg border border-amber-300 bg-amber-50 px-3.5 py-2.5 text-[13px] text-amber-800 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
                         <Info className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
                         <span className="min-w-0 flex-1">
                             Las facturas aún no se cancelan: falta aceptar los cobros en{' '}
@@ -300,7 +301,7 @@ export default function DetalleAdmin({
                 )}
 
                 {!yaGestionada && (
-                    <div className="space-y-3 pt-1">
+                    <div data-guia="revisar-planilla" className="space-y-3 pt-1">
                         <div className="space-y-1.5">
                             <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                                 Observaciones (opcional)
@@ -324,6 +325,7 @@ export default function DetalleAdmin({
                                 Rechazar / observar
                             </Button>
                             <Button
+                                data-guia="validar-planilla"
                                 size="sm"
                                 className="bg-emerald-600 text-white shadow-md shadow-emerald-600/30 hover:bg-emerald-700 gap-1.5"
                                 onClick={() => onValidar(planilla.id_planilla)}

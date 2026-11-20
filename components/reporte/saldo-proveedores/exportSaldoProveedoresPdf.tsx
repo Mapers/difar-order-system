@@ -139,7 +139,7 @@ export const ExportSaldoProveedoresPdf: React.FC<Props> = ({ grupos, fechaCorte,
 
     return (
         <>
-            <Button variant="outline" className="w-full sm:w-auto" onClick={abrir} disabled={disabled}>
+            <Button data-guia="saldo-pdf" variant="outline" className="w-full sm:w-auto" onClick={abrir} disabled={disabled}>
                 <Download className="mr-2 h-4 w-4" /> PDF
             </Button>
             <PdfVistaPreviaDialog
