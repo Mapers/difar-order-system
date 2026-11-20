@@ -3,7 +3,7 @@
 import { useState, useCallback } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import {FileText, Plus, Truck, Settings, CreditCard, Target, FlaskConical, Hash, Landmark, MessageCircle, Pill, Calculator, Images} from "lucide-react" // Se agregó Pill
+import {FileText, Plus, Truck, Settings, CreditCard, Target, FlaskConical, Hash, Landmark, MessageCircle, Pill, Calculator, Images, Smartphone, Upload} from "lucide-react" // Se agregó Pill
 import AppConfigSection from "@/components/configuraciones/AppConfigSection";
 import SequentialSection from "@/components/configuraciones/SequentialSection";
 import ClientConditionsSection from "@/components/configuraciones/ClientConditionsSection";
@@ -14,6 +14,7 @@ import ClienteReferenciaSection from "@/components/configuraciones/ClienteRefere
 import WhatsappSection from "@/components/configuraciones/WhatsappSection";
 import SustitutosSection from "@/components/configuraciones/SustitutosSection";
 import CostosSection from "@/components/configuraciones/CostosSection";
+import AppMovilSection from "@/components/configuraciones/AppMovilSection";
 
 const sections = [
     {
@@ -100,6 +101,13 @@ const sections = [
         icon: MessageCircle,
         color: "green"
     },
+    {
+        id: "app_movil",
+        title: "Aplicación Móvil",
+        description: "Versiones (APK) de la app de ventas",
+        icon: Smartphone,
+        color: "cyan"
+    },
 ]
 
 const iconColorMap: Record<string, string> = {
@@ -114,6 +122,7 @@ const iconColorMap: Record<string, string> = {
     lineas_credito: "text-amber-600",
     cliente_referencias: "text-rose-600",
     whatsapp: "text-green-600",
+    app_movil: "text-cyan-600",
 }
 
 const activeBgMap: Record<string, string> = {
@@ -128,6 +137,7 @@ const activeBgMap: Record<string, string> = {
     lineas_credito: "bg-amber-50 border-amber-500 text-amber-700",
     cliente_referencias: "bg-rose-50 border-rose-500 text-rose-700",
     whatsapp: "bg-green-50 border-green-500 text-green-700",
+    app_movil: "bg-cyan-50 border-cyan-500 text-cyan-700",
 }
 
 const activeIconBg: Record<string, string> = {
@@ -142,6 +152,7 @@ const activeIconBg: Record<string, string> = {
     lineas_credito: "bg-amber-100 text-amber-600",
     cliente_referencias: "bg-rose-100 text-rose-600",
     whatsapp: "bg-green-100 text-green-600",
+    app_movil: "bg-cyan-100 text-cyan-600",
 }
 
 export default function ConfiguracionesPage() {
@@ -220,6 +231,8 @@ export default function ConfiguracionesPage() {
                                                             ? "Administra los productos equivalentes o sustitutos para dispensación."
                                                             : activeSection === "costos"
                                                                 ? "Carga el costo unitario por periodo. El reporte de ventas lo usa en vez del costo del kardex."
+                                                            : activeSection === "app_movil"
+                                                                ? "Sube cada versión (APK) de la app. Los vendedores ven el aviso de actualización al abrirla."
                                                             : activeSection === "whatsapp"
                                                                 ? "Registra los números de WhatsApp que recibirán notificaciones de ventas."
                                                             : activeSection === "cliente_referencias"
@@ -232,7 +245,9 @@ export default function ConfiguracionesPage() {
                                 onClick={() => openModalFn()}
                                 className="flex items-center gap-2 w-full sm:w-auto"
                               >
-                                <Plus className="h-4 w-4"/> Nuevo Registro
+                                {activeSection === 'app_movil'
+                                    ? <><Upload className="h-4 w-4"/> Subir nueva versión</>
+                                    : <><Plus className="h-4 w-4"/> Nuevo Registro</>}
                               </Button>
                             )}
                         </CardHeader>
@@ -256,6 +271,8 @@ export default function ConfiguracionesPage() {
                                 <SustitutosSection onOpenModalChange={handleSetOpenModalFn} />
                             ) : activeSection === 'costos' ? (
                                 <CostosSection onOpenModalChange={handleSetOpenModalFn} />
+                            ) : activeSection === 'app_movil' ? (
+                                <AppMovilSection onOpenModalChange={handleSetOpenModalFn} />
                             ) : (
                                 <SequentialSection
                                     key={activeSection}
