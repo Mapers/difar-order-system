@@ -29,7 +29,50 @@ export interface PantallaGuia {
     grupo: string
     /** Qué es esta pantalla, en una frase. Se muestra en el primer paso. */
     resumen: string
+    /** Dibujo de módulos y tablas que se muestra en la presentación de la pantalla (opcional). */
+    diagrama?: DiagramaGuia
     pasos: PasoGuia[]
+}
+
+export type IconoDiagrama =
+    | "planilla" | "validar" | "enviar" | "caja" | "cliente" | "libro" | "reporte" | "filtro" | "buscar" | "sistema"
+    | "calculo" | "archivo" | "documento" | "comprobante" | "pedido" | "almacen" | "producto" | "precio" | "proveedor"
+    | "sunat" | "comision" | "ruta" | "calendario" | "chat"
+export type TonoDiagrama = "indigo" | "ambar" | "celeste" | "verde" | "violeta"
+
+/** Una tabla de la base que se graba en un paso del dibujo. */
+export interface TablaDiagrama {
+    nombre: string
+    /** Aclaración corta: qué se guarda ahí. */
+    nota?: string
+    /** true = tabla contable (pago, kardex, mayor): se pinta en verde. */
+    contable?: boolean
+}
+
+/** Un módulo del dibujo: quién actúa, dónde, y qué tablas graba. */
+export interface NodoDiagrama {
+    quien: string
+    modulo: string
+    accion: string
+    /** Estado en que queda el dato en este paso; se ve en la ficha que viaja ("Enviada", "Filtros listos"...). Máx. ~20 letras. */
+    estado?: string
+    icono: IconoDiagrama
+    tono: TonoDiagrama
+    /** "graba" (por defecto): el paso escribe en esas tablas. "lee": solo trae datos de ellas (reportes, consultas). "borra": quita filas de ellas. */
+    modo?: "graba" | "lee" | "borra"
+    /** Tablas que toca este paso (0 a 5). Vacío si el paso no toca la base. */
+    tablas: TablaDiagrama[]
+}
+
+export interface DiagramaGuia {
+    titulo: string
+    /** Nombre corto de lo que viaja por la línea: "Planilla", "Pedido", "Reporte"... */
+    ficha?: string
+    nodos: NodoDiagrama[]
+    /** A dónde llega el dato al final: otros módulos, reportes o archivos (máx. 4). */
+    tituloEfectos?: string
+    /** `desde`: tabla de la que ese módulo lee el dato. */
+    efectos?: { modulo: string; detalle: string; icono: IconoDiagrama; desde?: string }[]
 }
 
 /** Un paso del "camino completo": una tarea que cruza varias pantallas. */

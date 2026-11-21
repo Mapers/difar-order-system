@@ -13,6 +13,47 @@ export const pantallas: PantallaGuia[] = [
         nombre: "Registro de Compras e Inventarios",
         grupo: GRUPO,
         resumen: "Aquí registras las facturas de tus proveedores. Al guardar, el sistema arma solo el asiento contable, la deuda con el proveedor y el ingreso de mercadería.",
+        diagrama: {
+            titulo: "Qué se graba al guardar una compra",
+            ficha: "Compra",
+            nodos: [
+                {
+                    quien: "Contabilidad", modulo: "Llenar la factura", accion: "Escaneas o llenas el documento y pones sus líneas.",
+                    estado: "Por guardar", icono: "documento", tono: "indigo",
+                    tablas: [],
+                },
+                {
+                    quien: "Contabilidad", modulo: "Cuadre", accion: "Compruebas que las líneas sumen el total en S/ o US$.",
+                    estado: "Cuadra", icono: "calculo", tono: "ambar",
+                    tablas: [],
+                },
+                {
+                    quien: "Contabilidad", modulo: "Guardar", accion: "Se graba la compra: sus datos y cada línea.",
+                    estado: "Guardada", icono: "comprobante", tono: "celeste",
+                    tablas: [
+                        { nombre: "reg compras encabezado", nota: "proveedor, fecha y total" },
+                        { nombre: "reg compras detalle", nota: "cada línea de la factura" },
+                    ],
+                },
+                {
+                    quien: "Sistema", modulo: "Arma la contabilidad", accion: "Solo, al guardar: registro, asiento, deuda, kardex y lotes.",
+                    estado: "Contabilizada", icono: "sistema", tono: "verde",
+                    tablas: [
+                        { nombre: "registro de compras", nota: "fila del Registro de Compras", contable: true },
+                        { nombre: "mayor auxiliar", nota: "el asiento contable", contable: true },
+                        { nombre: "kardex proveedores", nota: "la deuda con el proveedor", contable: true },
+                        { nombre: "mkardexinventarios", nota: "ingreso de mercadería" },
+                        { nombre: "lotesxarticulo", nota: "lote y vencimiento" },
+                    ],
+                },
+            ],
+            tituloEfectos: "La compra llega a estos módulos",
+            efectos: [
+                { modulo: "Saldo y Pagos a cuenta", detalle: "cuánto se le debe", icono: "proveedor", desde: "kardex proveedores" },
+                { modulo: "Libros Contables", detalle: "el asiento de la compra", icono: "libro", desde: "mayor auxiliar" },
+                { modulo: "Actualización Contable", detalle: "controla el año", icono: "validar", desde: "registro de compras" },
+            ],
+        },
         pasos: [
             {
                 guia: "escanear-comprobante",
@@ -128,6 +169,45 @@ export const pantallas: PantallaGuia[] = [
         nombre: "Actualiza Ventas APP",
         grupo: GRUPO,
         resumen: "Aquí pasas a la contabilidad las facturas, boletas y notas de crédito emitidas en la web: al Registro de Ventas y al Libro Mayor.",
+        diagrama: {
+            titulo: "Cómo pasa una venta de la web a la contabilidad",
+            ficha: "Venta",
+            nodos: [
+                {
+                    quien: "Vendedor", modulo: "Venta en la web", accion: "Emite la factura, boleta o nota de crédito.",
+                    estado: "Emitida", icono: "comprobante", tono: "indigo",
+                    tablas: [],
+                },
+                {
+                    quien: "Contabilidad", modulo: "Año, mes y filtros", accion: "Eliges el mes y filtras los Pendientes.",
+                    estado: "Mes elegido", icono: "filtro", tono: "ambar",
+                    tablas: [],
+                },
+                {
+                    quien: "Sistema", modulo: "Comprobantes del mes", accion: "Trae los comprobantes y marca cuáles faltan cargar.",
+                    estado: "Pendiente", icono: "buscar", tono: "celeste", modo: "lee",
+                    tablas: [
+                        { nombre: "sie_app_ventas", nota: "ventas emitidas en la web" },
+                        { nombre: "vta_comprobante_cab", nota: "datos del comprobante" },
+                        { nombre: "vta_comprobante_sunat", nota: "envío a SUNAT" },
+                    ],
+                },
+                {
+                    quien: "Contabilidad", modulo: "Cargar pendientes", accion: "Pasa cada comprobante a la contabilidad, una sola vez.",
+                    estado: "Cargada", icono: "enviar", tono: "verde",
+                    tablas: [
+                        { nombre: "registro de ventas", nota: "una fila por comprobante", contable: true },
+                        { nombre: "mayor auxiliar", nota: "asiento de venta, libro 14", contable: true },
+                    ],
+                },
+            ],
+            tituloEfectos: "Al cargar, la venta llega aquí",
+            efectos: [
+                { modulo: "Registro de Ventas", detalle: "informes del mes", icono: "reporte", desde: "registro de ventas" },
+                { modulo: "Libros Contables", detalle: "Diario y Mayor", icono: "libro", desde: "mayor auxiliar" },
+                { modulo: "Actualización Contable", detalle: "controla el año", icono: "validar", desde: "registro de ventas" },
+            ],
+        },
         pasos: [
             {
                 guia: "periodo",
@@ -201,6 +281,50 @@ export const pantallas: PantallaGuia[] = [
         nombre: "Actualización Contable",
         grupo: GRUPO,
         resumen: "Aquí compruebas que caja, bancos, diario, ventas y compras del año estén bien pasados a la contabilidad. Revisar no cambia nada.",
+        diagrama: {
+            titulo: "Qué compara la revisión del año (solo lee)",
+            ficha: "Revisión",
+            nodos: [
+                {
+                    quien: "Contabilidad", modulo: "Año", accion: "Eliges el año que quieres revisar.",
+                    estado: "Año elegido", icono: "calendario", tono: "indigo",
+                    tablas: [],
+                },
+                {
+                    quien: "Contabilidad", modulo: "Revisar todo", accion: "Pides revisar los cinco bloques, uno tras otro.",
+                    estado: "Revisando", icono: "buscar", tono: "ambar",
+                    tablas: [],
+                },
+                {
+                    quien: "Sistema", modulo: "Lo que debería haber", accion: "Calcula, desde el origen, lo que debe estar en contabilidad.",
+                    estado: "Esperado listo", icono: "calculo", tono: "celeste", modo: "lee",
+                    tablas: [
+                        { nombre: "caja centralizacion", nota: "bloque Caja", contable: true },
+                        { nombre: "bcos centralizacion", nota: "bloque Bancos", contable: true },
+                        { nombre: "diario centralizacion", nota: "bloque Diario", contable: true },
+                        { nombre: "guia remision encabezado", nota: "bloque Clientes / Ventas" },
+                        { nombre: "reg compras encabezado", nota: "bloque Proveedores / Compras" },
+                    ],
+                },
+                {
+                    quien: "Sistema", modulo: "Lo que hay", accion: "Lo compara con lo grabado: duplicados, faltan o sobran.",
+                    estado: "Comparado", icono: "validar", tono: "verde", modo: "lee",
+                    tablas: [
+                        { nombre: "mayor auxiliar", nota: "asientos del año", contable: true },
+                        { nombre: "kardex clientes", nota: "cuenta de cada cliente", contable: true },
+                        { nombre: "kardex proveedores", nota: "cuenta de cada proveedor", contable: true },
+                        { nombre: "registro de ventas", nota: "ventas del año", contable: true },
+                        { nombre: "registro de compras", nota: "compras del año", contable: true },
+                    ],
+                },
+            ],
+            tituloEfectos: "Con el resultado puedes",
+            efectos: [
+                { modulo: "Bloques y casos", detalle: "ver cada diferencia en S/", icono: "reporte" },
+                { modulo: "Exportar Excel", detalle: "resumen y diferencias", icono: "archivo" },
+                { modulo: "Arreglar", detalle: "quita copias; antes las respalda", icono: "sistema" },
+            ],
+        },
         pasos: [
             {
                 guia: "anio",

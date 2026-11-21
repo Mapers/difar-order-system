@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
-import { ShoppingCart, Lock, User, ArrowRight, Delete } from "lucide-react"
+import { Lock, User, ArrowRight, ArrowLeft, Delete, ShieldCheck } from "lucide-react"
 import { useAuth } from "@/context/authContext"
 import { SmsCheck, SmsSend, UserLoginDTO, VendedorRelacionUnico } from "@/app/services/auth/types"
 import { AuthService } from "@/app/services/auth/AuthService"
@@ -199,21 +199,32 @@ export function LoginForm() {
   return (
     <>
     <div className="w-full max-w-md mx-auto">
-      <div className="text-center mb-6">
-        <div className="inline-flex items-center justify-center w-60 h-24 mb-2 relative">
+      {/* En escritorio el logo va en el panel de la izquierda (app/page.tsx). */}
+      <div className="text-center mb-5 lg:hidden">
+        <div className="inline-flex items-center justify-center w-56 h-20 relative">
           <LogoDifar
             fill
             style={{ objectFit: 'contain' }}
             sizes="130px"
           />
         </div>
-        <p className="text-muted-foreground mt-2">Sistema de Gestión de Pedidos</p>
+        <p className="text-sm text-muted-foreground mt-1">Sistema de Gestión de Pedidos</p>
       </div>
 
-      <Card className="w-full border-0 shadow-xl bg-card/90 backdrop-blur-sm">
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-indigo-500/20 rounded-xl -z-10"></div>
-        <CardHeader className="space-y-1 pb-2">
-          <CardTitle className="text-2xl text-center font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+      <Card className="w-full overflow-hidden rounded-2xl border border-white/60 bg-white/75 shadow-2xl shadow-sky-900/10 backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/60 dark:shadow-black/40">
+        <div className="h-1 w-full bg-gradient-to-r from-sky-500 via-teal-500 to-emerald-500" />
+        <CardHeader className="space-y-1 pb-2 pt-6">
+          {/* Dos pasos: DNI y código. */}
+          <div className="mb-3 flex items-center justify-center gap-2 text-[11px] font-semibold" aria-hidden="true">
+            <span className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 ${!showVerification ? "bg-sky-600 text-white" : "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300"}`}>
+              <User className="h-3 w-3" /> 1 · DNI
+            </span>
+            <span className="h-px w-6 bg-border" />
+            <span className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 ${showVerification ? "bg-sky-600 text-white" : "bg-muted text-muted-foreground"}`}>
+              <Lock className="h-3 w-3" /> 2 · Código
+            </span>
+          </div>
+          <CardTitle className="text-2xl text-center font-bold bg-gradient-to-r from-sky-600 to-emerald-600 bg-clip-text text-transparent dark:from-sky-400 dark:to-emerald-400">
             {showVerification ? "Verificación" : "Iniciar Sesión"}
           </CardTitle>
           <CardDescription className="text-center">
@@ -234,17 +245,20 @@ export function LoginForm() {
                       id="dni"
                       placeholder="Ingrese su DNI"
                       value={dni}
-                      onChange={(e) => setDni(e.target.value)}
+                      onChange={(e) => setDni(e.target.value.replace(/\D/g, ""))}
                       required
+                      autoFocus
+                      inputMode="numeric"
+                      autoComplete="username"
                       maxLength={8}
                       pattern="[0-9]{8}"
-                      className="pl-10 text-center text-lg h-12 bg-background border-border focus:border-blue-500 focus:ring-blue-500"
+                      className="pl-10 text-center text-lg tracking-[0.2em] placeholder:tracking-normal placeholder:text-base h-12 bg-white/80 dark:bg-slate-950/50 border-border focus:border-sky-500 focus:ring-sky-500"
                     />
                   </div>
                 </div>
                 <Button
                   type="submit"
-                  className="w-full h-12 mt-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-medium rounded-lg shadow-md hover:shadow-lg transition-all"
+                  className="w-full h-12 mt-2 bg-gradient-to-r from-sky-600 to-emerald-600 hover:from-sky-700 hover:to-emerald-700 text-white font-semibold rounded-xl shadow-lg shadow-sky-600/25 hover:shadow-xl transition-all"
                   disabled={loading}
                 >
                   {loading ? (
@@ -279,12 +293,12 @@ export function LoginForm() {
                         value={digit}
                         readOnly
                         onKeyDown={handleCodeKeyDown}
-                        className="w-12 h-14 text-center text-lg font-bold bg-background border-border focus:border-blue-500 focus:ring-blue-500 caret-transparent cursor-default"
+                        className="w-12 h-14 rounded-xl text-center text-xl font-bold bg-white/80 dark:bg-slate-950/50 border-border focus:border-sky-500 focus:ring-sky-500 caret-transparent cursor-default"
                         autoFocus={index === 0}
                       />
                     ))}
                   </div>
-                  <p className="text-xs text-center text-muted-foreground mt-2">Se ha enviado un código a su dispositivo</p>
+                  <p className="text-xs text-center text-muted-foreground mt-2">Te enviamos un código de 6 dígitos por WhatsApp</p>
 
                   {/* Teclado numérico: type="button" en todos, si no cada tecla envía el formulario. */}
                   <div className="mx-auto mt-4 grid w-full max-w-[260px] grid-cols-3 gap-2">
@@ -294,7 +308,7 @@ export function LoginForm() {
                         type="button"
                         variant="outline"
                         onClick={() => handleTecladoDigito(digito)}
-                        className="h-14 text-xl font-semibold bg-background hover:bg-muted active:scale-95 transition-transform"
+                        className="h-14 lg:h-12 rounded-xl text-xl font-semibold bg-white/80 dark:bg-slate-950/50 hover:bg-sky-50 dark:hover:bg-sky-500/10 hover:border-sky-400 active:scale-95 transition-all"
                       >
                         {digito}
                       </Button>
@@ -303,7 +317,7 @@ export function LoginForm() {
                       type="button"
                       variant="outline"
                       onClick={handleTecladoLimpiar}
-                      className="h-14 text-sm font-semibold bg-background text-muted-foreground hover:bg-muted active:scale-95 transition-transform"
+                      className="h-14 lg:h-12 rounded-xl text-sm font-semibold bg-white/80 dark:bg-slate-950/50 text-muted-foreground hover:bg-muted active:scale-95 transition-all"
                     >
                       Limpiar
                     </Button>
@@ -311,7 +325,7 @@ export function LoginForm() {
                       type="button"
                       variant="outline"
                       onClick={() => handleTecladoDigito('0')}
-                      className="h-14 text-xl font-semibold bg-background hover:bg-muted active:scale-95 transition-transform"
+                      className="h-14 lg:h-12 rounded-xl text-xl font-semibold bg-white/80 dark:bg-slate-950/50 hover:bg-sky-50 dark:hover:bg-sky-500/10 hover:border-sky-400 active:scale-95 transition-all"
                     >
                       0
                     </Button>
@@ -320,7 +334,7 @@ export function LoginForm() {
                       variant="outline"
                       onClick={handleTecladoBorrar}
                       aria-label="Borrar"
-                      className="h-14 bg-background text-red-600 hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-950/40 active:scale-95 transition-transform"
+                      className="h-14 lg:h-12 rounded-xl bg-white/80 dark:bg-slate-950/50 text-red-600 hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-950/40 active:scale-95 transition-transform"
                     >
                       <Delete className="h-6 w-6" />
                     </Button>
@@ -328,7 +342,7 @@ export function LoginForm() {
                 </div>
                 <Button
                   type="submit"
-                  className="w-full h-12 mt-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-medium rounded-lg shadow-md hover:shadow-lg transition-all disabled:opacity-60"
+                  className="w-full h-12 mt-2 bg-gradient-to-r from-sky-600 to-emerald-600 hover:from-sky-700 hover:to-emerald-700 text-white font-semibold rounded-xl shadow-lg shadow-sky-600/25 hover:shadow-xl transition-all disabled:opacity-60"
                   disabled={loading || codigoIncompleto}
                 >
                   {loading ? (
@@ -343,12 +357,21 @@ export function LoginForm() {
                     </div>
                   )}
                 </Button>
+                <button
+                  type="button"
+                  onClick={() => { setShowVerification(false); setVerificationCode(["", "", "", "", "", ""]) }}
+                  className="mx-auto inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground"
+                >
+                  <ArrowLeft className="h-3.5 w-3.5" /> Usar otro DNI
+                </button>
               </div>
             </form>
           )}
         </CardContent>
-        <CardFooter className="flex justify-center pb-6">
-          <p className="text-sm text-muted-foreground">Sistema seguro de gestión de pedidos</p>
+        <CardFooter className="flex justify-center border-t border-border/60 bg-muted/30 py-3">
+          <p className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+            <ShieldCheck className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" /> Acceso seguro con código por WhatsApp
+          </p>
         </CardFooter>
       </Card>
     </div>

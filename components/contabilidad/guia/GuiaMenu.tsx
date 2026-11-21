@@ -6,7 +6,7 @@ import { Switch } from "@/components/ui/switch"
 import { useGuia } from "./GuiaProvider"
 import { AvatarIvan } from "@/components/ivan/AvatarIvan"
 
-/** Botón "Guía" de la barra superior. Solo se ve en pantallas de Contabilidad (escritorio). */
+/** Botón "Guía" de la barra superior. Solo en escritorio y en las pantallas que tienen guía. */
 export function GuiaMenu() {
     const g = useGuia()
     if (!g || !g.disponible) return null
@@ -23,8 +23,8 @@ export function GuiaMenu() {
             </PopoverTrigger>
             <PopoverContent align="end" className="w-96 space-y-3 p-4">
                 <div>
-                    <p className="text-sm font-bold">IVAN te guía en Contabilidad</p>
-                    <p className="text-xs text-muted-foreground">Te explico cada pantalla: qué hace cada botón, dónde se guarda y qué sigue después.</p>
+                    <p className="text-sm font-bold">IVAN te guía</p>
+                    <p className="text-xs text-muted-foreground">Te explico cada pantalla: qué hace, qué tablas toca, dónde se guarda y qué sigue después.</p>
                 </div>
 
                 <label className="flex cursor-pointer items-center justify-between gap-3 rounded-lg border p-3">

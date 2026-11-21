@@ -60,6 +60,41 @@ export const pantallas: PantallaGuia[] = [
         nombre: "Libro Diario",
         grupo: GRUPO,
         resumen: "Consulta el Libro Diario del año o del mes, los asientos que no cuadran y el Diario Simplificado. Solo muestra, no graba nada.",
+        diagrama: {
+            titulo: "De dónde sale el Libro Diario que ves en pantalla",
+            ficha: "Libro",
+            nodos: [
+                {
+                    quien: "Tú", modulo: "Pestaña y periodo", accion: "Eliges el informe, el año y, si toca, el mes.",
+                    estado: "Filtros listos", icono: "filtro", tono: "indigo",
+                    tablas: [],
+                },
+                {
+                    quien: "Tú", modulo: "Consultar", accion: "Pulsas Consultar para pedir el informe.",
+                    estado: "Consultando", icono: "buscar", tono: "ambar",
+                    tablas: [],
+                },
+                {
+                    quien: "Sistema", modulo: "Leer los asientos", accion: "Trae los asientos del periodo y los ordena por glosa.",
+                    estado: "Asientos leídos", icono: "sistema", tono: "celeste", modo: "lee",
+                    tablas: [
+                        { nombre: "mayor auxiliar", nota: "asientos del periodo", contable: true },
+                        { nombre: "mplancuentas", nota: "nombre de cada cuenta" },
+                    ],
+                },
+                {
+                    quien: "Tú", modulo: "Tabla y totales", accion: "Ves Cargo, Abono y Diferencia en S/. No se graba nada.",
+                    estado: "En pantalla", icono: "libro", tono: "verde",
+                    tablas: [],
+                },
+            ],
+            tituloEfectos: "Con el informe puedes",
+            efectos: [
+                { modulo: "PDF", detalle: "imprimirlo o descargarlo", icono: "documento" },
+                { modulo: "Excel", detalle: "bajarlo con todas las filas", icono: "archivo" },
+                { modulo: "Revisión Asientos", detalle: "ver los que no cuadran", icono: "validar", desde: "mayor auxiliar" },
+            ],
+        },
         pasos: [
             {
                 guia: "pestanas",
@@ -106,6 +141,42 @@ export const pantallas: PantallaGuia[] = [
         nombre: "Libro Mayor",
         grupo: GRUPO,
         resumen: "Consulta el mayor por cuenta, del año o del mes, con saldo corrido, sus resúmenes y los documentos que no cuadran. Solo muestra, no graba nada.",
+        diagrama: {
+            titulo: "De dónde sale el Libro Mayor que ves en pantalla",
+            ficha: "Libro",
+            nodos: [
+                {
+                    quien: "Tú", modulo: "Pestaña, año y cuenta", accion: "Eliges el informe, el periodo y la cuenta (o su inicio).",
+                    estado: "Filtros listos", icono: "filtro", tono: "indigo",
+                    tablas: [],
+                },
+                {
+                    quien: "Tú", modulo: "Consultar", accion: "Pulsas Consultar para pedir el informe.",
+                    estado: "Consultando", icono: "buscar", tono: "ambar",
+                    tablas: [],
+                },
+                {
+                    quien: "Sistema", modulo: "Leer los movimientos", accion: "Trae los movimientos y calcula el saldo de cada cuenta.",
+                    estado: "Saldos calculados", icono: "calculo", tono: "celeste", modo: "lee",
+                    tablas: [
+                        { nombre: "mayor auxiliar", nota: "movimientos de cada cuenta", contable: true },
+                        { nombre: "mplancuentas", nota: "nombre de cada cuenta" },
+                        { nombre: "mnombrerazsoc", nota: "cliente o proveedor" },
+                    ],
+                },
+                {
+                    quien: "Tú", modulo: "Mayor por cuenta", accion: "Ves fecha, glosa, cargo, abono y saldo en S/. No graba nada.",
+                    estado: "En pantalla", icono: "libro", tono: "verde",
+                    tablas: [],
+                },
+            ],
+            tituloEfectos: "Con el informe puedes",
+            efectos: [
+                { modulo: "PDF", detalle: "imprimirlo o descargarlo", icono: "documento" },
+                { modulo: "Excel", detalle: "bajarlo con todas las filas", icono: "archivo" },
+                { modulo: "Revisa", detalle: "ver documentos que no cuadran", icono: "validar", desde: "mayor auxiliar" },
+            ],
+        },
         pasos: [
             {
                 guia: "pestanas",
@@ -155,6 +226,40 @@ export const pantallas: PantallaGuia[] = [
         nombre: "Movimiento de Sub Cuenta Contable",
         grupo: GRUPO,
         resumen: "Muestra los movimientos de una sub cuenta en un mes o en todo el año, con saldo inicial y saldo final. Solo muestra, no graba nada.",
+        diagrama: {
+            titulo: "De dónde salen los movimientos de una sub cuenta",
+            ficha: "Reporte",
+            nodos: [
+                {
+                    quien: "Tú", modulo: "Sub cuenta contable", accion: "La eliges de la lista, por código o por descripción.",
+                    estado: "Cuenta elegida", icono: "buscar", tono: "indigo", modo: "lee",
+                    tablas: [{ nombre: "mplancuentas", nota: "lista de sub cuentas" }],
+                },
+                {
+                    quien: "Tú", modulo: "Periodo y moneda", accion: "Eliges mes y año (o todo el ejercicio) y S/ o US$.",
+                    estado: "Filtros listos", icono: "calendario", tono: "ambar",
+                    tablas: [],
+                },
+                {
+                    quien: "Sistema", modulo: "Generar", accion: "Trae los movimientos de esa sub cuenta en el periodo.",
+                    estado: "Movimientos leídos", icono: "sistema", tono: "celeste", modo: "lee",
+                    tablas: [
+                        { nombre: "mayor auxiliar", nota: "movimientos de la sub cuenta", contable: true },
+                        { nombre: "mnombrerazsoc", nota: "personas y empresas" },
+                    ],
+                },
+                {
+                    quien: "Tú", modulo: "Saldos y movimientos", accion: "Ves saldo inicial, ingresos, salidas y saldo final.",
+                    estado: "En pantalla", icono: "reporte", tono: "verde",
+                    tablas: [],
+                },
+            ],
+            tituloEfectos: "Con el reporte puedes",
+            efectos: [
+                { modulo: "Exportar PDF", detalle: "verlo y descargarlo", icono: "documento" },
+                { modulo: "Libro Mayor", detalle: "buscar el documento que no cuadra", icono: "libro", desde: "mayor auxiliar" },
+            ],
+        },
         pasos: [
             {
                 guia: "subcuenta",
@@ -210,6 +315,41 @@ export const pantallas: PantallaGuia[] = [
         nombre: "Cuentas Contables",
         grupo: GRUPO,
         resumen: "Consulta el saldo de cada cuenta a una fecha de corte y las sumas del mayor por mes. Solo muestra, no graba nada.",
+        diagrama: {
+            titulo: "De dónde salen los saldos de las cuentas",
+            ficha: "Informe",
+            nodos: [
+                {
+                    quien: "Tú", modulo: "Pestaña y fecha", accion: "Eliges Saldos Cuentas (fecha de corte) o Sumas Mayor (año).",
+                    estado: "Filtros listos", icono: "filtro", tono: "indigo",
+                    tablas: [],
+                },
+                {
+                    quien: "Tú", modulo: "Consultar", accion: "Pulsas Consultar para pedir el informe.",
+                    estado: "Consultando", icono: "buscar", tono: "ambar",
+                    tablas: [],
+                },
+                {
+                    quien: "Sistema", modulo: "Sumar por cuenta", accion: "Suma los movimientos de cada cuenta desde el 1 de enero.",
+                    estado: "Saldos calculados", icono: "calculo", tono: "celeste", modo: "lee",
+                    tablas: [
+                        { nombre: "mayor auxiliar", nota: "movimientos de cada cuenta", contable: true },
+                        { nombre: "mplancuentas", nota: "nombre de cada cuenta" },
+                    ],
+                },
+                {
+                    quien: "Tú", modulo: "Saldos o sumas", accion: "Ves Deudor y Acreedor, o el Debe y Haber por mes, en S/.",
+                    estado: "En pantalla", icono: "reporte", tono: "verde",
+                    tablas: [],
+                },
+            ],
+            tituloEfectos: "Con el informe puedes",
+            efectos: [
+                { modulo: "PDF", detalle: "imprimirlo o descargarlo", icono: "documento" },
+                { modulo: "Excel", detalle: "bajarlo con todas las filas", icono: "archivo" },
+                { modulo: "Movimiento de Sub Cuenta", detalle: "ver el detalle de una cuenta", icono: "libro", desde: "mayor auxiliar" },
+            ],
+        },
         pasos: [
             {
                 guia: "pestanas",
@@ -241,6 +381,51 @@ export const pantallas: PantallaGuia[] = [
         nombre: "Estados Financieros y Balances",
         grupo: GRUPO,
         resumen: "Consulta el Balance General, el Estado de Resultados, los Balances de Comprobación, el Flujo de Efectivo y el Cambio en el Patrimonio. Solo muestra, no graba nada.",
+        diagrama: {
+            titulo: "De dónde salen los estados financieros",
+            ficha: "Estado",
+            nodos: [
+                {
+                    quien: "Tú", modulo: "Estado y periodo", accion: "Eliges el estado financiero, el año y, si toca, el mes.",
+                    estado: "Filtros listos", icono: "filtro", tono: "indigo",
+                    tablas: [],
+                },
+                {
+                    quien: "Tú", modulo: "Consultar", accion: "Pulsas Consultar para pedir el estado.",
+                    estado: "Consultando", icono: "buscar", tono: "ambar",
+                    tablas: [],
+                },
+                {
+                    quien: "Sistema", modulo: "Leer y agrupar", accion: "Trae los saldos y los agrupa por cuenta y por concepto.",
+                    estado: "Saldos agrupados", icono: "calculo", tono: "celeste", modo: "lee",
+                    tablas: [
+                        { nombre: "mayor auxiliar", nota: "saldos de cada cuenta", contable: true },
+                        { nombre: "mplancuentas", nota: "nombre de cada cuenta" },
+                        { nombre: "mconceptos estados financieros", nota: "concepto de cada cuenta" },
+                    ],
+                },
+                {
+                    quien: "Sistema", modulo: "Solo Flujo Efectivo", accion: "Esa pestaña sale de caja y diario. Está EN REVISIÓN.",
+                    estado: "Flujo en revisión", icono: "caja", tono: "violeta", modo: "lee",
+                    tablas: [
+                        { nombre: "caja centralizacion", nota: "movimientos de caja", contable: true },
+                        { nombre: "diario centralizacion", nota: "asientos del diario", contable: true },
+                        { nombre: "estas_flujo" },
+                    ],
+                },
+                {
+                    quien: "Tú", modulo: "Estado en pantalla", accion: "Ves Activo, Pasivo, Patrimonio y Resultado en S/.",
+                    estado: "En pantalla", icono: "reporte", tono: "verde",
+                    tablas: [],
+                },
+            ],
+            tituloEfectos: "Con el estado puedes",
+            efectos: [
+                { modulo: "PDF", detalle: "imprimirlo o descargarlo", icono: "documento" },
+                { modulo: "Excel", detalle: "bajarlo con todas las filas", icono: "archivo" },
+                { modulo: "Libro Diario y Mayor", detalle: "revisar si el balance no cuadra", icono: "libro", desde: "mayor auxiliar" },
+            ],
+        },
         pasos: [
             {
                 guia: "pestanas",

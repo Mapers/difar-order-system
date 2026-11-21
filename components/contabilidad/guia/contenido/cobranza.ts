@@ -18,6 +18,47 @@ export const pantallas: PantallaGuia[] = [
         nombre: "Planilla de Cobranza",
         grupo: "Cobranza",
         resumen: "Aquí revisas las planillas de cobranza de los vendedores, las validas y envías sus cobros a caja.",
+        diagrama: {
+            titulo: "Qué módulos y tablas toca una planilla al grabarse",
+            ficha: "Planilla",
+            nodos: [
+                {
+                    quien: "Vendedor", modulo: "Planilla de Cobranza", accion: "Registra cada cobro con su voucher y la envía.",
+                    estado: "Enviada", icono: "planilla", tono: "indigo",
+                    tablas: [
+                        { nombre: "tmp_planilla_cabecera", nota: "la planilla y su estado" },
+                        { nombre: "tmp_planilla_detalle", nota: "cada documento cobrado" },
+                        { nombre: "planilla_detalle_vouchers", nota: "fotos de los vouchers" },
+                    ],
+                },
+                {
+                    quien: "Administrador", modulo: "Validar planilla", accion: "Revisa que todo cuadre y la valida (o la observa).",
+                    estado: "Validada", icono: "validar", tono: "ambar",
+                    tablas: [{ nombre: "tmp_planilla_cabecera", nota: "estado, usuario y hora" }],
+                },
+                {
+                    quien: "Administrador", modulo: "Enviar a caja", accion: "Manda los cobros a contabilidad. Aún no baja la deuda.",
+                    estado: "En caja · pendiente", icono: "enviar", tono: "celeste",
+                    tablas: [{ nombre: "planilla_detalle_caja", nota: "bandeja de cobros pendientes" }],
+                },
+                {
+                    quien: "Contabilidad", modulo: "Libro Caja y Bancos", accion: "Acepta los cobros en la pestaña Planillas de cobranza.",
+                    estado: "Aceptado", icono: "caja", tono: "verde",
+                    tablas: [
+                        { nombre: "planilla_detalle_caja", nota: "el cobro pasa a aceptado" },
+                        { nombre: "amortizaciones", nota: "el pago del cliente", contable: true },
+                        { nombre: "kardex clientes", nota: "baja el saldo de la factura", contable: true },
+                        { nombre: "mayor auxiliar", nota: "el asiento contable", contable: true },
+                    ],
+                },
+            ],
+            tituloEfectos: "Al aceptar, el cobro llega a estos módulos",
+            efectos: [
+                { modulo: "Comisiones y Reportes", detalle: "ya cuentan el cobro", icono: "reporte", desde: "amortizaciones" },
+                { modulo: "Cliente Cobranza", detalle: "la factura debe menos", icono: "cliente", desde: "kardex clientes" },
+                { modulo: "Libros Contables", detalle: "abono al cliente, cargo a la caja", icono: "libro", desde: "mayor auxiliar" },
+            ],
+        },
         pasos: [
             {
                 guia: "pestanas-admin",
@@ -118,6 +159,46 @@ export const pantallas: PantallaGuia[] = [
         nombre: "Cliente Cobranza",
         grupo: "Cobranza",
         resumen: "Aquí consultas los cobros (amortizaciones) ya registrados de cada cliente, con su kardex y su asiento en el mayor.",
+        diagrama: {
+            titulo: "Qué tablas lee y cambia la consulta de cobros",
+            ficha: "Cobro",
+            nodos: [
+                {
+                    quien: "Contabilidad", modulo: "Cobros nuevos", accion: "Por ahora se registran en el sistema anterior (Access).",
+                    estado: "Solo consulta", icono: "sistema", tono: "indigo",
+                    tablas: [],
+                },
+                {
+                    quien: "Contabilidad", modulo: "Buscar cobros", accion: "Filtra por fechas, cliente, planilla, vendedor o documento.",
+                    estado: "Cobro ubicado", icono: "buscar", tono: "celeste", modo: "lee",
+                    tablas: [{ nombre: "amortizaciones", nota: "los cobros registrados", contable: true }],
+                },
+                {
+                    quien: "Contabilidad", modulo: "Kardex y L. Mayor", accion: "Mira el movimiento del cliente y el asiento de ese cobro.",
+                    estado: "Revisado", icono: "libro", tono: "ambar", modo: "lee",
+                    tablas: [
+                        { nombre: "kardex clientes", nota: "cuenta corriente del cliente", contable: true },
+                        { nombre: "mayor auxiliar", nota: "el asiento contable", contable: true },
+                    ],
+                },
+                {
+                    quien: "Contabilidad", modulo: "Eliminar o revertir", accion: "Borra el cobro mal hecho, o todos los de una planilla.",
+                    estado: "Eliminado", icono: "documento", tono: "violeta",
+                    tablas: [
+                        { nombre: "amortizaciones", nota: "se borra el cobro", contable: true },
+                        { nombre: "kardex clientes", nota: "el saldo vuelve a subir", contable: true },
+                        { nombre: "mayor auxiliar", nota: "se borra el asiento", contable: true },
+                        { nombre: "tmp_planilla_cabecera", nota: "la planilla vuelve a Validada" },
+                    ],
+                },
+            ],
+            tituloEfectos: "Si eliminas un cobro, cambia aquí",
+            efectos: [
+                { modulo: "Asignación de Cobranzas", detalle: "la factura vuelve a deber", icono: "cliente", desde: "kardex clientes" },
+                { modulo: "Libros Contables", detalle: "ya no sale ese asiento", icono: "libro", desde: "mayor auxiliar" },
+                { modulo: "Planilla de Cobranza", detalle: "lista para enviar a caja", icono: "planilla", desde: "tmp_planilla_cabecera" },
+            ],
+        },
         pasos: [
             {
                 guia: "aviso-mantenimiento",
@@ -146,14 +227,14 @@ export const pantallas: PantallaGuia[] = [
             },
             {
                 titulo: "Eliminar",
-                queHace: "Pulsa Eliminar en la fila del cobro que está mal y confirma.",
+                queHace: "Pulsa Eliminar en la tarjeta del cobro que está mal y confirma.",
                 quePasa: "Se borra el cobro junto con su movimiento en el kardex y su asiento en el mayor. No se puede deshacer.",
                 seGuarda: "Se borra el cobro, su kardex y su asiento: el saldo de la factura vuelve a subir.",
                 tablas: "amortizaciones, kardex clientes, mayor auxiliar",
             },
             {
                 titulo: "Revertir planilla",
-                queHace: "Solo aparece en cobros que vinieron de una Planilla de Cobranza. Quita de golpe todos los cobros de esa planilla.",
+                queHace: "Solo aparece en el encabezado de las planillas que vinieron de Planilla de Cobranza. Quita de golpe todos los cobros de esa planilla.",
                 quePasa: "Se borran sus cobros, su kardex y su asiento, y la planilla vuelve a quedar Validada.",
                 seGuarda: "Se borran los cobros de la planilla; la planilla regresa a Validada.",
                 tablas: "amortizaciones, kardex clientes, mayor auxiliar, tmp_planilla_cabecera",
@@ -163,7 +244,7 @@ export const pantallas: PantallaGuia[] = [
                 guia: "identificacion",
                 titulo: "Identificación",
                 queHace: "Elige el cliente; el vendedor se llena solo. El Nro. Planilla se asigna al guardar.",
-                quePasa: "Si pulsaste Editar en la lista, el cobro se carga aquí en solo lectura. Para corregirlo, elimínalo y vuelve a cargarlo.",
+                quePasa: "Si pulsaste Ver cobro en la lista, el cobro se carga aquí en solo lectura. Para corregirlo, elimínalo y vuelve a cargarlo.",
             },
             {
                 guia: "buscar-documento",
@@ -203,6 +284,44 @@ export const pantallas: PantallaGuia[] = [
         nombre: "Asignación de Cobranzas",
         grupo: "Cobranza",
         resumen: "Aquí repartes entre los vendedores las facturas pendientes de cobro y sigues cómo va cada gestión.",
+        diagrama: {
+            titulo: "Qué tablas toca una factura al asignarla para cobro",
+            ficha: "Factura",
+            nodos: [
+                {
+                    quien: "Administrador", modulo: "Facturas por asignar", accion: "Filtra y marca las facturas con saldo que nadie cobra.",
+                    estado: "Marcada", icono: "filtro", tono: "indigo", modo: "lee",
+                    tablas: [
+                        { nombre: "vta_comprobante_sunat", nota: "las facturas emitidas" },
+                        { nombre: "kardex clientes", nota: "el saldo que falta cobrar", contable: true },
+                    ],
+                },
+                {
+                    quien: "Administrador", modulo: "Asignar a cobranza", accion: "Elige el vendedor de cada grupo y confirma.",
+                    estado: "Asignada", icono: "enviar", tono: "ambar",
+                    tablas: [{ nombre: "t_cobranza_asignacion", nota: "factura, vendedor y estado" }],
+                },
+                {
+                    quien: "Automático", modulo: "Aviso por WhatsApp", accion: "Cada vendedor recibe la lista de sus facturas nuevas.",
+                    estado: "Vendedor avisado", icono: "chat", tono: "celeste",
+                    tablas: [],
+                },
+                {
+                    quien: "Vendedor", modulo: "Actualizar gestión", accion: "Cambia el estado, comenta y adjunta el comprobante.",
+                    estado: "En gestión", icono: "cliente", tono: "verde",
+                    tablas: [
+                        { nombre: "t_cobranza_asignacion", nota: "el estado nuevo" },
+                        { nombre: "t_cobranza_comentario", nota: "historial de comentarios" },
+                        { nombre: "t_cobranza_evidencia", nota: "el comprobante adjunto" },
+                    ],
+                },
+            ],
+            tituloEfectos: "La asignación se ve aquí",
+            efectos: [
+                { modulo: "Pestaña Asignadas", detalle: "estado y saldo de cada factura", icono: "buscar", desde: "t_cobranza_asignacion" },
+                { modulo: "Exportar PDF", detalle: "reporte con tus filtros", icono: "reporte", desde: "t_cobranza_asignacion" },
+            ],
+        },
         pasos: [
             {
                 guia: "pestanas-asignacion",
@@ -281,6 +400,42 @@ export const pantallas: PantallaGuia[] = [
         nombre: "Recibo Cuenta Cliente",
         grupo: "Cobranza",
         resumen: "Aquí emites el recibo de cobranza que firma el cliente; se envía a Gerencia por WhatsApp y queda en el historial.",
+        diagrama: {
+            titulo: "Qué tablas toca un recibo desde el permiso hasta el voucher",
+            ficha: "Recibo",
+            nodos: [
+                {
+                    quien: "Vendedor", modulo: "Solicitar permiso", accion: "Pide permiso a Gerencia para poder emitir.",
+                    estado: "Con permiso", icono: "validar", tono: "indigo",
+                    tablas: [{ nombre: "vta_recibo_permiso", nota: "la solicitud y su estado" }],
+                },
+                {
+                    quien: "Vendedor", modulo: "Documentos que paga", accion: "Elige los documentos pendientes del cliente y su importe en S/.",
+                    estado: "Documentos listos", icono: "buscar", tono: "ambar", modo: "lee",
+                    tablas: [{ nombre: "kardex clientes", nota: "el saldo de cada documento", contable: true }],
+                },
+                {
+                    quien: "Vendedor", modulo: "Generar recibo", accion: "Asigna el N°, arma el PDF y lo guarda. No baja el saldo.",
+                    estado: "Emitido", icono: "comprobante", tono: "celeste",
+                    tablas: [
+                        { nombre: "vta_otros_correlativos", nota: "el N° de recibo" },
+                        { nombre: "vta_recibo_cliente_cab", nota: "cabecera y firmas" },
+                        { nombre: "vta_recibo_cliente_det", nota: "cada documento pagado" },
+                    ],
+                },
+                {
+                    quien: "Vendedor", modulo: "Adjuntar vouchers", accion: "Desde el Historial, adjunta los vouchers del pago.",
+                    estado: "Con voucher", icono: "archivo", tono: "verde",
+                    tablas: [{ nombre: "vta_recibo_voucher", nota: "vouchers del recibo" }],
+                },
+            ],
+            tituloEfectos: "Al generar, el recibo llega aquí",
+            efectos: [
+                { modulo: "Gerencia", detalle: "recibe el PDF por WhatsApp", icono: "chat", desde: "vta_recibo_cliente_cab" },
+                { modulo: "Historial", detalle: "buscar, ver, descargar o anular", icono: "reporte", desde: "vta_recibo_cliente_cab" },
+                { modulo: "Próximo recibo", detalle: "avisa si el documento ya tiene uno", icono: "documento", desde: "vta_recibo_cliente_det" },
+            ],
+        },
         pasos: [
             {
                 guia: "solicitar-permiso",
@@ -367,6 +522,48 @@ export const pantallas: PantallaGuia[] = [
         nombre: "Libro Caja y Bancos",
         grupo: "Datos de Movimientos",
         resumen: "Aquí llevas el voucher diario de cada caja o banco y aceptas los cobros que llegan de las planillas de cobranza.",
+        diagrama: {
+            titulo: "Qué tablas graba el voucher de caja y los cobros aceptados",
+            ficha: "Voucher",
+            nodos: [
+                {
+                    quien: "Contabilidad", modulo: "Nuevo voucher", accion: "Crea el voucher del día de esa caja o banco.",
+                    estado: "Voucher abierto", icono: "caja", tono: "indigo",
+                    tablas: [{ nombre: "caja encabezado", nota: "cabecera del voucher", contable: true }],
+                },
+                {
+                    quien: "Contabilidad", modulo: "Líneas del voucher", accion: "Llena documento, persona, ingreso o egreso en S/ y cuenta.",
+                    estado: "Líneas listas", icono: "documento", tono: "ambar",
+                    tablas: [],
+                },
+                {
+                    quien: "Contabilidad", modulo: "Guardar", accion: "Graba las líneas y vuelve a armar el asiento contable.",
+                    estado: "Guardado", icono: "libro", tono: "celeste",
+                    tablas: [
+                        { nombre: "caja centralizacion", nota: "las líneas del voucher", contable: true },
+                        { nombre: "mayor auxiliar", nota: "el asiento contable", contable: true },
+                        { nombre: "kardex clientes", nota: "cuenta de los clientes", contable: true },
+                        { nombre: "kardex proveedores", nota: "cuenta de los proveedores", contable: true },
+                    ],
+                },
+                {
+                    quien: "Contabilidad", modulo: "Planillas de cobranza", accion: "Acepta los cobros que llegaron con Enviar a caja.",
+                    estado: "Cobro aceptado", icono: "validar", tono: "verde",
+                    tablas: [
+                        { nombre: "planilla_detalle_caja", nota: "el cobro pasa a aceptado" },
+                        { nombre: "amortizaciones", nota: "el pago del cliente", contable: true },
+                        { nombre: "kardex clientes", nota: "baja el saldo de la factura", contable: true },
+                        { nombre: "mayor auxiliar", nota: "el asiento contable", contable: true },
+                    ],
+                },
+            ],
+            tituloEfectos: "Lo grabado llega a estos módulos",
+            efectos: [
+                { modulo: "Libros Contables", detalle: "asientos de caja y bancos", icono: "libro", desde: "mayor auxiliar" },
+                { modulo: "Asignación de Cobranzas", detalle: "el saldo sale rebajado", icono: "cliente", desde: "kardex clientes" },
+                { modulo: "Comisiones y Reportes", detalle: "ya cuentan el cobro", icono: "reporte", desde: "amortizaciones" },
+            ],
+        },
         pasos: [
             {
                 guia: "caja-fecha",
@@ -391,7 +588,7 @@ export const pantallas: PantallaGuia[] = [
                 guia: "lineas-voucher",
                 titulo: "Líneas del voucher",
                 queHace: "Llena cada línea: documento, persona, detalle, Ingreso o Egreso (nunca los dos), tipo de pago, cuenta contable y centro de costos. Usa Agregar línea o Enter para seguir.",
-                quePasa: "Las líneas con la marca PLAN. vienen de una planilla de cobranza: no se cambian aquí, se quitan con Revertir en el Historial.",
+                quePasa: "Las líneas con la marca PLAN. vienen de una planilla de cobranza aceptada antes del 21/11/2026: no se cambian aquí, se quitan con Revertir en el Historial. Los cobros aceptados desde esa fecha ya no aparecen como línea del voucher.",
             },
             {
                 guia: "guardar-voucher",
@@ -432,10 +629,10 @@ export const pantallas: PantallaGuia[] = [
                 guia: "aceptar-seleccionados",
                 titulo: "Aceptar seleccionados",
                 queHace: "Con los cobros marcados, pulsa Aceptar seleccionados y confirma con Sí, aceptar.",
-                quePasa: "Cada cobro entra como línea al voucher de esa caja y fecha (si no existe, se crea). Se arma el asiento y baja el saldo de la factura del cliente.",
+                quePasa: "Cada cobro se registra como pago del cliente: se arma su asiento (abono al cliente, cargo a la caja) y baja el saldo de la factura. No agrega líneas al voucher.",
                 seGuarda: "Como en Access (Amortizacion Clientes): el pago, el asiento contable y la cuenta del cliente; el cobro queda Aceptado.",
                 tablas: "planilla_detalle_caja, amortizaciones, kardex clientes, mayor auxiliar",
-                despues: "En la pestaña Vouchers, abre esa caja y fecha para ver las líneas PLAN.",
+                despues: "El depósito al banco se digita aparte en la pestaña Vouchers (DEP. PLAN …). El cobro lo ves en Cliente Cobranza › Buscar.",
             },
             {
                 guia: "rechazar",
@@ -449,8 +646,8 @@ export const pantallas: PantallaGuia[] = [
                 guia: "pendientes-historial",
                 titulo: "Historial y Revertir",
                 queHace: "Pulsa Historial para ver lo aceptado y rechazado en unas fechas. Si un cobro aceptado estaba mal, pulsa Revertir.",
-                quePasa: "Revertir saca el cobro del voucher, vuelve a armar el asiento y la deuda del cliente sube otra vez. El cobro queda de nuevo pendiente.",
-                seGuarda: "Se borra la línea del voucher y se regenera el asiento y el kardex.",
+                quePasa: "Revertir borra el pago, su kardex y su asiento: la deuda del cliente sube otra vez y el cobro queda de nuevo pendiente.",
+                seGuarda: "Se borran el pago, su movimiento en el kardex y su asiento. (Un cobro aceptado antes del 21/11/2026 además sale de su voucher.)",
                 tablas: "amortizaciones, kardex clientes, mayor auxiliar, planilla_detalle_caja",
             },
         ],
@@ -497,13 +694,13 @@ export const caminos: CaminoGuia[] = [
                 titulo: "Asiento y saldo",
                 quien: "Automático",
                 queHace: "Al aceptar, cada cobro se registra igual que la planilla de cobranza de Access: se graba el pago, se arma el asiento (cliente al abono, caja al cargo) y baja el saldo de la factura. El depósito al banco se registra aparte en el voucher de caja.",
-                seGuarda: "Voucher de caja, asiento contable (mayor auxiliar) y kardex de clientes.",
+                seGuarda: "Pago del cliente (amortizaciones), asiento contable (mayor auxiliar) y kardex de clientes.",
             },
             {
                 titulo: "Dónde se ve",
                 ruta: RUTA_LIBRO_CAJA,
                 quien: "Contabilidad",
-                queHace: "En Libro Caja y Bancos › Vouchers abre esa caja y fecha: verás las líneas PLAN. En Planilla de Cobranza la planilla dice «En el libro» y en qué voucher entró cada cobro. En Asignación de Cobranzas el saldo de la factura ya sale rebajado.",
+                queHace: "En Cliente Cobranza › Buscar aparece el cobro con su kardex y su asiento. En Planilla de Cobranza, «Ver cómo se registró cada cobro» muestra la caja y la fecha. En Asignación de Cobranzas el saldo de la factura ya sale rebajado.",
             },
             {
                 titulo: "Si hay que corregir",

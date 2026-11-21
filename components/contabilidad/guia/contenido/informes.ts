@@ -14,6 +14,44 @@ export const pantallas: PantallaGuia[] = [
         nombre: "Informes Registro de Ventas",
         grupo: "Registros e Informes",
         resumen: "Aquí revisas el registro de ventas del mes antes de declarar: en soles, en dólares, boletas resumidas, correlativos, guías facturadas y ventas del año.",
+        diagrama: {
+            titulo: "De dónde salen los informes del registro de ventas",
+            ficha: "Informe",
+            nodos: [
+                {
+                    quien: "Tú", modulo: "Elegir informe y mes", accion: "Eliges la pestaña, el año y el mes y pulsas Consultar.",
+                    estado: "Filtros listos", icono: "filtro", tono: "indigo",
+                    tablas: [],
+                },
+                {
+                    quien: "Sistema", modulo: "Registro de ventas", accion: "Trae las ventas del periodo. No guarda ni cambia nada.",
+                    estado: "Leyendo ventas", icono: "sistema", tono: "ambar", modo: "lee",
+                    tablas: [
+                        { nombre: "registro de ventas", nota: "cada comprobante del mes", contable: true },
+                        { nombre: "mnombrerazsoc", nota: "nombre y RUC o DNI del cliente" },
+                        { nombre: "mtipocambiousd", nota: "para pasar los dólares a S/" },
+                        { nombre: "vta_comprobante_cab", nota: "solo en Guías facturadas" },
+                        { nombre: "lgt_guia_rem_cab", nota: "las guías de remisión" },
+                    ],
+                },
+                {
+                    quien: "Tú", modulo: "Totales y detalle", accion: "Revisas los totales en S/ y cada comprobante, uno por uno.",
+                    estado: "En pantalla", icono: "reporte", tono: "celeste",
+                    tablas: [],
+                },
+                {
+                    quien: "Tú", modulo: "PDF o Excel", accion: "Descargas el informe para revisarlo o archivarlo.",
+                    estado: "Exportado", icono: "archivo", tono: "verde",
+                    tablas: [],
+                },
+            ],
+            tituloEfectos: "Cuando el registro cuadra, sigue aquí",
+            efectos: [
+                { modulo: "SIRE Ventas", detalle: "Anexo 03 del mes", icono: "sunat", desde: "registro de ventas" },
+                { modulo: "PLE 14.1", detalle: "Registro de Ventas en TXT", icono: "sunat", desde: "registro de ventas" },
+                { modulo: "PDF y Excel", detalle: "el informe tal como lo ves", icono: "archivo" },
+            ],
+        },
         pasos: [
             {
                 guia: "pestanas",
@@ -81,6 +119,44 @@ export const pantallas: PantallaGuia[] = [
         nombre: "Informes Registro de Compras",
         grupo: "Registros e Informes",
         resumen: "Aquí revisas el registro de compras del mes antes de declarar: en soles, en dólares, percepciones, pendientes de SIRE y compras del año.",
+        diagrama: {
+            titulo: "De dónde salen los informes del registro de compras",
+            ficha: "Informe",
+            nodos: [
+                {
+                    quien: "Tú", modulo: "Elegir informe y mes", accion: "Eliges la pestaña, el año y el mes y pulsas Consultar.",
+                    estado: "Filtros listos", icono: "filtro", tono: "indigo",
+                    tablas: [],
+                },
+                {
+                    quien: "Sistema", modulo: "Registro de compras", accion: "Trae las compras del periodo. No guarda ni cambia nada.",
+                    estado: "Leyendo compras", icono: "sistema", tono: "ambar", modo: "lee",
+                    tablas: [
+                        { nombre: "registro de compras", nota: "cada compra del mes", contable: true },
+                        { nombre: "reg compras encabezado", nota: "la factura que se grabó" },
+                        { nombre: "reg compras detalle", nota: "los ítems de la factura" },
+                        { nombre: "mnombrerazsoc", nota: "nombre y RUC del proveedor" },
+                        { nombre: "mtipomoneda", nota: "soles o dólares" },
+                    ],
+                },
+                {
+                    quien: "Tú", modulo: "Totales y detalle", accion: "Revisas los totales, las percepciones y los SIRE pendientes.",
+                    estado: "En pantalla", icono: "reporte", tono: "celeste",
+                    tablas: [],
+                },
+                {
+                    quien: "Tú", modulo: "PDF o Excel", accion: "Descargas el informe para revisarlo o archivarlo.",
+                    estado: "Exportado", icono: "archivo", tono: "verde",
+                    tablas: [],
+                },
+            ],
+            tituloEfectos: "Cuando el registro cuadra, sigue aquí",
+            efectos: [
+                { modulo: "SIRE Compras", detalle: "Anexos 11, 12 y 8", icono: "sunat", desde: "registro de compras" },
+                { modulo: "PLE 8.1", detalle: "Registro de Compras en TXT", icono: "sunat", desde: "registro de compras" },
+                { modulo: "PDF y Excel", detalle: "el informe tal como lo ves", icono: "archivo" },
+            ],
+        },
         pasos: [
             {
                 guia: "pestanas",
@@ -149,6 +225,44 @@ export const pantallas: PantallaGuia[] = [
         nombre: "Informes Proveedores",
         grupo: "Registros e Informes",
         resumen: "Aquí consultas la cuenta corriente de los proveedores, qué documentos vencen (programa de pagos) y las compras de un proveedor en el año.",
+        diagrama: {
+            titulo: "De dónde salen los informes de proveedores",
+            ficha: "Informe",
+            nodos: [
+                {
+                    quien: "Tú", modulo: "Elegir informe", accion: "Eliges la pestaña, el proveedor y las fechas o el año.",
+                    estado: "Filtros listos", icono: "filtro", tono: "indigo",
+                    tablas: [],
+                },
+                {
+                    quien: "Sistema", modulo: "Cuenta del proveedor", accion: "Trae la provisión y los pagos. No guarda ni cambia nada.",
+                    estado: "Leyendo cuenta", icono: "sistema", tono: "ambar", modo: "lee",
+                    tablas: [
+                        { nombre: "kardex proveedores", nota: "provisión y pagos", contable: true },
+                        { nombre: "registro de compras", nota: "para Detalle por año", contable: true },
+                        { nombre: "mnombrerazsoc", nota: "nombre y RUC del proveedor" },
+                        { nombre: "mtipodocumento", nota: "factura, letra, nota..." },
+                        { nombre: "mtipomoneda", nota: "soles o dólares" },
+                    ],
+                },
+                {
+                    quien: "Tú", modulo: "Totales y detalle", accion: "Revisas cada documento y su saldo en S/ y en US$.",
+                    estado: "En pantalla", icono: "reporte", tono: "celeste",
+                    tablas: [],
+                },
+                {
+                    quien: "Tú", modulo: "PDF o Excel", accion: "Descargas el informe para decidir qué pagar.",
+                    estado: "Exportado", icono: "archivo", tono: "verde",
+                    tablas: [],
+                },
+            ],
+            tituloEfectos: "Para qué te sirve este informe",
+            efectos: [
+                { modulo: "Programa de pagos", detalle: "lo que vence y aún se debe", icono: "calendario", desde: "kardex proveedores" },
+                { modulo: "Saldo por Pagar", detalle: "el saldo a una fecha de corte", icono: "proveedor", desde: "kardex proveedores" },
+                { modulo: "PDF y Excel", detalle: "el informe tal como lo ves", icono: "archivo" },
+            ],
+        },
         pasos: [
             {
                 guia: "pestanas",
@@ -224,6 +338,43 @@ export const pantallas: PantallaGuia[] = [
         nombre: "Saldo de Documentos por Pagar Proveedor",
         grupo: "Registros e Informes",
         resumen: "Aquí ves cuánto debes a cada proveedor a una fecha de corte, documento por documento, en S/ y en US$.",
+        diagrama: {
+            titulo: "Cómo se calcula el saldo por pagar a proveedores",
+            ficha: "Saldo",
+            nodos: [
+                {
+                    quien: "Tú", modulo: "Proveedor y fecha", accion: "Eliges el proveedor (o todos) y la fecha de corte.",
+                    estado: "Filtros listos", icono: "filtro", tono: "indigo",
+                    tablas: [],
+                },
+                {
+                    quien: "Sistema", modulo: "Calcular saldos", accion: "Resta los pagos a la provisión de cada documento. Solo lee.",
+                    estado: "Calculando", icono: "calculo", tono: "ambar", modo: "lee",
+                    tablas: [
+                        { nombre: "kardex proveedores", nota: "provisión y pagos a la fecha", contable: true },
+                        { nombre: "mnombrerazsoc", nota: "nombre y RUC del proveedor" },
+                        { nombre: "mtipodocumento", nota: "factura, letra, nota..." },
+                        { nombre: "mtipomoneda", nota: "soles o dólares" },
+                    ],
+                },
+                {
+                    quien: "Tú", modulo: "Saldos por proveedor", accion: "Ves cada documento, su saldo en S/ o US$ y si está vencido.",
+                    estado: "En pantalla", icono: "proveedor", tono: "celeste",
+                    tablas: [],
+                },
+                {
+                    quien: "Tú", modulo: "PDF o Excel", accion: "Descargas el reporte de saldos por pagar.",
+                    estado: "Exportado", icono: "archivo", tono: "verde",
+                    tablas: [],
+                },
+            ],
+            tituloEfectos: "Lo que obtienes al final",
+            efectos: [
+                { modulo: "Reporte PDF", detalle: "saldos en S/ y en US$", icono: "documento" },
+                { modulo: "Hoja de Excel", detalle: "el mismo reporte para trabajar", icono: "archivo" },
+                { modulo: "Auditoría", detalle: "pagos o canjes repetidos", icono: "buscar", desde: "kardex proveedores" },
+            ],
+        },
         pasos: [
             {
                 guia: "saldo-proveedor",
@@ -289,6 +440,44 @@ export const pantallas: PantallaGuia[] = [
         nombre: "PLE - Libros Electrónicos",
         grupo: "SUNAT",
         resumen: "Aquí generas los archivos TXT del PLE de SUNAT: Registro de Ventas (14.1), Registro de Compras (8.1 y 8.2), Libro Diario (5.1 y 5.3) y Libro Mayor (6.1).",
+        diagrama: {
+            titulo: "De qué tablas sale cada archivo TXT del PLE",
+            ficha: "Archivo",
+            nodos: [
+                {
+                    quien: "Tú", modulo: "Periodo y libro", accion: "Eliges el año, el mes y la tarjeta del libro a generar.",
+                    estado: "Libro elegido", icono: "calendario", tono: "indigo",
+                    tablas: [],
+                },
+                {
+                    quien: "Sistema", modulo: "Armar el archivo", accion: "Trae los registros del mes. No guarda nada en el sistema.",
+                    estado: "Leyendo libros", icono: "sistema", tono: "ambar", modo: "lee",
+                    tablas: [
+                        { nombre: "registro de ventas", nota: "para el 14.1", contable: true },
+                        { nombre: "registro de compras", nota: "para el 8.1", contable: true },
+                        { nombre: "mayor auxiliar", nota: "asientos: 5.1 y 6.1", contable: true },
+                        { nombre: "libro contable", nota: "libro de cada asiento", contable: true },
+                        { nombre: "mplancuentas", nota: "plan de cuentas: 5.3" },
+                    ],
+                },
+                {
+                    quien: "Tú", modulo: "Vista previa TXT", accion: "Revisas el nombre, las líneas y el indicador (1 o 0).",
+                    estado: "TXT armado", icono: "documento", tono: "celeste",
+                    tablas: [],
+                },
+                {
+                    quien: "Tú", modulo: "Descargar TXT", accion: "Bajas el archivo a tu computadora sin cambiarle el nombre.",
+                    estado: "Descargado", icono: "archivo", tono: "verde",
+                    tablas: [],
+                },
+            ],
+            tituloEfectos: "Archivos que subes al PLE de SUNAT",
+            efectos: [
+                { modulo: "14.1 Ventas", detalle: "Registro de Ventas", icono: "sunat", desde: "registro de ventas" },
+                { modulo: "8.1 Compras", detalle: "y el 8.2, que sale vacío", icono: "sunat", desde: "registro de compras" },
+                { modulo: "5.1, 5.3 y 6.1", detalle: "Diario, Plan y Mayor", icono: "sunat", desde: "mayor auxiliar" },
+            ],
+        },
         pasos: [
             {
                 guia: "periodo",
@@ -354,6 +543,44 @@ export const pantallas: PantallaGuia[] = [
         nombre: "SIRE - Ventas y Compras",
         grupo: "SUNAT",
         resumen: "Aquí generas los archivos de reemplazo de las propuestas SIRE: ventas (Anexo 03) y compras (Anexos 11, 12 y 8).",
+        diagrama: {
+            titulo: "De qué tablas sale cada archivo del SIRE",
+            ficha: "Archivo",
+            nodos: [
+                {
+                    quien: "Tú", modulo: "Periodo y anexo", accion: "Eliges el año, el mes y la tarjeta del anexo.",
+                    estado: "Anexo elegido", icono: "calendario", tono: "indigo",
+                    tablas: [],
+                },
+                {
+                    quien: "Sistema", modulo: "Cargar documentos", accion: "Trae las ventas o compras del mes. No guarda nada.",
+                    estado: "Leyendo registros", icono: "sistema", tono: "ambar", modo: "lee",
+                    tablas: [
+                        { nombre: "registro de ventas", nota: "para Ventas Anexo 03", contable: true },
+                        { nombre: "registro de compras", nota: "para Anexos 11, 12 y 8", contable: true },
+                        { nombre: "mnombrerazsoc", nota: "nombre y RUC" },
+                        { nombre: "mtipomoneda", nota: "soles o dólares" },
+                        { nombre: "empresas control", nota: "datos de la empresa" },
+                    ],
+                },
+                {
+                    quien: "Tú", modulo: "Elegir documentos", accion: "En Anexo 12 y 8 marcas los documentos que vas a enviar.",
+                    estado: "Documentos listos", icono: "validar", tono: "celeste",
+                    tablas: [],
+                },
+                {
+                    quien: "Tú", modulo: "Vista previa y descarga", accion: "Revisas el TXT y lo bajas sin cambiarle el nombre.",
+                    estado: "Descargado", icono: "archivo", tono: "verde",
+                    tablas: [],
+                },
+            ],
+            tituloEfectos: "Archivos que subes al SIRE de SUNAT",
+            efectos: [
+                { modulo: "Ventas Anexo 03", detalle: "todo el mes", icono: "sunat", desde: "registro de ventas" },
+                { modulo: "Compras Anexo 11", detalle: "todo el mes", icono: "sunat", desde: "registro de compras" },
+                { modulo: "Compras Anexo 12 y 8", detalle: "solo lo que marcaste", icono: "sunat", desde: "registro de compras" },
+            ],
+        },
         pasos: [
             {
                 guia: "periodo",

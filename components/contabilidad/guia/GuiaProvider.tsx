@@ -3,7 +3,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react"
 import { usePathname } from "next/navigation"
 import { CaminoGuia, PantallaGuia } from "./tipos"
-import { CAMINOS, esRutaContable, pantallaDe } from "./contenido"
+import { CAMINOS, abreSola, esRutaContable, pantallaDe } from "./contenido"
 import { GuiaRecorrido } from "./GuiaRecorrido"
 import { GuiaAyudas } from "./GuiaAyudas"
 import { GuiaCaminos } from "./GuiaCaminos"
@@ -26,7 +26,7 @@ function grabar(clave: string, valor: unknown) {
 interface Recorrido { pantalla: PantallaGuia; indice: number }
 
 interface GuiaCtx {
-    /** Estamos en una pantalla de Contabilidad y en escritorio. */
+    /** Estamos en escritorio y en una pantalla con guía (todo el sistema menos configuración, roles y usuarios). */
     disponible: boolean
     pantalla: PantallaGuia | undefined
     activa: boolean
@@ -100,7 +100,7 @@ export function GuiaProvider({ children }: { children: React.ReactNode }) {
         setRecorrido(null)
         if (!cargado || !pantalla) return
         const forzar = new URLSearchParams(window.location.search).get("guia") === "1"
-        if (!forzar && (!activa || vistos.includes(pantalla.ruta))) return
+        if (!forzar && (!activa || vistos.includes(pantalla.ruta) || !abreSola(pantalla.ruta))) return
         const t = setTimeout(() => setRecorrido({ pantalla, indice: 0 }), 900)
         return () => clearTimeout(t)
         // eslint-disable-next-line react-hooks/exhaustive-deps
