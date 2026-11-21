@@ -19,6 +19,7 @@ import { CajaBancosService } from "@/app/services/contabilidad/ContabilidadServi
 import {
     CajaCatalogos, CajaPlanillaHistorial, CajaPlanillaPendiente,
 } from "@/app/types/contabilidad-types"
+import { EstadoProgreso, FilaProgreso, ProgresoAceptar } from "./ProgresoAceptar"
 
 const money = (v: number | string) =>
     Number(v ?? 0).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
@@ -61,6 +62,7 @@ export function PlanillasCaja({ catalogos, usuario, onPendientes }: Props) {
     const [trabajando, setTrabajando] = useState(false)
 
     const [aceptarIds, setAceptarIds]   = useState<number[] | null>(null)
+    const [progreso, setProgreso]       = useState<{ filas: FilaProgreso[]; estado: EstadoProgreso } | null>(null)
     const [rechazarIds, setRechazarIds] = useState<number[] | null>(null)
     const [motivo, setMotivo]           = useState('')
 
@@ -171,6 +173,18 @@ export function PlanillasCaja({ catalogos, usuario, onPendientes }: Props) {
         const ids = aceptarIds
         setAceptarIds(null)
         setTrabajando(true)
+        // Ventana animada: muestra cada tabla que graba el servidor y el resultado real.
+        const filas: FilaProgreso[] = pendientes
+            .filter(r => ids.includes(r.id_detalle))
+            .map(r => ({
+                id:        r.id_detalle,
+                cliente:   r.nombre_cliente,
+                documento: documento(r),
+                importe:   Number(r.importe_cobrado),
+                simbolo:   simbolo(r.moneda),
+                caja:      cajas.find(c => String(c.IdCaja) === edicion[r.id_detalle]?.idCaja)?.Descripcion ?? '',
+            }))
+        setProgreso({ filas, estado: { fase: 'grabando' } })
         try {
             const r: any = await CajaBancosService.planillasAceptar(usuario, ids.map(id => ({
                 idDetalle: id,
@@ -179,17 +193,17 @@ export function PlanillasCaja({ catalogos, usuario, onPendientes }: Props) {
             })))
             const n = Number(r?.aceptados ?? ids.length)
             const v = Number(r?.vouchers ?? 0)
-            toast({
-                title:       "Cobros aceptados",
-                description: `${n} cobro${n !== 1 ? 's' : ''} pasaron al libro${v ? ` en ${v} voucher${v !== 1 ? 's' : ''}` : ''}.`,
-            })
+            setProgreso({ filas, estado: { fase: 'listo', aceptados: n, vouchers: v } })
             await cargarPendientes()
             if (histCargado) cargarHistorial()
         } catch (e: any) {
-            toast({
-                title:       "No se pudo aceptar",
-                description: e?.response?.data?.message || "Error al aceptar los cobros.",
-                variant:     "destructive",
+            setProgreso({
+                filas,
+                estado: {
+                    fase:         'error',
+                    mensaje:      e?.response?.data?.message || "Error al aceptar los cobros.",
+                    sinRespuesta: !e?.response,
+                },
             })
         } finally {
             setTrabajando(false)
@@ -531,6 +545,13 @@ export function PlanillasCaja({ catalogos, usuario, onPendientes }: Props) {
                     )}
                 </Card>
             )}
+
+            <ProgresoAceptar
+                abierto={progreso !== null}
+                filas={progreso?.filas ?? []}
+                estado={progreso?.estado ?? { fase: 'grabando' }}
+                onCerrar={() => setProgreso(null)}
+            />
 
             <AlertDialog open={aceptarIds !== null} onOpenChange={v => { if (!v) setAceptarIds(null) }}>
                 <AlertDialogContent>
