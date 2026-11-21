@@ -47,6 +47,8 @@ export function BuscadorDocumentos({
     // Como en el sistema anterior: sin año ni período, se busca en todo el
     // registro por proveedor (RUC o nombre), serie o número.
     const [texto, setTexto]       = useState("")
+    const [desde, setDesde]       = useState("")
+    const [hasta, setHasta]       = useState("")
     const [pagina, setPagina]     = useState(1)
     const [tamano, setTamano]     = useState(25)
     const [filas, setFilas]       = useState<ComprasResumen[]>([])
@@ -58,12 +60,12 @@ export function BuscadorDocumentos({
 
     const nroBusqueda = useRef(0)
 
-    const buscar = useCallback(async (t: string, p: number, tam: number) => {
+    const buscar = useCallback(async (t: string, p: number, tam: number, d: string, h: string) => {
         const mio = ++nroBusqueda.current
         setCargando(true)
         setError(null)
         try {
-            const r = await ComprasService.buscarDocumentosPagina(t, p, tam)
+            const r = await ComprasService.buscarDocumentosPagina(t, p, tam, d, h)
             if (mio !== nroBusqueda.current) return
             setFilas(r.data)
             setTotal(r.total)
@@ -84,6 +86,8 @@ export function BuscadorDocumentos({
     useEffect(() => {
         if (!abierto) return
         setTexto("")
+        setDesde("")
+        setHasta("")
         setPagina(1)
     }, [abierto])
 
@@ -93,9 +97,12 @@ export function BuscadorDocumentos({
         if (!abierto) return
         const espera = texto !== ultimoTexto.current && texto ? 350 : 0
         ultimoTexto.current = texto
-        const t = setTimeout(() => buscar(texto, pagina, tamano), espera)
+        // Una fecha a medio escribir no se envía: solo fechas completas (AAAA-MM-DD).
+        const ok = (f: string) => (/^\d{4}-\d{2}-\d{2}$/.test(f) ? f : "")
+        const t = setTimeout(() => buscar(texto, pagina, tamano, ok(desde), ok(hasta)), espera)
         return () => clearTimeout(t)
-    }, [abierto, texto, pagina, tamano, buscar])
+    }, [abierto, texto, desde, hasta, pagina, tamano, buscar])
+    const fechaInvertida = !!desde && !!hasta && desde > hasta
 
     const importe = (f: ComprasResumen) => `${f.Moneda === 'NSO' ? 'S/' : f.Moneda} ${money(f.ImporteTotal)}`
     // El documento trae solo el código del tipo (01, 07…); el nombre sale del catálogo que ya se cargó.
@@ -113,13 +120,14 @@ export function BuscadorDocumentos({
                         <div className="min-w-0">
                             <DialogTitle>Buscar documento</DialogTitle>
                             <DialogDescription className="text-xs">
-                                Busca en todo el registro por proveedor (RUC o nombre), serie o número.
+                                Busca en todo el registro por proveedor (RUC o nombre), serie o número, y por fecha de emisión.
                             </DialogDescription>
                         </div>
                     </div>
                 </DialogHeader>
 
                 <div className="shrink-0 border-b bg-muted/40 px-5 py-3 sm:px-6">
+                    <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
                     <div className="flex min-w-0 flex-col gap-1.5">
                         <Label className="text-xs font-medium text-muted-foreground">Proveedor (RUC o nombre), serie o número</Label>
                         <div className="relative">
@@ -141,6 +149,26 @@ export function BuscadorDocumentos({
                             )}
                         </div>
                     </div>
+                    <div className="flex flex-col gap-1.5">
+                        <Label className="text-xs font-medium text-muted-foreground">Fecha de emisión</Label>
+                        <div className="flex items-center gap-1.5">
+                            <Input type="date" aria-label="Desde" title="Desde" className="h-9 w-[140px] bg-background"
+                                   value={desde} max={hasta || undefined}
+                                   onChange={e => { setDesde(e.target.value); setPagina(1) }} />
+                            <span className="text-xs text-muted-foreground">a</span>
+                            <Input type="date" aria-label="Hasta" title="Hasta" className="h-9 w-[140px] bg-background"
+                                   value={hasta} min={desde || undefined}
+                                   onChange={e => { setHasta(e.target.value); setPagina(1) }} />
+                            {(desde || hasta) && (
+                                <button type="button" onClick={() => { setDesde(""); setHasta(""); setPagina(1) }} title="Quitar fechas" aria-label="Quitar fechas"
+                                        className="flex h-7 w-7 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground">
+                                    <X className="h-3.5 w-3.5" />
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                    </div>
+                    {fechaInvertida && <p className="mt-2 text-xs font-medium text-amber-600">La fecha "desde" es posterior a "hasta": no habrá resultados.</p>}
                 </div>
 
                 <div className="min-h-0 flex-1 overflow-auto px-3 py-3 sm:px-6 sm:py-4">

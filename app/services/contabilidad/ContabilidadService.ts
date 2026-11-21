@@ -202,9 +202,9 @@ export const ComprasService = {
     },
 
     /** Busca en todos los años, paginado en el backend. */
-    buscarDocumentosPagina: async (texto: string, pagina: number, tamano: number): Promise<ComprasPagina> => {
+    buscarDocumentosPagina: async (texto: string, pagina: number, tamano: number, desde?: string, hasta?: string): Promise<ComprasPagina> => {
         const res = await apiClient.get('/contabilidad/compras/documentos/pagina', {
-            params: { texto: texto || undefined, pagina, tamano },
+            params: { texto: texto || undefined, pagina, tamano, desde: desde || undefined, hasta: hasta || undefined },
         })
         const d = res.data?.data ?? {}
         return {
