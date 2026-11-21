@@ -211,20 +211,20 @@ export function LoginForm() {
         <p className="text-sm text-muted-foreground mt-1">Sistema de Gestión de Pedidos</p>
       </div>
 
-      <Card className="w-full overflow-hidden rounded-2xl border border-white/60 bg-white/75 shadow-2xl shadow-sky-900/10 backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/60 dark:shadow-black/40">
-        <div className="h-1 w-full bg-gradient-to-r from-sky-500 via-teal-500 to-emerald-500" />
+      <Card className="w-full overflow-hidden rounded-2xl border border-white/60 bg-white/75 shadow-2xl shadow-blue-900/10 backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/60 dark:shadow-black/40">
+        <div className="h-1 w-full bg-gradient-to-r from-blue-500 to-indigo-500" />
         <CardHeader className="space-y-1 pb-2 pt-6">
           {/* Dos pasos: DNI y código. */}
           <div className="mb-3 flex items-center justify-center gap-2 text-[11px] font-semibold" aria-hidden="true">
-            <span className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 ${!showVerification ? "bg-sky-600 text-white" : "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300"}`}>
+            <span className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 ${!showVerification ? "bg-blue-600 text-white" : "bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300"}`}>
               <User className="h-3 w-3" /> 1 · DNI
             </span>
             <span className="h-px w-6 bg-border" />
-            <span className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 ${showVerification ? "bg-sky-600 text-white" : "bg-muted text-muted-foreground"}`}>
+            <span className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 ${showVerification ? "bg-blue-600 text-white" : "bg-muted text-muted-foreground"}`}>
               <Lock className="h-3 w-3" /> 2 · Código
             </span>
           </div>
-          <CardTitle className="text-2xl text-center font-bold bg-gradient-to-r from-sky-600 to-emerald-600 bg-clip-text text-transparent dark:from-sky-400 dark:to-emerald-400">
+          <CardTitle className="text-2xl text-center font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent dark:from-blue-400 dark:to-indigo-400">
             {showVerification ? "Verificación" : "Iniciar Sesión"}
           </CardTitle>
           <CardDescription className="text-center">
@@ -252,13 +252,13 @@ export function LoginForm() {
                       autoComplete="username"
                       maxLength={8}
                       pattern="[0-9]{8}"
-                      className="pl-10 text-center text-lg tracking-[0.2em] placeholder:tracking-normal placeholder:text-base h-12 bg-white/80 dark:bg-slate-950/50 border-border focus:border-sky-500 focus:ring-sky-500"
+                      className="pl-10 text-center text-lg tracking-[0.2em] placeholder:tracking-normal placeholder:text-base h-12 bg-white/80 dark:bg-slate-950/50 border-border focus:border-blue-500 focus:ring-blue-500"
                     />
                   </div>
                 </div>
                 <Button
                   type="submit"
-                  className="w-full h-12 mt-2 bg-gradient-to-r from-sky-600 to-emerald-600 hover:from-sky-700 hover:to-emerald-700 text-white font-semibold rounded-xl shadow-lg shadow-sky-600/25 hover:shadow-xl transition-all"
+                  className="w-full h-12 mt-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold rounded-xl shadow-lg shadow-blue-600/25 hover:shadow-xl transition-all"
                   disabled={loading}
                 >
                   {loading ? (
@@ -293,7 +293,7 @@ export function LoginForm() {
                         value={digit}
                         readOnly
                         onKeyDown={handleCodeKeyDown}
-                        className="w-12 h-14 rounded-xl text-center text-xl font-bold bg-white/80 dark:bg-slate-950/50 border-border focus:border-sky-500 focus:ring-sky-500 caret-transparent cursor-default"
+                        className="w-12 h-14 rounded-xl text-center text-xl font-bold bg-white/80 dark:bg-slate-950/50 border-border focus:border-blue-500 focus:ring-blue-500 caret-transparent cursor-default"
                         autoFocus={index === 0}
                       />
                     ))}
@@ -308,7 +308,7 @@ export function LoginForm() {
                         type="button"
                         variant="outline"
                         onClick={() => handleTecladoDigito(digito)}
-                        className="h-14 lg:h-12 rounded-xl text-xl font-semibold bg-white/80 dark:bg-slate-950/50 hover:bg-sky-50 dark:hover:bg-sky-500/10 hover:border-sky-400 active:scale-95 transition-all"
+                        className="h-14 lg:h-12 rounded-xl text-xl font-semibold bg-white/80 dark:bg-slate-950/50 hover:bg-blue-50 dark:hover:bg-blue-500/10 hover:border-blue-400 active:scale-95 transition-all"
                       >
                         {digito}
                       </Button>
@@ -325,7 +325,7 @@ export function LoginForm() {
                       type="button"
                       variant="outline"
                       onClick={() => handleTecladoDigito('0')}
-                      className="h-14 lg:h-12 rounded-xl text-xl font-semibold bg-white/80 dark:bg-slate-950/50 hover:bg-sky-50 dark:hover:bg-sky-500/10 hover:border-sky-400 active:scale-95 transition-all"
+                      className="h-14 lg:h-12 rounded-xl text-xl font-semibold bg-white/80 dark:bg-slate-950/50 hover:bg-blue-50 dark:hover:bg-blue-500/10 hover:border-blue-400 active:scale-95 transition-all"
                     >
                       0
                     </Button>
@@ -342,7 +342,7 @@ export function LoginForm() {
                 </div>
                 <Button
                   type="submit"
-                  className="w-full h-12 mt-2 bg-gradient-to-r from-sky-600 to-emerald-600 hover:from-sky-700 hover:to-emerald-700 text-white font-semibold rounded-xl shadow-lg shadow-sky-600/25 hover:shadow-xl transition-all disabled:opacity-60"
+                  className="w-full h-12 mt-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold rounded-xl shadow-lg shadow-blue-600/25 hover:shadow-xl transition-all disabled:opacity-60"
                   disabled={loading || codigoIncompleto}
                 >
                   {loading ? (

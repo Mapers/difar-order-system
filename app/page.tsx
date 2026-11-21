@@ -53,8 +53,8 @@ export default function Home() {
 
   if (typeof window === "undefined" || loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-sky-100 via-white to-emerald-100 dark:from-[#04101f] dark:via-[#071a2c] dark:to-[#04231f]">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-sky-500 border-t-transparent"></div>
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-100 via-white to-indigo-100 dark:from-[#0b0f19] dark:via-[#0c1226] dark:to-[#10102e]">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-500 border-t-transparent"></div>
       </div>
     );
   }
@@ -68,12 +68,12 @@ export default function Home() {
           <div className="relative h-24 w-64">
             <LogoDifar fill style={{ objectFit: "contain", objectPosition: "left" }} sizes="260px" priority />
           </div>
-          <p className="mt-8 inline-flex items-center rounded-full border border-sky-600/20 bg-white/60 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-sky-700 backdrop-blur dark:border-sky-300/20 dark:bg-white/5 dark:text-sky-300">
+          <p className="mt-8 inline-flex items-center rounded-full border border-blue-600/20 bg-white/60 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-blue-700 backdrop-blur dark:border-blue-300/20 dark:bg-white/5 dark:text-blue-300">
             Intranet · Distribución farmacéutica
           </p>
           <h1 className="mt-4 text-4xl font-bold leading-tight tracking-tight text-slate-900 dark:text-white xl:text-5xl">
             Del almacén a la farmacia,{" "}
-            <span className="bg-gradient-to-r from-sky-600 to-emerald-600 bg-clip-text text-transparent dark:from-sky-400 dark:to-emerald-400">todo en un solo lugar.</span>
+            <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent dark:from-blue-400 dark:to-indigo-400">todo en un solo lugar.</span>
           </h1>
           <p className="mt-4 max-w-md text-base text-slate-600 dark:text-slate-300">
             Sistema de Gestión de Pedidos de DIFAR: ventas, almacén, cobranzas y contabilidad.
@@ -81,7 +81,7 @@ export default function Home() {
           <ul className="mt-8 grid max-w-md grid-cols-2 gap-3">
             {AREAS.map(({ icono: Icono, titulo, detalle }) => (
               <li key={titulo} className="flex items-center gap-3 rounded-xl border border-white/60 bg-white/55 p-3 backdrop-blur-md dark:border-white/10 dark:bg-white/5">
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-sky-500 to-emerald-500 text-white shadow-md">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-indigo-500 text-white shadow-md">
                   <Icono className="h-4 w-4" />
                 </span>
                 <span className="min-w-0">
