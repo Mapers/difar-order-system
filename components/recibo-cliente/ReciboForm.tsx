@@ -59,14 +59,14 @@ const CAMPO =
 
 const svgUri = (svg: string) => `url("data:image/svg+xml,${encodeURIComponent(svg)}")`
 
-/* Borde rasgado a los costados: una tira dentada (12x180) que se repite hacia abajo a cada lado
+/* Borde rasgado a los costados: una tira dentada (16x260) que se repite hacia abajo a cada lado
    y un rectángulo lleno al centro. Los extremos de la tira coinciden para que no se note el empalme. */
-const TIRA_IZQ = svgUri(`<svg xmlns='http://www.w3.org/2000/svg' width='12' height='180'><path d='M12 0 L2 0 L1.1 3 L2 7.5 L2.9 12.8 L2.4 19.6 L1.4 28.3 L0.2 36.3 L3.5 44 L6.8 52.7 L2.4 62.2 L3.5 69.2 L3.2 74.8 L1.1 80.1 L3.6 86.1 L3.3 93 L2.1 96.4 L0.7 103 L6.3 112.4 L3.5 117.8 L1.5 124.4 L1.6 129.4 L2.3 134.7 L1.7 139.3 L2.4 148.4 L2.6 155 L2.7 164.6 L1.3 169.3 L3 174.6 L2 180 L12 180Z'/></svg>`)
-const TIRA_DER = svgUri(`<svg xmlns='http://www.w3.org/2000/svg' width='12' height='180'><path d='M0 0 L10.0 0 L10.9 3 L10.0 7.5 L9.1 12.8 L9.6 19.6 L10.6 28.3 L11.8 36.3 L8.5 44 L5.2 52.7 L9.6 62.2 L8.5 69.2 L8.8 74.8 L10.9 80.1 L8.4 86.1 L8.7 93 L9.9 96.4 L11.3 103 L5.7 112.4 L8.5 117.8 L10.5 124.4 L10.4 129.4 L9.7 134.7 L10.3 139.3 L9.6 148.4 L9.4 155 L9.3 164.6 L10.7 169.3 L9.0 174.6 L10.0 180 L0 180Z'/></svg>`)
+const TIRA_IZQ = svgUri(`<svg xmlns='http://www.w3.org/2000/svg' width='16' height='260'><path d='M16 0 L4 0 L4.7 1.5 L6 7.8 L7.1 12.4 L8.6 14.6 L8.5 20.1 L9.2 26.1 L10.4 32.5 L10.9 38.6 L11.5 40.1 L11.2 44.1 L11.5 49.8 L11.5 54.4 L11.5 57 L10.6 62.3 L11.5 65.7 L10.6 72 L11.1 76.2 L9.8 78.7 L8.7 83.6 L9.8 88.4 L10 93.7 L11 96 L10 99.8 L10 106.1 L11.2 110.6 L10.4 112.3 L8.8 118.3 L7.9 122.9 L6.9 125.9 L8.4 129.5 L10 131.2 L10.6 136 L11.5 139.3 L11.5 142.8 L10.9 148 L10.7 151.6 L10.6 157.9 L9.7 163 L11.5 165.1 L10.5 170.1 L10.1 171.8 L9.1 174.4 L7.9 177.7 L9.4 181.6 L7.9 183.2 L8.4 189.3 L8.1 194.1 L9 200.2 L8.5 206 L7 209.2 L7.3 213.9 L7.8 216.3 L7.6 218.2 L5.4 220.7 L5.4 224 L4.5 229.8 L4.4 234.8 L5.1 236.8 L5.3 239.8 L4.9 245.9 L3.8 249.9 L4.6 255.4 L4 260 L16 260Z'/></svg>`)
+const TIRA_DER = svgUri(`<svg xmlns='http://www.w3.org/2000/svg' width='16' height='260'><path d='M0 0 L12.0 0 L11.3 1.5 L10.0 7.8 L8.9 12.4 L7.4 14.6 L7.5 20.1 L6.8 26.1 L5.6 32.5 L5.1 38.6 L4.5 40.1 L4.8 44.1 L4.5 49.8 L4.5 54.4 L4.5 57 L5.4 62.3 L4.5 65.7 L5.4 72 L4.9 76.2 L6.2 78.7 L7.3 83.6 L6.2 88.4 L6.0 93.7 L5.0 96 L6.0 99.8 L6.0 106.1 L4.8 110.6 L5.6 112.3 L7.2 118.3 L8.1 122.9 L9.1 125.9 L7.6 129.5 L6.0 131.2 L5.4 136 L4.5 139.3 L4.5 142.8 L5.1 148 L5.3 151.6 L5.4 157.9 L6.3 163 L4.5 165.1 L5.5 170.1 L5.9 171.8 L6.9 174.4 L8.1 177.7 L6.6 181.6 L8.1 183.2 L7.6 189.3 L7.9 194.1 L7.0 200.2 L7.5 206 L9.0 209.2 L8.7 213.9 L8.2 216.3 L8.4 218.2 L10.6 220.7 L10.6 224 L11.5 229.8 L11.6 234.8 L10.9 236.8 L10.7 239.8 L11.1 245.9 L12.2 249.9 L11.4 255.4 L12.0 260 L0 260Z'/></svg>`)
 
 function mascaraBordeRoto(): React.CSSProperties {
     const image = `linear-gradient(#000,#000), ${TIRA_IZQ}, ${TIRA_DER}`
-    const size = 'calc(100% - 22px) 100%, 12px 180px, 12px 180px'
+    const size = 'calc(100% - 30px) 100%, 16px 260px, 16px 260px'
     const position = 'center top, left top, right top'
     const repeat = 'no-repeat, repeat-y, repeat-y'
     return {
@@ -80,13 +80,13 @@ const ARRUGAS: React.CSSProperties = {
     backgroundImage: svgUri(
         "<svg xmlns='http://www.w3.org/2000/svg' width='640' height='640'>" +
         "<filter id='a' x='0' y='0' width='100%' height='100%'>" +
-        "<feTurbulence type='fractalNoise' baseFrequency='0.007 0.012' numOctaves='5' seed='11' stitchTiles='stitch'/>" +
-        "<feDiffuseLighting lighting-color='#ffffff' surfaceScale='5'><feDistantLight azimuth='225' elevation='48'/></feDiffuseLighting>" +
+        "<feTurbulence type='fractalNoise' baseFrequency='0.004 0.009' numOctaves='6' seed='11' stitchTiles='stitch'/>" +
+        "<feDiffuseLighting lighting-color='#ffffff' surfaceScale='8'><feDistantLight azimuth='225' elevation='40'/></feDiffuseLighting>" +
         "</filter><rect width='100%' height='100%' filter='url(#a)'/></svg>"
     ),
     backgroundSize: '640px 640px',
     mixBlendMode: 'multiply',
-    opacity: 0.38,
+    opacity: 0.5,
 }
 
 /* Dobleces: un pliegue vertical al centro y uno horizontal, con sombra y brillo a cada lado. */
@@ -101,9 +101,12 @@ const DOBLECES: React.CSSProperties = {
 const PAPEL: React.CSSProperties = {
     backgroundColor: '#f7f0dc',
     backgroundImage: [
+        // fibras claras donde el papel se rasgó
+        'linear-gradient(90deg, rgba(252,248,236,.95) 0, rgba(252,248,236,.6) 9px, transparent 18px)',
+        'linear-gradient(270deg, rgba(252,248,236,.95) 0, rgba(252,248,236,.6) 9px, transparent 18px)',
         'radial-gradient(ellipse at center, rgba(255,252,240,.85) 0%, rgba(247,240,220,0) 60%)',
-        'radial-gradient(ellipse at top left, rgba(160,120,60,.10), transparent 55%)',
-        'radial-gradient(ellipse at bottom right, rgba(140,100,50,.12), transparent 55%)',
+        'radial-gradient(ellipse at top left, rgba(160,120,60,.14), transparent 55%)',
+        'radial-gradient(ellipse at bottom right, rgba(140,100,50,.16), transparent 55%)',
         'repeating-linear-gradient(0deg, rgba(120,95,50,.035) 0px, rgba(120,95,50,.035) 1px, transparent 1px, transparent 28px)',
     ].join(','),
     boxShadow: 'inset 0 0 60px rgba(120,90,40,.18)',
@@ -388,15 +391,15 @@ export function ReciboForm({ onEmitido }: Props) {
     return (
         <div className="mx-auto max-w-[820px]" style={{ filter: 'drop-shadow(0 10px 18px rgba(40,30,10,.22))' }}>
             <div
-                className="relative border-y border-[#cdbf98] px-[clamp(24px,4vw,34px)] py-[clamp(16px,3.5vw,30px)] text-[#1b2f63]"
+                className="relative border-y border-[#cdbf98] px-[clamp(30px,4.5vw,40px)] py-[clamp(16px,3.5vw,30px)] text-[#1b2f63]"
                 style={PAPEL}
             >
                 {/* Arrugas y dobleces del papel (no tapan clics). */}
                 <div aria-hidden="true" className="pointer-events-none absolute inset-0" style={ARRUGAS} />
                 <div aria-hidden="true" className="pointer-events-none absolute inset-0" style={DOBLECES} />
                 {/* Doble filete interior, como los talonarios impresos. */}
-                <div aria-hidden="true" className="pointer-events-none absolute inset-x-[16px] inset-y-[7px] rounded-[2px] border border-[#b9a777]/60" />
-                <div aria-hidden="true" className="pointer-events-none absolute inset-x-[19px] inset-y-[10px] rounded-[2px] border border-[#b9a777]/30" />
+                <div aria-hidden="true" className="pointer-events-none absolute inset-x-[22px] inset-y-[7px] rounded-[2px] border border-[#b9a777]/60" />
+                <div aria-hidden="true" className="pointer-events-none absolute inset-x-[25px] inset-y-[10px] rounded-[2px] border border-[#b9a777]/30" />
 
                 <div className="relative flex flex-wrap justify-between gap-4 border-b-2 border-double border-[#1b2f63] pb-2.5">
                     <div className="flex flex-1 flex-col gap-1 sm:min-w-[250px]">
