@@ -246,7 +246,7 @@ export function PlanillasCaja({ catalogos, usuario, onPendientes }: Props) {
         setTrabajando(true)
         try {
             await CajaBancosService.planillasRevertir(usuario, r.id_detalle)
-            toast({ title: "Cobro revertido", description: `${documento(r)} salió del voucher y volvió a pendientes.` })
+            toast({ title: "Cobro revertido", description: `${documento(r)} volvió a pendientes.` })
             await Promise.all([cargarPendientes(), cargarHistorial()])
         } catch (e: any) {
             toast({
@@ -521,7 +521,7 @@ export function PlanillasCaja({ catalogos, usuario, onPendientes }: Props) {
                                                     <>
                                                         <p className="font-semibold">{r.caja}</p>
                                                         <p className="text-[10.5px] text-muted-foreground">
-                                                            Voucher {r.voucher} · {fmtFecha(r.fecha_mvto)}
+                                                            {r.voucher ? `Voucher ${r.voucher}` : 'Planilla de cobranza'} · {fmtFecha(r.fecha_mvto)}
                                                         </p>
                                                     </>
                                                 ) : (
@@ -559,9 +559,9 @@ export function PlanillasCaja({ catalogos, usuario, onPendientes }: Props) {
                         <AlertDialogTitle>Aceptar cobros en el libro</AlertDialogTitle>
                         <AlertDialogDescription>
                             Se registrarán {resumenAceptar?.n} cobro{resumenAceptar?.n !== 1 ? 's' : ''} por
-                            {' '}S/ {money(resumenAceptar?.total ?? 0)} en {resumenAceptar?.vouchers} voucher
-                            {resumenAceptar?.vouchers !== 1 ? 's' : ''} de caja. Se genera el asiento y baja la
-                            deuda de cada cliente. Se puede revertir desde el Historial.
+                            {' '}S/ {money(resumenAceptar?.total ?? 0)} como planilla de cobranza, igual que en Access:
+                            baja la deuda de cada cliente y se genera el asiento (cliente al abono, caja al cargo).
+                            El depósito al banco se registra aparte en el voucher de caja. Se puede revertir desde el Historial.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
@@ -608,9 +608,12 @@ export function PlanillasCaja({ catalogos, usuario, onPendientes }: Props) {
                     <AlertDialogHeader>
                         <AlertDialogTitle>Revertir cobro</AlertDialogTitle>
                         <AlertDialogDescription>
-                            {revertir && <>El cobro {documento(revertir)} de {revertir.nombre_cliente} saldrá del voucher
-                            {' '}{revertir.voucher} ({revertir.caja}), se regenerará el asiento y la deuda del cliente
-                            vuelve a subir. El cobro queda otra vez pendiente.</>}
+                            {revertir && (revertir.voucher
+                                ? <>El cobro {documento(revertir)} de {revertir.nombre_cliente} saldrá del voucher
+                                    {' '}{revertir.voucher} ({revertir.caja}), se regenerará el asiento y la deuda del cliente
+                                    vuelve a subir. El cobro queda otra vez pendiente.</>
+                                : <>Se anulará el cobro {documento(revertir)} de {revertir.nombre_cliente}: su pago, su asiento
+                                    y su registro en la cuenta del cliente. La deuda vuelve a subir y el cobro queda otra vez pendiente.</>)}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>

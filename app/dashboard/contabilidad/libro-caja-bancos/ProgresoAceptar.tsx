@@ -9,7 +9,7 @@ import {
 
 /**
  * Ventana que acompaña "Aceptar" en Planillas de cobranza: muestra, en el orden real en que
- * sp_ws_cajabco_planilla_aceptar (+ sp_ws_cajabco_centralizar) graba, cada tabla que se toca.
+ * sp_ws_cajabco_planilla_aceptar_2b graba (igual que "Amortizacion Clientes" de Access), cada tabla que se toca.
  * El servidor hace todo en una sola llamada; los pasos avanzan mientras espera y se cierran
  * con la respuesta real (éxito o error). Nunca marca "listo" algo que el servidor no confirmó.
  */
@@ -30,11 +30,10 @@ export type EstadoProgreso =
 
 const PASOS = [
     { tabla: 'planilla_detalle_caja', titulo: 'Revisando los cobros',      texto: 'Confirma que sigan pendientes y que cliente, caja y fecha estén completos.', icono: ClipboardCheck },
-    { tabla: 'caja encabezado',       titulo: 'Abriendo el voucher',       texto: 'Un voucher por caja y por día; si ya existe, se reutiliza.',                 icono: FileText },
-    { tabla: 'caja centralizacion',   titulo: 'Grabando las líneas',       texto: 'Una línea por cobro, con su documento, importe y cuenta del cliente.',      icono: ListChecks },
-    { tabla: 'planilla_detalle_caja', titulo: 'Marcando como aceptados',   texto: 'Los cobros salen de pendientes y quedan enlazados a su voucher.',           icono: Check },
-    { tabla: 'mayor auxiliar',        titulo: 'Generando el asiento',      texto: 'Se regenera el asiento contable del voucher (debe y haber cuadrados).',     icono: BookOpenCheck },
+    { tabla: 'amortizaciones',        titulo: 'Registrando los pagos',     texto: 'Como en Access: planilla, operación, banco y vendedor de la factura.',     icono: FileText },
     { tabla: 'kardex clientes',       titulo: 'Cancelando las facturas',   texto: 'El pago baja el saldo de cada documento en la cuenta del cliente.',         icono: Receipt },
+    { tabla: 'mayor auxiliar',        titulo: 'Generando el asiento',      texto: 'Abono a la cuenta del cliente y cargo a la caja (debe y haber cuadrados).', icono: BookOpenCheck },
+    { tabla: 'planilla_detalle_caja', titulo: 'Marcando como aceptados',   texto: 'Los cobros salen de pendientes y pasan al Historial.',                      icono: ListChecks },
 ] as const
 
 const MS_POR_PASO = 650
@@ -98,7 +97,6 @@ export function ProgresoAceptar({ abierto, filas, estado, onCerrar }: Props) {
                         </DialogTitle>
                         <DialogDescription className="text-white/80">
                             {filas.length} cobro{filas.length !== 1 ? 's' : ''} · {simbolo} {money(total)}
-                            {ok && estado.fase === 'listo' && estado.vouchers > 0 && <> · {estado.vouchers} voucher{estado.vouchers !== 1 ? 's' : ''}</>}
                         </DialogDescription>
                     </DialogHeader>
                     <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/20">
@@ -180,7 +178,7 @@ export function ProgresoAceptar({ abierto, filas, estado, onCerrar }: Props) {
                 <div className="flex flex-wrap items-center justify-between gap-3 border-t bg-muted/30 px-6 py-3">
                     <p className="text-xs text-muted-foreground">
                         {grabando && 'No cierres esta ventana mientras se graba.'}
-                        {ok && estado.fase === 'listo' && <span className="text-emerald-700 dark:text-emerald-400">✓ {estado.aceptados} cobro{estado.aceptados !== 1 ? 's' : ''} en el libro y facturas canceladas en la cuenta del cliente.</span>}
+                        {ok && estado.fase === 'listo' && <span className="text-emerald-700 dark:text-emerald-400">✓ {estado.aceptados} cobro{estado.aceptados !== 1 ? 's' : ''} aceptados: facturas canceladas y asiento generado.</span>}
                         {fallo && estado.fase === 'error' && <span className="text-red-600">{estado.mensaje} {estado.sinRespuesta ? 'No llegó respuesta del servidor: revisa Pendientes e Historial antes de volver a intentar.' : 'No se grabó nada: los cobros siguen pendientes.'}</span>}
                     </p>
                     <Button onClick={onCerrar} disabled={grabando} className={ok ? 'bg-emerald-600 hover:bg-emerald-700' : ''}>

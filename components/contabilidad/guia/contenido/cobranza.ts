@@ -75,7 +75,7 @@ export const pantallas: PantallaGuia[] = [
                 guia: "aviso-caja",
                 titulo: "Ir a aceptar →",
                 queHace: "Mientras haya cobros esperando, verás este aviso. Pulsa Ir a aceptar → para abrir directo la pestaña Planillas de cobranza del Libro Caja.",
-                quePasa: "Cuando contabilidad acepta, aquí aparece «Ver en qué voucher entró cada cobro» con la caja, el voucher y la fecha. " + SOLO_CONSULTA,
+                quePasa: "Cuando contabilidad acepta, aquí aparece «Ver cómo se registró cada cobro» con la caja y la fecha. " + SOLO_CONSULTA,
             },
             {
                 guia: "acciones-planilla",
@@ -433,8 +433,8 @@ export const pantallas: PantallaGuia[] = [
                 titulo: "Aceptar seleccionados",
                 queHace: "Con los cobros marcados, pulsa Aceptar seleccionados y confirma con Sí, aceptar.",
                 quePasa: "Cada cobro entra como línea al voucher de esa caja y fecha (si no existe, se crea). Se arma el asiento y baja el saldo de la factura del cliente.",
-                seGuarda: "Voucher de caja del día, asiento contable y kardex del cliente; el cobro queda Aceptado.",
-                tablas: "planilla_detalle_caja, caja encabezado, caja centralizacion, mayor auxiliar, kardex clientes",
+                seGuarda: "Como en Access (Amortizacion Clientes): el pago, el asiento contable y la cuenta del cliente; el cobro queda Aceptado.",
+                tablas: "planilla_detalle_caja, amortizaciones, kardex clientes, mayor auxiliar",
                 despues: "En la pestaña Vouchers, abre esa caja y fecha para ver las líneas PLAN.",
             },
             {
@@ -451,7 +451,7 @@ export const pantallas: PantallaGuia[] = [
                 queHace: "Pulsa Historial para ver lo aceptado y rechazado en unas fechas. Si un cobro aceptado estaba mal, pulsa Revertir.",
                 quePasa: "Revertir saca el cobro del voucher, vuelve a armar el asiento y la deuda del cliente sube otra vez. El cobro queda de nuevo pendiente.",
                 seGuarda: "Se borra la línea del voucher y se regenera el asiento y el kardex.",
-                tablas: "caja centralizacion, mayor auxiliar, kardex clientes, planilla_detalle_caja",
+                tablas: "amortizaciones, kardex clientes, mayor auxiliar, planilla_detalle_caja",
             },
         ],
     },
@@ -496,7 +496,7 @@ export const caminos: CaminoGuia[] = [
             {
                 titulo: "Asiento y saldo",
                 quien: "Automático",
-                queHace: "Al aceptar, cada cobro entra como línea al voucher del día de esa caja. Se arma el asiento contable y baja el saldo de la factura en la cuenta corriente del cliente.",
+                queHace: "Al aceptar, cada cobro se registra igual que la planilla de cobranza de Access: se graba el pago, se arma el asiento (cliente al abono, caja al cargo) y baja el saldo de la factura. El depósito al banco se registra aparte en el voucher de caja.",
                 seGuarda: "Voucher de caja, asiento contable (mayor auxiliar) y kardex de clientes.",
             },
             {

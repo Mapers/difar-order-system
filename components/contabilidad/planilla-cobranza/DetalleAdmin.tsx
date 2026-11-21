@@ -239,7 +239,7 @@ export default function DetalleAdmin({
                 {aceptadosCaja > 0 && (
                     <details className="rounded-lg border bg-background p-3 text-xs">
                         <summary className="cursor-pointer font-semibold text-foreground">
-                            Ver en qué voucher entró cada cobro ({aceptadosCaja})
+                            Ver cómo se registró cada cobro ({aceptadosCaja})
                         </summary>
                         <ul className="mt-2 space-y-1 text-muted-foreground">
                             {(estadoCaja ?? []).filter(e => e.estado === 'aceptado').map(e => {
@@ -247,7 +247,7 @@ export default function DetalleAdmin({
                                 return (
                                     <li key={e.id_detalle}>
                                         <span className="font-mono font-semibold text-foreground">{r ? `${r.serie ?? ''}-${r.numero_doc ?? ''}` : e.id_detalle}</span>
-                                        {' · '}{e.caja} · voucher {e.voucher} · {fmtFecha(e.fecha_mvto)}
+                                        {' · '}{e.caja} · {e.voucher ? `voucher ${e.voucher}` : 'planilla de cobranza'} · {fmtFecha(e.fecha_mvto)}
                                     </li>
                                 )
                             })}
