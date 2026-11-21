@@ -13,6 +13,7 @@ import { AvisoEstadoSunat } from "@/components/comprobantes/AvisoEstadoSunat"
 import { GuardaMenu } from "@/components/auth/GuardaMenu"
 import { AvisoVersionNueva } from "@/components/auth/AvisoVersionNueva"
 import { GuiaProvider } from "@/components/contabilidad/guia/GuiaProvider"
+import { FondoLogin } from "@/components/auth/FondoLogin"
 
 function DashboardContent({ children }: { children: React.ReactNode }) {
     const { isAuthenticated, loading } = useAuth()
@@ -27,6 +28,8 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
 
     return (
         <div className="flex min-h-screen bg-gradient-to-br">
+            {/* Mismo fondo del inicio de sesión, tenue y quieto, detrás de todas las pantallas. */}
+            <FondoLogin suave />
             <SideNav />
             <MobileNav />
             <div className={`min-w-0 flex-1 transition-all duration-300 ${collapsed ? "md:pl-20" : "md:pl-72"}`}>

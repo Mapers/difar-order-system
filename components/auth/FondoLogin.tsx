@@ -9,6 +9,7 @@ const ANIMACIONES = `
 @keyframes login-deriva { 0%, 100% { transform: translate3d(0, 0, 0) scale(1) } 50% { transform: translate3d(3%, -4%, 0) scale(1.08) } }
 @keyframes login-ruta { to { stroke-dashoffset: -280 } }
 @media (prefers-reduced-motion: reduce) { .login-anim { animation: none !important } }
+.login-quieto .login-anim { animation: none !important }
 `
 
 /** Cápsula de dos mitades (los colores del logo: rojo y blanco). */
@@ -50,9 +51,14 @@ function Cruz({ className, demora }: { className: string; demora: number }) {
     )
 }
 
-export function FondoLogin() {
+/**
+ * `suave`: versión tenue para ponerla detrás de las pantallas de trabajo (todo el sistema):
+ * va por debajo del contenido, con un velo más fuerte para no restar lectura y sin movimiento
+ * para no distraer ni gastar equipo.
+ */
+export function FondoLogin({ suave = false }: { suave?: boolean }) {
     return (
-        <div aria-hidden="true" className="pointer-events-none fixed inset-0 overflow-hidden bg-gradient-to-br from-blue-100 via-white to-indigo-100 dark:from-[#0b0f19] dark:via-[#0c1226] dark:to-[#10102e]">
+        <div aria-hidden="true" className={`pointer-events-none fixed inset-0 overflow-hidden ${suave ? "login-quieto -z-10" : ""} bg-gradient-to-br from-blue-100 via-white to-indigo-100 dark:from-[#0b0f19] dark:via-[#0c1226] dark:to-[#10102e]`}>
             <style>{ANIMACIONES}</style>
 
             {/* Manchas de color muy desenfocadas. */}
@@ -93,7 +99,7 @@ export function FondoLogin() {
             <Cruz className="right-[40%] bottom-[10%] w-24 opacity-25 blur-[12px]" demora={6} />
 
             {/* Velo para que el texto se lea siempre. */}
-            <div className="absolute inset-0 bg-white/30 dark:bg-[#070a14]/45" />
+            <div className={`absolute inset-0 ${suave ? "bg-white/60 dark:bg-[#070a14]/65" : "bg-white/30 dark:bg-[#070a14]/45"}`} />
         </div>
     )
 }
