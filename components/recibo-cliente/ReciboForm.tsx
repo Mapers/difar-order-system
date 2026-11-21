@@ -57,6 +57,46 @@ const CAMPO =
     'bg-transparent border-0 border-b border-[#9a8c6a] outline-none px-1 py-0.5 ' +
     'text-[#1b2f63] placeholder:text-[#b7aa8a] focus:border-[#9b1c22] focus:bg-[#fbf6e8]'
 
+const svgUri = (svg: string) => `url("data:image/svg+xml,${encodeURIComponent(svg)}")`
+
+/* Borde rasgado a los costados: una tira dentada (12x180) que se repite hacia abajo a cada lado
+   y un rectángulo lleno al centro. Los extremos de la tira coinciden para que no se note el empalme. */
+const TIRA_IZQ = svgUri(`<svg xmlns='http://www.w3.org/2000/svg' width='12' height='180'><path d='M12 0 L2 0 L1.1 3 L2 7.5 L2.9 12.8 L2.4 19.6 L1.4 28.3 L0.2 36.3 L3.5 44 L6.8 52.7 L2.4 62.2 L3.5 69.2 L3.2 74.8 L1.1 80.1 L3.6 86.1 L3.3 93 L2.1 96.4 L0.7 103 L6.3 112.4 L3.5 117.8 L1.5 124.4 L1.6 129.4 L2.3 134.7 L1.7 139.3 L2.4 148.4 L2.6 155 L2.7 164.6 L1.3 169.3 L3 174.6 L2 180 L12 180Z'/></svg>`)
+const TIRA_DER = svgUri(`<svg xmlns='http://www.w3.org/2000/svg' width='12' height='180'><path d='M0 0 L10.0 0 L10.9 3 L10.0 7.5 L9.1 12.8 L9.6 19.6 L10.6 28.3 L11.8 36.3 L8.5 44 L5.2 52.7 L9.6 62.2 L8.5 69.2 L8.8 74.8 L10.9 80.1 L8.4 86.1 L8.7 93 L9.9 96.4 L11.3 103 L5.7 112.4 L8.5 117.8 L10.5 124.4 L10.4 129.4 L9.7 134.7 L10.3 139.3 L9.6 148.4 L9.4 155 L9.3 164.6 L10.7 169.3 L9.0 174.6 L10.0 180 L0 180Z'/></svg>`)
+
+function mascaraBordeRoto(): React.CSSProperties {
+    const image = `linear-gradient(#000,#000), ${TIRA_IZQ}, ${TIRA_DER}`
+    const size = 'calc(100% - 22px) 100%, 12px 180px, 12px 180px'
+    const position = 'center top, left top, right top'
+    const repeat = 'no-repeat, repeat-y, repeat-y'
+    return {
+        WebkitMaskImage: image, WebkitMaskSize: size, WebkitMaskPosition: position, WebkitMaskRepeat: repeat,
+        maskImage: image, maskSize: size, maskPosition: position, maskRepeat: repeat,
+    }
+}
+
+/* Arrugas: relieve suave hecho con ruido + luz rasante; se multiplica sobre el papel. */
+const ARRUGAS: React.CSSProperties = {
+    backgroundImage: svgUri(
+        "<svg xmlns='http://www.w3.org/2000/svg' width='640' height='640'>" +
+        "<filter id='a' x='0' y='0' width='100%' height='100%'>" +
+        "<feTurbulence type='fractalNoise' baseFrequency='0.007 0.012' numOctaves='5' seed='11' stitchTiles='stitch'/>" +
+        "<feDiffuseLighting lighting-color='#ffffff' surfaceScale='5'><feDistantLight azimuth='225' elevation='48'/></feDiffuseLighting>" +
+        "</filter><rect width='100%' height='100%' filter='url(#a)'/></svg>"
+    ),
+    backgroundSize: '640px 640px',
+    mixBlendMode: 'multiply',
+    opacity: 0.38,
+}
+
+/* Dobleces: un pliegue vertical al centro y uno horizontal, con sombra y brillo a cada lado. */
+const DOBLECES: React.CSSProperties = {
+    backgroundImage: [
+        'linear-gradient(90deg, transparent calc(50% - 6px), rgba(110,82,35,.10) calc(50% - 1px), rgba(255,253,245,.55) 50%, transparent calc(50% + 7px))',
+        'linear-gradient(180deg, transparent calc(38% - 6px), rgba(110,82,35,.09) calc(38% - 1px), rgba(255,253,245,.5) 38%, transparent calc(38% + 7px))',
+    ].join(','),
+}
+
 // Papel antiguo pero sobrio: crema cálido, bordes algo tostados, rayado muy tenue y tinta azul.
 const PAPEL: React.CSSProperties = {
     backgroundColor: '#f7f0dc',
@@ -66,7 +106,8 @@ const PAPEL: React.CSSProperties = {
         'radial-gradient(ellipse at bottom right, rgba(140,100,50,.12), transparent 55%)',
         'repeating-linear-gradient(0deg, rgba(120,95,50,.035) 0px, rgba(120,95,50,.035) 1px, transparent 1px, transparent 28px)',
     ].join(','),
-    boxShadow: 'inset 0 0 60px rgba(120,90,40,.18), 0 10px 30px rgba(40,30,10,.18)',
+    boxShadow: 'inset 0 0 60px rgba(120,90,40,.18)',
+    ...mascaraBordeRoto(),
 }
 const SERIF = { fontFamily: 'Georgia, "Times New Roman", serif' }
 
@@ -345,14 +386,17 @@ export function ReciboForm({ onEmitido }: Props) {
             : null
 
     return (
-        <div className="mx-auto max-w-[820px]">
+        <div className="mx-auto max-w-[820px]" style={{ filter: 'drop-shadow(0 10px 18px rgba(40,30,10,.22))' }}>
             <div
-                className="relative rounded-[3px] border border-[#cdbf98] p-[clamp(14px,3.5vw,30px)] text-[#1b2f63]"
+                className="relative border-y border-[#cdbf98] px-[clamp(24px,4vw,34px)] py-[clamp(16px,3.5vw,30px)] text-[#1b2f63]"
                 style={PAPEL}
             >
+                {/* Arrugas y dobleces del papel (no tapan clics). */}
+                <div aria-hidden="true" className="pointer-events-none absolute inset-0" style={ARRUGAS} />
+                <div aria-hidden="true" className="pointer-events-none absolute inset-0" style={DOBLECES} />
                 {/* Doble filete interior, como los talonarios impresos. */}
-                <div aria-hidden="true" className="pointer-events-none absolute inset-[7px] rounded-[2px] border border-[#b9a777]/60" />
-                <div aria-hidden="true" className="pointer-events-none absolute inset-[10px] rounded-[2px] border border-[#b9a777]/30" />
+                <div aria-hidden="true" className="pointer-events-none absolute inset-x-[16px] inset-y-[7px] rounded-[2px] border border-[#b9a777]/60" />
+                <div aria-hidden="true" className="pointer-events-none absolute inset-x-[19px] inset-y-[10px] rounded-[2px] border border-[#b9a777]/30" />
 
                 <div className="relative flex flex-wrap justify-between gap-4 border-b-2 border-double border-[#1b2f63] pb-2.5">
                     <div className="flex flex-1 flex-col gap-1 sm:min-w-[250px]">
