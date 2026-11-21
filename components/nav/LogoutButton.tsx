@@ -32,7 +32,7 @@ export function LogoutButton({ onClick }: LogoutButtonProps) {
   const { collapsed } = useSidebar();
 
   return (
-    <div className="border-t p-4 shrink-0">
+    <div className="border-t border-border/60 p-3 shrink-0">
       {collapsed ? (
         <TooltipProvider delayDuration={100}>
           <Tooltip>
@@ -52,10 +52,12 @@ export function LogoutButton({ onClick }: LogoutButtonProps) {
       ) : (
         <Button
           variant="outline"
-          className="w-full justify-start gap-2 text-red-600 hover:bg-red-50 hover:text-red-700"
+          className="group h-11 w-full justify-start gap-3 rounded-xl border-red-200 px-2.5 text-red-600 transition-all duration-200 hover:border-red-300 hover:bg-red-50 hover:text-red-700 active:scale-[0.98] dark:border-red-500/30 dark:hover:bg-red-500/10"
           onClick={onClick}
         >
-          <LogOut className="h-4 w-4" />
+          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-50 transition-transform duration-200 group-hover:-translate-x-0.5 dark:bg-red-500/10">
+            <LogOut className="h-4 w-4" />
+          </span>
           Cerrar sesión
         </Button>
       )}
