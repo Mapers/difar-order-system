@@ -173,24 +173,8 @@ export default function ModalKardex({ open, onClose, amortizacion }: Props) {
                                         {r.Amortizacion > 0 ? fmtMoney(r.Amortizacion) : '–'}
                                     </td>
                                     <td className="py-2 px-3">
-                                        <div className="flex items-center justify-center gap-1">
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                className="h-6 px-2 text-[10px] gap-1 text-blue-600 border-blue-200 hover:bg-blue-50"
-                                                onClick={() => handleEditarClick(r)}
-                                            >
-                                                <Pencil className="h-3 w-3" /> Editar
-                                            </Button>
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                className="h-6 px-2 text-[10px] gap-1 text-red-600 border-red-200 hover:bg-red-50"
-                                                onClick={() => handleDeleteClick(r)}
-                                            >
-                                                <Trash2 className="h-3 w-3" /> Eliminar
-                                            </Button>
-                                        </div>
+                                        {/* Solo consulta (21/11/2026): editar o borrar filas sueltas descuadra los libros. Para corregir, Eliminar o Revertir planilla. */}
+                                        <span className="block text-center text-[10px] text-muted-foreground" title="Para corregir un cobro usa Eliminar o Revertir planilla en la búsqueda">Solo consulta</span>
                                     </td>
                                 </tr>
                             ))}

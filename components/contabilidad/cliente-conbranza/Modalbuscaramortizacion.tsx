@@ -289,7 +289,7 @@ export default function ModalBuscarAmortizacion({ open, onClose, onSelectEditar,
                         <DialogDescription>
                             Se quitarán <strong>todas</strong> las amortizaciones de la planilla <strong>{revertTarget?.NroPlanilla}</strong>
                             {filasDePlanilla.length > 0 && <> ({filasDePlanilla.length} en esta lista, {fmtMoney(filasDePlanilla.reduce((s, r) => s + Number(r.Importe_Amortiz), 0))})</>}
-                            , con sus registros de kardex y libro mayor. La planilla vuelve a quedar validada en Planilla de Cobranza, lista para corregirla o procesarla de nuevo.
+                            , con sus registros de kardex y libro mayor. La planilla vuelve a quedar validada en Planilla de Cobranza y, si sus cobros se aceptaron en Libro Caja, vuelven a Pendientes allí para aceptarlos de nuevo.
                         </DialogDescription>
                     </DialogHeader>
                     <DialogFooter className="gap-2">
@@ -311,7 +311,7 @@ export default function ModalBuscarAmortizacion({ open, onClose, onSelectEditar,
                             <AlertCircle className="h-5 w-5 text-red-600" /> Confirmar Eliminación
                         </DialogTitle>
                         <DialogDescription>
-                            ¿Eliminar la amortización <strong>{deleteTarget?.NroPlanilla || `#${deleteTarget?.Id_Amort_Clie}`}</strong> del cliente <strong>{deleteTarget?.NombreCliente || deleteTarget?.Cod_Clie}</strong>? Se borrarán también los registros de kardex y libro mayor asociados. Esta acción no se puede deshacer.
+                            ¿Eliminar la amortización <strong>{deleteTarget?.NroPlanilla || `#${deleteTarget?.Id_Amort_Clie}`}</strong> del cliente <strong>{deleteTarget?.NombreCliente || deleteTarget?.Cod_Clie}</strong>? Se borrarán también los registros de kardex y libro mayor asociados. Si el cobro se aceptó en Libro Caja, vuelve a Pendientes allí. Esta acción no se puede deshacer.
                         </DialogDescription>
                     </DialogHeader>
                     <DialogFooter className="gap-2">
