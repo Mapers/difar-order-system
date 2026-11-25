@@ -71,9 +71,11 @@ export default function EstadoCuentaClientePage() {
     const formatDateToDDMMYYYY = (dateString: string): string => {
         if (!dateString) return '-';
         try {
-            const date = new Date(dateString);
-            if (isNaN(date.getTime())) return dateString;
-            return `${date.getUTCDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()}`;
+            // Se lee el texto AAAA-MM-DD tal cual: con new Date() el día salía en UTC y el
+            // mes en hora de Perú, y las fechas del día 1 mostraban el mes anterior.
+            const [y, m, d] = String(dateString).split('T')[0].split('-');
+            if (y && m && d) return `${d}/${m}/${y}`;
+            return dateString;
         } catch {
             return dateString;
         }
