@@ -27,9 +27,11 @@ export const ExportExpiredBalancesPdf: React.FC<ExportPdfProps> = ({ data, disab
     const formatDateToDDMMYYYY = (dateString: string): string => {
         if (!dateString) return '';
         try {
-            const date = new Date(dateString);
-            if (isNaN(date.getTime())) return dateString;
-            return `${date.getUTCDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()}`;
+            // Fecha leída tal cual AAAA-MM-DD: con new Date() el día salía en UTC
+            // y el mes en local, y las fechas del día 1 mostraban el mes anterior.
+            const [year, month, day] = String(dateString).split('T')[0].split('-');
+            if (year && month && day) return `${day}/${month}/${year}`;
+            return dateString;
         } catch {
             return dateString;
         }

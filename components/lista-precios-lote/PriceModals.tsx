@@ -13,9 +13,11 @@ import { PriceMethodsService } from "@/app/dashboard/lista-precios-lote/services
 const formatDateToDDMMYYYY = (dateString: string) => {
     if (!dateString) return '';
     try {
-        const d = new Date(dateString);
-        if (isNaN(d.getTime())) return dateString;
-        return `${d.getUTCDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getFullYear()}`;
+        // Fecha leída tal cual AAAA-MM-DD: con new Date() el día salía en UTC
+        // y el mes en local, y las fechas del día 1 mostraban el mes anterior.
+        const [year, month, day] = String(dateString).split('T')[0].split('-');
+        if (year && month && day) return `${day}/${month}/${year}`;
+        return dateString;
     } catch (e) { return dateString; }
 };
 
