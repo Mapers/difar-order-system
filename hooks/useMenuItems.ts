@@ -17,13 +17,17 @@ export interface NavChild {
 
 /** Íconos de los grupos (no tienen ruta, así que no están en ICON_MAP). */
 const ICONOS_GRUPO: Record<string, NavIcon> = {
+  // Grupos reales del Access (3soj SISTEMAS Contable): Datos Movimientos / Datos Fijos / Informes Contables
+  "Datos Movimientos": ArrowLeftRight,
+  "Datos Fijos": Settings2,
+  "Informes Contables": FileBarChart,
+  // Nombres antiguos (por compatibilidad si quedara algún grupo previo)
   "Cobranzas": HandCoins,
   "Datos de Movimientos": ArrowLeftRight,
   "Libros Contables": BookText,
   "Registros e Informes": FileBarChart,
   "SUNAT": Landmark,
   "Comisiones": BadgePercent,
-  "Datos Fijos": Settings2,
 };
 
 /**
