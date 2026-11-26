@@ -15,11 +15,16 @@ import {
     Loader2, RefreshCw, CheckCheck, XCircle, Inbox, History, Undo2, AlertCircle, Search,
 } from "lucide-react"
 import { toast } from "@/app/hooks/useToast"
+import apiClient from "@/app/api/client"
 import { CajaBancosService } from "@/app/services/contabilidad/ContabilidadService"
 import {
-    CajaCatalogos, CajaPlanillaHistorial, CajaPlanillaPendiente,
+    CajaCatalogos, CajaCtaBanco, CajaPlanillaHistorial, CajaPlanillaPendiente, CajaVoucherCuenta,
 } from "@/app/types/contabilidad-types"
 import { EstadoProgreso, FilaProgreso, ProgresoAceptar } from "./ProgresoAceptar"
+import { VoucherCuentaModal } from "./VoucherCuentaModal"
+
+// Las fotos de los vouchers se sirven desde el backend (sin el sufijo /api).
+const VOUCHER_BASE = (apiClient.defaults.baseURL || '').replace(/\/api\/?$/, '')
 
 const money = (v: number | string) =>
     Number(v ?? 0).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
@@ -61,7 +66,12 @@ export function PlanillasCaja({ catalogos, usuario, onPendientes }: Props) {
     const [seleccion, setSeleccion]   = useState<Set<number>>(new Set())
     const [trabajando, setTrabajando] = useState(false)
 
-    const [aceptarIds, setAceptarIds]   = useState<number[] | null>(null)
+    // Modal de cuenta de banco por voucher (paso previo a aceptar).
+    const [cuentaModal, setCuentaModal]   = useState<number[] | null>(null)
+    const [ctasBanco, setCtasBanco]       = useState<CajaCtaBanco[]>([])
+    const [lecturas, setLecturas]         = useState<Record<number, CajaVoucherCuenta>>({})
+    const [cargandoCuentas, setCargandoCuentas] = useState(false)
+
     const [progreso, setProgreso]       = useState<{ filas: FilaProgreso[]; estado: EstadoProgreso } | null>(null)
     const [rechazarIds, setRechazarIds] = useState<number[] | null>(null)
     const [motivo, setMotivo]           = useState('')
@@ -158,20 +168,34 @@ export function PlanillasCaja({ catalogos, usuario, onPendientes }: Props) {
         return null
     }
 
-    const pedirAceptar = (ids: number[]) => {
+    // Paso 1: validar y abrir el modal para elegir la cuenta de banco del depósito.
+    // Lee en paralelo el catálogo de cuentas y, con IA, la cuenta de cada voucher.
+    const pedirAceptar = async (ids: number[]) => {
         if (ids.length === 0) return
         const p = problemaAceptar(ids)
         if (p) {
             toast({ title: "Falta un dato", description: p, variant: "warning" })
             return
         }
-        setAceptarIds(ids)
+        setCuentaModal(ids)
+        setCargandoCuentas(true)
+        try {
+            const [cts, lec] = await Promise.all([
+                ctasBanco.length ? Promise.resolve(ctasBanco) : CajaBancosService.ctasBanco().catch(() => [] as CajaCtaBanco[]),
+                CajaBancosService.planillaVoucherCuenta(ids).catch(() => [] as CajaVoucherCuenta[]),
+            ])
+            if (!ctasBanco.length && cts.length) setCtasBanco(cts)
+            const mapa: Record<number, CajaVoucherCuenta> = {}
+            for (const l of lec) mapa[l.id_detalle] = l
+            setLecturas(mapa)
+        } finally {
+            setCargandoCuentas(false)
+        }
     }
 
-    const confirmarAceptar = async () => {
-        if (!aceptarIds) return
-        const ids = aceptarIds
-        setAceptarIds(null)
+    // Paso 2: con la cuenta elegida por voucher, grabar.
+    const ejecutarAceptar = async (ids: number[], ctaPorDetalle: Record<number, number | null>) => {
+        setCuentaModal(null)
         setTrabajando(true)
         // Ventana animada: muestra cada tabla que graba el servidor y el resultado real.
         const filas: FilaProgreso[] = pendientes
@@ -187,9 +211,10 @@ export function PlanillasCaja({ catalogos, usuario, onPendientes }: Props) {
         setProgreso({ filas, estado: { fase: 'grabando' } })
         try {
             const r: any = await CajaBancosService.planillasAceptar(usuario, ids.map(id => ({
-                idDetalle: id,
-                idCaja:    Number(edicion[id].idCaja),
-                fecha:     edicion[id].fecha,
+                idDetalle:  id,
+                idCaja:     Number(edicion[id].idCaja),
+                fecha:      edicion[id].fecha,
+                idCtaBanco: ctaPorDetalle[id] ?? null,
             })))
             const n = Number(r?.aceptados ?? ids.length)
             const v = Number(r?.vouchers ?? 0)
@@ -263,16 +288,9 @@ export function PlanillasCaja({ catalogos, usuario, onPendientes }: Props) {
     const totalSel = pendientes
         .filter(r => seleccion.has(r.id_detalle))
         .reduce((s, r) => s + Number(r.importe_cobrado), 0)
-    const resumenAceptar = useMemo(() => {
-        if (!aceptarIds) return null
-        const filas = pendientes.filter(r => aceptarIds.includes(r.id_detalle))
-        const vouchers = new Set(filas.map(r => `${edicion[r.id_detalle]?.idCaja}|${edicion[r.id_detalle]?.fecha}`))
-        return {
-            n:        filas.length,
-            total:    filas.reduce((s, r) => s + Number(r.importe_cobrado), 0),
-            vouchers: vouchers.size,
-        }
-    }, [aceptarIds, pendientes, edicion])
+    const cobrosModal = useMemo(
+        () => (cuentaModal ? pendientes.filter(r => cuentaModal.includes(r.id_detalle)) : []),
+        [cuentaModal, pendientes])
 
     return (
         <div className="grid grid-cols-1 gap-4">
@@ -553,25 +571,16 @@ export function PlanillasCaja({ catalogos, usuario, onPendientes }: Props) {
                 onCerrar={() => setProgreso(null)}
             />
 
-            <AlertDialog open={aceptarIds !== null} onOpenChange={v => { if (!v) setAceptarIds(null) }}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>Aceptar cobros en el libro</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            Se registrarán {resumenAceptar?.n} cobro{resumenAceptar?.n !== 1 ? 's' : ''} por
-                            {' '}S/ {money(resumenAceptar?.total ?? 0)} como planilla de cobranza, igual que en Access:
-                            baja la deuda de cada cliente y se genera el asiento (cliente al abono, caja al cargo).
-                            El depósito al banco se registra aparte en el voucher de caja. Se puede revertir desde el Historial.
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                        <AlertDialogAction className="bg-emerald-600 hover:bg-emerald-700" onClick={confirmarAceptar}>
-                            Sí, aceptar
-                        </AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
+            <VoucherCuentaModal
+                abierto={cuentaModal !== null}
+                cobros={cobrosModal}
+                ctasBanco={ctasBanco}
+                lecturas={lecturas}
+                cargando={cargandoCuentas}
+                baseUrl={VOUCHER_BASE}
+                onCancel={() => setCuentaModal(null)}
+                onConfirm={map => { if (cuentaModal) ejecutarAceptar(cuentaModal, map) }}
+            />
 
             <AlertDialog open={rechazarIds !== null} onOpenChange={v => { if (!v) setRechazarIds(null) }}>
                 <AlertDialogContent>

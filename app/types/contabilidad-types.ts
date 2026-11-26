@@ -227,9 +227,36 @@ export interface CajaPlanillaHistorial {
 }
 
 export interface CajaPlanillaAceptarFila {
-    idDetalle: number
-    idCaja:    number
-    fecha:     string
+    idDetalle:  number
+    idCaja:     number
+    fecha:      string
+    idCtaBanco?: number | null
+}
+
+/** Cuenta de banco de la empresa (para elegir a qué cuenta fue el depósito). */
+export interface CajaCtaBanco {
+    Cod_Bco:           string
+    NombreBanco:       string
+    Nro_Cta:           string
+    Moneda:            string
+    EntidadFinanciera: string
+    CtaContable:       number
+    Cod_Contab:        string
+    Descripcion_Cta:   string
+}
+
+/** Lectura IA del voucher de un cobro: sus fotos y la cuenta de banco sugerida. */
+export interface CajaVoucherCuenta {
+    id_detalle:    number
+    rutas:         string[]
+    numero_cuenta: string | null
+    cuenta_banco:  {
+        cod_bco:      string
+        id_cta_banco: number
+        cod_contable: string
+        descripcion:  string
+        entidad:      string
+    } | null
 }
 
 

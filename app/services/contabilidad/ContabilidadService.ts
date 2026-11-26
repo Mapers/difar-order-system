@@ -12,6 +12,8 @@ import {
     CajaCatalogos,
     CajaDetallePayload,
     CajaPlanillaAceptarFila,
+    CajaCtaBanco,
+    CajaVoucherCuenta,
     CajaPlanillaHistorial,
     CajaPlanillaPendiente,
     CajaVoucher,
@@ -126,6 +128,17 @@ export const CajaBancosService = {
         const res = await apiClient.get('/contabilidad/caja/planillas/historial', {
             params: { desde: desde || undefined, hasta: hasta || undefined },
         })
+        return res.data?.data?.data ?? []
+    },
+
+    ctasBanco: async (): Promise<CajaCtaBanco[]> => {
+        const res = await apiClient.get('/contabilidad/caja/ctas-banco')
+        return res.data?.data?.data ?? []
+    },
+
+    // Lee con IA la cuenta destino de los vouchers de los cobros elegidos (para el modal).
+    planillaVoucherCuenta: async (idDetalles: number[]): Promise<CajaVoucherCuenta[]> => {
+        const res = await apiClient.post('/contabilidad/caja/planillas/voucher-cuenta', { id_detalles: idDetalles })
         return res.data?.data?.data ?? []
     },
 
